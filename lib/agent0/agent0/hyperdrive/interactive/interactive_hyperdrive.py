@@ -120,14 +120,18 @@ class InteractiveHyperdrive:
             The LP fee applied to the curve portion of a trade.
         flat_fee: FixedPoint
             The LP fee applied to the flat portion of a trade.
-        governance_fee: FixedPoint
+        governance_lp_fee: FixedPoint
             The portion of the LP fee that goes to governance.
+        governance_zombie_fee: FixedPoint
+            The portion of the zombie interest that is given to governance as a fee.
         max_curve_fee: FixedPoint
             The upper bound on the curve fee that governance can set.
         max_flat_fee: FixedPoint
             The upper bound on the flat fee that governance can set.
-        max_governance_fee: FixedPoint
-            The upper bound on the governance fee that governance can set.
+        max_governance_lp_fee: FixedPoint
+            The upper bound on the governance lp fee that governance can set.
+        max_governance_zombie_fee: FixedPoint
+            The upper bound on the governance zombie fee that governance can set.
         """
 
         # Environment variables
@@ -144,15 +148,17 @@ class InteractiveHyperdrive:
         initial_share_price: FixedPoint = FixedPoint(1)
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
-        position_duration: int = 604800  # 1 week
-        checkpoint_duration: int = 3600  # 1 hour
+        position_duration: int = 604_800  # 1 week
+        checkpoint_duration: int = 3_600  # 1 hour
         time_stretch: FixedPoint | None = None
         curve_fee: FixedPoint = FixedPoint("0.1")  # 10%
         flat_fee: FixedPoint = FixedPoint("0.0005")  # 0.05%
-        governance_fee: FixedPoint = FixedPoint("0.15")  # 15%
-        max_curve_fee: FixedPoint = FixedPoint("0.3")  # 30%
+        governance_lp_fee: FixedPoint = FixedPoint("0.01")  # 1%
+        governance_zombie_fee: FixedPoint = FixedPoint("0.10")  # 10%
+        max_curve_fee: FixedPoint = FixedPoint("0.30")  # 30%
         max_flat_fee: FixedPoint = FixedPoint("0.0015")  # 0.15%
-        max_governance_fee: FixedPoint = FixedPoint("0.30")  # 30%
+        max_governance_lp_fee: FixedPoint = FixedPoint("0.30")  # 30%
+        max_governance_zombie_fee: FixedPoint = FixedPoint("0.30")  # 30%
 
         def __post_init__(self):
             # Random generator
@@ -419,11 +425,13 @@ class InteractiveHyperdrive:
             config.time_stretch.scaled_value,
             "",  # will be determined in the deploy function
             "",  # will be determined in the deploy function
-            Fees(config.curve_fee.scaled_value, config.flat_fee.scaled_value, config.governance_fee.scaled_value),
+            Fees(config.curve_fee.scaled_value, config.flat_fee.scaled_value, config.governance_lp_fee.scaled_value),
         )
 
         max_fees = Fees(
-            config.max_curve_fee.scaled_value, config.max_flat_fee.scaled_value, config.max_governance_fee.scaled_value
+            config.max_curve_fee.scaled_value,
+            config.max_flat_fee.scaled_value,
+            config.max_governance_lp_fee.scaled_value,
         )
 
         return deploy_hyperdrive_from_factory(

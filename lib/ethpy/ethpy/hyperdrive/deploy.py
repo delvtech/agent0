@@ -11,7 +11,7 @@ from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.receipts import get_transaction_logs
 from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
-from hypertypes import Fees, PoolConfig
+from hypertypes import Fees, PoolDeployConfig
 from hypertypes.types import (
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,
@@ -57,7 +57,7 @@ def deploy_hyperdrive_from_factory(
     initial_liquidity: FixedPoint,
     initial_variable_rate: FixedPoint,
     initial_fixed_rate: FixedPoint,
-    pool_config: PoolConfig,
+    pool_config: PoolDeployConfig,
     max_fees: Fees,
 ) -> DeployedHyperdrivePool:
     """Initializes a Hyperdrive pool on an existing chain.
@@ -74,7 +74,7 @@ def deploy_hyperdrive_from_factory(
         The starting variable rate for an underlying yield source.
     initial_fixed_rate: FixedPoint
         The fixed rate of the pool on initialization.
-    pool_config: PoolConfig
+    pool_config: PoolDeployConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
     max_fees: Fees
@@ -105,6 +105,9 @@ def deploy_hyperdrive_from_factory(
     deploy_account = _initialize_deployment_account(web3, deployer_private_key)
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
     # Fill in the pool config information for the deployer account address
+    # pool_config = PoolDeployConfig(
+    #     ... # stuff from input
+    # )
     pool_config.governance = deploy_account_addr
     pool_config.feeCollector = deploy_account_addr
     # Deploy the factory and base token contracts
@@ -190,7 +193,7 @@ def _deploy_hyperdrive_factory(
     web3: Web3,
     deploy_account_addr: ChecksumAddress,
     initial_variable_rate: FixedPoint,
-    pool_config: PoolConfig,
+    pool_config: PoolDeployConfig,
     max_fees: Fees,
 ) -> tuple[ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract, ERC4626HyperdriveDeployerContract]:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
@@ -203,7 +206,7 @@ def _deploy_hyperdrive_factory(
         The address of the account that's deploying the contract.
     initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
-    pool_config: PoolConfig
+    pool_config: PoolDeployConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
     max_fees: Fees
@@ -343,7 +346,7 @@ def _deploy_and_initialize_hyperdrive_pool(
     initial_liquidity: FixedPoint,
     initial_fixed_rate: FixedPoint,
     pool_contract_addr: ChecksumAddress,
-    pool_config: PoolConfig,
+    pool_config: PoolDeployConfig,
     factory_contract: HyperdriveFactoryContract,
 ) -> str:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
@@ -362,7 +365,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         The fixed rate of the pool on initialization.
     pool_contract_addr: ChecksumAddress
         The address of the pool contract.
-    pool_config: PoolConfig
+    pool_config: PoolDeployConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
     factory_contract: HyperdriveFactoryContract
