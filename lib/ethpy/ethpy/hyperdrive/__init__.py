@@ -7,6 +7,7 @@ from .receipt_breakdown import ReceiptBreakdown
 from .transactions import (
     get_event_history_from_chain,
     get_hyperdrive_checkpoint,
+    get_hyperdrive_checkpoint_exposure,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
     parse_logs,

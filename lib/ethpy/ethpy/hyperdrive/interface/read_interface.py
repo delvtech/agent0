@@ -13,6 +13,7 @@ from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from ethpy.hyperdrive.state import PoolState
 from ethpy.hyperdrive.transactions import (
     get_hyperdrive_checkpoint,
+    get_hyperdrive_checkpoint_exposure,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
@@ -260,10 +261,9 @@ class HyperdriveReadInterface:
         block_number = self.get_block_number(block)
         pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
-        checkpoint = get_hyperdrive_checkpoint(
-            self.hyperdrive_contract,
-            self.calc_checkpoint_id(pool_config.checkpoint_duration, self.get_block_timestamp(block)),
-        )
+        checkpoint_time = self.calc_checkpoint_id(pool_config.checkpoint_duration, self.get_block_timestamp(block))
+        checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time)
+        exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time)
         variable_rate = self.get_variable_rate(block_number)
         vault_shares = self.get_vault_shares(block_number)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
@@ -275,6 +275,7 @@ class HyperdriveReadInterface:
             pool_config,
             pool_info,
             checkpoint,
+            exposure,
             variable_rate,
             vault_shares,
             total_supply_withdrawal_shares,
