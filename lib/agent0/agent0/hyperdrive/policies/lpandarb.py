@@ -52,7 +52,7 @@ def calc_shares_needed_for_bonds(
     """
     try:
         _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
-    except:  # pylint: disable=bare-except
+    except Exception:  # pylint: disable=broad-except
         _shares_to_pool = interface.calc_shares_in_given_bonds_out_down(abs(bonds_needed), pool_state)
     spot_price = interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
@@ -109,6 +109,7 @@ def calc_reserves_to_hit_target_rate(
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
         # to avoid negative share reserves, we increase the divisor until they are no longer negative.
         divisor = FixedPoint(2)
+        bonds_needed = FixedPoint(0)
         avoid_negative_share_reserves = False
         while avoid_negative_share_reserves is False:
             bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
@@ -118,7 +119,7 @@ def calc_reserves_to_hit_target_rate(
                 temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
                 predicted_rate = interface.calc_fixed_rate(temp_pool_state)
                 avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
-            except:
+            except:  # pylint: disable=bare-except
                 pass
             divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot

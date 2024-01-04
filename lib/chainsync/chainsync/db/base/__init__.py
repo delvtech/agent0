@@ -12,6 +12,5 @@ from .interface import (
     initialize_engine,
     initialize_session,
     query_tables,
-    _create_sequences_for_table,
 )
 from .schema import AddrToUsername, Base, UsernameToUser

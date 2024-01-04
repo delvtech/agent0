@@ -15,8 +15,6 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import get_checkpoint_info
-from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
     get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
@@ -643,7 +641,8 @@ class InteractiveHyperdrive:
             if coerce_float:
                 out_df.loc[row_idxs, value_column] += float(initial_balance)
             else:
-                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))
+                # Pandas is smart enough to handle "+=" for "Series[Unknown]" and "Decimal"
+                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
         return out_df
 
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
