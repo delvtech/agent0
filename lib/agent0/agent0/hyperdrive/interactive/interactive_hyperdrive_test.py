@@ -74,7 +74,8 @@ def _ensure_db_wallet_matches_agent_wallet(
 def test_funding_and_trades(chain: LocalChain):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    initial_pool_config = InteractiveHyperdrive.Config()
+    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
+    initial_pool_config = InteractiveHyperdrive.Config(initial_liquidity=FixedPoint(1000))
     # Launches 2 pools on the same local chain
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
     interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
@@ -119,8 +120,8 @@ def test_funding_and_trades(chain: LocalChain):
 
     # Test trades
     # Add liquidity
-    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(1111))
-    assert add_liquidity_event.base_amount == FixedPoint(1111)
+    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(11111))
+    assert add_liquidity_event.base_amount == FixedPoint(11111)
     assert hyperdrive_agent0.wallet.lp_tokens == add_liquidity_event.lp_amount
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
@@ -133,6 +134,16 @@ def test_funding_and_trades(chain: LocalChain):
     assert agent0_longs[0].maturity_time == open_long_event.maturity_time
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
+    # Remove liquidity
+    remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
+    assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
+    assert hyperdrive_agent0.wallet.lp_tokens == FixedPoint(0)
+    assert hyperdrive_agent0.wallet.withdraw_shares == remove_liquidity_event.withdrawal_share_amount
+    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
+
+    # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
+    assert remove_liquidity_event.withdrawal_share_amount > 0
+
     # Open short
     open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(3333))
     assert open_short_event.bond_amount == FixedPoint(3333)
@@ -140,13 +151,6 @@ def test_funding_and_trades(chain: LocalChain):
     assert len(agent0_shorts) == 1
     assert agent0_shorts[0].balance == open_short_event.bond_amount
     assert agent0_shorts[0].maturity_time == open_short_event.maturity_time
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
-
-    # Remove liquidity
-    remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
-    assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
-    assert hyperdrive_agent0.wallet.lp_tokens == FixedPoint(0)
-    assert hyperdrive_agent0.wallet.withdraw_shares == remove_liquidity_event.withdrawal_share_amount
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     # Close long
