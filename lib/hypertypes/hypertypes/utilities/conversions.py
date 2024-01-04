@@ -207,7 +207,8 @@ def fixedpoint_to_pool_config(
         fees=Fees(
             curve=dict_pool_config["fees"][0],
             flat=dict_pool_config["fees"][1],
-            governance=dict_pool_config["fees"][2],
+            governanceLP=dict_pool_config["fees"][2],
+            governanceZombie=dict_pool_config["fees"][3],
         ),
     )
 
