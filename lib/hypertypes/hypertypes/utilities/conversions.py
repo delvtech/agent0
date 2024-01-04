@@ -191,8 +191,8 @@ def fixedpoint_to_pool_config(
             dict_pool_config[key] = (
                 dict_pool_config[key]["curve"].scaled_value,
                 dict_pool_config[key]["flat"].scaled_value,
-                dict_pool_config[key]["governanceLP"].scaled_value,
-                dict_pool_config[key]["governanceZombie"].scaled_value,
+                dict_pool_config[key]["governance_lp"].scaled_value,
+                dict_pool_config[key]["governance_zombie"].scaled_value,
             )
     return PoolConfig(
         baseToken=dict_pool_config["baseToken"],
