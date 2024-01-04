@@ -36,7 +36,9 @@ from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
-from hypertypes import Fees, PoolConfig
+
+# TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
+from hypertypes import Fees, PoolDeployConfig
 from numpy.random._generator import Generator
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
@@ -104,8 +106,6 @@ class InteractiveHyperdrive:
             The starting variable rate for an underlying yield source.
         initial_fixed_rate: FixedPoint
             The fixed rate of the pool on initialization.
-        initial_share_price: FixedPoint
-            The initial share price
         minimum_share_reserves: FixedPoint
             The minimum share reserves
         minimum_transaction_amount: FixedPoint
@@ -124,6 +124,7 @@ class InteractiveHyperdrive:
             The portion of the LP fee that goes to governance.
         governance_zombie_fee: FixedPoint
             The portion of the zombie interest that is given to governance as a fee.
+            The portion of the zombie interest that will go to LPs is 1 - governance_zombie_fee.
         max_curve_fee: FixedPoint
             The upper bound on the curve fee that governance can set.
         max_flat_fee: FixedPoint
@@ -145,7 +146,6 @@ class InteractiveHyperdrive:
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
         initial_fixed_rate: FixedPoint = FixedPoint("0.05")
         # Initial Pool Config variables
-        initial_share_price: FixedPoint = FixedPoint(1)
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         position_duration: int = 604_800  # 1 week
@@ -413,25 +413,30 @@ class InteractiveHyperdrive:
         # sanity check (also for type checking), should get set in __post_init__
         assert config.time_stretch is not None
 
-        initial_pool_config = PoolConfig(
-            "",  # will be determined in the deploy function
-            ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
-            bytes(32),  # bytes32(0)
-            config.initial_share_price.scaled_value,
-            config.minimum_share_reserves.scaled_value,
-            config.minimum_transaction_amount.scaled_value,
-            config.position_duration,
-            config.checkpoint_duration,
-            config.time_stretch.scaled_value,
-            "",  # will be determined in the deploy function
-            "",  # will be determined in the deploy function
-            Fees(config.curve_fee.scaled_value, config.flat_fee.scaled_value, config.governance_lp_fee.scaled_value),
+        initial_pool_config = PoolDeployConfig(
+            baseToken="",  # will be determined in the deploy function
+            linkerFactory=ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
+            linkerCodeHash=bytes(32),  # bytes32(0)
+            minimumShareReserves=config.minimum_share_reserves.scaled_value,
+            minimumTransactionAmount=config.minimum_transaction_amount.scaled_value,
+            positionDuration=config.position_duration,
+            checkpointDuration=config.checkpoint_duration,
+            timeStretch=config.time_stretch.scaled_value,
+            governance="",  # will be determined in the deploy function
+            feeCollector="",  # will be determined in the deploy function
+            fees=Fees(  # type: ignore
+                config.curve_fee.scaled_value,
+                config.flat_fee.scaled_value,
+                config.governance_lp_fee.scaled_value,
+                config.governance_zombie_fee.scaled_value,
+            ),
         )
 
         max_fees = Fees(
             config.max_curve_fee.scaled_value,
             config.max_flat_fee.scaled_value,
             config.max_governance_lp_fee.scaled_value,
+            config.max_governance_zombie_fee.scaled_value,
         )
 
         return deploy_hyperdrive_from_factory(
