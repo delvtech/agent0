@@ -236,7 +236,7 @@ def dataclass_to_dict(
             case FixedPoint():
                 out_dict[key] = val.scaled_value
             case FeesFP():
-                out_dict[key] = (val.curve, val.flat, val.governance)
+                out_dict[key] = (val.curve, val.flat, val.governance_lp, val.governance_zombie)
             case dict():
                 out_dict[key] = (val["curve"], val["flat"], val["governanceLP"], val["governanceZombie"])
             case int():

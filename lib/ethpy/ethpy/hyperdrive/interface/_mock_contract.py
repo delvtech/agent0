@@ -191,7 +191,9 @@ def _calc_fees_out_given_bonds_in(
     flat_fee = (
         bonds_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
     ) / pool_state.pool_config.initial_share_price
-    gov_fee = curve_fee * pool_state.pool_config.fees.governance + flat_fee * pool_state.pool_config.fees.governance
+    gov_fee = (
+        curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
+    )
     return curve_fee, flat_fee, gov_fee
 
 
@@ -216,7 +218,9 @@ def _calc_fees_out_given_shares_in(
     flat_fee = (
         shares_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
     ) / pool_state.pool_config.initial_share_price
-    gov_fee = curve_fee * pool_state.pool_config.fees.governance + flat_fee * pool_state.pool_config.fees.governance
+    gov_fee = (
+        curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
+    )
     return curve_fee, flat_fee, gov_fee
 
 

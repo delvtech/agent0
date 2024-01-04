@@ -262,10 +262,10 @@ def test_save_load_snapshot(chain: LocalChain):
 
     # Generate funded trading agents from the interactive object
     # Make trades to set the initial state
-    hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111111), eth=FixedPoint(111), name="alice")
-    open_long_event = hyperdrive_agent.open_long(base=FixedPoint(2222))
-    open_short_event = hyperdrive_agent.open_short(bonds=FixedPoint(3333))
-    hyperdrive_agent.add_liquidity(base=FixedPoint(4444))
+    hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111_111), eth=FixedPoint(111), name="alice")
+    open_long_event = hyperdrive_agent.open_long(base=FixedPoint(2_222))
+    open_short_event = hyperdrive_agent.open_short(bonds=FixedPoint(3_333))
+    hyperdrive_agent.add_liquidity(base=FixedPoint(4_444))
 
     # Save the state on the chain
     chain.save_snapshot()
@@ -469,8 +469,8 @@ def test_get_config_no_transactions(chain: LocalChain):
 def test_get_config_with_transactions(chain: LocalChain):
     """Get pool config after executing one transaction."""
     interactive_hyperdrive = InteractiveHyperdrive(chain)
-    agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
-    agent0.open_long(base=FixedPoint(11111))
+    agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), name="alice")
+    agent0.open_long(base=FixedPoint(11_111))
     pool_config = interactive_hyperdrive.get_pool_config()
     assert isinstance(pool_config, Series)
 
