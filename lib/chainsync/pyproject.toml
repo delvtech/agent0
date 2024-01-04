@@ -22,7 +22,7 @@ with-dependencies = [
     "chainsync[base, lateral]"
 ]
 base = [
-    "fixedpointmath",
+    "fixedpointmath==0.1.6",
     "matplotlib",
     "numpy",
     "pandas",
