@@ -156,7 +156,8 @@ def pool_config_to_fixedpoint(
             dict_pool_config[key] = (
                 FixedPoint(scaled_value=dict_pool_config[key]["curve"]),
                 FixedPoint(scaled_value=dict_pool_config[key]["flat"]),
-                FixedPoint(scaled_value=dict_pool_config[key]["governance"]),
+                FixedPoint(scaled_value=dict_pool_config[key]["governanceLP"]),
+                FixedPoint(scaled_value=dict_pool_config[key]["governanceZombie"]),
             )
     return PoolConfigFP(**dict_pool_config)
 
@@ -190,7 +191,8 @@ def fixedpoint_to_pool_config(
             dict_pool_config[key] = (
                 dict_pool_config[key]["curve"].scaled_value,
                 dict_pool_config[key]["flat"].scaled_value,
-                dict_pool_config[key]["governance"].scaled_value,
+                dict_pool_config[key]["governanceLP"].scaled_value,
+                dict_pool_config[key]["governanceZombie"].scaled_value,
             )
     return PoolConfig(
         baseToken=dict_pool_config["baseToken"],
@@ -236,7 +238,7 @@ def dataclass_to_dict(
             case FeesFP():
                 out_dict[key] = (val.curve, val.flat, val.governance)
             case dict():
-                out_dict[key] = (val["curve"], val["flat"], val["governance"])
+                out_dict[key] = (val["curve"], val["flat"], val["governanceLP"], val["governanceZombie"])
             case int():
                 out_dict[key] = val
             case str():
