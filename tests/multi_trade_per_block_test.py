@@ -32,7 +32,6 @@ class MultiTradePolicy(HyperdrivePolicy):
     """An agent that submits multiple trades per block."""
 
     counter = 0
-    made_trade = False
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -52,22 +51,29 @@ class MultiTradePolicy(HyperdrivePolicy):
             A tuple where the first element is a list of actions,
             and the second element defines if the agent is done trading
         """
-        # pylint: disable=unused-argument
 
-        if self.made_trade:
+        done_trading = False
+
+        if self.counter == 0:
+            # Adding liquidity to make other trades valid
+            action_list: list[Trade[HyperdriveMarketAction]] = [
+                interface.add_liquidity_trade(FixedPoint(1_111_111)),
+            ]
+        elif self.counter == 1:
+            # Adding in 3 trades at the same time:
+            action_list: list[Trade[HyperdriveMarketAction]] = [
+                interface.add_liquidity_trade(FixedPoint(11_111)),
+                interface.open_long_trade(FixedPoint(22_222)),
+                interface.open_short_trade(FixedPoint(33_333)),
+            ]
+            done_trading = True
+        else:
             # We want this bot to exit and crash after it's done the trades it needs to do
             # In this case, if this exception gets thrown, this means an invalid trade went through
             raise AssertionError("This policy's action shouldn't get called again after failure")
 
-        # Adding in 4 trades at the same time:
-        action_list: list[Trade[HyperdriveMarketAction]] = [
-            interface.add_liquidity_trade(FixedPoint(11_111)),
-            interface.open_long_trade(FixedPoint(22_222)),
-            interface.open_short_trade(FixedPoint(33_333)),
-        ]
-
-        self.made_trade = True
-        return action_list, True
+        self.counter += 1
+        return action_list, done_trading
 
 
 class TestMultiTradePerBlock:
@@ -114,7 +120,7 @@ class TestMultiTradePerBlock:
             AgentConfig(
                 policy=MultiTradePolicy,
                 number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=MultiTradePolicy.Config(),
             ),
@@ -160,23 +166,27 @@ class TestMultiTradePerBlock:
             exit_on_catch_up=True,
         )
 
-        # Ensure other 3 trades went through
-        # 1. addLiquidity of 11111 base
-        # 2. openLong of 22222 base
-        # 3. openShort of 33333 bonds
+        # Ensure all 4 trades went through
+        # 1. addLiquidity of 111_111 base
+        # 1. addLiquidity of 11_111 base
+        # 2. openLong of 22_222 base
+        # 3. openShort of 33_333 bonds
 
         db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
-        expected_number_of_transactions = 3
+        expected_number_of_transactions = 4
         assert len(db_transaction_info == expected_number_of_transactions)
+        # Checking first add liquidity
+        assert "addLiquidity" == db_transaction_info["input_method"].iloc[0]
         # Checking without order
-        trxs = db_transaction_info["input_method"].to_list()
+        trxs = db_transaction_info["input_method"].iloc[1:].to_list()
         assert "addLiquidity" in trxs
         assert "openLong" in trxs
         assert "openShort" in trxs
 
         db_ticker: pd.DataFrame = get_ticker(db_session, coerce_float=False)
         assert len(db_ticker == expected_number_of_transactions)
-        ticker_ops = db_ticker["trade_type"].to_list()
+        assert "addLiquidity" == db_ticker["trade_type"].iloc[0]
+        ticker_ops = db_ticker["trade_type"].iloc[1:].to_list()
         assert "addLiquidity" in ticker_ops
         assert "openLong" in ticker_ops
         assert "openShort" in ticker_ops
