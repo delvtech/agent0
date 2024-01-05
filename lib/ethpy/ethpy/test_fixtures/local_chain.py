@@ -168,6 +168,9 @@ def launch_local_hyperdrive_pool(
     )
     # Pool initialization parameters
     initial_fixed_rate = FixedPoint("0.05")  # 5%
+    # NOTE: we set the initial liquidity here to be very small to ensure we can do trades to ensure withdrawal shares
+    # Hence, for testing normal conditions, we likely need to increase the initial liquidity by adding
+    # liquidity as the first trade of the pool.
     initial_liquidity = FixedPoint(1_000)
     minimum_share_reserves = FixedPoint(10)
     minimum_transaction_amount = FixedPoint("0.001")
