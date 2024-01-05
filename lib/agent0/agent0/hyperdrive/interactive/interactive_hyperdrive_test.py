@@ -131,8 +131,6 @@ def test_funding_and_trades(chain: LocalChain):
     assert add_liquidity_event.base_amount == FixedPoint(111_111)
     assert hyperdrive_agent0.wallet.lp_tokens == add_liquidity_event.lp_amount
     assert interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves > 1_000
-    print(f"{interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves=}")
-    print(f"{interactive_hyperdrive.get_pool_state()=}")
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     # Open long
