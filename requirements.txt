@@ -6,4 +6,3 @@
 --find-links="packages/hyperdrivepy"
 hyperdrivepy
 rollbar
-wandb
