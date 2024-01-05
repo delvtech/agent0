@@ -510,6 +510,9 @@ async def async_smart_contract_transact(
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
         err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # Race condition here, other transactions may have happened when we get the block number here
+        # Hence, this is a best effort guess as to which block the chain was on when this exception was thrown.
+        block_number = int(web3.eth.block_number)
         raise ContractCallException(
             "Error in smart_contract_transact",
             orig_exception=err,
@@ -518,6 +521,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
+            block_number=block_number,
         ) from err
     except UnknownBlockError as err:
         block_number_arg = err.args[1]
@@ -534,6 +538,9 @@ async def async_smart_contract_transact(
             block_number=block_number,
         ) from err
     except Exception as err:
+        # Race condition here, other transactions may have happened when we get the block number here
+        # Hence, this is a best effort guess as to which block the chain was on when this exception was thrown.
+        block_number = int(web3.eth.block_number)
         raise ContractCallException(
             "Error in smart_contract_transact",
             orig_exception=err,
@@ -542,6 +549,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
+            block_number=block_number,
         ) from err
 
 
