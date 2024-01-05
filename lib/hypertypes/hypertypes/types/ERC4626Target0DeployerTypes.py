@@ -26,7 +26,8 @@ class Fees:
 
     curve: int
     flat: int
-    governance: int
+    governanceLP: int
+    governanceZombie: int
 
 
 @dataclass
@@ -39,7 +40,6 @@ class PoolConfig:
     initialSharePrice: int
     minimumShareReserves: int
     minimumTransactionAmount: int
-    precisionThreshold: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int

@@ -179,10 +179,13 @@ class InvalidCloseLong(HyperdrivePolicy):
         action_list = []
         done_trading = False
         if self.counter == 0:
+            # Add liquidity for other valid trades
+            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+        if self.counter == 1:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
-        elif self.counter == 1:
-            # Closing existent long for more than I have
+        elif self.counter == 2:
+            # Closing existing long for a small trade amount
             assert len(wallet.longs) == 1
             for long_time in wallet.longs.keys():
                 action_list.append(interface.close_long_trade(SMALL_TRADE_AMOUNT, long_time, self.slippage_tolerance))
@@ -218,9 +221,12 @@ class InvalidCloseShort(HyperdrivePolicy):
         action_list = []
         done_trading = False
         if self.counter == 0:
+            # Add liquidity for other valid trades
+            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+        if self.counter == 1:
             # Open Short
             action_list.append(interface.open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
-        elif self.counter == 1:
+        elif self.counter == 2:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
             for short_time in wallet.shorts.keys():
@@ -230,7 +236,7 @@ class InvalidCloseShort(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class TestInvalidTrades:
+class TestMinTxAmount:
     """Test pipeline from bots making invalid trades."""
 
     def _build_and_run_with_funded_bot(

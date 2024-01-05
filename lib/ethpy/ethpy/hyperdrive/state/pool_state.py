@@ -25,6 +25,7 @@ class PoolState:
     pool_config: PoolConfigFP
     pool_info: PoolInfoFP
     checkpoint: CheckpointFP
+    exposure: FixedPoint
     variable_rate: FixedPoint
     vault_shares: FixedPoint
     total_supply_withdrawal_shares: FixedPoint

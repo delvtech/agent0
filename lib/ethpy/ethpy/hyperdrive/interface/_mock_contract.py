@@ -53,9 +53,9 @@ def _calc_spot_price(pool_state: PoolState):
     return FixedPoint(scaled_value=int(spot_price))
 
 
-def _calc_long_amount(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
+def _calc_open_long(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
     """See API for documentation."""
-    long_amount = hyperdrivepy.get_long_amount(
+    long_amount = hyperdrivepy.calculate_open_long(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(base_amount.scaled_value),
@@ -63,7 +63,20 @@ def _calc_long_amount(pool_state: PoolState, base_amount: FixedPoint) -> FixedPo
     return FixedPoint(scaled_value=int(long_amount))
 
 
-def _calc_short_deposit(
+def _calc_close_long(
+    pool_state: PoolState, bond_amount: FixedPoint, normalized_time_remaining: FixedPoint
+) -> FixedPoint:
+    """See API for documentation."""
+    long_returns = hyperdrivepy.calculate_close_long(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(normalized_time_remaining.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(long_returns))
+
+
+def _calc_open_short(
     pool_state: PoolState,
     short_amount: FixedPoint,
     spot_price: FixedPoint,
@@ -75,7 +88,7 @@ def _calc_short_deposit(
         open_share_price_str = None
     else:  # convert FixedPoint to string
         open_share_price_str = str(open_share_price.scaled_value)
-    short_deposit = hyperdrivepy.get_short_deposit(
+    short_deposit = hyperdrivepy.calculate_open_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(short_amount.scaled_value),
@@ -83,6 +96,25 @@ def _calc_short_deposit(
         open_share_price_str,  # str | None
     )
     return FixedPoint(scaled_value=int(short_deposit))
+
+
+def _calc_close_short(
+    pool_state: PoolState,
+    bond_amount: FixedPoint,
+    open_share_price: FixedPoint,
+    close_share_price: FixedPoint,
+    normalized_time_remaining: FixedPoint,
+) -> FixedPoint:
+    """See API for documentation."""
+    short_returns = hyperdrivepy.calculate_close_short(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(open_share_price.scaled_value),
+        str(close_share_price.scaled_value),
+        str(normalized_time_remaining.scaled_value),
+    )
+    return FixedPoint(scaled_value=int(short_returns))
 
 
 def _calc_bonds_out_given_shares_in_down(
@@ -138,30 +170,6 @@ def _calc_shares_out_given_bonds_in_down(
     return FixedPoint(scaled_value=int(amount_out))
 
 
-def _calc_max_buy(
-    pool_state: PoolState,
-) -> FixedPoint:
-    """See API for documentation."""
-    amount_out = hyperdrivepy.calculate_max_buy(
-        fixedpoint_to_pool_config(pool_state.pool_config),
-        fixedpoint_to_pool_info(pool_state.pool_info),
-    )
-    return FixedPoint(scaled_value=int(amount_out))
-
-
-def _calc_max_sell(
-    pool_state: PoolState,
-    minimum_share_reserves: FixedPoint,
-) -> FixedPoint:
-    """See API for documentation."""
-    amount_out = hyperdrivepy.calculate_max_sell(
-        fixedpoint_to_pool_config(pool_state.pool_config),
-        fixedpoint_to_pool_info(pool_state.pool_info),
-        str(minimum_share_reserves.scaled_value),
-    )
-    return FixedPoint(scaled_value=int(amount_out))
-
-
 def _calc_fees_out_given_bonds_in(
     pool_state: PoolState, bonds_in: FixedPoint, maturity_time: int | None = None
 ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
@@ -183,7 +191,9 @@ def _calc_fees_out_given_bonds_in(
     flat_fee = (
         bonds_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
     ) / pool_state.pool_config.initial_share_price
-    gov_fee = curve_fee * pool_state.pool_config.fees.governance + flat_fee * pool_state.pool_config.fees.governance
+    gov_fee = (
+        curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
+    )
     return curve_fee, flat_fee, gov_fee
 
 
@@ -208,7 +218,9 @@ def _calc_fees_out_given_shares_in(
     flat_fee = (
         shares_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
     ) / pool_state.pool_config.initial_share_price
-    gov_fee = curve_fee * pool_state.pool_config.fees.governance + flat_fee * pool_state.pool_config.fees.governance
+    gov_fee = (
+        curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
+    )
     return curve_fee, flat_fee, gov_fee
 
 
@@ -241,7 +253,7 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 fixedpoint_to_pool_config(pool_state.pool_config),
                 fixedpoint_to_pool_info(pool_state.pool_info),
                 str(budget.scaled_value),
-                checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
+                checkpoint_exposure=str(pool_state.exposure.scaled_value),
                 maybe_max_iterations=None,
             )
         )
@@ -257,9 +269,22 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
                 budget=str(budget.scaled_value),
                 open_share_price=str(pool_state.pool_info.share_price.scaled_value),
-                checkpoint_exposure=str(pool_state.checkpoint.exposure.scaled_value),
+                checkpoint_exposure=str(pool_state.exposure.scaled_value),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,
+            )
+        )
+    )
+
+
+def _calc_present_value(pool_state: PoolState, current_block_timestamp: int) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_present_value(
+                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
+                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
+                current_block_timestamp=str(current_block_timestamp),
             )
         )
     )

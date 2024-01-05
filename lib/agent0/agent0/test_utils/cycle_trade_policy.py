@@ -70,13 +70,13 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11_111)))
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == 1:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(22_222), self.slippage_tolerance))
         elif self.counter == 2:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(33_333), self.slippage_tolerance))
+            action_list.append(interface.open_short_trade(FixedPoint(333), self.slippage_tolerance))
         elif self.counter == 3:
             # Remove All Liquidity
             action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))

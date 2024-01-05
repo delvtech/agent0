@@ -36,7 +36,8 @@ def init_data_chain_to_db(
     fees = pool_config_dict["fees"]
     pool_config_dict["curve_fee"] = fees["curve"]
     pool_config_dict["flat_fee"] = fees["flat"]
-    pool_config_dict["governance_fee"] = fees["governance"]
+    pool_config_dict["governance_lp_fee"] = fees["governance_lp"]
+    pool_config_dict["governance_zombie_fee"] = fees["governance_zombie"]
     pool_config_dict["inv_time_stretch"] = FixedPoint(1) / pool_config_dict["time_stretch"]
     pool_config_db_obj = convert_pool_config(pool_config_dict)
     add_pool_config(pool_config_db_obj, session)

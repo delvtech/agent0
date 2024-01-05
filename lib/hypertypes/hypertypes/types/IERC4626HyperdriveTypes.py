@@ -36,7 +36,6 @@ class Checkpoint:
     """Checkpoint struct."""
 
     sharePrice: int
-    exposure: int
 
 
 @dataclass
@@ -46,6 +45,7 @@ class MarketState:
     shareReserves: int
     bondReserves: int
     shareAdjustment: int
+    zombieShareReserves: int
     longExposure: int
     longsOutstanding: int
     shortsOutstanding: int
@@ -61,7 +61,8 @@ class Fees:
 
     curve: int
     flat: int
-    governance: int
+    governanceLP: int
+    governanceZombie: int
 
 
 @dataclass
@@ -74,7 +75,6 @@ class PoolConfig:
     initialSharePrice: int
     minimumShareReserves: int
     minimumTransactionAmount: int
-    precisionThreshold: int
     positionDuration: int
     checkpointDuration: int
     timeStretch: int
@@ -89,6 +89,7 @@ class PoolInfo:
 
     shareReserves: int
     shareAdjustment: int
+    zombieShareReserves: int
     bondReserves: int
     lpTotalSupply: int
     sharePrice: int

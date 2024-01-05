@@ -156,7 +156,8 @@ def pool_config_to_fixedpoint(
             dict_pool_config[key] = (
                 FixedPoint(scaled_value=dict_pool_config[key]["curve"]),
                 FixedPoint(scaled_value=dict_pool_config[key]["flat"]),
-                FixedPoint(scaled_value=dict_pool_config[key]["governance"]),
+                FixedPoint(scaled_value=dict_pool_config[key]["governanceLP"]),
+                FixedPoint(scaled_value=dict_pool_config[key]["governanceZombie"]),
             )
     return PoolConfigFP(**dict_pool_config)
 
@@ -190,7 +191,8 @@ def fixedpoint_to_pool_config(
             dict_pool_config[key] = (
                 dict_pool_config[key]["curve"].scaled_value,
                 dict_pool_config[key]["flat"].scaled_value,
-                dict_pool_config[key]["governance"].scaled_value,
+                dict_pool_config[key]["governance_lp"].scaled_value,
+                dict_pool_config[key]["governance_zombie"].scaled_value,
             )
     return PoolConfig(
         baseToken=dict_pool_config["baseToken"],
@@ -199,7 +201,6 @@ def fixedpoint_to_pool_config(
         initialSharePrice=dict_pool_config["initialSharePrice"],
         minimumShareReserves=dict_pool_config["minimumShareReserves"],
         minimumTransactionAmount=dict_pool_config["minimumTransactionAmount"],
-        precisionThreshold=dict_pool_config["precisionThreshold"],
         positionDuration=dict_pool_config["positionDuration"],
         checkpointDuration=dict_pool_config["checkpointDuration"],
         timeStretch=dict_pool_config["timeStretch"],
@@ -208,7 +209,8 @@ def fixedpoint_to_pool_config(
         fees=Fees(
             curve=dict_pool_config["fees"][0],
             flat=dict_pool_config["fees"][1],
-            governance=dict_pool_config["fees"][2],
+            governanceLP=dict_pool_config["fees"][2],
+            governanceZombie=dict_pool_config["fees"][3],
         ),
     )
 
@@ -234,9 +236,9 @@ def dataclass_to_dict(
             case FixedPoint():
                 out_dict[key] = val.scaled_value
             case FeesFP():
-                out_dict[key] = (val.curve, val.flat, val.governance)
+                out_dict[key] = (val.curve, val.flat, val.governance_lp, val.governance_zombie)
             case dict():
-                out_dict[key] = (val["curve"], val["flat"], val["governance"])
+                out_dict[key] = (val["curve"], val["flat"], val["governanceLP"], val["governanceZombie"])
             case int():
                 out_dict[key] = val
             case str():

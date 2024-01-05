@@ -63,10 +63,10 @@ def setup_fuzz(
     if not fees:
         initial_pool_config.curve_fee = FixedPoint(0)
         initial_pool_config.flat_fee = FixedPoint(0)
-        initial_pool_config.governance_fee = FixedPoint(0)
+        initial_pool_config.governance_lp_fee = FixedPoint(0)
         initial_pool_config.max_curve_fee = FixedPoint(0)
         initial_pool_config.max_flat_fee = FixedPoint(0)
-        initial_pool_config.max_governance_fee = FixedPoint(0)
+        initial_pool_config.max_governance_lp_fee = FixedPoint(0)
 
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 

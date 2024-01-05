@@ -74,72 +74,71 @@ def _ensure_db_wallet_matches_agent_wallet(
 def test_funding_and_trades(chain: LocalChain):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    initial_pool_config = InteractiveHyperdrive.Config()
+    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
+    initial_pool_config = InteractiveHyperdrive.Config(
+        initial_liquidity=FixedPoint(1_000),
+        initial_fixed_rate=FixedPoint("0.05"),
+        # TODO the above parameters results in negative interest with the default position duration
+        # Hence, we adjust the position duration to be a year to avoid the pool's reserve being 1:1
+        # This likely should get fixed by adjusting the time_stretch parameter
+        position_duration=31_536_000,  # 1 year
+    )
     # Launches 2 pools on the same local chain
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
     interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
 
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later
-    hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(111111), eth=FixedPoint(111), name="alice")
-    hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(222222), eth=FixedPoint(222), name="bob")
+    hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
+    hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(222_222), eth=FixedPoint(222), name="bob")
     # Omission of name defaults to wallet address
     hyperdrive_agent2 = interactive_hyperdrive.init_agent()
 
     # Add funds to an agent
-    hyperdrive_agent2.add_funds(base=FixedPoint(333333), eth=FixedPoint(333))
+    hyperdrive_agent2.add_funds(base=FixedPoint(333_333), eth=FixedPoint(333))
 
     # Ensure agent wallet have expected balances
-    assert (hyperdrive_agent0.wallet.balance.amount) == FixedPoint(111111)
-    assert (hyperdrive_agent1.wallet.balance.amount) == FixedPoint(222222)
-    assert (hyperdrive_agent2.wallet.balance.amount) == FixedPoint(333333)
+    assert (hyperdrive_agent0.wallet.balance.amount) == FixedPoint(1_111_111)
+    assert (hyperdrive_agent1.wallet.balance.amount) == FixedPoint(222_222)
+    assert (hyperdrive_agent2.wallet.balance.amount) == FixedPoint(333_333)
     # Ensure chain balances are as expected
     (
         chain_eth_balance,
         chain_base_balance,
     ) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent0.agent)
-    assert chain_base_balance == FixedPoint(111111)
+    assert chain_base_balance == FixedPoint(1_111_111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0001")
     (
         chain_eth_balance,
         chain_base_balance,
     ) = interactive_hyperdrive_2.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent1.agent)
-    assert chain_base_balance == FixedPoint(222222)
+    assert chain_base_balance == FixedPoint(222_222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0001")
     (
         chain_eth_balance,
         chain_base_balance,
     ) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent2.agent)
-    assert chain_base_balance == FixedPoint(333333)
+    assert chain_base_balance == FixedPoint(333_333)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     # Since we initialized without parameters, and the default is 10 eth. We then added 333 eth.
     assert (FixedPoint(343) - chain_eth_balance) < FixedPoint("0.0001")
 
     # Test trades
-    # Add liquidity
-    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(1111))
-    assert add_liquidity_event.base_amount == FixedPoint(1111)
+    # Add liquidity to 112_111 total
+    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
+    assert add_liquidity_event.base_amount == FixedPoint(111_111)
     assert hyperdrive_agent0.wallet.lp_tokens == add_liquidity_event.lp_amount
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     # Open long
-    open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(2222))
-    assert open_long_event.base_amount == FixedPoint(2222)
+    open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
+    assert open_long_event.base_amount == FixedPoint(22_222)
     agent0_longs = list(hyperdrive_agent0.wallet.longs.values())
     assert len(agent0_longs) == 1
     assert agent0_longs[0].balance == open_long_event.bond_amount
     assert agent0_longs[0].maturity_time == open_long_event.maturity_time
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
-
-    # Open short
-    open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(3333))
-    assert open_short_event.bond_amount == FixedPoint(3333)
-    agent0_shorts = list(hyperdrive_agent0.wallet.shorts.values())
-    assert len(agent0_shorts) == 1
-    assert agent0_shorts[0].balance == open_short_event.bond_amount
-    assert agent0_shorts[0].maturity_time == open_short_event.maturity_time
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     # Remove liquidity
@@ -147,6 +146,18 @@ def test_funding_and_trades(chain: LocalChain):
     assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
     assert hyperdrive_agent0.wallet.lp_tokens == FixedPoint(0)
     assert hyperdrive_agent0.wallet.withdraw_shares == remove_liquidity_event.withdrawal_share_amount
+    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
+
+    # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
+    assert remove_liquidity_event.withdrawal_share_amount > 0
+
+    # Open short
+    open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(333))
+    assert open_short_event.bond_amount == FixedPoint(333)
+    agent0_shorts = list(hyperdrive_agent0.wallet.shorts.values())
+    assert len(agent0_shorts) == 1
+    assert agent0_shorts[0].balance == open_short_event.bond_amount
+    assert agent0_shorts[0].maturity_time == open_short_event.maturity_time
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     # Close long
@@ -258,10 +269,10 @@ def test_save_load_snapshot(chain: LocalChain):
 
     # Generate funded trading agents from the interactive object
     # Make trades to set the initial state
-    hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111111), eth=FixedPoint(111), name="alice")
-    open_long_event = hyperdrive_agent.open_long(base=FixedPoint(2222))
-    open_short_event = hyperdrive_agent.open_short(bonds=FixedPoint(3333))
-    hyperdrive_agent.add_liquidity(base=FixedPoint(4444))
+    hyperdrive_agent = interactive_hyperdrive.init_agent(base=FixedPoint(111_111), eth=FixedPoint(111), name="alice")
+    open_long_event = hyperdrive_agent.open_long(base=FixedPoint(2_222))
+    open_short_event = hyperdrive_agent.open_short(bonds=FixedPoint(3_333))
+    hyperdrive_agent.add_liquidity(base=FixedPoint(4_444))
 
     # Save the state on the chain
     chain.save_snapshot()
@@ -465,8 +476,8 @@ def test_get_config_no_transactions(chain: LocalChain):
 def test_get_config_with_transactions(chain: LocalChain):
     """Get pool config after executing one transaction."""
     interactive_hyperdrive = InteractiveHyperdrive(chain)
-    agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
-    agent0.open_long(base=FixedPoint(11111))
+    agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), name="alice")
+    agent0.open_long(base=FixedPoint(11_111))
     pool_config = interactive_hyperdrive.get_pool_config()
     assert isinstance(pool_config, Series)
 

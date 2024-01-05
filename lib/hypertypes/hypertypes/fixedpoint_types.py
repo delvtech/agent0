@@ -23,7 +23,8 @@ class FeesFP:
 
     curve: FixedPoint
     flat: FixedPoint
-    governance: FixedPoint
+    governance_lp: FixedPoint
+    governance_zombie: FixedPoint
 
 
 @dataclass
@@ -32,6 +33,7 @@ class PoolInfoFP:
 
     share_reserves: FixedPoint
     share_adjustment: FixedPoint
+    zombie_share_reserves: FixedPoint
     bond_reserves: FixedPoint
     lp_total_supply: FixedPoint
     share_price: FixedPoint
@@ -55,7 +57,6 @@ class PoolConfigFP:
     initial_share_price: FixedPoint
     minimum_share_reserves: FixedPoint
     minimum_transaction_amount: FixedPoint
-    precision_threshold: int
     position_duration: int
     checkpoint_duration: int
     time_stretch: FixedPoint
@@ -75,4 +76,3 @@ class CheckpointFP:
     """Checkpoint struct."""
 
     share_price: FixedPoint
-    exposure: FixedPoint

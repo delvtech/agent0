@@ -172,17 +172,17 @@ class TestBotToDb:
         )
 
         # This bot does the following known trades in sequence:
-        # 1. addLiquidity of 11111 base
-        # 2. openLong of 22222 base
-        # 3. openShort of 33333 bonds
+        # 1. addLiquidity of 111_111 base
+        # 2. openLong of 22_222 base
+        # 3. openShort of 333 bonds
         # 4. removeLiquidity of all LP tokens
         # 5. closeLong on long from trade 2
         # 6. closeShort on short from trade 3
         # 7. redeemWithdrawalShares of all withdrawal tokens from trade 4
-        # The bot then runs again, this time for 4 trades:
-        # 8. addLiquidity of 11111 base
-        # 9. openLong of 22222 base
-        # 10. openShort of 33333 bonds
+        # The bot then runs again, this time for 3 trades:
+        # 8. addLiquidity of 111_111 base
+        # 9. openLong of 22_222 base
+        # 10. openShort of 333 bonds
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
@@ -206,15 +206,15 @@ class TestBotToDb:
             "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
-            "precision_threshold": int(1e14),
-            "position_duration": 604800,  # 1 week
+            "position_duration": 31_536_000,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
             "curve_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
             "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
-            "governance_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
+            "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
+            "governance_zombie_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
             "inv_time_stretch": expected_inv_timestretch,
         }
 
@@ -239,6 +239,7 @@ class TestBotToDb:
             # Keys from contract call
             "block_number",
             "share_reserves",
+            "zombie_share_reserves",
             "bond_reserves",
             "lp_total_supply",
             "share_price",
@@ -303,7 +304,7 @@ class TestBotToDb:
             # TODO differentiate between the first and second addLiquidity
             block_number = txn["block_number"]
             if txn["input_method"] == "addLiquidity":
-                assert txn["input_params_contribution"] == Decimal(11111)
+                assert txn["input_params_contribution"] == Decimal(111_111)
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
@@ -314,14 +315,8 @@ class TestBotToDb:
                 assert len(base_delta_df) == 1
                 lp_delta = lp_delta_df.iloc[0]
                 base_delta = base_delta_df.iloc[0]
-                # 11111 base for...
-                # TODO there's a bug in Hyperdrive's emitted event for addLiquidity
-                # that introduces a rounding issue in the base amount spent for this
-                # Change this back to direct equality check when this gets fixed
-                # https://github.com/delvtech/agent0/issues/1077
-
-                # assert base_delta["delta"] == -Decimal(11111)
-                assert abs(base_delta["delta"] - (-Decimal(11111))) < Decimal("1e-14")
+                # 111_111 base for...
+                assert base_delta["delta"] == -Decimal(111_111)
 
                 # TODO check LP delta
                 # TODO check wallet info matches the deltas
@@ -331,7 +326,7 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openLong
             if txn["input_method"] == "openLong":
-                assert txn["input_params_base_amount"] == Decimal(22222)
+                assert txn["input_params_base_amount"] == Decimal(22_222)
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
@@ -342,8 +337,8 @@ class TestBotToDb:
                 assert len(base_delta_df) == 1
                 long_delta = long_delta_df.iloc[0]
                 base_delta = base_delta_df.iloc[0]
-                # 22222 base for...
-                assert base_delta["delta"] == -Decimal(22222)
+                # 22_222 base for...
+                assert base_delta["delta"] == -Decimal(22_222)
                 # TODO check long delta
                 # TODO check maturity time and token_type
                 # TODO check current wallet matches the deltas
@@ -353,7 +348,7 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openShort
             if txn["input_method"] == "openShort":
-                assert txn["input_params_bond_amount"] == Decimal(33333)
+                assert txn["input_params_bond_amount"] == Decimal(333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == expected_number_of_deltas
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
@@ -362,8 +357,8 @@ class TestBotToDb:
                 assert len(base_delta_df) == 1
                 short_delta = short_delta_df.iloc[0]
                 base_delta = base_delta_df.iloc[0]
-                # 33333 bonds for...
-                assert short_delta["delta"] == Decimal(33333)
+                # 333 bonds for...
+                assert short_delta["delta"] == Decimal(333)
                 # TODO check base delta
                 # TODO check maturity time and token_type
                 # TODO check pool info after this tx
@@ -412,7 +407,7 @@ class TestBotToDb:
                 # TODO check pool info after this tx
 
             if txn["input_method"] == "closeShort":
-                assert txn["input_params_bond_amount"] == Decimal(33333)
+                assert txn["input_params_bond_amount"] == Decimal(333)
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == expected_number_of_deltas
                 short_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "SHORT"]
@@ -450,7 +445,7 @@ class TestBotToDb:
         # TODO currently only shorts are not dependent on poolinfo, so we only check shorts here
         # Eventually we want to double check all token types
         short_pos = db_current_wallet[db_current_wallet["base_token_type"] == "SHORT"]
-        assert short_pos.iloc[0]["value"] == Decimal(33333)
+        assert short_pos.iloc[0]["value"] == Decimal(333)
 
         # Check spot price and fixed rate
         db_pool_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
@@ -468,6 +463,5 @@ class TestBotToDb:
         expected_fixed_rate = hyperdrive.calc_fixed_rate()
 
         assert latest_pool_analysis["block_number"] == hyperdrive.current_pool_state.block_number
-        # TODO there's rounding errors between db spot price and fixed rates
-        assert abs(latest_spot_price - expected_spot_price) <= FixedPoint(1e-16)
-        assert abs(latest_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)
+        assert latest_spot_price == expected_spot_price
+        assert latest_fixed_rate == expected_fixed_rate

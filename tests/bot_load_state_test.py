@@ -93,7 +93,7 @@ class WalletTestPolicy(HyperdrivePolicy):
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11_111)))
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(22_222)))

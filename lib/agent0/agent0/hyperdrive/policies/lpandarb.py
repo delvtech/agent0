@@ -54,7 +54,7 @@ def calc_shares_needed_for_bonds(
     spot_price = interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
     _shares_to_gov = (
-        _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance
+        _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance_lp
     )
     _shares_to_pool -= _shares_to_gov
     return _shares_to_pool, _shares_to_gov

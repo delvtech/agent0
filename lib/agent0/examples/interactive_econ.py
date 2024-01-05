@@ -123,7 +123,7 @@ config = InteractiveHyperdrive.Config(
     initial_variable_rate=exp.starting_variable_rate,
     curve_fee=exp.curve_fee,
     flat_fee=exp.flat_fee,
-    governance_fee=exp.governance_fee,
+    governance_lp_fee=exp.governance_fee,
 )
 MINIMUM_TRANSACTION_AMOUNT = config.minimum_transaction_amount
 for k, v in config.__dict__.items():

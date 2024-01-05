@@ -12,7 +12,7 @@ from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
-from hypertypes import Fees, PoolConfig
+from hypertypes import Fees, PoolDeployConfig
 from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
@@ -148,38 +148,52 @@ def launch_local_hyperdrive_pool(
     initial_variable_rate = FixedPoint("0.05")
     curve_fee = FixedPoint("0.1")  # 10%
     flat_fee = FixedPoint("0.0005")  # 0.05%
-    governance_fee = FixedPoint("0.15")  # 15%
+    governance_lp_fee = FixedPoint("0.01")  # 1%
+    governance_zombie_fee = FixedPoint("0.1")  # 10%
     max_curve_fee = FixedPoint("0.3")  # 30%
     max_flat_fee = FixedPoint("0.0015")  # 0.15%
-    max_governance_fee = FixedPoint("0.30")  # 30%
-    fees = Fees(curve_fee.scaled_value, flat_fee.scaled_value, governance_fee.scaled_value)
-    max_fees = Fees(max_curve_fee.scaled_value, max_flat_fee.scaled_value, max_governance_fee.scaled_value)
+    max_governance_lp_fee = FixedPoint("0.30")  # 30%
+    max_governance_zombie_fee = FixedPoint("0.30")  # 30%
+    fees = Fees(
+        curve_fee.scaled_value,
+        flat_fee.scaled_value,
+        governance_lp_fee.scaled_value,
+        governance_zombie_fee.scaled_value,
+    )
+    max_fees = Fees(
+        max_curve_fee.scaled_value,
+        max_flat_fee.scaled_value,
+        max_governance_lp_fee.scaled_value,
+        max_governance_zombie_fee.scaled_value,
+    )
     # Pool initialization parameters
     initial_fixed_rate = FixedPoint("0.05")  # 5%
-    initial_liquidity = FixedPoint(100_000_000)
-    initial_share_price = FixedPoint(1)
+    # NOTE: we set the initial liquidity here to be very small to ensure we can do trades to ensure withdrawal shares
+    # Hence, for testing normal conditions, we likely need to increase the initial liquidity by adding
+    # liquidity as the first trade of the pool.
+    initial_liquidity = FixedPoint(1_000)
     minimum_share_reserves = FixedPoint(10)
     minimum_transaction_amount = FixedPoint("0.001")
-    precision_threshold = int(1e14)
-    position_duration = 604800  # 1 week
+    # TODO the above parameters results in negative interest with the default position duration
+    # Hence, we adjust the position duration to be a year to avoid the pool's reserve being 1:1
+    # This likely should get fixed by adjusting the time_stretch parameter
+    position_duration = 31_536_000  # 1 year
     checkpoint_duration = 3600  # 1 hour
     time_stretch = FixedPoint(1) / (
         FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
     )
-    pool_config = PoolConfig(
-        "",  # will be determined in the deploy function
-        ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
-        bytes(32),  # bytes32(0)
-        initial_share_price.scaled_value,
-        minimum_share_reserves.scaled_value,
-        minimum_transaction_amount.scaled_value,
-        precision_threshold,
-        position_duration,
-        checkpoint_duration,
-        time_stretch.scaled_value,
-        "",  # will be determined in the deploy function
-        "",  # will be determined in the deploy function
-        fees,
+    pool_config = PoolDeployConfig(
+        baseToken="",  # will be determined in the deploy function
+        linkerFactory=ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
+        linkerCodeHash=bytes(32),  # bytes32(0)
+        minimumShareReserves=minimum_share_reserves.scaled_value,
+        minimumTransactionAmount=minimum_transaction_amount.scaled_value,
+        positionDuration=position_duration,
+        checkpointDuration=checkpoint_duration,
+        timeStretch=time_stretch.scaled_value,
+        governance="",  # will be determined in the deploy function
+        feeCollector="",  # will be determined in the deploy function
+        fees=fees,  # type: ignore
     )
     return deploy_hyperdrive_from_factory(
         local_chain_uri,
