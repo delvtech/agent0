@@ -78,6 +78,10 @@ def test_funding_and_trades(chain: LocalChain):
     initial_pool_config = InteractiveHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_rate=FixedPoint("0.05"),
+        # TODO the above parameters results in negative interest with the default position duration
+        # Hence, we adjust the position duration to be a year to avoid the pool's reserve being 1:1
+        # This likely should get fixed by adjusting the time_stretch parameter
+        position_duration=31_536_000,  # 1 year
     )
     # Launches 2 pools on the same local chain
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
@@ -132,8 +136,8 @@ def test_funding_and_trades(chain: LocalChain):
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.wallet)
 
     # Open long
-    open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(2_222))
-    assert open_long_event.base_amount == FixedPoint(2_222)
+    open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
+    assert open_long_event.base_amount == FixedPoint(22_222)
     agent0_longs = list(hyperdrive_agent0.wallet.longs.values())
     assert len(agent0_longs) == 1
     assert agent0_longs[0].balance == open_long_event.bond_amount

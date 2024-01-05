@@ -50,6 +50,8 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: f
         # Using default abi dir
     )
 
+    lp_trade = ("add_liquidity", int(1_000_000))
+
     if delta > 0:
         trade_tuple = ("open_short", int(delta))
     else:
@@ -59,9 +61,9 @@ def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: f
         AgentConfig(
             policy=Zoo.deterministic,
             number_of_agents=1,
-            base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+            base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
             eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-            policy_config=Zoo.deterministic.Config(trade_list=[trade_tuple]),
+            policy_config=Zoo.deterministic.Config(trade_list=[lp_trade, trade_tuple]),
         ),
     ]
     setup_and_run_agent_loop(

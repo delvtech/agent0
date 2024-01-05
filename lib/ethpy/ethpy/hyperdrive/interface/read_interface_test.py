@@ -123,7 +123,7 @@ class TestHyperdriveReadInterface:
             "initial_share_price": FixedPoint("1"),
             "minimum_share_reserves": FixedPoint("10"),
             "minimum_transaction_amount": FixedPoint("0.001"),
-            "position_duration": 604800,  # 1 week
+            "position_duration": 31_536_000,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch_fp,
             "governance": deploy_account.address,

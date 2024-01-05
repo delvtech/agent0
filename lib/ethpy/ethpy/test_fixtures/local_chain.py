@@ -149,7 +149,7 @@ def launch_local_hyperdrive_pool(
     curve_fee = FixedPoint("0.1")  # 10%
     flat_fee = FixedPoint("0.0005")  # 0.05%
     governance_lp_fee = FixedPoint("0.01")  # 1%
-    governance_zombie_fee = FixedPoint("0.1")  # 1%
+    governance_zombie_fee = FixedPoint("0.1")  # 10%
     max_curve_fee = FixedPoint("0.3")  # 30%
     max_flat_fee = FixedPoint("0.0015")  # 0.15%
     max_governance_lp_fee = FixedPoint("0.30")  # 30%
@@ -168,10 +168,16 @@ def launch_local_hyperdrive_pool(
     )
     # Pool initialization parameters
     initial_fixed_rate = FixedPoint("0.05")  # 5%
-    initial_liquidity = FixedPoint(100_000_000)
+    # NOTE: we set the initial liquidity here to be very small to ensure we can do trades to ensure withdrawal shares
+    # Hence, for testing normal conditions, we likely need to increase the initial liquidity by adding
+    # liquidity as the first trade of the pool.
+    initial_liquidity = FixedPoint(1_000)
     minimum_share_reserves = FixedPoint(10)
     minimum_transaction_amount = FixedPoint("0.001")
-    position_duration = 604800  # 1 week
+    # TODO the above parameters results in negative interest with the default position duration
+    # Hence, we adjust the position duration to be a year to avoid the pool's reserve being 1:1
+    # This likely should get fixed by adjusting the time_stretch parameter
+    position_duration = 31_536_000  # 1 year
     checkpoint_duration = 3600  # 1 hour
     time_stretch = FixedPoint(1) / (
         FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
