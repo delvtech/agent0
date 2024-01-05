@@ -108,13 +108,13 @@ class WalletTestAgainstChainPolicy(HyperdrivePolicy):
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(11_111)))
+            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(interface.open_long_trade(FixedPoint(22_222), self.slippage_tolerance))
         elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(33_333), self.slippage_tolerance))
+            action_list.append(interface.open_short_trade(FixedPoint(333), self.slippage_tolerance))
         elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
             # Remove All Liquidity
             action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
@@ -178,7 +178,7 @@ class TestWalletAgainstChain:
             AgentConfig(
                 policy=WalletTestAgainstChainPolicy,
                 number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=WalletTestAgainstChainPolicy.Config(
                     slippage_tolerance=FixedPoint("0.0001"),
