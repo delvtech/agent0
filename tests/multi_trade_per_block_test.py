@@ -168,9 +168,9 @@ class TestMultiTradePerBlock:
 
         # Ensure all 4 trades went through
         # 1. addLiquidity of 111_111 base
-        # 1. addLiquidity of 11_111 base
-        # 2. openLong of 22_222 base
-        # 3. openShort of 33_333 bonds
+        # 2. addLiquidity of 11_111 base
+        # 3. openLong of 22_222 base
+        # 4. openShort of 33_333 bonds
 
         db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
         expected_number_of_transactions = 4
