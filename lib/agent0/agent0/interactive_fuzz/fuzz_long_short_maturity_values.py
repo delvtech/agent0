@@ -120,7 +120,11 @@ def fuzz_long_short_maturity_values(
             invariant_check(trade, close_event, starting_checkpoint, maturity_checkpoint, interactive_hyperdrive)
         except FuzzAssertionException as error:
             dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
-            additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
+            additional_info = {
+                "fuzz_random_seed": random_seed,
+                "dump_state_dir": dump_state_dir,
+                "trade_ticker": interactive_hyperdrive.get_ticker(),
+            }
             additional_info.update(error.exception_data)
             report = build_crash_trade_result(
                 error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info

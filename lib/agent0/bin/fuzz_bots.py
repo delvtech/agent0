@@ -24,10 +24,14 @@ ENV_FILE = "fuzz_test_bots.account.env"
 # Username binding of bots
 USERNAME = "test_bots"
 # The amount of base token each bot receives
+# TODO update base budget to be 100% of liquidity, so that max trades cause large swings
+# May want to add weighting to random draw so large trades are unlikely, or have arb bot
+# ensure pool stays reasonable
 BASE_BUDGET_PER_BOT = FixedPoint(1000)
 ETH_BUDGET_PER_BOT = FixedPoint(10)
 # The slippage tolerance for trades
-SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
+# TODO randomly turn on/off slippage for each bot
+SLIPPAGE_TOLERANCE = FixedPoint("0.1")  # 10% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 

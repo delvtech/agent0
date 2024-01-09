@@ -8,6 +8,7 @@ from types import TracebackType
 from typing import Any
 
 import numpy as np
+import pandas as pd
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator
@@ -58,6 +59,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return o.name
         if isinstance(o, bytes):
             return str(o)
+        if isinstance(o, pd.DataFrame):
+            return o.to_dict(orient="records")
         try:
             return o.__dict__
         except AttributeError:

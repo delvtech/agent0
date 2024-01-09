@@ -150,6 +150,7 @@ def run_invariant_checks(
         + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
         + pool_state.gov_fees_accrued
         + pool_state.pool_info.withdrawal_shares_proceeds
+        + pool_state.pool_info.zombie_share_reserves
     )
     actual_vault_shares = pool_state.vault_shares
     if not fp_isclose(expected_vault_shares, actual_vault_shares, abs_tol=epsilon):
@@ -180,9 +181,7 @@ def run_invariant_checks(
         failed = True
 
     # The pool has more than the minimum share reserves
-    current_share_reserves = (
-        pool_state.pool_info.share_reserves * pool_state.pool_info.share_price - pool_state.pool_info.long_exposure
-    )
+    current_share_reserves = pool_state.pool_info.share_reserves
     minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
     if not current_share_reserves >= minimum_share_reserves:
         exception_message.append(
@@ -198,6 +197,9 @@ def run_invariant_checks(
 
     # Creating a checkpoint should never fail
     # TODO: add get_block_transactions() to interface
+    # NOTE: This wold be prone to false positives.
+    #   If the transaction would have failed anyway, then we don't know
+    #   that it failed bc of checkpoint failure or bc e.g., open long was for too much
     transactions = latest_block.get("transactions", None)
     if transactions is not None and isinstance(transactions, Sequence):
         # If any transaction is to hyperdrive then assert a checkpoint happened
