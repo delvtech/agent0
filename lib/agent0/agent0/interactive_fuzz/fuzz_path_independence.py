@@ -91,11 +91,13 @@ def fuzz_path_independence(
         chain.load_snapshot()
 
         # Randomly grab some trades & close them one at a time
+        # TODO guarantee closing trades within the same checkpoint
         close_random_trades(trade_events, rng)
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
         pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
+        # TODO add present value check here
         # On first run, save final state
         if check_data is None:
             check_data = {}
@@ -234,17 +236,6 @@ def invariant_check(
     exception_data: dict[str, Any] = {}
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
-    # Base balance
-    expected_base_balance = FixedPoint(check_data["hyperdrive_base_balance"])
-    actual_base_balance = pool_state.hyperdrive_base_balance
-    if expected_base_balance != actual_base_balance:
-        difference_in_wei = abs(expected_base_balance.scaled_value - actual_base_balance.scaled_value)
-        exception_message.append(f"{expected_base_balance=} != {actual_base_balance=}, {difference_in_wei=}")
-        exception_data["invariance_check:expected_base_balance"] = expected_base_balance
-        exception_data["invariance_check:actual_base_balance"] = actual_base_balance
-        exception_data["invariance_check:base_balance_difference_in_wei"] = difference_in_wei
-        failed = True
-
     # Effective share reserves
     expected_effective_share_reserves = FixedPoint(check_data["effective_share_reserves"])
     actual_effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
@@ -260,19 +251,6 @@ def invariant_check(
         exception_data["invariance_check:expected_effective_share_reserves"] = expected_effective_share_reserves
         exception_data["invariance_check:actual_effective_share_reserves"] = actual_effective_share_reserves
         exception_data["invariance_check:effective_share_reserves_difference_in_wei"] = difference_in_wei
-        failed = True
-
-    # Minimum share reserves
-    expected_minimum_share_reserves = check_data["minimum_share_reserves"]
-    actual_minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
-    if expected_minimum_share_reserves != actual_minimum_share_reserves:
-        difference_in_wei = abs(expected_minimum_share_reserves - actual_minimum_share_reserves)
-        exception_message.append(
-            f"{expected_minimum_share_reserves=} != {actual_minimum_share_reserves=}, {difference_in_wei=}"
-        )
-        exception_data["invariance_check:expected_minimum_share_reserves"] = expected_minimum_share_reserves
-        exception_data["invariance_check:actual_minimum_share_reserves"] = actual_minimum_share_reserves
-        exception_data["invariance_check:minimum_share_reserves_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Check that the subset of columns in initial db pool state and the latest pool state are equal

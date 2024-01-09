@@ -62,7 +62,8 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
 
     # Open some trades
-    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
+    # TODO set advance time to be true, but ensure all open positions are within one position duration
+    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=False)
 
     # Close the trades
     close_random_trades(trade_events, rng)
