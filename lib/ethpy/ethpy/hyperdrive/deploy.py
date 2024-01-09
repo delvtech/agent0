@@ -293,8 +293,8 @@ def _deploy_hyperdrive_factory(
 def _mint_and_approve(
     web3,
     funding_account,
-    funding_contract: Contract,
-    contract_to_approve: Contract,
+    funding_contract: ERC20MintableContract,
+    contract_to_approve: HyperdriveFactoryContract,
     mint_amount: FixedPoint,
 ) -> tuple[TxReceipt, TxReceipt]:
     """Mint tokens from the funding_contract and approve spending with the contract_to_approve

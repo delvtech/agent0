@@ -1,4 +1,22 @@
-"""Script for fuzzing profit values on immediately opening & closing a long or short."""
+"""Script for fuzzing profit values on immediately opening & closing a long or short.
+
+
+# Test procedure
+- spin up local chain, deploy hyperdrive
+- open a long for a random amount
+- advance time, but not enough to trigger a new checkpoint
+- close the long
+- open a short for a random amount
+- advance time, but not enough to trigger a new checkpoint
+- close the short
+- invariance checks
+
+# Invariance checks (these should be True):
+# We are checking that the agent made made no profit
+- Repeat these two checks for the longs & shorts
+  - transaction receipt: base amount returned < base amount provided
+  - agent wallet: agent's wallet balance < trade amount
+"""
 from __future__ import annotations
 
 import argparse
