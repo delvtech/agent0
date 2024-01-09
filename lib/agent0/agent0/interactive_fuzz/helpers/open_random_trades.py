@@ -1,6 +1,7 @@
 """Return a list of results from opening a random longs and shorts."""
 from __future__ import annotations
 
+import numpy as np
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
@@ -17,7 +18,8 @@ def open_random_trades(
     interactive_hyperdrive: InteractiveHyperdrive,
     advance_time: bool = False,
 ) -> list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]]:
-    """Open some trades specified by the trade list.
+    """Open some trades specified by the trade list. If advance time is true, the sum of all time passed
+    between all trades will be between 0 and the position duration.
 
     Arguments
     ---------
@@ -43,8 +45,21 @@ def open_random_trades(
             - the agent executing the trade
             - either the OpenLong or OpenShort trade event
     """
+
+    # Generate the total time elapsed for all trades
+    max_advance_time = rng.integers(
+        low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration
+    )
+
+    # Generate intermediate points between 0 and max_advance_time, sorted in ascending order
+    # Generating number of trades + 1 since cumulative diff results in one less
+    intermediate_points = np.sort(rng.integers(low=0, high=max_advance_time, size=len(trade_list) + 1))
+
+    # Find cumulative differences of intermediate points for how much time to wait between each trade
+    time_diffs = np.diff(intermediate_points)
+
     trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
-    for trade in trade_list:
+    for trade, time_diff in zip(trade_list, time_diffs):
         agent, trade_type, trade_amount = trade
         if trade_type == HyperdriveActionType.OPEN_LONG:
             trade_event = agent.open_long(base=trade_amount)
@@ -56,10 +71,7 @@ def open_random_trades(
         if advance_time:
             # Advance a random amount of time between opening trades
             chain.advance_time(
-                rng.integers(
-                    low=0,
-                    high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration,
-                ),
+                time_diff,
                 create_checkpoints=True,
             )
     return trade_events
