@@ -30,6 +30,7 @@ USERNAME = "test_bots"
 BASE_BUDGET_PER_BOT = FixedPoint(1000)
 ETH_BUDGET_PER_BOT = FixedPoint(10)
 # The slippage tolerance for trades
+# TODO randomly turn on/off slippage for each bot
 SLIPPAGE_TOLERANCE = FixedPoint("0.1")  # 10% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
