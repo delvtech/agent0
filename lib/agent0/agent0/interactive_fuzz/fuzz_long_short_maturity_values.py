@@ -1,4 +1,21 @@
-"""Script to verify that longs and shorts which are closed at maturity supply the correct amounts."""
+"""Script to verify that longs and shorts which are closed at maturity supply the correct amounts.
+
+# Test procedure
+- spin up local chain, deploy hyperdrive
+- advance time to ensure we are in the middle of a checkpoint
+- generate a list of random trades
+  - type in [open_short, open_long]
+  - amount in uniform[min_trade_amount, 100k) base
+- open those trades in a random order, but within the same checkpoint
+- advance time past the position duration, into a new checkpoint
+- close the trades one at a time, run invariance checks after each close action
+
+# Invariance checks (these should be True):
+if trade was open and close a long:
+  - base out == bonds in minus flat fee
+if trade was open and close a short:
+  - base out == interest accrued
+"""
 from __future__ import annotations
 
 import argparse
@@ -242,7 +259,6 @@ def invariant_check(
         # 0.05 would be a 5% fee.
         flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
 
-        # assert with trade values
         # base out should be equal to bonds in minus the flat fee.
         actual_base_amount = close_trade_event.base_amount
         expected_base_amount_from_event = (
@@ -260,6 +276,7 @@ def invariant_check(
             exception_data["invariance_check:base_amount_from_event_difference_in_wei"] = difference_in_wei
             failed = True
 
+        # assert with trade values
         expected_base_amount_from_trade = open_trade_event.bond_amount - open_trade_event.bond_amount * flat_fee_percent
         if actual_base_amount != expected_base_amount_from_trade:
             difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount_from_trade.scaled_value)

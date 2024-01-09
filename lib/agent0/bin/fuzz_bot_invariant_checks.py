@@ -1,4 +1,16 @@
-"""Script for checking Hyperdrive invariants at each block."""
+"""Script for checking Hyperdrive invariants at each block.
+
+This script assumes that fuzz_bots is running in a concurrent process.
+Given that, we will periodically run this test:
+
+
+# Invariance checks (these should be True):
+- hyperdrive base & eth balances are zero
+- the expected total shares equals the hyperdrive balance in the vault contract
+- the pool has more than the minimum share reserves
+- the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
+- if a hyperdrive trade happened then a checkpoint was created at the appropriate time
+"""
 from __future__ import annotations
 
 import argparse
@@ -165,21 +177,6 @@ def run_invariant_checks(
         exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
-    # The system should always be solvent
-    solvency = (
-        pool_state.pool_info.share_reserves
-        - pool_state.pool_info.long_exposure
-        - pool_state.pool_config.minimum_share_reserves
-    )
-    if not solvency > FixedPoint(0):
-        exception_message.append(
-            f"{solvency=} <= 0. "
-            f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
-            f"{pool_state.pool_config.minimum_share_reserves=}). Test failed at block {latest_block_number}."
-        )
-        exception_data["invariance_check:solvency"] = solvency
-        failed = True
-
     # The pool has more than the minimum share reserves
     current_share_reserves = pool_state.pool_info.share_reserves
     minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
@@ -193,6 +190,21 @@ def run_invariant_checks(
         )
         exception_data["invariance_check:current_share_reserves"] = current_share_reserves
         exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
+        failed = True
+
+    # The system should always be solvent
+    solvency = (
+        pool_state.pool_info.share_reserves
+        - pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
+        - pool_state.pool_config.minimum_share_reserves
+    )
+    if not solvency > FixedPoint(0):
+        exception_message.append(
+            f"{solvency=} <= 0. "
+            f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
+            f"{pool_state.pool_config.minimum_share_reserves=}). Test failed at block {latest_block_number}."
+        )
+        exception_data["invariance_check:solvency"] = solvency
         failed = True
 
     # Creating a checkpoint should never fail

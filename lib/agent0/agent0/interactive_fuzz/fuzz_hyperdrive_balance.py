@@ -1,4 +1,20 @@
-"""Fuzz test to verify that if all of the funds are removed from Hyperdrive, there is no base left in the contract."""
+"""Fuzz test to verify that the Hyperdrive share reserves are valid after trades are opened and then closed.
+
+# Test procedure
+- spin up local chain, deploy hyperdrive
+- get initial_pool_state
+- generate a list of random trades
+  - type in [open_short, open_long]
+  - amount in uniform[min_trade_amount, 100k) base
+- open those trades in a random order & advance time randomly between
+  - total time advanced in uniform[0, position_duration)
+- close the trades in a random order
+- invariance checks
+
+# Invariance checks (these should be True):
+- current effective share reserves calculated from hyperdrivepy == initial share reserves
+- share resserves >= minimum share reserves
+"""
 from __future__ import annotations
 
 import argparse
@@ -197,7 +213,6 @@ def invariant_check(
         exception_data["invariance_check:share_reserves"] = share_reserves
         exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
         exception_data["invariance_check:share_reserves_difference_in_wei"] = difference_in_wei
-
         failed = True
 
     if failed:

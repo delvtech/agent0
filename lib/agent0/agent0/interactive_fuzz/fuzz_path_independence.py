@@ -1,4 +1,30 @@
-"""Script to verify that the state of pool reserves is invariant to the order in which positions are closed."""
+"""Script to verify that the state of pool reserves is invariant to the order in which positions are closed.
+
+# Test procedure
+- spin up local chain, deploy hyperdrive
+- generate a list of random trades
+  - type in [open_short, open_long]
+  - amount in uniform[min_trade_amount, 100k base)
+- open those trades in a random order & advance time randomly between
+  - time advance in uniform[0, position_duration)
+- save a snapshot of the current chain state
+- repeat N times (where N is set as a command-line arg):
+    - load chain state (trades are opened, none are closed)
+    - close the trades in a random order
+    - invariance checks
+
+# Invariance checks (these should be True):
+# We are checking that the pool ends up in the same sate regardless of close transaction order
+- the following state values should equal in all checks:
+  - effective share reserves 
+  - shorts outstanding
+  - withdrawal shares proceeds
+  - share price
+  - long exposure
+  - bond reserves
+  - lp total supply
+  - longs outstanding
+"""
 from __future__ import annotations
 
 import argparse
