@@ -76,7 +76,11 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
         invariant_check(initial_effective_share_reserves, interactive_hyperdrive)
     except FuzzAssertionException as error:
         dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
-        additional_info = {"fuzz_random_seed": random_seed, "dump_state_dir": dump_state_dir}
+        additional_info = {
+            "fuzz_random_seed": random_seed,
+            "dump_state_dir": dump_state_dir,
+            "trade_ticker": interactive_hyperdrive.get_ticker(),
+        }
         additional_info.update(error.exception_data)
         report = build_crash_trade_result(
             error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info

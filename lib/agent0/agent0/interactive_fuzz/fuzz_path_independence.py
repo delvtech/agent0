@@ -6,6 +6,7 @@ import logging
 import sys
 from typing import Any, NamedTuple, Sequence
 
+import pandas as pd
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
@@ -84,6 +85,7 @@ def fuzz_path_independence(
     logging.info("Close trades in random order; check final state...")
     check_data: dict[str, Any] | None = None
     first_run_state_dump_dir: str | None = None
+    first_run_ticker: pd.DataFrame | None = None
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
         logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
@@ -110,6 +112,7 @@ def fuzz_path_independence(
             check_data["effective_share_reserves"] = effective_share_reserves
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
+            first_run_ticker = interactive_hyperdrive.get_ticker()
 
         # On subsequent run, check against the saved final state
         else:
@@ -125,6 +128,8 @@ def fuzz_path_independence(
                     "fuzz_random_seed": random_seed,
                     "first_run_state_dump_dir": first_run_state_dump_dir,
                     "dump_state_dir": dump_state_dir,
+                    "first_run_trade_ticker": first_run_ticker,
+                    "trade_ticker": interactive_hyperdrive.get_ticker(),
                 }
                 additional_info.update(error.exception_data)
                 report = build_crash_trade_result(

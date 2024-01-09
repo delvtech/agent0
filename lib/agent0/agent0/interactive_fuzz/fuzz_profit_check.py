@@ -105,6 +105,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         additional_info = {
             "fuzz_random_seed": random_seed,
             "dump_state_dir": dump_state_dir,
+            "trade_ticker": interactive_hyperdrive.get_ticker(),
         }
         additional_info.update(error.exception_data)
         # TODO do better checking here or make agent optional in build_crash_trade_result
