@@ -186,6 +186,26 @@ def test_funding_and_trades(chain: LocalChain):
 
 
 @pytest.mark.anvil
+def test_block_timestamp_interval(chain: LocalChain):
+    """Ensure block timestamp interval is set correctly."""
+    # The chain in the test fixture defaults to 12 seconds
+
+    # We need the underlying hyperdrive interface here to test time
+    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
+
+    current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+
+    # Make a trade to mine a block
+    hyperdrive_agent0.open_long(base=FixedPoint(111))
+
+    current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+
+    assert current_time_2 - current_time_1 == 12
+
+
+@pytest.mark.anvil
 def test_advance_time(chain: LocalChain):
     """Advance time by 3600 seconds then 1 week."""
     # We need the underlying hyperdrive interface here to test time
@@ -207,6 +227,10 @@ def test_advance_time(chain: LocalChain):
 @pytest.mark.anvil
 def test_advance_time_with_checkpoints(chain: LocalChain):
     """Checkpoint creation with advance time."""
+    # Since advancing time with checkpoints can be off by a block, we set block timestamp interval here
+    # to be 1 to avoid advancing extra time
+    chain._set_block_timestamp_interval(1)  # pylint: disable=protected-access
+
     # We need the underlying hyperdrive interface here to test time
     config = InteractiveHyperdrive.Config(checkpoint_duration=3600)
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)

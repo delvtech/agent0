@@ -84,8 +84,11 @@ def fuzz_path_independence(
         If True, log to stdout in addition to a file.
         Defaults to False.
     """
+    # pylint: disable=too-many-statements
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+        log_filename, chain_config, log_to_stdout, fees=False, var_interest=FixedPoint(0)
+    )
 
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
@@ -123,8 +126,12 @@ def fuzz_path_independence(
         chain.load_snapshot()
 
         # Randomly grab some trades & close them one at a time
-        # TODO guarantee closing trades within the same block
+        # guarantee closing trades within the same checkpoint by getting the checkpoint id before
+        # and after closing trades, then asserting they're the same
+        starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
         close_random_trades(trade_events, rng)
+        ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+        assert starting_checkpoint_id == ending_checkpoint_id
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
         pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
@@ -140,11 +147,15 @@ def fuzz_path_independence(
             check_data["initial_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
+            check_data["curr_checkpoint_id"] = ending_checkpoint_id
             first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
             first_run_ticker = interactive_hyperdrive.get_ticker()
 
         # On subsequent run, check against the saved final state
         else:
+            # Sanity check, ensure checkpoint id is the same after all runs
+            assert ending_checkpoint_id == check_data["curr_checkpoint_id"]
+
             # Check values not provided in the database
             check_data["final_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
             # Raise an error if it failed

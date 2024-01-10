@@ -14,6 +14,7 @@ def setup_fuzz(
     chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
     fees=True,
+    var_interest=None,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
     """Setup the fuzz experiment.
 
@@ -29,6 +30,9 @@ def setup_fuzz(
         Defaults to False.
     fees: bool, optional
         If False, will turn off fees when deploying hyperdrive. Defaults to True.
+    var_interest: FixedPoint | None, optional
+        The variable interest rate. Defaults to using the default variable interest rate
+        defined in interactive hyperdrive.
 
     Returns
     -------
@@ -67,6 +71,9 @@ def setup_fuzz(
         initial_pool_config.max_curve_fee = FixedPoint(0)
         initial_pool_config.max_flat_fee = FixedPoint(0)
         initial_pool_config.max_governance_lp_fee = FixedPoint(0)
+
+    if var_interest is not None:
+        initial_pool_config.initial_variable_rate = var_interest
 
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 
