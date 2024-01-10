@@ -30,7 +30,7 @@ from hypertypes.fixedpoint_types import CheckpointFP
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, generate_trade_list, open_random_trades, setup_fuzz
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, execute_random_trades, setup_fuzz
 
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
@@ -86,12 +86,9 @@ def fuzz_long_short_maturity_values(
     logging.info("Advance time...")
     chain.advance_time(time_to_next_checkpoint + 100, create_checkpoints=True)
 
-    # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
-
     # Open some trades
     logging.info("Open random trades...")
-    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=False)
+    trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=False)
 
     # Ensure all trades open are within the same checkpoint
     trade_maturity_times = []
