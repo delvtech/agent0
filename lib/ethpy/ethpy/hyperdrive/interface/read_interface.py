@@ -651,7 +651,7 @@ class HyperdriveReadInterface:
             which represents the time of the last checkpoint.
         """
         if checkpoint_duration is None:
-            checkpoint_duration = self.current_pool_state.pool_config.checkpoint_duration
+            checkpoint_duration = self.pool_config.checkpoint_duration
         if block_timestamp is None:
             block_timestamp = self.current_pool_state.block_time
         return _calc_checkpoint_id(checkpoint_duration, block_timestamp)
