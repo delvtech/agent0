@@ -120,12 +120,22 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         invariant_check(check_data)
     except FuzzAssertionException as error:
         dump_state_dir = chain.save_state(save_prefix="fuzz_profit_check")
+
+        # The additional information going into the crash report
         additional_info = {
             "fuzz_random_seed": random_seed,
             "dump_state_dir": dump_state_dir,
             "trade_ticker": interactive_hyperdrive.get_ticker(),
         }
         additional_info.update(error.exception_data)
+
+        # The subset of information going into rollbar
+        rollbar_data = {
+            "fuzz_random_seed": random_seed,
+            "dump_state_dir": dump_state_dir,
+        }
+        rollbar_data.update(error.exception_data)
+
         # TODO do better checking here or make agent optional in build_crash_trade_result
         if "LONG" in error.args[0]:
             agent = long_agent.agent
@@ -136,7 +146,11 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         )
         # Crash reporting already going to file in logging
         log_hyperdrive_crash_report(
-            report, crash_report_to_file=True, crash_report_file_prefix="fuzz_profit_check", log_to_rollbar=True
+            report,
+            crash_report_to_file=True,
+            crash_report_file_prefix="fuzz_profit_check",
+            log_to_rollbar=True,
+            rollbar_data=rollbar_data,
         )
         chain.cleanup()
         raise error
