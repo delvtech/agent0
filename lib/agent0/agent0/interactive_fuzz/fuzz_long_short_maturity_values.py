@@ -114,7 +114,7 @@ def fuzz_long_short_maturity_values(
     interactive_hyperdrive.hyperdrive_interface.create_checkpoint(signer.agent, checkpoint_time=checkpoint_id)
     maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
 
-    # TODO ensure this maturity checkpoint is the maturity of all open positions
+    # Ensure this maturity checkpoint is the maturity of all open positions
     for trade_maturity_time in trade_maturity_times:
         assert checkpoint_id == trade_maturity_time
 
@@ -256,39 +256,29 @@ def invariant_check(
     exception_data: dict[str, Any] = {}
 
     if isinstance(open_trade_event, OpenLong) and isinstance(close_trade_event, CloseLong):
+        # Ensure we close the trade for all of the opened bonds
+        assert close_trade_event.bond_amount == open_trade_event.bond_amount
+
         # 0.05 would be a 5% fee.
         flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
         actual_base_amount = close_trade_event.base_amount
-        expected_base_amount_from_event = (
-            close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
-        )
+        expected_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
-        # assert with event values
-        if actual_base_amount != expected_base_amount_from_event:
-            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount_from_event.scaled_value)
-            exception_message.append(
-                f"{actual_base_amount=} != {expected_base_amount_from_event=}, {difference_in_wei=}"
-            )
-            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
-            exception_data["invariance_check:expected_base_amount_from_event"] = expected_base_amount_from_event
-            exception_data["invariance_check:base_amount_from_event_difference_in_wei"] = difference_in_wei
-            failed = True
-
-        # assert with trade values
-        expected_base_amount_from_trade = open_trade_event.bond_amount - open_trade_event.bond_amount * flat_fee_percent
-        if actual_base_amount != expected_base_amount_from_trade:
-            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount_from_trade.scaled_value)
-            exception_message.append(
-                f"{actual_base_amount=} != {expected_base_amount_from_trade=}, {difference_in_wei=}"
-            )
-            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
-            exception_data["invariance_check:expected_base_amount_from_trade"] = expected_base_amount_from_trade
-            exception_data["invariance_check:base_amount_from_trade_difference_in_wei"] = difference_in_wei
+        # assert with close event bond amount
+        if actual_base_amount != expected_base_amount:
+            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount.scaled_value)
+            exception_message.append(f"{actual_base_amount=} != {expected_base_amount=}, {difference_in_wei=}")
+            exception_data["invariance_check:actual_long_base_amount"] = actual_base_amount
+            exception_data["invariance_check:expected_long_base_amount"] = expected_base_amount
+            exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
 
     elif isinstance(open_trade_event, OpenShort) and isinstance(close_trade_event, CloseShort):
+        # Ensure we close the trade for all of the opened bonds
+        assert close_trade_event.bond_amount == open_trade_event.bond_amount
+
         # get the share prices
         open_share_price = starting_checkpoint.share_price
         closing_share_price = maturity_checkpoint.share_price
@@ -302,17 +292,17 @@ def invariant_check(
         share_reserves_delta_plus_flat_fee = share_reserves_delta + flat_fee
 
         # get the final interest accrued
-        interest_accrued = (
+        expected_base_amount = (
             open_trade_event.bond_amount * (closing_share_price / open_share_price + flat_fee_percent)
             - share_reserves_delta_plus_flat_fee
         )
 
         actual_base_amount = close_trade_event.base_amount
-        if actual_base_amount != interest_accrued:
-            difference_in_wei = abs(actual_base_amount.scaled_value - interest_accrued.scaled_value)
-            exception_message.append(f"{actual_base_amount=} != {interest_accrued=}, {difference_in_wei=}")
-            exception_data["invariance_check:actual_base_amount"] = actual_base_amount
-            exception_data["invariance_check:interest_accured"] = interest_accrued
+        if actual_base_amount != expected_base_amount:
+            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount.scaled_value)
+            exception_message.append(f"{actual_base_amount=} != {expected_base_amount=}, {difference_in_wei=}")
+            exception_data["invariance_check:actual_short_base_amount"] = actual_base_amount
+            exception_data["invariance_check:expected_short_base_amount"] = expected_base_amount
             exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
     else:
