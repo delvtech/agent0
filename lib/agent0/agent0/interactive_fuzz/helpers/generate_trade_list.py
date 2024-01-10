@@ -29,7 +29,7 @@ def generate_trade_list(
     list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]]
         Each element in the returned list is a tuple containing
             - an agent
-            - a trade for that agent
+            - a trade for that agent (within pool minimum & maximum)
             - the trade amount in base
     """
     available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
@@ -48,10 +48,10 @@ def generate_trade_list(
                 )
             case _:
                 raise ValueError("Invalid trade type")
-        trade_amount = FixedPoint(scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade))))
-        agent = interactive_hyperdrive.init_agent(
-            base=trade_amount * 2,  # extra base accounts for fees
-            eth=FixedPoint(100),
+        trade_amount = FixedPoint(
+            scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
         )
+        # extra base accounts for fees
+        agent = interactive_hyperdrive.init_agent(base=trade_amount * 2, eth=FixedPoint(100))
         trade_list.append((agent, trade_type, trade_amount))
     return trade_list
