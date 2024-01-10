@@ -5,7 +5,7 @@
 - get initial_pool_state
 - generate a list of random trades
   - type in [open_short, open_long]
-  - amount in uniform[min_trade_amount, 100k) base
+  - amount in uniform[min_trade_amount, max_trade_amount) base
 - open those trades in a random order & advance time randomly between
   - total time advanced in uniform[0, position_duration)
 - close the trades in a random order
