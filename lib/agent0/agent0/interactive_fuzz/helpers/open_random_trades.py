@@ -46,7 +46,6 @@ def execute_random_trades(
     """
     # Generate a list of trades
     available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
-    trade_list = [rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]
 
     if advance_time:
         # Generate the total time elapsed for all trades
@@ -55,13 +54,13 @@ def execute_random_trades(
         )
         # Generate intermediate points between 0 and max_advance_time, sorted in ascending order
         # Generating number of trades + 1 since cumulative diff results in one less
-        intermediate_points = np.sort(rng.integers(low=0, high=max_advance_time, size=len(trade_list) + 1))
+        intermediate_points = np.sort(rng.integers(low=0, high=max_advance_time, size=num_trades + 1))
         # Find cumulative differences of intermediate points for how much time to wait between each trade
         time_diffs = np.diff(intermediate_points)
 
     # Do the trades
     trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
-    for trade_index, trade_type in enumerate(trade_list):
+    for trade_index, trade_type in enumerate([rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]):
         trade_amount = _get_open_trade_amount(trade_type, rng, interactive_hyperdrive)
         # extra base accounts for fees
         # the short trade amount is technically bonds, but we know that will be less than the required base
@@ -71,7 +70,7 @@ def execute_random_trades(
         if advance_time:
             # Advance a random amount of time between opening trades
             chain.advance_time(
-                time_diffs[trade_index],
+                time_diffs[trade_index],  # type: ignore
                 create_checkpoints=True,
             )
     return trade_events
