@@ -86,13 +86,13 @@ def _get_open_trade_amount(
     Arguments
     ---------
     trade_type: HyperdriveActionType
-        A trade to be executed on the Hyperdrive pool
+        A trade to be executed on the Hyperdrive pool.
     rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
         The numpy Generator provides access to a wide range of distributions, and stores the random state.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     max_budget: FixedPoint, optional
-        An optional amount to set an upper bound for the trade, defaults to FixedPoint("1e9")
+        An optional amount to set an upper bound for the trade, defaults to FixedPoint("1e9").
 
     Returns
     -------
