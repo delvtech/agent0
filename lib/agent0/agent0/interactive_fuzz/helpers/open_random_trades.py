@@ -44,9 +44,6 @@ def execute_random_trades(
             - the agent executing the trade
             - either the OpenLong or OpenShort trade event
     """
-    # Generate a list of trades
-    available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
-
     if advance_time:
         # Generate the total time elapsed for all trades
         max_advance_time = rng.integers(
@@ -58,6 +55,8 @@ def execute_random_trades(
         # Find cumulative differences of intermediate points for how much time to wait between each trade
         time_diffs = np.diff(intermediate_points)
 
+    # Generate a list of trades
+    available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
     # Do the trades
     trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
     for trade_index, trade_type in enumerate([rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]):
