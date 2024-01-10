@@ -9,7 +9,6 @@ from eth_typing import ChecksumAddress, HexAddress, HexStr
 from ethpy.base import smart_contract_preview_transaction
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
-from hypertypes.fixedpoint_types import PoolInfoFP
 from web3.contract.contract import Contract
 
 
@@ -99,7 +98,7 @@ def calc_single_closeout(
 
 
 def calc_closeout_pnl(
-    current_wallet: pd.DataFrame, hyperdrive_contract: Contract, pool_info: PoolInfoFP
+    current_wallet: pd.DataFrame, hyperdrive_contract: Contract, lp_share_price: FixedPoint
 ) -> pd.DataFrame:
     """Calculate closeout value of agent positions.
 
@@ -109,8 +108,8 @@ def calc_closeout_pnl(
         A dataframe resulting from `get_current_wallet` that describes the current wallet position.
     hyperdrive_contract: Contract
         The hyperdrive contract object.
-    pool_info: PoolInfo
-        Description of the pool at the point in time for which we're calculating the PNL.
+    lp_share_price: FixedPoint
+        The price of an LP share in units of the base token
 
     Returns
     -------
@@ -121,6 +120,6 @@ def calc_closeout_pnl(
         calc_single_closeout,  # type: ignore
         contract=hyperdrive_contract,
         min_output=0,
-        lp_share_price=pool_info.lp_share_price,
+        lp_share_price=lp_share_price,
         axis=1,
     )
