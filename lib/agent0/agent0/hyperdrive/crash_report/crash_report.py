@@ -186,6 +186,7 @@ def log_hyperdrive_crash_report(
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,
     log_to_rollbar: bool = False,
+    rollbar_data: dict | None = None,
 ) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
@@ -206,6 +207,9 @@ def log_hyperdrive_crash_report(
     log_to_rollbar: bool, optional
         If enabled, logs errors to the rollbar service.
         Defaults to False.
+    rollbar_data: dict | None, optional
+        Optional dictionary of data to use for the the rollbar report.
+        If not provided, will default to logging all of the crash report to rollbar.
     """
     if log_level is None:
         log_level = logging.CRITICAL
@@ -275,6 +279,7 @@ def log_hyperdrive_crash_report(
     }
 
     # We print out a machine readable crash report
+    crash_report_file = None
     if crash_report_to_file:
         dump_obj["env"] = env_details  # type: ignore
         # We add the machine readable version of the crash to the file
@@ -290,10 +295,18 @@ def log_hyperdrive_crash_report(
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
 
     if log_to_rollbar:
-        # Don't log anvil dump state to rollbar
-        dump_obj["anvil_dump_state"] = None  # type: ignore
-        logging_crash_report = json.loads(json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder))
-        log_rollbar_exception(trade_result.exception, log_level, logging_crash_report)
+        if rollbar_data is None:
+            # Don't log anvil dump state to rollbar
+            dump_obj["anvil_dump_state"] = None  # type: ignore
+            rollbar_data = dump_obj
+        else:
+            # If we're supplying the subset of data, we want to link to the original crash report
+            if crash_report_file is not None:
+                rollbar_data["crash_report_file"] = os.path.abspath(crash_report_file)
+
+        # Format data
+        rollbar_data = json.loads(json.dumps(rollbar_data, indent=2, cls=ExtendedJSONEncoder))
+        log_rollbar_exception(trade_result.exception, log_level, rollbar_data)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet | None) -> dict[str, Any]:
