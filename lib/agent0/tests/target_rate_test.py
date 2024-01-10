@@ -92,6 +92,7 @@ def test_already_at_target(chain: LocalChain):
     andy_base = FixedPoint(1e9)
     andy_config = Zoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
+        done_on_empty=True,
         minimum_trade_amount=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount,
     )
     andy = interactive_hyperdrive.init_agent(
