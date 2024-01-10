@@ -153,6 +153,7 @@ def data_to_analysis(
     pool_config: pd.Series,
     db_session: Session,
     hyperdrive_contract: Contract,
+    calc_pnl: bool = True,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
     Executes analysis on a batch of blocks, defined by start and end block.
@@ -169,6 +170,8 @@ def data_to_analysis(
         The initialized db session.
     hyperdrive_contract: Contract
         The hyperdrive contract.
+    calc_pnl: bool
+        Whether to calculate pnl. Defaults to True.
     """
     # Get data
     pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
@@ -192,7 +195,10 @@ def data_to_analysis(
         # We can set a sample rate by doing batch processing on this function
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
-        pnl_df = calc_closeout_pnl(wallet_pnl, pool_info, hyperdrive_contract)
+        if calc_pnl:
+            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, pool_info["share_price"].iloc[-1])
+        else:
+            pnl_df = np.nan
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,

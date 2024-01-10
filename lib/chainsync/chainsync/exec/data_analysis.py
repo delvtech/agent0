@@ -36,6 +36,7 @@ def data_analysis(
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
     suppress_logs: bool = False,
+    calc_pnl: bool = True,
 ):
     """Execute the data acquisition pipeline.
 
@@ -65,6 +66,8 @@ def data_analysis(
         Defaults to not set.
     suppress_logs: bool, optional
         If true, will suppress info logging from this function. Defaults to False.
+    calc_pnl: bool
+        Whether to calculate pnl. Defaults to True.
     """
     # TODO implement logger instead of global logging to suppress based on module name.
 
@@ -126,7 +129,9 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract)
+        data_to_analysis(
+            analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract, calc_pnl
+        )
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit

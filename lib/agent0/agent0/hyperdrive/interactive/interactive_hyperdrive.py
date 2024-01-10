@@ -15,9 +15,8 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import get_checkpoint_info
-from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
+    get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
@@ -27,6 +26,7 @@ from chainsync.db.hyperdrive import (
     get_wallet_deltas,
     get_wallet_pnl,
 )
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -133,6 +133,8 @@ class InteractiveHyperdrive:
             The upper bound on the governance lp fee that governance can set.
         max_governance_zombie_fee: FixedPoint
             The upper bound on the governance zombie fee that governance can set.
+        calc_pnl: bool
+            Whether to calculate pnl. Defaults to True.
         """
 
         # Environment variables
@@ -159,6 +161,7 @@ class InteractiveHyperdrive:
         max_flat_fee: FixedPoint = FixedPoint("0.0015")  # 0.15%
         max_governance_lp_fee: FixedPoint = FixedPoint("0.30")  # 30%
         max_governance_zombie_fee: FixedPoint = FixedPoint("0.30")  # 30%
+        calc_pnl: bool = True
 
         def __post_init__(self):
             # Random generator
@@ -195,6 +198,7 @@ class InteractiveHyperdrive:
         full_path = os.path.realpath(__file__)
         current_file_dir, _ = os.path.split(full_path)
         abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
+        self.calc_pnl = config.calc_pnl
 
         self.eth_config = EthConfig(
             artifacts_uri="not_used",
@@ -381,6 +385,7 @@ class InteractiveHyperdrive:
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
+            calc_pnl=self.calc_pnl,
         )
 
     def _cleanup(self):
@@ -618,8 +623,7 @@ class InteractiveHyperdrive:
         # DB read calls ensures data pipeline is caught up before returning
         if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
-        out = get_checkpoint_info(self.db_session, coerce_float=coerce_float)
-        return out
+        return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
         addr_to_username = get_addr_to_username(self.db_session)
@@ -637,7 +641,8 @@ class InteractiveHyperdrive:
             if coerce_float:
                 out_df.loc[row_idxs, value_column] += float(initial_balance)
             else:
-                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))
+                # Pandas is smart enough to handle "+=" for "Series[Unknown]" and "Decimal"
+                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
         return out_df
 
     def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:

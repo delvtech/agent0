@@ -1,6 +1,14 @@
 # Environment variables
 *.env
 
+# Data
+*.csv
+*.parquet
+*.png
+
+# Weights and biases
+wandb
+
 # user configs
 .configs
 
