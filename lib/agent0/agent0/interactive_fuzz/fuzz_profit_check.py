@@ -64,22 +64,24 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout)
 
     # Get a random trade amount
-    trade_amount = FixedPoint(
+    long_trade_amount = FixedPoint(
         scaled_value=int(
             np.floor(
                 rng.uniform(
                     low=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount.scaled_value,
-                    high=int(1e23),
+                    high=interactive_hyperdrive.hyperdrive_interface.calc_max_long(
+                        FixedPoint(1e9), interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                    ).scaled_value,
                 )
             )
         )
     )
 
     # Generate funded trading agent
-    long_agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="alice")
+    long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount * 2, eth=FixedPoint(100), name="alice")
     # Open a long
     logging.info("Open a long...")
-    open_long_event = long_agent.open_long(base=trade_amount)
+    open_long_event = long_agent.open_long(base=long_trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
@@ -90,13 +92,26 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
 
-    # Generate funded trading agent
-    short_agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100), name="bob")
     # Open a short
+    short_trade_amount = FixedPoint(
+        scaled_value=int(
+            np.floor(
+                rng.uniform(
+                    low=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount.scaled_value,
+                    high=interactive_hyperdrive.hyperdrive_interface.calc_max_short(
+                        FixedPoint(1e9), interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                    ).scaled_value,
+                )
+            )
+        )
+    )
+    # Generate funded trading agent
+    # the short trade amount is in bonds, but we know we will need much less base
+    # we can play it safe by initializing with that much base
+    short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
     logging.info("Open a short...")
-    trade_amount = short_agent.wallet.balance.amount
-    open_short_event = short_agent.open_short(bonds=trade_amount)
+    open_short_event = short_agent.open_short(bonds=short_trade_amount)
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
@@ -110,7 +125,8 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     logging.info("Check invariants...")
     # Ensure that the prior trades did not result in a profit
     check_data = {
-        "trade_amount": trade_amount,
+        "long_trade_amount": long_trade_amount,
+        "short_trade_amount": short_trade_amount,
         "long_agent": long_agent,
         "short_agent": short_agent,
         "long_events": {"open": open_long_event, "close": close_long_event},
@@ -263,8 +279,9 @@ def invariant_check(
     exception_message: list[str] = ["Fuzz Profit Check Invariant Check"]
     exception_data: dict[str, Any] = {}
 
-    base_amount_returned = check_data["long_events"]["close"].base_amount
-    base_amount_provided = check_data["long_events"]["open"].base_amount
+    # Check long trade
+    base_amount_returned: FixedPoint = check_data["long_events"]["close"].base_amount
+    base_amount_provided: FixedPoint = check_data["long_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append(
@@ -277,8 +294,8 @@ def invariant_check(
         exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
-    agent_balance = check_data["long_agent"].wallet.balance.amount
-    trade_amount = check_data["trade_amount"]
+    agent_balance: FixedPoint = check_data["long_agent"].wallet.balance.amount
+    trade_amount: FixedPoint = check_data["long_trade_amount"]
     if agent_balance >= trade_amount:
         difference_in_wei = abs(agent_balance.scaled_value - trade_amount.scaled_value)
         exception_message.append(
@@ -291,8 +308,9 @@ def invariant_check(
         exception_data["invariance_check:long_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
-    base_amount_returned = check_data["short_events"]["close"].base_amount
-    base_amount_provided = check_data["short_events"]["open"].base_amount
+    # Check short trade
+    base_amount_returned: FixedPoint = check_data["short_events"]["close"].base_amount
+    base_amount_provided: FixedPoint = check_data["short_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append(
@@ -305,8 +323,8 @@ def invariant_check(
         exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
-    agent_balance = check_data["short_agent"].wallet.balance.amount
-    trade_amount = check_data["trade_amount"]
+    agent_balance: FixedPoint = check_data["short_agent"].wallet.balance.amount
+    trade_amount: FixedPoint = check_data["short_trade_amount"]
     if agent_balance >= trade_amount:
         difference_in_wei = abs(agent_balance.scaled_value - trade_amount.scaled_value)
         exception_message.append(
