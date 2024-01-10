@@ -201,7 +201,7 @@ def data_to_analysis(
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
         pnl_df = np.nan
         if calc_pnl:
-            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, hyperdrive_interface)
+            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, pool_info)
 
         # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
         # This is because the `CurrentWallet` table has one entry per change in wallet position,
