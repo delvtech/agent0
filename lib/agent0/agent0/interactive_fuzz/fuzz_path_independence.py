@@ -84,6 +84,7 @@ def fuzz_path_independence(
         If True, log to stdout in addition to a file.
         Defaults to False.
     """
+    # pylint: disable=too-many-statements
     log_filename = ".logging/fuzz_path_independence.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
         log_filename, chain_config, log_to_stdout, fees=False, var_interest=FixedPoint(0)
