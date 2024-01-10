@@ -6,7 +6,7 @@
   - type in [open_short, open_long]
   - amount in uniform[min_trade_amount, 100k base)
 - open those trades in a random order & advance time randomly between
-  - time advance in uniform[0, position_duration)
+  - maximum time advance between first and last trade is in [0, position_duration)
 - save a snapshot of the current chain state
 - repeat N times (where N is set as a command-line arg):
     - load chain state (trades are opened, none are closed)
@@ -40,6 +40,7 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     close_random_trades,
+    fp_isclose,
     generate_trade_list,
     open_random_trades,
     setup_fuzz,
@@ -63,6 +64,7 @@ def main(argv: Sequence[str] | None = None):
 def fuzz_path_independence(
     num_trades: int,
     num_paths_checked: int,
+    present_value_epsilon: float,
     chain_config: LocalChain.Config,
     log_to_stdout: bool = False,
 ):
@@ -74,6 +76,8 @@ def fuzz_path_independence(
         Number of trades to perform during the fuzz tests.
     num_paths_checked: int
         Number of paths (order of operations for opening/closing) to perform.
+    present_value_epsilon: float
+        The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
     log_to_stdout: bool, optional
@@ -119,23 +123,22 @@ def fuzz_path_independence(
         chain.load_snapshot()
 
         # Randomly grab some trades & close them one at a time
-        # TODO guarantee closing trades within the same checkpoint
+        # TODO guarantee closing trades within the same block
         close_random_trades(trade_events, rng)
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
         pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
-        # TODO add present value check here
         # On first run, save final state
         if check_data is None:
             check_data = {}
             pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-            effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
-                pool_state
-            )
+            check_data["present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
+            check_data[
+                "effective_share_reserves"
+            ] = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
             check_data["initial_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
-            check_data["effective_share_reserves"] = effective_share_reserves
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
             first_run_ticker = interactive_hyperdrive.get_ticker()
@@ -147,7 +150,7 @@ def fuzz_path_independence(
             # Raise an error if it failed
             assert first_run_state_dump_dir is not None
             try:
-                invariant_check(check_data, interactive_hyperdrive)
+                invariant_check(check_data, present_value_epsilon, interactive_hyperdrive)
             except FuzzAssertionException as error:
                 dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
                 additional_info = {
@@ -179,6 +182,7 @@ class Args(NamedTuple):
 
     num_trades: int
     num_paths_checked: int
+    present_value_epsilon: float
     chain_config: LocalChain.Config
     log_to_stdout: bool
 
@@ -199,6 +203,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         num_trades=namespace.num_trades,
         num_paths_checked=namespace.num_paths_checked,
+        present_value_epsilon=namespace.present_value_epsilon,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
@@ -231,6 +236,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="The port to use for the local chain.",
     )
     parser.add_argument(
+        "--present_value_epsilon",
+        type=float,
+        default=1e-4,
+        help="The allowed error for present value equality tests.",
+    )
+    parser.add_argument(
         "--chain_port",
         type=int,
         default=10000,
@@ -250,6 +261,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 def invariant_check(
     check_data: dict[str, Any],
+    present_value_epsilon: float,
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
@@ -258,6 +270,8 @@ def invariant_check(
     ---------
     check_data: dict[str, Any]
         The trade data to check.
+    present_value_epsilon: float
+        The allowed error for present value equality tests.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
@@ -282,6 +296,17 @@ def invariant_check(
         exception_data["invariance_check:expected_effective_share_reserves"] = expected_effective_share_reserves
         exception_data["invariance_check:actual_effective_share_reserves"] = actual_effective_share_reserves
         exception_data["invariance_check:effective_share_reserves_difference_in_wei"] = difference_in_wei
+        failed = True
+
+    # Present value
+    expected_present_value = FixedPoint(check_data["present_value"])
+    actual_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
+    if not fp_isclose(expected_present_value, actual_present_value, abs_tol=FixedPoint(str(present_value_epsilon))):
+        difference_in_wei = abs(expected_present_value.scaled_value - actual_present_value.scaled_value)
+        exception_message.append(f"{expected_present_value=} != {actual_present_value=}, {difference_in_wei=}")
+        exception_data["invariance_check:expected_present_value"] = expected_present_value
+        exception_data["invariance_check:actual_present_value"] = actual_present_value
+        exception_data["invariance_check:effective_present_value_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Check that the subset of columns in initial db pool state and the latest pool state are equal
