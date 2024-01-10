@@ -97,10 +97,9 @@ def calc_single_closeout(
         raise ValueError(f"Unexpected token type: {tokentype}")
     return out_pnl
 
+
 def calc_closeout_pnl(
-    current_wallet: pd.DataFrame,
-    hyperdrive_contract: Contract,
-    pool_info: PoolInfoFP
+    current_wallet: pd.DataFrame, hyperdrive_contract: Contract, pool_info: PoolInfoFP
 ) -> pd.DataFrame:
     """Calculate closeout value of agent positions.
 
