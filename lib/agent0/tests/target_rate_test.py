@@ -2,108 +2,78 @@
 from __future__ import annotations
 
 import logging
-import os
-from typing import cast
 
 import pytest
-from eth_typing import URI
-from ethpy import EthConfig
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
-from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
-from web3 import HTTPProvider
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.hyperdrive.interactive import LocalChain, InteractiveHyperdrive
 from agent0.hyperdrive.policies.zoo import Zoo
+
+TRADE_AMOUNTS = [0.002, 1e5, 2e5]  # 0.002 is double the minimum transaction amount of local test deploy
+# We hit the target rate to the 5th decimal of precision.
+# That means 0.050001324091154488 is close enough to a target rate of 0.05.
+PRECISION = FixedPoint(1e-5)
 
 
 @pytest.mark.anvil
-@pytest.mark.parametrize("delta", [-1e5, 1e5])
-def test_hit_target_rate(local_hyperdrive_pool: DeployedHyperdrivePool, delta: float):
-    """Ensure bot can hit target rate."""
-    # Run this test with develop mode on
-    os.environ["DEVELOP"] = "true"
-    # Get hyperdrive chain info
-    uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-    rpc_uri = uri if uri else URI("http://localhost:8545")
-    hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+@pytest.mark.parametrize("trade_amount", TRADE_AMOUNTS)
+def test_open_long(chain: LocalChain, trade_amount: float):
+    """Hit target rate when opening a long to hit the target rate."""
+    interactive_config = InteractiveHyperdrive.Config()
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
 
-    # Build environment config
-    env_config = EnvironmentConfig(
-        delete_previous_logs=False,
-        halt_on_errors=True,
-        log_filename="target_rate_test",
-        log_level=logging.DEBUG,
-        log_stdout=True,
-        global_random_seed=1234,
-        username="test",
+    # change the fixed rate
+    interactive_hyperdrive.init_agent(base=FixedPoint(1e9)).open_short(bonds=FixedPoint(trade_amount))
+
+    # report starting fixed rate
+    logging.warning("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+
+    # arbitrage it back
+    andy_base = FixedPoint(1e9)
+    andy_config = Zoo.lp_and_arb.Config(
+        lp_portion=FixedPoint(0),
+        minimum_trade_amount=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount,
     )
-
-    # Build custom eth config pointing to local test chain
-    eth_config = EthConfig(
-        # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-        artifacts_uri="not_used",
-        rpc_uri=rpc_uri,
-        # Using default abi dir
+    andy = interactive_hyperdrive.init_agent(
+        base=andy_base, name="andy", policy=Zoo.lp_and_arb, policy_config=andy_config
     )
-
-    lp_trade = ("add_liquidity", int(1_000_000))
-
-    if delta > 0:
-        trade_tuple = ("open_short", int(delta))
-    else:
-        trade_tuple = ("open_long", int(-delta))
-    # One deterministic bot to increase the fixed rate
-    agent_config: list[AgentConfig] = [
-        AgentConfig(
-            policy=Zoo.deterministic,
-            number_of_agents=1,
-            base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
-            eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-            policy_config=Zoo.deterministic.Config(trade_list=[lp_trade, trade_tuple]),
-        ),
-    ]
-    setup_and_run_agent_loop(
-        env_config,
-        agent_config,
-        account_key_config=build_account_key_config_from_agent_config(agent_config, random_seed=1),
-        eth_config=eth_config,
-        contract_addresses=hyperdrive_contract_addresses,
-        load_wallet_state=False,
-    )
-
-    # One arb bot to hit the variable rate
-    agent_config: list[AgentConfig] = [
-        AgentConfig(
-            policy=Zoo.lp_and_arb,
-            number_of_agents=1,
-            base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
-            eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-            policy_config=Zoo.lp_and_arb.Config(
-                lp_portion=FixedPoint("0"),  # don't LP, just arb
-                done_on_empty=True,  # exit the bot if there are no trades
-                high_fixed_rate_thresh=FixedPoint(1e-6),
-                low_fixed_rate_thresh=FixedPoint(1e-6),
-            ),
-        ),
-    ]
-    setup_and_run_agent_loop(
-        env_config,
-        agent_config,
-        account_key_config=build_account_key_config_from_agent_config(agent_config, random_seed=2),
-        eth_config=eth_config,
-        contract_addresses=hyperdrive_contract_addresses,
-        load_wallet_state=False,
-    )
-
-    hyperdrive = HyperdriveReadInterface(eth_config=eth_config, addresses=hyperdrive_contract_addresses)
-    fixed_rate = hyperdrive.calc_fixed_rate()
-    variable_rate = hyperdrive.current_pool_state.variable_rate
-    logging.log(10, "fixed rate is %s", fixed_rate)
-    logging.log(10, "variable rate is %s", variable_rate)
+    andy.execute_policy_action()
+    fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
+    variable_rate = interactive_hyperdrive.hyperdrive_interface.current_pool_state.variable_rate
+    logging.warning("ending fixed rate is %s", fixed_rate)
+    logging.warning("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
-    logging.log(10, "difference is %s", abs_diff)
-    assert abs_diff < FixedPoint(1e-6)
+    logging.warning("difference is %s", abs_diff)
+    assert abs_diff < PRECISION
+
+
+@pytest.mark.anvil
+@pytest.mark.parametrize("trade_amount", TRADE_AMOUNTS)
+def test_open_short(chain: LocalChain, trade_amount: float):
+    """Hit target rate when opening a short to hit the target rate."""
+    interactive_config = InteractiveHyperdrive.Config()
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+
+    # change the fixed rate
+    interactive_hyperdrive.init_agent(base=FixedPoint(1e9)).open_long(base=FixedPoint(trade_amount))
+
+    # report starting fixed rate
+    logging.warning("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+
+    # arbitrage it back
+    andy_base = FixedPoint(1e9)
+    andy_config = Zoo.lp_and_arb.Config(
+        lp_portion=FixedPoint(0),
+        minimum_trade_amount=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount,
+    )
+    andy = interactive_hyperdrive.init_agent(
+        base=andy_base, name="andy", policy=Zoo.lp_and_arb, policy_config=andy_config
+    )
+    andy.execute_policy_action()
+    fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
+    variable_rate = interactive_hyperdrive.hyperdrive_interface.current_pool_state.variable_rate
+    logging.warning("ending fixed rate is %s", fixed_rate)
+    logging.warning("variable rate is %s", variable_rate)
+    abs_diff = abs(fixed_rate - variable_rate)
+    logging.warning("difference is %s", abs_diff)
+    assert abs_diff < PRECISION

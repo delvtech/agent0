@@ -119,7 +119,10 @@ def calc_reserves_to_hit_target_rate(
             avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
             divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot
-        overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
+        if (target_rate - latest_fixed_rate) != FixedPoint(0):
+            overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
+        else:
+            overshoot_or_undershoot = FixedPoint(0)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
@@ -217,9 +220,9 @@ class LPandArb(HyperdrivePolicy):
         high_fixed_rate_thresh: FixedPoint
             Amount over variable rate to arbitrage.
         low_fixed_rate_thresh: FixedPoint
-            Amount below variable rate to arbitrage.
+            Amount below variable rate to arbitrage. Defaults to 0.
         lp_portion: FixedPoint
-            The portion of capital assigned to LP.
+            The portion of capital assigned to LP. Defaults to 0.
         done_on_empty: bool
             Whether to exit the bot if there are no trades.
         minimum_trade_amount: FixedPoint
@@ -227,8 +230,8 @@ class LPandArb(HyperdrivePolicy):
         """
 
         lp_portion: FixedPoint = FixedPoint("0.5")
-        high_fixed_rate_thresh: FixedPoint = FixedPoint("0.01")
-        low_fixed_rate_thresh: FixedPoint = FixedPoint("0.01")
+        high_fixed_rate_thresh: FixedPoint = FixedPoint(0)
+        low_fixed_rate_thresh: FixedPoint = FixedPoint(0)
         rate_slippage: FixedPoint = FixedPoint("0.01")
         done_on_empty: bool = False
         minimum_trade_amount: FixedPoint = FixedPoint(10)
