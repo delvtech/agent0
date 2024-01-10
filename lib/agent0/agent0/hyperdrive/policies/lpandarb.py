@@ -212,6 +212,8 @@ class LPandArb(HyperdrivePolicy):
             The portion of capital assigned to LP.
         done_on_empty: bool
             Whether to exit the bot if there are no trades.
+        minimum_trade_amount: FixedPoint
+            The minimum trade amount below which the agent won't submit a trade.
         """
 
         lp_portion: FixedPoint = FixedPoint("0.5")
@@ -219,6 +221,7 @@ class LPandArb(HyperdrivePolicy):
         low_fixed_rate_thresh: FixedPoint = FixedPoint("0.01")
         rate_slippage: FixedPoint = FixedPoint("0.01")
         done_on_empty: bool = False
+        minimum_trade_amount: FixedPoint = FixedPoint(10)
 
         @property
         def arb_portion(self) -> FixedPoint:
@@ -237,7 +240,7 @@ class LPandArb(HyperdrivePolicy):
             The custom arguments for this policy
         """
         self.policy_config = policy_config
-        self.minimum_trade_amount = FixedPoint(10)
+        self.minimum_trade_amount = policy_config.minimum_trade_amount
         self.convergence_iters = []
         self.convergence_speed = []
 
