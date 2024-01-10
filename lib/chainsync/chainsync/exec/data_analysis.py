@@ -130,7 +130,7 @@ def data_analysis(
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
         data_to_analysis(
-            analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract, interface, calc_pnl
+            analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract, calc_pnl
         )
         curr_start_write_block = latest_data_block_number + 1
 

@@ -154,7 +154,6 @@ def data_to_analysis(
     pool_config: pd.Series,
     db_session: Session,
     hyperdrive_contract: Contract,
-    hyperdrive_interface: HyperdriveReadInterface,
     calc_pnl: bool = True,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
@@ -172,8 +171,6 @@ def data_to_analysis(
         The initialized db session.
     hyperdrive_contract: Contract
         The hyperdrive contract.
-    hyperdrive_interface: HyperdriveReadInterface
-        The hyperdrive interface.
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
     """
