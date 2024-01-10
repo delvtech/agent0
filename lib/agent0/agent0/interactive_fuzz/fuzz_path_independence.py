@@ -85,7 +85,9 @@ def fuzz_path_independence(
         Defaults to False.
     """
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+        log_filename, chain_config, log_to_stdout, fees=False, var_interest=FixedPoint(0)
+    )
 
     # Generate a list of agents that execute random trades
     trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
