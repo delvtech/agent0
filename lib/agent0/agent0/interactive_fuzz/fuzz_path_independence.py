@@ -4,7 +4,7 @@
 - spin up local chain, deploy hyperdrive
 - generate a list of random trades
   - type in [open_short, open_long]
-  - amount in uniform[min_trade_amount, 100k base)
+  - amount in uniform[min_trade_amount, max_trade_amount) base
 - open those trades in a random order & advance time randomly between
   - maximum time advance between first and last trade is in [0, position_duration)
 - save a snapshot of the current chain state
