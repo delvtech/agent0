@@ -89,7 +89,7 @@ def calc_single_closeout(
     # even if there are no withdrawal shares available to withdraw
     # Hence, we don't use preview transaction here
     elif tokentype in ["LP", "WITHDRAWAL_SHARE"]:
-        out_pnl = amount * float(lp_share_price)
+        out_pnl = amount * lp_share_price
         out_pnl = Decimal(out_pnl) / Decimal(1e18)
     else:
         # Should never get here
