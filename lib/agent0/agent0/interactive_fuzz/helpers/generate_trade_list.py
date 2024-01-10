@@ -36,20 +36,22 @@ def generate_trade_list(
     min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
     trade_list: list[tuple[InteractiveHyperdriveAgent, HyperdriveActionType, FixedPoint]] = []
     for _ in range(num_trades):  # 1 agent per trade
-        budget = FixedPoint(
-            scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value * 10, high=int(1e23))))
-        )  # Give a little extra money to account for fees
-        agent = interactive_hyperdrive.init_agent(base=budget, eth=FixedPoint(100))
         trade_type = rng.choice(available_actions, size=1)[0]
-        trade_amount_base = FixedPoint(
-            scaled_value=int(
-                rng.uniform(
-                    low=min_trade.scaled_value,
-                    high=int(
-                        budget.scaled_value / 2
-                    ),  # Don't trade all of their money, to make sure they have enough for fees
+        match trade_type:
+            case HyperdriveActionType.OPEN_LONG:
+                max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_long(
+                    FixedPoint(1e9), interactive_hyperdrive.hyperdrive_interface.current_pool_state
                 )
-            )
+            case HyperdriveActionType.OPEN_SHORT:
+                max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_short(
+                    FixedPoint(1e9), interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                )
+            case _:
+                raise ValueError("Invalid trade type")
+        trade_amount = FixedPoint(scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade))))
+        agent = interactive_hyperdrive.init_agent(
+            base=trade_amount * 2,  # extra base accounts for fees
+            eth=FixedPoint(100),
         )
-        trade_list.append((agent, trade_type, trade_amount_base))
+        trade_list.append((agent, trade_type, trade_amount))
     return trade_list
