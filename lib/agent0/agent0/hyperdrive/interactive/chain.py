@@ -110,6 +110,14 @@ class Chain:
         if "result" not in response:
             raise KeyError("Response did not have a result.")
 
+    def _set_block_timestamp_interval(self, timestamp_interval: int) -> None:
+        response = self._web3.provider.make_request(
+            method=RPCEndpoint("anvil_setBlockTimestampInterval"), params=[timestamp_interval]
+        )
+        # ensure response is valid
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+
     # pylint: disable=too-many-branches
     def advance_time(
         self, time_delta: int | timedelta, create_checkpoints: bool = True
@@ -434,7 +442,7 @@ class LocalChain(Chain):
         """
 
         block_time: int | None = None
-        block_timestamp_interval: int | None = None
+        block_timestamp_interval: int | None = 12
         chain_port: int = 10_000
         transaction_block_keeper: int = 10_000
 
@@ -475,8 +483,7 @@ class LocalChain(Chain):
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
 
         if config.block_timestamp_interval is not None:
-            # TODO make RPC call for setting block timestamp
-            raise NotImplementedError("Block timestamp interval not implemented yet")
+            self._set_block_timestamp_interval(config.block_timestamp_interval)
 
         # TODO hack, wait for chain to init
         time.sleep(1)
