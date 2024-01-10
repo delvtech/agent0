@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import WEI, Trade
+from agent0.base import Trade
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
@@ -98,8 +98,7 @@ class Random(HyperdrivePolicy):
         """
         # prevent accidental override
         # compile a list of all actions
-        minimum_trade: FixedPoint = pool_state.pool_config.minimum_transaction_amount
-        if wallet.balance.amount <= minimum_trade:
+        if wallet.balance.amount <= pool_state.pool_config.minimum_transaction_amount:
             all_available_actions = []
         else:
             all_available_actions = [
@@ -136,14 +135,16 @@ class Random(HyperdrivePolicy):
             A list with a single Trade element for opening a Hyperdrive short.
         """
         maximum_trade_amount = interface.calc_max_short(wallet.balance.amount, interface.current_pool_state)
-        if maximum_trade_amount <= WEI:
+        if maximum_trade_amount <= interface.pool_config.minimum_transaction_amount:
             return []
 
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
-        # WEI <= trade_amount <= max_short
-        trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
+        # minimum_transaction_amount <= trade_amount <= max_short
+        trade_amount = max(
+            interface.pool_config.minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount)
+        )
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [interface.open_short_trade(trade_amount, self.slippage_tolerance)]
 
@@ -187,14 +188,16 @@ class Random(HyperdrivePolicy):
             A list with a single Trade element for opening a Hyperdrive long.
         """
         maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, interface.current_pool_state)
-        if maximum_trade_amount <= WEI:
+        if maximum_trade_amount <= interface.pool_config.minimum_transaction_amount:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
-        # WEI <= trade_amount <= max long
-        trade_amount = max(WEI, min(initial_trade_amount, maximum_trade_amount))
+        # minimum_transaction_amount <= trade_amount <= max long
+        trade_amount = max(
+            interface.pool_config.minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount)
+        )
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [interface.open_long_trade(trade_amount, self.slippage_tolerance)]
 
@@ -241,8 +244,10 @@ class Random(HyperdrivePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
-        # WEI <= trade_amount
-        trade_amount: FixedPoint = max(WEI, min(wallet.balance.amount, initial_trade_amount))
+        # minimum_transaction_amount <= trade_amount
+        trade_amount: FixedPoint = max(
+            interface.pool_config.minimum_transaction_amount, min(wallet.balance.amount, initial_trade_amount)
+        )
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [interface.add_liquidity_trade(trade_amount)]
 
@@ -267,8 +272,10 @@ class Random(HyperdrivePolicy):
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
-        # WEI <= trade_amount <= lp_tokens
-        trade_amount = max(WEI, min(wallet.lp_tokens, initial_trade_amount))
+        # minimum_transaction_amount <= trade_amount <= lp_tokens
+        trade_amount = max(
+            interface.pool_config.minimum_transaction_amount, min(wallet.lp_tokens, initial_trade_amount)
+        )
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [interface.remove_liquidity_trade(trade_amount, self.slippage_tolerance)]
 
@@ -297,8 +304,10 @@ class Random(HyperdrivePolicy):
             wallet.withdraw_shares,
             interface.current_pool_state.pool_info.withdrawal_shares_ready_to_withdraw,
         )
-        # WEI <= trade_amount <= withdraw_shares
-        trade_amount = max(WEI, min(shares_available_to_withdraw, initial_trade_amount))
+        # minimum_transaction_amount <= trade_amount <= withdraw_shares
+        trade_amount = max(
+            interface.pool_config.minimum_transaction_amount, min(shares_available_to_withdraw, initial_trade_amount)
+        )
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [interface.redeem_withdraw_shares_trade(trade_amount)]
 
