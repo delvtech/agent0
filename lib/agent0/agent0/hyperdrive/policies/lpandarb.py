@@ -108,16 +108,15 @@ def calc_reserves_to_hit_target_rate(
         divisor = FixedPoint(2)
         bonds_needed = FixedPoint(0)
         avoid_negative_share_reserves = False
+        # We want to take as large of a step as possible while avoiding negative share reserves.
+        # So we loop through, increasing the divisor until the share reserves are no longer negative.
         while avoid_negative_share_reserves is False:
             bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
-            try:
-                shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
-                # save bad first guess to a temporary variable
-                temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
-                predicted_rate = interface.calc_fixed_rate(temp_pool_state)
-                avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
-            except:  # pylint: disable=bare-except
-                pass
+            shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+            # save bad first guess to a temporary variable
+            temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
+            predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+            avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
             divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot
         overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
