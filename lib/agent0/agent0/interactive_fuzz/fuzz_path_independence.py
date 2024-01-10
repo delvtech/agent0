@@ -270,6 +270,8 @@ def invariant_check(
     ---------
     check_data: dict[str, Any]
         The trade data to check.
+    present_value_epsilon: float
+        The allowed error for present value equality tests.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """

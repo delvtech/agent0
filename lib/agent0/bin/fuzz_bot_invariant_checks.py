@@ -129,6 +129,7 @@ def run_invariant_checks(
     test_epsilon: float
         The tolerance for the invariance checks.
     """
+    # pylint: disable=too-many-locals
     # Get the variables to check & check each invariant
     pool_state = interface.get_hyperdrive_state(latest_block)
     failed = False
