@@ -78,6 +78,7 @@ def test_open_short(chain: LocalChain, trade_amount: float):
     logging.warning("difference is %s", abs_diff)
     assert abs_diff < PRECISION
 
+
 @pytest.mark.anvil
 def test_already_at_target(chain: LocalChain):
     """Hit target rate when opening a short to hit the target rate."""
