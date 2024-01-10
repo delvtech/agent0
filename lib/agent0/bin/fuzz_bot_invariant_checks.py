@@ -129,31 +129,24 @@ def run_invariant_checks(
     test_epsilon: float
         The tolerance for the invariance checks.
     """
-
-    # TODO
-    # pylint: disable=too-many-locals
-
-    # Get the variables to check
+    # Get the variables to check & check each invariant
     pool_state = interface.get_hyperdrive_state(latest_block)
-    epsilon = FixedPoint(str(test_epsilon))
-
-    # Check each invariant
     failed = False
-
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data: dict[str, Any] = {}
 
     # Hyperdrive base & eth balances should always be zero
-    actual_hyperdrive_base_balance = pool_state.hyperdrive_base_balance
-    if actual_hyperdrive_base_balance != FixedPoint(0):
-        exception_message.append(f"{actual_hyperdrive_base_balance} != 0. Test failed at block {latest_block_number}")
-        exception_data["invariance_check:actual_hyperdrive_base_balance"] = actual_hyperdrive_base_balance
+    if pool_state.hyperdrive_base_balance != FixedPoint(0):
+        exception_message.append(
+            f"{pool_state.hyperdrive_base_balance} != 0. Test failed at block {latest_block_number}"
+        )
+        exception_data["invariance_check:actual_hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         failed = True
-
-    actual_hyperdrive_eth_balance = pool_state.hyperdrive_eth_balance
-    if actual_hyperdrive_eth_balance != FixedPoint(0):
-        exception_message.append(f"{actual_hyperdrive_eth_balance} != 0. Test failed at block {latest_block_number}")
-        exception_data["invariance_check:actual_hyperdrive_eth_balance"] = actual_hyperdrive_eth_balance
+    if pool_state.hyperdrive_eth_balance != FixedPoint(0):
+        exception_message.append(
+            f"{pool_state.hyperdrive_eth_balance} != 0. Test failed at block {latest_block_number}"
+        )
+        exception_data["invariance_check:actual_hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
         failed = True
 
     # Total shares is correctly calculated
@@ -165,7 +158,7 @@ def run_invariant_checks(
         + pool_state.pool_info.zombie_share_reserves
     )
     actual_vault_shares = pool_state.vault_shares
-    if not fp_isclose(expected_vault_shares, actual_vault_shares, abs_tol=epsilon):
+    if not fp_isclose(expected_vault_shares, actual_vault_shares, abs_tol=FixedPoint(str(test_epsilon))):
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message.append(
             f"{actual_vault_shares=} is incorrect, should be {expected_vault_shares}. "
@@ -240,8 +233,8 @@ def run_invariant_checks(
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
+    test_epsilon: float
     eth_config_env_file: str
-    test_epsilon: int
     sleep_time: int
 
 
@@ -259,8 +252,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        eth_config_env_file=namespace.eth_config_env_file,
         test_epsilon=namespace.test_epsilon,
+        eth_config_env_file=namespace.eth_config_env_file,
         sleep_time=namespace.sleep_time,
     )
 
