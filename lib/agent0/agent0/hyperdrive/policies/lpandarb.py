@@ -104,14 +104,24 @@ def calc_reserves_to_hit_target_rate(
         # we modify bonds by only half of bonds_needed, knowing that an amount of equal
         # value will move shares in the other direction, toward our desired ratio.
         # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
-        bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / FixedPoint(2)
-        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
-        # save bad first guess to a temporary variable
-        temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
-        predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+        # to avoid negative share reserves, we increase the divisor until they are no longer negative.
+        divisor = FixedPoint(2)
+        bonds_needed = FixedPoint(0)
+        avoid_negative_share_reserves = False
+        # We want to take as large of a step as possible while avoiding negative share reserves.
+        # So we loop through, increasing the divisor until the share reserves are no longer negative.
+        while avoid_negative_share_reserves is False:
+            bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
+            shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+            # save bad first guess to a temporary variable
+            temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
+            predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+            avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
+            divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot
         overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
-        bonds_needed /= overshoot_or_undershoot
+        if overshoot_or_undershoot != FixedPoint(0):
+            bonds_needed = bonds_needed / overshoot_or_undershoot
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
         # update pool state with second guess and continue from there
         pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
@@ -293,12 +303,12 @@ class LPandArb(HyperdrivePolicy):
         # Close longs if matured
         for maturity_time, long in wallet.longs.items():
             # If matured
-            if maturity_time < interface.current_pool_state.block_time:
+            if maturity_time < interface.current_pool_state.block_time and long.balance > self.minimum_trade_amount:
                 action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
-            if maturity_time < interface.current_pool_state.block_time:
+            if maturity_time < interface.current_pool_state.block_time and short.balance > self.minimum_trade_amount:
                 action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # calculate bonds and shares needed if we're arbitraging in either direction
@@ -323,13 +333,14 @@ class LPandArb(HyperdrivePolicy):
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                     reduce_short_amount = min(short.balance, bonds_needed, max_long_bonds)
-                    bonds_needed -= reduce_short_amount
-                    logging.debug("reducing short by %s", reduce_short_amount)
-                    action_list.append(
-                        interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
-                    )
+                    if reduce_short_amount > self.minimum_trade_amount:
+                        bonds_needed -= reduce_short_amount
+                        logging.debug("reducing short by %s", reduce_short_amount)
+                        action_list.append(
+                            interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
+                        )
             # Open a new long, if there's still a need, and we have money
-            if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:
+            if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 amount = min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
@@ -341,13 +352,14 @@ class LPandArb(HyperdrivePolicy):
                 for maturity_time, long in wallet.longs.items():
                     max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                     reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
-                    bonds_needed -= reduce_long_amount
-                    logging.debug("reducing long by %s", reduce_long_amount)
-                    action_list.append(
-                        interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)
-                    )
+                    if reduce_long_amount > self.minimum_trade_amount:
+                        bonds_needed -= reduce_long_amount
+                        logging.debug("reducing long by %s", reduce_long_amount)
+                        action_list.append(
+                            interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)
+                        )
             # Open a new short, if there's still a need, and we have money
-            if we_have_money and bonds_needed > interface.current_pool_state.pool_config.minimum_transaction_amount:
+            if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                 amount = min(bonds_needed, max_short_bonds)
                 action_list.append(interface.open_short_trade(amount, self.slippage_tolerance))
