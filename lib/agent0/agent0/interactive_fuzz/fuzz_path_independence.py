@@ -153,6 +153,8 @@ def fuzz_path_independence(
                 invariant_check(check_data, present_value_epsilon, interactive_hyperdrive)
             except FuzzAssertionException as error:
                 dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
+
+                # The additional information going into the crash report
                 additional_info = {
                     "fuzz_random_seed": random_seed,
                     "first_run_state_dump_dir": first_run_state_dump_dir,
@@ -161,6 +163,15 @@ def fuzz_path_independence(
                     "trade_ticker": interactive_hyperdrive.get_ticker(),
                 }
                 additional_info.update(error.exception_data)
+
+                # The subset of information going into rollbar
+                rollbar_data = {
+                    "fuzz_random_seed": random_seed,
+                    "first_run_state_dump_dir": first_run_state_dump_dir,
+                    "dump_state_dir": dump_state_dir,
+                }
+                rollbar_data.update(error.exception_data)
+
                 report = build_crash_trade_result(
                     error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
                 )
@@ -170,6 +181,7 @@ def fuzz_path_independence(
                     crash_report_to_file=True,
                     crash_report_file_prefix="fuzz_path_independence",
                     log_to_rollbar=True,
+                    rollbar_data=rollbar_data,
                 )
                 chain.cleanup()
                 raise error
