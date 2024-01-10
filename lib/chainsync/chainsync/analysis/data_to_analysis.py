@@ -2,7 +2,6 @@
 import logging
 from decimal import Decimal
 from typing import Type
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
 
 import numpy as np
 import pandas as pd
