@@ -611,6 +611,8 @@ def test_two_trades_cancel(chain: LocalChain):
     event = alice.open_long(base=FixedPoint(1e6))  # trade 1 million in a pool with 10 million liquidity
     bob.open_short(bonds=event.bond_amount)
     ending_fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    assert (
-        ending_fixed_rate == starting_fixed_rate
-    ), f"Expected {starting_fixed_rate} but got {ending_fixed_rate}, diff={ending_fixed_rate - starting_fixed_rate}, diff(%)={Decimal(str((ending_fixed_rate - starting_fixed_rate) / starting_fixed_rate)):e}"
+    assert ending_fixed_rate == starting_fixed_rate, (
+        f"Expected {starting_fixed_rate} but got {ending_fixed_rate}"
+        f", diff={ending_fixed_rate - starting_fixed_rate}"
+        f", diff(%)={Decimal(str((ending_fixed_rate - starting_fixed_rate) / starting_fixed_rate)):e}"
+    )
