@@ -39,8 +39,11 @@ def main(argv: Sequence[str] | None = None):
         try:
             print("Running path independence test")
             chain_config = LocalChain.Config(db_port=5435, chain_port=10002)
+            effective_share_reserves_epsilon = 1e-4
             present_value_epsilon = 1e-4
-            fuzz_path_independence(num_trades, num_paths_checked, present_value_epsilon, chain_config)
+            fuzz_path_independence(
+                num_trades, num_paths_checked, effective_share_reserves_epsilon, present_value_epsilon, chain_config
+            )
         except FuzzAssertionException:
             pass
 
