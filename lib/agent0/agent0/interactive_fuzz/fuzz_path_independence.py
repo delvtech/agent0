@@ -87,6 +87,7 @@ def fuzz_path_independence(
         Defaults to False.
     """
     # pylint: disable=too-many-statements
+    # pylint: disable=too-many-arguments
     log_filename = ".logging/fuzz_path_independence.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
 
