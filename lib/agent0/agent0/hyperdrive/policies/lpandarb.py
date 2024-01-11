@@ -337,7 +337,7 @@ class LPandArb(HyperdrivePolicy):
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                     current_block_time = interface.current_pool_state.block_time
-                    logging.warning("current block time is %s (human-readable: %s)", current_block_time, datetime.fromtimestamp(current_block_time))
+                    # logging.warning("current block time is %s (human-readable: %s)", current_block_time, datetime.fromtimestamp(current_block_time))
                     curve_portion = FixedPoint((maturity_time - current_block_time) / interface.pool_config.position_duration)
                     logging.warning("curve portion is %s", curve_portion)
                     logging.warning("bonds needed is %s", bonds_needed)
