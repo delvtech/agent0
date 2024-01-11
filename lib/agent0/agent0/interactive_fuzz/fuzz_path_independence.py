@@ -86,15 +86,16 @@ def fuzz_path_independence(
     """
     # pylint: disable=too-many-statements
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config, log_to_stdout, fees=False, var_interest=FixedPoint(0)
-    )
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
 
     # Open some trades
     logging.info("Open random trades...")
     trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=True)
     assert len(trade_events) > 0
     agent = trade_events[0][0]
+
+    # All positions open, we set variable rate to 0 for closing all positions
+    interactive_hyperdrive.set_variable_rate(FixedPoint(0))
 
     # Snapshot the chain, so we can load the snapshot & close in different orders
     logging.info("Save chain snapshot...")
