@@ -1,5 +1,7 @@
 """Script for gathering all events emitted from the hyperdrive contract since the beginning of the chain."""
 import pandas as pd
+from chainsync.db.base import initialize_session
+from chainsync.db.hyperdrive import get_transactions
 from ethpy.hyperdrive.interface import HyperdriveReadInterface
 
 # This is meant to be a standalone script, no need for global upper_case naming style
@@ -33,3 +35,8 @@ out_events = out_events.sort_values("block_number")
 
 # Write to csv
 out_events.to_csv("all_events.csv", index=False)
+
+db_session = initialize_session()
+
+txns = get_transactions(db_session)
+txns[["transaction_hash", "block_number", "input_method"]].to_csv("all_transactions.csv", index=False)
