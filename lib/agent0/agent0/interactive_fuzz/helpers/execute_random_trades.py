@@ -44,6 +44,7 @@ def execute_random_trades(
             - the agent executing the trade
             - either the OpenLong or OpenShort trade event
     """
+    time_diffs = None
     if advance_time:
         # Generate the total time elapsed for all trades
         max_advance_time = rng.integers(
@@ -67,8 +68,9 @@ def execute_random_trades(
         trade_events.append((agent, trade_event))
         if advance_time:
             # Advance a random amount of time between opening trades
+            assert time_diffs is not None
             chain.advance_time(
-                time_diffs[trade_index],  # type: ignore
+                time_diffs[trade_index],
                 create_checkpoints=True,
             )
     return trade_events
