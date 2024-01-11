@@ -109,8 +109,6 @@ def _get_open_trade_amount(
             max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_short(
                 max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
             )
-        case HyperdriveActionType.ADD_LIQUIDITY:
-            max_trade = max_budget
         case _:
             raise ValueError(f"Invalid {trade_type=}\nOnly opening trades are allowed.")
     return FixedPoint(scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value))))
