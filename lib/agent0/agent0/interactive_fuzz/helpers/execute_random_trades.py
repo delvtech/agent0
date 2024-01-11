@@ -61,9 +61,8 @@ def execute_random_trades(
     trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
     for trade_index, trade_type in enumerate([rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]):
         trade_amount = _get_open_trade_amount(trade_type, rng, interactive_hyperdrive)
-        # extra base accounts for fees
         # the short trade amount is technically bonds, but we know that will be less than the required base
-        agent = interactive_hyperdrive.init_agent(base=trade_amount * 2, eth=FixedPoint(100))
+        agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100))
         trade_event = _execute_trade(trade_type, trade_amount, agent)
         trade_events.append((agent, trade_event))
         if advance_time:
