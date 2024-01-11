@@ -116,7 +116,7 @@ def _get_open_trade_amount(
         case _:
             raise ValueError(f"Invalid {trade_type=}\nOnly opening trades are allowed.")
 
-    max_trade = max_trade * FixedPoint(percent_max)
+    max_trade = max_trade * percent_max
     return FixedPoint(scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value))))
 
 
