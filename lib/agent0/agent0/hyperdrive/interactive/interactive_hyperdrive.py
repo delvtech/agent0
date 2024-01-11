@@ -584,7 +584,7 @@ class InteractiveHyperdrive:
     # These methods expose the underlying chainsync getter methods with minimal processing
     # TODO expand in docstrings the columns of the output dataframe
 
-    def get_pool_config(self, coerce_float: bool = True) -> pd.Series:
+    def get_pool_config(self, coerce_float: bool = False) -> pd.Series:
         """Get the pool config and returns as a pandas series.
 
         Arguments
@@ -604,7 +604,7 @@ class InteractiveHyperdrive:
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
 
-    def get_pool_state(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_pool_state(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 
         Arguments
@@ -626,7 +626,7 @@ class InteractiveHyperdrive:
         pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
         return pool_info
 
-    def get_checkpoint_info(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_checkpoint_info(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get the previous checkpoint infos per block and returns as a pandas dataframe.
 
         Arguments
@@ -664,7 +664,7 @@ class InteractiveHyperdrive:
                 out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
         return out_df
 
-    def get_current_wallet(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_current_wallet(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the current wallet positions of all agents and their corresponding pnl
         and returns as a pandas dataframe.
 
@@ -729,7 +729,7 @@ class InteractiveHyperdrive:
         ]
         return out
 
-    def get_ticker(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_ticker(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the ticker history of all trades and the corresponding token deltas for each trade.
 
         Arguments
@@ -770,7 +770,7 @@ class InteractiveHyperdrive:
         ]
         return out
 
-    def get_wallet_positions(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_wallet_positions(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get a dataframe summarizing all wallet deltas and positions
         and returns as a pandas dataframe.
 
@@ -834,7 +834,7 @@ class InteractiveHyperdrive:
         ]
         return out
 
-    def get_total_wallet_pnl_over_time(self, coerce_float: bool = True) -> pd.DataFrame:
+    def get_total_wallet_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets total pnl for each wallet for each block, aggregated across all open positions.
 
         Arguments
