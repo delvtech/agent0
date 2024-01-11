@@ -46,6 +46,9 @@ def calc_single_closeout(
     preview_result = None
     maturity = 0
 
+    if tokentype in ["LONG", "SHORT"]:
+        maturity = int(position["maturity_time"])
+
     out_pnl = Decimal("nan")
     if tokentype == "LONG":
         fn_args = (
