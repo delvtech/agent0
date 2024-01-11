@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from dataclasses import asdict
 from typing import Any, NamedTuple, Sequence
 
 import numpy as np
@@ -67,7 +68,7 @@ def fuzz_present_value(
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
 
     initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
-    check_data = {
+    check_data: dict[str, Any] = {
         "initial_lp_share_price": initial_pool_state.pool_info.lp_share_price,
         "initial_present_value": interactive_hyperdrive.hyperdrive_interface.calc_present_value(initial_pool_state),
     }
@@ -88,6 +89,7 @@ def fuzz_present_value(
         # Execute the trade
         min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
         max_budget = agent.wallet.balance.amount
+        trade_amount = None
         match trade_type:
             case HyperdriveActionType.OPEN_LONG:
                 max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_long(
@@ -125,7 +127,6 @@ def fuzz_present_value(
                 raise ValueError(f"Invalid {trade_type=}")
 
         check_data["trade_type"] = trade_type
-        check_data["trade_event"] = trade_event
         try:
             invariant_check(check_data, test_epsilon, interactive_hyperdrive)
         except FuzzAssertionException as error:
@@ -145,14 +146,13 @@ def fuzz_present_value(
                 "fuzz_random_seed": random_seed,
                 "trade_type": trade_type,
                 "trade_amount": trade_amount,
-                "event_base_amount": trade_event.base_amount,
-                "event_bond_amount": trade_event.bond_amount,
-                "event_lp_amount": trade_event.lp_amount,
-                "event_share_price": trade_event.share_price,
                 "initial_present_value": check_data["initial_present_value"],
                 "initial_lp_share_price": check_data["initial_lp_share_price"],
                 "dump_state_dir": dump_state_dir,
             }
+            for key, value in asdict(trade_event).items():
+                key = "event_" + key
+                rollbar_data[key] = value
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
