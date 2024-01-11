@@ -5,6 +5,7 @@ import logging
 import time
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 from statistics import mean
 from typing import TYPE_CHECKING
 
@@ -315,9 +316,9 @@ class LPandArb(HyperdrivePolicy):
                 action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # calculate bonds and shares needed if we're arbitraging in either direction
-        bonds_needed, shares_needed = FixedPoint(0), FixedPoint(0)
+        bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
-            shares_needed, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
+            _, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
                 target_rate=interface.current_pool_state.variable_rate, interface=interface
             )
             self.convergence_iters.append(iters)
@@ -335,10 +336,16 @@ class LPandArb(HyperdrivePolicy):
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
-                    reduce_short_amount = min(short.balance, bonds_needed, max_long_bonds)
+                    current_block_time = interface.current_pool_state.block_time
+                    logging.warning("current block time is %s (human-readable: %s)", current_block_time, datetime.fromtimestamp(current_block_time))
+                    curve_portion = FixedPoint((maturity_time - current_block_time) / interface.pool_config.position_duration)
+                    logging.warning("curve portion is %s", curve_portion)
+                    logging.warning("bonds needed is %s", bonds_needed)
+                    reduce_short_amount = min(short.balance, bonds_needed/curve_portion, max_long_bonds)
                     if reduce_short_amount > self.minimum_trade_amount:
-                        bonds_needed -= reduce_short_amount
-                        logging.debug("reducing short by %s", reduce_short_amount)
+                        bonds_needed -= reduce_short_amount*curve_portion
+                        logging.warning("reducing short by %s", reduce_short_amount)
+                        logging.warning("reduce_short_amount*curve_portion = %s", reduce_short_amount*curve_portion)
                         action_list.append(
                             interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
                         )
@@ -346,7 +353,7 @@ class LPandArb(HyperdrivePolicy):
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
-                amount = min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
+                amount = min(bonds_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
                 action_list.append(interface.open_long_trade(amount, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
@@ -354,6 +361,8 @@ class LPandArb(HyperdrivePolicy):
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
                     max_short_bonds = interface.calc_max_short(wallet.balance.amount)
+                    curve_portion = (maturity_time - interface.current_pool_state.block_time) / interface.pool_config.position_duration
+                    logging.warning("curve portion is %s", curve_portion)
                     reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
                     if reduce_long_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_long_amount
