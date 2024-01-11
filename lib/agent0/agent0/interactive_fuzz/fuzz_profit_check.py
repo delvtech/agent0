@@ -78,7 +78,8 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     )
 
     # Generate funded trading agent
-    long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount * 2, eth=FixedPoint(100), name="alice")
+    long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
+    long_agent_initial_balance = long_agent.wallet.balance.amount
     # Open a long
     logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=long_trade_amount)
@@ -109,6 +110,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # the short trade amount is in bonds, but we know we will need much less base
     # we can play it safe by initializing with that much base
     short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
+    short_agent_initial_balance = short_agent.wallet.balance.amount
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
     logging.info("Open a short...")
     open_short_event = short_agent.open_short(bonds=short_trade_amount)
@@ -126,10 +128,12 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # Ensure that the prior trades did not result in a profit
     check_data = {
         "long_trade_amount": long_trade_amount,
-        "short_trade_amount": short_trade_amount,
-        "long_agent": long_agent,
-        "short_agent": short_agent,
+        "long_agent_initial_balance": long_agent_initial_balance,
+        "long_agent_final_balance": long_agent.wallet.balance.amount,
         "long_events": {"open": open_long_event, "close": close_long_event},
+        "short_trade_amount": short_trade_amount,
+        "short_agent_final_balance": short_agent.wallet.balance.amount,
+        "short_agent_initial_balance": short_agent_initial_balance,
         "short_events": {"open": open_short_event, "close": close_short_event},
     }
     try:
@@ -265,9 +269,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     return namespace_to_args(parser.parse_args())
 
 
-def invariant_check(
-    check_data: dict[str, Any],
-) -> None:
+def invariant_check(check_data: dict[str, Any]) -> None:
     """Check the pool state invariants.
 
     Arguments
@@ -294,17 +296,17 @@ def invariant_check(
         exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
-    agent_balance: FixedPoint = check_data["long_agent"].wallet.balance.amount
-    trade_amount: FixedPoint = check_data["long_trade_amount"]
-    if agent_balance >= trade_amount:
-        difference_in_wei = abs(agent_balance.scaled_value - trade_amount.scaled_value)
+    initial_agent_balance: FixedPoint = check_data["long_agent_initial_balance"]
+    final_agent_balance: FixedPoint = check_data["long_agent_final_balance"]
+    if final_agent_balance > initial_agent_balance:
+        difference_in_wei = abs(final_agent_balance.scaled_value - initial_agent_balance.scaled_value)
         exception_message.append(
             f"LONG: Agent made a profit when the should not have.\n"
-            f"{agent_balance=} should not be >= {trade_amount=}. "
+            f"{final_agent_balance=} should not be > {initial_agent_balance=}. "
             f"{difference_in_wei=}"
         )
-        exception_data["invariance_check:long_agent_balance"] = agent_balance
-        exception_data["invariance_check:long_trade_amount"] = trade_amount
+        exception_data["invariance_check:long_agent_initial_balance"] = initial_agent_balance
+        exception_data["invariance_check:long_agent_final_balance"] = final_agent_balance
         exception_data["invariance_check:long_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 
@@ -323,17 +325,17 @@ def invariant_check(
         exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
         failed = True
 
-    agent_balance: FixedPoint = check_data["short_agent"].wallet.balance.amount
-    trade_amount: FixedPoint = check_data["short_trade_amount"]
-    if agent_balance >= trade_amount:
-        difference_in_wei = abs(agent_balance.scaled_value - trade_amount.scaled_value)
+    initial_agent_balance: FixedPoint = check_data["short_agent_initial_balance"]
+    final_agent_balance: FixedPoint = check_data["short_agent_final_balance"]
+    if final_agent_balance > initial_agent_balance:
+        difference_in_wei = abs(initial_agent_balance.scaled_value - final_agent_balance.scaled_value)
         exception_message.append(
             f"SHORT: Agent made a profit when the should not have.\n"
-            f"{agent_balance=} should not be >= {trade_amount=}. "
+            f"{final_agent_balance=} should not be > {initial_agent_balance=}. "
             f"{difference_in_wei=}"
         )
-        exception_data["invariance_check:short_agent_balance"] = agent_balance
-        exception_data["invariance_check:short_trade_amount"] = trade_amount
+        exception_data["invariance_check:short_agent_initial_balance"] = initial_agent_balance
+        exception_data["invariance_check:short_agent_final_balance"] = final_agent_balance
         exception_data["invariance_check:short_agent_balance_difference_in_wei"] = difference_in_wei
         failed = True
 

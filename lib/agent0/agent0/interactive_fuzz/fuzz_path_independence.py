@@ -40,9 +40,8 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     close_random_trades,
+    execute_random_trades,
     fp_isclose,
-    generate_trade_list,
-    open_random_trades,
     setup_fuzz,
 )
 
@@ -90,12 +89,9 @@ def fuzz_path_independence(
         log_filename, chain_config, log_to_stdout, fees=False, var_interest=FixedPoint(0)
     )
 
-    # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
-
     # Open some trades
     logging.info("Open random trades...")
-    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
+    trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=True)
     assert len(trade_events) > 0
     agent = trade_events[0][0]
 

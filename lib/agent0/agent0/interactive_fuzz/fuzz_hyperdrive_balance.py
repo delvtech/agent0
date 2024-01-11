@@ -29,8 +29,7 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     close_random_trades,
-    generate_trade_list,
-    open_random_trades,
+    execute_random_trades,
     setup_fuzz,
 )
 
@@ -74,17 +73,14 @@ def fuzz_hyperdrive_balance(num_trades: int, chain_config: LocalChain.Config, lo
         pool_state
     )
 
-    # Generate a list of agents that execute random trades
-    trade_list = generate_trade_list(num_trades, rng, interactive_hyperdrive)
-
     # Open some trades
-    trade_events = open_random_trades(trade_list, chain, rng, interactive_hyperdrive, advance_time=True)
+    trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=True)
 
     # Close the trades
     close_random_trades(trade_events, rng)
 
-    assert len(trade_list) > 0
-    agent = trade_list[0][0]
+    assert len(trade_events) > 0
+    agent = trade_events[0][0]
 
     # Check the reserve amounts; they should be unchanged now that all of the trades are closed
     try:
