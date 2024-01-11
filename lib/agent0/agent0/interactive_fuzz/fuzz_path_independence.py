@@ -76,6 +76,8 @@ def fuzz_path_independence(
         Number of trades to perform during the fuzz tests.
     num_paths_checked: int
         Number of paths (order of operations for opening/closing) to perform.
+    effective_share_reserves_epsilon: float
+        The allowed error for effective share reserves equality tests.
     present_value_epsilon: float
         The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
