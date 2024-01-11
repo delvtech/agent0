@@ -8,7 +8,13 @@ from typing import NamedTuple, Sequence
 from hyperlogs.rollbar_utilities import initialize_rollbar
 
 from agent0.hyperdrive.interactive.chain import LocalChain
-from agent0.interactive_fuzz import fuzz_long_short_maturity_values, fuzz_path_independence, fuzz_profit_check
+from agent0.interactive_fuzz import (
+    fuzz_hyperdrive_balance,
+    fuzz_long_short_maturity_values,
+    fuzz_path_independence,
+    fuzz_present_value,
+    fuzz_profit_check,
+)
 from agent0.interactive_fuzz.helpers import FuzzAssertionException
 
 
@@ -51,6 +57,14 @@ def main(argv: Sequence[str] | None = None):
             print("Running fuzz profit test")
             chain_config = LocalChain.Config(db_port=5436, chain_port=10003)
             fuzz_profit_check(chain_config)
+        except FuzzAssertionException:
+            pass
+
+        try:
+            print("Running fuzz present value test")
+            chain_config = LocalChain.Config(db_port=5437, chain_port=10004)
+            present_value_epsilon = 0.01
+            fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config)
         except FuzzAssertionException:
             pass
         num_checks += 1

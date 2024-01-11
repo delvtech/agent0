@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 if TYPE_CHECKING:
     from typing import Type
-
-    from fixedpointmath import FixedPoint
 
     from agent0.hyperdrive.policies import HyperdrivePolicy
     from agent0.hyperdrive.state import HyperdriveWallet

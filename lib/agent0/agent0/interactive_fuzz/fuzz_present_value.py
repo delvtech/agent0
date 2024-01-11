@@ -23,20 +23,13 @@ import logging
 import sys
 from typing import Any, NamedTuple, Sequence
 
-import pandas as pd
+import numpy as np
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
-from agent0.interactive_fuzz.helpers import (
-    FuzzAssertionException,
-    close_random_trades,
-    fp_isclose,
-    generate_trade_list,
-    open_random_trades,
-    setup_fuzz,
-)
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose, setup_fuzz
 
 
 # pylint: disable=too-many-locals
@@ -75,49 +68,96 @@ def fuzz_present_value(
 
     initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
     check_data = {
-        "lp_share_price": initial_pool_state.pool_info.lp_share_price,
-        "present_value": interactive_hyperdrive.hyperdrive_interface.calc_present_value(initial_pool_state),
+        "initial_lp_share_price": initial_pool_state.pool_info.lp_share_price,
+        "initial_present_value": interactive_hyperdrive.hyperdrive_interface.calc_present_value(initial_pool_state),
     }
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000))
 
-    for trade_type in [HyperdriveActionType.OPEN_LONG, HyperdriveActionType.CLOSE_LONG, HyperdriveActionType.OPEN_SHORT, HyperdriveActionType.CLOSE_SHORT, HyperdriveActionType.ADD_LIQUIDITY, HyperdriveActionType.REMOVE_LIQUIDITY]:
-        
+    for trade_type in [
+        HyperdriveActionType.OPEN_LONG,
+        HyperdriveActionType.CLOSE_LONG,
+        HyperdriveActionType.OPEN_SHORT,
+        HyperdriveActionType.CLOSE_SHORT,
+        HyperdriveActionType.ADD_LIQUIDITY,
+        HyperdriveActionType.REMOVE_LIQUIDITY,
+    ]:
+        if agent.wallet.balance.amount < FixedPoint("1e10"):
+            agent.add_funds(base=FixedPoint("1e10") - agent.wallet.balance.amount)
+        min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
+        max_budget = agent.wallet.balance.amount
+        match trade_type:
+            case HyperdriveActionType.OPEN_LONG:
+                max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_long(
+                    max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                )
+                trade_amount = FixedPoint(
+                    scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
+                )
+                trade_event = agent.open_long(base=trade_amount)
+            case HyperdriveActionType.CLOSE_LONG:
+                maturity_time, open_trade = next(iter(agent.wallet.longs.items()))
+                trade_event = agent.close_long(maturity_time=maturity_time, bonds=open_trade.balance)
+            case HyperdriveActionType.OPEN_SHORT:
+                max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_short(
+                    max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                )
+                trade_amount = FixedPoint(
+                    scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
+                )
+                trade_event = agent.open_short(trade_amount)
+            case HyperdriveActionType.CLOSE_SHORT:
+                maturity_time, open_trade = next(iter(agent.wallet.shorts.items()))
+                trade_event = agent.close_short(maturity_time=maturity_time, bonds=open_trade.balance)
+            case HyperdriveActionType.ADD_LIQUIDITY:
+                trade_amount = FixedPoint(
+                    scaled_value=int(
+                        np.floor(rng.uniform(low=min_trade.scaled_value, high=agent.wallet.balance.amount.scaled_value))
+                    )
+                )
+                trade_event = agent.add_liquidity(trade_amount)
+            case HyperdriveActionType.REMOVE_LIQUIDITY:
+                trade_amount = agent.wallet.lp_tokens
+                trade_event = agent.remove_liquidity(agent.wallet.lp_tokens)
+            case _:
+                raise ValueError(f"Invalid {trade_type=}")
 
-    try:
-        invariant_check(check_data, test_epsilon, interactive_hyperdrive)
-    except FuzzAssertionException as error:
-        dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
+        check_data["trade_type"] = trade_type
+        try:
+            invariant_check(check_data, test_epsilon, interactive_hyperdrive)
+        except FuzzAssertionException as error:
+            dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
 
-        # The additional information going into the crash report
-        additional_info = {
-            "fuzz_random_seed": random_seed,
-            "first_run_state_dump_dir": first_run_state_dump_dir,
-            "dump_state_dir": dump_state_dir,
-            "first_run_trade_ticker": first_run_ticker,
-            "trade_ticker": interactive_hyperdrive.get_ticker(),
-        }
-        additional_info.update(error.exception_data)
+            # The additional information going into the crash report
+            additional_info = {
+                "fuzz_random_seed": random_seed,
+                "first_run_state_dump_dir": first_run_state_dump_dir,
+                "dump_state_dir": dump_state_dir,
+                "first_run_trade_ticker": first_run_ticker,
+                "trade_ticker": interactive_hyperdrive.get_ticker(),
+            }
+            additional_info.update(error.exception_data)
 
-        # The subset of information going into rollbar
-        rollbar_data = {
-            "fuzz_random_seed": random_seed,
-            "first_run_state_dump_dir": first_run_state_dump_dir,
-            "dump_state_dir": dump_state_dir,
-        }
-        rollbar_data.update(error.exception_data)
+            # The subset of information going into rollbar
+            rollbar_data = {
+                "fuzz_random_seed": random_seed,
+                "first_run_state_dump_dir": first_run_state_dump_dir,
+                "dump_state_dir": dump_state_dir,
+            }
+            rollbar_data.update(error.exception_data)
 
-        report = build_crash_trade_result(
-            error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
-        )
-        # Crash reporting already going to file in logging
-        log_hyperdrive_crash_report(
-            report,
-            crash_report_to_file=True,
-            crash_report_file_prefix="fuzz_path_independence",
-            log_to_rollbar=True,
-            rollbar_data=rollbar_data,
-        )
-        chain.cleanup()
-        raise error
+            report = build_crash_trade_result(
+                error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
+            )
+            # Crash reporting already going to file in logging
+            log_hyperdrive_crash_report(
+                report,
+                crash_report_to_file=True,
+                crash_report_file_prefix="fuzz_path_independence",
+                log_to_rollbar=True,
+                rollbar_data=rollbar_data,
+            )
+            chain.cleanup()
+            raise error
     chain.cleanup()
     logging.info("Test passed!")
 
@@ -201,6 +241,8 @@ def invariant_check(
         The trade data to check.
     test_epsilon: float
         The allowed error for present value equality tests.
+        It is a float representing the proportional error tolerated.
+        For example, test_epsilon = 0.01 means the actual_value must be within 1% of the expected_value.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
@@ -210,54 +252,73 @@ def invariant_check(
     exception_data: dict[str, Any] = {}
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
-    # Effective share reserves
-    expected_effective_share_reserves = FixedPoint(check_data["effective_share_reserves"])
-    actual_effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
-        pool_state
-    )
-    if expected_effective_share_reserves != actual_effective_share_reserves:
-        difference_in_wei = abs(
-            expected_effective_share_reserves.scaled_value - actual_effective_share_reserves.scaled_value
-        )
-        exception_message.append(
-            f"{expected_effective_share_reserves=} != {actual_effective_share_reserves=}, {difference_in_wei=}"
-        )
-        exception_data["invariance_check:expected_effective_share_reserves"] = expected_effective_share_reserves
-        exception_data["invariance_check:actual_effective_share_reserves"] = actual_effective_share_reserves
-        exception_data["invariance_check:effective_share_reserves_difference_in_wei"] = difference_in_wei
+    # LP share price
+    # for any trade, LP share price shouldn't change by more than 0.1%
+    initial_lp_share_price = FixedPoint(check_data["initial_lp_share_price"])
+    current_lp_share_price = pool_state.pool_info.lp_share_price
+    test_tolerance = initial_lp_share_price * FixedPoint(str(test_epsilon))
+    if not fp_isclose(initial_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
+        difference_in_wei = abs(initial_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
+        exception_message.append(f"{initial_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}")
+        exception_data["invariance_check:initial_lp_share_price"] = initial_lp_share_price
+        exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
+        exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
 
     # Present value
-    expected_present_value = FixedPoint(check_data["present_value"])
-    actual_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
-    if not fp_isclose(expected_present_value, actual_present_value, abs_tol=FixedPoint(str(test_epsilon))):
-        difference_in_wei = abs(expected_present_value.scaled_value - actual_present_value.scaled_value)
-        exception_message.append(f"{expected_present_value=} != {actual_present_value=}, {difference_in_wei=}")
-        exception_data["invariance_check:expected_present_value"] = expected_present_value
-        exception_data["invariance_check:actual_present_value"] = actual_present_value
-        exception_data["invariance_check:effective_present_value_difference_in_wei"] = difference_in_wei
-        failed = True
+    # open or close trades shouldn't affect PV within 0.1%
+    current_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
+    if check_data["trade_type"] in [
+        HyperdriveActionType.OPEN_LONG,
+        HyperdriveActionType.CLOSE_LONG,
+        HyperdriveActionType.OPEN_SHORT,
+        HyperdriveActionType.CLOSE_SHORT,
+    ]:
+        initial_present_value = FixedPoint(check_data["initial_present_value"])
+        test_tolerance = initial_present_value * FixedPoint(str(test_epsilon))
+        if not fp_isclose(initial_present_value, current_present_value, abs_tol=test_tolerance):
+            difference_in_wei = abs(initial_present_value.scaled_value - current_present_value.scaled_value)
+            exception_message.append(f"{initial_present_value=} != {current_present_value=}, {difference_in_wei=}")
+            exception_data["invariance_check:initial_present_value"] = initial_present_value
+            exception_data["invariance_check:current_present_value"] = current_present_value
+            exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
+            failed = True
 
-    # Check that the subset of columns in initial db pool state and the latest pool state are equal
-    expected_pool_state_df = check_data["initial_pool_state_df"]
-    actual_pool_state_df = check_data["final_pool_state_df"]
-    # Fill values fill nan values with 0 for equality check
-    eq_vals = expected_pool_state_df.eq(actual_pool_state_df, fill_value=0)
-    if not eq_vals.all():
-        # Get rows where values are not equal
-        expected_pool_state_df = expected_pool_state_df[~eq_vals]
-        actual_pool_state_df = actual_pool_state_df[~eq_vals]
-        # Iterate and build exception message and data
-        for field_name, expected_val in expected_pool_state_df.items():
-            expected_val = FixedPoint(expected_val)
-            actual_val = FixedPoint(actual_pool_state_df[field_name])
-            difference_in_wei = abs(expected_val.scaled_value - actual_val.scaled_value)
-            exception_message.append(
-                f"expected_{field_name}={expected_val}, actual_{field_name}={actual_val}, {difference_in_wei=}"
-            )
-            exception_data["invariance_check:expected_" + field_name] = expected_val
-            exception_data["invariance_check:actual_" + field_name] = actual_val
-            exception_data["invariance_check:" + field_name + "_difference_in_wei"] = difference_in_wei
+    # adding liquidity shouldn't result in the PV decreasing (it should increase)
+    if check_data["trade_type"] == HyperdriveActionType.ADD_LIQUIDITY:
+        initial_present_value = FixedPoint(check_data["initial_present_value"])
+        if current_present_value < initial_present_value:  # it decreased == bad
+            difference_in_wei = abs(current_present_value.scaled_value - initial_present_value.scaled_value)
+            exception_message.append(f"{current_present_value=} < {initial_present_value=}, {difference_in_wei=}")
+            exception_data["invariance_check:initial_present_value"] = initial_present_value
+            exception_data["invariance_check:current_present_value"] = current_present_value
+            exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
+            failed = True
+
+    # removing liquidity shouldn't result in the PV increasing (it should decrease)
+    if check_data["trade_type"] == HyperdriveActionType.REMOVE_LIQUIDITY:
+        initial_present_value = FixedPoint(check_data["initial_present_value"])
+        if current_present_value > initial_present_value:  # it increased == bad
+            difference_in_wei = abs(current_present_value.scaled_value - initial_present_value.scaled_value)
+            exception_message.append(f"{current_present_value=} > {initial_present_value=}, {difference_in_wei=}")
+            exception_data["invariance_check:initial_present_value"] = initial_present_value
+            exception_data["invariance_check:current_present_value"] = current_present_value
+            exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
+            failed = True
+
+    # present value should always be >= idle
+    # idle shares are the shares that are not reserved by open positions
+    # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
+    long_exposure_shares = pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
+    idle_shares = (
+        pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
+    )
+    if current_present_value < idle_shares:
+        difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
+        exception_message.append(f"{current_present_value=} < {idle_shares=}, {difference_in_wei=}")
+        exception_data["invariance_check:idle_shares"] = idle_shares
+        exception_data["invariance_check:current_present_value"] = current_present_value
+        exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
         failed = True
 
     if failed:
