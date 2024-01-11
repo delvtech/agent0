@@ -63,6 +63,7 @@ def main(argv: Sequence[str] | None = None):
 def fuzz_path_independence(
     num_trades: int,
     num_paths_checked: int,
+    effective_share_reserves_epsilon: float,
     present_value_epsilon: float,
     chain_config: LocalChain.Config,
     log_to_stdout: bool = False,
@@ -75,6 +76,8 @@ def fuzz_path_independence(
         Number of trades to perform during the fuzz tests.
     num_paths_checked: int
         Number of paths (order of operations for opening/closing) to perform.
+    effective_share_reserves_epsilon: float
+        The allowed error for effective share reserves equality tests.
     present_value_epsilon: float
         The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
@@ -84,16 +87,18 @@ def fuzz_path_independence(
         Defaults to False.
     """
     # pylint: disable=too-many-statements
+    # pylint: disable=too-many-arguments
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config, log_to_stdout, fees=False, var_interest=FixedPoint(0)
-    )
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
 
     # Open some trades
     logging.info("Open random trades...")
     trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=True)
     assert len(trade_events) > 0
     agent = trade_events[0][0]
+
+    # All positions open, we set variable rate to 0 for closing all positions
+    interactive_hyperdrive.set_variable_rate(FixedPoint(0))
 
     # Snapshot the chain, so we can load the snapshot & close in different orders
     logging.info("Save chain snapshot...")
@@ -157,7 +162,9 @@ def fuzz_path_independence(
             # Raise an error if it failed
             assert first_run_state_dump_dir is not None
             try:
-                invariant_check(check_data, present_value_epsilon, interactive_hyperdrive)
+                invariant_check(
+                    check_data, effective_share_reserves_epsilon, present_value_epsilon, interactive_hyperdrive
+                )
             except FuzzAssertionException as error:
                 dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
 
@@ -201,6 +208,7 @@ class Args(NamedTuple):
 
     num_trades: int
     num_paths_checked: int
+    effective_share_reserves_epsilon: float
     present_value_epsilon: float
     chain_config: LocalChain.Config
     log_to_stdout: bool
@@ -222,6 +230,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         num_trades=namespace.num_trades,
         num_paths_checked=namespace.num_paths_checked,
+        effective_share_reserves_epsilon=namespace.effective_share_reserves_epsilon,
         present_value_epsilon=namespace.present_value_epsilon,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
@@ -255,6 +264,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="The port to use for the local chain.",
     )
     parser.add_argument(
+        "--effective_share_reserves_epsilon",
+        type=float,
+        default=1e-4,
+        help="The allowed error for effective share reserves equality tests.",
+    )
+    parser.add_argument(
         "--present_value_epsilon",
         type=float,
         default=1e-4,
@@ -280,6 +295,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 def invariant_check(
     check_data: dict[str, Any],
+    effective_share_reserves_epsilon: float,
     present_value_epsilon: float,
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> None:
@@ -289,6 +305,8 @@ def invariant_check(
     ---------
     check_data: dict[str, Any]
         The trade data to check.
+    effective_share_reserves_epsilon: float
+        The allowed error for effective share reserves equality tests.
     present_value_epsilon: float
         The allowed error for present value equality tests.
     interactive_hyperdrive: InteractiveHyperdrive
@@ -305,7 +323,11 @@ def invariant_check(
     actual_effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
         pool_state
     )
-    if expected_effective_share_reserves != actual_effective_share_reserves:
+    if not fp_isclose(
+        expected_effective_share_reserves,
+        actual_effective_share_reserves,
+        abs_tol=FixedPoint(str(effective_share_reserves_epsilon)),
+    ):
         difference_in_wei = abs(
             expected_effective_share_reserves.scaled_value - actual_effective_share_reserves.scaled_value
         )

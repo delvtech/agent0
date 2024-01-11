@@ -81,6 +81,7 @@ def _get_open_trade_amount(
     rng: Generator,
     interactive_hyperdrive: InteractiveHyperdrive,
     max_budget: FixedPoint = FixedPoint("1e9"),
+    percent_max: FixedPoint = FixedPoint("0.75"),
 ) -> FixedPoint:
     """Get a trade amount for a given trade and Hyperdrive pool.
 
@@ -94,6 +95,8 @@ def _get_open_trade_amount(
         An instantiated InteractiveHyperdrive object.
     max_budget: FixedPoint, optional
         An optional amount to set an upper bound for the trade, defaults to FixedPoint("1e9").
+    percent_max: FixedPoint, optional
+        A percentage of the max trade to use for the upper bound for the trade, defaults to FixedPoint("0.75").
 
     Returns
     -------
@@ -112,6 +115,8 @@ def _get_open_trade_amount(
             )
         case _:
             raise ValueError(f"Invalid {trade_type=}\nOnly opening trades are allowed.")
+
+    max_trade = max_trade * percent_max
     return FixedPoint(scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value))))
 
 

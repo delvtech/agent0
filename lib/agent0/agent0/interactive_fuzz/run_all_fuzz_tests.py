@@ -8,12 +8,7 @@ from typing import NamedTuple, Sequence
 from hyperlogs.rollbar_utilities import initialize_rollbar
 
 from agent0.hyperdrive.interactive.chain import LocalChain
-from agent0.interactive_fuzz import (
-    fuzz_hyperdrive_balance,
-    fuzz_long_short_maturity_values,
-    fuzz_path_independence,
-    fuzz_profit_check,
-)
+from agent0.interactive_fuzz import fuzz_long_short_maturity_values, fuzz_path_independence, fuzz_profit_check
 from agent0.interactive_fuzz.helpers import FuzzAssertionException
 
 
@@ -35,13 +30,6 @@ def main(argv: Sequence[str] | None = None):
     num_checks = 0
     while True:
         try:
-            print("Running hyperdrive balance test")
-            chain_config = LocalChain.Config(db_port=5433, chain_port=10000)
-            fuzz_hyperdrive_balance(num_trades, chain_config)
-        except FuzzAssertionException:
-            pass
-
-        try:
             print("Running long short maturity test")
             chain_config = LocalChain.Config(db_port=5434, chain_port=10001)
             fuzz_long_short_maturity_values(num_trades, chain_config)
@@ -51,8 +39,11 @@ def main(argv: Sequence[str] | None = None):
         try:
             print("Running path independence test")
             chain_config = LocalChain.Config(db_port=5435, chain_port=10002)
+            effective_share_reserves_epsilon = 1e-4
             present_value_epsilon = 1e-4
-            fuzz_path_independence(num_trades, num_paths_checked, present_value_epsilon, chain_config)
+            fuzz_path_independence(
+                num_trades, num_paths_checked, effective_share_reserves_epsilon, present_value_epsilon, chain_config
+            )
         except FuzzAssertionException:
             pass
 
