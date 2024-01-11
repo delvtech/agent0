@@ -63,7 +63,7 @@ def fuzz_present_value(
         If True, log to stdout in addition to a file.
         Defaults to False.
     """
-    log_filename = ".logging/fuzz_path_independence.log"
+    log_filename = ".logging/fuzz_present_value.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
 
     initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
@@ -81,8 +81,11 @@ def fuzz_present_value(
         HyperdriveActionType.ADD_LIQUIDITY,
         HyperdriveActionType.REMOVE_LIQUIDITY,
     ]:
+        # Keep the agent flush
         if agent.wallet.balance.amount < FixedPoint("1e10"):
             agent.add_funds(base=FixedPoint("1e10") - agent.wallet.balance.amount)
+
+        # Execute the trade
         min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
         max_budget = agent.wallet.balance.amount
         match trade_type:
@@ -122,25 +125,32 @@ def fuzz_present_value(
                 raise ValueError(f"Invalid {trade_type=}")
 
         check_data["trade_type"] = trade_type
+        check_data["trade_event"] = trade_event
         try:
             invariant_check(check_data, test_epsilon, interactive_hyperdrive)
         except FuzzAssertionException as error:
-            dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
+            dump_state_dir = chain.save_state(save_prefix="fuzz_present_value")
 
             # The additional information going into the crash report
             additional_info = {
                 "fuzz_random_seed": random_seed,
-                "first_run_state_dump_dir": first_run_state_dump_dir,
                 "dump_state_dir": dump_state_dir,
-                "first_run_trade_ticker": first_run_ticker,
                 "trade_ticker": interactive_hyperdrive.get_ticker(),
             }
+            additional_info.update(check_data)  # add check_data fields
             additional_info.update(error.exception_data)
 
             # The subset of information going into rollbar
             rollbar_data = {
                 "fuzz_random_seed": random_seed,
-                "first_run_state_dump_dir": first_run_state_dump_dir,
+                "trade_type": trade_type,
+                "trade_amount": trade_amount,
+                "event_base_amount": trade_event.base_amount,
+                "event_bond_amount": trade_event.bond_amount,
+                "event_lp_amount": trade_event.lp_amount,
+                "event_share_price": trade_event.share_price,
+                "initial_present_value": check_data["initial_present_value"],
+                "initial_lp_share_price": check_data["initial_lp_share_price"],
                 "dump_state_dir": dump_state_dir,
             }
             rollbar_data.update(error.exception_data)
@@ -152,7 +162,7 @@ def fuzz_present_value(
             log_hyperdrive_crash_report(
                 report,
                 crash_report_to_file=True,
-                crash_report_file_prefix="fuzz_path_independence",
+                crash_report_file_prefix="fuzz_present_value",
                 log_to_rollbar=True,
                 rollbar_data=rollbar_data,
             )
@@ -248,7 +258,7 @@ def invariant_check(
     """
     # pylint: disable=too-many-statements
     failed = False
-    exception_message: list[str] = ["Fuzz Path Independence Invariant Check"]
+    exception_message: list[str] = ["Fuzz Present Value Invariant Check"]
     exception_data: dict[str, Any] = {}
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
 
