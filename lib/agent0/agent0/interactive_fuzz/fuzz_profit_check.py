@@ -78,7 +78,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     )
 
     # Generate funded trading agent
-    long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount * 2, eth=FixedPoint(100), name="alice")
+    long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
     long_agent_initial_balance = long_agent.wallet.balance.amount
     # Open a long
     logging.info("Open a long...")
