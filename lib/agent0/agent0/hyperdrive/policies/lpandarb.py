@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-arguments, too-many-locals
 
 # constants
-TOLERANCE = 1e-16
+TOLERANCE = 1e-18
 MAX_ITER = 50
 
 
@@ -52,6 +52,8 @@ def calc_shares_needed_for_bonds(
             The associated shares going to governance.
     """
     _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
+    # _shares_to_pool = interface.calc_shares_in_given_bonds_out_down(abs(bonds_needed), pool_state)
+    # _shares_to_pool = interface.calc_shares_in_given_bonds_out_up(abs(bonds_needed), pool_state)
     spot_price = interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
     _shares_to_gov = (
@@ -93,7 +95,7 @@ def calc_reserves_to_hit_target_rate(
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
     # pylint: disable=logging-fstring-interpolation
-    logging.debug(f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate()):.2%}")
+    logging.warning(f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate()):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE:
         iteration += 1
         latest_fixed_rate = interface.calc_fixed_rate(pool_state)
@@ -140,12 +142,12 @@ def calc_reserves_to_hit_target_rate(
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
             + f" d_bonds={float(total_bonds_needed):27,.18f} d_shares={float(total_shares_needed):27,.18f}"
         )
-        logging.debug(formatted_str)
+        logging.warning(formatted_str)
         if iteration >= MAX_ITER:
             break
     convergence_speed = time.time() - start_time
     formatted_str = f"predicted precision: {float(abs(predicted_rate-target_rate))}, time taken: {convergence_speed}s"
-    logging.debug(formatted_str)
+    logging.warning(formatted_str)
     return total_shares_needed, total_bonds_needed, iteration, convergence_speed
 
 
@@ -337,8 +339,9 @@ class LPandArb(HyperdrivePolicy):
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                     current_block_time = interface.current_pool_state.block_time
+                    next_block_time = current_block_time + 12
                     # logging.warning("current block time is %s (human-readable: %s)", current_block_time, datetime.fromtimestamp(current_block_time))
-                    curve_portion = FixedPoint((maturity_time - current_block_time) / interface.pool_config.position_duration)
+                    curve_portion = FixedPoint((maturity_time - next_block_time) / interface.pool_config.position_duration)
                     logging.warning("curve portion is %s", curve_portion)
                     logging.warning("bonds needed is %s", bonds_needed)
                     reduce_short_amount = min(short.balance, bonds_needed/curve_portion, max_long_bonds)
@@ -361,11 +364,14 @@ class LPandArb(HyperdrivePolicy):
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
                     max_short_bonds = interface.calc_max_short(wallet.balance.amount)
-                    curve_portion = (maturity_time - interface.current_pool_state.block_time) / interface.pool_config.position_duration
+                    current_block_time = interface.current_pool_state.block_time
+                    next_block_time = current_block_time + 12
+                    curve_portion = FixedPoint((maturity_time - next_block_time) / interface.pool_config.position_duration)
                     logging.warning("curve portion is %s", curve_portion)
-                    reduce_long_amount = min(long.balance, bonds_needed, max_short_bonds)
+                    logging.warning("bonds needed is %s", bonds_needed)
+                    reduce_long_amount = min(long.balance, bonds_needed/curve_portion, max_short_bonds)
                     if reduce_long_amount > self.minimum_trade_amount:
-                        bonds_needed -= reduce_long_amount
+                        bonds_needed -= reduce_long_amount*curve_portion
                         logging.debug("reducing long by %s", reduce_long_amount)
                         action_list.append(
                             interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)

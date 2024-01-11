@@ -110,38 +110,55 @@ def test_close_long(chain: LocalChain, trade_amount: float):
     # report starting fixed rate
     logging.warning("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
-    # give andy a long position
+    # give andy a long position twice the trade amount, to be sufficiently large when closing
     pool_bonds_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
     pool_shares_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
     block_time_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
-    event = andy.open_long(base=FixedPoint(trade_amount))
+    event = andy.open_long(base=FixedPoint(3*trade_amount))
     pool_bonds_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
     pool_shares_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
     block_time_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
     d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
     d_time = block_time_after - block_time_before
-    logging.warning("Andy opened long %s base.", trade_amount)
+    logging.warning("Andy opened long %s base.", 3*trade_amount)
     logging.warning("Δtime=%s", d_time)
     logging.warning(" pool  Δbonds= %s%s, Δbase= %s%s", "+" if d_bonds > 0 else "", d_bonds, "+" if d_shares > 0 else "", d_shares)
     logging.warning(" event Δbonds= %s%s, Δbase= %s%s", "+" if event.bond_amount > 0 else "", event.bond_amount, "+" if event.base_amount > 0 else "", event.base_amount)
     # undo this trade manually
-    manual_agent.open_short(bonds=FixedPoint(event.bond_amount))
+    manual_agent.open_short(bonds=FixedPoint(event.bond_amount*FixedPoint(1.006075)))
+    logging.warning("manually opened short. event Δbonds= %s%s, Δbase= %s%s", "+" if event.bond_amount > 0 else "", event.bond_amount, "+" if event.base_amount > 0 else "", event.base_amount)
+
+    # report fixed rate
+    logging.warning("fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
     # change the fixed rate
-    manual_agent.open_long(base=FixedPoint(trade_amount))
-
-    # report starting fixed rate
-    logging.warning("intermediate fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    event = manual_agent.open_long(base=FixedPoint(trade_amount))
+    logging.warning("manually opened short. event Δbonds= %s%s, Δbase= %s%s", "+" if event.bond_amount > 0 else "", event.bond_amount, "+" if event.base_amount > 0 else "", event.base_amount)
+    # report fixed rate
+    logging.warning("fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
     # pass time
     chain.advance_time(YEAR_IN_SECONDS / 2, create_checkpoints=False)
 
-    # arbitrage it back
+    # arbitrage it all back in one trade
+    pool_bonds_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
+    pool_shares_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
+    block_time_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
     event_list = andy.execute_policy_action()
     logging.warning("andy executed %s", event_list)
     event = event_list[0] if isinstance(event_list, list) else event_list
     assert isinstance(event, CloseLong)
+    pool_bonds_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
+    pool_shares_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
+    block_time_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+    d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
+    d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
+    d_time = block_time_after - block_time_before
+    logging.warning("Andy closed long. amount determined by policy.")
+    logging.warning("Δtime=%s", d_time)
+    logging.warning(" pool  Δbonds= %s%s, Δbase= %s%s", "+" if d_bonds > 0 else "", d_bonds, "+" if d_shares > 0 else "", d_shares)
+    logging.warning(" event Δbonds= %s%s, Δbase= %s%s", "+" if event.bond_amount > 0 else "", event.bond_amount, "+" if event.base_amount > 0 else "", event.base_amount)
 
     # report results
     fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
