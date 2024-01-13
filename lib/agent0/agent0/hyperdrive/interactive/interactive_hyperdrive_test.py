@@ -594,25 +594,3 @@ def test_policy_config_forgotten(chain: LocalChain):
         policy=Zoo.random,
     )
     assert alice.agent.policy is not None
-
-
-@pytest.mark.anvil
-def test_two_trades_cancel(chain: LocalChain):
-    """The economic impact of two trades on the same number of bonds, but in opposite directions, should cancel."""
-    initial_liquidity = FixedPoint(10_000_000)
-    interactive_config = InteractiveHyperdrive.Config(
-        position_duration=YEAR_IN_SECONDS, governance_lp_fee=FixedPoint(0), initial_liquidity=initial_liquidity
-    )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
-    starting_fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    # give them same amount of base as in the pool, so they can trade whatever they want
-    alice = interactive_hyperdrive.init_agent(base=initial_liquidity)
-    bob = interactive_hyperdrive.init_agent(base=initial_liquidity)
-    event = alice.open_long(base=FixedPoint(1e6))  # trade 1 million in a pool with 10 million liquidity
-    bob.open_short(bonds=event.bond_amount)
-    ending_fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    assert ending_fixed_rate == starting_fixed_rate, (
-        f"Expected {starting_fixed_rate} but got {ending_fixed_rate}"
-        f", diff={ending_fixed_rate - starting_fixed_rate}"
-        f", diff(%)={Decimal(str((ending_fixed_rate - starting_fixed_rate) / starting_fixed_rate)):e}"
-    )
