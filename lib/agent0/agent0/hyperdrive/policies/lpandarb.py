@@ -341,14 +341,16 @@ class LPandArb(HyperdrivePolicy):
                     current_block_time = interface.current_pool_state.block_time
                     next_block_time = current_block_time + 12
                     # logging.warning("current block time is %s (human-readable: %s)", current_block_time, datetime.fromtimestamp(current_block_time))
-                    curve_portion = FixedPoint((maturity_time - next_block_time) / interface.pool_config.position_duration)
+                    curve_portion = FixedPoint(
+                        (maturity_time - next_block_time) / interface.pool_config.position_duration
+                    )
                     logging.warning("curve portion is %s", curve_portion)
                     logging.warning("bonds needed is %s", bonds_needed)
-                    reduce_short_amount = min(short.balance, bonds_needed/curve_portion, max_long_bonds)
+                    reduce_short_amount = min(short.balance, bonds_needed / curve_portion, max_long_bonds)
                     if reduce_short_amount > self.minimum_trade_amount:
-                        bonds_needed -= reduce_short_amount*curve_portion
+                        bonds_needed -= reduce_short_amount * curve_portion
                         logging.warning("reducing short by %s", reduce_short_amount)
-                        logging.warning("reduce_short_amount*curve_portion = %s", reduce_short_amount*curve_portion)
+                        logging.warning("reduce_short_amount*curve_portion = %s", reduce_short_amount * curve_portion)
                         action_list.append(
                             interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
                         )
@@ -366,12 +368,14 @@ class LPandArb(HyperdrivePolicy):
                     max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                     current_block_time = interface.current_pool_state.block_time
                     next_block_time = current_block_time + 12
-                    curve_portion = FixedPoint((maturity_time - next_block_time) / interface.pool_config.position_duration)
+                    curve_portion = FixedPoint(
+                        (maturity_time - next_block_time) / interface.pool_config.position_duration
+                    )
                     logging.warning("curve portion is %s", curve_portion)
                     logging.warning("bonds needed is %s", bonds_needed)
-                    reduce_long_amount = min(long.balance, bonds_needed/curve_portion, max_short_bonds)
+                    reduce_long_amount = min(long.balance, bonds_needed / curve_portion, max_short_bonds)
                     if reduce_long_amount > self.minimum_trade_amount:
-                        bonds_needed -= reduce_long_amount*curve_portion
+                        bonds_needed -= reduce_long_amount * curve_portion
                         logging.debug("reducing long by %s", reduce_long_amount)
                         action_list.append(
                             interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)
