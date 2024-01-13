@@ -8,7 +8,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import LocalChain, InteractiveHyperdrive
 from agent0.hyperdrive.policies.zoo import Zoo
-from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
+from agent0.hyperdrive.interactive.event_types import CloseLong
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 
 # avoid unnecessary warning from using fixtures defined in outer scope
@@ -136,6 +136,7 @@ def test_open_short(
     assert abs_diff < PRECISION
 
 
+# pylint: disable=too-many-locals
 @pytest.mark.anvil
 @pytest.mark.parametrize("trade_amount", [0.003, 10])
 def test_close_long(

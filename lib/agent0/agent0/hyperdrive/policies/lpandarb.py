@@ -5,7 +5,6 @@ import logging
 import time
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import datetime
 from statistics import mean
 from typing import TYPE_CHECKING
 
@@ -262,7 +261,7 @@ class LPandArb(HyperdrivePolicy):
 
         super().__init__(policy_config)
 
-    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-branches, too-many-statements
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
@@ -340,7 +339,6 @@ class LPandArb(HyperdrivePolicy):
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                     current_block_time = interface.current_pool_state.block_time
                     next_block_time = current_block_time + 12
-                    # logging.warning("current block time is %s (human-readable: %s)", current_block_time, datetime.fromtimestamp(current_block_time))
                     curve_portion = FixedPoint(
                         (maturity_time - next_block_time) / interface.pool_config.position_duration
                     )
