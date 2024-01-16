@@ -119,10 +119,9 @@ def calc_reserves_to_hit_target_rate(
             avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
             divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot
+        overshoot_or_undershoot = FixedPoint(0)
         if (target_rate - latest_fixed_rate) != FixedPoint(0):
             overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
-        else:
-            overshoot_or_undershoot = FixedPoint(0)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
         shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
