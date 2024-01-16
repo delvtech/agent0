@@ -335,7 +335,7 @@ class LPandArb(HyperdrivePolicy):
                     current_block_time = interface.current_pool_state.block_time
                     next_block_time = current_block_time + 12
                     curve_portion = FixedPoint(
-                        (maturity_time - next_block_time) / interface.pool_config.position_duration
+                        max(0, (maturity_time - next_block_time) / interface.pool_config.position_duration)
                     )
                     logging.info("curve portion is %s", curve_portion)
                     logging.info("bonds needed is %s", bonds_needed)
@@ -362,7 +362,7 @@ class LPandArb(HyperdrivePolicy):
                     current_block_time = interface.current_pool_state.block_time
                     next_block_time = current_block_time + 12
                     curve_portion = FixedPoint(
-                        (maturity_time - next_block_time) / interface.pool_config.position_duration
+                        max(0, (maturity_time - next_block_time) / interface.pool_config.position_duration)
                     )
                     logging.info("curve portion is %s", curve_portion)
                     logging.info("bonds needed is %s", bonds_needed)

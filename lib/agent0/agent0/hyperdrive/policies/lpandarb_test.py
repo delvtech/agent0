@@ -265,32 +265,38 @@ def test_already_at_target(interactive_hyperdrive: InteractiveHyperdrive, arbitr
 
 
 @pytest.mark.anvil
-def test_maturity_long(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
-    """Close a long matured position."""
+def test_reduce_long(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
+    """Reduce a long position."""
 
     # give Andy a long
     event = arbitrage_andy.open_long(base=FixedPoint(10))
 
     # advance time to maturity
-    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS / 2, create_checkpoints=False)
 
-    # see if he closes it
+    # see if he reduces the long
     event = arbitrage_andy.execute_policy_action()
     event = event[0] if isinstance(event, list) else event
+    logging.info("event is %s", event)
     assert isinstance(event, CloseLong)
 
 
 @pytest.mark.anvil
-def test_maturity_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
-    """Close a short matured position."""
+def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
+    """Reduce a short position."""
+
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
     # give Andy a short
-    event = arbitrage_andy.open_short(bonds=FixedPoint(1000))
+    event = arbitrage_andy.open_short(bonds=FixedPoint(10))
+
+    logging.info("fixed rate after open short is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
     # advance time to maturity
-    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS / 2, create_checkpoints=False)
 
-    # see if he closes it
+    # see if he reduces the short
     event = arbitrage_andy.execute_policy_action()
     event = event[0] if isinstance(event, list) else event
+    logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
