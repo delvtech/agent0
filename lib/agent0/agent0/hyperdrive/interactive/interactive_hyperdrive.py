@@ -97,6 +97,8 @@ class InteractiveHyperdrive:
             Whether to preview the position before executing a trade. Defaults to False.
         log_to_rollbar: bool, optional
             Whether to log crash reports to rollbar. Defaults to False.
+        crash_log_level: int | None, optional
+            The log level to log crashes at. Defaults to critical.
         rng_seed: int | None, optional
             The seed for the random number generator. Defaults to None.
         rng: Generator | None, optional
@@ -143,6 +145,7 @@ class InteractiveHyperdrive:
         data_pipeline_timeout: int = 60
         preview_before_trade: bool = False
         log_to_rollbar: bool = False
+        crash_log_level: int | None = None
         # Random generators
         rng_seed: int | None = None
         rng: Generator | None = None
@@ -258,6 +261,7 @@ class InteractiveHyperdrive:
 
         self.rng = config.rng
         self.log_to_rollbar = config.log_to_rollbar
+        self.crash_log_level = config.crash_log_level
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -953,6 +957,7 @@ class InteractiveHyperdrive:
             # Defaults to CRITICAL
             log_hyperdrive_crash_report(
                 trade_result,
+                log_level=self.crash_log_level,
                 crash_report_to_file=True,
                 crash_report_file_prefix="interactive_hyperdrive",
                 log_to_rollbar=self.log_to_rollbar,

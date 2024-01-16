@@ -14,6 +14,7 @@ def setup_fuzz(
     chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
     log_to_rollbar: bool = True,
+    crash_log_level: int | None = None,
     fees=True,
     var_interest=None,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
@@ -29,6 +30,10 @@ def setup_fuzz(
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
+    log_to_rollbar: bool, optional
+        If True, log errors rollbar. Defaults to True.
+    crash_log_level: int | None, optional
+        The log level to log crashes at. Defaults to critical.
     fees: bool, optional
         If False, will turn off fees when deploying hyperdrive. Defaults to True.
     var_interest: FixedPoint | None, optional
@@ -48,6 +53,7 @@ def setup_fuzz(
             interactive_hyperdrive: InteractiveHyperdrive
                 An instantiated InteractiveHyperdrive object.
     """
+    # pylint: disable=too-many-arguments
     setup_logging(
         log_filename=log_filename,
         delete_previous_logs=False,
@@ -65,7 +71,10 @@ def setup_fuzz(
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
     initial_pool_config = InteractiveHyperdrive.Config(
-        preview_before_trade=True, checkpoint_duration=86400, log_to_rollbar=log_to_rollbar
+        preview_before_trade=True,
+        checkpoint_duration=86400,
+        log_to_rollbar=log_to_rollbar,
+        crash_log_level=crash_log_level,
     )
     if not fees:
         initial_pool_config.curve_fee = FixedPoint(0)
