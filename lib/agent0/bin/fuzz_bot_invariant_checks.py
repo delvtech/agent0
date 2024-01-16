@@ -203,10 +203,8 @@ def run_invariant_checks(
 
     # Present value is always greater than or equal to idle
     present_value = interface.calc_present_value(pool_state)
-    long_exposure_shares = pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
-    idle_shares = (
-        pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
-    )
+    idle_shares = interface.get_idle_shares(latest_block_number)
+
     if not present_value >= idle_shares:
         difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
         exception_message.append(f"{present_value=} < {idle_shares=}, {difference_in_wei=}")
