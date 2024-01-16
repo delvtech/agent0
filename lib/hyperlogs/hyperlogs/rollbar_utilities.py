@@ -6,10 +6,10 @@ import getpass
 import logging
 import os
 import platform
-import sys
 
 import rollbar
 from dotenv import load_dotenv
+from ethpy.base.errors import ContractCallException
 
 load_dotenv("rollbar.env")
 ROLLBAR_API_KEY = os.getenv("ROLLBAR_API_KEY")
@@ -79,8 +79,8 @@ def log_rollbar_exception(exception: Exception, log_level: int, extra_data: dict
     extra_data: dict, optional.
         Extra data to send to rollbar. This usually contains the custom crash report json
     """
-    log_level_name = logging.getLevelName(log_level)
-    try:
-        raise exception
-    except Exception:  # pylint: disable=broad-exception-caught
-        rollbar.report_exc_info(sys.exc_info(), level=log_level_name, extra_data=extra_data)
+    log_level_name = logging.getLevelName(log_level).lower()
+    log_message = repr(exception)
+    if isinstance(exception, ContractCallException):
+        log_message += ": " + repr(exception.orig_exception)
+    rollbar.report_message(log_message, log_level_name, extra_data=extra_data)
