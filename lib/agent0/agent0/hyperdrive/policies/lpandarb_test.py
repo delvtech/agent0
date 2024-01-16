@@ -8,7 +8,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import LocalChain, InteractiveHyperdrive
 from agent0.hyperdrive.policies.zoo import Zoo
-from agent0.hyperdrive.interactive.event_types import CloseLong
+from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 
 # avoid unnecessary warning from using fixtures defined in outer scope
@@ -262,3 +262,35 @@ def test_already_at_target(interactive_hyperdrive: InteractiveHyperdrive, arbitr
     abs_diff = abs(fixed_rate - variable_rate)
     logging.info("difference is %s", abs_diff)
     assert abs_diff < PRECISION
+
+
+@pytest.mark.anvil
+def test_maturity_long(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
+    """Close a long matured position."""
+
+    # give Andy a long
+    event = arbitrage_andy.open_long(base=FixedPoint(10))
+
+    # advance time to maturity
+    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+
+    # see if he closes it
+    event = arbitrage_andy.execute_policy_action()
+    event = event[0] if isinstance(event, list) else event
+    assert isinstance(event, CloseLong)
+
+
+@pytest.mark.anvil
+def test_maturity_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
+    """Close a short matured position."""
+
+    # give Andy a short
+    event = arbitrage_andy.open_short(bonds=FixedPoint(10))
+
+    # advance time to maturity
+    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+
+    # see if he closes it
+    event = arbitrage_andy.execute_policy_action()
+    event = event[0] if isinstance(event, list) else event
+    assert isinstance(event, CloseShort)
