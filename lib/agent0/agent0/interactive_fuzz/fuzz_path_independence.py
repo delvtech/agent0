@@ -33,6 +33,8 @@ import sys
 from typing import Any, NamedTuple, Sequence
 
 import pandas as pd
+import rollbar
+from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
@@ -89,7 +91,16 @@ def fuzz_path_independence(
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+        log_filename,
+        chain_config,
+        log_to_stdout,
+        # Trade crashes in this file have expected failures, hence we log interactive
+        # hyperdrive crashes as info instead of critical.
+        crash_log_level=logging.INFO,
+        fees=False,
+        rollbar_log_prefix="fuzz_path_independence",
+    )
 
     # Open some trades
     logging.info("Open random trades...")
@@ -120,6 +131,8 @@ def fuzz_path_independence(
     check_data: dict[str, Any] | None = None
     first_run_state_dump_dir: str | None = None
     first_run_ticker: pd.DataFrame | None = None
+    invariance_checked: bool = False
+    latest_error: Exception | None = None
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
         logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
@@ -130,7 +143,13 @@ def fuzz_path_independence(
         # guarantee closing trades within the same checkpoint by getting the checkpoint id before
         # and after closing trades, then asserting they're the same
         starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
-        close_random_trades(trade_events, rng)
+        try:
+            close_random_trades(trade_events, rng)
+        except ContractCallException:
+            # Trades can fail here due to invalid order, we ignore and move on
+            # These trades get logged as info
+            continue
+
         ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
         assert starting_checkpoint_id == ending_checkpoint_id
 
@@ -154,6 +173,7 @@ def fuzz_path_independence(
 
         # On subsequent run, check against the saved final state
         else:
+            invariance_checked = True
             # Sanity check, ensure checkpoint id is the same after all runs
             assert ending_checkpoint_id == check_data["curr_checkpoint_id"]
 
@@ -197,8 +217,19 @@ def fuzz_path_independence(
                     log_to_rollbar=True,
                     rollbar_data=rollbar_data,
                 )
-                chain.cleanup()
-                raise error
+                latest_error = error
+
+    # If the number of successful paths < 2, we print and log a warning
+    if not invariance_checked:
+        warning_message = "No invariance checks were performed due to failed paths."
+        logging.warning(warning_message)
+        rollbar.report_message(warning_message, "warning")
+
+    # If any of the path checks broke, we throw an exception at the very end
+    if latest_error is not None:
+        chain.cleanup()
+        raise latest_error
+
     chain.cleanup()
     logging.info("Test passed!")
 

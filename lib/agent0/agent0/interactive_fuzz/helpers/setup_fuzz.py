@@ -1,6 +1,8 @@
 """Setup an interactive enfironment for fuzz testing."""
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 from fixedpointmath import FixedPoint
 from hyperlogs import setup_logging
@@ -13,6 +15,9 @@ def setup_fuzz(
     log_filename: str,
     chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
+    log_to_rollbar: bool = True,
+    crash_log_level: int | None = None,
+    rollbar_log_prefix: str | None = None,
     fees=True,
     var_interest=None,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
@@ -28,6 +33,12 @@ def setup_fuzz(
     log_to_stdout: bool, optional
         If True, log to stdout in addition to a file.
         Defaults to False.
+    log_to_rollbar: bool, optional
+        If True, log errors rollbar. Defaults to True.
+    crash_log_level: int | None, optional
+        The log level to log crashes at. Defaults to critical.
+    rollbar_log_prefix: str | None, optional
+        The prefix to prepend to rollbar exception messages
     fees: bool, optional
         If False, will turn off fees when deploying hyperdrive. Defaults to True.
     var_interest: FixedPoint | None, optional
@@ -47,6 +58,7 @@ def setup_fuzz(
             interactive_hyperdrive: InteractiveHyperdrive
                 An instantiated InteractiveHyperdrive object.
     """
+    # pylint: disable=too-many-arguments
     setup_logging(
         log_filename=log_filename,
         delete_previous_logs=False,
@@ -63,7 +75,17 @@ def setup_fuzz(
 
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
-    initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True, checkpoint_duration=86400)
+    if crash_log_level is None:
+        crash_log_level = logging.CRITICAL
+
+    initial_pool_config = InteractiveHyperdrive.Config(
+        preview_before_trade=True,
+        checkpoint_duration=86400,
+        log_to_rollbar=log_to_rollbar,
+        rollbar_log_prefix=rollbar_log_prefix,
+        crash_log_level=crash_log_level,
+        crash_log_ticker=True,
+    )
     if not fees:
         initial_pool_config.curve_fee = FixedPoint(0)
         initial_pool_config.flat_fee = FixedPoint(0)

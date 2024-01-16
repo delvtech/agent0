@@ -186,6 +186,7 @@ def log_hyperdrive_crash_report(
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,
     log_to_rollbar: bool = False,
+    rollbar_log_prefix: str | None = None,
     rollbar_data: dict | None = None,
 ) -> None:
     # pylint: disable=too-many-arguments
@@ -207,6 +208,8 @@ def log_hyperdrive_crash_report(
     log_to_rollbar: bool, optional
         If enabled, logs errors to the rollbar service.
         Defaults to False.
+    rollbar_log_prefix: str | None, optional
+        The prefix to prepend to rollbar exception messages
     rollbar_data: dict | None, optional
         Optional dictionary of data to use for the the rollbar report.
         If not provided, will default to logging all of the crash report to rollbar.
@@ -306,7 +309,7 @@ def log_hyperdrive_crash_report(
 
         # Format data
         rollbar_data = json.loads(json.dumps(rollbar_data, indent=2, cls=ExtendedJSONEncoder))
-        log_rollbar_exception(trade_result.exception, log_level, rollbar_data)
+        log_rollbar_exception(trade_result.exception, log_level, rollbar_data, rollbar_log_prefix=rollbar_log_prefix)
 
 
 def _hyperdrive_wallet_to_dict(wallet: HyperdriveWallet | None) -> dict[str, Any]:

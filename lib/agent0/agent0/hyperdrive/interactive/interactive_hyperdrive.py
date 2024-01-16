@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import time
 from dataclasses import asdict, dataclass
@@ -15,8 +16,9 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
+from chainsync.db.hyperdrive import get_checkpoint_info
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
-    get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
@@ -26,7 +28,6 @@ from chainsync.db.hyperdrive import (
     get_wallet_deltas,
     get_wallet_pnl,
 )
-from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -95,6 +96,14 @@ class InteractiveHyperdrive:
             The timeout for the data pipeline. Defaults to 60 seconds.
         preview_before_trade: bool, optional
             Whether to preview the position before executing a trade. Defaults to False.
+        log_to_rollbar: bool, optional
+            Whether to log crash reports to rollbar. Defaults to False.
+        rollbar_log_prefix: str | None, optional
+            The prefix to prepend to rollbar exception messages
+        crash_log_level: int, optional
+            The log level to log crashes at. Defaults to critical.
+        crash_log_ticker: bool | None, optional
+            Whether to log the trade ticker in crash reports. Defaults to False.
         rng_seed: int | None, optional
             The seed for the random number generator. Defaults to None.
         rng: Generator | None, optional
@@ -140,6 +149,10 @@ class InteractiveHyperdrive:
         # Environment variables
         data_pipeline_timeout: int = 60
         preview_before_trade: bool = False
+        log_to_rollbar: bool = False
+        rollbar_log_prefix: str | None = None
+        crash_log_level: int = logging.CRITICAL
+        crash_log_ticker: bool = False
         # Random generators
         rng_seed: int | None = None
         rng: Generator | None = None
@@ -254,6 +267,10 @@ class InteractiveHyperdrive:
             self._run_blocking_data_pipeline()
 
         self.rng = config.rng
+        self.log_to_rollbar = config.log_to_rollbar
+        self.rollbar_log_prefix = config.rollbar_log_prefix
+        self.crash_log_level = config.crash_log_level
+        self.crash_log_ticker = config.crash_log_ticker
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -946,9 +963,20 @@ class InteractiveHyperdrive:
             # We only get anvil state dump here, since it's an on chain call
             # and we don't want to do it when e.g., slippage happens
             trade_result.anvil_state = get_anvil_state_dump(self.hyperdrive_interface.web3)
+            if self.crash_log_ticker:
+                if trade_result.additional_info is None:
+                    trade_result.additional_info = {"ticker": self.get_ticker()}
+                else:
+                    trade_result.additional_info["ticker"] = self.get_ticker()
+
             # Defaults to CRITICAL
             log_hyperdrive_crash_report(
-                trade_result, crash_report_to_file=True, crash_report_file_prefix="interactive_hyperdrive"
+                trade_result,
+                log_level=self.crash_log_level,
+                crash_report_to_file=True,
+                crash_report_file_prefix="interactive_hyperdrive",
+                log_to_rollbar=self.log_to_rollbar,
+                rollbar_log_prefix=self.rollbar_log_prefix,
             )
             raise trade_result.exception
 

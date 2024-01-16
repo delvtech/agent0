@@ -6,10 +6,10 @@ import getpass
 import logging
 import os
 import platform
-import sys
 
 import rollbar
 from dotenv import load_dotenv
+from ethpy.base.errors import ContractCallException
 
 load_dotenv("rollbar.env")
 ROLLBAR_API_KEY = os.getenv("ROLLBAR_API_KEY")
@@ -67,7 +67,9 @@ def log_rollbar_message(message: str, log_level: int, extra_data: dict | None = 
     rollbar.report_message(message, log_level_name, extra_data=extra_data)
 
 
-def log_rollbar_exception(exception: Exception, log_level: int, extra_data: dict | None = None):
+def log_rollbar_exception(
+    exception: Exception, log_level: int, extra_data: dict | None = None, rollbar_log_prefix: str | None = None
+):
     """Logs an exception to the rollbar service.
 
     Arguments
@@ -78,9 +80,15 @@ def log_rollbar_exception(exception: Exception, log_level: int, extra_data: dict
         The logging level enum value.
     extra_data: dict, optional.
         Extra data to send to rollbar. This usually contains the custom crash report json
+    rollbar_log_prefix: str, optional
+        The prefix to prepend to rollbar exception messages
     """
-    log_level_name = logging.getLevelName(log_level)
-    try:
-        raise exception
-    except Exception:  # pylint: disable=broad-exception-caught
-        rollbar.report_exc_info(sys.exc_info(), log_level_name, extra_data=extra_data)
+    log_level_name = logging.getLevelName(log_level).lower()
+    if rollbar_log_prefix is None:
+        log_message = ""
+    else:
+        log_message = rollbar_log_prefix + ": "
+    log_message += repr(exception)
+    if isinstance(exception, ContractCallException):
+        log_message += ": " + repr(exception.orig_exception)
+    rollbar.report_message(log_message, log_level_name, extra_data=extra_data)

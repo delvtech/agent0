@@ -30,7 +30,7 @@ def main(argv: Sequence[str] | None = None):
     initialize_rollbar("interactivefuzz")
 
     num_trades = 10
-    num_paths_checked = 10
+    num_paths_checked = 20
 
     num_checks = 0
     while True:
@@ -40,6 +40,10 @@ def main(argv: Sequence[str] | None = None):
             fuzz_long_short_maturity_values(num_trades, chain_config)
         except FuzzAssertionException:
             pass
+        # We catch other exceptions here, for some reason rollbar needs to be continuously running in order
+        # to log.
+        except Exception:  # pylint: disable=broad-except
+            print("Unexpected error:", sys.exc_info()[0])
 
         try:
             print("Running path independence test")
@@ -51,6 +55,7 @@ def main(argv: Sequence[str] | None = None):
             )
         except FuzzAssertionException:
             pass
+        # No need to catch other exceptions here, the test itself catches them
 
         try:
             print("Running fuzz profit test")
@@ -58,6 +63,8 @@ def main(argv: Sequence[str] | None = None):
             fuzz_profit_check(chain_config)
         except FuzzAssertionException:
             pass
+        except Exception:  # pylint: disable=broad-except
+            print("Unexpected error:", sys.exc_info()[0])
 
         try:
             print("Running fuzz present value test")
@@ -66,6 +73,9 @@ def main(argv: Sequence[str] | None = None):
             fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config)
         except FuzzAssertionException:
             pass
+        except Exception:  # pylint: disable=broad-except
+            print("Unexpected error:", sys.exc_info()[0])
+
         num_checks += 1
         if parsed_args.number_of_runs > 0 and num_checks >= parsed_args.number_of_runs:
             break
