@@ -15,6 +15,7 @@ def setup_fuzz(
     log_to_stdout: bool = False,
     log_to_rollbar: bool = True,
     crash_log_level: int | None = None,
+    rollbar_log_prefix: str | None = None,
     fees=True,
     var_interest=None,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
@@ -34,6 +35,8 @@ def setup_fuzz(
         If True, log errors rollbar. Defaults to True.
     crash_log_level: int | None, optional
         The log level to log crashes at. Defaults to critical.
+    rollbar_log_prefix: str | None, optional
+        The prefix to prepend to rollbar exception messages
     fees: bool, optional
         If False, will turn off fees when deploying hyperdrive. Defaults to True.
     var_interest: FixedPoint | None, optional
@@ -74,7 +77,9 @@ def setup_fuzz(
         preview_before_trade=True,
         checkpoint_duration=86400,
         log_to_rollbar=log_to_rollbar,
+        rollbar_log_prefix=rollbar_log_prefix,
         crash_log_level=crash_log_level,
+        crash_log_ticker=True,
     )
     if not fees:
         initial_pool_config.curve_fee = FixedPoint(0)

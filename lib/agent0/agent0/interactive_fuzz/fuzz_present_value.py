@@ -65,7 +65,13 @@ def fuzz_present_value(
         Defaults to False.
     """
     log_filename = ".logging/fuzz_present_value.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+        log_filename,
+        chain_config,
+        log_to_stdout,
+        fees=False,
+        rollbar_log_prefix="fuzz_present_value",
+    )
 
     initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
     check_data: dict[str, Any] = {
