@@ -30,7 +30,7 @@ def main(argv: Sequence[str] | None = None):
     initialize_rollbar("interactivefuzz")
 
     num_trades = 10
-    num_paths_checked = 10
+    num_paths_checked = 20
 
     num_checks = 0
     while True:
