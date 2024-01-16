@@ -21,7 +21,7 @@ addopts = ["--tb=short"]
 norecursedirs = ".git examples hyperdrive_solidity"
 python_files = "*_test.py test_*.py"
 log_cli = true
-log_cli_level = "WARNING"
+log_cli_level = "INFO"
 log_cli_format = "\n%(asctime)s: %(levelname)s: %(filename)s:%(lineno)s::%(module)s::%(funcName)s:\n%(message)s"
 log_cli_date_format = "%y-%m-%d %H:%M:%S"
 
