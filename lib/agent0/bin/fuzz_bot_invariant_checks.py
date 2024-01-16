@@ -201,6 +201,35 @@ def run_invariant_checks(
         exception_data["invariance_check:solvency"] = solvency
         failed = True
 
+    # Present value is always greater than or equal to idle
+    present_value = interface.calc_present_value(pool_state)
+    long_exposure_shares = pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
+    idle_shares = (
+        pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
+    )
+    if not present_value >= idle_shares:
+        difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
+        exception_message.append(f"{present_value=} < {idle_shares=}, {difference_in_wei=}")
+        exception_data["invariance_check:idle_shares"] = idle_shares
+        exception_data["invariance_check:current_present_value"] = present_value
+        exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
+        failed = True
+
+    # LP share price
+    # for any trade, LP share price shouldn't change by more than 0.1%
+    previous_pool_state = interface.get_hyperdrive_state(interface.get_block(latest_block_number - 1))
+    previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
+    current_lp_share_price = pool_state.pool_info.lp_share_price
+    test_tolerance = previous_lp_share_price * FixedPoint(str(test_epsilon))
+
+    if not fp_isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
+        difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
+        exception_message.append(f"{previous_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}")
+        exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
+        exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
+        exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
+        failed = True
+
     # Creating a checkpoint should never fail
     # TODO: add get_block_transactions() to interface
     # NOTE: This wold be prone to false positives.
