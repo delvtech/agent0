@@ -1,6 +1,8 @@
 """Setup an interactive enfironment for fuzz testing."""
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 from fixedpointmath import FixedPoint
 from hyperlogs import setup_logging
@@ -73,6 +75,9 @@ def setup_fuzz(
 
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
+    if crash_log_level is None:
+        crash_log_level = logging.CRITICAL
+
     initial_pool_config = InteractiveHyperdrive.Config(
         preview_before_trade=True,
         checkpoint_duration=86400,

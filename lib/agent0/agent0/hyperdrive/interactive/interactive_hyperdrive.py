@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import time
 from dataclasses import asdict, dataclass
@@ -99,7 +100,7 @@ class InteractiveHyperdrive:
             Whether to log crash reports to rollbar. Defaults to False.
         rollbar_log_prefix: str | None, optional
             The prefix to prepend to rollbar exception messages
-        crash_log_level: int | None, optional
+        crash_log_level: int, optional
             The log level to log crashes at. Defaults to critical.
         crash_log_ticker: bool | None, optional
             Whether to log the trade ticker in crash reports. Defaults to False.
@@ -150,7 +151,7 @@ class InteractiveHyperdrive:
         preview_before_trade: bool = False
         log_to_rollbar: bool = False
         rollbar_log_prefix: str | None = None
-        crash_log_level: int | None = None
+        crash_log_level: int = logging.CRITICAL
         crash_log_ticker: bool = False
         # Random generators
         rng_seed: int | None = None
