@@ -17,8 +17,6 @@ from .interactive_hyperdrive import InteractiveHyperdrive
 # pylint: disable=redefined-outer-name
 # ruff: noqa: PLR2004 (comparison against magic values (literals like numbers))
 
-YEAR_IN_SECONDS = 31_536_000
-
 
 @pytest.mark.anvil
 def _ensure_db_wallet_matches_agent_wallet(
