@@ -22,6 +22,7 @@ from typing import Any, NamedTuple, Sequence
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive.state.pool_state import PoolState
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from hyperlogs import setup_logging
@@ -202,31 +203,19 @@ def run_invariant_checks(
         failed = True
 
     # Present value is always greater than or equal to idle
-    present_value = interface.calc_present_value(pool_state)
-    idle_shares = interface.get_idle_shares(latest_block_number)
-
-    if not present_value >= idle_shares:
-        difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
-        exception_message.append(f"{present_value=} < {idle_shares=}, {difference_in_wei=}")
-        exception_data["invariance_check:idle_shares"] = idle_shares
-        exception_data["invariance_check:current_present_value"] = present_value
-        exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
-        failed = True
+    failed = (
+        _present_value_greater_than_idle_shares(
+            latest_block_number, interface, pool_state, exception_message, exception_data
+        )
+        | failed
+    )
 
     # LP share price
     # for any trade, LP share price shouldn't change by more than 0.1%
-    previous_pool_state = interface.get_hyperdrive_state(interface.get_block(latest_block_number - 1))
-    previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
-    current_lp_share_price = pool_state.pool_info.lp_share_price
-    test_tolerance = previous_lp_share_price * FixedPoint(str(test_epsilon))
-
-    if not fp_isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
-        difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
-        exception_message.append(f"{previous_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}")
-        exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
-        exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
-        exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
-        failed = True
+    failed = (
+        _lp_share_price(latest_block_number, interface, test_epsilon, pool_state, exception_message, exception_data)
+        | failed
+    )
 
     # Creating a checkpoint should never fail
     # TODO: add get_block_transactions() to interface
@@ -256,6 +245,84 @@ def run_invariant_checks(
     if failed:
         logging.critical("\n".join(exception_message))
         raise FuzzAssertionException(*exception_message, exception_data=exception_data)
+
+
+def _lp_share_price(
+    block_number: BlockNumber,
+    interface: HyperdriveReadInterface,
+    test_epsilon: float,
+    pool_state: PoolState,
+    exception_message: list[str],
+    exception_data: dict[str, Any],
+) -> bool:
+    """Returns True if the test (∆ lp_share_price > test_epsilon) fails.
+
+    Parameters
+    ----------
+    block_number : BlockNumber
+    interface : HyperdriveReadInterface
+    test_epsilon : float
+    pool_state : PoolState
+    exception_message : list[str]
+    exception_data : dict[str, Any]
+
+    Returns
+    -------
+    bool
+        True if the test failed.
+    """
+    # pylint: disable=too-many-arguments
+
+    previous_pool_state = interface.get_hyperdrive_state(interface.get_block(block_number - 1))
+    previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
+    current_lp_share_price = pool_state.pool_info.lp_share_price
+    test_tolerance = previous_lp_share_price * FixedPoint(str(test_epsilon))
+
+    if not fp_isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
+        difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
+        exception_message.append(f"{previous_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}")
+        exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
+        exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
+        exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
+        return True
+
+    return False
+
+
+def _present_value_greater_than_idle_shares(
+    block_number: BlockNumber,
+    interface: HyperdriveReadInterface,
+    pool_state: PoolState,
+    exception_message: list[str],
+    exception_data: dict[str, Any],
+) -> bool:
+    """Returns True if the test (present_value > idle_shares) fails.
+
+    Parameters
+    ----------
+    block_number : BlockNumber
+    interface : HyperdriveReadInterface
+    pool_state : PoolState
+    exception_message : list[str]
+    exception_data : dict[str, Any]
+
+    Returns
+    -------
+    bool
+        True if the test failed.
+    """
+    present_value = interface.calc_present_value(pool_state)
+    idle_shares = interface.get_idle_shares(block_number)
+
+    if not present_value >= idle_shares:
+        difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
+        exception_message.append(f"{present_value=} < {idle_shares=}, {difference_in_wei=}")
+        exception_data["invariance_check:idle_shares"] = idle_shares
+        exception_data["invariance_check:current_present_value"] = present_value
+        exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
+        return True
+
+    return False
 
 
 class Args(NamedTuple):
