@@ -122,6 +122,10 @@ def fuzz_long_short_maturity_values(
     extra_time = int(np.floor(rng.uniform(low=0, high=position_duration)))
     chain.advance_time(extra_time, create_checkpoints=False)
 
+    # Randomize close trade order
+    # Numpy rng allows lists to be passed in
+    rng.shuffle(trade_events)  # type: ignore
+
     # Close the trades one at a time, check invariants
     for index, (agent, trade) in enumerate(trade_events):
         logging.info("closing trade %s out of %s\n", index, len(trade_events) - 1)
