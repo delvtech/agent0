@@ -8,7 +8,7 @@
   - amount in uniform[min_trade_amount, max_trade_amount) base
 - open those trades in a random order, but within the same checkpoint
 - advance time past the position duration, into a new checkpoint
-- close the trades one at a time, run invariance checks after each close action
+- close the trades one at a time in random order, run invariance checks after each close action
 
 # Invariance checks (these should be True):
 if trade was open and close a long:
@@ -121,6 +121,10 @@ def fuzz_long_short_maturity_values(
     logging.info("Advance time...")
     extra_time = int(np.floor(rng.uniform(low=0, high=position_duration)))
     chain.advance_time(extra_time, create_checkpoints=False)
+
+    # Randomize close trade order
+    # Numpy rng allows lists to be passed in
+    rng.shuffle(trade_events)  # type: ignore
 
     # Close the trades one at a time, check invariants
     for index, (agent, trade) in enumerate(trade_events):
