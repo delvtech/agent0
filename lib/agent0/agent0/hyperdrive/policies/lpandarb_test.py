@@ -285,7 +285,7 @@ def test_maturity_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage
     """Close a short matured position."""
 
     # give Andy a short
-    event = arbitrage_andy.open_short(bonds=FixedPoint(10))
+    event = arbitrage_andy.open_short(bonds=FixedPoint(1000))
 
     # advance time to maturity
     interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
