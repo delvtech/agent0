@@ -240,6 +240,17 @@ def test_already_at_target(interactive_hyperdrive: InteractiveHyperdrive, arbitr
     # report starting fixed rate
     logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
+    # modify Andy to be done_on_empty
+    andy_interactive_policy = arbitrage_andy.agent.policy
+    assert hasattr(andy_interactive_policy, "sub_policy") and isinstance(
+        getattr(andy_interactive_policy, "sub_policy"), Zoo.lp_and_arb
+    )
+    andy_policy = getattr(andy_interactive_policy, "sub_policy")
+    assert hasattr(andy_policy, "policy_config") and isinstance(
+        getattr(andy_policy, "policy_config"), Zoo.lp_and_arb.Config
+    )
+    andy_policy.policy_config.done_on_empty = True
+
     # arbitrage it back
     arbitrage_andy.execute_policy_action()
 
