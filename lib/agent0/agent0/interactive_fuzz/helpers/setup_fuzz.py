@@ -13,6 +13,7 @@ def setup_fuzz(
     log_filename: str,
     chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
+    log_to_rollbar: bool = True,
     fees=True,
     var_interest=None,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
@@ -64,7 +65,7 @@ def setup_fuzz(
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
     initial_pool_config = InteractiveHyperdrive.Config(
-        preview_before_trade=True, checkpoint_duration=86400, log_to_rollbar=True
+        preview_before_trade=True, checkpoint_duration=86400, log_to_rollbar=log_to_rollbar
     )
     if not fees:
         initial_pool_config.curve_fee = FixedPoint(0)

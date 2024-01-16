@@ -89,7 +89,13 @@ def fuzz_path_independence(
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
     log_filename = ".logging/fuzz_path_independence.log"
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(log_filename, chain_config, log_to_stdout, fees=False)
+    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+        log_filename,
+        chain_config,
+        log_to_stdout,
+        log_to_rollbar=False,  # We don't log other crashes to rollbar since we expect failed paths here
+        fees=False,
+    )
 
     # Open some trades
     logging.info("Open random trades...")
