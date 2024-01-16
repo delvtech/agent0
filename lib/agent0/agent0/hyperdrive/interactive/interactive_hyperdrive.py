@@ -15,8 +15,9 @@ import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
+from chainsync.db.hyperdrive import get_checkpoint_info
+from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.db.hyperdrive import (
-    get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
@@ -26,7 +27,6 @@ from chainsync.db.hyperdrive import (
     get_wallet_deltas,
     get_wallet_pnl,
 )
-from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -95,6 +95,8 @@ class InteractiveHyperdrive:
             The timeout for the data pipeline. Defaults to 60 seconds.
         preview_before_trade: bool, optional
             Whether to preview the position before executing a trade. Defaults to False.
+        log_to_rollbar: bool, optional
+            Whether to log crash reports to rollbar. Defaults to False.
         rng_seed: int | None, optional
             The seed for the random number generator. Defaults to None.
         rng: Generator | None, optional
@@ -140,6 +142,7 @@ class InteractiveHyperdrive:
         # Environment variables
         data_pipeline_timeout: int = 60
         preview_before_trade: bool = False
+        log_to_rollbar: bool = False
         # Random generators
         rng_seed: int | None = None
         rng: Generator | None = None
@@ -254,6 +257,7 @@ class InteractiveHyperdrive:
             self._run_blocking_data_pipeline()
 
         self.rng = config.rng
+        self.log_to_rollbar = config.log_to_rollbar
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -948,7 +952,10 @@ class InteractiveHyperdrive:
             trade_result.anvil_state = get_anvil_state_dump(self.hyperdrive_interface.web3)
             # Defaults to CRITICAL
             log_hyperdrive_crash_report(
-                trade_result, crash_report_to_file=True, crash_report_file_prefix="interactive_hyperdrive"
+                trade_result,
+                crash_report_to_file=True,
+                crash_report_file_prefix="interactive_hyperdrive",
+                log_to_rollbar=self.log_to_rollbar,
             )
             raise trade_result.exception
 

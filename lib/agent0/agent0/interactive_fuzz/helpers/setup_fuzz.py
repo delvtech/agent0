@@ -63,7 +63,9 @@ def setup_fuzz(
 
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
-    initial_pool_config = InteractiveHyperdrive.Config(preview_before_trade=True, checkpoint_duration=86400)
+    initial_pool_config = InteractiveHyperdrive.Config(
+        preview_before_trade=True, checkpoint_duration=86400, log_to_rollbar=True
+    )
     if not fees:
         initial_pool_config.curve_fee = FixedPoint(0)
         initial_pool_config.flat_fee = FixedPoint(0)

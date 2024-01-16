@@ -83,4 +83,4 @@ def log_rollbar_exception(exception: Exception, log_level: int, extra_data: dict
     try:
         raise exception
     except Exception:  # pylint: disable=broad-exception-caught
-        rollbar.report_exc_info(sys.exc_info(), log_level_name, extra_data=extra_data)
+        rollbar.report_exc_info(sys.exc_info(), level=log_level_name, extra_data=extra_data)
