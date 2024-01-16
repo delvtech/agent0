@@ -272,7 +272,7 @@ def test_reduce_long(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_an
     event = arbitrage_andy.open_long(base=FixedPoint(10))
 
     # advance time to maturity
-    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS / 2, create_checkpoints=False)
+    interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS / 2), create_checkpoints=False)
 
     # see if he reduces the long
     event = arbitrage_andy.execute_policy_action()
@@ -293,7 +293,7 @@ def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_a
     logging.info("fixed rate after open short is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
 
     # advance time to maturity
-    interactive_hyperdrive.chain.advance_time(YEAR_IN_SECONDS / 2, create_checkpoints=False)
+    interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS / 2), create_checkpoints=False)
 
     # see if he reduces the short
     event = arbitrage_andy.execute_policy_action()
