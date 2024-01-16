@@ -93,7 +93,7 @@ def calc_reserves_to_hit_target_rate(
     total_bonds_needed = FixedPoint(0)
     # pylint: disable=logging-fstring-interpolation
     logging.info(f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate()):.2%}")
-    while float(abs(predicted_rate - target_rate)) > TOLERANCE:
+    while float(abs(predicted_rate - target_rate)) > TOLERANCE and iteration < MAX_ITER:
         iteration += 1
         latest_fixed_rate = interface.calc_fixed_rate(pool_state)
         target_bonds = interface.calc_bonds_given_shares_and_rate(
@@ -139,8 +139,6 @@ def calc_reserves_to_hit_target_rate(
             + f" d_bonds={float(total_bonds_needed):27,.18f} d_shares={float(total_shares_needed):27,.18f}"
         )
         logging.info(formatted_str)
-        if iteration >= MAX_ITER:
-            break
     convergence_speed = time.time() - start_time
     formatted_str = f"predicted precision: {float(abs(predicted_rate-target_rate))}, time taken: {convergence_speed}s"
     logging.info(formatted_str)
