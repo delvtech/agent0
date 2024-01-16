@@ -8,7 +8,7 @@
   - amount in uniform[min_trade_amount, max_trade_amount) base
 - open those trades in a random order, but within the same checkpoint
 - advance time past the position duration, into a new checkpoint
-- close the trades one at a time, run invariance checks after each close action
+- close the trades one at a time in random order, run invariance checks after each close action
 
 # Invariance checks (these should be True):
 if trade was open and close a long:
