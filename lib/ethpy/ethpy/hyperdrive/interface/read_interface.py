@@ -55,6 +55,7 @@ from ._mock_contract import (
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
     _calc_spot_price,
+    _calc_time_stretch,
 )
 
 # We expect to have many instance attributes & public methods since this is a large API.
@@ -319,6 +320,29 @@ class HyperdriveReadInterface:
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
         return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
+
+    def get_idle_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+        """Get the balance of idle shares that the Hyperdrive pool has.
+
+        Arguments
+        ---------
+        block_number: BlockNumber, optional
+            The number for any minted block.
+            Defaults to the current block number.
+
+        Returns
+        -------
+        FixedPoint
+            The quantity of vault shares for the yield source at the provided block.
+        """
+        if block_number is None:
+            block_number = self.get_block_number(self.get_current_block())
+        pool_state = self.current_pool_state
+        long_exposure_shares = self.current_pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
+        idle_shares = (
+            pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
+        )
+        return idle_shares
 
     def get_variable_rate(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Use an RPC to get the yield source variable rate.
@@ -625,6 +649,23 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_position_duration_in_years(pool_state)
+
+    def calc_time_stretch(self, target_rate: FixedPoint, target_position_duration: FixedPoint) -> FixedPoint:
+        """Returns the time stretch parameter given a target fixed rate and position duration.
+
+        Arguments
+        ---------
+        target_rate: FixedPoint
+            The fixed rate that the Hyperdrive pool will be initialized with.
+        target_position_duration: FixedPoint
+            The position duration that the Hyperdrive pool will be initialized with.
+
+        Returns
+        -------
+        FixedPoint
+            The time stretch constant.
+        """
+        return _calc_time_stretch(target_rate, target_position_duration)
 
     def calc_checkpoint_id(
         self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None

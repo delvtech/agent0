@@ -70,7 +70,7 @@ def fuzz_present_value(
         chain_config,
         log_to_stdout,
         fees=False,
-        rollbar_log_prefix="fuzz_present_value",
+        fuzz_test_name="fuzz_present_value",
     )
 
     initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
@@ -325,10 +325,7 @@ def invariant_check(
     # present value should always be >= idle
     # idle shares are the shares that are not reserved by open positions
     # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
-    long_exposure_shares = pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
-    idle_shares = (
-        pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
-    )
+    idle_shares = interactive_hyperdrive.hyperdrive_interface.get_idle_shares(pool_state.block_number)
     if current_present_value < idle_shares:
         difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
         exception_message.append(f"{current_present_value=} < {idle_shares=}, {difference_in_wei=}")

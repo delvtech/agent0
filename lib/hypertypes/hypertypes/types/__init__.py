@@ -8,12 +8,14 @@ from .ERC4626Target0DeployerTypes import *
 from .ForwarderFactoryContract import *
 from .IERC4626HyperdriveContract import *
 from .IERC4626HyperdriveTypes import *
-from .ERC4626HyperdriveDeployerContract import *
-from .ERC4626HyperdriveDeployerTypes import *
+from .ERC4626HyperdriveDeployerCoordinatorContract import *
+from .ERC4626HyperdriveDeployerCoordinatorTypes import *
 from .HyperdriveFactoryContract import *
 from .HyperdriveFactoryTypes import *
 from .ERC4626Target3DeployerContract import *
 from .ERC4626Target3DeployerTypes import *
+from .ERC4626HyperdriveContract import *
+from .ERC4626HyperdriveTypes import *
 from .ERC4626Target1DeployerContract import *
 from .ERC4626Target1DeployerTypes import *
 from .ERC4626Target2DeployerContract import *
