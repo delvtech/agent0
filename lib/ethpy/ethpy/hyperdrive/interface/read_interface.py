@@ -321,7 +321,7 @@ class HyperdriveReadInterface:
         return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
 
     def get_idle_shares(self, block_number: BlockNumber | None) -> FixedPoint:
-        """Use an RPC to get the balance of idle shares that the Hyperdrive pool has.
+        """Get the balance of idle shares that the Hyperdrive pool has.
 
         Arguments
         ---------
