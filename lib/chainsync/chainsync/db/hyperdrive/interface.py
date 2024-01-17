@@ -606,6 +606,7 @@ def get_ticker(
     DataFrame
         A DataFrame that consists of the queried pool info data
     """
+    # pylint: disable=too-many-arguments
     query = session.query(Ticker)
 
     # Support for negative indices
