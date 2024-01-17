@@ -158,6 +158,7 @@ class TestHyperdriveReadInterface:
         expected_pool_info_keys = {
             "share_reserves",
             "bond_reserves",
+            "zombie_base_proceeds",
             "zombie_share_reserves",
             "lp_total_supply",
             "share_price",

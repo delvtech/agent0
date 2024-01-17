@@ -33,6 +33,7 @@ class PoolInfoFP:
 
     share_reserves: FixedPoint
     share_adjustment: FixedPoint
+    zombie_base_proceeds: FixedPoint
     zombie_share_reserves: FixedPoint
     bond_reserves: FixedPoint
     lp_total_supply: FixedPoint
