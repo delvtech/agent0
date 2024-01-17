@@ -59,6 +59,30 @@ def calc_shares_needed_for_bonds(
     _shares_to_pool -= _shares_to_gov
     return _shares_to_pool, _shares_to_gov
 
+def calc_reserves_to_hit_target_rate_closed_form(
+    target_rate: FixedPoint, interface: HyperdriveReadInterface
+) -> tuple[FixedPoint, FixedPoint, int, float]:
+    """Calculate the bonds and shares needed to hit the target fixed rate.
+    
+    Using closed form solution.
+    
+    For change in shares:
+    \Delta z = \frac{1}{\mu} \cdot (\frac{
+    \frac{c}{\mu}  \cdot (\mu \cdot z)^{1 - t} + y^{1 - t}}{(\frac{c}{\mu} + (1 + r')^{1 - t})})^\frac{1}{1-t} - z
+    in algebraic terms:
+    delta_z = (1 / mu) * (
+            ((c / mu) * (mu * z) ** (1 - t) + y ** (1 - t))
+            / ((c / mu) + (1 + r) ** (1 - t))
+        ) ** (1 / (1 - t)) - z
+
+    For change in bonds:
+    \Delta y = (\frac{\frac{c}{\mu}  \cdot (\mu \cdot z)^{1 - t} + y^{1 - t}}{(\frac{c}{\mu}  \cdot (\frac{1}{1 + r'})^{1 - t} + 1)})^\frac{1}{1-t} -y
+    in algebraic terms:
+    delta_y = (
+            ((c / mu) * (mu * z) ** (1 - t) + y ** (1 - t))
+            / ((c / mu) * (1 / (1 + r)) ** (1 - t) + 1)
+        ) ** (1 / (1 - t)) - y
+    """
 
 def calc_reserves_to_hit_target_rate(
     target_rate: FixedPoint, interface: HyperdriveReadInterface
@@ -351,8 +375,9 @@ class LPandArb(HyperdrivePolicy):
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
-                amount = min(bonds_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
-                action_list.append(interface.open_long_trade(amount, self.slippage_tolerance))
+                shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
+                amount_base = min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
+                action_list.append(interface.open_long_trade(amount_base, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
             # Reduce longs first, if we have them
