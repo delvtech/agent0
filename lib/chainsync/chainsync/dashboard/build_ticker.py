@@ -29,8 +29,6 @@ def build_ticker(ticker_data: pd.DataFrame, user_map: pd.DataFrame) -> pd.DataFr
     ticker_data.columns = ["Block Number", "Timestamp", "User", "Wallet", "Method", "Token Deltas"]
     # Shorten wallet address string
     ticker_data["Wallet"] = mapped_addrs["abbr_address"]
-    # Return reverse of methods to put most recent transactions at the top
-    ticker_data = ticker_data.set_index("Timestamp").sort_index(ascending=False)
     # Drop rows with nonexistant wallets
     ticker_data = ticker_data.dropna(axis=0, subset="Wallet")
     return ticker_data
