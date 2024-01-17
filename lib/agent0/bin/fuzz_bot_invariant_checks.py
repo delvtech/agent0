@@ -136,28 +136,15 @@ def run_invariant_checks(
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data: dict[str, Any] = {}
 
-    eth_balances_results = _check_eth_balances(latest_block_number, pool_state)
-    base_balances_results = _check_base_balances(latest_block_number, pool_state)
-    total_share_results = _check_total_shares(latest_block_number, test_epsilon, pool_state)
-    minimum_share_reserves_results = _check_minimum_share_reserves(latest_block_number, pool_state)
-    solvency_results = _check_solvency(latest_block_number, pool_state)
-    present_values_greater_than_idle_shares_results = _check_present_value_greater_than_idle_shares(
-        latest_block_number, interface, pool_state
-    )
-    lp_share_price_results = _check_lp_share_price(latest_block_number, interface, test_epsilon, pool_state)
-    checkpointing_results = _check_checkpointing_should_never_fail(
-        latest_block, latest_block_number, interface, pool_state
-    )
-
-    results = [
-        eth_balances_results,
-        base_balances_results,
-        total_share_results,
-        minimum_share_reserves_results,
-        solvency_results,
-        present_values_greater_than_idle_shares_results,
-        lp_share_price_results,
-        checkpointing_results,
+    results: list[InvariantCheckResults] = [
+        _check_eth_balances(latest_block_number, pool_state),
+        _check_base_balances(latest_block_number, pool_state),
+        _check_total_shares(latest_block_number, test_epsilon, pool_state),
+        _check_minimum_share_reserves(latest_block_number, pool_state),
+        _check_solvency(latest_block_number, pool_state),
+        _check_present_value_greater_than_idle_shares(latest_block_number, interface, pool_state),
+        _check_lp_share_price(latest_block_number, interface, test_epsilon, pool_state),
+        _check_checkpointing_should_never_fail(latest_block, latest_block_number, interface, pool_state),
     ]
 
     for failed, message, data in results:
