@@ -139,10 +139,18 @@ def run_invariant_checks(
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data: dict[str, Any] = {}
 
+    # Due to inaccuracies with the share_price in pool_state, we call the yield contract's convertToShares
+    # function to get a more accurate shorts outstanding in shares
+    shorts_outstanding_in_shares = FixedPoint(
+        scaled_value=interface.yield_contract.functions.convertToShares(
+            pool_state.pool_info.shorts_outstanding.scaled_value
+        ).call()
+    )
+
     results: list[InvariantCheckResults] = [
         _check_eth_balances(latest_block_number, pool_state),
         _check_base_balances(latest_block_number, pool_state),
-        _check_total_shares(latest_block_number, test_epsilon, pool_state),
+        _check_total_shares(latest_block_number, test_epsilon, pool_state, shorts_outstanding_in_shares),
         _check_minimum_share_reserves(latest_block_number, pool_state),
         _check_solvency(latest_block_number, pool_state),
         _check_present_value_greater_than_idle_shares(latest_block_number, interface, pool_state),
@@ -278,7 +286,9 @@ def _check_minimum_share_reserves(block_number: BlockNumber, pool_state: PoolSta
     return InvariantCheckResults(failed, exception_message, exception_data)
 
 
-def _check_total_shares(block_number: BlockNumber, test_epsilon: float, pool_state: PoolState) -> InvariantCheckResults:
+def _check_total_shares(
+    block_number: BlockNumber, test_epsilon: float, pool_state: PoolState, shorts_outstanding_in_shares: FixedPoint
+) -> InvariantCheckResults:
     # Total shares is correctly calculated
     failed = False
     exception_message = ""
@@ -286,7 +296,9 @@ def _check_total_shares(block_number: BlockNumber, test_epsilon: float, pool_sta
 
     expected_vault_shares = (
         pool_state.pool_info.share_reserves
-        + pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
+        # The term below replaces this calculation:
+        # pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
+        + shorts_outstanding_in_shares
         + pool_state.gov_fees_accrued
         + pool_state.pool_info.withdrawal_shares_proceeds
         + pool_state.pool_info.zombie_share_reserves
