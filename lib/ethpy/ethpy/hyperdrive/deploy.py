@@ -17,7 +17,7 @@ from hypertypes import Fees, PoolDeployConfig
 from hypertypes.types import (
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,
-    ERC4626HyperdriveDeployerContract,
+    ERC4626HyperdriveDeployerCoordinatorContract,
     ERC4626Target0DeployerContract,
     ERC4626Target1DeployerContract,
     ERC4626Target2DeployerContract,
@@ -194,7 +194,9 @@ def _deploy_hyperdrive_factory(
     initial_variable_rate: FixedPoint,
     pool_deploy_config: PoolDeployConfig,
     max_fees: Fees,
-) -> tuple[ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract, ERC4626HyperdriveDeployerContract]:
+) -> tuple[
+    ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract, ERC4626HyperdriveDeployerCoordinatorContract
+]:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
@@ -213,7 +215,12 @@ def _deploy_hyperdrive_factory(
 
     Returns
     -------
-    tuple[ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract, ERC4626HyperdriveDeployerContract]
+    tuple[
+        ERC20MintableContract,
+        HyperdriveFactoryContract,
+        MockERC4626Contract,
+        ERC4626HyperdriveDeployerCoordinatorContract,
+    ]
         Containing the deployed base token, factory, the pool, and the deploy contracts.
     """
     base_token_contract = ERC20MintableContract.deploy(
@@ -263,11 +270,11 @@ def _deploy_hyperdrive_factory(
         w3=web3,
         account=deploy_account_addr,
     )
-    deployer_contract = ERC4626HyperdriveDeployerContract.deploy(
+    deployer_contract = ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=ERC4626HyperdriveDeployerContract.ConstructorArgs(
-            hyperdriveCoreDeployer=core_deployer_contract.address,
+        constructorArgs=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
+            coreDeployer=core_deployer_contract.address,
             target0Deployer=target0_contract.address,
             target1Deployer=target1_contract.address,
             target2Deployer=target2_contract.address,

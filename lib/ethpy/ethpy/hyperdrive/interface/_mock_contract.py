@@ -234,7 +234,7 @@ def _calc_bonds_given_shares_and_rate(
         target_shares = _calc_effective_share_reserves(pool_state)
     return FixedPoint(
         scaled_value=int(
-            hyperdrivepy.calculate_bonds_given_shares_and_rate(
+            hyperdrivepy.calculate_initial_bond_reserves(
                 str(target_shares.scaled_value),
                 str(pool_state.pool_config.initial_share_price.scaled_value),
                 str(target_rate.scaled_value),
@@ -286,5 +286,14 @@ def _calc_present_value(pool_state: PoolState, current_block_timestamp: int) -> 
                 pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
                 current_block_timestamp=str(current_block_timestamp),
             )
+        )
+    )
+
+
+def _calc_time_stretch(target_rate: FixedPoint, target_position_duration: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.get_time_stretch(str(target_rate.scaled_value), str(int(target_position_duration)))
         )
     )
