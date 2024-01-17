@@ -233,7 +233,7 @@ def log_hyperdrive_crash_report(
         trade_result.additional_info.update(additional_info)
 
     curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
-    fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_Z")
+    fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_%f_%Z")
     time_str = curr_time.isoformat()
 
     orig_traceback = None
