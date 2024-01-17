@@ -62,7 +62,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config, log_to_stdout, rollbar_log_prefix="fuzz_profit_check"
+        log_filename, chain_config, log_to_stdout, fuzz_test_name="fuzz_profit_check"
     )
 
     # Get a random trade amount

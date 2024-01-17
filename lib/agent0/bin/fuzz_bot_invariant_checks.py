@@ -65,11 +65,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         except FuzzAssertionException as error:
             report = build_crash_trade_result(error, interface, additional_info=error.exception_data)
             report.anvil_state = get_anvil_state_dump(interface.web3)
+            rollbar_data = error.exception_data
+
             log_hyperdrive_crash_report(
                 report,
                 crash_report_to_file=True,
                 crash_report_file_prefix="fuzz_bots_invariant_checks",
                 log_to_rollbar=log_to_rollbar,
+                rollbar_data=rollbar_data,
             )
 
 
