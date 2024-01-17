@@ -188,6 +188,7 @@ def log_hyperdrive_crash_report(
     log_to_rollbar: bool = False,
     rollbar_log_prefix: str | None = None,
     rollbar_data: dict | None = None,
+    additional_info: dict | None = None,
 ) -> None:
     # pylint: disable=too-many-arguments
     """Log a crash report for a hyperdrive transaction.
@@ -213,12 +214,23 @@ def log_hyperdrive_crash_report(
     rollbar_data: dict | None, optional
         Optional dictionary of data to use for the the rollbar report.
         If not provided, will default to logging all of the crash report to rollbar.
+    additional_info: dict | None, optional
+        Optional dictionary of additional data to include in the crash report.
     """
     if log_level is None:
         log_level = logging.CRITICAL
 
     # If we're crash reporting, an exception is expected
     assert trade_result.exception is not None
+
+    # Add custom additional info to trade_results
+    if additional_info is None:
+        additional_info = {}
+
+    if trade_result.additional_info is None:
+        trade_result.additional_info = additional_info
+    else:
+        trade_result.additional_info.update(additional_info)
 
     curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
     fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_Z")

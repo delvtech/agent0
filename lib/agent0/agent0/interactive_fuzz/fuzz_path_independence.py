@@ -99,7 +99,7 @@ def fuzz_path_independence(
         # hyperdrive crashes as info instead of critical.
         crash_log_level=logging.INFO,
         fees=False,
-        rollbar_log_prefix="fuzz_path_independence",
+        fuzz_test_name="fuzz_path_independence",
     )
 
     # Open some trades

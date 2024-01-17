@@ -8,7 +8,7 @@ import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from threading import Thread
-from typing import Literal, Type, overload
+from typing import Any, Literal, Type, overload
 
 import nest_asyncio
 import numpy as np
@@ -153,6 +153,7 @@ class InteractiveHyperdrive:
         rollbar_log_prefix: str | None = None
         crash_log_level: int = logging.CRITICAL
         crash_log_ticker: bool = False
+        crash_report_additional_info: dict[str, Any] | None = None
         # Random generators
         rng_seed: int | None = None
         rng: Generator | None = None
@@ -271,6 +272,7 @@ class InteractiveHyperdrive:
         self.rollbar_log_prefix = config.rollbar_log_prefix
         self.crash_log_level = config.crash_log_level
         self.crash_log_ticker = config.crash_log_ticker
+        self.crash_report_additional_info = config.crash_report_additional_info
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -977,6 +979,7 @@ class InteractiveHyperdrive:
                 crash_report_file_prefix="interactive_hyperdrive",
                 log_to_rollbar=self.log_to_rollbar,
                 rollbar_log_prefix=self.rollbar_log_prefix,
+                additional_info=self.crash_report_additional_info,
             )
             raise trade_result.exception
 

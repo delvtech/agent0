@@ -71,7 +71,10 @@ def fuzz_long_short_maturity_values(
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config, log_to_stdout, rollbar_log_prefix="fuzz_long_short_maturity_values"
+        log_filename,
+        chain_config,
+        log_to_stdout,
+        fuzz_test_name="fuzz_long_short_maturity_values",
     )
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 

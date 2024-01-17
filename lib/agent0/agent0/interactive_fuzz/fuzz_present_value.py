@@ -70,7 +70,7 @@ def fuzz_present_value(
         chain_config,
         log_to_stdout,
         fees=False,
-        rollbar_log_prefix="fuzz_present_value",
+        fuzz_test_name="fuzz_present_value",
     )
 
     initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
