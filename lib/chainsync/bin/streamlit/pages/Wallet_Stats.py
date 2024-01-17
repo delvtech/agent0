@@ -8,7 +8,7 @@ import gc
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
-from chainsync.dashboard import build_ticker, build_user_mapping, map_addresses
+from chainsync.dashboard import build_ticker, build_user_mapping, map_addresses, reduce_plot_data
 from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import (
     get_all_traders,
@@ -27,7 +27,8 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # TODO clean up this script into various functions
 
-MAX_LIVE_BLOCKS = 5000
+MAX_PLOT_BLOCKS = 5000
+MAX_ROWS = 1000
 
 # Load and connect to postgres
 session = initialize_session()
@@ -51,11 +52,12 @@ user_map = build_user_mapping(trader_addrs, addr_to_username, username_to_user)
 # TODO does this take series? Or do I need to cast this as a list
 # TODO there is a case that format_name is not unique, where we should use the wallet addresses
 selected = st.multiselect("Wallet Addresses", user_map["format_name"])
+
 # Map selected_addrs back to actual addresses
 selected_addresses = map_addresses(selected, user_map, "format_name")["address"].to_list()
 
 # Get ticker for selected addresses
-ticker = get_ticker(session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses)
+ticker = get_ticker(session, max_rows=MAX_ROWS, coerce_float=False, wallet_address=selected_addresses)
 display_ticker = build_ticker(ticker, user_map)
 
 # Get latest wallet pnls for selected addresses
@@ -86,12 +88,12 @@ st.dataframe(display_ticker, height=500, use_container_width=True)
 
 # Get PNL over time
 pnl_over_time = get_total_wallet_pnl_over_time(
-    session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
+    session, start_block=-MAX_PLOT_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
 # Add username
 pnl_over_time["username"] = map_addresses(pnl_over_time["wallet_address"], user_map)["username"]
 wallet_positions = get_wallet_positions_over_time(
-    session, start_block=-MAX_LIVE_BLOCKS, coerce_float=False, wallet_address=selected_addresses
+    session, start_block=-MAX_PLOT_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
 wallet_positions["username"] = map_addresses(wallet_positions["wallet_address"], user_map)["username"]
 
@@ -103,7 +105,10 @@ main_fig = mpf.figure(style="mike", figsize=(10, 10))
 for addr in pnl_over_time["wallet_address"].unique():
     format_name = map_addresses(addr, user_map)["format_name"]
     wallet_pnl_over_time = pnl_over_time[pnl_over_time["wallet_address"] == addr]
+    wallet_pnl_over_time = reduce_plot_data(wallet_pnl_over_time, "timestamp", "pnl")
     ax_pnl.plot(wallet_pnl_over_time["timestamp"], wallet_pnl_over_time["pnl"], label=format_name)
+
+
 ax_pnl.yaxis.set_label_position("right")
 ax_pnl.yaxis.tick_right()
 ax_pnl.set_xlabel("block timestamp")
@@ -116,21 +121,31 @@ for addr in wallet_positions["wallet_address"].unique():
     format_name = map_addresses(addr, user_map)["format_name"]
     labels.append(format_name)
     wallet_positions_over_time = wallet_positions[wallet_positions["wallet_address"] == addr]
-    base_positions = wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == BASE_TOKEN_SYMBOL][
-        ["timestamp", "value"]
-    ]
-    long_positions = wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "LONG"][
-        ["timestamp", "value"]
-    ]
-    short_positions = wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "SHORT"][
-        ["timestamp", "value"]
-    ]
-    lp_positions = wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "LP"][
-        ["timestamp", "value"]
-    ]
-    withdraw_positions = wallet_positions_over_time[
-        wallet_positions_over_time["base_token_type"] == "WITHDRAWAL_SHARE"
-    ][["timestamp", "value"]]
+    base_positions = reduce_plot_data(
+        wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == BASE_TOKEN_SYMBOL],
+        x_column_name="timestamp",
+        y_column_name="value",
+    )
+    long_positions = reduce_plot_data(
+        wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "LONG"],
+        x_column_name="timestamp",
+        y_column_name="value",
+    )
+    short_positions = reduce_plot_data(
+        wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "SHORT"],
+        x_column_name="timestamp",
+        y_column_name="value",
+    )
+    lp_positions = reduce_plot_data(
+        wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "LP"],
+        x_column_name="timestamp",
+        y_column_name="value",
+    )
+    withdraw_positions = reduce_plot_data(
+        wallet_positions_over_time[wallet_positions_over_time["base_token_type"] == "WITHDRAWAL_SHARE"],
+        x_column_name="timestamp",
+        y_column_name="value",
+    )
     ax_base.plot(base_positions["timestamp"], base_positions["value"], label=format_name)
     ax_long.plot(long_positions["timestamp"], long_positions["value"], label=format_name)
     ax_short.plot(short_positions["timestamp"], short_positions["value"], label=format_name)

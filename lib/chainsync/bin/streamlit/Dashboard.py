@@ -55,6 +55,7 @@ config_data = get_pool_config(session, coerce_float=False)
 config_data = config_data.iloc[0]
 
 max_live_blocks = 5000
+max_ticker_rows = 1000
 # Live ticker
 ticker_placeholder = st.empty()
 # OHLCV
@@ -86,7 +87,7 @@ while True:
                 freq = "5T"
 
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
-    ticker = get_ticker(session, start_block=-max_live_blocks, coerce_float=False)
+    ticker = get_ticker(session, max_rows=max_ticker_rows, coerce_float=False)
     # Adds user lookup to the ticker
     display_ticker = build_ticker(ticker, user_map)
 
