@@ -87,7 +87,7 @@ while True:
                 freq = "5T"
 
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
-    ticker = get_ticker(session, max_rows=max_ticker_rows, coerce_float=False)
+    ticker = get_ticker(session, max_rows=max_ticker_rows, coerce_float=False, sort_desc=True)
     # Adds user lookup to the ticker
     display_ticker = build_ticker(ticker, user_map)
 

@@ -580,6 +580,7 @@ def get_ticker(
     end_block: int | None = None,
     wallet_address: list[str] | None = None,
     max_rows: int | None = None,
+    sort_desc: bool | None = False,
     coerce_float=True,
 ) -> pd.DataFrame:
     """Get all pool analysis and returns as a pandas dataframe.
@@ -598,6 +599,8 @@ def get_ticker(
         The wallet addresses to filter the query on
     max_rows: int | None
         The number of rows to return. If None, will return all rows
+    sort_desc: bool, optional
+        If true, will sort in descending order
     coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -624,7 +627,11 @@ def get_ticker(
         query = query.filter(Ticker.wallet_address.in_(wallet_address))
 
     # Always sort by block in order
-    query = query.order_by(Ticker.block_number.desc())
+    # NOTE this affects which results get returned if max_rows is set
+    if sort_desc:
+        query = query.order_by(Ticker.block_number.desc())
+    else:
+        query = query.order_by(Ticker.block_number)
 
     if max_rows is not None:
         query = query.limit(max_rows)

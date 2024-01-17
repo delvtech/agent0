@@ -57,7 +57,7 @@ selected = st.multiselect("Wallet Addresses", user_map["format_name"])
 selected_addresses = map_addresses(selected, user_map, "format_name")["address"].to_list()
 
 # Get ticker for selected addresses
-ticker = get_ticker(session, max_rows=MAX_ROWS, coerce_float=False, wallet_address=selected_addresses)
+ticker = get_ticker(session, max_rows=MAX_ROWS, coerce_float=False, wallet_address=selected_addresses, sort_desc=True)
 display_ticker = build_ticker(ticker, user_map)
 
 # Get latest wallet pnls for selected addresses
