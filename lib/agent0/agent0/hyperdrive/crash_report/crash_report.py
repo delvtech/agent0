@@ -302,10 +302,10 @@ def log_hyperdrive_crash_report(
             # Don't log anvil dump state to rollbar
             dump_obj["anvil_dump_state"] = None  # type: ignore
             rollbar_data = dump_obj
-        else:
-            # If we're supplying the subset of data, we want to link to the original crash report
-            if crash_report_file is not None:
-                rollbar_data["crash_report_file"] = os.path.abspath(crash_report_file)
+
+        # Link to original crash report file in rollbar
+        if crash_report_file is not None:
+            rollbar_data["crash_report_file"] = os.path.abspath(crash_report_file)
 
         # Format data
         rollbar_data = json.loads(json.dumps(rollbar_data, indent=2, cls=ExtendedJSONEncoder))
