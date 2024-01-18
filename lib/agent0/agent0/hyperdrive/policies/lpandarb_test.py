@@ -4,8 +4,14 @@ from __future__ import annotations
 import logging
 
 import pytest
+from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveAddresses
+from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
+from web3 import Web3
+from web3.types import RPCEndpoint
 
+from agent0.hyperdrive.exec import async_execute_agent_trades
 from agent0.hyperdrive.interactive import LocalChain, InteractiveHyperdrive
 from agent0.hyperdrive.policies.zoo import Zoo
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
@@ -13,6 +19,8 @@ from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import Interacti
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
+# allow accessing _web3 member of chain
+# pylint: disable=protected-member
 
 TRADE_AMOUNTS = [0.003, 1e4, 1e5]  # 0.003 is three times the minimum transaction amount of local test deploy
 # We hit the target rate to the 5th decimal of precision.
@@ -300,3 +308,42 @@ def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_a
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
+
+@pytest.mark.anvil
+def test_max_open_long(chain: LocalChain):
+    """Open a max long."""
+    # Load anvil state with already deployed hyperdrive
+    with open('bytecode.bin', 'rb') as file:
+        byte_data = file.read()
+    # byte_data = b"0x" + byte_data
+    hex_data = byte_data.hex()
+    # prepend "0x" to hex_data
+    # hex_data = "0x" + hex_data
+    response = chain._web3.provider.make_request(method=RPCEndpoint("anvil_loadState"), params=[hex_data])
+    logging.info("anvil_loadState response is %s", response)
+
+    # create hyperdrive interface to connect to that known pool
+    eth_config = EthConfig(
+        artifacts_uri="not_used",
+        rpc_uri=chain.rpc_uri,
+    )
+    hyperdrive_addresses = HyperdriveAddresses(
+        base_token=Web3.to_checksum_address('0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9'),
+        hyperdrive_factory=Web3.to_checksum_address('0x851356ae760d987E095750cCeb3bC6014560891C'),
+        mock_hyperdrive=Web3.to_checksum_address('0x55652FF92Dc17a21AD6810Cce2F4703fa2339CAE'),
+        mock_hyperdrive_math=None
+    )
+    hyperdrive_interface = HyperdriveReadWriteInterface(
+        eth_config=eth_config,
+        addresses=hyperdrive_addresses,
+        web3=chain._web3,
+    )
+
+    # create a deterministic agent to run my trades
+    dbot = Zoo.deterministic(Zoo.deterministic.Config(
+        trade_list = ("open_long", 100)
+    ))
+
+    trade_results = async_execute_agent_trades(hyperdrive_interface, [dbot], liquidate=False, interactive_mode=False)
+    trade_result = trade_results[0]
+    logging.info("trade result is %s", trade_result)
