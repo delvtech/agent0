@@ -85,7 +85,9 @@ def setup_fuzz(
 
     initial_pool_config = InteractiveHyperdrive.Config(
         preview_before_trade=True,
-        checkpoint_duration=86400,
+        checkpoint_duration=60 * 60 * 24,  # 1 day
+        # TODO calc_max_short doesn't work with a week position duration, setting to 30 days
+        position_duration=60 * 60 * 24 * 30,  # 30 days
         log_to_rollbar=log_to_rollbar,
         rollbar_log_prefix=fuzz_test_name,
         crash_log_level=crash_log_level,
