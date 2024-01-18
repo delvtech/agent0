@@ -191,22 +191,21 @@ class TestBotToDb:
         # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
         initial_fixed_rate = FixedPoint("0.05")
+        # This expected time stretch is only true for 1 year position duration
         expected_timestretch_fp = FixedPoint(1) / (
             FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
         )
         expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
-
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
-
         expected_pool_config = {
             "contract_address": hyperdrive_contract_addresses.mock_hyperdrive,
             "base_token": hyperdrive_contract_addresses.base_token,
             "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
-            "position_duration": 31_536_000,  # 1 year
+            "position_duration": 60 * 60 * 24 * 365,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,
             "governance": deploy_account.address,

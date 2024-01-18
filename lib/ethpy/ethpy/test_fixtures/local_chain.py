@@ -12,6 +12,7 @@ from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
+from hyperdrivepy import get_time_stretch
 from hypertypes import Fees, PoolDeployConfig
 from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
@@ -177,10 +178,10 @@ def launch_local_hyperdrive_pool(
     # TODO the above parameters results in negative interest with the default position duration
     # Hence, we adjust the position duration to be a year to avoid the pool's reserve being 1:1
     # This likely should get fixed by adjusting the time_stretch parameter
-    position_duration = 31_536_000  # 1 year
+    position_duration = 60 * 60 * 24 * 365  # 1 year
     checkpoint_duration = 3600  # 1 hour
-    time_stretch = FixedPoint(1) / (
-        FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
+    time_stretch = FixedPoint(
+        scaled_value=int(get_time_stretch(str(initial_fixed_rate.scaled_value), str(position_duration)))
     )
     pool_config = PoolDeployConfig(
         baseToken="",  # will be determined in the deploy function
