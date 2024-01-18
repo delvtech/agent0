@@ -24,14 +24,12 @@ ENV_FILE = "fuzz_test_bots.account.env"
 # Username binding of bots
 USERNAME = "test_bots"
 # The amount of base token each bot receives
-# TODO update base budget to be 100% of liquidity, so that max trades cause large swings
-# May want to add weighting to random draw so large trades are unlikely, or have arb bot
-# ensure pool stays reasonable
-BASE_BUDGET_PER_BOT = FixedPoint(1000)
-ETH_BUDGET_PER_BOT = FixedPoint(10)
+# We don't have access to the pool liquidity here,
+# but we assume this is enough base to make trades that are at the pool's max
+BASE_BUDGET_PER_BOT = FixedPoint(10_000_000)
+ETH_BUDGET_PER_BOT = FixedPoint(1_000)
 # The slippage tolerance for trades
-# TODO randomly turn on/off slippage for each bot
-SLIPPAGE_TOLERANCE = FixedPoint("0.1")  # 10% slippage
+SLIPPAGE_TOLERANCE = FixedPoint("0.01")  # 1% slippage
 # Run this file with this flag set to true to close out all open positions
 LIQUIDATE = False
 
@@ -64,6 +62,7 @@ agent_config: list[AgentConfig] = [
         policy_config=Zoo.random.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
+            randomly_ignore_slippage_tolerance=True,
         ),
     ),
 ]
