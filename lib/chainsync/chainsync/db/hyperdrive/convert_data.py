@@ -131,7 +131,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
                 value = Decimal(str(value))
             # Pool config contains many addresses, the DB only needs the mock hyperdrive address
             if isinstance(value, HyperdriveAddresses):
-                value = value.mock_hyperdrive
+                value = value.erc4626_hyperdrive
         args_dict[camel_to_snake(key)] = value
     pool_config = PoolConfig(**args_dict)
     return pool_config
