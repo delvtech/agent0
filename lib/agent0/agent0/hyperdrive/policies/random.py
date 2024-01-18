@@ -53,6 +53,7 @@ class Random(HyperdrivePolicy):
         """
 
         trade_chance: FixedPoint = FixedPoint("1.0")
+        randomly_ignore_slippage_tolerance: bool = False
         allowable_actions: list[HyperdriveActionType] = field(
             default_factory=lambda: [
                 HyperdriveActionType.OPEN_LONG,
@@ -75,6 +76,7 @@ class Random(HyperdrivePolicy):
         """
         self.trade_chance = policy_config.trade_chance
         self.allowable_actions = policy_config.allowable_actions
+        self.randomly_ignore_slippage_tolerance = policy_config.randomly_ignore_slippage_tolerance
         super().__init__(policy_config)
 
     def get_available_actions(
@@ -145,8 +147,14 @@ class Random(HyperdrivePolicy):
         trade_amount = max(
             interface.pool_config.minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount)
         )
+        # optionally ignore slippage tolerance
+        ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
+        if ignore_slippage:
+            slippage = None
+        else:
+            slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.open_short_trade(trade_amount, self.slippage_tolerance)]
+        return [interface.open_short_trade(trade_amount, slippage)]
 
     def close_random_short(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -168,7 +176,14 @@ class Random(HyperdrivePolicy):
         # choose a random short time to close
         short_time = list(wallet.shorts)[self.rng.integers(len(wallet.shorts))]
         trade_amount = wallet.shorts[short_time].balance  # close the full trade
-        return [interface.close_short_trade(trade_amount, short_time, self.slippage_tolerance)]
+        # optionally ignore slippage tolerance
+        ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
+        if ignore_slippage:
+            slippage = None
+        else:
+            slippage = self.slippage_tolerance
+        # return a trade using a specification that is parsable by the rest of the sim framework
+        return [interface.close_short_trade(trade_amount, short_time, slippage)]
 
     def open_long_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -198,8 +213,14 @@ class Random(HyperdrivePolicy):
         trade_amount = max(
             interface.pool_config.minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount)
         )
+        # optionally ignore slippage tolerance
+        ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
+        if ignore_slippage:
+            slippage = None
+        else:
+            slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.open_long_trade(trade_amount, self.slippage_tolerance)]
+        return [interface.open_long_trade(trade_amount, slippage)]
 
     def close_random_long(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -221,7 +242,14 @@ class Random(HyperdrivePolicy):
         # choose a random long time to close
         long_time = list(wallet.longs)[self.rng.integers(len(wallet.longs))]
         trade_amount = wallet.longs[long_time].balance  # close the full trade
-        return [interface.close_long_trade(trade_amount, long_time, self.slippage_tolerance)]
+        # optionally ignore slippage tolerance
+        ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
+        if ignore_slippage:
+            slippage = None
+        else:
+            slippage = self.slippage_tolerance
+        # return a trade using a specification that is parsable by the rest of the sim framework
+        return [interface.close_long_trade(trade_amount, long_time, slippage)]
 
     def add_liquidity_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -276,8 +304,14 @@ class Random(HyperdrivePolicy):
         trade_amount = max(
             interface.pool_config.minimum_transaction_amount, min(wallet.lp_tokens, initial_trade_amount)
         )
+        # optionally ignore slippage tolerance
+        ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
+        if ignore_slippage:
+            slippage = None
+        else:
+            slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.remove_liquidity_trade(trade_amount, self.slippage_tolerance)]
+        return [interface.remove_liquidity_trade(trade_amount, slippage)]
 
     def redeem_withdraw_shares_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
