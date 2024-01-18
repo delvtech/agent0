@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
 
 import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.interactive import LocalChain, InteractiveHyperdrive
 from agent0.hyperdrive.policies.zoo import Zoo
+from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 
@@ -54,7 +56,21 @@ def arbitrage_andy(interactive_hyperdrive) -> InteractiveHyperdriveAgent:
     -------
     InteractiveHyperdriveAgent
         Arbitrage Andy interactive hyperdrive agent."""
-    # create arbitrage andy
+    return create_arbitrage_andy(interactive_hyperdrive)
+
+
+def create_arbitrage_andy(interactive_hyperdrive) -> InteractiveHyperdriveAgent:
+    """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
+
+    Arguments
+    ---------
+    interactive_hyperdrive: InteractiveHyperdrive
+        Interactive hyperdrive.
+
+    Returns
+    -------
+    InteractiveHyperdriveAgent
+        Arbitrage Andy interactive hyperdrive agent."""
     andy_base = FixedPoint(1e9)
     andy_config = Zoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
@@ -301,3 +317,87 @@ def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_a
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
+
+
+def calc_shares_needed_for_bonds(bonds_needed: FixedPoint, pool_state, interface) -> tuple[FixedPoint, FixedPoint]:
+    _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
+    spot_price = interface.calc_spot_price(pool_state)
+    price_discount = FixedPoint(1) - spot_price
+    _shares_to_gov = (
+        _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance_lp
+    )
+    _shares_to_pool -= _shares_to_gov
+    return _shares_to_pool, _shares_to_gov
+
+
+def apply_step(pool_state, bonds_needed, shares_needed, gov_fee):
+    if bonds_needed > 0:  # short case
+        pool_state.pool_info.share_reserves += -shares_needed - gov_fee
+    else:  # long case
+        pool_state.pool_info.share_reserves += shares_needed - gov_fee
+    pool_state.pool_info.bond_reserves += bonds_needed
+    return pool_state
+
+
+@pytest.mark.anvil
+def test_get_what_you_got(chain: Chain):
+    """Ensure prediction matches reality."""
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
+    pool_state = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    starting_bond_reserves = pool_state.pool_info.bond_reserves
+    starting_share_reserves = pool_state.pool_info.share_reserves
+    logging.info("starting bond_reserves is %s", starting_bond_reserves)
+    logging.info("starting share_reserves is %s", starting_share_reserves)
+
+    bonds_needed = FixedPoint(100_000)
+    shares_needed = interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(bonds_needed)
+    share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_price
+    base_needed = shares_needed * share_price
+    shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(
+        bonds_needed, pool_state, interactive_hyperdrive.hyperdrive_interface
+    )
+    pool_state = apply_step(deepcopy(pool_state), -bonds_needed, shares_to_pool, shares_to_gov)
+    predicted_bond_reserves = pool_state.pool_info.bond_reserves
+    predicted_share_reserves = pool_state.pool_info.share_reserves
+    predicted_delta_bonds = predicted_bond_reserves - starting_bond_reserves
+    predicted_delta_shares = predicted_share_reserves - starting_share_reserves
+    logging.info("predicted delta bonds is %s", predicted_delta_bonds)
+    logging.info("predicted delta shares is %s", predicted_delta_shares)
+
+    # measure pool before trade
+    pool_state_before = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_bonds_before = pool_state_before.pool_info.bond_reserves
+    pool_shares_before = pool_state_before.pool_info.share_reserves
+    # do the trade
+    event = arbitrage_andy.open_long(base=base_needed)
+    event = event[0] if isinstance(event, list) else event
+    actual_event_bonds = event.bond_amount
+    actual_event_base = event.base_amount
+    logging.info(
+        "opened long with input base=%s, output Δbonds= %s%s, Δbase= %s%s",
+        base_needed,
+        "+" if actual_event_bonds > 0 else "",
+        actual_event_bonds,
+        "+" if actual_event_base > 0 else "",
+        actual_event_base,
+    )
+    # measure pool after trade
+    pool_state_after = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_bonds_after = pool_state_after.pool_info.bond_reserves
+    pool_shares_after = pool_state_after.pool_info.share_reserves
+    logging.info("pool bonds after is %s", pool_bonds_after)
+    logging.info("pool shares after is %s", pool_shares_after)
+    actual_delta_bonds = pool_bonds_after - pool_bonds_before
+    actual_delta_shares = pool_shares_after - pool_shares_before
+    logging.info("actual delta bonds is %s", actual_delta_bonds)
+    logging.info("actual delta shares is %s", actual_delta_shares)
+
+    logging.info(f"discrepancy (%) for bonds is {float((actual_delta_bonds - predicted_delta_bonds) / predicted_delta_bonds):e}")
+    logging.info(f"discrepancy (%) for shares is {float((actual_delta_shares - predicted_delta_shares) / predicted_delta_shares):e}")
