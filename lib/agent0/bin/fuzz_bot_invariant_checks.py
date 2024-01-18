@@ -27,6 +27,7 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from hyperlogs import setup_logging
 from hyperlogs.rollbar_utilities import initialize_rollbar
+from web3.exceptions import BlockNotFound
 from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
@@ -381,7 +382,12 @@ def _check_lp_share_price(
     exception_message = ""
     exception_data: dict[str, Any] = {}
 
-    previous_pool_state = interface.get_hyperdrive_state(interface.get_block(block_number - 1))
+    # This is known to fail when checking the first block, as block - 1 doesn't exist.
+    try:
+        previous_pool_state = interface.get_hyperdrive_state(interface.get_block(block_number - 1))
+    except BlockNotFound:
+        return InvariantCheckResults(False, exception_message, exception_data)
+
     previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
     current_lp_share_price = pool_state.pool_info.lp_share_price
     test_tolerance = previous_lp_share_price * FixedPoint(str(test_epsilon))

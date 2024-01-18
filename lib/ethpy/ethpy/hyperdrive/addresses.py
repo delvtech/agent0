@@ -7,7 +7,6 @@ import time
 import attr
 import requests
 from eth_typing import Address, ChecksumAddress
-
 from hypertypes.utilities.conversions import camel_to_snake
 
 
@@ -18,8 +17,9 @@ class HyperdriveAddresses:
     # pylint: disable=too-few-public-methods
 
     base_token: Address | ChecksumAddress = attr.ib()
+    erc4626_hyperdrive: Address | ChecksumAddress = attr.ib()
     hyperdrive_factory: Address | ChecksumAddress = attr.ib()
-    mock_hyperdrive: Address | ChecksumAddress = attr.ib()
+    steth_hyperdrive: Address | ChecksumAddress = attr.ib()
     mock_hyperdrive_math: Address | ChecksumAddress | None = attr.ib()
 
 

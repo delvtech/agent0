@@ -118,7 +118,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Get the Hyperdrive contract.
     # TODO replace this with the hyperdrive interface
     addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-    hyperdrive_contract_address = web3.to_checksum_address(addresses.mock_hyperdrive)
+    hyperdrive_contract_address = web3.to_checksum_address(addresses.erc4626_hyperdrive)
     hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=web3)(
         hyperdrive_contract_address
     )

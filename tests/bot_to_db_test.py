@@ -200,7 +200,7 @@ class TestBotToDb:
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
         expected_pool_config = {
-            "contract_address": hyperdrive_contract_addresses.mock_hyperdrive,
+            "contract_address": hyperdrive_contract_addresses.erc4626_hyperdrive,
             "base_token": hyperdrive_contract_addresses.base_token,
             "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
