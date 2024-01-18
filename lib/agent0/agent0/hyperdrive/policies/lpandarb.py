@@ -351,8 +351,9 @@ class LPandArb(HyperdrivePolicy):
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
-                amount = min(bonds_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
-                action_list.append(interface.open_long_trade(amount, self.slippage_tolerance))
+                shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
+                amount_base = min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
+                action_list.append(interface.open_long_trade(amount_base, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
             # Reduce longs first, if we have them
