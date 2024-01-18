@@ -1,13 +1,17 @@
 """Test the ability of bots to hit a target rate."""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 import pytest
 from ethpy import EthConfig
+from ethpy.base import wait_for_transaction_receipt
 from ethpy.hyperdrive import HyperdriveAddresses
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
+from hypertypes import IERC4626HyperdriveContract
+from hypertypes.types import ERC20MintableContract
 from web3 import Web3
 from web3.types import RPCEndpoint
 
@@ -309,41 +313,88 @@ def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_a
     logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
 
+
 @pytest.mark.anvil
 def test_max_open_long(chain: LocalChain):
     """Open a max long."""
+    web3 = chain._web3
+
+    # connect to external anvil
+    web3 = Web3(Web3.HTTPProvider("http://127.0.0.1:9999"))
+
     # Load anvil state with already deployed hyperdrive
-    with open('bytecode.bin', 'rb') as file:
-        byte_data = file.read()
-    # byte_data = b"0x" + byte_data
-    hex_data = byte_data.hex()
-    # prepend "0x" to hex_data
-    # hex_data = "0x" + hex_data
-    response = chain._web3.provider.make_request(method=RPCEndpoint("anvil_loadState"), params=[hex_data])
+    with open("bytecode.hex", "r", encoding="utf-8") as file:
+        hex_data = file.read()
+    response = web3.provider.make_request(method=RPCEndpoint("anvil_loadState"), params=[hex_data])
     logging.info("anvil_loadState response is %s", response)
 
-    # create hyperdrive interface to connect to that known pool
-    eth_config = EthConfig(
-        artifacts_uri="not_used",
-        rpc_uri=chain.rpc_uri,
+    # rawdog trade with the pool
+    amount_of_base_to_mint = int(1_000_000 * 10**18)
+    base_token_contract_address = "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9"
+    hyperdrive_contract_addsress = "0x55652FF92Dc17a21AD6810Cce2F4703fa2339CAE"
+    base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=web3)(
+        web3.to_checksum_address(base_token_contract_address)
     )
-    hyperdrive_addresses = HyperdriveAddresses(
-        base_token=Web3.to_checksum_address('0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9'),
-        hyperdrive_factory=Web3.to_checksum_address('0x851356ae760d987E095750cCeb3bC6014560891C'),
-        mock_hyperdrive=Web3.to_checksum_address('0x55652FF92Dc17a21AD6810Cce2F4703fa2339CAE'),
-        mock_hyperdrive_math=None
-    )
-    hyperdrive_interface = HyperdriveReadWriteInterface(
-        eth_config=eth_config,
-        addresses=hyperdrive_addresses,
-        web3=chain._web3,
-    )
+    signer_checksum_address = web3.eth.accounts[0]
+    signer_private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
-    # create a deterministic agent to run my trades
-    dbot = Zoo.deterministic(Zoo.deterministic.Config(
-        trade_list = ("open_long", 100)
-    ))
+    # mint
+    unsent_mint_tx = base_token_contract.functions.mint(amount_of_base_to_mint)
+    built_tx = unsent_mint_tx.build_transaction(
+        {"from": web3.eth.accounts[0], "gas": 1000000, "nonce": web3.eth.get_transaction_count(signer_checksum_address)}
+    )
+    signed_txn = web3.eth.account.sign_transaction(built_tx, signer_private_key)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    logging.info("mint txn is %s", tx_receipt)
+    assert tx_receipt["status"] == 1
 
-    trade_results = async_execute_agent_trades(hyperdrive_interface, [dbot], liquidate=False, interactive_mode=False)
-    trade_result = trade_results[0]
-    logging.info("trade result is %s", trade_result)
+    # approve
+    unsent_approve_tx = base_token_contract.functions.approve(
+        web3.to_checksum_address(hyperdrive_contract_addsress),
+        amount_of_base_to_mint,
+    )
+    built_tx = unsent_approve_tx.build_transaction(
+        {"from": web3.eth.accounts[0], "gas": 1000000, "nonce": web3.eth.get_transaction_count(signer_checksum_address)}
+    )
+    signed_txn = web3.eth.account.sign_transaction(built_tx, signer_private_key)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    logging.info("approve txn is %s", tx_receipt)
+    assert tx_receipt["status"] == 1
+
+    hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=web3)(
+        web3.to_checksum_address(hyperdrive_contract_addsress)
+    )
+    # inspect pool
+    pool_info = hyperdrive_contract.functions.getPoolInfo().call()
+    logging.info("pool info is %s", pool_info)
+
+    # open long
+    fn_args = (
+        int(20),
+        1,  # min_output
+        1,  # min_share_price
+        (  # IHyperdrive.Options
+            signer_checksum_address,  # destination
+            True,  # asBase
+            bytes(0),  # extraData
+        ),
+    )
+    func_handle = hyperdrive_contract.get_function_by_name("openLong")(*fn_args)
+    unsent_txn = func_handle.build_transaction(
+        {
+            "from": signer_checksum_address,
+            "nonce": web3.eth.get_transaction_count(signer_checksum_address),
+            "gas": 10000000,
+        }
+    )
+    signed_txn = web3.eth.account.sign_transaction(unsent_txn, signer_private_key)
+    logging.info("signed_txn is %s", signed_txn)
+
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    logging.info("tx_receipt is %s", tx_receipt)
+
+    # check if the trade was successful
+    assert tx_receipt["status"] == 1

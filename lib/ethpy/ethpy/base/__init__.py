@@ -8,6 +8,7 @@ from .transactions import (
     async_eth_transfer,
     async_smart_contract_transact,
     async_wait_for_transaction_receipt,
+    wait_for_transaction_receipt,
     eth_transfer,
     fetch_contract_transactions_for_block,
     smart_contract_preview_transaction,
