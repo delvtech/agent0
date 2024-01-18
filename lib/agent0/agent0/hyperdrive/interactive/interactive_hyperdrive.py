@@ -37,6 +37,7 @@ from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
+from hyperdrivepy import get_time_stretch
 
 # TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
 from hypertypes import Fees, PoolDeployConfig
@@ -88,7 +89,7 @@ class InteractiveHyperdrive:
     # pylint: disable=too-many-instance-attributes
     @dataclass
     class Config:
-        """The configuration for the initial pool configuration
+        """The configuration for the initial pool configuration.
 
         Attributes
         ----------
@@ -99,7 +100,7 @@ class InteractiveHyperdrive:
         log_to_rollbar: bool, optional
             Whether to log crash reports to rollbar. Defaults to False.
         rollbar_log_prefix: str | None, optional
-            The prefix to prepend to rollbar exception messages
+            The prefix to prepend to rollbar exception messages.
         crash_log_level: int, optional
             The log level to log crashes at. Defaults to critical.
         crash_log_ticker: bool | None, optional
@@ -116,15 +117,16 @@ class InteractiveHyperdrive:
         initial_fixed_rate: FixedPoint
             The fixed rate of the pool on initialization.
         minimum_share_reserves: FixedPoint
-            The minimum share reserves
+            The minimum share reserves.
         minimum_transaction_amount: FixedPoint
             The minimum amount of tokens that a position can be opened or closed with.
         position_duration: int
-            The duration of a position prior to maturity (in seconds)
+            The duration of a position prior to maturity (in seconds).
         checkpoint_duration: int
-            The duration of a checkpoint (in seconds)
-        time_stretch: FixedPoint
-            A parameter which decreases slippage around a target rate
+            The duration of a checkpoint (in seconds).
+        time_stretch: FixedPoint, optional
+            A parameter which decreases slippage around a target rate.
+            Defaults to a value computed from the initial_fixed_rate and position_duration.
         curve_fee: FixedPoint
             The LP fee applied to the curve portion of a trade.
         flat_fee: FixedPoint
@@ -181,15 +183,16 @@ class InteractiveHyperdrive:
             # Random generator
             if self.rng is None:
                 self.rng = np.random.default_rng(self.rng_seed)
-
-            if self.time_stretch is None:
-                self.time_stretch = FixedPoint(1) / (
-                    FixedPoint("5.24592") / (FixedPoint("0.04665") * (self.initial_fixed_rate * FixedPoint(100)))
-                )
             if self.checkpoint_duration > self.position_duration:
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
+            if self.time_stretch is None:
+                self.time_stretch = FixedPoint(
+                    scaled_value=int(
+                        get_time_stretch(str(self.initial_fixed_rate.scaled_value), str(self.position_duration))
+                    )
+                )
 
     def __init__(self, chain: Chain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
