@@ -302,15 +302,19 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        actual_base_amount = close_trade_event.base_amount
-        expected_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
+        actual_long_base_amount = close_trade_event.base_amount
+        expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
         # assert with close event bond amount
-        if not fp_isclose(actual_base_amount, expected_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))):
-            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount.scaled_value)
-            exception_message.append(f"{actual_base_amount=} != {expected_base_amount=}, {difference_in_wei=}")
-            exception_data["invariance_check:actual_long_base_amount"] = actual_base_amount
-            exception_data["invariance_check:expected_long_base_amount"] = expected_base_amount
+        if not fp_isclose(
+            actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
+        ):
+            difference_in_wei = abs(actual_long_base_amount.scaled_value - expected_long_base_amount.scaled_value)
+            exception_message.append(
+                f"{actual_long_base_amount=} != {expected_long_base_amount=}, {difference_in_wei=}"
+            )
+            exception_data["invariance_check:actual_long_base_amount"] = actual_long_base_amount
+            exception_data["invariance_check:expected_long_base_amount"] = expected_long_base_amount
             exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
 
@@ -331,17 +335,21 @@ def invariant_check(
         share_reserves_delta_plus_flat_fee = share_reserves_delta + flat_fee
 
         # get the final interest accrued
-        expected_base_amount = (
+        expected_short_base_amount = (
             open_trade_event.bond_amount * (closing_share_price / open_share_price + flat_fee_percent)
             - share_reserves_delta_plus_flat_fee
         )
 
-        actual_base_amount = close_trade_event.base_amount
-        if not fp_isclose(actual_base_amount, expected_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))):
-            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount.scaled_value)
-            exception_message.append(f"{actual_base_amount=} != {expected_base_amount=}, {difference_in_wei=}")
-            exception_data["invariance_check:actual_short_base_amount"] = actual_base_amount
-            exception_data["invariance_check:expected_short_base_amount"] = expected_base_amount
+        actual_short_base_amount = close_trade_event.base_amount
+        if not fp_isclose(
+            actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
+        ):
+            difference_in_wei = abs(actual_short_base_amount.scaled_value - expected_short_base_amount.scaled_value)
+            exception_message.append(
+                f"{actual_short_base_amount=} != {expected_short_base_amount=}, {difference_in_wei=}"
+            )
+            exception_data["invariance_check:actual_short_base_amount"] = actual_short_base_amount
+            exception_data["invariance_check:expected_short_base_amount"] = expected_short_base_amount
             exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
     else:
