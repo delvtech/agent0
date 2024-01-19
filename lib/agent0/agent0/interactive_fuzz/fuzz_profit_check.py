@@ -2,7 +2,7 @@
 
 
 # Test procedure
-- spin up local chain, deploy hyperdrive
+- spin up local chain, deploy hyperdrive with fees
 - open a long for a random amount
 - advance time, but not enough to trigger a new checkpoint
 - close the long
@@ -15,7 +15,11 @@
 # We are checking that the agent made made no profit
 - Repeat these two checks for the longs & shorts
   - transaction receipt: base amount returned < base amount provided
-  - agent wallet: agent's wallet balance < trade amount
+  - agent wallet: final balance <= initial balance
+- Specific values checked
+  - trade amount
+  - agent initial balance
+  - agent final balance
 """
 from __future__ import annotations
 
