@@ -286,6 +286,7 @@ def invariant_check(
     # present value should always be >= idle
     # idle shares are the shares that are not reserved by open positions
     # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
+    current_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
     idle_shares = interactive_hyperdrive.hyperdrive_interface.get_idle_shares(pool_state.block_number)
     if current_present_value < idle_shares:
         difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
@@ -300,7 +301,6 @@ def invariant_check(
 
     # Present value
     # open or close trades shouldn't affect PV within 0.1%
-    current_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
     if check_data["trade_type"] in [
         HyperdriveActionType.OPEN_LONG,
         HyperdriveActionType.CLOSE_LONG,
