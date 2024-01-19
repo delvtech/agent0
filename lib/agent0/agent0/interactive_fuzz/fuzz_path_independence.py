@@ -115,16 +115,21 @@ def fuzz_path_independence(
     logging.info("Save chain snapshot...")
     chain.save_snapshot()
 
-    # List of columns in pool info to check between the initial pool info and the latest pool info.
-    check_columns = [
-        "shorts_outstanding",
-        "withdrawal_shares_proceeds",
-        "lp_share_price",
-        "long_exposure",
-        "bond_reserves",
-        "lp_total_supply",
-        "longs_outstanding",
-    ]
+    # Dictionary of columns in pool state to check between the initial pool info and the latest pool info.
+    # Keys represents the columns, values represents the allowed error.
+    check_columns_epsilon: dict[str, Any] = {
+        "shorts_outstanding": 0,
+        "withdrawal_shares_proceeds": 0,
+        "lp_share_price": 0,
+        "long_exposure": 0,
+        "bond_reserves": 0,
+        "lp_total_supply": 0,
+        "longs_outstanding": 0,
+    }
+    check_columns = list(check_columns_epsilon.keys())
+    # Add additional epsilon checks for added invariance checks
+    check_columns_epsilon["present_value"] = present_value_epsilon
+    check_columns_epsilon["effective_share_reserves"] = effective_share_reserves_epsilon
 
     # Close the trades randomly & verify that the final state is unchanged
     logging.info("Close trades in random order; check final state...")
@@ -164,7 +169,7 @@ def fuzz_path_independence(
             check_data[
                 "effective_share_reserves"
             ] = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
-            check_data["initial_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
+            check_data["initial_pool_state"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             check_data["curr_checkpoint_id"] = ending_checkpoint_id
@@ -178,13 +183,12 @@ def fuzz_path_independence(
             assert ending_checkpoint_id == check_data["curr_checkpoint_id"]
 
             # Check values not provided in the database
-            check_data["final_pool_state_df"] = pool_state_df[check_columns].iloc[-1].copy()
+            check_data["final_pool_state"] = pool_state_df[check_columns].iloc[-1].copy()
+
             # Raise an error if it failed
             assert first_run_state_dump_dir is not None
             try:
-                invariant_check(
-                    check_data, effective_share_reserves_epsilon, present_value_epsilon, interactive_hyperdrive
-                )
+                invariant_check(check_data, check_columns_epsilon, interactive_hyperdrive)
             except FuzzAssertionException as error:
                 dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
 
@@ -326,8 +330,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 def invariant_check(
     check_data: dict[str, Any],
-    effective_share_reserves_epsilon: float,
-    present_value_epsilon: float,
+    check_epsilon: dict[str, Any],
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
@@ -336,6 +339,8 @@ def invariant_check(
     ---------
     check_data: dict[str, Any]
         The trade data to check.
+    check_epsilon: dict[str, Any]
+        The expected epsilon for each invariants check.
     effective_share_reserves_epsilon: float
         The allowed error for effective share reserves equality tests.
     present_value_epsilon: float
@@ -357,7 +362,7 @@ def invariant_check(
     if not fp_isclose(
         expected_effective_share_reserves,
         actual_effective_share_reserves,
-        abs_tol=FixedPoint(str(effective_share_reserves_epsilon)),
+        abs_tol=FixedPoint(str(check_epsilon["effective_share_reserves"])),
     ):
         difference_in_wei = abs(
             expected_effective_share_reserves.scaled_value - actual_effective_share_reserves.scaled_value
@@ -373,7 +378,9 @@ def invariant_check(
     # Present value
     expected_present_value = FixedPoint(check_data["present_value"])
     actual_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
-    if not fp_isclose(expected_present_value, actual_present_value, abs_tol=FixedPoint(str(present_value_epsilon))):
+    if not fp_isclose(
+        expected_present_value, actual_present_value, abs_tol=FixedPoint(str(check_epsilon["present_value"]))
+    ):
         difference_in_wei = abs(expected_present_value.scaled_value - actual_present_value.scaled_value)
         exception_message.append(f"{expected_present_value=} != {actual_present_value=}, {difference_in_wei=}")
         exception_data["invariance_check:expected_present_value"] = expected_present_value
@@ -382,18 +389,18 @@ def invariant_check(
         failed = True
 
     # Check that the subset of columns in initial db pool state and the latest pool state are equal
-    expected_pool_state_df = check_data["initial_pool_state_df"]
-    actual_pool_state_df = check_data["final_pool_state_df"]
-    # Fill values fill nan values with 0 for equality check
-    eq_vals = expected_pool_state_df.eq(actual_pool_state_df, fill_value=0)
-    if not eq_vals.all():
-        # Get rows where values are not equal
-        expected_pool_state_df = expected_pool_state_df[~eq_vals]
-        actual_pool_state_df = actual_pool_state_df[~eq_vals]
-        # Iterate and build exception message and data
-        for field_name, expected_val in expected_pool_state_df.items():
-            expected_val = FixedPoint(expected_val)
-            actual_val = FixedPoint(actual_pool_state_df[field_name])
+    expected_pool_state: pd.Series = check_data["initial_pool_state"]
+    actual_pool_state: pd.Series = check_data["final_pool_state"]
+
+    # Sanity check, both series have the same indices
+    assert (expected_pool_state.index == actual_pool_state.index).all()
+
+    for field_name, expected_val in expected_pool_state.items():
+        field_name = str(field_name)
+        expected_val = FixedPoint(expected_val)
+        actual_val = FixedPoint(actual_pool_state[field_name])
+        epsilon = FixedPoint(str(check_epsilon[field_name]))
+        if not fp_isclose(expected_val, actual_val, abs_tol=epsilon):
             difference_in_wei = abs(expected_val.scaled_value - actual_val.scaled_value)
             exception_message.append(
                 f"expected_{field_name}={expected_val}, actual_{field_name}={actual_val}, {difference_in_wei=}"
@@ -401,7 +408,7 @@ def invariant_check(
             exception_data["invariance_check:expected_" + field_name] = expected_val
             exception_data["invariance_check:actual_" + field_name] = actual_val
             exception_data["invariance_check:" + field_name + "_difference_in_wei"] = difference_in_wei
-        failed = True
+            failed = True
 
     if failed:
         logging.critical("\n".join(exception_message))
