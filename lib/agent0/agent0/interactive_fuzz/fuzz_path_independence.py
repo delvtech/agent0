@@ -65,6 +65,7 @@ def main(argv: Sequence[str] | None = None):
 def fuzz_path_independence(
     num_trades: int,
     num_paths_checked: int,
+    lp_share_price_epsilon: float,
     effective_share_reserves_epsilon: float,
     present_value_epsilon: float,
     chain_config: LocalChain.Config,
@@ -78,6 +79,8 @@ def fuzz_path_independence(
         Number of trades to perform during the fuzz tests.
     num_paths_checked: int
         Number of paths (order of operations for opening/closing) to perform.
+    lp_share_price_epsilon: float
+        The allowed error for LP share price equality tests.
     effective_share_reserves_epsilon: float
         The allowed error for effective share reserves equality tests.
     present_value_epsilon: float
@@ -120,7 +123,7 @@ def fuzz_path_independence(
     check_columns_epsilon: dict[str, Any] = {
         "shorts_outstanding": 0,
         "withdrawal_shares_proceeds": 0,
-        "lp_share_price": 0,
+        "lp_share_price": lp_share_price_epsilon,
         "long_exposure": 0,
         "bond_reserves": 0,
         "lp_total_supply": 0,
@@ -243,6 +246,7 @@ class Args(NamedTuple):
 
     num_trades: int
     num_paths_checked: int
+    lp_share_price_epsilon: float
     effective_share_reserves_epsilon: float
     present_value_epsilon: float
     chain_config: LocalChain.Config
@@ -265,6 +269,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         num_trades=namespace.num_trades,
         num_paths_checked=namespace.num_paths_checked,
+        lp_share_price_epsilon=namespace.lp_share_price_epsilon,
         effective_share_reserves_epsilon=namespace.effective_share_reserves_epsilon,
         present_value_epsilon=namespace.present_value_epsilon,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
@@ -297,6 +302,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=10,
         help="The port to use for the local chain.",
+    )
+    parser.add_argument(
+        "--lp_share_price_epsilon",
+        type=float,
+        default=1e-14,
+        help="The allowed error for lp share price equality tests.",
     )
     parser.add_argument(
         "--effective_share_reserves_epsilon",
