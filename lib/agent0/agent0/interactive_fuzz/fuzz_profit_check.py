@@ -292,7 +292,7 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     base_amount_provided: FixedPoint = check_data["long_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
-        exception_message.append(f"LONG: Amount returned on closing was too large.")
+        exception_message.append("LONG: Amount returned on closing was too large.")
         exception_message.append(
             f"{base_amount_returned=} should not be >= {base_amount_provided=}. {difference_in_wei=}"
         )
@@ -305,7 +305,7 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     final_agent_balance: FixedPoint = check_data["long_agent_final_balance"]
     if final_agent_balance > initial_agent_balance:
         difference_in_wei = abs(final_agent_balance.scaled_value - initial_agent_balance.scaled_value)
-        exception_message.append(f"LONG: Agent made a profit when the should not have.")
+        exception_message.append("LONG: Agent made a profit when the should not have.")
         exception_message.append(
             f"{final_agent_balance=} should not be > {initial_agent_balance=}. {difference_in_wei=}"
         )
@@ -319,7 +319,7 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     base_amount_provided: FixedPoint = check_data["short_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
-        exception_message.append(f"SHORT: Amount returned on closing was too large.")
+        exception_message.append("SHORT: Amount returned on closing was too large.")
         exception_message.append(
             f"{base_amount_returned=} should not be >= {base_amount_provided=}. {difference_in_wei=}"
         )
@@ -332,7 +332,7 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     final_agent_balance: FixedPoint = check_data["short_agent_final_balance"]
     if final_agent_balance > initial_agent_balance:
         difference_in_wei = abs(initial_agent_balance.scaled_value - final_agent_balance.scaled_value)
-        exception_message.append(f"SHORT: Agent made a profit when the should not have.")
+        exception_message.append("SHORT: Agent made a profit when the should not have.")
         exception_message.append(
             f"{final_agent_balance=} should not be > {initial_agent_balance=}. {difference_in_wei=}"
         )
