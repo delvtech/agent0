@@ -377,8 +377,8 @@ def invariant_check(
         difference_in_wei = abs(
             expected_effective_share_reserves.scaled_value - actual_effective_share_reserves.scaled_value
         )
+        exception_message.append("The effective share reserves has deviated after closing all trades.")
         exception_message.append(
-            "The effective share reserves has deviated after closing all trades.\n"
             f"{expected_effective_share_reserves=} != {actual_effective_share_reserves=}, {difference_in_wei=}"
         )
         exception_data["invariance_check:expected_effective_share_reserves"] = expected_effective_share_reserves
@@ -393,10 +393,8 @@ def invariant_check(
         expected_present_value, actual_present_value, abs_tol=FixedPoint(str(check_epsilon["present_value"]))
     ):
         difference_in_wei = abs(expected_present_value.scaled_value - actual_present_value.scaled_value)
-        exception_message.append(
-            "The present value has deviated after closing all trades.\n"
-            f"{expected_present_value=} != {actual_present_value=}, {difference_in_wei=}"
-        )
+        exception_message.append("The present value has deviated after closing all trades.")
+        exception_message.append(f"{expected_present_value=} != {actual_present_value=}, {difference_in_wei=}")
         exception_data["invariance_check:expected_present_value"] = expected_present_value
         exception_data["invariance_check:actual_present_value"] = actual_present_value
         exception_data["invariance_check:effective_present_value_difference_in_wei"] = difference_in_wei
@@ -416,8 +414,8 @@ def invariant_check(
         epsilon = FixedPoint(str(check_epsilon[field_name]))
         if not fp_isclose(expected_val, actual_val, abs_tol=epsilon):
             difference_in_wei = abs(expected_val.scaled_value - actual_val.scaled_value)
+            exception_message.append("The pool state has deviated after closing all of the trades.")
             exception_message.append(
-                "The pool state has deviated after closing all of the trades.\n"
                 f"expected_{field_name}={expected_val}, actual_{field_name}={actual_val}, {difference_in_wei=}"
             )
             exception_data["invariance_check:expected_" + field_name] = expected_val

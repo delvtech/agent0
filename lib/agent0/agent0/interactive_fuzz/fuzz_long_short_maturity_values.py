@@ -310,8 +310,8 @@ def invariant_check(
             actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_long_base_amount.scaled_value - expected_long_base_amount.scaled_value)
+            exception_message.append("The base out does not equal the bonds in minus the flat fee.")
             exception_message.append(
-                "The base out does not equal the bonds in minus the flat fee.\n"
                 f"{actual_long_base_amount=} != {expected_long_base_amount=}, {difference_in_wei=}"
             )
             exception_data["invariance_check:actual_long_base_amount"] = actual_long_base_amount
@@ -347,7 +347,9 @@ def invariant_check(
         ):
             difference_in_wei = abs(actual_short_base_amount.scaled_value - expected_short_base_amount.scaled_value)
             exception_message.append(
-                "The expected base returned (interest accrued) does not match the event's reported base returned.\n"
+                "The expected base returned (interest accrued) does not match the event's reported base returned."
+            )
+            exception_message.append(
                 f"{actual_short_base_amount=} != {expected_short_base_amount=}, {difference_in_wei=}"
             )
             exception_data["invariance_check:actual_short_base_amount"] = actual_short_base_amount
