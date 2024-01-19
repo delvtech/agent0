@@ -341,10 +341,6 @@ def invariant_check(
         The trade data to check.
     check_epsilon: dict[str, Any]
         The expected epsilon for each invariants check.
-    effective_share_reserves_epsilon: float
-        The allowed error for effective share reserves equality tests.
-    present_value_epsilon: float
-        The allowed error for present value equality tests.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
