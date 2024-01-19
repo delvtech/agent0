@@ -1,15 +1,17 @@
 """Script to verify that the state of pool reserves is invariant to the order in which positions are closed.
 
 # Test procedure
-- spin up local chain, deploy hyperdrive
-- generate a list of random trades
-  - type in [open_short, open_long]
-  - amount in uniform[min_trade_amount, max_trade_amount) base
-- open those trades in a random order & advance time randomly between
-  - maximum time advance between first and last trade is in [0, position_duration)
+- spin up local chain, deploy hyperdrive without fees
+- execute random trades
+  - from [open_long, open_short]
+  - trade amount in uniform[min_trade_amount, max_trade_amount) base
+  - advance one block (12 sec) betwen each trade.
+  - advance time randomly between trades
+  - the maximum time advance between first and last trade is in [0, position_duration)
+- set the variable rate to 0
 - save a snapshot of the current chain state
 - repeat N times (where N is set as a command-line arg):
-    - load chain state (trades are opened, none are closed)
+    - load chain state (all trades are opened, none are closed)
     - close the trades in a random order
     - invariance checks
 
@@ -17,6 +19,7 @@
 # We are checking that the pool ends up in the same sate regardless of close transaction order
 - the following state values should equal in all checks:
   - effective share reserves 
+  - present value
   - shorts outstanding
   - withdrawal shares proceeds
   - lp share price
@@ -374,6 +377,7 @@ def invariant_check(
         difference_in_wei = abs(
             expected_effective_share_reserves.scaled_value - actual_effective_share_reserves.scaled_value
         )
+        exception_message.append("The effective share reserves has deviated after closing all trades.")
         exception_message.append(
             f"{expected_effective_share_reserves=} != {actual_effective_share_reserves=}, {difference_in_wei=}"
         )
@@ -389,6 +393,7 @@ def invariant_check(
         expected_present_value, actual_present_value, abs_tol=FixedPoint(str(check_epsilon["present_value"]))
     ):
         difference_in_wei = abs(expected_present_value.scaled_value - actual_present_value.scaled_value)
+        exception_message.append("The present value has deviated after closing all trades.")
         exception_message.append(f"{expected_present_value=} != {actual_present_value=}, {difference_in_wei=}")
         exception_data["invariance_check:expected_present_value"] = expected_present_value
         exception_data["invariance_check:actual_present_value"] = actual_present_value
@@ -409,6 +414,7 @@ def invariant_check(
         epsilon = FixedPoint(str(check_epsilon[field_name]))
         if not fp_isclose(expected_val, actual_val, abs_tol=epsilon):
             difference_in_wei = abs(expected_val.scaled_value - actual_val.scaled_value)
+            exception_message.append("The pool state has deviated after closing all of the trades.")
             exception_message.append(
                 f"expected_{field_name}={expected_val}, actual_{field_name}={actual_val}, {difference_in_wei=}"
             )

@@ -35,7 +35,8 @@ def execute_random_trades(
         An instantiated InteractiveHyperdrive object.
     advance_time: bool, optional
         If True, advance time a random amount between 0 and the position duration after each trade.
-        Defaults to False.
+        Defaults to False, which follows the anvil settings.
+        Typically this advances one block and 12 seconds between each trade.
 
     Returns
     -------

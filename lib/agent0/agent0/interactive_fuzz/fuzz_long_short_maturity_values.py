@@ -1,13 +1,13 @@
 """Script to verify that longs and shorts which are closed at maturity supply the correct amounts.
 
 # Test procedure
-- spin up local chain, deploy hyperdrive
+- spin up local chain, deploy hyperdrive with fees
 - advance time to ensure we are in the middle of a checkpoint
-- generate a list of random trades
-  - type in [open_short, open_long]
-  - amount in uniform[min_trade_amount, max_trade_amount) base
-- open those trades in a random order, but within the same checkpoint
-- advance time past the position duration, into a new checkpoint
+- execute random trades
+  - from [open_long, open_short]
+  - trade amount in uniform[min_trade_amount, max_trade_amount) base
+  - advance one block (12 sec) betwen each trade.
+- advance time past the position duration, into a new checkpoint, create a checkpoint
 - close the trades one at a time in random order, run invariance checks after each close action
 
 # Invariance checks (these should be True):
@@ -310,6 +310,7 @@ def invariant_check(
             actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_long_base_amount.scaled_value - expected_long_base_amount.scaled_value)
+            exception_message.append("The base out does not equal the bonds in minus the flat fee.")
             exception_message.append(
                 f"{actual_long_base_amount=} != {expected_long_base_amount=}, {difference_in_wei=}"
             )
@@ -345,6 +346,9 @@ def invariant_check(
             actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_short_base_amount.scaled_value - expected_short_base_amount.scaled_value)
+            exception_message.append(
+                "The expected base returned (interest accrued) does not match the event's reported base returned."
+            )
             exception_message.append(
                 f"{actual_short_base_amount=} != {expected_short_base_amount=}, {difference_in_wei=}"
             )

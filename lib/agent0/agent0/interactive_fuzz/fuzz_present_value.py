@@ -1,20 +1,19 @@
 """Script to confirm present value and LP share price invariance.
 
 # Test procedure
-- spin up local chain, deploy hyperdrive
-- generate a list of random trades
-  - type in [open_short, open_long, add_liquidity, remove_liquidity]
-  - amount in uniform[min_trade_amount, max_trade_amount) base
-- execute those trades in a random order & advance time randomly between
-- check invariances after each trade
+- spin up local chain, deploy hyperdrive without fees
+- given trade list [open_long, close_long, open_short, close_short, add_liquidity, remove_liquidity]
+  - trade amount in uniform[min_trade_amount, max_trade_amount) base
+  - execute the trade and allow the block to tick (12 seconds)
+  - check invariances after each trade
 
 # Invariance checks (these should be True):
-- the following state values should equal in all checks:
+- the following state values should equal:
   - for any trade, LP share price shouldn't change by more than 0.1%
+  - for any trade, present value should always be >= idle
   - open or close trades shouldn't affect PV within 0.1
   - removing liquidity shouldn't result in the PV increasing (it should decrease)
   - adding liquidity shouldn't result in the PV decreasing (it should increase)
-  - present value should always be >= idle
 """
 from __future__ import annotations
 
@@ -275,15 +274,29 @@ def invariant_check(
     test_tolerance = initial_lp_share_price * FixedPoint(str(test_epsilon))
     if not fp_isclose(initial_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
         difference_in_wei = abs(initial_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
+        exception_message.append("LP share price increased by more than 0.1%.")
         exception_message.append(f"{initial_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}")
         exception_data["invariance_check:initial_lp_share_price"] = initial_lp_share_price
         exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
 
+    # present value should always be >= idle
+    # idle shares are the shares that are not reserved by open positions
+    # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
+    current_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
+    idle_shares = interactive_hyperdrive.hyperdrive_interface.get_idle_shares(pool_state.block_number)
+    if current_present_value < idle_shares:
+        difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
+        exception_message.append("The present value is not greater than or equal to the idle.")
+        exception_message.append(f"{current_present_value=} < {idle_shares=}, {difference_in_wei=}")
+        exception_data["invariance_check:idle_shares"] = idle_shares
+        exception_data["invariance_check:current_present_value"] = current_present_value
+        exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
+        failed = True
+
     # Present value
     # open or close trades shouldn't affect PV within 0.1%
-    current_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
     if check_data["trade_type"] in [
         HyperdriveActionType.OPEN_LONG,
         HyperdriveActionType.CLOSE_LONG,
@@ -294,6 +307,7 @@ def invariant_check(
         test_tolerance = initial_present_value * FixedPoint(str(test_epsilon))
         if not fp_isclose(initial_present_value, current_present_value, abs_tol=test_tolerance):
             difference_in_wei = abs(initial_present_value.scaled_value - current_present_value.scaled_value)
+            exception_message.append("Opening or closing trades affects the present value more than 0.1%.")
             exception_message.append(f"{initial_present_value=} != {current_present_value=}, {difference_in_wei=}")
             exception_data["invariance_check:initial_present_value"] = initial_present_value
             exception_data["invariance_check:current_present_value"] = current_present_value
@@ -305,6 +319,7 @@ def invariant_check(
         initial_present_value = FixedPoint(check_data["initial_present_value"])
         if current_present_value < initial_present_value:  # it decreased == bad
             difference_in_wei = abs(current_present_value.scaled_value - initial_present_value.scaled_value)
+            exception_message.append("Adding liquidity resulted in the present value decreasing.")
             exception_message.append(f"{current_present_value=} < {initial_present_value=}, {difference_in_wei=}")
             exception_data["invariance_check:initial_present_value"] = initial_present_value
             exception_data["invariance_check:current_present_value"] = current_present_value
@@ -316,23 +331,12 @@ def invariant_check(
         initial_present_value = FixedPoint(check_data["initial_present_value"])
         if current_present_value > initial_present_value:  # it increased == bad
             difference_in_wei = abs(current_present_value.scaled_value - initial_present_value.scaled_value)
+            exception_message.append("Removing liquidity resulted in the present value increasing.")
             exception_message.append(f"{current_present_value=} > {initial_present_value=}, {difference_in_wei=}")
             exception_data["invariance_check:initial_present_value"] = initial_present_value
             exception_data["invariance_check:current_present_value"] = current_present_value
             exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
             failed = True
-
-    # present value should always be >= idle
-    # idle shares are the shares that are not reserved by open positions
-    # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
-    idle_shares = interactive_hyperdrive.hyperdrive_interface.get_idle_shares(pool_state.block_number)
-    if current_present_value < idle_shares:
-        difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
-        exception_message.append(f"{current_present_value=} < {idle_shares=}, {difference_in_wei=}")
-        exception_data["invariance_check:idle_shares"] = idle_shares
-        exception_data["invariance_check:current_present_value"] = current_present_value
-        exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
-        failed = True
 
     if failed:
         logging.critical("\n".join(exception_message))
