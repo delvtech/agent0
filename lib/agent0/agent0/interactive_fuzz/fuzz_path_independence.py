@@ -19,7 +19,7 @@
   - effective share reserves 
   - shorts outstanding
   - withdrawal shares proceeds
-  - share price
+  - lp share price
   - long exposure
   - bond reserves
   - lp total supply
@@ -119,7 +119,7 @@ def fuzz_path_independence(
     check_columns = [
         "shorts_outstanding",
         "withdrawal_shares_proceeds",
-        "share_price",
+        "lp_share_price",
         "long_exposure",
         "bond_reserves",
         "lp_total_supply",
