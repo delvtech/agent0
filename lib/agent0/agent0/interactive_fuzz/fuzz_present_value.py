@@ -31,8 +31,11 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose, setup_fuzz
 
-
+# tests have lots of stuff
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-statements
+
+
 def main(argv: Sequence[str] | None = None):
     """Primary entrypoint.
 
@@ -79,6 +82,7 @@ def fuzz_present_value(
     }
     agent = interactive_hyperdrive.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000))
 
+    # Execute the trades and check invariances for each trade
     for trade_type in [
         HyperdriveActionType.OPEN_LONG,
         HyperdriveActionType.CLOSE_LONG,
@@ -91,10 +95,12 @@ def fuzz_present_value(
         if agent.wallet.balance.amount < FixedPoint("1e10"):
             agent.add_funds(base=FixedPoint("1e10") - agent.wallet.balance.amount)
 
-        # Execute the trade
+        # Set up trade amount bounds
         min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
         max_budget = agent.wallet.balance.amount
         trade_amount = None
+
+        # Execute the trade
         match trade_type:
             case HyperdriveActionType.OPEN_LONG:
                 max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_long(
@@ -119,6 +125,10 @@ def fuzz_present_value(
                 maturity_time, open_trade = next(iter(agent.wallet.shorts.items()))
                 trade_event = agent.close_short(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.ADD_LIQUIDITY:
+                # recompute initial present value for liquidity actions
+                check_data["initial_present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(
+                    interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                )
                 trade_amount = FixedPoint(
                     scaled_value=int(
                         np.floor(rng.uniform(low=min_trade.scaled_value, high=agent.wallet.balance.amount.scaled_value))
@@ -126,11 +136,16 @@ def fuzz_present_value(
                 )
                 trade_event = agent.add_liquidity(trade_amount)
             case HyperdriveActionType.REMOVE_LIQUIDITY:
+                # recompute initial present value for liquidity actions
+                check_data["initial_present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(
+                    interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                )
                 trade_amount = agent.wallet.lp_tokens
                 trade_event = agent.remove_liquidity(agent.wallet.lp_tokens)
             case _:
                 raise ValueError(f"Invalid {trade_type=}")
 
+        # run invariance check
         check_data["trade_type"] = trade_type
         try:
             invariant_check(check_data, test_epsilon, interactive_hyperdrive)
@@ -296,6 +311,7 @@ def invariant_check(
         failed = True
 
     # Present value
+    initial_present_value = FixedPoint(check_data["initial_present_value"])
     # open or close trades shouldn't affect PV within 0.1%
     if check_data["trade_type"] in [
         HyperdriveActionType.OPEN_LONG,
@@ -303,7 +319,6 @@ def invariant_check(
         HyperdriveActionType.OPEN_SHORT,
         HyperdriveActionType.CLOSE_SHORT,
     ]:
-        initial_present_value = FixedPoint(check_data["initial_present_value"])
         test_tolerance = initial_present_value * FixedPoint(str(test_epsilon))
         if not fp_isclose(initial_present_value, current_present_value, abs_tol=test_tolerance):
             difference_in_wei = abs(initial_present_value.scaled_value - current_present_value.scaled_value)
@@ -316,7 +331,6 @@ def invariant_check(
 
     # adding liquidity shouldn't result in the PV decreasing (it should increase)
     if check_data["trade_type"] == HyperdriveActionType.ADD_LIQUIDITY:
-        initial_present_value = FixedPoint(check_data["initial_present_value"])
         if current_present_value < initial_present_value:  # it decreased == bad
             difference_in_wei = abs(current_present_value.scaled_value - initial_present_value.scaled_value)
             exception_message.append("Adding liquidity resulted in the present value decreasing.")
@@ -328,7 +342,6 @@ def invariant_check(
 
     # removing liquidity shouldn't result in the PV increasing (it should decrease)
     if check_data["trade_type"] == HyperdriveActionType.REMOVE_LIQUIDITY:
-        initial_present_value = FixedPoint(check_data["initial_present_value"])
         if current_present_value > initial_present_value:  # it increased == bad
             difference_in_wei = abs(current_present_value.scaled_value - initial_present_value.scaled_value)
             exception_message.append("Removing liquidity resulted in the present value increasing.")
