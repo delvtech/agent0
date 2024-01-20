@@ -82,11 +82,14 @@ def fuzz_present_value(
     }
     agent = interactive_hyperdrive.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000))
 
+    # Execute the trades and check invariances for each trade
     for trade_type in [
         HyperdriveActionType.OPEN_LONG,
         HyperdriveActionType.CLOSE_LONG,
         HyperdriveActionType.OPEN_SHORT,
         HyperdriveActionType.CLOSE_SHORT,
+        HyperdriveActionType.ADD_LIQUIDITY,
+        HyperdriveActionType.REMOVE_LIQUIDITY,
     ]:
         # Keep the agent flush
         if agent.wallet.balance.amount < FixedPoint("1e10"):
@@ -121,21 +124,6 @@ def fuzz_present_value(
             case HyperdriveActionType.CLOSE_SHORT:
                 maturity_time, open_trade = next(iter(agent.wallet.shorts.items()))
                 trade_event = agent.close_short(maturity_time=maturity_time, bonds=open_trade.balance)
-            case _:
-                raise ValueError(f"Invalid {trade_type=}")
-
-    for trade_type in [HyperdriveActionType.ADD_LIQUIDITY, HyperdriveActionType.REMOVE_LIQUIDITY]:
-        # Keep the agent flush
-        if agent.wallet.balance.amount < FixedPoint("1e10"):
-            agent.add_funds(base=FixedPoint("1e10") - agent.wallet.balance.amount)
-
-        # Set up trade amount bounds
-        min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
-        max_budget = agent.wallet.balance.amount
-        trade_amount = None
-
-        # Execute the trade
-        match trade_type:
             case HyperdriveActionType.ADD_LIQUIDITY:
                 # recompute initial present value for liquidity actions
                 check_data["initial_present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(
@@ -157,6 +145,7 @@ def fuzz_present_value(
             case _:
                 raise ValueError(f"Invalid {trade_type=}")
 
+        # run invariance check
         check_data["trade_type"] = trade_type
         try:
             invariant_check(check_data, test_epsilon, interactive_hyperdrive)
