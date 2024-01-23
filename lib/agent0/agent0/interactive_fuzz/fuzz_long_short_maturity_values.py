@@ -51,7 +51,8 @@ def main(argv: Sequence[str] | None = None):
 
 def fuzz_long_short_maturity_values(
     num_trades: int,
-    maturity_vals_epsilon: float,
+    long_maturity_vals_epsilon: float,
+    short_maturity_vals_epsilon: float,
     chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
 ):
@@ -61,8 +62,10 @@ def fuzz_long_short_maturity_values(
     ----------
     num_trades: int
         Number of trades to perform during the fuzz tests.
-    maturity_vals_epsilon: float
-        The allowed error for maturity values equality tests.
+    long_maturity_vals_epsilon: float
+        The allowed error for maturity values equality tests for longs.
+    short_maturity_vals_epsilon: float
+        The allowed error for maturity values equality tests for shorts.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
     log_to_stdout: bool, optional
@@ -150,7 +153,8 @@ def fuzz_long_short_maturity_values(
                 close_event,
                 starting_checkpoint,
                 maturity_checkpoint,
-                maturity_vals_epsilon,
+                long_maturity_vals_epsilon,
+                short_maturity_vals_epsilon,
                 interactive_hyperdrive,
             )
         except FuzzAssertionException as error:
@@ -192,7 +196,8 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     num_trades: int
-    maturity_vals_epsilon: float
+    long_maturity_vals_epsilon: float
+    short_maturity_vals_epsilon: float
     chain_config: LocalChain.Config
     log_to_stdout: bool
 
@@ -213,7 +218,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     # TODO: replace this func with Args(**namespace)?
     return Args(
         num_trades=namespace.num_trades,
-        maturity_vals_epsilon=namespace.maturity_vals_epsilon,
+        long_maturity_vals_epsilon=namespace.long_maturity_vals_epsilon,
+        short_maturity_vals_epsilon=namespace.short_maturity_vals_epsilon,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
@@ -240,10 +246,16 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="The number of random trades to open.",
     )
     parser.add_argument(
-        "--maturity_vals_epsilon",
+        "--long_maturity_vals_epsilon",
         type=float,
         default=1e-14,
-        help="The number of random trades to open.",
+        help="The epsilon for long maturity expected value.",
+    )
+    parser.add_argument(
+        "--short_maturity_vals_epsilon",
+        type=float,
+        default=1e-9,
+        help="The epsilon for short maturity expected value.",
     )
     parser.add_argument(
         "--chain_port",
@@ -269,7 +281,8 @@ def invariant_check(
     close_trade_event: CloseLong | CloseShort,
     starting_checkpoint: CheckpointFP,
     maturity_checkpoint: CheckpointFP,
-    maturity_vals_epsilon: float,
+    long_maturity_vals_epsilon: float,
+    short_maturity_vals_epsilon: float,
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
@@ -284,8 +297,10 @@ def invariant_check(
         The starting checkpoint.
     maturity_checkpoint: CheckpointFP
         The maturity checkpoint.
-    maturity_vals_epsilon: float
-        The epsilon value for the maturity values.
+    long_maturity_vals_epsilon: float
+        The epsilon value for the maturity values for longs.
+    short_maturity_vals_epsilon: float
+        The epsilon value for the maturity values for shorts.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
@@ -307,7 +322,7 @@ def invariant_check(
 
         # assert with close event bond amount
         if not fp_isclose(
-            actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
+            actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(long_maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_long_base_amount.scaled_value - expected_long_base_amount.scaled_value)
             exception_message.append("The base out does not equal the bonds in minus the flat fee.")
@@ -343,7 +358,7 @@ def invariant_check(
 
         actual_short_base_amount = close_trade_event.base_amount
         if not fp_isclose(
-            actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))
+            actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(short_maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_short_base_amount.scaled_value - expected_short_base_amount.scaled_value)
             exception_message.append(
