@@ -74,6 +74,11 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         chain_config,
         log_to_stdout,
         fuzz_test_name="fuzz_profit_check",
+        flat_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0.001),  # 0.1%
+        governance_lp_fee=FixedPoint(0),
+        governance_zombie_fee=FixedPoint(0),
+        var_interest=FixedPoint(0.0),
     )
 
     # Get a random trade amount
