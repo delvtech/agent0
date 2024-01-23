@@ -66,6 +66,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         If True, log to stdout in addition to a file.
         Defaults to False.
     """
+    # pylint: disable=too-many-statements
 
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
