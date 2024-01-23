@@ -37,8 +37,11 @@ def main(argv: Sequence[str] | None = None):
         try:
             print("Running long short maturity test")
             chain_config = LocalChain.Config(db_port=5434, chain_port=10001)
-            maturity_vals_epsilon = 1e-14
-            fuzz_long_short_maturity_values(num_trades, maturity_vals_epsilon, chain_config)
+            long_maturity_vals_epsilon = 1e-14
+            short_maturity_vals_epsilon = 1e-9
+            fuzz_long_short_maturity_values(
+                num_trades, long_maturity_vals_epsilon, short_maturity_vals_epsilon, chain_config
+            )
         except FuzzAssertionException:
             pass
         # We catch other exceptions here, for some reason rollbar needs to be continuously running in order
