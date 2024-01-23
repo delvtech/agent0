@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from math import perm
 from typing import Any, NamedTuple, Sequence
 
 import pandas as pd
@@ -44,9 +45,10 @@ from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdr
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
-    close_random_trades,
+    close_trades,
     execute_random_trades,
     fp_isclose,
+    permute_trade_events,
     setup_fuzz,
 )
 
@@ -96,6 +98,12 @@ def fuzz_path_independence(
     """
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
+
+    # Make sure there exists enough permutations of paths to ensure independent operations
+    # plus some buffer
+    if perm(num_trades) < 2 * num_paths_checked:
+        raise AssertionError("Need more trades to check {num_paths_checked} paths.")
+
     log_filename = ".logging/fuzz_path_independence.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
         log_filename,
@@ -144,18 +152,38 @@ def fuzz_path_independence(
     first_run_ticker: pd.DataFrame | None = None
     invariance_checked: bool = False
     latest_error: Exception | None = None
+
+    # In case all paths failed, we keep track of all tickers and crash reports for all paths
+
+    trade_paths = []
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
         logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
         # Load the snapshot
         chain.load_snapshot()
 
+        # Generate a random permutation of the trades
+        # Resample if duplicate
+        duplicate = True
+        random_trade_events = None
+        while duplicate:
+            random_trade_events = permute_trade_events(trade_events, rng)
+            duplicate = False
+            # TODO this is O(x^2), fix
+            for trade_path in trade_paths:
+                if trade_path == random_trade_events:
+                    duplicate = True
+                    break
+
+        assert random_trade_events is not None
+        trade_paths.append(random_trade_events)
+
         # Randomly grab some trades & close them one at a time
         # guarantee closing trades within the same checkpoint by getting the checkpoint id before
         # and after closing trades, then asserting they're the same
         starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
         try:
-            close_random_trades(trade_events, rng)
+            close_trades(random_trade_events)
         except ContractCallException:
             # Trades can fail here due to invalid order, we ignore and move on
             # These trades get logged as info
@@ -233,7 +261,8 @@ def fuzz_path_independence(
     if not invariance_checked:
         warning_message = "No invariance checks were performed due to failed paths."
         logging.warning(warning_message)
-        rollbar.report_message(warning_message, "warning")
+        rollbar_data = {"fuzz_random_seed": random_seed, "close_random_paths": [trade for _, trade in trade_paths]}
+        rollbar.report_message(warning_message, "warning", extra_data=rollbar_data)
 
     # If any of the path checks broke, we throw an exception at the very end
     if latest_error is not None:
