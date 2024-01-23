@@ -18,8 +18,11 @@ def setup_fuzz(
     log_to_rollbar: bool = True,
     crash_log_level: int | None = None,
     fuzz_test_name: str | None = None,
-    fees=True,
-    var_interest=None,
+    curve_fee: FixedPoint | None = None,
+    flat_fee: FixedPoint | None = None,
+    governance_lp_fee: FixedPoint | None = None,
+    governance_zombie_fee: FixedPoint | None = None,
+    var_interest: FixedPoint | None = None,
 ) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
     """Setup the fuzz experiment.
 
@@ -39,8 +42,14 @@ def setup_fuzz(
         The log level to log crashes at. Defaults to critical.
     fuzz_test_name: str | None, optional
         The prefix to prepend to rollbar exception messages
-    fees: bool, optional
-        If False, will turn off fees when deploying hyperdrive. Defaults to True.
+    curve_fee: FixedPoint | None, optional
+        The curve fee for the test. Defaults to using the default fee
+    flat_fee: FixedPoint | None, optional
+        The flat fee for the test. Defaults to using the default fee
+    governance_lp_fee: FixedPoint | None, optional
+        The governance lp fee for the test. Defaults to using the default fee
+    governance_zombie_fee: FixedPoint | None, optional
+        The governance zombie fee for the test. Defaults to using the default fee
     var_interest: FixedPoint | None, optional
         The variable interest rate. Defaults to using the default variable interest rate
         defined in interactive hyperdrive.
@@ -59,6 +68,7 @@ def setup_fuzz(
                 An instantiated InteractiveHyperdrive object.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
     setup_logging(
         log_filename=log_filename,
         delete_previous_logs=False,
@@ -92,16 +102,18 @@ def setup_fuzz(
         rollbar_log_prefix=fuzz_test_name,
         crash_log_level=crash_log_level,
         crash_log_ticker=True,
-        # Put this
+        # Put this into crash report for all tests
         crash_report_additional_info=crash_report_additional_info,
     )
-    if not fees:
-        initial_pool_config.curve_fee = FixedPoint(0)
-        initial_pool_config.flat_fee = FixedPoint(0)
-        initial_pool_config.governance_lp_fee = FixedPoint(0)
-        initial_pool_config.max_curve_fee = FixedPoint(0)
-        initial_pool_config.max_flat_fee = FixedPoint(0)
-        initial_pool_config.max_governance_lp_fee = FixedPoint(0)
+
+    if curve_fee is not None:
+        initial_pool_config.curve_fee = curve_fee
+    if flat_fee is not None:
+        initial_pool_config.flat_fee = flat_fee
+    if governance_lp_fee is not None:
+        initial_pool_config.governance_lp_fee = governance_lp_fee
+    if governance_zombie_fee is not None:
+        initial_pool_config.governance_zombie_fee = governance_zombie_fee
 
     if var_interest is not None:
         initial_pool_config.initial_variable_rate = var_interest
