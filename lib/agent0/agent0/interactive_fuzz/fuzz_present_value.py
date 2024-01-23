@@ -71,7 +71,10 @@ def fuzz_present_value(
         log_filename,
         chain_config,
         log_to_stdout,
-        fees=False,
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        governance_lp_fee=FixedPoint(0),
+        governance_zombie_fee=FixedPoint(0),
         fuzz_test_name="fuzz_present_value",
     )
 

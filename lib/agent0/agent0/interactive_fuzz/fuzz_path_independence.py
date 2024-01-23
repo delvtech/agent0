@@ -112,7 +112,10 @@ def fuzz_path_independence(
         # Trade crashes in this file have expected failures, hence we log interactive
         # hyperdrive crashes as info instead of critical.
         crash_log_level=logging.INFO,
-        fees=False,
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        governance_lp_fee=FixedPoint(0),
+        governance_zombie_fee=FixedPoint(0),
         fuzz_test_name="fuzz_path_independence",
     )
 
