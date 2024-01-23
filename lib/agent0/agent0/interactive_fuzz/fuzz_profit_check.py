@@ -30,11 +30,15 @@ from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, setup_fuzz
+from agent0.hyperdrive.interactive import LocalChain
+from agent0.interactive_fuzz.helpers import (
+    FuzzAssertionException,
+    advance_time_after_checkpoint,
+    advance_time_before_checkpoint,
+    setup_fuzz,
+)
 
 # pylint: disable=too-many-locals
 
@@ -66,7 +70,10 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config, log_to_stdout, fuzz_test_name="fuzz_profit_check"
+        log_filename,
+        chain_config,
+        log_to_stdout,
+        fuzz_test_name="fuzz_profit_check",
     )
 
     # Get a random trade amount
@@ -86,18 +93,31 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # Generate funded trading agent
     long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
     long_agent_initial_balance = long_agent.wallet.balance.amount
+
+    # Advance time to be right after a checkpoint boundary
+    logging.info("Advance time...")
+    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+
     # Open a long
     logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=long_trade_amount)
+
+    starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
+
     # Close the long
     logging.info("Close the long...")
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
+    ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
+    # Ensure open + close are within same checkpoint
+    assert starting_checkpoint_id == ending_checkpoint_id
 
     # Open a short
     short_trade_amount = FixedPoint(
@@ -117,18 +137,30 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # we can play it safe by initializing with that much base
     short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
     short_agent_initial_balance = short_agent.wallet.balance.amount
+
+    # Advance time to be right after a checkpoint boundary
+    logging.info("Advance time...")
+    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
     logging.info("Open a short...")
     open_short_event = short_agent.open_short(bonds=short_trade_amount)
+    starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
+
     # Close the short
     logging.info("Close the short...")
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
     )
+    ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
+    # Ensure open + close are within same checkpoint
+    assert starting_checkpoint_id == ending_checkpoint_id
 
     logging.info("Check invariants...")
     # Ensure that the prior trades did not result in a profit
@@ -182,39 +214,6 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         raise error
     chain.cleanup()
     logging.info("Test passed!")
-
-
-def advance_time_before_checkpoint(
-    chain: LocalChain, rng: Generator, interactive_hyperdrive: InteractiveHyperdrive
-) -> None:
-    """Advance time on the chain a random amount that is less than the next checkpoint time.
-
-    Arguments
-    ---------
-    chain: LocalChain
-        An instantiated LocalChain.
-    rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
-        The numpy Generator provides access to a wide range of distributions, and stores the random state.
-    interactive_hyperdrive: InteractiveHyperdrive
-        An instantiated InteractiveHyperdrive object.
-    """
-    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
-        interactive_hyperdrive.hyperdrive_interface.get_current_block()
-    )
-    last_checkpoint_time = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id(current_block_time)
-    next_checkpoint_time = (
-        last_checkpoint_time + interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
-    )
-    advance_upper_bound = next_checkpoint_time - current_block_time - 2  # minus 2 seconds to avoid edge cases
-    # Only advance time if the upper bound is positive
-    # Would be negative if we are already very close to the next checkpoint time
-    if advance_upper_bound >= 0:
-        checkpoint_info = chain.advance_time(
-            rng.integers(low=0, high=advance_upper_bound),
-            create_checkpoints=True,  # we don't want to create one, but only because we haven't advanced enough
-        )
-        # Do a final check to make sure that the checkpoint didn't happen
-        assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
 
 
 class Args(NamedTuple):

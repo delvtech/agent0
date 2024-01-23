@@ -30,7 +30,13 @@ from hypertypes.fixedpoint_types import CheckpointFP
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, execute_random_trades, fp_isclose, setup_fuzz
+from agent0.interactive_fuzz.helpers import (
+    FuzzAssertionException,
+    advance_time_after_checkpoint,
+    execute_random_trades,
+    fp_isclose,
+    setup_fuzz,
+)
 
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
@@ -86,18 +92,11 @@ def fuzz_long_short_maturity_values(
     )
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
-    # Advance time to ensure current time is in the middle of a checkpoint
-    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
-        interactive_hyperdrive.hyperdrive_interface.get_current_block()
-    )
-    time_to_next_checkpoint = (
-        current_block_time % interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
-    )
     # Add a small amount to ensure we're not at the edge of a checkpoint
     # This prevents the latter step of `chain.advance_time(position_duration+30)` advancing past a checkpoint
     # Also prevents `open_random_trades` from passing the create checkpoint barrier
     logging.info("Advance time...")
-    chain.advance_time(time_to_next_checkpoint + 100, create_checkpoints=True)
+    advance_time_after_checkpoint(chain, interactive_hyperdrive)
 
     # Open some trades
     logging.info("Open random trades...")
