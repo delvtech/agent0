@@ -238,7 +238,12 @@ def log_hyperdrive_crash_report(
 
     orig_traceback = None
     if trade_result.orig_exception is not None:
-        orig_traceback = trade_result.orig_exception.__traceback__
+        if isinstance(trade_result.orig_exception, list):
+            orig_traceback = [exception.__traceback__ for exception in trade_result.orig_exception]
+        elif isinstance(trade_result.orig_exception, Exception):
+            orig_traceback = trade_result.orig_exception.__traceback__
+        else:
+            assert False
 
     if trade_result.agent is not None:
         agent_wallet = trade_result.agent.wallet
