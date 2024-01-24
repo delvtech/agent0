@@ -1,6 +1,7 @@
 """Extend the dfault JSON encoder to include additional types."""
 
 import json
+from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from enum import Enum
 from traceback import format_tb
@@ -61,6 +62,11 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, pd.DataFrame):
             return o.to_dict(orient="records")
+        if is_dataclass(o):
+            out = asdict(o)
+            out.update({"class_name": o.__class__.__name__})
+            return out
+
         try:
             return o.__dict__
         except AttributeError:

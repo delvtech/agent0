@@ -31,6 +31,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from math import perm
@@ -40,6 +41,7 @@ import pandas as pd
 import rollbar
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
+from hyperlogs import ExtendedJSONEncoder
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
@@ -269,8 +271,15 @@ def fuzz_path_independence(
     if not invariance_checked:
         warning_message = "No invariance checks were performed due to failed paths."
         logging.warning(warning_message)
-        rollbar_data = {"fuzz_random_seed": random_seed, "close_random_paths": [trade for _, trade in trade_paths]}
-        rollbar.report_message(warning_message, "warning", extra_data=rollbar_data)
+        rollbar_data = {
+            "fuzz_random_seed": random_seed,
+            "close_random_paths": [[trade for _, trade in path] for path in trade_paths],
+        }
+        rollbar.report_message(
+            warning_message,
+            "warning",
+            extra_data=json.loads(json.dumps(rollbar_data, indent=2, cls=ExtendedJSONEncoder)),
+        )
 
     # If any of the path checks broke, we throw an exception at the very end
     if latest_error is not None:
