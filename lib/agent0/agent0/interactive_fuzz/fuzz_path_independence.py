@@ -193,7 +193,12 @@ def fuzz_path_independence(
             continue
 
         ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
-        assert starting_checkpoint_id == ending_checkpoint_id
+        if starting_checkpoint_id != ending_checkpoint_id:
+            message = "Trades were not closed in the same checkpoint"
+            logging.error(message)
+            rollbar_data = {"fuzz_random_seed": random_seed}
+            rollbar.report_message(message, "error", extra_data=rollbar_data)
+            continue
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
         pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
