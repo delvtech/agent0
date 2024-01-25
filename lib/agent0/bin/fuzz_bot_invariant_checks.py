@@ -298,7 +298,7 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
     actual_vault_shares = pool_state.vault_shares
 
     # While the expected vault shares is a bit inaccurate, we're testing
-    # solvency here, hence, we ensure that the expected vault shares >= actual vault shares
+    # solvency here, hence, we ensure that the actual vault shares >= expected vault shares
     if actual_vault_shares < expected_vault_shares:
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message = (
