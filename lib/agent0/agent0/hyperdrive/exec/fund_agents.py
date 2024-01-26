@@ -16,7 +16,7 @@ from ethpy.base import (
 )
 from ethpy.hyperdrive import HyperdriveAddresses
 from hyperlogs import setup_logging
-from hypertypes.types import ERC20MintableContract
+from hypertypes import ERC20MintableContract
 from web3.types import Nonce, TxReceipt
 
 from agent0 import AccountKeyConfig

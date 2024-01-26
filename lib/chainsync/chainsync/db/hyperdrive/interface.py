@@ -287,9 +287,7 @@ def get_checkpoint_info(
     """Get all info associated with a given checkpoint.
 
     This includes
-    - `share_price`: The share price of the first transaction in the checkpoint.
-    - `longSharePrice`: The weighted average of the share prices that all longs in the checkpoint were opened at.
-    - `exposure`: The exposure for that checkpoint.
+    - `vault_share_price`: The share price of the first transaction in the checkpoint.
 
     Arguments
     ---------

@@ -21,7 +21,6 @@ class HyperdriveAddresses:
     erc4626_hyperdrive: Address | ChecksumAddress = attr.ib()
     hyperdrive_factory: Address | ChecksumAddress = attr.ib()
     steth_hyperdrive: Address | ChecksumAddress = attr.ib()
-    mock_hyperdrive_math: Address | ChecksumAddress | None = attr.ib()
 
 
 def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:

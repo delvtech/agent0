@@ -39,9 +39,7 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptB
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hyperdrivepy import get_time_stretch
-
-# TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
-from hypertypes import Fees, PoolDeployConfig
+from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from numpy.random._generator import Generator
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
@@ -88,7 +86,7 @@ class InteractiveHyperdrive:
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
-    @dataclass
+    @dataclass(kw_only=True)
     class Config:
         """The configuration for the initial pool configuration.
 
@@ -157,28 +155,46 @@ class InteractiveHyperdrive:
         crash_log_level: int = logging.CRITICAL
         crash_log_ticker: bool = False
         crash_report_additional_info: dict[str, Any] | None = None
+
         # Random generators
         rng_seed: int | None = None
         rng: Generator | None = None
+
+        # Data pipeline parameters
+        calc_pnl: bool = True
+
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
         initial_fixed_rate: FixedPoint = FixedPoint("0.05")
-        # Initial Pool Config variables
+
+        # Factory Deploy Config variables
+        factory_checkpoint_duration_resolution: int = 60 * 60  # 1 hour
+        factory_min_checkpoint_duration: int = 60 * 60  # 1 hour
+        factory_max_checkpoint_duration: int = 60 * 60 * 24  # 1 day
+        factory_min_position_duration: int = 60 * 60 * 24 * 7  # 7 days
+        factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
+        # NOTE we differ in min fees here, since we'd like to turn off fees for some
+        # interactive fuzz testing
+        factory_min_curve_fee: FixedPoint = FixedPoint("0")
+        factory_min_flat_fee: FixedPoint = FixedPoint("0")
+        factory_min_governance_lp_fee: FixedPoint = FixedPoint("0")
+        factory_min_governance_zombie_fee: FixedPoint = FixedPoint("0")
+        factory_max_curve_fee: FixedPoint = FixedPoint("0.1")  # 10%
+        factory_max_flat_fee: FixedPoint = FixedPoint("0.001")  # .1%
+        factory_max_governance_lp_fee: FixedPoint = FixedPoint("0.15")  # 15%
+        factory_max_governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
+
+        # Pool Deploy Config variables
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         position_duration: int = 604_800  # 1 week
         checkpoint_duration: int = 3_600  # 1 hour
         time_stretch: FixedPoint | None = None
-        curve_fee: FixedPoint = FixedPoint("0.1")  # 10%
+        curve_fee: FixedPoint = FixedPoint("0.01")  # 1%
         flat_fee: FixedPoint = FixedPoint("0.0005")  # 0.05%
-        governance_lp_fee: FixedPoint = FixedPoint("0.01")  # 1%
-        governance_zombie_fee: FixedPoint = FixedPoint("0.10")  # 10%
-        max_curve_fee: FixedPoint = FixedPoint("0.30")  # 30%
-        max_flat_fee: FixedPoint = FixedPoint("0.0015")  # 0.15%
-        max_governance_lp_fee: FixedPoint = FixedPoint("0.30")  # 30%
-        max_governance_zombie_fee: FixedPoint = FixedPoint("0.30")  # 30%
-        calc_pnl: bool = True
+        governance_lp_fee: FixedPoint = FixedPoint("0.15")  # 15%
+        governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
 
         def __post_init__(self):
             # Random generator
@@ -194,6 +210,33 @@ class InteractiveHyperdrive:
                         get_time_stretch(str(self.initial_fixed_rate.scaled_value), str(self.position_duration))
                     )
                 )
+
+        @property
+        def _factory_min_fees(self) -> Fees:
+            return Fees(
+                curve=self.factory_min_curve_fee.scaled_value,
+                flat=self.factory_min_flat_fee.scaled_value,
+                governanceLP=self.factory_min_governance_lp_fee.scaled_value,
+                governanceZombie=self.factory_min_governance_zombie_fee.scaled_value,
+            )
+
+        @property
+        def _factory_max_fees(self) -> Fees:
+            return Fees(
+                curve=self.factory_max_curve_fee.scaled_value,
+                flat=self.factory_max_flat_fee.scaled_value,
+                governanceLP=self.factory_max_governance_lp_fee.scaled_value,
+                governanceZombie=self.factory_max_governance_zombie_fee.scaled_value,
+            )
+
+        @property
+        def _fees(self) -> Fees:
+            return Fees(
+                curve=self.curve_fee.scaled_value,
+                flat=self.flat_fee.scaled_value,
+                governanceLP=self.governance_lp_fee.scaled_value,
+                governanceZombie=self.governance_zombie_fee.scaled_value,
+            )
 
     def __init__(self, chain: Chain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
@@ -441,30 +484,34 @@ class InteractiveHyperdrive:
         # sanity check (also for type checking), should get set in __post_init__
         assert config.time_stretch is not None
 
-        initial_pool_config = PoolDeployConfig(
+        factory_deploy_config = FactoryConfig(
+            governance="",  # will be determined in the deploy function
+            hyperdriveGovernance="",  # will be determined in the deploy function
+            defaultPausers=[],  # We don't support pausers when we deploy
+            feeCollector="",  # will be determined in the deploy function
+            checkpointDurationResolution=config.factory_checkpoint_duration_resolution,
+            minCheckpointDuration=config.factory_min_checkpoint_duration,
+            maxCheckpointDuration=config.factory_max_checkpoint_duration,
+            minPositionDuration=config.factory_min_position_duration,
+            maxPositionDuration=config.factory_max_position_duration,
+            minFees=config._factory_min_fees,  # pylint: disable=protected-access
+            maxFees=config._factory_max_fees,  # pylint: disable=protected-access
+            linkerFactory="",  # will be determined in the deploy function
+            linkerCodeHash=bytes(),  # will be determined in the deploy function
+        )
+
+        pool_deploy_config = PoolDeployConfig(
             baseToken="",  # will be determined in the deploy function
-            linkerFactory=ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
+            linkerFactory=ADDRESS_ZERO,  # address(0)
             linkerCodeHash=bytes(32),  # bytes32(0)
             minimumShareReserves=config.minimum_share_reserves.scaled_value,
             minimumTransactionAmount=config.minimum_transaction_amount.scaled_value,
             positionDuration=config.position_duration,
             checkpointDuration=config.checkpoint_duration,
             timeStretch=config.time_stretch.scaled_value,
-            governance="",  # will be determined in the deploy function
-            feeCollector="",  # will be determined in the deploy function
-            fees=Fees(  # type: ignore
-                config.curve_fee.scaled_value,
-                config.flat_fee.scaled_value,
-                config.governance_lp_fee.scaled_value,
-                config.governance_zombie_fee.scaled_value,
-            ),
-        )
-
-        max_fees = Fees(
-            config.max_curve_fee.scaled_value,
-            config.max_flat_fee.scaled_value,
-            config.max_governance_lp_fee.scaled_value,
-            config.max_governance_zombie_fee.scaled_value,
+            governance=ADDRESS_ZERO,  # address(0)
+            feeCollector=ADDRESS_ZERO,  # address(0)
+            fees=config._fees,  # pylint: disable=protected-access
         )
 
         return deploy_hyperdrive_from_factory(
@@ -473,8 +520,8 @@ class InteractiveHyperdrive:
             config.initial_liquidity,
             config.initial_variable_rate,
             config.initial_fixed_rate,
-            initial_pool_config,
-            max_fees,
+            factory_deploy_config,
+            pool_deploy_config,
         )
 
     def set_variable_rate(self, variable_rate: FixedPoint) -> None:
@@ -507,7 +554,7 @@ class InteractiveHyperdrive:
         if check_if_exists:
             checkpoint = self.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
             # If it exists, don't create a checkpoint and return None.
-            if checkpoint.sharePrice > 0:
+            if checkpoint.vaultSharePrice > 0:
                 return None
 
         try:
@@ -522,7 +569,7 @@ class InteractiveHyperdrive:
         # a checkpoint isn't a trade result
         return CreateCheckpoint(
             checkpoint_time=tx_receipt.checkpoint_time,
-            share_price=tx_receipt.share_price,
+            vault_share_price=tx_receipt.vault_share_price,
             matured_shorts=tx_receipt.matured_shorts,
             matured_longs=tx_receipt.matured_longs,
             lp_share_price=tx_receipt.lp_share_price,
@@ -1229,7 +1276,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1239,7 +1286,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1249,7 +1296,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1259,7 +1306,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1268,7 +1315,7 @@ class InteractiveHyperdrive:
                     provider=to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
 
@@ -1277,7 +1324,7 @@ class InteractiveHyperdrive:
                     provider=to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
@@ -1287,7 +1334,7 @@ class InteractiveHyperdrive:
                     provider=to_checksum_address(tx_receipt.provider),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                 )
 
             case _:

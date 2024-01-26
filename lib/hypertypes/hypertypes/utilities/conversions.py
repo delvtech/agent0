@@ -98,7 +98,7 @@ def checkpoint_to_fixedpoint(
     Returns
     -------
     CheckpointFP
-        A dataclass containing the checkpoint share_price and exposure fields converted to FixedPoint.
+        A dataclass containing the checkpoint vault_share_price and exposure fields converted to FixedPoint.
     """
     return CheckpointFP(
         **{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in asdict(hypertypes_checkpoint).items()}
@@ -118,7 +118,7 @@ def fixedpoint_to_checkpoint(
     Returns
     -------
     Checkpoint
-        A dataclass containing the checkpoint share_price and exposure fields converted to integers.
+        A dataclass containing the checkpoint vault_share_price and exposure fields converted to integers.
     """
     return Checkpoint(
         **{snake_to_camel(key): value.scaled_value for key, value in asdict(fixedpoint_checkpoint).items()}
@@ -145,7 +145,7 @@ def pool_config_to_fixedpoint(
     """
     dict_pool_config = {camel_to_snake(key): value for key, value in asdict(hypertypes_pool_config).items()}
     fixedpoint_keys = [
-        "initial_share_price",
+        "initial_vault_share_price",
         "minimum_share_reserves",
         "minimum_transaction_amount",
         "time_stretch",
@@ -180,7 +180,7 @@ def fixedpoint_to_pool_config(
     """
     dict_pool_config = {snake_to_camel(key): value for key, value in asdict(fixedpoint_pool_config).items()}
     fixedpoint_keys = [
-        "initialSharePrice",
+        "initialVaultSharePrice",
         "minimumShareReserves",
         "minimumTransactionAmount",
         "timeStretch",
@@ -199,7 +199,7 @@ def fixedpoint_to_pool_config(
         baseToken=dict_pool_config["baseToken"],
         linkerFactory=dict_pool_config["linkerFactory"],
         linkerCodeHash=dict_pool_config["linkerCodeHash"],
-        initialSharePrice=dict_pool_config["initialSharePrice"],
+        initialVaultSharePrice=dict_pool_config["initialVaultSharePrice"],
         minimumShareReserves=dict_pool_config["minimumShareReserves"],
         minimumTransactionAmount=dict_pool_config["minimumTransactionAmount"],
         positionDuration=dict_pool_config["positionDuration"],

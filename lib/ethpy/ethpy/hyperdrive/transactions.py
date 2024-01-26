@@ -143,7 +143,7 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         "bondAmount",
         "lpAmount",
         "withdrawalShareAmount",
-        "sharePrice",
+        "vaultSharePrice",
         "lpSharePrice",
         "maturedShorts",
         "maturedLongs",

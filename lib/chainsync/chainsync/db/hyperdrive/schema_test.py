@@ -76,11 +76,11 @@ class TestCheckpointTable:
         db_session.add(checkpoint)
         db_session.commit()
 
-        checkpoint.share_price = Decimal("5.0")
+        checkpoint.vault_share_price = Decimal("5.0")
         db_session.commit()
 
         updated_checkpoint = db_session.query(CheckpointInfo).filter_by(block_number=1).first()
-        assert updated_checkpoint.share_price == 5.0
+        assert updated_checkpoint.vault_share_price == 5.0
 
     @pytest.mark.docker
     def test_delete_checkpoint(self, db_session):
@@ -103,18 +103,18 @@ class TestPoolConfigTable:
     @pytest.mark.docker
     def test_create_pool_config(self, db_session):
         """Create and entry"""
-        pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
         retrieved_pool_config = db_session.query(PoolConfig).filter_by(contract_address="0").first()
         assert retrieved_pool_config is not None
-        assert float(retrieved_pool_config.initial_share_price) == 3.2
+        assert float(retrieved_pool_config.initial_vault_share_price) == 3.2
 
     @pytest.mark.docker
     def test_delete_pool_config(self, db_session):
         """Delete an entry"""
-        pool_config = PoolConfig(contract_address="0", initial_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 

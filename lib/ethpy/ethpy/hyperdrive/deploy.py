@@ -12,10 +12,7 @@ from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.receipts import get_transaction_logs
 from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
-
-# TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
-from hypertypes import Fees, PoolDeployConfig
-from hypertypes.types import (
+from hypertypes import (
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,
     ERC4626HyperdriveDeployerCoordinatorContract,
@@ -23,12 +20,13 @@ from hypertypes.types import (
     ERC4626Target1DeployerContract,
     ERC4626Target2DeployerContract,
     ERC4626Target3DeployerContract,
+    FactoryConfig,
     ForwarderFactoryContract,
     HyperdriveFactoryContract,
     IERC4626HyperdriveContract,
     MockERC4626Contract,
+    PoolDeployConfig,
 )
-from hypertypes.types.HyperdriveFactoryTypes import FactoryConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -60,8 +58,8 @@ def deploy_hyperdrive_from_factory(
     initial_liquidity: FixedPoint,
     initial_variable_rate: FixedPoint,
     initial_fixed_rate: FixedPoint,
+    factory_deploy_config: FactoryConfig,
     pool_deploy_config: PoolDeployConfig,
-    max_fees: Fees,
 ) -> DeployedHyperdrivePool:
     """Initializes a Hyperdrive pool on an existing chain.
 
@@ -77,11 +75,12 @@ def deploy_hyperdrive_from_factory(
         The starting variable rate for an underlying yield source.
     initial_fixed_rate: FixedPoint
         The fixed rate of the pool on initialization.
-    pool_deploy_config: PoolDeployConfig
-        The configuration for initializing hyperdrive.
+    factory_deploy_config: FactoryConfig
+        The configuration for initializing the hyperdrive factory.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    max_fees: Fees
-        The maximum value for the setup fees.
+    pool_deploy_config: PoolDeployConfig
+        The configuration for initializing hyperdrive pool.
+        The type is generated from the Hyperdrive ABI using Pypechain.
 
     Returns
     -------
@@ -107,21 +106,19 @@ def deploy_hyperdrive_from_factory(
     # Create the pre-funded account on the Delv devnet
     deploy_account = _initialize_deployment_account(web3, deployer_private_key)
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
-    # Construct pool deploy config with information for the deployer account address
-    pool_deploy_config.governance = deploy_account_addr
-    pool_deploy_config.feeCollector = deploy_account_addr
+
+    # Update various configs with the deploy account address
+    factory_deploy_config.governance = deploy_account_addr
+    factory_deploy_config.hyperdriveGovernance = deploy_account_addr
+    factory_deploy_config.feeCollector = deploy_account_addr
+
     # Deploy the factory and base token contracts
     base_token_contract, factory_contract, pool_contract, deployer_contract = _deploy_hyperdrive_factory(
         web3,
-        deploy_account_addr,
+        deploy_account,
         initial_variable_rate,
-        pool_deploy_config,
-        max_fees,
+        factory_deploy_config,
     )
-    receipt = smart_contract_transact(
-        web3, factory_contract, deploy_account, "addHyperdriveDeployer", deployer_contract.address
-    )
-    assert receipt["status"] == 1, f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}"
     pool_deploy_config.baseToken = base_token_contract.address
 
     # Mint base and approve the initial liquidity amount for the hyperdrive factory
@@ -154,7 +151,6 @@ def deploy_hyperdrive_from_factory(
             base_token=Web3.to_checksum_address(base_token_contract.address),
             hyperdrive_factory=Web3.to_checksum_address(factory_contract.address),
             erc4626_hyperdrive=hyperdrive_checksum_address,
-            mock_hyperdrive_math=None,
             # We don't deploy a steth hyperdrive here, so we don't set this address
             steth_hyperdrive=Web3.to_checksum_address(ADDRESS_ZERO),
         ),
@@ -193,10 +189,9 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
 def _deploy_hyperdrive_factory(
     web3: Web3,
-    deploy_account_addr: ChecksumAddress,
+    deploy_account: LocalAccount,
     initial_variable_rate: FixedPoint,
-    pool_deploy_config: PoolDeployConfig,
-    max_fees: Fees,
+    factory_deploy_config: FactoryConfig,
 ) -> tuple[
     ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract, ERC4626HyperdriveDeployerCoordinatorContract
 ]:
@@ -206,15 +201,13 @@ def _deploy_hyperdrive_factory(
     ---------
     web3: Web3
         Web3 provider object.
-    deploy_account_addr: ChecksumAddress
-        The address of the account that's deploying the contract.
+    deploy_account: LocalAccount
+        The account that's deploying the contract.
     initial_variable_rate: FixedPoint
         The starting variable rate for an underlying yield source.
-    pool_deploy_config: PoolDeployConfig
-        The configuration for initializing hyperdrive.
+    factory_deploy_config: FactoryConfig
+        The factory configuration for initializing the hyperdrive factory.
         The type is generated from the Hyperdrive ABI using Pypechain.
-    max_fees: Fees
-        The maximum value for the setup fees.
 
     Returns
     -------
@@ -226,6 +219,7 @@ def _deploy_hyperdrive_factory(
     ]
         Containing the deployed base token, factory, the pool, and the deploy contracts.
     """
+    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
     base_token_contract = ERC20MintableContract.deploy(
         w3=web3,
         account=deploy_account_addr,
@@ -237,21 +231,15 @@ def _deploy_hyperdrive_factory(
         w3=web3,
         account=deploy_account_addr,
     )
+
+    # Set config from forwarder factory contract here
+    factory_deploy_config.linkerFactory = forwarder_factory_contract.address
+    factory_deploy_config.linkerCodeHash = forwarder_factory_contract.functions.ERC20LINK_HASH().call()
+
     factory_contract = HyperdriveFactoryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(
-            FactoryConfig(
-                governance=deploy_account_addr,
-                hyperdriveGovernance=deploy_account_addr,
-                defaultPausers=[],
-                feeCollector=deploy_account_addr,
-                fees=pool_deploy_config.fees,  # type: ignore
-                maxFees=max_fees,  # type: ignore
-                linkerFactory=forwarder_factory_contract.address,
-                linkerCodeHash=forwarder_factory_contract.functions.ERC20LINK_HASH().call(),
-            ),
-        ),
+        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config),
     )
     core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(
         w3=web3,
@@ -284,7 +272,19 @@ def _deploy_hyperdrive_factory(
             target3Deployer=target3_contract.address,
         ),
     )
-    factory_contract.functions.addHyperdriveDeployer(deployer_contract.address)
+
+    add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(deployer_contract.address)
+    function_name = add_deployer_coordinator_function.fn_name
+    function_args = add_deployer_coordinator_function.args
+    receipt = smart_contract_transact(
+        web3,
+        factory_contract,
+        deploy_account,
+        function_name,
+        *function_args,
+    )
+    assert receipt["status"] == 1, f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}"
+
     pool_contract = MockERC4626Contract.deploy(
         w3=web3,
         account=deploy_account_addr,
@@ -350,7 +350,7 @@ def _mint_and_approve(
 
 def _deploy_and_initialize_hyperdrive_pool(
     web3: Web3,
-    deploy_contract_address: ChecksumAddress,
+    deployer_coordinator_address: ChecksumAddress,
     deploy_account: LocalAccount,
     initial_liquidity: FixedPoint,
     initial_fixed_rate: FixedPoint,
@@ -364,7 +364,7 @@ def _deploy_and_initialize_hyperdrive_pool(
     ---------
     web3: Web3
         Web3 provider object.
-    deploy_contract_address: ChecksumAddress
+    deployer_coordinator_address: ChecksumAddress
         The address for the deployed ERC4626HyperdriveDeployer contract.
     deploy_account: LocalAccount
         A Web3 LocalAccount for the given private key.
@@ -386,7 +386,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         The deployed hyperdrive contract address.
     """
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
-        hyperdriveDeployer=deploy_contract_address,
+        deployerCoordinator=deployer_coordinator_address,
         deployConfig=pool_deploy_config,
         extraData=encode(("address", "address[]"), (pool_contract_addr, [])),
         contribution=initial_liquidity.scaled_value,

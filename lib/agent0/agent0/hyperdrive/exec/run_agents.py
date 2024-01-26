@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     import pandas as pd
     from ethpy import EthConfig
     from ethpy.hyperdrive import HyperdriveAddresses
-    from hypertypes.types import ERC20MintableContract
+    from hypertypes import ERC20MintableContract
 
     from agent0 import AccountKeyConfig
     from agent0.base.config import AgentConfig, EnvironmentConfig

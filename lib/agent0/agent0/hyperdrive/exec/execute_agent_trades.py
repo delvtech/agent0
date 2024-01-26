@@ -286,7 +286,10 @@ async def async_match_contract_call_to_trade(
             assert min_apr, "min_apr is required for ADD_LIQUIDITY"
             max_apr = trade.max_apr
             assert max_apr, "max_apr is required for ADD_LIQUIDITY"
-            trade_result = await interface.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr, nonce=nonce)
+            # TODO implement slippage tolerance for add liquidity
+            trade_result = await interface.async_add_liquidity(
+                agent, trade.trade_amount, min_apr, max_apr, slippage_tolerance=None, nonce=nonce
+            )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,

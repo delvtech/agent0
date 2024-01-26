@@ -21,7 +21,7 @@ class ReceiptBreakdown:
     bond_amount: FixedPoint = FixedPoint(0)
     lp_amount: FixedPoint = FixedPoint(0)
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
-    share_price: FixedPoint = FixedPoint(0)
+    vault_share_price: FixedPoint = FixedPoint(0)
     lp_share_price: FixedPoint = FixedPoint(0)
     # checkpoint event params
     checkpoint_time: int = 0
@@ -37,7 +37,7 @@ class ReceiptBreakdown:
             or self.maturity_time_seconds < 0
             or self.lp_amount < 0
             or self.withdrawal_share_amount < 0
-            or self.share_price < 0
+            or self.vault_share_price < 0
             or self.lp_share_price < 0
             or self.checkpoint_time < 0
             or self.matured_shorts < 0

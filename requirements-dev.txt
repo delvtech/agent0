@@ -1,5 +1,5 @@
 autodocsumm>=0.2.11
-black
+black==24.*
 coverage
 ipython
 jupytext

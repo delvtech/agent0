@@ -19,8 +19,7 @@ from ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_info,
 )
 from fixedpointmath import FixedPoint
-from hypertypes import IERC4626HyperdriveContract
-from hypertypes.types import ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract
+from hypertypes import ERC20MintableContract, HyperdriveFactoryContract, IERC4626HyperdriveContract, MockERC4626Contract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.base import MarketType, Trade
@@ -122,7 +121,7 @@ class HyperdriveReadInterface:
         self.hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.addresses.erc4626_hyperdrive)
         )
-        self.yield_address = self.hyperdrive_contract.functions.pool().call()
+        self.yield_address = self.hyperdrive_contract.functions.vault().call()
         self.yield_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(self.yield_address)
         )
@@ -339,7 +338,7 @@ class HyperdriveReadInterface:
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
         pool_state = self.current_pool_state
-        long_exposure_shares = self.current_pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
+        long_exposure_shares = self.current_pool_state.pool_info.long_exposure / pool_state.pool_info.vault_share_price
         idle_shares = (
             pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
         )
@@ -833,13 +832,15 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_open_short(pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.share_price)
+        return _calc_open_short(
+            pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.vault_share_price
+        )
 
     def calc_close_short(
         self,
         bond_amount: FixedPoint,
-        open_share_price: FixedPoint,
-        close_share_price: FixedPoint,
+        open_vault_share_price: FixedPoint,
+        close_vault_share_price: FixedPoint,
         normalized_time_remaining: FixedPoint,
         pool_state: PoolState | None = None,
     ) -> FixedPoint:
@@ -849,9 +850,9 @@ class HyperdriveReadInterface:
         ---------
         bond_amount: FixedPoint
             The amount to of bonds provided.
-        open_share_price: FixedPoint
+        open_vault_share_price: FixedPoint
             The share price when the short was opened.
-        close_share_price: FixedPoint
+        close_vault_share_price: FixedPoint
             The share price when the short was closed.
         normalized_time_remaining: FixedPoint
             The time remaining before the short reaches maturity,
@@ -868,7 +869,7 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_close_short(
-            pool_state, bond_amount, open_share_price, close_share_price, normalized_time_remaining
+            pool_state, bond_amount, open_vault_share_price, close_vault_share_price, normalized_time_remaining
         )
 
     def calc_bonds_out_given_shares_in_down(

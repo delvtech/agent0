@@ -41,7 +41,8 @@ from web3.contract.contract import (
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
-from .HyperdriveFactoryTypes import FactoryConfig, Fees, PoolDeployConfig
+from .HyperdriveFactoryTypes import FactoryConfig
+from .IHyperdriveTypes import Fees, PoolDeployConfig
 from .utilities import dataclass_to_tuple, rename_returned_types
 
 structs = {
@@ -51,11 +52,11 @@ structs = {
 }
 
 
-class HyperdriveFactoryAddHyperdriveDeployerContractFunction(ContractFunction):
-    """ContractFunction for the addHyperdriveDeployer method."""
+class HyperdriveFactoryAddDeployerCoordinatorContractFunction(ContractFunction):
+    """ContractFunction for the addDeployerCoordinator method."""
 
-    def __call__(self, hyperdriveDeployer: str) -> HyperdriveFactoryAddHyperdriveDeployerContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(hyperdriveDeployer))
+    def __call__(self, deployerCoordinator: str) -> HyperdriveFactoryAddDeployerCoordinatorContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(deployerCoordinator))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -73,12 +74,66 @@ class HyperdriveFactoryAddHyperdriveDeployerContractFunction(ContractFunction):
         # Call the function
 
 
+class HyperdriveFactoryCheckpointDurationResolutionContractFunction(ContractFunction):
+    """ContractFunction for the checkpointDurationResolution method."""
+
+    def __call__(self) -> HyperdriveFactoryCheckpointDurationResolutionContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryDefaultPausersContractFunction(ContractFunction):
+    """ContractFunction for the defaultPausers method."""
+
+    def __call__(self) -> HyperdriveFactoryDefaultPausersContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> list[str]:
+        """returns list[str]."""
+        # Define the expected return types from the smart contract call
+
+        return_types = list[str]
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
+
+
 class HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
     """ContractFunction for the deployAndInitialize method."""
 
-    def __call__(self, hyperdriveDeployer: str, deployConfig: PoolDeployConfig, extraData: bytes, contribution: int, apr: int, initializeExtraData: bytes) -> HyperdriveFactoryDeployAndInitializeContractFunction:  # type: ignore
+    def __call__(self, deployerCoordinator: str, deployConfig: PoolDeployConfig, extraData: bytes, contribution: int, apr: int, initializeExtraData: bytes) -> HyperdriveFactoryDeployAndInitializeContractFunction:  # type: ignore
         clone = super().__call__(
-            dataclass_to_tuple(hyperdriveDeployer),
+            dataclass_to_tuple(deployerCoordinator),
             dataclass_to_tuple(deployConfig),
             dataclass_to_tuple(extraData),
             dataclass_to_tuple(contribution),
@@ -134,72 +189,10 @@ class HyperdriveFactoryFeeCollectorContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveFactoryFeesContractFunction(ContractFunction):
-    """ContractFunction for the fees method."""
+class HyperdriveFactoryGetDeployerCoordinatorAtIndexContractFunction(ContractFunction):
+    """ContractFunction for the getDeployerCoordinatorAtIndex method."""
 
-    class ReturnValues(NamedTuple):
-        """The return named tuple for Fees."""
-
-        curve: int
-        flat: int
-        governanceLP: int
-        governanceZombie: int
-
-    def __call__(self) -> HyperdriveFactoryFeesContractFunction:  # type: ignore
-        clone = super().__call__()
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> ReturnValues:
-        """returns ReturnValues."""
-        # Define the expected return types from the smart contract call
-
-        return_types = [int, int, int, int]
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return self.ReturnValues(*rename_returned_types(structs, return_types, raw_values))
-
-
-class HyperdriveFactoryGetDefaultPausersContractFunction(ContractFunction):
-    """ContractFunction for the getDefaultPausers method."""
-
-    def __call__(self) -> HyperdriveFactoryGetDefaultPausersContractFunction:  # type: ignore
-        clone = super().__call__()
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> list[str]:
-        """returns list[str]."""
-        # Define the expected return types from the smart contract call
-
-        return_types = list[str]
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
-
-
-class HyperdriveFactoryGetHyperdriveDeployerAtIndexContractFunction(ContractFunction):
-    """ContractFunction for the getHyperdriveDeployerAtIndex method."""
-
-    def __call__(self, index: int) -> HyperdriveFactoryGetHyperdriveDeployerAtIndexContractFunction:  # type: ignore
+    def __call__(self, index: int) -> HyperdriveFactoryGetDeployerCoordinatorAtIndexContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(index))
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -223,10 +216,10 @@ class HyperdriveFactoryGetHyperdriveDeployerAtIndexContractFunction(ContractFunc
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveFactoryGetHyperdriveDeployersInRangeContractFunction(ContractFunction):
-    """ContractFunction for the getHyperdriveDeployersInRange method."""
+class HyperdriveFactoryGetDeployerCoordinatorsInRangeContractFunction(ContractFunction):
+    """ContractFunction for the getDeployerCoordinatorsInRange method."""
 
-    def __call__(self, startIndex: int, endIndex: int) -> HyperdriveFactoryGetHyperdriveDeployersInRangeContractFunction:  # type: ignore
+    def __call__(self, startIndex: int, endIndex: int) -> HyperdriveFactoryGetDeployerCoordinatorsInRangeContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(startIndex), dataclass_to_tuple(endIndex))
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -304,10 +297,10 @@ class HyperdriveFactoryGetInstancesInRangeContractFunction(ContractFunction):
         return cast(list[str], rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveFactoryGetNumberOfHyperdriveDeployersContractFunction(ContractFunction):
-    """ContractFunction for the getNumberOfHyperdriveDeployers method."""
+class HyperdriveFactoryGetNumberOfDeployerCoordinatorsContractFunction(ContractFunction):
+    """ContractFunction for the getNumberOfDeployerCoordinators method."""
 
-    def __call__(self) -> HyperdriveFactoryGetNumberOfHyperdriveDeployersContractFunction:  # type: ignore
+    def __call__(self) -> HyperdriveFactoryGetNumberOfDeployerCoordinatorsContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -412,10 +405,10 @@ class HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveFactoryIsHyperdriveDeployerContractFunction(ContractFunction):
-    """ContractFunction for the isHyperdriveDeployer method."""
+class HyperdriveFactoryIsDeployerCoordinatorContractFunction(ContractFunction):
+    """ContractFunction for the isDeployerCoordinator method."""
 
-    def __call__(self, arg1: str) -> HyperdriveFactoryIsHyperdriveDeployerContractFunction:  # type: ignore
+    def __call__(self, arg1: str) -> HyperdriveFactoryIsDeployerCoordinatorContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -547,11 +540,195 @@ class HyperdriveFactoryLinkerFactoryContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveFactoryRemoveHyperdriveDeployerContractFunction(ContractFunction):
-    """ContractFunction for the removeHyperdriveDeployer method."""
+class HyperdriveFactoryMaxCheckpointDurationContractFunction(ContractFunction):
+    """ContractFunction for the maxCheckpointDuration method."""
 
-    def __call__(self, hyperdriveDeployer: str, index: int) -> HyperdriveFactoryRemoveHyperdriveDeployerContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(hyperdriveDeployer), dataclass_to_tuple(index))
+    def __call__(self) -> HyperdriveFactoryMaxCheckpointDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMaxFeesContractFunction(ContractFunction):
+    """ContractFunction for the maxFees method."""
+
+    def __call__(self) -> HyperdriveFactoryMaxFeesContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> Fees:
+        """returns Fees."""
+        # Define the expected return types from the smart contract call
+
+        return_types = Fees
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(Fees, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMaxPositionDurationContractFunction(ContractFunction):
+    """ContractFunction for the maxPositionDuration method."""
+
+    def __call__(self) -> HyperdriveFactoryMaxPositionDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMinCheckpointDurationContractFunction(ContractFunction):
+    """ContractFunction for the minCheckpointDuration method."""
+
+    def __call__(self) -> HyperdriveFactoryMinCheckpointDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMinFeesContractFunction(ContractFunction):
+    """ContractFunction for the minFees method."""
+
+    def __call__(self) -> HyperdriveFactoryMinFeesContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> Fees:
+        """returns Fees."""
+        # Define the expected return types from the smart contract call
+
+        return_types = Fees
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(Fees, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMinPositionDurationContractFunction(ContractFunction):
+    """ContractFunction for the minPositionDuration method."""
+
+    def __call__(self) -> HyperdriveFactoryMinPositionDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryRemoveDeployerCoordinatorContractFunction(ContractFunction):
+    """ContractFunction for the removeDeployerCoordinator method."""
+
+    def __call__(self, deployerCoordinator: str, index: int) -> HyperdriveFactoryRemoveDeployerCoordinatorContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(deployerCoordinator), dataclass_to_tuple(index))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateCheckpointDurationResolutionContractFunction(ContractFunction):
+    """ContractFunction for the updateCheckpointDurationResolution method."""
+
+    def __call__(self, checkpointDurationResolution: int) -> HyperdriveFactoryUpdateCheckpointDurationResolutionContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(checkpointDurationResolution))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -596,28 +773,6 @@ class HyperdriveFactoryUpdateFeeCollectorContractFunction(ContractFunction):
 
     def __call__(self, feeCollector: str) -> HyperdriveFactoryUpdateFeeCollectorContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(feeCollector))
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> None:
-        """returns None."""
-        # Define the expected return types from the smart contract call
-
-        # Call the function
-
-
-class HyperdriveFactoryUpdateFeesContractFunction(ContractFunction):
-    """ContractFunction for the updateFees method."""
-
-    def __call__(self, fees: Fees) -> HyperdriveFactoryUpdateFeesContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(fees))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -723,6 +878,138 @@ class HyperdriveFactoryUpdateLinkerFactoryContractFunction(ContractFunction):
         # Call the function
 
 
+class HyperdriveFactoryUpdateMaxCheckpointDurationContractFunction(ContractFunction):
+    """ContractFunction for the updateMaxCheckpointDuration method."""
+
+    def __call__(self, maxCheckpointDuration: int) -> HyperdriveFactoryUpdateMaxCheckpointDurationContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(maxCheckpointDuration))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMaxFeesContractFunction(ContractFunction):
+    """ContractFunction for the updateMaxFees method."""
+
+    def __call__(self, maxFees: Fees) -> HyperdriveFactoryUpdateMaxFeesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(maxFees))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMaxPositionDurationContractFunction(ContractFunction):
+    """ContractFunction for the updateMaxPositionDuration method."""
+
+    def __call__(self, maxPositionDuration: int) -> HyperdriveFactoryUpdateMaxPositionDurationContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(maxPositionDuration))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMinCheckpointDurationContractFunction(ContractFunction):
+    """ContractFunction for the updateMinCheckpointDuration method."""
+
+    def __call__(self, minCheckpointDuration: int) -> HyperdriveFactoryUpdateMinCheckpointDurationContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(minCheckpointDuration))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMinFeesContractFunction(ContractFunction):
+    """ContractFunction for the updateMinFees method."""
+
+    def __call__(self, minFees: Fees) -> HyperdriveFactoryUpdateMinFeesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(minFees))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMinPositionDurationContractFunction(ContractFunction):
+    """ContractFunction for the updateMinPositionDuration method."""
+
+    def __call__(self, minPositionDuration: int) -> HyperdriveFactoryUpdateMinPositionDurationContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(minPositionDuration))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
 class HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
     """ContractFunction for the versionCounter method."""
 
@@ -753,25 +1040,25 @@ class HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
 class HyperdriveFactoryContractFunctions(ContractFunctions):
     """ContractFunctions for the HyperdriveFactory contract."""
 
-    addHyperdriveDeployer: HyperdriveFactoryAddHyperdriveDeployerContractFunction
+    addDeployerCoordinator: HyperdriveFactoryAddDeployerCoordinatorContractFunction
+
+    checkpointDurationResolution: HyperdriveFactoryCheckpointDurationResolutionContractFunction
+
+    defaultPausers: HyperdriveFactoryDefaultPausersContractFunction
 
     deployAndInitialize: HyperdriveFactoryDeployAndInitializeContractFunction
 
     feeCollector: HyperdriveFactoryFeeCollectorContractFunction
 
-    fees: HyperdriveFactoryFeesContractFunction
+    getDeployerCoordinatorAtIndex: HyperdriveFactoryGetDeployerCoordinatorAtIndexContractFunction
 
-    getDefaultPausers: HyperdriveFactoryGetDefaultPausersContractFunction
-
-    getHyperdriveDeployerAtIndex: HyperdriveFactoryGetHyperdriveDeployerAtIndexContractFunction
-
-    getHyperdriveDeployersInRange: HyperdriveFactoryGetHyperdriveDeployersInRangeContractFunction
+    getDeployerCoordinatorsInRange: HyperdriveFactoryGetDeployerCoordinatorsInRangeContractFunction
 
     getInstanceAtIndex: HyperdriveFactoryGetInstanceAtIndexContractFunction
 
     getInstancesInRange: HyperdriveFactoryGetInstancesInRangeContractFunction
 
-    getNumberOfHyperdriveDeployers: HyperdriveFactoryGetNumberOfHyperdriveDeployersContractFunction
+    getNumberOfDeployerCoordinators: HyperdriveFactoryGetNumberOfDeployerCoordinatorsContractFunction
 
     getNumberOfInstances: HyperdriveFactoryGetNumberOfInstancesContractFunction
 
@@ -779,7 +1066,7 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     hyperdriveGovernance: HyperdriveFactoryHyperdriveGovernanceContractFunction
 
-    isHyperdriveDeployer: HyperdriveFactoryIsHyperdriveDeployerContractFunction
+    isDeployerCoordinator: HyperdriveFactoryIsDeployerCoordinatorContractFunction
 
     isInstance: HyperdriveFactoryIsInstanceContractFunction
 
@@ -789,13 +1076,25 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     linkerFactory: HyperdriveFactoryLinkerFactoryContractFunction
 
-    removeHyperdriveDeployer: HyperdriveFactoryRemoveHyperdriveDeployerContractFunction
+    maxCheckpointDuration: HyperdriveFactoryMaxCheckpointDurationContractFunction
+
+    maxFees: HyperdriveFactoryMaxFeesContractFunction
+
+    maxPositionDuration: HyperdriveFactoryMaxPositionDurationContractFunction
+
+    minCheckpointDuration: HyperdriveFactoryMinCheckpointDurationContractFunction
+
+    minFees: HyperdriveFactoryMinFeesContractFunction
+
+    minPositionDuration: HyperdriveFactoryMinPositionDurationContractFunction
+
+    removeDeployerCoordinator: HyperdriveFactoryRemoveDeployerCoordinatorContractFunction
+
+    updateCheckpointDurationResolution: HyperdriveFactoryUpdateCheckpointDurationResolutionContractFunction
 
     updateDefaultPausers: HyperdriveFactoryUpdateDefaultPausersContractFunction
 
     updateFeeCollector: HyperdriveFactoryUpdateFeeCollectorContractFunction
-
-    updateFees: HyperdriveFactoryUpdateFeesContractFunction
 
     updateGovernance: HyperdriveFactoryUpdateGovernanceContractFunction
 
@@ -804,6 +1103,18 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
     updateLinkerCodeHash: HyperdriveFactoryUpdateLinkerCodeHashContractFunction
 
     updateLinkerFactory: HyperdriveFactoryUpdateLinkerFactoryContractFunction
+
+    updateMaxCheckpointDuration: HyperdriveFactoryUpdateMaxCheckpointDurationContractFunction
+
+    updateMaxFees: HyperdriveFactoryUpdateMaxFeesContractFunction
+
+    updateMaxPositionDuration: HyperdriveFactoryUpdateMaxPositionDurationContractFunction
+
+    updateMinCheckpointDuration: HyperdriveFactoryUpdateMinCheckpointDurationContractFunction
+
+    updateMinFees: HyperdriveFactoryUpdateMinFeesContractFunction
+
+    updateMinPositionDuration: HyperdriveFactoryUpdateMinPositionDurationContractFunction
 
     versionCounter: HyperdriveFactoryVersionCounterContractFunction
 
@@ -815,13 +1126,29 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
         decode_tuples: bool | None = False,
     ) -> None:
         super().__init__(abi, w3, address, decode_tuples)
-        self.addHyperdriveDeployer = HyperdriveFactoryAddHyperdriveDeployerContractFunction.factory(
-            "addHyperdriveDeployer",
+        self.addDeployerCoordinator = HyperdriveFactoryAddDeployerCoordinatorContractFunction.factory(
+            "addDeployerCoordinator",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="addHyperdriveDeployer",
+            function_identifier="addDeployerCoordinator",
+        )
+        self.checkpointDurationResolution = HyperdriveFactoryCheckpointDurationResolutionContractFunction.factory(
+            "checkpointDurationResolution",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="checkpointDurationResolution",
+        )
+        self.defaultPausers = HyperdriveFactoryDefaultPausersContractFunction.factory(
+            "defaultPausers",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="defaultPausers",
         )
         self.deployAndInitialize = HyperdriveFactoryDeployAndInitializeContractFunction.factory(
             "deployAndInitialize",
@@ -839,37 +1166,21 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="feeCollector",
         )
-        self.fees = HyperdriveFactoryFeesContractFunction.factory(
-            "fees",
+        self.getDeployerCoordinatorAtIndex = HyperdriveFactoryGetDeployerCoordinatorAtIndexContractFunction.factory(
+            "getDeployerCoordinatorAtIndex",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="fees",
+            function_identifier="getDeployerCoordinatorAtIndex",
         )
-        self.getDefaultPausers = HyperdriveFactoryGetDefaultPausersContractFunction.factory(
-            "getDefaultPausers",
+        self.getDeployerCoordinatorsInRange = HyperdriveFactoryGetDeployerCoordinatorsInRangeContractFunction.factory(
+            "getDeployerCoordinatorsInRange",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="getDefaultPausers",
-        )
-        self.getHyperdriveDeployerAtIndex = HyperdriveFactoryGetHyperdriveDeployerAtIndexContractFunction.factory(
-            "getHyperdriveDeployerAtIndex",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="getHyperdriveDeployerAtIndex",
-        )
-        self.getHyperdriveDeployersInRange = HyperdriveFactoryGetHyperdriveDeployersInRangeContractFunction.factory(
-            "getHyperdriveDeployersInRange",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="getHyperdriveDeployersInRange",
+            function_identifier="getDeployerCoordinatorsInRange",
         )
         self.getInstanceAtIndex = HyperdriveFactoryGetInstanceAtIndexContractFunction.factory(
             "getInstanceAtIndex",
@@ -887,13 +1198,13 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="getInstancesInRange",
         )
-        self.getNumberOfHyperdriveDeployers = HyperdriveFactoryGetNumberOfHyperdriveDeployersContractFunction.factory(
-            "getNumberOfHyperdriveDeployers",
+        self.getNumberOfDeployerCoordinators = HyperdriveFactoryGetNumberOfDeployerCoordinatorsContractFunction.factory(
+            "getNumberOfDeployerCoordinators",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="getNumberOfHyperdriveDeployers",
+            function_identifier="getNumberOfDeployerCoordinators",
         )
         self.getNumberOfInstances = HyperdriveFactoryGetNumberOfInstancesContractFunction.factory(
             "getNumberOfInstances",
@@ -919,13 +1230,13 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="hyperdriveGovernance",
         )
-        self.isHyperdriveDeployer = HyperdriveFactoryIsHyperdriveDeployerContractFunction.factory(
-            "isHyperdriveDeployer",
+        self.isDeployerCoordinator = HyperdriveFactoryIsDeployerCoordinatorContractFunction.factory(
+            "isDeployerCoordinator",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="isHyperdriveDeployer",
+            function_identifier="isDeployerCoordinator",
         )
         self.isInstance = HyperdriveFactoryIsInstanceContractFunction.factory(
             "isInstance",
@@ -959,13 +1270,71 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="linkerFactory",
         )
-        self.removeHyperdriveDeployer = HyperdriveFactoryRemoveHyperdriveDeployerContractFunction.factory(
-            "removeHyperdriveDeployer",
+        self.maxCheckpointDuration = HyperdriveFactoryMaxCheckpointDurationContractFunction.factory(
+            "maxCheckpointDuration",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="removeHyperdriveDeployer",
+            function_identifier="maxCheckpointDuration",
+        )
+        self.maxFees = HyperdriveFactoryMaxFeesContractFunction.factory(
+            "maxFees",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxFees",
+        )
+        self.maxPositionDuration = HyperdriveFactoryMaxPositionDurationContractFunction.factory(
+            "maxPositionDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxPositionDuration",
+        )
+        self.minCheckpointDuration = HyperdriveFactoryMinCheckpointDurationContractFunction.factory(
+            "minCheckpointDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="minCheckpointDuration",
+        )
+        self.minFees = HyperdriveFactoryMinFeesContractFunction.factory(
+            "minFees",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="minFees",
+        )
+        self.minPositionDuration = HyperdriveFactoryMinPositionDurationContractFunction.factory(
+            "minPositionDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="minPositionDuration",
+        )
+        self.removeDeployerCoordinator = HyperdriveFactoryRemoveDeployerCoordinatorContractFunction.factory(
+            "removeDeployerCoordinator",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="removeDeployerCoordinator",
+        )
+        self.updateCheckpointDurationResolution = (
+            HyperdriveFactoryUpdateCheckpointDurationResolutionContractFunction.factory(
+                "updateCheckpointDurationResolution",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                decode_tuples=decode_tuples,
+                function_identifier="updateCheckpointDurationResolution",
+            )
         )
         self.updateDefaultPausers = HyperdriveFactoryUpdateDefaultPausersContractFunction.factory(
             "updateDefaultPausers",
@@ -982,14 +1351,6 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="updateFeeCollector",
-        )
-        self.updateFees = HyperdriveFactoryUpdateFeesContractFunction.factory(
-            "updateFees",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="updateFees",
         )
         self.updateGovernance = HyperdriveFactoryUpdateGovernanceContractFunction.factory(
             "updateGovernance",
@@ -1023,6 +1384,54 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateLinkerFactory",
         )
+        self.updateMaxCheckpointDuration = HyperdriveFactoryUpdateMaxCheckpointDurationContractFunction.factory(
+            "updateMaxCheckpointDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMaxCheckpointDuration",
+        )
+        self.updateMaxFees = HyperdriveFactoryUpdateMaxFeesContractFunction.factory(
+            "updateMaxFees",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMaxFees",
+        )
+        self.updateMaxPositionDuration = HyperdriveFactoryUpdateMaxPositionDurationContractFunction.factory(
+            "updateMaxPositionDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMaxPositionDuration",
+        )
+        self.updateMinCheckpointDuration = HyperdriveFactoryUpdateMinCheckpointDurationContractFunction.factory(
+            "updateMinCheckpointDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMinCheckpointDuration",
+        )
+        self.updateMinFees = HyperdriveFactoryUpdateMinFeesContractFunction.factory(
+            "updateMinFees",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMinFees",
+        )
+        self.updateMinPositionDuration = HyperdriveFactoryUpdateMinPositionDurationContractFunction.factory(
+            "updateMinPositionDuration",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMinPositionDuration",
+        )
         self.versionCounter = HyperdriveFactoryVersionCounterContractFunction.factory(
             "versionCounter",
             w3=w3,
@@ -1030,6 +1439,158 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="versionCounter",
+        )
+
+
+class HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent(ContractEvent):
+    """ContractEvent for CheckpointDurationResolutionUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryDefaultPausersUpdatedContractEvent(ContractEvent):
+    """ContractEvent for DefaultPausersUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryDefaultPausersUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryDefaultPausersUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryDefaultPausersUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryDefaultPausersUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
         )
 
 
@@ -1094,6 +1655,158 @@ class HyperdriveFactoryDeployedContractEvent(ContractEvent):
     @classmethod
     def create_filter(  # type: ignore
         cls: Type["HyperdriveFactoryDeployedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryDeployerCoordinatorAddedContractEvent(ContractEvent):
+    """ContractEvent for DeployerCoordinatorAdded."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorAddedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorAddedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorAddedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorAddedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryDeployerCoordinatorRemovedContractEvent(ContractEvent):
+    """ContractEvent for DeployerCoordinatorRemoved."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorRemovedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorRemovedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorRemovedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorRemovedContractEvent"],
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -1565,10 +2278,474 @@ class HyperdriveFactoryLinkerFactoryUpdatedContractEvent(ContractEvent):
         )
 
 
+class HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MaxCheckpointDurationUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMaxFeesUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MaxFeesUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMaxFeesUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxFeesUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMaxFeesUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxFeesUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMaxPositionDurationUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MaxPositionDurationUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMaxPositionDurationUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxPositionDurationUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMaxPositionDurationUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxPositionDurationUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MinCheckpointDurationUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMinFeesUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MinFeesUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMinFeesUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMinFeesUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMinFeesUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMinFeesUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMinPositionDurationUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MinPositionDurationUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMinPositionDurationUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMinPositionDurationUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMinPositionDurationUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMinPositionDurationUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class HyperdriveFactoryContractEvents(ContractEvents):
     """ContractEvents for the HyperdriveFactory contract."""
 
+    CheckpointDurationResolutionUpdated: HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent
+
+    DefaultPausersUpdated: HyperdriveFactoryDefaultPausersUpdatedContractEvent
+
     Deployed: HyperdriveFactoryDeployedContractEvent
+
+    DeployerCoordinatorAdded: HyperdriveFactoryDeployerCoordinatorAddedContractEvent
+
+    DeployerCoordinatorRemoved: HyperdriveFactoryDeployerCoordinatorRemovedContractEvent
 
     FeeCollectorUpdated: HyperdriveFactoryFeeCollectorUpdatedContractEvent
 
@@ -1582,6 +2759,18 @@ class HyperdriveFactoryContractEvents(ContractEvents):
 
     LinkerFactoryUpdated: HyperdriveFactoryLinkerFactoryUpdatedContractEvent
 
+    MaxCheckpointDurationUpdated: HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent
+
+    MaxFeesUpdated: HyperdriveFactoryMaxFeesUpdatedContractEvent
+
+    MaxPositionDurationUpdated: HyperdriveFactoryMaxPositionDurationUpdatedContractEvent
+
+    MinCheckpointDurationUpdated: HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent
+
+    MinFeesUpdated: HyperdriveFactoryMinFeesUpdatedContractEvent
+
+    MinPositionDurationUpdated: HyperdriveFactoryMinPositionDurationUpdatedContractEvent
+
     def __init__(
         self,
         abi: ABI,
@@ -1589,10 +2778,46 @@ class HyperdriveFactoryContractEvents(ContractEvents):
         address: ChecksumAddress | None = None,
     ) -> None:
         super().__init__(abi, w3, address)
+        self.CheckpointDurationResolutionUpdated = cast(
+            HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent,
+            HyperdriveFactoryCheckpointDurationResolutionUpdatedContractEvent.factory(
+                "CheckpointDurationResolutionUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="CheckpointDurationResolutionUpdated",
+            ),
+        )
+        self.DefaultPausersUpdated = cast(
+            HyperdriveFactoryDefaultPausersUpdatedContractEvent,
+            HyperdriveFactoryDefaultPausersUpdatedContractEvent.factory(
+                "DefaultPausersUpdated", w3=w3, contract_abi=abi, address=address, event_name="DefaultPausersUpdated"
+            ),
+        )
         self.Deployed = cast(
             HyperdriveFactoryDeployedContractEvent,
             HyperdriveFactoryDeployedContractEvent.factory(
                 "Deployed", w3=w3, contract_abi=abi, address=address, event_name="Deployed"
+            ),
+        )
+        self.DeployerCoordinatorAdded = cast(
+            HyperdriveFactoryDeployerCoordinatorAddedContractEvent,
+            HyperdriveFactoryDeployerCoordinatorAddedContractEvent.factory(
+                "DeployerCoordinatorAdded",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="DeployerCoordinatorAdded",
+            ),
+        )
+        self.DeployerCoordinatorRemoved = cast(
+            HyperdriveFactoryDeployerCoordinatorRemovedContractEvent,
+            HyperdriveFactoryDeployerCoordinatorRemovedContractEvent.factory(
+                "DeployerCoordinatorRemoved",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="DeployerCoordinatorRemoved",
             ),
         )
         self.FeeCollectorUpdated = cast(
@@ -1635,6 +2860,58 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 "LinkerFactoryUpdated", w3=w3, contract_abi=abi, address=address, event_name="LinkerFactoryUpdated"
             ),
         )
+        self.MaxCheckpointDurationUpdated = cast(
+            HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent,
+            HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent.factory(
+                "MaxCheckpointDurationUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MaxCheckpointDurationUpdated",
+            ),
+        )
+        self.MaxFeesUpdated = cast(
+            HyperdriveFactoryMaxFeesUpdatedContractEvent,
+            HyperdriveFactoryMaxFeesUpdatedContractEvent.factory(
+                "MaxFeesUpdated", w3=w3, contract_abi=abi, address=address, event_name="MaxFeesUpdated"
+            ),
+        )
+        self.MaxPositionDurationUpdated = cast(
+            HyperdriveFactoryMaxPositionDurationUpdatedContractEvent,
+            HyperdriveFactoryMaxPositionDurationUpdatedContractEvent.factory(
+                "MaxPositionDurationUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MaxPositionDurationUpdated",
+            ),
+        )
+        self.MinCheckpointDurationUpdated = cast(
+            HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent,
+            HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent.factory(
+                "MinCheckpointDurationUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MinCheckpointDurationUpdated",
+            ),
+        )
+        self.MinFeesUpdated = cast(
+            HyperdriveFactoryMinFeesUpdatedContractEvent,
+            HyperdriveFactoryMinFeesUpdatedContractEvent.factory(
+                "MinFeesUpdated", w3=w3, contract_abi=abi, address=address, event_name="MinFeesUpdated"
+            ),
+        )
+        self.MinPositionDurationUpdated = cast(
+            HyperdriveFactoryMinPositionDurationUpdatedContractEvent,
+            HyperdriveFactoryMinPositionDurationUpdatedContractEvent.factory(
+                "MinPositionDurationUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MinPositionDurationUpdated",
+            ),
+        )
 
 
 hyperdrivefactory_abi: ABI = cast(
@@ -1652,8 +2929,13 @@ hyperdrivefactory_abi: ABI = cast(
                         {"name": "hyperdriveGovernance", "type": "address", "internalType": "address"},
                         {"name": "defaultPausers", "type": "address[]", "internalType": "address[]"},
                         {"name": "feeCollector", "type": "address", "internalType": "address"},
+                        {"name": "checkpointDurationResolution", "type": "uint256", "internalType": "uint256"},
+                        {"name": "minCheckpointDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "maxCheckpointDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "minPositionDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "maxPositionDuration", "type": "uint256", "internalType": "uint256"},
                         {
-                            "name": "fees",
+                            "name": "minFees",
                             "type": "tuple",
                             "internalType": "struct IHyperdrive.Fees",
                             "components": [
@@ -1683,16 +2965,30 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "addHyperdriveDeployer",
-            "inputs": [{"name": "_hyperdriveDeployer", "type": "address", "internalType": "address"}],
+            "name": "addDeployerCoordinator",
+            "inputs": [{"name": "_deployerCoordinator", "type": "address", "internalType": "address"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
         {
             "type": "function",
+            "name": "checkpointDurationResolution",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "defaultPausers",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "address[]", "internalType": "address[]"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "deployAndInitialize",
             "inputs": [
-                {"name": "_hyperdriveDeployer", "type": "address", "internalType": "address"},
+                {"name": "_deployerCoordinator", "type": "address", "internalType": "address"},
                 {
                     "name": "_deployConfig",
                     "type": "tuple",
@@ -1738,33 +3034,14 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "fees",
-            "inputs": [],
-            "outputs": [
-                {"name": "curve", "type": "uint256", "internalType": "uint256"},
-                {"name": "flat", "type": "uint256", "internalType": "uint256"},
-                {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
-                {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
-            ],
-            "stateMutability": "view",
-        },
-        {
-            "type": "function",
-            "name": "getDefaultPausers",
-            "inputs": [],
-            "outputs": [{"name": "", "type": "address[]", "internalType": "address[]"}],
-            "stateMutability": "view",
-        },
-        {
-            "type": "function",
-            "name": "getHyperdriveDeployerAtIndex",
+            "name": "getDeployerCoordinatorAtIndex",
             "inputs": [{"name": "index", "type": "uint256", "internalType": "uint256"}],
             "outputs": [{"name": "", "type": "address", "internalType": "address"}],
             "stateMutability": "view",
         },
         {
             "type": "function",
-            "name": "getHyperdriveDeployersInRange",
+            "name": "getDeployerCoordinatorsInRange",
             "inputs": [
                 {"name": "startIndex", "type": "uint256", "internalType": "uint256"},
                 {"name": "endIndex", "type": "uint256", "internalType": "uint256"},
@@ -1791,7 +3068,7 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "getNumberOfHyperdriveDeployers",
+            "name": "getNumberOfDeployerCoordinators",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
@@ -1819,7 +3096,7 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "isHyperdriveDeployer",
+            "name": "isDeployerCoordinator",
             "inputs": [{"name": "", "type": "address", "internalType": "address"}],
             "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
             "stateMutability": "view",
@@ -1854,11 +3131,84 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "removeHyperdriveDeployer",
+            "name": "maxCheckpointDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "maxFees",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "tuple",
+                    "internalType": "struct IHyperdrive.Fees",
+                    "components": [
+                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                    ],
+                }
+            ],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "maxPositionDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "minCheckpointDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "minFees",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "tuple",
+                    "internalType": "struct IHyperdrive.Fees",
+                    "components": [
+                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                    ],
+                }
+            ],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "minPositionDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "removeDeployerCoordinator",
             "inputs": [
-                {"name": "_hyperdriveDeployer", "type": "address", "internalType": "address"},
+                {"name": "_deployerCoordinator", "type": "address", "internalType": "address"},
                 {"name": "_index", "type": "uint256", "internalType": "uint256"},
             ],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateCheckpointDurationResolution",
+            "inputs": [{"name": "_checkpointDurationResolution", "type": "uint256", "internalType": "uint256"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -1873,25 +3223,6 @@ hyperdrivefactory_abi: ABI = cast(
             "type": "function",
             "name": "updateFeeCollector",
             "inputs": [{"name": "_feeCollector", "type": "address", "internalType": "address"}],
-            "outputs": [],
-            "stateMutability": "nonpayable",
-        },
-        {
-            "type": "function",
-            "name": "updateFees",
-            "inputs": [
-                {
-                    "name": "_fees",
-                    "type": "tuple",
-                    "internalType": "struct IHyperdrive.Fees",
-                    "components": [
-                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
-                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
-                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
-                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
-                    ],
-                }
-            ],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -1925,10 +3256,97 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "updateMaxCheckpointDuration",
+            "inputs": [{"name": "_maxCheckpointDuration", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMaxFees",
+            "inputs": [
+                {
+                    "name": "__maxFees",
+                    "type": "tuple",
+                    "internalType": "struct IHyperdrive.Fees",
+                    "components": [
+                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                    ],
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMaxPositionDuration",
+            "inputs": [{"name": "_maxPositionDuration", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMinCheckpointDuration",
+            "inputs": [{"name": "_minCheckpointDuration", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMinFees",
+            "inputs": [
+                {
+                    "name": "__minFees",
+                    "type": "tuple",
+                    "internalType": "struct IHyperdrive.Fees",
+                    "components": [
+                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                    ],
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMinPositionDuration",
+            "inputs": [{"name": "_minPositionDuration", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
             "name": "versionCounter",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
+        },
+        {
+            "type": "event",
+            "name": "CheckpointDurationResolutionUpdated",
+            "inputs": [
+                {
+                    "name": "newCheckpointDurationResolution",
+                    "type": "uint256",
+                    "indexed": False,
+                    "internalType": "uint256",
+                }
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "DefaultPausersUpdated",
+            "inputs": [
+                {"name": "newDefaultPausers", "type": "address[]", "indexed": False, "internalType": "address[]"}
+            ],
+            "anonymous": False,
         },
         {
             "type": "event",
@@ -1971,6 +3389,18 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "event",
+            "name": "DeployerCoordinatorAdded",
+            "inputs": [{"name": "deployerCoordinator", "type": "address", "indexed": True, "internalType": "address"}],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "DeployerCoordinatorRemoved",
+            "inputs": [{"name": "deployerCoordinator", "type": "address", "indexed": True, "internalType": "address"}],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
             "name": "FeeCollectorUpdated",
             "inputs": [{"name": "newFeeCollector", "type": "address", "indexed": True, "internalType": "address"}],
             "anonymous": False,
@@ -2005,21 +3435,100 @@ hyperdrivefactory_abi: ABI = cast(
             "inputs": [{"name": "newLinkerFactory", "type": "address", "indexed": True, "internalType": "address"}],
             "anonymous": False,
         },
+        {
+            "type": "event",
+            "name": "MaxCheckpointDurationUpdated",
+            "inputs": [
+                {"name": "newMaxCheckpointDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MaxFeesUpdated",
+            "inputs": [
+                {
+                    "name": "newMaxFees",
+                    "type": "tuple",
+                    "indexed": False,
+                    "internalType": "struct IHyperdrive.Fees",
+                    "components": [
+                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                    ],
+                }
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MaxPositionDurationUpdated",
+            "inputs": [
+                {"name": "newMaxPositionDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MinCheckpointDurationUpdated",
+            "inputs": [
+                {"name": "newMinCheckpointDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MinFeesUpdated",
+            "inputs": [
+                {
+                    "name": "newMinFees",
+                    "type": "tuple",
+                    "indexed": False,
+                    "internalType": "struct IHyperdrive.Fees",
+                    "components": [
+                        {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                        {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                    ],
+                }
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MinPositionDurationUpdated",
+            "inputs": [
+                {"name": "newMinPositionDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {"type": "error", "name": "DeployerCoordinatorAlreadyAdded", "inputs": []},
+        {"type": "error", "name": "DeployerCoordinatorIndexMismatch", "inputs": []},
+        {"type": "error", "name": "DeployerCoordinatorNotAdded", "inputs": []},
         {"type": "error", "name": "EndIndexTooLarge", "inputs": []},
-        {"type": "error", "name": "FeeTooHigh", "inputs": []},
-        {"type": "error", "name": "HyperdriveDeployerAlreadyAdded", "inputs": []},
-        {"type": "error", "name": "HyperdriveDeployerIndexMismatch", "inputs": []},
-        {"type": "error", "name": "HyperdriveDeployerNotAdded", "inputs": []},
-        {"type": "error", "name": "InvalidDeployer", "inputs": []},
+        {"type": "error", "name": "InvalidCheckpointDuration", "inputs": []},
+        {"type": "error", "name": "InvalidCheckpointDurationResolution", "inputs": []},
+        {"type": "error", "name": "InvalidDeployConfig", "inputs": []},
+        {"type": "error", "name": "InvalidDeployerCoordinator", "inputs": []},
+        {"type": "error", "name": "InvalidFees", "inputs": []},
         {"type": "error", "name": "InvalidIndexes", "inputs": []},
-        {"type": "error", "name": "MaxFeeTooHigh", "inputs": []},
+        {"type": "error", "name": "InvalidMaxCheckpointDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMaxFees", "inputs": []},
+        {"type": "error", "name": "InvalidMaxPositionDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMinCheckpointDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMinFees", "inputs": []},
+        {"type": "error", "name": "InvalidMinPositionDuration", "inputs": []},
+        {"type": "error", "name": "InvalidPositionDuration", "inputs": []},
         {"type": "error", "name": "TransferFailed", "inputs": []},
         {"type": "error", "name": "Unauthorized", "inputs": []},
     ],
 )
 # pylint: disable=line-too-long
 hyperdrivefactory_bytecode = HexStr(
-    "0x610100604052600180553480156200001657600080fd5b5060405162002004380380620020048339810160408190526200003991620003d8565b60a0808201805151608081905281516020015190925280516040015160c052516060015160e052670de0b6b3a764000010806200007f5750670de0b6b3a764000060a051115b80620000945750670de0b6b3a764000060c051115b80620000a95750670de0b6b3a764000060e051115b15620000c85760405163a3932d2d60e01b815260040160405180910390fd5b6080805190820151511180620000e7575060a051816080015160200151115b80620000fc575060c051816080015160400151115b8062000111575060e051816080015160600151115b15620001305760405163cd4e616760e01b815260040160405180910390fd5b608081015180516006556020808201516007556040808301516008556060928301516009558351600080546001600160a01b03199081166001600160a01b03938416179091558386015160038054831691841691909117905593850151600a8054909516911617909255908201518051620001b092600b920190620001e2565b5060c0810151600480546001600160a01b0319166001600160a01b0390921691909117905560e00151600555620004cf565b8280548282559060005260206000209081019282156200023a579160200282015b828111156200023a57825182546001600160a01b0319166001600160a01b0390911617825560209092019160019091019062000203565b50620002489291506200024c565b5090565b5b808211156200024857600081556001016200024d565b634e487b7160e01b600052604160045260246000fd5b60405161010081016001600160401b03811182821017156200029f576200029f62000263565b60405290565b80516001600160a01b0381168114620002bd57600080fd5b919050565b600082601f830112620002d457600080fd5b815160206001600160401b0380831115620002f357620002f362000263565b8260051b604051601f19603f830116810181811084821117156200031b576200031b62000263565b6040529384528581018301938381019250878511156200033a57600080fd5b83870191505b8482101562000364576200035482620002a5565b8352918301919083019062000340565b979650505050505050565b6000608082840312156200038257600080fd5b604051608081016001600160401b0381118282101715620003a757620003a762000263565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b600060208284031215620003eb57600080fd5b81516001600160401b03808211156200040357600080fd5b908301906101c082860312156200041957600080fd5b6200042362000279565b6200042e83620002a5565b81526200043e60208401620002a5565b60208201526040830151828111156200045657600080fd5b6200046487828601620002c2565b6040830152506200047860608401620002a5565b60608201526200048c86608085016200036f565b6080820152620004a18661010085016200036f565b60a0820152620004b56101808401620002a5565b60c08201526101a0929092015160e0830152509392505050565b60805160a05160c05160e051611afb620005096000396000610ab701526000610a8901526000610a5b01526000610a310152611afb6000f3fe60806040526004361061019c5760003560e01c80639af1d35a116100ec578063cd2cdf581161008a578063dd2b8fbb11610064578063dd2b8fbb146104df578063dd6d30c1146104ff578063e333155514610515578063f1e1b6601461053557600080fd5b8063cd2cdf581461048c578063d2c35ce81461049f578063daac24da146104bf57600080fd5b8063b2561263116100c6578063b256126314610416578063bc30e7a114610436578063c415b95c14610456578063c905a4b51461047657600080fd5b80639af1d35a1461039e5780639af25262146103e1578063a1ac11f51461040157600080fd5b80636e95d67c1161015957806380a6b8641161013357806380a6b8641461030e578063852297851461033e57806398a9c92b1461035e57806399623bb11461037e57600080fd5b80636e95d67c146102ad57806377b81aac146102cc5780637f7c5a7d146102f957600080fd5b806302fd2de9146101a15780634fbfee77146101c3578063503cf156146101e35780635aa6e675146102035780635f5a4e88146102405780636b44e6be1461026d575b600080fd5b3480156101ad57600080fd5b506101c16101bc366004611472565b610555565b005b3480156101cf57600080fd5b506101c16101de366004611496565b61061f565b3480156101ef57600080fd5b506101c16101fe3660046114af565b61067c565b34801561020f57600080fd5b50600054610223906001600160a01b031681565b6040516001600160a01b0390911681526020015b60405180910390f35b34801561024c57600080fd5b5061026061025b3660046114db565b610800565b60405161023791906114fd565b34801561027957600080fd5b5061029d610288366004611472565b600f6020526000908152604090205460ff1681565b6040519015158152602001610237565b3480156102b957600080fd5b50600e545b604051908152602001610237565b3480156102d857600080fd5b506102be6102e7366004611472565b60026020526000908152604090205481565b34801561030557600080fd5b5061026061091c565b34801561031a57600080fd5b5061029d610329366004611472565b600d6020526000908152604090205460ff1681565b34801561034a57600080fd5b506101c1610359366004611472565b61097e565b34801561036a57600080fd5b506101c161037936600461154a565b610a05565b34801561038a57600080fd5b50600454610223906001600160a01b031681565b3480156103aa57600080fd5b506006546007546008546009546103c19392919084565b604080519485526020850193909352918301526060820152608001610237565b3480156103ed57600080fd5b506101c16103fc366004611562565b610b1e565b34801561040d57600080fd5b50600c546102be565b34801561042257600080fd5b506101c1610431366004611472565b610b54565b34801561044257600080fd5b506102606104513660046114db565b610bc6565b34801561046257600080fd5b50600a54610223906001600160a01b031681565b34801561048257600080fd5b506102be60055481565b61022361049a36600461170a565b610cdb565b3480156104ab57600080fd5b506101c16104ba366004611472565b611199565b3480156104cb57600080fd5b506102236104da366004611496565b61120d565b3480156104eb57600080fd5b506101c16104fa366004611472565b61123d565b34801561050b57600080fd5b506102be60015481565b34801561052157600080fd5b50600354610223906001600160a01b031681565b34801561054157600080fd5b50610223610550366004611496565b6112b1565b6000546001600160a01b0316331461057f576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0381166000908152600d602052604090205460ff16156105b95760405163322026b560e21b815260040160405180910390fd5b6001600160a01b03166000818152600d60205260408120805460ff19166001908117909155600c805491820181559091527fdf6966c971051c3d54ec59162606531493a51404a002842f56009d7e5cf4a8c70180546001600160a01b0319169091179055565b6000546001600160a01b03163314610649576040516282b42960e81b815260040160405180910390fd5b600581905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6000546001600160a01b031633146106a6576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0382166000908152600d602052604090205460ff166106df57604051634793420960e11b815260040160405180910390fd5b816001600160a01b0316600c82815481106106fc576106fc61184e565b6000918252602090912001546001600160a01b03161461072f5760405163e1a1578d60e01b815260040160405180910390fd5b6001600160a01b0382166000908152600d60205260409020805460ff19169055600c805461075f9060019061187a565b8154811061076f5761076f61184e565b600091825260209091200154600c80546001600160a01b03909216918390811061079b5761079b61184e565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b03160217905550600c8054806107da576107da611893565b600082815260209020810160001990810180546001600160a01b03191690550190555050565b60608183111561082357604051633b2735ab60e11b815260040160405180910390fd5b600c548211156108465760405163e0f7becb60e01b815260040160405180910390fd5b610850838361187a565b61085b9060016118a9565b67ffffffffffffffff811115610873576108736115d7565b60405190808252806020026020018201604052801561089c578160200160208202803683370190505b509050825b82811161091557600c81815481106108bb576108bb61184e565b6000918252602090912001546001600160a01b0316826108db868461187a565b815181106108eb576108eb61184e565b6001600160a01b03909216602092830291909101909101528061090d816118bc565b9150506108a1565b5092915050565b6060600b80548060200260200160405190810160405280929190818152602001828054801561097457602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610956575b5050505050905090565b6000546001600160a01b031633146109a8576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0381166109bb57600080fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6000546001600160a01b03163314610a2f576040516282b42960e81b815260040160405180910390fd5b7f000000000000000000000000000000000000000000000000000000000000000081351180610a8157507f00000000000000000000000000000000000000000000000000000000000000008160200135115b80610aaf57507f00000000000000000000000000000000000000000000000000000000000000008160400135115b80610add57507f00000000000000000000000000000000000000000000000000000000000000008160600135115b15610afb5760405163cd4e616760e01b815260040160405180910390fd5b80356006556020810135600755604081013560085560600135600955565b505050565b6000546001600160a01b03163314610b48576040516282b42960e81b815260040160405180910390fd5b610b19600b83836113d2565b6000546001600160a01b03163314610b7e576040516282b42960e81b815260040160405180910390fd5b600080546001600160a01b0319166001600160a01b038316908117825560405190917f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab91a250565b606081831115610be957604051633b2735ab60e11b815260040160405180910390fd5b600e54821115610c0c5760405163e0f7becb60e01b815260040160405180910390fd5b610c16838361187a565b610c219060016118a9565b67ffffffffffffffff811115610c3957610c396115d7565b604051908082528060200260200182016040528015610c62578160200160208202803683370190505b509050825b82811161091557600e8181548110610c8157610c8161184e565b6000918252602090912001546001600160a01b031682610ca1868461187a565b81518110610cb157610cb161184e565b6001600160a01b039092166020928302919091019091015280610cd3816118bc565b915050610c67565b6001600160a01b0386166000908152600d602052604081205460ff16610d145760405163043c669f60e01b815260040160405180910390fd5b600480546001600160a01b039081166020808a01919091526005546040808b0191909152600a5483166101208b0152306101008b015280516080810182526006548152600754928101929092526008548282015260095460608301526101408a019190915251630c46909760e11b8152600092918a169163188d212e91610d9f918b918b91016119e3565b6020604051808303816000875af1158015610dbe573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610de29190611a0e565b6001546001600160a01b03808316600090815260026020526040908190208390556003549091166101008b015251919250907f9409438224258854b5587daf29ca81c2676ed86cd439240ca7aaa0c6e17cfa7690610e459084908b908b90611a2b565b60405180910390a2600e805460018082019092557fbb7b4a454dc3493923482f07822329ed19e8244eff582cc204f8554c3620c3fd0180546001600160a01b0319166001600160a01b0384169081179091556000908152600f60205260408120805460ff1916909217909155348611610f5857610ec2863461187a565b60408051606081018252338152600160208201528082018790529051631df417fd60e21b81529192506001600160a01b038416916377d05ff4918991610f0f9183918b9190600401611a66565b60206040518083038185885af1158015610f2d573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190610f529190611aac565b50611015565b5086513490610f72906001600160a01b03163330896112c6565b8751610f88906001600160a01b03168388611355565b60408051606081018252338152600160208201528082018690529051631df417fd60e21b81526001600160a01b038416916377d05ff491610fd0918a918a9190600401611a66565b6020604051808303816000875af1158015610fef573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906110139190611aac565b505b801561108657604051600090339083908381818185875af1925050503d806000811461105d576040519150601f19603f3d011682016040523d82523d6000602084013e611062565b606091505b5050905080611084576040516312171d8360e31b815260040160405180910390fd5b505b60005b600b5481101561112c57826001600160a01b0316637180c8ca600b83815481106110b5576110b561184e565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b15801561110957600080fd5b505af115801561111d573d6000803e3d6000fd5b50505050806001019050611089565b5060035460405163ab033ea960e01b81526001600160a01b0391821660048201529083169063ab033ea990602401600060405180830381600087803b15801561117457600080fd5b505af1158015611188573d6000803e3d6000fd5b50939b9a5050505050505050505050565b6000546001600160a01b031633146111c3576040516282b42960e81b815260040160405180910390fd5b600a80546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b6000600e82815481106112225761122261184e565b6000918252602090912001546001600160a01b031692915050565b6000546001600160a01b03163314611267576040516282b42960e81b815260040160405180910390fd5b600380546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6000600c82815481106112225761122261184e565b60006040516323b872dd60e01b81528460048201528360248201528260448201526020600060648360008a5af13d15601f3d116001600051141617169150508061134e5760405162461bcd60e51b81526020600482015260146024820152731514905394d1915497d19493d357d1905253115160621b60448201526064015b60405180910390fd5b5050505050565b600060405163095ea7b360e01b8152836004820152826024820152602060006044836000895af13d15601f3d11600160005114161716915050806113cc5760405162461bcd60e51b815260206004820152600e60248201526d1054141493d59157d1905253115160921b6044820152606401611345565b50505050565b828054828255906000526020600020908101928215611425579160200282015b828111156114255781546001600160a01b0319166001600160a01b038435161782556020909201916001909101906113f2565b50611431929150611435565b5090565b5b808211156114315760008155600101611436565b6001600160a01b038116811461145f57600080fd5b50565b803561146d8161144a565b919050565b60006020828403121561148457600080fd5b813561148f8161144a565b9392505050565b6000602082840312156114a857600080fd5b5035919050565b600080604083850312156114c257600080fd5b82356114cd8161144a565b946020939093013593505050565b600080604083850312156114ee57600080fd5b50508035926020909101359150565b6020808252825182820181905260009190848201906040850190845b8181101561153e5783516001600160a01b031683529284019291840191600101611519565b50909695505050505050565b60006080828403121561155c57600080fd5b50919050565b6000806020838503121561157557600080fd5b823567ffffffffffffffff8082111561158d57600080fd5b818501915085601f8301126115a157600080fd5b8135818111156115b057600080fd5b8660208260051b85010111156115c557600080fd5b60209290920196919550909350505050565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff81118282101715611611576116116115d7565b60405290565b60006080828403121561162957600080fd5b6040516080810181811067ffffffffffffffff8211171561164c5761164c6115d7565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b600082601f83011261168e57600080fd5b813567ffffffffffffffff808211156116a9576116a96115d7565b604051601f8301601f19908116603f011681019082821181831017156116d1576116d16115d7565b816040528381528660208588010111156116ea57600080fd5b836020870160208301376000602085830101528094505050505092915050565b60008060008060008086880361026081121561172557600080fd5b87356117308161144a565b96506101c0601f198201121561174557600080fd5b5061174e6115ed565b61175a60208901611462565b815261176860408901611462565b6020820152606088013560408201526080880135606082015260a0880135608082015260c088013560a082015260e088013560c08201526101008089013560e08301526101206117b9818b01611462565b8284015261014091506117cd828b01611462565b908301526117df8a6101608b01611617565b9082015294506101e087013567ffffffffffffffff8082111561180157600080fd5b61180d8a838b0161167d565b95506102008901359450610220890135935061024089013591508082111561183457600080fd5b5061184189828a0161167d565b9150509295509295509295565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b8181038181111561188d5761188d611864565b92915050565b634e487b7160e01b600052603160045260246000fd5b8082018082111561188d5761188d611864565b6000600182016118ce576118ce611864565b5060010190565b80516001600160a01b0316825260208101516118fc60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e083015261010080820151611954828501826001600160a01b03169052565b5050610120818101516001600160a01b031690830152610140808201518051828501526020810151610160850152604081015161018085015260608101516101a08501526113cc565b6000815180845260005b818110156119c3576020818501810151868301820152016119a7565b506000602082860101526020601f19601f83011685010191505092915050565b60006101e06119f283866118d5565b806101c0840152611a058184018561199d565b95945050505050565b600060208284031215611a2057600080fd5b815161148f8161144a565b6001600160a01b03841681526000610200611a4960208401866118d5565b806101e0840152611a5c8184018561199d565b9695505050505050565b8381528260208201526060604082015260018060a01b03825116606082015260208201511515608082015260006040830151606060a0840152611a5c60c084018261199d565b600060208284031215611abe57600080fd5b505191905056fea26469706673582212205b34e244251bfd0e9fe791ecddac80804ece136977852d767025090938bf1fac64736f6c63430008130033"
+    "0x608060405260016002553480156200001657600080fd5b5060405162002b3738038062002b37833981016040819052620000399162000556565b80608001518160a00151108062000064575080608001518160a0015162000061919062000688565b15155b156200008357604051630219d66360e11b815260040160405180910390fd5b60a0810151600881905560c08201511080620000b3575080608001518160c00151620000b0919062000688565b15155b15620000d25760405163f9c0959d60e01b815260040160405180910390fd5b60c0810151600981905560e0820151108062000102575080608001518160e00151620000ff919062000688565b15155b156200012157604051633007ad0160e11b815260040160405180910390fd5b60e0810151600a8190556101008201511080620001535750806080015181610100015162000150919062000688565b15155b15620001725760405163cfb699cb60e01b815260040160405180910390fd5b610100810151600b5561014081015151670de0b6b3a76400001080620001a85750670de0b6b3a764000081610140015160200151115b80620001c45750670de0b6b3a764000081610140015160400151115b80620001e05750670de0b6b3a764000081610140015160600151115b15620001ff5760405163161071fb60e11b815260040160405180910390fd5b61014081015180516010819055602082015160115560408201516012556060909101516013556101208201515111806200024a57508061014001516020015181610120015160200151115b806200026757508061014001516040015181610120015160400151115b806200028457508061014001516060015181610120015160600151115b15620002a3576040516315b05a8f60e01b815260040160405180910390fd5b6101208101518051600c55602080820151600d55604080830151600e55606092830151600f558351600180546001600160a01b03199081166001600160a01b03938416179091558386015160048054831691841691909117905593850151600780549095169116179092559082015180516200032492601492019062000360565b50610160810151600580546001600160a01b0319166001600160a01b0390921691909117905561018081015160065560800151600055620006ab565b828054828255906000526020600020908101928215620003b8579160200282015b82811115620003b857825182546001600160a01b0319166001600160a01b0390911617825560209092019160019091019062000381565b50620003c6929150620003ca565b5090565b5b80821115620003c65760008155600101620003cb565b634e487b7160e01b600052604160045260246000fd5b6040516101a081016001600160401b03811182821017156200041d576200041d620003e1565b60405290565b80516001600160a01b03811681146200043b57600080fd5b919050565b600082601f8301126200045257600080fd5b815160206001600160401b0380831115620004715762000471620003e1565b8260051b604051601f19603f83011681018181108482111715620004995762000499620003e1565b604052938452858101830193838101925087851115620004b857600080fd5b83870191505b84821015620004e257620004d28262000423565b83529183019190830190620004be565b979650505050505050565b6000608082840312156200050057600080fd5b604051608081016001600160401b0381118282101715620005255762000525620003e1565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b6000602082840312156200056957600080fd5b81516001600160401b03808211156200058157600080fd5b9083019061026082860312156200059757600080fd5b620005a1620003f7565b620005ac8362000423565b8152620005bc6020840162000423565b6020820152604083015182811115620005d457600080fd5b620005e28782860162000440565b604083015250620005f66060840162000423565b60608201526080830151608082015260a083015160a082015260c083015160c082015260e083015160e08201526101009150818301518282015261012091506200064386838501620004ed565b8282015262000657866101a08501620004ed565b6101408201526200066c610220840162000423565b6101608201526102409290920151610180830152509392505050565b600082620006a657634e487b7160e01b600052601260045260246000fd5b500690565b61247c80620006bb6000396000f3fe6080604052600436106102305760003560e01c8063bc30e7a11161012e578063dd6d30c1116100ab578063e83e34b11161006f578063e83e34b11461066a578063eb71f66c1461067f578063ec895f111461069f578063f8c09e59146106bf578063fe3d5aeb146106ef57600080fd5b8063dd6d30c1146105e9578063e0e2daaa146105ff578063e1b39c8014610615578063e33315551461062a578063e71f34b31461064a57600080fd5b8063d0f96b92116100f2578063d0f96b921461055d578063d2c35ce814610573578063daac24da14610593578063daf012e6146105b3578063dd2b8fbb146105c957600080fd5b8063bc30e7a1146104d2578063c1722563146104f2578063c415b95c14610514578063c905a4b514610534578063cd2cdf581461054a57600080fd5b80636e95d67c116101bc5780638efc0986116101805780638efc09861461043a57806399623bb1146104505780639af2526214610470578063a64c90bf14610490578063b2561263146104b257600080fd5b80636e95d67c146103985780636f6d5c4a146103ad57806377b81aac146103cd57806385229785146103fa5780638e127cf51461041a57600080fd5b8063421caba811610203578063421caba8146102b75780634fbfee77146102d75780635720c9d5146102f75780635aa6e675146103205780636b44e6be1461035857600080fd5b806310d1dc3e1461023557806311e77bfe146102575780632885e3ac14610277578063411c303514610297575b600080fd5b34801561024157600080fd5b50610255610250366004611d34565b61070f565b005b34801561026357600080fd5b50610255610272366004611d4c565b6107f9565b34801561028357600080fd5b50610255610292366004611d34565b6108cb565b3480156102a357600080fd5b506102556102b2366004611d8d565b610a03565b3480156102c357600080fd5b506102556102d2366004611db9565b610bbb565b3480156102e357600080fd5b506102556102f2366004611d4c565b610cab565b34801561030357600080fd5b5061030d60085481565b6040519081526020015b60405180910390f35b34801561032c57600080fd5b50600154610340906001600160a01b031681565b6040516001600160a01b039091168152602001610317565b34801561036457600080fd5b50610388610373366004611db9565b60186020526000908152604090205460ff1681565b6040519015158152602001610317565b3480156103a457600080fd5b5060175461030d565b3480156103b957600080fd5b506102556103c8366004611d4c565b610d08565b3480156103d957600080fd5b5061030d6103e8366004611db9565b60036020526000908152604090205481565b34801561040657600080fd5b50610255610415366004611db9565b610dac565b34801561042657600080fd5b50610255610435366004611d4c565b610e20565b34801561044657600080fd5b5061030d600b5481565b34801561045c57600080fd5b50600554610340906001600160a01b031681565b34801561047c57600080fd5b5061025561048b366004611ddd565b610ec4565b34801561049c57600080fd5b506104a5610f38565b6040516103179190611e52565b3480156104be57600080fd5b506102556104cd366004611db9565b610f9a565b3480156104de57600080fd5b506104a56104ed366004611e9f565b61100e565b3480156104fe57600080fd5b5061050761112a565b6040516103179190611ec1565b34801561052057600080fd5b50600754610340906001600160a01b031681565b34801561054057600080fd5b5061030d60065481565b610340610558366004612021565b611182565b34801561056957600080fd5b5061030d60005481565b34801561057f57600080fd5b5061025561058e366004611db9565b6117da565b34801561059f57600080fd5b506103406105ae366004611d4c565b61184e565b3480156105bf57600080fd5b5061030d600a5481565b3480156105d557600080fd5b506102556105e4366004611db9565b61187e565b3480156105f557600080fd5b5061030d60025481565b34801561060b57600080fd5b5061030d60095481565b34801561062157600080fd5b5060155461030d565b34801561063657600080fd5b50600454610340906001600160a01b031681565b34801561065657600080fd5b50610255610665366004611d4c565b6118f2565b34801561067657600080fd5b50610507611996565b34801561068b57600080fd5b5061025561069a366004611d4c565b6119ee565b3480156106ab57600080fd5b506104a56106ba366004611e9f565b611a86565b3480156106cb57600080fd5b506103886106da366004611db9565b60166020526000908152604090205460ff1681565b3480156106fb57600080fd5b5061034061070a366004611d4c565b611b9b565b6001546001600160a01b03163314610739576040516282b42960e81b815260040160405180910390fd5b6010548135118061074f57506011546020820135115b8061075f57506012546040820135115b8061076f57506013546060820135115b1561078d576040516315b05a8f60e01b815260040160405180910390fd5b8035600c819055602080830135600d819055604080850135600e819055606080870135600f819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a150565b6001546001600160a01b03163314610823576040516282b42960e81b815260040160405180910390fd5b806008546108319190612165565b15158061084a5750806009546108479190612165565b15155b80610861575080600a5461085e9190612165565b15155b80610878575080600b546108759190612165565b15155b15610896576040516311b75c1560e31b815260040160405180910390fd5b60008190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a906020016107ee565b6001546001600160a01b031633146108f5576040516282b42960e81b815260040160405180910390fd5b670de0b6b3a7640000813511806109175750670de0b6b3a76400008160200135115b8061092d5750670de0b6b3a76400008160400135115b806109435750670de0b6b3a76400008160600135115b806109505750600c548135105b806109605750600d546020820135105b806109705750600e546040820135105b806109805750600f546060820135105b1561099e5760405163161071fb60e11b815260040160405180910390fd5b80356010819055602080830135601181905560408085013560128190556060808701356013819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a7906080016107ee565b6001546001600160a01b03163314610a2d576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03821660009081526016602052604090205460ff16610a6657604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b031660158281548110610a8357610a83612187565b6000918252602090912001546001600160a01b031614610ab657604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601660205260409020805460ff1916905560158054610ae6906001906121b3565b81548110610af657610af6612187565b600091825260209091200154601580546001600160a01b039092169183908110610b2257610b22612187565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055506015805480610b6157610b616121c6565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6001546001600160a01b03163314610be5576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03811660009081526016602052604090205460ff1615610c1f5760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b038116600081815260166020526040808220805460ff1916600190811790915560158054918201815583527f55f448fdea98c4d29eb340757ef0a66cd03dbb9538908a6a81d96026b71ec4750180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6001546001600160a01b03163314610cd5576040516282b42960e81b815260040160405180910390fd5b600681905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6001546001600160a01b03163314610d32576040516282b42960e81b815260040160405180910390fd5b600854811080610d4d5750600054610d4a9082612165565b15155b80610d595750600a5481115b15610d775760405163f9c0959d60e01b815260040160405180910390fd5b60098190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f2906020016107ee565b6001546001600160a01b03163314610dd6576040516282b42960e81b815260040160405180910390fd5b600580546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6001546001600160a01b03163314610e4a576040516282b42960e81b815260040160405180910390fd5b600054811080610e655750600054610e629082612165565b15155b80610e71575060095481115b15610e8f57604051630219d66360e11b815260040160405180910390fd5b60088190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b7631906020016107ee565b6001546001600160a01b03163314610eee576040516282b42960e81b815260040160405180910390fd5b610efa60148383611cbc565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc388282604051610f2c9291906121dc565b60405180910390a15050565b60606014805480602002602001604051908101604052809291908181526020018280548015610f9057602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610f72575b5050505050905090565b6001546001600160a01b03163314610fc4576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab90600090a250565b60608183111561103157604051633b2735ab60e11b815260040160405180910390fd5b6017548211156110545760405163e0f7becb60e01b815260040160405180910390fd5b61105e83836121b3565b61106990600161222a565b67ffffffffffffffff81111561108157611081611eee565b6040519080825280602002602001820160405280156110aa578160200160208202803683370190505b509050825b82811161112357601781815481106110c9576110c9612187565b6000918252602090912001546001600160a01b0316826110e986846121b3565b815181106110f9576110f9612187565b6001600160a01b03909216602092830291909101909101528061111b8161223d565b9150506110af565b5092915050565b6111556040518060800160405280600081526020016000815260200160008152602001600081525090565b5060408051608081018252600c548152600d546020820152600e5491810191909152600f54606082015290565b6001600160a01b03861660009081526016602052604081205460ff166111bb57604051636e623f0f60e01b815260040160405180910390fd5b6008548660c0015110806111d457506009548660c00151115b806111ef57506000548660c001516111ec9190612165565b15155b1561120d57604051635428734d60e01b815260040160405180910390fd5b600a548660a0015110806112265750600b548660a00151115b8061124357508560c001518660a001516112409190612165565b15155b156112615760405163253fffcf60e11b815260040160405180910390fd5b601054610140870151511180611281575060115461014087015160200151115b80611296575060125461014087015160400151115b806112ab575060135461014087015160600151115b806112bd5750600c5461014087015151105b806112d25750600d5461014087015160200151105b806112e75750600e5461014087015160400151105b806112fc5750600f5461014087015160600151105b1561131a57604051632d8768f960e01b815260040160405180910390fd5b60208601516001600160a01b03161515806113385750604086015115155b8061135057506101208601516001600160a01b031615155b8061136857506101008601516001600160a01b031615155b156113865760405163e8c02dd760e01b815260040160405180910390fd5b6005546001600160a01b03908116602088015260065460408089019190915260075482166101208901523061010089015251630c46909760e11b815260009189169063188d212e906113de908a908a90600401612364565b6020604051808303816000875af11580156113fd573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611421919061238f565b6002546001600160a01b03808316600090815260036020526040908190208390556004549091166101008b015251919250907f9409438224258854b5587daf29ca81c2676ed86cd439240ca7aaa0c6e17cfa76906114849084908b908b906123ac565b60405180910390a26017805460018082019092557fc624b66cc0138b8fabc209247f72d758e1cf3343756d543badbf24212bed8c150180546001600160a01b0319166001600160a01b0384169081179091556000908152601860205260408120805460ff19169092179091553486116115975761150186346121b3565b60408051606081018252338152600160208201528082018790529051631df417fd60e21b81529192506001600160a01b038416916377d05ff491899161154e9183918b91906004016123e7565b60206040518083038185885af115801561156c573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190611591919061242d565b50611654565b50865134906115b1906001600160a01b0316333089611bb0565b87516115c7906001600160a01b03168388611c3f565b60408051606081018252338152600160208201528082018690529051631df417fd60e21b81526001600160a01b038416916377d05ff49161160f918a918a91906004016123e7565b6020604051808303816000875af115801561162e573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611652919061242d565b505b80156116c557604051600090339083908381818185875af1925050503d806000811461169c576040519150601f19603f3d011682016040523d82523d6000602084013e6116a1565b606091505b50509050806116c3576040516312171d8360e31b815260040160405180910390fd5b505b60005b60145481101561176b57826001600160a01b0316637180c8ca601483815481106116f4576116f4612187565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b15801561174857600080fd5b505af115801561175c573d6000803e3d6000fd5b505050508060010190506116c8565b506004805460405163ab033ea960e01b81526001600160a01b039182169281019290925283169063ab033ea990602401600060405180830381600087803b1580156117b557600080fd5b505af11580156117c9573d6000803e3d6000fd5b50939b9a5050505050505050505050565b6001546001600160a01b03163314611804576040516282b42960e81b815260040160405180910390fd5b600780546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b60006017828154811061186357611863612187565b6000918252602090912001546001600160a01b031692915050565b6001546001600160a01b031633146118a8576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6001546001600160a01b0316331461191c576040516282b42960e81b815260040160405180910390fd5b60095481108061193757506000546119349082612165565b15155b806119435750600b5481115b1561196157604051633007ad0160e11b815260040160405180910390fd5b600a8190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f178906020016107ee565b6119c16040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526010548152601154602082015260125491810191909152601354606082015290565b6001546001600160a01b03163314611a18576040516282b42960e81b815260040160405180910390fd5b600a54811080611a335750600054611a309082612165565b15155b15611a515760405163cfb699cb60e01b815260040160405180910390fd5b600b8190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b906020016107ee565b606081831115611aa957604051633b2735ab60e11b815260040160405180910390fd5b601554821115611acc5760405163e0f7becb60e01b815260040160405180910390fd5b611ad683836121b3565b611ae190600161222a565b67ffffffffffffffff811115611af957611af9611eee565b604051908082528060200260200182016040528015611b22578160200160208202803683370190505b509050825b8281116111235760158181548110611b4157611b41612187565b6000918252602090912001546001600160a01b031682611b6186846121b3565b81518110611b7157611b71612187565b6001600160a01b039092166020928302919091019091015280611b938161223d565b915050611b27565b60006015828154811061186357611863612187565b60006040516323b872dd60e01b81528460048201528360248201528260448201526020600060648360008a5af13d15601f3d1160016000511416171691505080611c385760405162461bcd60e51b81526020600482015260146024820152731514905394d1915497d19493d357d1905253115160621b60448201526064015b60405180910390fd5b5050505050565b600060405163095ea7b360e01b8152836004820152826024820152602060006044836000895af13d15601f3d1160016000511416171691505080611cb65760405162461bcd60e51b815260206004820152600e60248201526d1054141493d59157d1905253115160921b6044820152606401611c2f565b50505050565b828054828255906000526020600020908101928215611d0f579160200282015b82811115611d0f5781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190611cdc565b50611d1b929150611d1f565b5090565b5b80821115611d1b5760008155600101611d20565b600060808284031215611d4657600080fd5b50919050565b600060208284031215611d5e57600080fd5b5035919050565b6001600160a01b0381168114611d7a57600080fd5b50565b8035611d8881611d65565b919050565b60008060408385031215611da057600080fd5b8235611dab81611d65565b946020939093013593505050565b600060208284031215611dcb57600080fd5b8135611dd681611d65565b9392505050565b60008060208385031215611df057600080fd5b823567ffffffffffffffff80821115611e0857600080fd5b818501915085601f830112611e1c57600080fd5b813581811115611e2b57600080fd5b8660208260051b8501011115611e4057600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015611e935783516001600160a01b031683529284019291840191600101611e6e565b50909695505050505050565b60008060408385031215611eb257600080fd5b50508035926020909101359150565b81518152602080830151908201526040808301519082015260608083015190820152608081015b92915050565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff81118282101715611f2857611f28611eee565b60405290565b600060808284031215611f4057600080fd5b6040516080810181811067ffffffffffffffff82111715611f6357611f63611eee565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b600082601f830112611fa557600080fd5b813567ffffffffffffffff80821115611fc057611fc0611eee565b604051601f8301601f19908116603f01168101908282118183101715611fe857611fe8611eee565b8160405283815286602085880101111561200157600080fd5b836020870160208301376000602085830101528094505050505092915050565b60008060008060008086880361026081121561203c57600080fd5b873561204781611d65565b96506101c0601f198201121561205c57600080fd5b50612065611f04565b61207160208901611d7d565b815261207f60408901611d7d565b6020820152606088013560408201526080880135606082015260a0880135608082015260c088013560a082015260e088013560c08201526101008089013560e08301526101206120d0818b01611d7d565b8284015261014091506120e4828b01611d7d565b908301526120f68a6101608b01611f2e565b9082015294506101e087013567ffffffffffffffff8082111561211857600080fd5b6121248a838b01611f94565b95506102008901359450610220890135935061024089013591508082111561214b57600080fd5b5061215889828a01611f94565b9150509295509295509295565b60008261218257634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b81810381811115611ee857611ee861219d565b634e487b7160e01b600052603160045260246000fd5b60208082528181018390526000908460408401835b8681101561221f57823561220481611d65565b6001600160a01b0316825291830191908301906001016121f1565b509695505050505050565b80820180821115611ee857611ee861219d565b60006001820161224f5761224f61219d565b5060010190565b80516001600160a01b03168252602081015161227d60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e0830152610100808201516122d5828501826001600160a01b03169052565b5050610120818101516001600160a01b031690830152610140808201518051828501526020810151610160850152604081015161018085015260608101516101a0850152611cb6565b6000815180845260005b8181101561234457602081850181015186830182015201612328565b506000602082860101526020601f19601f83011685010191505092915050565b60006101e06123738386612256565b806101c08401526123868184018561231e565b95945050505050565b6000602082840312156123a157600080fd5b8151611dd681611d65565b6001600160a01b038416815260006102006123ca6020840186612256565b806101e08401526123dd8184018561231e565b9695505050505050565b8381528260208201526060604082015260018060a01b03825116606082015260208201511515608082015260006040830151606060a08401526123dd60c084018261231e565b60006020828403121561243f57600080fd5b505191905056fea2646970667358221220b4aaf0d63c7a455572efc037a197120b3566a91f0d3c15de358cc1586a7dd7cf64736f6c63430008130033"
 )
 
 

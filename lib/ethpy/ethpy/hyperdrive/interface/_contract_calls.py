@@ -14,7 +14,7 @@ from ethpy.base import (
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
-from hypertypes.types import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
+from hypertypes import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
 from web3 import Web3
 
 if TYPE_CHECKING:
@@ -158,17 +158,17 @@ async def _async_open_long(
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    # min_share_price: int
+    # min_vault_share_price: int
     #   Minium share price at which to open the long.
     #   This allows traders to protect themselves from opening a long in
     #   a checkpoint where negative interest has accrued.
-    min_share_price = 0  # TODO: give the user access to this parameter
+    min_vault_share_price = 0  # TODO: give the user access to this parameter
     min_output = 0  # TODO: give the user access to this parameter
 
     fn_args = (
         trade_amount.scaled_value,
         min_output,
-        min_share_price,
+        min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             True,  # asBase
@@ -196,7 +196,7 @@ async def _async_open_long(
         fn_args = (
             trade_amount.scaled_value,
             min_output,
-            min_share_price,
+            min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 True,  # asBase
@@ -303,15 +303,15 @@ async def _async_open_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
-    # min_share_price: int
+    # min_vault_share_price: int
     #   Minium share price at which to open the short.
     #   This allows traders to protect themselves from opening a long in
     #   a checkpoint where negative interest has accrued.
-    min_share_price = 0  # TODO: give the user access to this parameter
+    min_vault_share_price = 0  # TODO: give the user access to this parameter
     fn_args = (
         trade_amount.scaled_value,
         max_deposit,
-        min_share_price,
+        min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             True,  # asBase
@@ -339,7 +339,7 @@ async def _async_open_short(
         fn_args = (
             trade_amount.scaled_value,
             max_deposit,
-            min_share_price,
+            min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 True,  # asBase
@@ -440,13 +440,20 @@ async def _async_add_liquidity(
     trade_amount: FixedPoint,
     min_apr: FixedPoint,
     max_apr: FixedPoint,
+    slippage_tolerance: FixedPoint | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
+    # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
+    if slippage_tolerance is not None:
+        raise NotImplementedError("Slippage tolerance for add liquidity not yet supported")
+
     agent_checksum_address = Web3.to_checksum_address(agent.address)
+    min_lp_share_price = 0
     fn_args = (
         trade_amount.scaled_value,
+        min_lp_share_price,
         min_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr below this amount
         max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
         (  # IHyperdrive.Options

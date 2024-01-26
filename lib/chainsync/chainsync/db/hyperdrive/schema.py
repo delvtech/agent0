@@ -19,6 +19,7 @@ FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 
 
 ## Base schemas for raw data
+# TODO add column for timestamp in seconds in db
 
 
 class PoolConfig(Base):
@@ -27,10 +28,10 @@ class PoolConfig(Base):
     __tablename__ = "pool_config"
 
     contract_address: Mapped[str] = mapped_column(String, primary_key=True)
+    base_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
     linker_factory: Mapped[Union[str, None]] = mapped_column(String, default=None)
     # Ignoring linker_code_hash field
-    base_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    initial_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    initial_vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_transaction_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     position_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
@@ -52,7 +53,8 @@ class CheckpointInfo(Base):
 
     block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
-    share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    # TODO we'd like to add the checkpoint id here as a field as well
 
 
 class PoolInfo(Base):
@@ -66,19 +68,20 @@ class PoolInfo(Base):
     block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    share_adjustment: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    zombie_base_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     zombie_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     bond_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lp_total_supply: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    share_adjustment: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     longs_outstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     long_average_maturity_time: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     shorts_outstanding: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     short_average_maturity_time: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     withdrawal_shares_ready_to_withdraw: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     withdrawal_shares_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     total_supply_withdrawal_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     variable_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
@@ -231,6 +234,7 @@ class PoolAnalysis(Base):
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     base_buffer: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    # TODO add gov fees accrued, vault shares
 
 
 class CurrentWallet(Base):

@@ -21,15 +21,7 @@ from dataclasses import dataclass
 
 from web3.types import ABIEvent, ABIEventParams
 
-
-@dataclass
-class Fees:
-    """Fees struct."""
-
-    curve: int
-    flat: int
-    governanceLP: int
-    governanceZombie: int
+from . import IHyperdriveTypes as IHyperdrive
 
 
 @dataclass
@@ -40,28 +32,34 @@ class FactoryConfig:
     hyperdriveGovernance: str
     defaultPausers: list[str]
     feeCollector: str
-    fees: Fees
-    maxFees: Fees
+    checkpointDurationResolution: int
+    minCheckpointDuration: int
+    maxCheckpointDuration: int
+    minPositionDuration: int
+    maxPositionDuration: int
+    minFees: IHyperdrive.Fees
+    maxFees: IHyperdrive.Fees
     linkerFactory: str
     linkerCodeHash: bytes
 
 
-@dataclass
-class PoolDeployConfig:
-    """PoolDeployConfig struct."""
+CheckpointDurationResolutionUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newCheckpointDurationResolution", type="uint256"),
+    ],
+    name="CheckpointDurationResolutionUpdated",
+    type="event",
+)
 
-    baseToken: str
-    linkerFactory: str
-    linkerCodeHash: bytes
-    minimumShareReserves: int
-    minimumTransactionAmount: int
-    positionDuration: int
-    checkpointDuration: int
-    timeStretch: int
-    governance: str
-    feeCollector: str
-    fees: Fees
-
+DefaultPausersUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newDefaultPausers", type="address[]"),
+    ],
+    name="DefaultPausersUpdated",
+    type="event",
+)
 
 Deployed = ABIEvent(
     anonymous=False,
@@ -72,6 +70,24 @@ Deployed = ABIEvent(
         ABIEventParams(indexed=False, name="extraData", type="bytes"),
     ],
     name="Deployed",
+    type="event",
+)
+
+DeployerCoordinatorAdded = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="deployerCoordinator", type="address"),
+    ],
+    name="DeployerCoordinatorAdded",
+    type="event",
+)
+
+DeployerCoordinatorRemoved = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="deployerCoordinator", type="address"),
+    ],
+    name="DeployerCoordinatorRemoved",
     type="event",
 )
 
@@ -126,5 +142,59 @@ LinkerFactoryUpdated = ABIEvent(
         ABIEventParams(indexed=True, name="newLinkerFactory", type="address"),
     ],
     name="LinkerFactoryUpdated",
+    type="event",
+)
+
+MaxCheckpointDurationUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMaxCheckpointDuration", type="uint256"),
+    ],
+    name="MaxCheckpointDurationUpdated",
+    type="event",
+)
+
+MaxFeesUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMaxFees", type="tuple"),
+    ],
+    name="MaxFeesUpdated",
+    type="event",
+)
+
+MaxPositionDurationUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMaxPositionDuration", type="uint256"),
+    ],
+    name="MaxPositionDurationUpdated",
+    type="event",
+)
+
+MinCheckpointDurationUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMinCheckpointDuration", type="uint256"),
+    ],
+    name="MinCheckpointDurationUpdated",
+    type="event",
+)
+
+MinFeesUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMinFees", type="tuple"),
+    ],
+    name="MinFeesUpdated",
+    type="event",
+)
+
+MinPositionDurationUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMinPositionDuration", type="uint256"),
+    ],
+    name="MinPositionDurationUpdated",
     type="event",
 )

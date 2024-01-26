@@ -222,10 +222,10 @@ def _check_checkpointing_should_never_fail(
             txn_to = transaction.get("to", None)
             if txn_to is None:
                 raise AssertionError("Transaction did not have a 'to' key.")
-            if txn_to == interface.hyperdrive_contract.address and pool_state.checkpoint.share_price <= 0:
+            if txn_to == interface.hyperdrive_contract.address and pool_state.checkpoint.vault_share_price <= 0:
                 exception_message = (
                     f"A transaction was created but no checkpoint was minted.\n"
-                    f"{pool_state.checkpoint.share_price=}\n"
+                    f"{pool_state.checkpoint.vault_share_price=}\n"
                     f"{transaction=}\n"
                 )
                 failed = True
@@ -241,7 +241,7 @@ def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
 
     solvency = (
         pool_state.pool_info.share_reserves
-        - pool_state.pool_info.long_exposure / pool_state.pool_info.share_price
+        - pool_state.pool_info.long_exposure / pool_state.pool_info.vault_share_price
         - pool_state.pool_config.minimum_share_reserves
     )
     if not solvency > FixedPoint(0):
@@ -268,7 +268,7 @@ def _check_minimum_share_reserves(pool_state: PoolState) -> InvariantCheckResult
         exception_message = (
             f"{current_share_reserves} < {minimum_share_reserves=}. "
             f"({pool_state.pool_info.share_reserves=} * "
-            f"{pool_state.pool_info.share_price=} - "
+            f"{pool_state.pool_info.vault_share_price=} - "
             f"{pool_state.pool_info.long_exposure=})."
         )
         exception_data["invariance_check:current_share_reserves"] = current_share_reserves
@@ -290,7 +290,7 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
             pool_state.pool_info.shorts_outstanding
             + (pool_state.pool_info.shorts_outstanding * pool_state.pool_config.fees.flat)
         )
-        / pool_state.pool_info.share_price
+        / pool_state.pool_info.vault_share_price
         + pool_state.gov_fees_accrued
         + pool_state.pool_info.withdrawal_shares_proceeds
         + pool_state.pool_info.zombie_share_reserves
