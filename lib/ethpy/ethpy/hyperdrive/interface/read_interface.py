@@ -19,8 +19,7 @@ from ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_info,
 )
 from fixedpointmath import FixedPoint
-from hypertypes import IERC4626HyperdriveContract
-from hypertypes.types import ERC20MintableContract, HyperdriveFactoryContract, MockERC4626Contract
+from hypertypes import ERC20MintableContract, HyperdriveFactoryContract, IERC4626HyperdriveContract, MockERC4626Contract
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.base import MarketType, Trade

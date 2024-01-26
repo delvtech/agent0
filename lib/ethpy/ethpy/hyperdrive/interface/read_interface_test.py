@@ -7,8 +7,8 @@ from dataclasses import fields
 from typing import cast
 
 from fixedpointmath import FixedPoint
+from hypertypes import Checkpoint, PoolConfig
 from hypertypes.fixedpoint_types import FeesFP
-from hypertypes.types import Checkpoint, PoolConfig
 from hypertypes.utilities.conversions import (
     checkpoint_to_fixedpoint,
     pool_config_to_fixedpoint,

@@ -14,7 +14,7 @@ from ethpy.base import (
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
-from hypertypes.types import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
+from hypertypes import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
 from web3 import Web3
 
 if TYPE_CHECKING:

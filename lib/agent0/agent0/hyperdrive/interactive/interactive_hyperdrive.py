@@ -39,8 +39,6 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptB
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hyperdrivepy import get_time_stretch
-
-# TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from numpy.random._generator import Generator
 from web3._utils.threads import Timeout
