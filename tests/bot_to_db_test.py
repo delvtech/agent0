@@ -239,6 +239,7 @@ class TestBotToDb:
             # Keys from contract call
             "block_number",
             "share_reserves",
+            "zombie_base_proceeds",
             "zombie_share_reserves",
             "bond_reserves",
             "lp_total_supply",
