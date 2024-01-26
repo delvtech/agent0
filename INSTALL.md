@@ -8,7 +8,7 @@ The following outlines our recommended install workflow, although alternatives a
 Clone the repo into a <repo_location> of your choice.
 
 ```bash
-git clone git@github.com:delvtech/agent0.git <repo_location>
+git clone https://github.com/delvtech/agent0.git <repo_location>
 ```
 
 ## 2. Install Pyenv
