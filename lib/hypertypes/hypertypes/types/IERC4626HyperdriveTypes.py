@@ -17,101 +17,7 @@ https://github.com/delvtech/pypechain """
 # pylint: disable=no-else-return
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from web3.types import ABIEvent, ABIEventParams
-
-
-@dataclass
-class Options:
-    """Options struct."""
-
-    destination: str
-    asBase: bool
-    extraData: bytes
-
-
-@dataclass
-class Checkpoint:
-    """Checkpoint struct."""
-
-    sharePrice: int
-
-
-@dataclass
-class MarketState:
-    """MarketState struct."""
-
-    shareReserves: int
-    bondReserves: int
-    longExposure: int
-    longsOutstanding: int
-    shareAdjustment: int
-    shortsOutstanding: int
-    longAverageMaturityTime: int
-    shortAverageMaturityTime: int
-    isInitialized: bool
-    isPaused: bool
-    zombieBaseProceeds: int
-    zombieShareReserves: int
-
-
-@dataclass
-class Fees:
-    """Fees struct."""
-
-    curve: int
-    flat: int
-    governanceLP: int
-    governanceZombie: int
-
-
-@dataclass
-class PoolConfig:
-    """PoolConfig struct."""
-
-    baseToken: str
-    linkerFactory: str
-    linkerCodeHash: bytes
-    initialSharePrice: int
-    minimumShareReserves: int
-    minimumTransactionAmount: int
-    positionDuration: int
-    checkpointDuration: int
-    timeStretch: int
-    governance: str
-    feeCollector: str
-    fees: Fees
-
-
-@dataclass
-class PoolInfo:
-    """PoolInfo struct."""
-
-    shareReserves: int
-    shareAdjustment: int
-    zombieBaseProceeds: int
-    zombieShareReserves: int
-    bondReserves: int
-    lpTotalSupply: int
-    sharePrice: int
-    longsOutstanding: int
-    longAverageMaturityTime: int
-    shortsOutstanding: int
-    shortAverageMaturityTime: int
-    withdrawalSharesReadyToWithdraw: int
-    withdrawalSharesProceeds: int
-    lpSharePrice: int
-    longExposure: int
-
-
-@dataclass
-class WithdrawPool:
-    """WithdrawPool struct."""
-
-    readyToWithdraw: int
-    proceeds: int
-
 
 AddLiquidity = ABIEvent(
     anonymous=False,
@@ -119,7 +25,7 @@ AddLiquidity = ABIEvent(
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
     name="AddLiquidity",
@@ -155,7 +61,7 @@ CloseLong = ABIEvent(
         ABIEventParams(indexed=True, name="assetId", type="uint256"),
         ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="CloseLong",
@@ -169,7 +75,7 @@ CloseShort = ABIEvent(
         ABIEventParams(indexed=True, name="assetId", type="uint256"),
         ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="CloseShort",
@@ -180,8 +86,7 @@ CollectGovernanceFee = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="collector", type="address"),
-        ABIEventParams(indexed=False, name="baseFees", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="fees", type="uint256"),
     ],
     name="CollectGovernanceFee",
     type="event",
@@ -191,12 +96,21 @@ CreateCheckpoint = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="checkpointTime", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="maturedShorts", type="uint256"),
         ABIEventParams(indexed=False, name="maturedLongs", type="uint256"),
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
     name="CreateCheckpoint",
+    type="event",
+)
+
+GovernanceUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newGovernance", type="address"),
+    ],
+    name="GovernanceUpdated",
     type="event",
 )
 
@@ -206,7 +120,7 @@ Initialize = ABIEvent(
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="apr", type="uint256"),
     ],
     name="Initialize",
@@ -220,7 +134,7 @@ OpenLong = ABIEvent(
         ABIEventParams(indexed=True, name="assetId", type="uint256"),
         ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="OpenLong",
@@ -234,10 +148,19 @@ OpenShort = ABIEvent(
         ABIEventParams(indexed=True, name="assetId", type="uint256"),
         ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="OpenShort",
+    type="event",
+)
+
+PauserUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newPauser", type="address"),
+    ],
+    name="PauserUpdated",
     type="event",
 )
 
@@ -247,7 +170,7 @@ RedeemWithdrawalShares = ABIEvent(
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
     ],
     name="RedeemWithdrawalShares",
     type="event",
@@ -259,7 +182,7 @@ RemoveLiquidity = ABIEvent(
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="sharePrice", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
