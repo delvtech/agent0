@@ -63,7 +63,7 @@ class TradeResult:
     block_number: int | None = None
     block_timestamp: int | None = None
     exception: Exception | None = None
-    orig_exception: Exception | list[Exception] | None = None
+    orig_exception: Exception | list[Exception] | BaseException | None = None
     pool_config: dict[str, Any] | None = None
     pool_info: dict[str, Any] | None = None
     checkpoint_info: dict[str, Any] | None = None

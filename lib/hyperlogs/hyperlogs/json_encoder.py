@@ -56,6 +56,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return format_tb(o)
         if isinstance(o, Exception):
             return repr(o)
+        if isinstance(o, BaseException):
+            return repr(o)
         if isinstance(o, Enum):
             return o.name
         if isinstance(o, bytes):

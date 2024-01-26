@@ -241,7 +241,7 @@ def log_hyperdrive_crash_report(
     if trade_result.orig_exception is not None:
         if isinstance(trade_result.orig_exception, list):
             orig_traceback = [exception.__traceback__ for exception in trade_result.orig_exception]
-        elif isinstance(trade_result.orig_exception, Exception):
+        elif isinstance(trade_result.orig_exception, (Exception, BaseException)):
             orig_traceback = trade_result.orig_exception.__traceback__
         else:
             assert False
