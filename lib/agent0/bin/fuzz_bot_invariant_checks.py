@@ -302,7 +302,7 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
     if actual_vault_shares < expected_vault_shares:
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message = (
-            f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares}. {difference_in_wei=}. "
+            f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=}. {difference_in_wei=}. "
         )
         exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
         exception_data["invariance_check:actual_vault_shares"] = actual_vault_shares
