@@ -12,8 +12,7 @@ from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.receipts import get_transaction_logs
 from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
-from hypertypes import PoolDeployConfig
-from hypertypes.types import (
+from hypertypes import (
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,
     ERC4626HyperdriveDeployerCoordinatorContract,
@@ -21,12 +20,13 @@ from hypertypes.types import (
     ERC4626Target1DeployerContract,
     ERC4626Target2DeployerContract,
     ERC4626Target3DeployerContract,
+    FactoryConfig,
     ForwarderFactoryContract,
     HyperdriveFactoryContract,
     IERC4626HyperdriveContract,
     MockERC4626Contract,
+    PoolDeployConfig,
 )
-from hypertypes.types.HyperdriveFactoryTypes import FactoryConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
