@@ -122,7 +122,7 @@ class HyperdriveReadInterface:
         self.hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.addresses.erc4626_hyperdrive)
         )
-        self.yield_address = self.hyperdrive_contract.functions.pool().call()
+        self.yield_address = self.hyperdrive_contract.functions.vault().call()
         self.yield_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(self.yield_address)
         )
