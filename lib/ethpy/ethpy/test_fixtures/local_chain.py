@@ -14,7 +14,7 @@ from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy
 from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hyperdrivepy import get_time_stretch
-from hypertypes import Fees, PoolDeployConfig
+from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
@@ -146,34 +146,36 @@ def launch_local_hyperdrive_pool(
     deployer_private_key: str = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     # ABI folder should contain JSON and Bytecode files for the following contracts:
     # ERC20Mintable, MockERC4626, ForwarderFactory, ERC4626HyperdriveDeployer, ERC4626HyperdriveFactory
-    # Factory initialization parameters
-    initial_variable_rate = FixedPoint("0.05")
-    curve_fee = FixedPoint("0.1")  # 10%
-    flat_fee = FixedPoint("0.0005")  # 0.05%
-    governance_lp_fee = FixedPoint("0.01")  # 1%
-    governance_zombie_fee = FixedPoint("0.1")  # 10%
-    max_curve_fee = FixedPoint("0.3")  # 30%
-    max_flat_fee = FixedPoint("0.0015")  # 0.15%
-    max_governance_lp_fee = FixedPoint("0.30")  # 30%
-    max_governance_zombie_fee = FixedPoint("0.30")  # 30%
-    fees = Fees(
-        curve_fee.scaled_value,
-        flat_fee.scaled_value,
-        governance_lp_fee.scaled_value,
-        governance_zombie_fee.scaled_value,
-    )
-    max_fees = Fees(
-        max_curve_fee.scaled_value,
-        max_flat_fee.scaled_value,
-        max_governance_lp_fee.scaled_value,
-        max_governance_zombie_fee.scaled_value,
-    )
-    # Pool initialization parameters
-    initial_fixed_rate = FixedPoint("0.05")  # 5%
+
+    # Initial pool variables
     # NOTE: we set the initial liquidity here to be very small to ensure we can do trades to ensure withdrawal shares
     # Hence, for testing normal conditions, we likely need to increase the initial liquidity by adding
     # liquidity as the first trade of the pool.
     initial_liquidity = FixedPoint(1_000)
+    initial_variable_rate = FixedPoint("0.05")
+    initial_fixed_rate = FixedPoint("0.05")  # 5%
+
+    # Factory initialization parameters
+    factory_checkpoint_duration_resolution: int = 60 * 60  # 1 hour
+    factory_min_checkpoint_duration: int = 60 * 60  # 1 hour
+    factory_max_checkpoint_duration: int = 60 * 60 * 24  # 1 day
+    factory_min_position_duration: int = 60 * 60 * 24 * 7  # 7 days
+    factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
+
+    factory_min_fees = Fees(
+        curve=FixedPoint("0.001").scaled_value,  # .1%
+        flat=FixedPoint("0.0001").scaled_value,  # .01%
+        governanceLP=FixedPoint("0.15").scaled_value,  # 15%
+        governanceZombie=FixedPoint("0.03").scaled_value,  # 3%
+    )
+    factory_max_fees = Fees(
+        curve=FixedPoint("0.1").scaled_value,  # 10%
+        flat=FixedPoint("0.001").scaled_value,  # .1%
+        governanceLP=FixedPoint("0.15").scaled_value,  # 15%
+        governanceZombie=FixedPoint("0.03").scaled_value,  # 3%
+    )
+
+    # Deploy Pool initialization parameters
     minimum_share_reserves = FixedPoint(10)
     minimum_transaction_amount = FixedPoint("0.001")
     # TODO the above parameters results in negative interest with the default position duration
@@ -184,7 +186,30 @@ def launch_local_hyperdrive_pool(
     time_stretch = FixedPoint(
         scaled_value=int(get_time_stretch(str(initial_fixed_rate.scaled_value), str(position_duration)))
     )
-    pool_config = PoolDeployConfig(
+    fees = Fees(
+        curve=FixedPoint("0.01").scaled_value,  # 1%
+        flat=FixedPoint("0.0005").scaled_value,  # .05%
+        governanceLP=FixedPoint("0.15").scaled_value,  # 15%
+        governanceZombie=FixedPoint("0.03").scaled_value,  # 3%
+    )
+
+    factory_deploy_config = FactoryConfig(
+        governance="",  # will be determined in the deploy function
+        hyperdriveGovernance="",  # will be determined in the deploy function
+        defaultPausers=[],  # We don't support pausers when we deploy
+        feeCollector="",  # will be determined in the deploy function
+        checkpointDurationResolution=factory_checkpoint_duration_resolution,
+        minCheckpointDuration=factory_min_checkpoint_duration,
+        maxCheckpointDuration=factory_max_checkpoint_duration,
+        minPositionDuration=factory_min_position_duration,
+        maxPositionDuration=factory_max_position_duration,
+        minFees=factory_min_fees,  # pylint: disable=protected-access
+        maxFees=factory_max_fees,  # pylint: disable=protected-access
+        linkerFactory="",  # will be determined in the deploy function
+        linkerCodeHash=bytes(),  # will be determined in the deploy function
+    )
+
+    pool_deploy_config = PoolDeployConfig(
         baseToken="",  # will be determined in the deploy function
         linkerFactory=ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
         linkerCodeHash=bytes(32),  # bytes32(0)
@@ -193,9 +218,9 @@ def launch_local_hyperdrive_pool(
         positionDuration=position_duration,
         checkpointDuration=checkpoint_duration,
         timeStretch=time_stretch.scaled_value,
-        governance="",  # will be determined in the deploy function
-        feeCollector="",  # will be determined in the deploy function
-        fees=fees,  # type: ignore
+        governance=ADDRESS_ZERO,  # address(0)
+        feeCollector=ADDRESS_ZERO,  # address(0)
+        fees=fees,
     )
     return deploy_hyperdrive_from_factory(
         local_chain_uri,
@@ -203,8 +228,8 @@ def launch_local_hyperdrive_pool(
         initial_liquidity,
         initial_variable_rate,
         initial_fixed_rate,
-        pool_config,
-        max_fees,
+        factory_deploy_config,
+        pool_deploy_config,
     )
 
 
