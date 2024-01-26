@@ -1,4 +1,5 @@
 """Defines the accounts configuration from env vars."""
+
 from __future__ import annotations
 
 import json
@@ -89,25 +90,31 @@ def initialize_accounts(
     if env_file is None:
         env_file = "account.env"
 
-    if not os.path.exists(env_file):
+    # If we're in develop mode, we don't use the env file at all
+    if develop:
+        account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed)
+    # If we're not in develop mode and the env file doesn't exist
+    # we create the env file keeping track of keys and budgets
+    elif not os.path.exists(env_file):
         logging.info("Creating %s", env_file)
         # Create AccountKeyConfig from agent config
         account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed)
         # Create file
         with open(env_file, "w", encoding="UTF-8") as file:
             file.write(account_key_config.to_env_str())
-        if not develop:
-            print(
-                f"Account key config written {env_file}. "
-                "Run the following command to fund the accounts, then rerun this script."
-            )
-            # Different commands depending on if default env file is used
-            command_str = "python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key>"
-            if env_file != "account.env":
-                command_str += f" -f {env_file}"
-            print(command_str)
-            # Clean exit
-            sys.exit(0)
+        print(
+            f"Account key config written {env_file}. "
+            "Run the following command to fund the accounts, then rerun this script."
+        )
+        # Different commands depending on if default env file is used
+        command_str = "python lib/agent0/bin/fund_agents_from_user_key.py -u <user_private_key>"
+        if env_file != "account.env":
+            command_str += f" -f {env_file}"
+        print(command_str)
+        # Clean exit
+        sys.exit(0)
+    # If we're not in develop mode and the env file does exist
+    # we load the env file key
     else:
         logging.info("Loading %s", env_file)
         # Ensure account_config matches up with env_file

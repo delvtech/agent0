@@ -1,4 +1,5 @@
 """Run the dashboard."""
+
 # pylint: disable=invalid-name
 # Streamlit gets the name of the sidebar tab from the name of the file
 # hence, this file is capitalized

@@ -1,4 +1,5 @@
 """Agent policy for LP trading that also arbitrage on the fixed rate."""
+
 from __future__ import annotations
 
 import logging
@@ -377,8 +378,8 @@ class LPandArb(HyperdrivePolicy):
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
-                amount = min(bonds_needed, max_short_bonds)
-                action_list.append(interface.open_short_trade(amount, self.slippage_tolerance))
+                amount_bonds = min(bonds_needed, max_short_bonds)
+                action_list.append(interface.open_short_trade(amount_bonds, self.slippage_tolerance))
 
         if self.policy_config.done_on_empty and len(action_list) == 0:
             return [], True

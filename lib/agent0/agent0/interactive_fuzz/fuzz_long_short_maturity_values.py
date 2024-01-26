@@ -1,13 +1,13 @@
 """Script to verify that longs and shorts which are closed at maturity supply the correct amounts.
 
 # Test procedure
-- spin up local chain, deploy hyperdrive
+- spin up local chain, deploy hyperdrive with fees
 - advance time to ensure we are in the middle of a checkpoint
-- generate a list of random trades
-  - type in [open_short, open_long]
-  - amount in uniform[min_trade_amount, max_trade_amount) base
-- open those trades in a random order, but within the same checkpoint
-- advance time past the position duration, into a new checkpoint
+- execute random trades
+  - from [open_long, open_short]
+  - trade amount in uniform[min_trade_amount, max_trade_amount) base
+  - advance one block (12 sec) betwen each trade.
+- advance time past the position duration, into a new checkpoint, create a checkpoint
 - close the trades one at a time in random order, run invariance checks after each close action
 
 # Invariance checks (these should be True):
@@ -16,6 +16,7 @@ if trade was open and close a long:
 if trade was open and close a short:
   - base out == interest accrued
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,7 +31,13 @@ from hypertypes.fixedpoint_types import CheckpointFP
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, execute_random_trades, fp_isclose, setup_fuzz
+from agent0.interactive_fuzz.helpers import (
+    FuzzAssertionException,
+    advance_time_after_checkpoint,
+    execute_random_trades,
+    fp_isclose,
+    setup_fuzz,
+)
 
 # main script has a lot of stuff going on
 # pylint: disable=too-many-locals
@@ -51,7 +58,8 @@ def main(argv: Sequence[str] | None = None):
 
 def fuzz_long_short_maturity_values(
     num_trades: int,
-    maturity_vals_epsilon: float,
+    long_maturity_vals_epsilon: float,
+    short_maturity_vals_epsilon: float,
     chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
 ):
@@ -61,8 +69,10 @@ def fuzz_long_short_maturity_values(
     ----------
     num_trades: int
         Number of trades to perform during the fuzz tests.
-    maturity_vals_epsilon: float
-        The allowed error for maturity values equality tests.
+    long_maturity_vals_epsilon: float
+        The allowed error for maturity values equality tests for longs.
+    short_maturity_vals_epsilon: float
+        The allowed error for maturity values equality tests for shorts.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
     log_to_stdout: bool, optional
@@ -83,18 +93,11 @@ def fuzz_long_short_maturity_values(
     )
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
 
-    # Advance time to ensure current time is in the middle of a checkpoint
-    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
-        interactive_hyperdrive.hyperdrive_interface.get_current_block()
-    )
-    time_to_next_checkpoint = (
-        current_block_time % interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
-    )
     # Add a small amount to ensure we're not at the edge of a checkpoint
     # This prevents the latter step of `chain.advance_time(position_duration+30)` advancing past a checkpoint
     # Also prevents `open_random_trades` from passing the create checkpoint barrier
     logging.info("Advance time...")
-    chain.advance_time(time_to_next_checkpoint + 100, create_checkpoints=True)
+    advance_time_after_checkpoint(chain, interactive_hyperdrive)
 
     # Open some trades
     logging.info("Open random trades...")
@@ -150,7 +153,8 @@ def fuzz_long_short_maturity_values(
                 close_event,
                 starting_checkpoint,
                 maturity_checkpoint,
-                maturity_vals_epsilon,
+                long_maturity_vals_epsilon,
+                short_maturity_vals_epsilon,
                 interactive_hyperdrive,
             )
         except FuzzAssertionException as error:
@@ -192,7 +196,8 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     num_trades: int
-    maturity_vals_epsilon: float
+    long_maturity_vals_epsilon: float
+    short_maturity_vals_epsilon: float
     chain_config: LocalChain.Config
     log_to_stdout: bool
 
@@ -213,7 +218,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     # TODO: replace this func with Args(**namespace)?
     return Args(
         num_trades=namespace.num_trades,
-        maturity_vals_epsilon=namespace.maturity_vals_epsilon,
+        long_maturity_vals_epsilon=namespace.long_maturity_vals_epsilon,
+        short_maturity_vals_epsilon=namespace.short_maturity_vals_epsilon,
         chain_config=LocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
@@ -240,10 +246,16 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="The number of random trades to open.",
     )
     parser.add_argument(
-        "--maturity_vals_epsilon",
+        "--long_maturity_vals_epsilon",
         type=float,
         default=1e-14,
-        help="The number of random trades to open.",
+        help="The epsilon for long maturity expected value.",
+    )
+    parser.add_argument(
+        "--short_maturity_vals_epsilon",
+        type=float,
+        default=1e-9,
+        help="The epsilon for short maturity expected value.",
     )
     parser.add_argument(
         "--chain_port",
@@ -269,7 +281,8 @@ def invariant_check(
     close_trade_event: CloseLong | CloseShort,
     starting_checkpoint: CheckpointFP,
     maturity_checkpoint: CheckpointFP,
-    maturity_vals_epsilon: float,
+    long_maturity_vals_epsilon: float,
+    short_maturity_vals_epsilon: float,
     interactive_hyperdrive: InteractiveHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
@@ -284,8 +297,10 @@ def invariant_check(
         The starting checkpoint.
     maturity_checkpoint: CheckpointFP
         The maturity checkpoint.
-    maturity_vals_epsilon: float
-        The epsilon value for the maturity values.
+    long_maturity_vals_epsilon: float
+        The epsilon value for the maturity values for longs.
+    short_maturity_vals_epsilon: float
+        The epsilon value for the maturity values for shorts.
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
@@ -302,15 +317,20 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        actual_base_amount = close_trade_event.base_amount
-        expected_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
+        actual_long_base_amount = close_trade_event.base_amount
+        expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
         # assert with close event bond amount
-        if not fp_isclose(actual_base_amount, expected_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))):
-            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount.scaled_value)
-            exception_message.append(f"{actual_base_amount=} != {expected_base_amount=}, {difference_in_wei=}")
-            exception_data["invariance_check:actual_long_base_amount"] = actual_base_amount
-            exception_data["invariance_check:expected_long_base_amount"] = expected_base_amount
+        if not fp_isclose(
+            actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(long_maturity_vals_epsilon))
+        ):
+            difference_in_wei = abs(actual_long_base_amount.scaled_value - expected_long_base_amount.scaled_value)
+            exception_message.append("The base out does not equal the bonds in minus the flat fee.")
+            exception_message.append(
+                f"{actual_long_base_amount=} != {expected_long_base_amount=}, {difference_in_wei=}"
+            )
+            exception_data["invariance_check:actual_long_base_amount"] = actual_long_base_amount
+            exception_data["invariance_check:expected_long_base_amount"] = expected_long_base_amount
             exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
 
@@ -331,17 +351,24 @@ def invariant_check(
         share_reserves_delta_plus_flat_fee = share_reserves_delta + flat_fee
 
         # get the final interest accrued
-        expected_base_amount = (
+        expected_short_base_amount = (
             open_trade_event.bond_amount * (closing_share_price / open_share_price + flat_fee_percent)
             - share_reserves_delta_plus_flat_fee
         )
 
-        actual_base_amount = close_trade_event.base_amount
-        if not fp_isclose(actual_base_amount, expected_base_amount, abs_tol=FixedPoint(str(maturity_vals_epsilon))):
-            difference_in_wei = abs(actual_base_amount.scaled_value - expected_base_amount.scaled_value)
-            exception_message.append(f"{actual_base_amount=} != {expected_base_amount=}, {difference_in_wei=}")
-            exception_data["invariance_check:actual_short_base_amount"] = actual_base_amount
-            exception_data["invariance_check:expected_short_base_amount"] = expected_base_amount
+        actual_short_base_amount = close_trade_event.base_amount
+        if not fp_isclose(
+            actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(short_maturity_vals_epsilon))
+        ):
+            difference_in_wei = abs(actual_short_base_amount.scaled_value - expected_short_base_amount.scaled_value)
+            exception_message.append(
+                "The expected base returned (interest accrued) does not match the event's reported base returned."
+            )
+            exception_message.append(
+                f"{actual_short_base_amount=} != {expected_short_base_amount=}, {difference_in_wei=}"
+            )
+            exception_data["invariance_check:actual_short_base_amount"] = actual_short_base_amount
+            exception_data["invariance_check:expected_short_base_amount"] = expected_short_base_amount
             exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
     else:

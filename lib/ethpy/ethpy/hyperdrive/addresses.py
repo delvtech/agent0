@@ -1,4 +1,5 @@
 """Helper class for storing Hyperdrive addresses"""
+
 from __future__ import annotations
 
 import logging

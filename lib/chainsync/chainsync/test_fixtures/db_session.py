@@ -1,4 +1,5 @@
 """Create an in memory db session and creates the base db schema."""
+
 import logging
 import os
 import re

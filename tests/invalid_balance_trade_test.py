@@ -1,4 +1,5 @@
 """Test for invalid trades due to balance."""
+
 from __future__ import annotations
 
 import logging
@@ -495,7 +496,7 @@ class TestInvalidTrades:
             # This throws a contract logic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractLogicError)
-            assert exc.orig_exception.args[0] == "execution reverted: TRANSFER_FROM_FAILED"
+            assert "TRANSFER_FROM_FAILED" in exc.orig_exception.args[0]
 
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_zero(

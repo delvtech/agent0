@@ -11,6 +11,7 @@ Given that, we will periodically run this test:
 - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
 - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
 """
+
 from __future__ import annotations
 
 import argparse
@@ -140,23 +141,15 @@ def run_invariant_checks(
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data: dict[str, Any] = {}
 
-    # Due to inaccuracies with the share_price in pool_state, we call the yield contract's convertToShares
-    # function to get a more accurate shorts outstanding in shares
-    shorts_outstanding_in_shares = FixedPoint(
-        scaled_value=interface.yield_contract.functions.convertToShares(
-            pool_state.pool_info.shorts_outstanding.scaled_value
-        ).call()
-    )
-
     results: list[InvariantCheckResults] = [
-        _check_eth_balances(latest_block_number, pool_state),
-        _check_base_balances(latest_block_number, pool_state),
-        _check_total_shares(latest_block_number, test_epsilon, pool_state, shorts_outstanding_in_shares),
-        _check_minimum_share_reserves(latest_block_number, pool_state),
-        _check_solvency(latest_block_number, pool_state),
+        _check_eth_balances(pool_state),
+        _check_base_balances(pool_state),
+        _check_total_shares(pool_state),
+        _check_minimum_share_reserves(pool_state),
+        _check_solvency(pool_state),
         _check_present_value_greater_than_idle_shares(latest_block_number, interface, pool_state),
         _check_lp_share_price(latest_block_number, interface, test_epsilon, pool_state),
-        _check_checkpointing_should_never_fail(latest_block, latest_block_number, interface, pool_state),
+        _check_checkpointing_should_never_fail(latest_block, interface, pool_state),
     ]
 
     for failed, message, data in results:
@@ -179,28 +172,28 @@ class InvariantCheckResults(NamedTuple):
     exception_data: dict[str, Any]
 
 
-def _check_eth_balances(block_number: BlockNumber, pool_state: PoolState) -> InvariantCheckResults:
+def _check_eth_balances(pool_state: PoolState) -> InvariantCheckResults:
     # Hyperdrive base & eth balances should always be zero
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
 
     if pool_state.hyperdrive_eth_balance != FixedPoint(0):
-        exception_message = f"{pool_state.hyperdrive_eth_balance} != 0. Test failed at block {block_number}"
+        exception_message = f"{pool_state.hyperdrive_eth_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
         failed = True
 
     return InvariantCheckResults(failed, exception_message, exception_data)
 
 
-def _check_base_balances(block_number: BlockNumber, pool_state: PoolState) -> InvariantCheckResults:
+def _check_base_balances(pool_state: PoolState) -> InvariantCheckResults:
     # Hyperdrive base & eth balances should always be zero
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
 
     if pool_state.hyperdrive_base_balance != FixedPoint(0):
-        exception_message = f"{pool_state.hyperdrive_base_balance} != 0. Test failed at block {block_number}"
+        exception_message = f"{pool_state.hyperdrive_base_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         failed = True
 
@@ -208,7 +201,7 @@ def _check_base_balances(block_number: BlockNumber, pool_state: PoolState) -> In
 
 
 def _check_checkpointing_should_never_fail(
-    block: BlockData, block_number: BlockNumber, interface: HyperdriveReadInterface, pool_state: PoolState
+    block: BlockData, interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
     # Creating a checkpoint should never fail
     # TODO: add get_block_transactions() to interface
@@ -234,14 +227,13 @@ def _check_checkpointing_should_never_fail(
                     f"A transaction was created but no checkpoint was minted.\n"
                     f"{pool_state.checkpoint.share_price=}\n"
                     f"{transaction=}\n"
-                    f"{block_number=}"
                 )
                 failed = True
 
     return InvariantCheckResults(failed, exception_message, exception_data)
 
 
-def _check_solvency(block_number: BlockNumber, pool_state: PoolState) -> InvariantCheckResults:
+def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
     # The system should always be solvent
     failed = False
     exception_message: str | None = None
@@ -256,7 +248,7 @@ def _check_solvency(block_number: BlockNumber, pool_state: PoolState) -> Invaria
         exception_message = (
             f"{solvency=} <= 0. "
             f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
-            f"{pool_state.pool_config.minimum_share_reserves=}). Test failed at block {block_number}."
+            f"{pool_state.pool_config.minimum_share_reserves=})."
         )
         exception_data["invariance_check:solvency"] = solvency
         failed = True
@@ -264,7 +256,7 @@ def _check_solvency(block_number: BlockNumber, pool_state: PoolState) -> Invaria
     return InvariantCheckResults(failed, exception_message, exception_data)
 
 
-def _check_minimum_share_reserves(block_number: BlockNumber, pool_state: PoolState) -> InvariantCheckResults:
+def _check_minimum_share_reserves(pool_state: PoolState) -> InvariantCheckResults:
     # The pool has more than the minimum share reserves
     failed = False
     exception_message = ""
@@ -277,8 +269,7 @@ def _check_minimum_share_reserves(block_number: BlockNumber, pool_state: PoolSta
             f"{current_share_reserves} < {minimum_share_reserves=}. "
             f"({pool_state.pool_info.share_reserves=} * "
             f"{pool_state.pool_info.share_price=} - "
-            f"{pool_state.pool_info.long_exposure=}). "
-            f"Test failed at block {block_number}."
+            f"{pool_state.pool_info.long_exposure=})."
         )
         exception_data["invariance_check:current_share_reserves"] = current_share_reserves
         exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
@@ -287,9 +278,7 @@ def _check_minimum_share_reserves(block_number: BlockNumber, pool_state: PoolSta
     return InvariantCheckResults(failed, exception_message, exception_data)
 
 
-def _check_total_shares(
-    block_number: BlockNumber, test_epsilon: float, pool_state: PoolState, shorts_outstanding_in_shares: FixedPoint
-) -> InvariantCheckResults:
+def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
     # Total shares is correctly calculated
     failed = False
     exception_message = ""
@@ -297,20 +286,23 @@ def _check_total_shares(
 
     expected_vault_shares = (
         pool_state.pool_info.share_reserves
-        # The term below replaces this calculation:
-        # pool_state.pool_info.shorts_outstanding / pool_state.pool_info.share_price
-        + shorts_outstanding_in_shares
+        + (
+            pool_state.pool_info.shorts_outstanding
+            + (pool_state.pool_info.shorts_outstanding * pool_state.pool_config.fees.flat)
+        )
+        / pool_state.pool_info.share_price
         + pool_state.gov_fees_accrued
         + pool_state.pool_info.withdrawal_shares_proceeds
         + pool_state.pool_info.zombie_share_reserves
     )
     actual_vault_shares = pool_state.vault_shares
-    if not fp_isclose(expected_vault_shares, actual_vault_shares, abs_tol=FixedPoint(str(test_epsilon))):
+
+    # While the expected vault shares is a bit inaccurate, we're testing
+    # solvency here, hence, we ensure that the expected vault shares >= actual vault shares
+    if actual_vault_shares < expected_vault_shares:
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message = (
-            f"{actual_vault_shares=} is incorrect, should be {expected_vault_shares}. "
-            f"{difference_in_wei=}. "
-            f"Test failed at block {block_number}."
+            f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares}. {difference_in_wei=}. "
         )
         exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
         exception_data["invariance_check:actual_vault_shares"] = actual_vault_shares

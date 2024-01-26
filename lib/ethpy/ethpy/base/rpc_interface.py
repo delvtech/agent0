@@ -1,4 +1,5 @@
 """Functions for interfacing with the anvil or ethereum RPC endpoint"""
+
 from __future__ import annotations
 
 from web3 import Web3

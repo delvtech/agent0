@@ -1,4 +1,5 @@
 """Pytest fixture that creates an in memory db session and creates dummy db schemas"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

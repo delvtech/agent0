@@ -1,4 +1,5 @@
 """Functions for gathering data from the chain and adding it to the db"""
+
 from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal

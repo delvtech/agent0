@@ -1,4 +1,5 @@
 """Calculates the pnl."""
+
 from __future__ import annotations
 
 import logging

@@ -1,4 +1,5 @@
 """State object for setting environment configuration"""
+
 from __future__ import annotations
 
 import json

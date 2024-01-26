@@ -1,4 +1,5 @@
 """Testing for agent0 types"""
+
 from __future__ import annotations
 
 import unittest

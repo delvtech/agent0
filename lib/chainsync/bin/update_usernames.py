@@ -3,6 +3,7 @@ This script is meant to run once at docker initialization.
 The script can then be ran at any time to update the database in the case of
 e.g., new wallets being added.
 """
+
 import logging
 
 from chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session

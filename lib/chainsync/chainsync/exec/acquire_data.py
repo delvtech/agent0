@@ -1,4 +1,5 @@
 """Script to format on-chain hyperdrive pool, config, and transaction data post-processing."""
+
 from __future__ import annotations
 
 import logging

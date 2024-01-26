@@ -1,4 +1,5 @@
 """Web3 powered functions for interfacing with smart contracts"""
+
 from __future__ import annotations
 
 import logging
@@ -524,12 +525,36 @@ async def async_smart_contract_transact(
             block_number=block_number,
         ) from err
     except UnknownBlockError as err:
+        # Unknown block error means the transaction went through, but was rejected
+        # At this point, we try a preview transaction to see if we can get a better error message
+        # from the preview
         block_number_arg = err.args[1]
         assert "block_number=" in block_number_arg
         block_number = int(block_number_arg.split("block_number=")[1])
+
+        orig_exception: list[Exception] = [err]
+        try:
+            smart_contract_preview_transaction(
+                contract=contract,
+                signer_address=signer.address,
+                function_name_or_signature=function_name_or_signature,
+                *fn_args,
+                block_number=BlockNumber(block_number),
+                read_retry_count=1,  # No retries for this preview
+                **fn_kwargs,
+            )
+            # If the preview was successful, then we raise this message here
+            raise AssertionError("Preview was successful.")  # pylint: disable=raise-missing-from
+
+        except Exception as preview_err:  # pylint: disable=broad-except
+            # We add a message to the preview error saying what this error is
+            preview_err.args = ("Previewing transaction on transaction failure:",) + preview_err.args
+            # We report both the exception from the transaction and the exception from the preview
+            orig_exception.append(preview_err)
+
         raise ContractCallException(
             "Error in smart_contract_transact",
-            orig_exception=err,
+            orig_exception=orig_exception,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
@@ -662,12 +687,36 @@ def smart_contract_transact(
             raw_txn=dict(unsent_txn),
         ) from err
     except UnknownBlockError as err:
+        # Unknown block error means the transaction went through, but was rejected
+        # At this point, we try a preview transaction to see if we can get a better error message
+        # from the preview
         block_number_arg = err.args[1]
         assert "block_number=" in block_number_arg
         block_number = int(block_number_arg.split("block_number=")[1])
+
+        orig_exception: list[Exception] = [err]
+        try:
+            smart_contract_preview_transaction(
+                contract=contract,
+                signer_address=signer.address,
+                function_name_or_signature=function_name_or_signature,
+                *fn_args,
+                block_number=BlockNumber(block_number),
+                read_retry_count=1,  # No retries for this preview
+                **fn_kwargs,
+            )
+            # If the preview was successful, then we raise this message here
+            raise AssertionError("Preview was successful.")  # pylint: disable=raise-missing-from
+
+        except Exception as preview_err:  # pylint: disable=broad-except
+            # We add a message to the preview error saying what this error is
+            preview_err.args = ("Previewing transaction on transaction failure:",) + preview_err.args
+            # We report both the exception from the transaction and the exception from the preview
+            orig_exception.append(preview_err)
+
         raise ContractCallException(
             "Error in smart_contract_transact",
-            orig_exception=err,
+            orig_exception=orig_exception,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,

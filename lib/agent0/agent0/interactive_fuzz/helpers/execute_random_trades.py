@@ -1,4 +1,5 @@
 """Return a list of results from opening a random longs and shorts."""
+
 from __future__ import annotations
 
 from typing import Literal, overload
@@ -35,7 +36,8 @@ def execute_random_trades(
         An instantiated InteractiveHyperdrive object.
     advance_time: bool, optional
         If True, advance time a random amount between 0 and the position duration after each trade.
-        Defaults to False.
+        Defaults to False, which follows the anvil settings.
+        Typically this advances one block and 12 seconds between each trade.
 
     Returns
     -------
@@ -123,15 +125,13 @@ def _get_open_trade_amount(
 @overload
 def _execute_trade(
     trade_type: Literal[HyperdriveActionType.OPEN_LONG], trade_amount: FixedPoint, agent: InteractiveHyperdriveAgent
-) -> OpenLong:
-    ...
+) -> OpenLong: ...
 
 
 @overload
 def _execute_trade(
     trade_type: Literal[HyperdriveActionType.OPEN_SHORT], trade_amount: FixedPoint, agent: InteractiveHyperdriveAgent
-) -> OpenShort:
-    ...
+) -> OpenShort: ...
 
 
 def _execute_trade(

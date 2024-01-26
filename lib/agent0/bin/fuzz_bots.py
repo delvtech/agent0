@@ -1,4 +1,5 @@
 """Runs random bots against the local chain for fuzz testing"""
+
 from __future__ import annotations
 
 import logging

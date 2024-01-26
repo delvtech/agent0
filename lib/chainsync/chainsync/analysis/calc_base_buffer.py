@@ -1,4 +1,5 @@
 """Calculates the amount of base set aside that can't be withdrawn"""
+
 from decimal import Decimal
 
 import pandas as pd

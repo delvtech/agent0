@@ -1,4 +1,5 @@
 """Defines the output hyperdrive events as dataclasses"""
+
 from dataclasses import dataclass
 
 from eth_typing import ChecksumAddress

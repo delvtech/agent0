@@ -1,4 +1,5 @@
 """Create agent accounts and fund them."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

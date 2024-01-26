@@ -1,4 +1,5 @@
 """Runner script for agents"""
+
 from __future__ import annotations
 
 import asyncio
@@ -269,6 +270,12 @@ def run_agents(
                 < minimum_avg_agent_base
             ):
                 _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+                # Update agent accounts with new wallet balances
+                for agent in agent_accounts:
+                    # Contract call to get base balance
+                    (_, base_amount) = interface.get_eth_base_balances(agent)
+                    base_obj = Quantity(amount=base_amount, unit=TokenType.BASE)
+                    agent.wallet.balance = base_obj
         if new_executed_block == last_executed_block:
             # wait
             time.sleep(poll_latency)

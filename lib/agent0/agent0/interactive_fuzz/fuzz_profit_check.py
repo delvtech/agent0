@@ -2,7 +2,7 @@
 
 
 # Test procedure
-- spin up local chain, deploy hyperdrive
+- spin up local chain, deploy hyperdrive with fees
 - open a long for a random amount
 - advance time, but not enough to trigger a new checkpoint
 - close the long
@@ -15,8 +15,13 @@
 # We are checking that the agent made made no profit
 - Repeat these two checks for the longs & shorts
   - transaction receipt: base amount returned < base amount provided
-  - agent wallet: agent's wallet balance < trade amount
+  - agent wallet: final balance <= initial balance
+- Specific values checked
+  - trade amount
+  - agent initial balance
+  - agent final balance
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,11 +31,15 @@ from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, setup_fuzz
+from agent0.hyperdrive.interactive import LocalChain
+from agent0.interactive_fuzz.helpers import (
+    FuzzAssertionException,
+    advance_time_after_checkpoint,
+    advance_time_before_checkpoint,
+    setup_fuzz,
+)
 
 # pylint: disable=too-many-locals
 
@@ -58,11 +67,20 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         If True, log to stdout in addition to a file.
         Defaults to False.
     """
+    # pylint: disable=too-many-statements
 
     # Setup the environment
     log_filename = ".logging/fuzz_profit_check.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename, chain_config, log_to_stdout, fuzz_test_name="fuzz_profit_check"
+        log_filename,
+        chain_config,
+        log_to_stdout,
+        fuzz_test_name="fuzz_profit_check",
+        flat_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0.001),  # 0.1%
+        governance_lp_fee=FixedPoint(0),
+        governance_zombie_fee=FixedPoint(0),
+        var_interest=FixedPoint(0.0),
     )
 
     # Get a random trade amount
@@ -82,18 +100,31 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # Generate funded trading agent
     long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
     long_agent_initial_balance = long_agent.wallet.balance.amount
+
+    # Advance time to be right after a checkpoint boundary
+    logging.info("Advance time...")
+    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+
     # Open a long
     logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=long_trade_amount)
+
+    starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
+
     # Close the long
     logging.info("Close the long...")
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
+    ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
+    # Ensure open + close are within same checkpoint
+    assert starting_checkpoint_id == ending_checkpoint_id
 
     # Open a short
     short_trade_amount = FixedPoint(
@@ -113,18 +144,30 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # we can play it safe by initializing with that much base
     short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
     short_agent_initial_balance = short_agent.wallet.balance.amount
+
+    # Advance time to be right after a checkpoint boundary
+    logging.info("Advance time...")
+    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
     logging.info("Open a short...")
     open_short_event = short_agent.open_short(bonds=short_trade_amount)
+    starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
     advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
+
     # Close the short
     logging.info("Close the short...")
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
     )
+    ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+
+    # Ensure open + close are within same checkpoint
+    assert starting_checkpoint_id == ending_checkpoint_id
 
     logging.info("Check invariants...")
     # Ensure that the prior trades did not result in a profit
@@ -178,39 +221,6 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         raise error
     chain.cleanup()
     logging.info("Test passed!")
-
-
-def advance_time_before_checkpoint(
-    chain: LocalChain, rng: Generator, interactive_hyperdrive: InteractiveHyperdrive
-) -> None:
-    """Advance time on the chain a random amount that is less than the next checkpoint time.
-
-    Arguments
-    ---------
-    chain: LocalChain
-        An instantiated LocalChain.
-    rng: `Generator <https://numpy.org/doc/stable/reference/random/generator.html>`_
-        The numpy Generator provides access to a wide range of distributions, and stores the random state.
-    interactive_hyperdrive: InteractiveHyperdrive
-        An instantiated InteractiveHyperdrive object.
-    """
-    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
-        interactive_hyperdrive.hyperdrive_interface.get_current_block()
-    )
-    last_checkpoint_time = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id(current_block_time)
-    next_checkpoint_time = (
-        last_checkpoint_time + interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
-    )
-    advance_upper_bound = next_checkpoint_time - current_block_time - 2  # minus 2 seconds to avoid edge cases
-    # Only advance time if the upper bound is positive
-    # Would be negative if we are already very close to the next checkpoint time
-    if advance_upper_bound >= 0:
-        checkpoint_info = chain.advance_time(
-            rng.integers(low=0, high=advance_upper_bound),
-            create_checkpoints=True,  # we don't want to create one, but only because we haven't advanced enough
-        )
-        # Do a final check to make sure that the checkpoint didn't happen
-        assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
 
 
 class Args(NamedTuple):
@@ -288,10 +298,9 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     base_amount_provided: FixedPoint = check_data["long_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
+        exception_message.append("LONG: Amount returned on closing was too large.")
         exception_message.append(
-            f"LONG: Amount returned on closing was too large.\n"
-            f"{base_amount_returned=} should not be >= {base_amount_provided=}. "
-            f"{difference_in_wei=}"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}. {difference_in_wei=}"
         )
         exception_data["invariance_check:long_base_amount_returned"] = base_amount_returned
         exception_data["invariance_check:long_base_amount_provided"] = base_amount_provided
@@ -302,10 +311,9 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     final_agent_balance: FixedPoint = check_data["long_agent_final_balance"]
     if final_agent_balance > initial_agent_balance:
         difference_in_wei = abs(final_agent_balance.scaled_value - initial_agent_balance.scaled_value)
+        exception_message.append("LONG: Agent made a profit when the should not have.")
         exception_message.append(
-            f"LONG: Agent made a profit when the should not have.\n"
-            f"{final_agent_balance=} should not be > {initial_agent_balance=}. "
-            f"{difference_in_wei=}"
+            f"{final_agent_balance=} should not be > {initial_agent_balance=}. {difference_in_wei=}"
         )
         exception_data["invariance_check:long_agent_initial_balance"] = initial_agent_balance
         exception_data["invariance_check:long_agent_final_balance"] = final_agent_balance
@@ -317,10 +325,9 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     base_amount_provided: FixedPoint = check_data["short_events"]["open"].base_amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
+        exception_message.append("SHORT: Amount returned on closing was too large.")
         exception_message.append(
-            f"SHORT: Amount returned on closing was too large.\n"
-            f"{base_amount_returned=} should not be >= {base_amount_provided=}. "
-            f"{difference_in_wei=}"
+            f"{base_amount_returned=} should not be >= {base_amount_provided=}. {difference_in_wei=}"
         )
         exception_data["invariance_check:short_base_amount_returned"] = base_amount_returned
         exception_data["invariance_check:short_base_amount_provided"] = base_amount_provided
@@ -331,10 +338,9 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     final_agent_balance: FixedPoint = check_data["short_agent_final_balance"]
     if final_agent_balance > initial_agent_balance:
         difference_in_wei = abs(initial_agent_balance.scaled_value - final_agent_balance.scaled_value)
+        exception_message.append("SHORT: Agent made a profit when the should not have.")
         exception_message.append(
-            f"SHORT: Agent made a profit when the should not have.\n"
-            f"{final_agent_balance=} should not be > {initial_agent_balance=}. "
-            f"{difference_in_wei=}"
+            f"{final_agent_balance=} should not be > {initial_agent_balance=}. {difference_in_wei=}"
         )
         exception_data["invariance_check:short_agent_initial_balance"] = initial_agent_balance
         exception_data["invariance_check:short_agent_final_balance"] = final_agent_balance

@@ -1,4 +1,5 @@
 """Test fixtures for ethpy"""
+
 from .local_chain import (
     hyperdrive_read_interface,
     hyperdrive_read_write_interface,

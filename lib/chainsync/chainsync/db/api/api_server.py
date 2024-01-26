@@ -1,4 +1,5 @@
 """A simple Flask server to run python scripts."""
+
 from __future__ import annotations
 
 import logging

@@ -1,4 +1,5 @@
 """Tests for Hyperdrive interface inheritance."""
+
 from __future__ import annotations
 
 from .read_interface import HyperdriveReadInterface

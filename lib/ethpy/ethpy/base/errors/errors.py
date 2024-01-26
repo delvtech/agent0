@@ -1,4 +1,5 @@
 """Error handling for the hyperdrive ecosystem"""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -29,7 +30,7 @@ class ContractCallException(Exception):
         *args,
         # Explicitly passing these arguments as kwargs to allow for multiple `args` to be passed in
         # similar for other types of exceptions
-        orig_exception: Exception | None = None,
+        orig_exception: Exception | list[Exception] | None = None,
         contract_call_type: ContractCallType | None = None,
         function_name_or_signature: str | None = None,
         fn_args: tuple | None = None,
