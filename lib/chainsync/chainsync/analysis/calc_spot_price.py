@@ -42,5 +42,7 @@ def calc_spot_price(
         # Sanity check
         assert (effective_share_reserves >= 0).all()
         # Pandas is smart enough to be able to broadcast with internal Decimal types at runtime
-        spot_price = ((initial_vault_share_price * effective_share_reserves) / bond_reserves) ** time_stretch  # type: ignore
+        spot_price = (
+            (initial_vault_share_price * effective_share_reserves) / bond_reserves  # type: ignore
+        ) ** time_stretch
     return spot_price
