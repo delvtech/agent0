@@ -329,7 +329,7 @@ def calc_shares_needed_for_bonds(bonds_needed: FixedPoint, pool_state, interface
     governance_fee = pool_state.pool_config.fees.governance_lp
     logging.info("curve fee is %s", curve_fee)
     logging.info("governance fee is %s", governance_fee)
-    _shares_to_gov = (_shares_to_pool * price_discount * curve_fee * governance_fee)
+    _shares_to_gov = _shares_to_pool * price_discount * curve_fee * governance_fee
     _shares_to_pool -= _shares_to_gov
     return _shares_to_pool, _shares_to_gov
 
@@ -368,9 +368,7 @@ def test_predict_open_long(chain: Chain):
     price_discount = FixedPoint(1) - spot_price
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
-    shares_needed = interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(
-        bonds_needed
-        )
+    shares_needed = interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(bonds_needed)
     share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_price
     base_needed = shares_needed * share_price
     # use rust to predict trade outcome
@@ -420,10 +418,13 @@ def test_predict_open_long(chain: Chain):
     bonds_discrepancy = float((actual_delta_bonds - predicted_delta_bonds) / predicted_delta_bonds)
     shares_discrepancy = float((actual_delta_shares - predicted_delta_shares) / predicted_delta_shares)
     logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")  # pylint: disable=logging-fstring-interpolation
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")  # pylint: disable=logging-fstring-interpolation
+    logging.info(
+        f"discrepancy (%) for shares is {shares_discrepancy:e}"
+    )  # pylint: disable=logging-fstring-interpolation
 
     assert abs(bonds_discrepancy) < 1e-7
     assert abs(shares_discrepancy) < 1e-7
+
 
 @pytest.mark.anvil
 def test_predict_open_short(chain: Chain):
@@ -450,61 +451,56 @@ def test_predict_open_short(chain: Chain):
     price_discount = FixedPoint(1) - spot_price
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
-    # shares_needed = interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(
-    #     bonds_needed
-    #     )
-    # share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_price
-    # base_needed = shares_needed * share_price
     # use rust to predict trade outcome
-    # bonds_after_fees = interactive_hyperdrive.hyperdrive_interface.calc_open_long(base_needed)
-    shares_after_fees = interactive_hyperdrive.hyperdrive_interface.calc_open_short(bonds_needed)
+    shares_before_fees = interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(bonds_needed)
+    logging.info("shares_before_fees is %s", shares_before_fees)
+    fees = bonds_needed * price_discount * curve_fee
+    fees_to_pool = fees * (FixedPoint(1) - governance_fee)
+    fees_to_gov = fees * governance_fee
+    shares_after_fees = shares_before_fees + fees_to_pool + fees_to_gov
     logging.info("shares_after_fees is %s", shares_after_fees)
-    # logging.info("bonds_after_fees is %s", bonds_after_fees)
-    # bond_fees = bonds_after_fees * price_discount * curve_fee
-    # bond_fees_to_pool = bond_fees * (FixedPoint(1) - governance_fee)
-    # bond_fees_to_gov = bond_fees * governance_fee
-    # bonds_before_fees = bonds_after_fees + bond_fees_to_pool + bond_fees_to_gov
-    # logging.info("bonds_before_fees is %s", bonds_before_fees)
-    # logging.info("bond_fees_to_pool is %s", bond_fees_to_pool)
-    # logging.info("bond_fees_to_gov is %s", bond_fees_to_gov)
+    logging.info("fees_to_pool is %s", fees_to_pool)
+    logging.info("fees_to_gov is %s", fees_to_gov)
 
-    # predicted_delta_bonds = -bonds_after_fees - bond_fees_to_gov
-    # predicted_delta_shares = base_needed / share_price * (FixedPoint(1) - price_discount * curve_fee * governance_fee)
-    # logging.info("predicted delta bonds is %s", predicted_delta_bonds)
-    # logging.info("predicted delta shares is %s", predicted_delta_shares)
+    predicted_delta_bonds = bonds_needed
+    predicted_delta_shares = -shares_before_fees + fees_to_pool
+    logging.info("predicted delta bonds is %s", predicted_delta_bonds)
+    logging.info("predicted delta shares is %s", predicted_delta_shares)
 
     # # measure pool before trade
-    # pool_state_before = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
-    # pool_bonds_before = pool_state_before.pool_info.bond_reserves
-    # pool_shares_before = pool_state_before.pool_info.share_reserves
+    pool_state_before = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_bonds_before = pool_state_before.pool_info.bond_reserves
+    pool_shares_before = pool_state_before.pool_info.share_reserves
     # # do the trade
-    # event = arbitrage_andy.open_long(base=base_needed)
-    # event = event[0] if isinstance(event, list) else event
-    # actual_event_bonds = event.bond_amount
-    # actual_event_base = event.base_amount
-    # logging.info(
-    #     "opened long with input base=%s, output Δbonds= %s%s, Δbase= %s%s",
-    #     base_needed,
-    #     "+" if actual_event_bonds > 0 else "",
-    #     actual_event_bonds,
-    #     "+" if actual_event_base > 0 else "",
-    #     actual_event_base,
-    # )
+    event = arbitrage_andy.open_short(bonds=bonds_needed)
+    event = event[0] if isinstance(event, list) else event
+    actual_event_bonds = event.bond_amount
+    actual_event_base = event.base_amount
+    logging.info(
+        "opened short with input base=%s, output Δbonds= %s%s, Δbase= %s%s",
+        bonds_needed,
+        "+" if actual_event_bonds > 0 else "",
+        actual_event_bonds,
+        "+" if actual_event_base > 0 else "",
+        actual_event_base,
+    )
     # # measure pool after trade
-    # pool_state_after = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
-    # pool_bonds_after = pool_state_after.pool_info.bond_reserves
-    # pool_shares_after = pool_state_after.pool_info.share_reserves
-    # logging.info("pool bonds after is %s", pool_bonds_after)
-    # logging.info("pool shares after is %s", pool_shares_after)
-    # actual_delta_bonds = pool_bonds_after - pool_bonds_before
-    # actual_delta_shares = pool_shares_after - pool_shares_before
-    # logging.info("actual delta bonds is %s", actual_delta_bonds)
-    # logging.info("actual delta shares is %s", actual_delta_shares)
+    pool_state_after = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_bonds_after = pool_state_after.pool_info.bond_reserves
+    pool_shares_after = pool_state_after.pool_info.share_reserves
+    logging.info("pool bonds after is %s", pool_bonds_after)
+    logging.info("pool shares after is %s", pool_shares_after)
+    actual_delta_bonds = pool_bonds_after - pool_bonds_before
+    actual_delta_shares = pool_shares_after - pool_shares_before
+    logging.info("actual delta bonds is %s", actual_delta_bonds)
+    logging.info("actual delta shares is %s", actual_delta_shares)
 
-    # bonds_discrepancy = float((actual_delta_bonds - predicted_delta_bonds) / predicted_delta_bonds)
-    # shares_discrepancy = float((actual_delta_shares - predicted_delta_shares) / predicted_delta_shares)
-    # logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")  # pylint: disable=logging-fstring-interpolation
-    # logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")  # pylint: disable=logging-fstring-interpolation
+    bonds_discrepancy = float((actual_delta_bonds - predicted_delta_bonds) / predicted_delta_bonds)
+    shares_discrepancy = float((actual_delta_shares - predicted_delta_shares) / predicted_delta_shares)
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")  # pylint: disable=logging-fstring-interpolation
+    logging.info(
+        f"discrepancy (%) for shares is {shares_discrepancy:e}"
+    )  # pylint: disable=logging-fstring-interpolation
 
-    # assert abs(bonds_discrepancy) < 1e-7
-    # assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < 1e-7
+    assert abs(shares_discrepancy) < 1e-7
