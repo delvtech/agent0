@@ -16,6 +16,7 @@ if trade was open and close a long:
 if trade was open and close a short:
   - base out == interest accrued
 """
+
 from __future__ import annotations
 
 import argparse

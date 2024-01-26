@@ -1,4 +1,5 @@
 """Unit tests for the EthWallet class."""
+
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest

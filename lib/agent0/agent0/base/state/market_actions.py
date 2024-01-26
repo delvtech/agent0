@@ -1,4 +1,5 @@
 """A dataclass for storing possible action types and wallets in any given market."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

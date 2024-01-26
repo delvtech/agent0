@@ -1,4 +1,5 @@
 """simulation for the Hyperdrive market"""
+
 from __future__ import annotations
 
 import mplfinance as mpf

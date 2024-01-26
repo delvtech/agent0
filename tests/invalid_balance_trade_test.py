@@ -1,4 +1,5 @@
 """Test for invalid trades due to balance."""
+
 from __future__ import annotations
 
 import logging

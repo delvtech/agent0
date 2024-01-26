@@ -1,4 +1,5 @@
 """Wrapper functions for retrying."""
+
 from __future__ import annotations
 
 import inspect

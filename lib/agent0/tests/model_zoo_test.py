@@ -1,4 +1,5 @@
 """Test the agent0 model zoo."""
+
 from __future__ import annotations
 
 import logging

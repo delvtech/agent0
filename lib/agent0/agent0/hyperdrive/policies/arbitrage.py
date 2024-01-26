@@ -1,4 +1,5 @@
 """Agent policy for arbitrade trading on the fixed rate"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

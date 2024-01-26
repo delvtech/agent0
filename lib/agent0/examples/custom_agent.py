@@ -1,4 +1,5 @@
 """Script to showcase setting up and running custom agents"""
+
 # %%
 from __future__ import annotations
 

@@ -1,4 +1,5 @@
 """Runs all fuzz tests forever."""
+
 from __future__ import annotations
 
 import argparse

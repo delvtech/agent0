@@ -1,4 +1,5 @@
 """Hyperdrive AssetId classes and methods"""
+
 from enum import IntEnum
 
 # TODO get this value from the deployed pool, putting this here now for reference

@@ -1,4 +1,5 @@
 """Script to showcase running default implemented agents."""
+
 # %%
 from __future__ import annotations
 

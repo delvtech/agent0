@@ -1,4 +1,5 @@
 """Web3 powered functions for interfacing with smart contracts"""
+
 from __future__ import annotations
 
 import logging

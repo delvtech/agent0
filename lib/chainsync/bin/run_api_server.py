@@ -1,4 +1,5 @@
 """A simple Flask server to run python scripts."""
+
 import argparse
 
 from chainsync.db.api import launch_flask

@@ -1,4 +1,5 @@
 """Script for loading agents with trading policies."""
+
 from __future__ import annotations
 
 import asyncio

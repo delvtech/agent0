@@ -1,4 +1,5 @@
 """Helper functions for mapping addresses to usernames."""
+
 from __future__ import annotations
 
 from typing import overload
@@ -52,13 +53,11 @@ def build_user_mapping(
 
 
 @overload
-def map_addresses(key: str, user_map: pd.DataFrame, map_column=None) -> pd.Series:
-    ...
+def map_addresses(key: str, user_map: pd.DataFrame, map_column=None) -> pd.Series: ...
 
 
 @overload
-def map_addresses(key: pd.Series | list, user_map: pd.DataFrame, map_column=None) -> pd.Series:
-    ...
+def map_addresses(key: pd.Series | list, user_map: pd.DataFrame, map_column=None) -> pd.Series: ...
 
 
 def map_addresses(key: pd.Series | list | str, user_map: pd.DataFrame, map_column=None) -> pd.DataFrame | pd.Series:

@@ -1,4 +1,5 @@
 """Calculates a ticker based on wallet deltas"""
+
 import pandas as pd
 
 

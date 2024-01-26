@@ -21,6 +21,7 @@
   - agent initial balance
   - agent final balance
 """
+
 from __future__ import annotations
 
 import argparse

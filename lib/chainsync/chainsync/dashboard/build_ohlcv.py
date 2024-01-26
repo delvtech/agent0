@@ -1,4 +1,5 @@
 """Builds the ohlcv dataframe for the dashboard."""
+
 from __future__ import annotations
 
 import pandas as pd

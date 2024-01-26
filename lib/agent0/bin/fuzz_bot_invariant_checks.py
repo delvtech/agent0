@@ -11,6 +11,7 @@ Given that, we will periodically run this test:
 - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
 - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
 """
+
 from __future__ import annotations
 
 import argparse

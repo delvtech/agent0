@@ -1,4 +1,5 @@
 """Utility function for logging agent crash reports."""
+
 from __future__ import annotations
 
 import getpass

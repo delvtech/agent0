@@ -1,4 +1,5 @@
 """Script for gathering all events emitted from the hyperdrive contract since the beginning of the chain."""
+
 import pandas as pd
 from chainsync.db.hyperdrive import get_transactions
 from fixedpointmath import FixedPoint

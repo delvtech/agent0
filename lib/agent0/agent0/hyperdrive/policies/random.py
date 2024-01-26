@@ -1,4 +1,5 @@
 """User strategy that opens or closes a random position with a random allowed amount."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

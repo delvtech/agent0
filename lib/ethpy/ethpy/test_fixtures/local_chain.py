@@ -1,4 +1,5 @@
 """Test fixture for deploying local anvil chain and initializing hyperdrive."""
+
 from __future__ import annotations
 
 import subprocess

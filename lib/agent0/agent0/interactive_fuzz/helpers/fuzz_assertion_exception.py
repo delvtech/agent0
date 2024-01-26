@@ -1,4 +1,5 @@
 """Helper functions for checks and exceptions for fuzz testing."""
+
 from __future__ import annotations
 
 from typing import Any

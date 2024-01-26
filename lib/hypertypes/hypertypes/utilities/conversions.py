@@ -1,4 +1,5 @@
 """Conversion for hypertypes to fixedpoint"""
+
 from __future__ import annotations
 
 import re

@@ -1,4 +1,5 @@
 """Helpers for advancing time wrt checkpoint boundaries"""
+
 from numpy.random._generator import Generator
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain

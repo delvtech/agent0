@@ -1,4 +1,5 @@
 """High-level interface for a Hyperdrive pool."""
+
 from __future__ import annotations
 
 import copy

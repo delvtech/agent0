@@ -1,4 +1,5 @@
 """Defines the accounts configuration from env vars."""
+
 from __future__ import annotations
 
 import json

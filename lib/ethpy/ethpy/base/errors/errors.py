@@ -1,4 +1,5 @@
 """Error handling for the hyperdrive ecosystem"""
+
 from __future__ import annotations
 
 from enum import Enum

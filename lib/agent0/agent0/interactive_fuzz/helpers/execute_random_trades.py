@@ -1,4 +1,5 @@
 """Return a list of results from opening a random longs and shorts."""
+
 from __future__ import annotations
 
 from typing import Literal, overload
@@ -124,15 +125,13 @@ def _get_open_trade_amount(
 @overload
 def _execute_trade(
     trade_type: Literal[HyperdriveActionType.OPEN_LONG], trade_amount: FixedPoint, agent: InteractiveHyperdriveAgent
-) -> OpenLong:
-    ...
+) -> OpenLong: ...
 
 
 @overload
 def _execute_trade(
     trade_type: Literal[HyperdriveActionType.OPEN_SHORT], trade_amount: FixedPoint, agent: InteractiveHyperdriveAgent
-) -> OpenShort:
-    ...
+) -> OpenShort: ...
 
 
 def _execute_trade(

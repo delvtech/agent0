@@ -1,4 +1,5 @@
 """Calculate the fixed interest rate."""
+
 from decimal import ROUND_DOWN, ROUND_UP, Decimal, localcontext
 
 import pandas as pd

@@ -1,4 +1,5 @@
 """Defines the eth chain connection configuration from env vars."""
+
 from __future__ import annotations
 
 import os

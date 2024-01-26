@@ -15,6 +15,7 @@
   - removing liquidity shouldn't result in the PV increasing (it should decrease)
   - adding liquidity shouldn't result in the PV decreasing (it should increase)
 """
+
 from __future__ import annotations
 
 import argparse

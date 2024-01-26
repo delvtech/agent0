@@ -28,6 +28,7 @@
   - lp total supply
   - longs outstanding
 """
+
 from __future__ import annotations
 
 import argparse
@@ -210,9 +211,9 @@ def fuzz_path_independence(
             check_data = {}
             pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
             check_data["present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
-            check_data[
-                "effective_share_reserves"
-            ] = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
+            check_data["effective_share_reserves"] = (
+                interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
+            )
             check_data["initial_pool_state"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves

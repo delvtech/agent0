@@ -1,4 +1,5 @@
 """Error types from Web3"""
+
 from typing import Literal, Sequence, TypedDict
 
 from web3.types import ABIFunctionParams

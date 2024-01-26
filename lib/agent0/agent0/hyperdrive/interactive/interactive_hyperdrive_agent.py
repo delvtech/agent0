@@ -1,4 +1,5 @@
 """The hyperdrive agent object that encapsulates an agent."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

@@ -1,4 +1,5 @@
 """Test the ability of bots to hit a target rate."""
+
 from __future__ import annotations
 
 import logging

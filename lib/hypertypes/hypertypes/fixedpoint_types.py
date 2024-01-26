@@ -1,4 +1,5 @@
 """Fixed point versions of common structs from the hyperdrive contracts."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

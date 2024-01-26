@@ -1,4 +1,5 @@
 """A checkpoint bot for Hyperdrive"""
+
 from __future__ import annotations
 
 import argparse
