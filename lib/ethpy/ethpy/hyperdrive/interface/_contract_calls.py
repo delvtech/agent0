@@ -1,4 +1,5 @@
 """Hyperdrive interface functions that require a contract call."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

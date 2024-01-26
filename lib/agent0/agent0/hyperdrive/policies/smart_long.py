@@ -1,4 +1,5 @@
 """Agent policy for leveraged long positions"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

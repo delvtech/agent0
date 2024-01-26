@@ -1,4 +1,5 @@
 """Utilities for handling transaction receipts"""
+
 from __future__ import annotations
 
 import warnings

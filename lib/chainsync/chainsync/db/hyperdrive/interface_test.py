@@ -1,4 +1,5 @@
 """CRUD tests for Transaction"""
+
 from datetime import datetime
 from decimal import Decimal
 

@@ -1,4 +1,5 @@
 """Close trades in a random order."""
+
 from __future__ import annotations
 
 from numpy.random._generator import Generator

@@ -1,4 +1,5 @@
 """Error handling for the hyperdrive ecosystem"""
+
 from typing import NamedTuple
 
 

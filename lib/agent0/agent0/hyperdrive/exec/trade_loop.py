@@ -1,4 +1,5 @@
 """Helper function for executing a set of trades"""
+
 from __future__ import annotations
 
 import asyncio

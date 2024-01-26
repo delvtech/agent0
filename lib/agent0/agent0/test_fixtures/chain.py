@@ -1,4 +1,5 @@
 """Local chain connected to a local database hosted in docker."""
+
 import logging
 import os
 from pathlib import Path

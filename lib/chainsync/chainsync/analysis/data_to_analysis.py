@@ -1,4 +1,5 @@
 """Functions to gather data from postgres, do analysis, and add back into postgres"""
+
 import logging
 from decimal import Decimal
 from typing import Type

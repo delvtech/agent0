@@ -1,4 +1,5 @@
 """Various agent0 utility functions."""
+
 from typing import NoReturn
 
 

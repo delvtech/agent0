@@ -1,4 +1,5 @@
 """Setup helper function for running eth agent experiments."""
+
 from __future__ import annotations
 
 import numpy as np

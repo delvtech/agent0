@@ -1,4 +1,5 @@
 """Core types used across the repo"""
+
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from dataclasses import asdict, dataclass, is_dataclass, replace

@@ -1,4 +1,5 @@
 """A container for hyperdrive contract return values."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

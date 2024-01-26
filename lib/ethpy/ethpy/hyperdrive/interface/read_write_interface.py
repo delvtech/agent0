@@ -1,4 +1,5 @@
 """High-level interface for writing to Hyperdrive smart contracts."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

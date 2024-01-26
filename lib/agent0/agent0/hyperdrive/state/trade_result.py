@@ -1,4 +1,5 @@
 """The resulting deltas of a market action"""
+
 # Please enter the commit message for your changes. Lines starting
 from __future__ import annotations
 

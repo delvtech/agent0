@@ -1,4 +1,5 @@
 """Functions and classes for setting up a web3py interface"""
+
 from __future__ import annotations
 
 from eth_typing import URI

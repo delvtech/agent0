@@ -1,4 +1,5 @@
 """Functions for storing Hyperdrive state."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

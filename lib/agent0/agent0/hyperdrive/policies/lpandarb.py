@@ -1,4 +1,5 @@
 """Agent policy for LP trading that also arbitrage on the fixed rate."""
+
 from __future__ import annotations
 
 import logging

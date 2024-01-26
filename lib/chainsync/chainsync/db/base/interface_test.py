@@ -1,4 +1,5 @@
 """CRUD tests for CheckpointInfo"""
+
 import numpy as np
 import pytest
 

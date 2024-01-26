@@ -1,4 +1,5 @@
 """Example script for using interactive hyperdrive."""
+
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode
 # pylint: disable=pointless-statement

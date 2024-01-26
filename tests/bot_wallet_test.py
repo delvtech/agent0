@@ -1,4 +1,5 @@
 """System test for checking calculated wallets versus wallets on chain."""
+
 from __future__ import annotations
 
 import logging

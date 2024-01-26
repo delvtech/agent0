@@ -1,4 +1,5 @@
 """Empty accounts for engaging with smart contracts"""
+
 from __future__ import annotations
 
 import logging

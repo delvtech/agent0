@@ -1,4 +1,5 @@
 """CRUD tests for UserMap"""
+
 import pytest
 
 from .schema import AddrToUsername, UsernameToUser

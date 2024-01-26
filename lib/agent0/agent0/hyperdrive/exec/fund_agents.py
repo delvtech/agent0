@@ -1,4 +1,5 @@
 """Fund agent private keys from a user key."""
+
 from __future__ import annotations
 
 import asyncio

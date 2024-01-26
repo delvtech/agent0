@@ -1,4 +1,5 @@
 """Builds the ticker for the dashboard."""
+
 import pandas as pd
 
 from .usernames import map_addresses
