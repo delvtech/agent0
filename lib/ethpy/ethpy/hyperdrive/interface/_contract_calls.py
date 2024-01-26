@@ -440,13 +440,20 @@ async def _async_add_liquidity(
     trade_amount: FixedPoint,
     min_apr: FixedPoint,
     max_apr: FixedPoint,
+    slippage_tolerance: FixedPoint | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
+    # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
+    if slippage_tolerance is not None:
+        raise NotImplementedError("Slippage tolerance for add liquidity not yet supported")
+
     agent_checksum_address = Web3.to_checksum_address(agent.address)
+    min_lp_share_price = 0
     fn_args = (
         trade_amount.scaled_value,
+        min_lp_share_price,
         min_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr below this amount
         max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
         (  # IHyperdrive.Options

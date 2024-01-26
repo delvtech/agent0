@@ -84,15 +84,15 @@ async def async_execute_single_agent_trade(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
-    wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException] = (
-        await asyncio.gather(
-            *[
-                async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
-                for i, trade_object in enumerate(trades)
-            ],
-            # Instead of throwing exception, return the exception to the caller here
-            return_exceptions=True,
-        )
+    wallet_deltas_or_exception: list[
+        tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException
+    ] = await asyncio.gather(
+        *[
+            async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
+            for i, trade_object in enumerate(trades)
+        ],
+        # Instead of throwing exception, return the exception to the caller here
+        return_exceptions=True,
     )
 
     # TODO Here, gather returns results based on original order of trades, but this order isn't guaranteed
@@ -286,7 +286,10 @@ async def async_match_contract_call_to_trade(
             assert min_apr, "min_apr is required for ADD_LIQUIDITY"
             max_apr = trade.max_apr
             assert max_apr, "max_apr is required for ADD_LIQUIDITY"
-            trade_result = await interface.async_add_liquidity(agent, trade.trade_amount, min_apr, max_apr, nonce=nonce)
+            # TODO implement slippage tolerance for add liquidity
+            trade_result = await interface.async_add_liquidity(
+                agent, trade.trade_amount, min_apr, max_apr, slippage_tolerance=None, nonce=nonce
+            )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
                     amount=-trade_result.base_amount,

@@ -255,6 +255,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         trade_amount: FixedPoint,
         min_apr: FixedPoint,
         max_apr: FixedPoint,
+        slippage_tolerance: FixedPoint | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to add liquidity to the Hyperdrive pool.
@@ -269,6 +270,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The minimum allowable APR after liquidity is added.
         max_apr: FixedPoint
             The maximum allowable APR after liquidity is added.
+        slippage_tolerance: FixedPoint, optional
+            Amount of slippage allowed from the trade.
+            If given, then the trade will not execute unless the slippage is below this value.
+            If not given, then execute the trade regardless of the slippage.
         nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
@@ -278,7 +283,14 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the absolute values for token quantities changed.
         """
         return await _async_add_liquidity(
-            self, agent, trade_amount, min_apr, max_apr, nonce, self.eth_config.preview_before_trade
+            self,
+            agent,
+            trade_amount,
+            min_apr,
+            max_apr,
+            slippage_tolerance=slippage_tolerance,
+            nonce=nonce,
+            preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     async def async_remove_liquidity(
