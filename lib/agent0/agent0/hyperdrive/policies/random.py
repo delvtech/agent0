@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from ethpy.base.errors import ContractCallException, ContractCallType
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
+from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
@@ -137,7 +140,35 @@ class Random(HyperdrivePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for opening a Hyperdrive short.
         """
-        maximum_trade_amount = interface.calc_max_short(wallet.balance.amount, interface.current_pool_state)
+        # Calc max short is crashing, we surround in try catch to log
+        try:
+            maximum_trade_amount = interface.calc_max_short(wallet.balance.amount, interface.current_pool_state)
+        # TODO pyo3 throws a PanicException here, which is derived from BaseException
+        # Ideally, we would import the exact exception in python here, but pyo3 doesn't
+        # expose this exception. Need to (1) fix the underlying calc_max_short bug, or
+        # (2) throw a python exception in the underlying rust code when this happens.
+        except BaseException as orig_exception:  # pylint: disable=broad-except
+            # TODO while this isn't strictly a contract call exception, we used the class
+            # to keep track of the original exception
+            exception = ContractCallException(
+                "Random policy: Error in rust call to calc_max_short",
+                orig_exception=orig_exception,
+                contract_call_type=ContractCallType.READ,
+                function_name_or_signature="rust::calc_max_short",
+                fn_args=(wallet.balance.amount, interface.current_pool_state),
+            )
+            crash_report = build_crash_trade_result(exception, interface)
+            # TODO get these parameters from config
+            log_hyperdrive_crash_report(
+                crash_report,
+                logging.ERROR,
+                crash_report_to_file=True,
+                crash_report_file_prefix="",
+                log_to_rollbar=True,
+            )
+            # We don't return a trade here if this fails
+            return []
+
         if maximum_trade_amount <= interface.pool_config.minimum_transaction_amount:
             return []
 
