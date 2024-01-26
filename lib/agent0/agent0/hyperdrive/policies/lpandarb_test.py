@@ -396,10 +396,8 @@ def test_predict_open_long(chain: Chain):
 
     bonds_discrepancy = float((actual_delta_bonds - predicted_delta_bonds) / predicted_delta_bonds)
     shares_discrepancy = float((actual_delta_shares - predicted_delta_shares) / predicted_delta_shares)
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")  # pylint: disable=logging-fstring-interpolation
-    logging.info(
-        f"discrepancy (%) for shares is {shares_discrepancy:e}"
-    )  # pylint: disable=logging-fstring-interpolation
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
 
     assert abs(bonds_discrepancy) < 1e-7
     assert abs(shares_discrepancy) < 1e-7
