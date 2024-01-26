@@ -211,10 +211,10 @@ class TestBotToDb:
             "time_stretch": expected_timestretch,
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
-            "curve_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
+            "curve_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
             "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
-            "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
-            "governance_zombie_fee": _to_unscaled_decimal(FixedPoint("0.1")),  # 10%
+            "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
+            "governance_zombie_fee": _to_unscaled_decimal(FixedPoint("0.03")),  # 3%
             "inv_time_stretch": expected_inv_timestretch,
         }
 
