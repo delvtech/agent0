@@ -322,30 +322,6 @@ def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_a
     assert isinstance(event, CloseShort)
 
 
-def calc_shares_needed_for_bonds(bonds_needed: FixedPoint, pool_state, interface) -> tuple[FixedPoint, FixedPoint]:
-    _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
-    spot_price = interface.calc_spot_price(pool_state)
-    price_discount = FixedPoint(1) - spot_price
-    # price_discount = FixedPoint(1) / spot_price - FixedPoint(1)
-    curve_fee = pool_state.pool_config.fees.curve
-    _shares_to_pool += _shares_to_pool * price_discount * curve_fee
-    governance_fee = pool_state.pool_config.fees.governance_lp
-    logging.info("curve fee is %s", curve_fee)
-    logging.info("governance fee is %s", governance_fee)
-    _shares_to_gov = _shares_to_pool * price_discount * curve_fee * governance_fee
-    _shares_to_pool -= _shares_to_gov
-    return _shares_to_pool, _shares_to_gov
-
-
-def apply_step(pool_state, bonds_needed, shares_needed, gov_fee):
-    if bonds_needed > 0:  # short case
-        pool_state.pool_info.share_reserves += -shares_needed - gov_fee
-    else:  # long case when bonds_needed < 0
-        pool_state.pool_info.share_reserves += shares_needed - gov_fee
-    pool_state.pool_info.bond_reserves += bonds_needed
-    return pool_state
-
-
 @pytest.mark.anvil
 def test_predict_open_long(chain: Chain):
     """Predict oucome of an open long."""
