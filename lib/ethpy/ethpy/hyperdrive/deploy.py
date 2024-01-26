@@ -12,9 +12,7 @@ from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.receipts import get_transaction_logs
 from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
-
-# TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
-from hypertypes import Fees, PoolDeployConfig
+from hypertypes import PoolDeployConfig
 from hypertypes.types import (
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,

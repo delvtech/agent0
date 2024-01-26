@@ -130,10 +130,10 @@ class TestHyperdriveReadInterface:
             "fee_collector": deploy_account.address,
         }
         expected_pool_config["fees"] = FeesFP(
-            curve=FixedPoint("0.1"),  # 10,
+            curve=FixedPoint("0.01"),  # 1%,
             flat=FixedPoint("0.0005"),  # 0.05%
-            governance_lp=FixedPoint("0.01"),  # 1%
-            governance_zombie=FixedPoint("0.1"),  # 10%
+            governance_lp=FixedPoint("0.15"),  # 15%
+            governance_zombie=FixedPoint("0.03"),  # 3%
         )
 
         api_pool_config = hyperdrive_read_interface.current_pool_state.pool_config
