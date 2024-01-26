@@ -112,7 +112,7 @@ You then can update the generated `hypertypes` python package by running `pypech
 
 ```bash
 pip install --upgrade pip && pip install --upgrade pypechain
-pypechain packages/hyperdrive/src/abis/ --output_dir lib/hypertypes/hypertypes/
+pypechain packages/hyperdrive/src/abis/ --output-dir lib/hypertypes/hypertypes/
 ```
 
 # Additional useful applications
