@@ -374,7 +374,7 @@ def invariant_check(
     else:
         raise ValueError("Invalid types for open/close trade events")
 
-    # We check vault heres here after both trades
+    # We check vault shares heres here after both trades
     pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
     expected_vault_shares = (
         pool_state.pool_info.share_reserves
