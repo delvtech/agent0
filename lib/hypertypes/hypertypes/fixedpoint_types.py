@@ -38,7 +38,7 @@ class PoolInfoFP:
     zombie_share_reserves: FixedPoint
     bond_reserves: FixedPoint
     lp_total_supply: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     longs_outstanding: FixedPoint
     long_average_maturity_time: FixedPoint
     shorts_outstanding: FixedPoint
@@ -56,7 +56,7 @@ class PoolConfigFP:
     base_token: str
     linker_factory: str
     linker_code_hash: bytes
-    initial_share_price: FixedPoint
+    initial_vault_share_price: FixedPoint
     minimum_share_reserves: FixedPoint
     minimum_transaction_amount: FixedPoint
     position_duration: int
@@ -77,4 +77,4 @@ class PoolConfigFP:
 class CheckpointFP:
     """Checkpoint struct."""
 
-    share_price: FixedPoint
+    vault_share_price: FixedPoint

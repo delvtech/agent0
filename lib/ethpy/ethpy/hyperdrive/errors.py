@@ -25,6 +25,8 @@ def lookup_hyperdrive_error_selector(error_selector: str) -> str:
 class HyperdriveErrors(NamedTuple):
     """A collection of error selectors by the name."""
 
+    # TODO need to update these, ideally use pypechain generated errors
+
     ##################
     ### Hyperdrive ###
     ##################
@@ -32,7 +34,7 @@ class HyperdriveErrors(NamedTuple):
     InvalidApr: str = "0x76c22a22"
     InvalidBaseToken: str = "0x0e442a4a"
     InvalidCheckpointTime: str = "0xecd29e81"
-    InvalidInitialSharePrice: str = "0x55f2a42f"
+    InvalidInitialVaultSharePrice: str = "0x094b19ad"
     InvalidMaturityTime: str = "0x987dadd3"
     InvalidPositionDuration: str = "0x4a7fff9e"
     InvalidFeeAmounts: str = "0x45ee5986"

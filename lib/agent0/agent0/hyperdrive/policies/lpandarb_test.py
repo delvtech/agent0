@@ -8,11 +8,11 @@ from copy import deepcopy
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import LocalChain, InteractiveHyperdrive
-from agent0.hyperdrive.policies.zoo import Zoo
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
+from agent0.hyperdrive.policies.zoo import Zoo
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
@@ -348,8 +348,8 @@ def test_predict_open_long(chain: Chain):
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
     shares_needed = interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-    share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_price
-    base_needed = shares_needed * share_price
+    vault_share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.vault_share_price
+    base_needed = shares_needed * vault_share_price
     # use rust to predict trade outcome
     bonds_after_fees = interactive_hyperdrive.hyperdrive_interface.calc_open_long(base_needed)
     logging.info("bonds_after_fees is %s", bonds_after_fees)
@@ -362,7 +362,9 @@ def test_predict_open_long(chain: Chain):
     logging.info("bond_fees_to_gov is %s", bond_fees_to_gov)
 
     predicted_delta_bonds = -bonds_after_fees - bond_fees_to_gov
-    predicted_delta_shares = base_needed / share_price * (FixedPoint(1) - price_discount * curve_fee * governance_fee)
+    predicted_delta_shares = (
+        base_needed / vault_share_price * (FixedPoint(1) - price_discount * curve_fee * governance_fee)
+    )
     logging.info("predicted delta bonds is %s", predicted_delta_bonds)
     logging.info("predicted delta shares is %s", predicted_delta_shares)
 

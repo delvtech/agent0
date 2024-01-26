@@ -353,7 +353,9 @@ class LPandArb(HyperdrivePolicy):
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-                amount_base = min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.share_price
+                amount_base = (
+                    min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.vault_share_price
+                )
                 action_list.append(interface.open_long_trade(amount_base, self.slippage_tolerance))
 
         if low_fixed_rate_detected:

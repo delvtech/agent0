@@ -197,7 +197,7 @@ def data_to_analysis(
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
         if calc_pnl:
-            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, pool_info["share_price"].iloc[-1])
+            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, pool_info["vault_share_price"].iloc[-1])
         else:
             pnl_df = np.nan
 
@@ -231,7 +231,7 @@ def data_to_analysis(
         pool_info["share_reserves"],
         pool_info["share_adjustment"],
         pool_info["bond_reserves"],
-        pool_config["initial_share_price"],
+        pool_config["initial_vault_share_price"],
         pool_config["time_stretch"],
     )
 
@@ -240,7 +240,7 @@ def data_to_analysis(
 
     # Calculate base buffer
     base_buffer = calc_base_buffer(
-        pool_info["longs_outstanding"], pool_info["share_price"], pool_config["minimum_share_reserves"]
+        pool_info["longs_outstanding"], pool_info["vault_share_price"], pool_config["minimum_share_reserves"]
     )
 
     pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)

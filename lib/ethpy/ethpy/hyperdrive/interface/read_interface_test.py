@@ -53,14 +53,14 @@ class TestHyperdriveReadInterface:
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand."""
         # get pool config variables
         pool_config = hyperdrive_read_interface.current_pool_state.pool_config
-        init_share_price: FixedPoint = pool_config.initial_share_price
+        init_vault_share_price: FixedPoint = pool_config.initial_vault_share_price
         time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
         pool_info = hyperdrive_read_interface.current_pool_state.pool_info
         share_reserves: FixedPoint = pool_info.share_reserves
         bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
-        spot_price = ((init_share_price * share_reserves) / bond_reserves) ** time_stretch
+        spot_price = ((init_vault_share_price * share_reserves) / bond_reserves) ** time_stretch
         assert abs(spot_price - hyperdrive_read_interface.calc_spot_price()) <= FixedPoint(1e-18)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
@@ -120,7 +120,7 @@ class TestHyperdriveReadInterface:
         hyperdrive_contract_addresses = local_hyperdrive_pool.hyperdrive_contract_addresses
         expected_pool_config = {
             "base_token": hyperdrive_contract_addresses.base_token,
-            "initial_share_price": FixedPoint("1"),
+            "initial_vault_share_price": FixedPoint("1"),
             "minimum_share_reserves": FixedPoint("10"),
             "minimum_transaction_amount": FixedPoint("0.001"),
             "position_duration": 60 * 60 * 24 * 365,  # 1 year
@@ -161,7 +161,7 @@ class TestHyperdriveReadInterface:
             "zombie_base_proceeds",
             "zombie_share_reserves",
             "lp_total_supply",
-            "share_price",
+            "vault_share_price",
             "share_adjustment",
             "lp_share_price",
             "long_exposure",
@@ -186,7 +186,7 @@ class TestHyperdriveReadInterface:
         api_spot_price = hyperdrive_read_interface.calc_spot_price()
         effective_share_reserves = api_pool_info.share_reserves - api_pool_info.share_adjustment
         expected_spot_price = (
-            (api_pool_config.initial_share_price * effective_share_reserves) / api_pool_info.bond_reserves
+            (api_pool_config.initial_vault_share_price * effective_share_reserves) / api_pool_info.bond_reserves
         ) ** api_pool_config.time_stretch
 
         api_fixed_rate = hyperdrive_read_interface.calc_fixed_rate()

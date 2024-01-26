@@ -339,8 +339,8 @@ def invariant_check(
         assert close_trade_event.bond_amount == open_trade_event.bond_amount
 
         # get the share prices
-        open_share_price = starting_checkpoint.share_price
-        closing_share_price = maturity_checkpoint.share_price
+        open_vault_share_price = starting_checkpoint.vault_share_price
+        closing_vault_share_price = maturity_checkpoint.vault_share_price
 
         # interested accrued in shares = (c1 / c0 + flat_fee) * dy - c1 * dz
         flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
@@ -352,7 +352,7 @@ def invariant_check(
 
         # get the final interest accrued
         expected_short_base_amount = (
-            open_trade_event.bond_amount * (closing_share_price / open_share_price + flat_fee_percent)
+            open_trade_event.bond_amount * (closing_vault_share_price / open_vault_share_price + flat_fee_percent)
             - share_reserves_delta_plus_flat_fee
         )
 
@@ -382,7 +382,7 @@ def invariant_check(
             pool_state.pool_info.shorts_outstanding
             + (pool_state.pool_info.shorts_outstanding * pool_state.pool_config.fees.flat)
         )
-        / pool_state.pool_info.share_price
+        / pool_state.pool_info.vault_share_price
         + pool_state.gov_fees_accrued
         + pool_state.pool_info.withdrawal_shares_proceeds
         + pool_state.pool_info.zombie_share_reserves

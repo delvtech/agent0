@@ -20,7 +20,7 @@ class OpenLong:
         The maturity time for the opened long
     base_amount: FixedPoint
         The amount of longs opened in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The value of shares during the time of the trade.
     bond_amount: FixedPoint
         The amount of longs opened in units of bonds.
@@ -30,7 +30,7 @@ class OpenLong:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     bond_amount: FixedPoint
 
 
@@ -48,7 +48,7 @@ class CloseLong:
         The maturity time for the closed long
     base_amount: FixedPoint
         The amount of longs closed in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price for the long.
     bond_amount: FixedPoint
         The amount of longs closed in units of bonds.
@@ -58,7 +58,7 @@ class CloseLong:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     bond_amount: FixedPoint
 
 
@@ -76,7 +76,7 @@ class OpenShort:
         The maturity time for the opened short
     base_amount: FixedPoint
         The amount of shorts opened in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price for the short.
     bond_amount: FixedPoint
         The amount of shorts opened in units of bonds.
@@ -86,7 +86,7 @@ class OpenShort:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     bond_amount: FixedPoint
 
 
@@ -104,7 +104,7 @@ class CloseShort:
         The maturity time for the closed short
     base_amount: FixedPoint
         The amount of shorts closed in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price for the short.
     bond_amount: FixedPoint
         The amount of shorts closed in units of bonds.
@@ -114,7 +114,7 @@ class CloseShort:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     bond_amount: FixedPoint
 
 
@@ -130,7 +130,7 @@ class AddLiquidity:
         The amount of liquidity added in units of lp.
     base_amount: FixedPoint
         The amount of liquidity added in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price for this trade.
     lp_share_price: FixedPoint
         The lp share price for this trade.
@@ -139,7 +139,7 @@ class AddLiquidity:
     provider: ChecksumAddress
     lp_amount: FixedPoint
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     lp_share_price: FixedPoint
 
 
@@ -155,7 +155,7 @@ class RemoveLiquidity:
         The amount of liquidity removed in units of lp.
     base_amount: FixedPoint
         The amount of liquidity removed in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price for this trade.
     withdrawal_share_amount: FixedPoint
         The amount of withdrawal shares received from removing liquidity.
@@ -166,7 +166,7 @@ class RemoveLiquidity:
     provider: ChecksumAddress
     lp_amount: FixedPoint
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     withdrawal_share_amount: FixedPoint
     lp_share_price: FixedPoint
 
@@ -183,14 +183,14 @@ class RedeemWithdrawalShares:
         The amount of withdrawal shares redeemed in units of shares.
     base_amount: FixedPoint
         The amount of withdrawal shares redeemed in units of base.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price for this trade.
     """
 
     provider: ChecksumAddress
     withdrawal_share_amount: FixedPoint
     base_amount: FixedPoint
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
 
 
 @dataclass
@@ -201,7 +201,7 @@ class CreateCheckpoint:
     ----------
     checkpoint_time: int
         The seconds epoch time for this checkpoint.
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
         The share price at the checkpoint.
     matured_shorts: FixedPoint
         The amount of shorts that matured within this checkpoint
@@ -212,7 +212,7 @@ class CreateCheckpoint:
     """
 
     checkpoint_time: int
-    share_price: FixedPoint
+    vault_share_price: FixedPoint
     matured_shorts: FixedPoint
     matured_longs: FixedPoint
     lp_share_price: FixedPoint

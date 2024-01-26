@@ -158,17 +158,17 @@ async def _async_open_long(
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    # min_share_price: int
+    # min_vault_share_price: int
     #   Minium share price at which to open the long.
     #   This allows traders to protect themselves from opening a long in
     #   a checkpoint where negative interest has accrued.
-    min_share_price = 0  # TODO: give the user access to this parameter
+    min_vault_share_price = 0  # TODO: give the user access to this parameter
     min_output = 0  # TODO: give the user access to this parameter
 
     fn_args = (
         trade_amount.scaled_value,
         min_output,
-        min_share_price,
+        min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             True,  # asBase
@@ -196,7 +196,7 @@ async def _async_open_long(
         fn_args = (
             trade_amount.scaled_value,
             min_output,
-            min_share_price,
+            min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 True,  # asBase
@@ -303,15 +303,15 @@ async def _async_open_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
-    # min_share_price: int
+    # min_vault_share_price: int
     #   Minium share price at which to open the short.
     #   This allows traders to protect themselves from opening a long in
     #   a checkpoint where negative interest has accrued.
-    min_share_price = 0  # TODO: give the user access to this parameter
+    min_vault_share_price = 0  # TODO: give the user access to this parameter
     fn_args = (
         trade_amount.scaled_value,
         max_deposit,
-        min_share_price,
+        min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             True,  # asBase
@@ -339,7 +339,7 @@ async def _async_open_short(
         fn_args = (
             trade_amount.scaled_value,
             max_deposit,
-            min_share_price,
+            min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 True,  # asBase

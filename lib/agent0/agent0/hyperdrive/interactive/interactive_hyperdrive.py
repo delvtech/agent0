@@ -19,16 +19,9 @@ from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import get_checkpoint_info
 from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
-from chainsync.db.hyperdrive import (
-    get_latest_block_number_from_analysis_table,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_ticker,
-    get_total_wallet_pnl_over_time,
-    get_wallet_deltas,
-    get_wallet_pnl,
-)
+from chainsync.db.hyperdrive import (get_latest_block_number_from_analysis_table, get_pool_analysis, get_pool_config,
+                                     get_pool_info, get_ticker, get_total_wallet_pnl_over_time, get_wallet_deltas,
+                                     get_wallet_pnl)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
@@ -39,7 +32,6 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptB
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hyperdrivepy import get_time_stretch
-
 # TODO: Fees should be able to be imported directly from hypertypes (see type: ignore on Fees constructors)
 from hypertypes import Fees, PoolDeployConfig
 from numpy.random._generator import Generator
@@ -56,16 +48,8 @@ from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStat
 from agent0.test_utils import assert_never
 
 from .chain import Chain
-from .event_types import (
-    AddLiquidity,
-    CloseLong,
-    CloseShort,
-    CreateCheckpoint,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
+from .event_types import (AddLiquidity, CloseLong, CloseShort, CreateCheckpoint, OpenLong, OpenShort,
+                          RedeemWithdrawalShares, RemoveLiquidity)
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
@@ -507,7 +491,7 @@ class InteractiveHyperdrive:
         if check_if_exists:
             checkpoint = self.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
             # If it exists, don't create a checkpoint and return None.
-            if checkpoint.sharePrice > 0:
+            if checkpoint.vaultSharePrice > 0:
                 return None
 
         try:
@@ -522,7 +506,7 @@ class InteractiveHyperdrive:
         # a checkpoint isn't a trade result
         return CreateCheckpoint(
             checkpoint_time=tx_receipt.checkpoint_time,
-            share_price=tx_receipt.share_price,
+            vault_share_price=tx_receipt.vault_share_price,
             matured_shorts=tx_receipt.matured_shorts,
             matured_longs=tx_receipt.matured_longs,
             lp_share_price=tx_receipt.lp_share_price,
@@ -1171,49 +1155,56 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
+    ) -> OpenLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
+    ) -> CloseLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
+    ) -> OpenShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
+    ) -> CloseShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
+    ) -> AddLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
+    ) -> RemoveLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
+    ) -> RedeemWithdrawalShares:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
@@ -1229,7 +1220,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1239,7 +1230,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1249,7 +1240,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1259,7 +1250,7 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1268,7 +1259,7 @@ class InteractiveHyperdrive:
                     provider=to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
 
@@ -1277,7 +1268,7 @@ class InteractiveHyperdrive:
                     provider=to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
@@ -1287,7 +1278,7 @@ class InteractiveHyperdrive:
                     provider=to_checksum_address(tx_receipt.provider),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     base_amount=tx_receipt.base_amount,
-                    share_price=tx_receipt.share_price,
+                    vault_share_price=tx_receipt.vault_share_price,
                 )
 
             case _:

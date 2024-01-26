@@ -81,20 +81,20 @@ def _calc_open_short(
     pool_state: PoolState,
     short_amount: FixedPoint,
     spot_price: FixedPoint,
-    open_share_price: FixedPoint | None = None,
+    open_vault_share_price: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    open_share_price_str: str | None
-    if open_share_price is None:  # keep it None
-        open_share_price_str = None
+    open_vault_share_price_str: str | None
+    if open_vault_share_price is None:  # keep it None
+        open_vault_share_price_str = None
     else:  # convert FixedPoint to string
-        open_share_price_str = str(open_share_price.scaled_value)
+        open_vault_share_price_str = str(open_vault_share_price.scaled_value)
     short_deposit = hyperdrivepy.calculate_open_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(short_amount.scaled_value),
         str(spot_price.scaled_value),
-        open_share_price_str,  # str | None
+        open_vault_share_price_str,  # str | None
     )
     return FixedPoint(scaled_value=int(short_deposit))
 
@@ -102,8 +102,8 @@ def _calc_open_short(
 def _calc_close_short(
     pool_state: PoolState,
     bond_amount: FixedPoint,
-    open_share_price: FixedPoint,
-    close_share_price: FixedPoint,
+    open_vault_share_price: FixedPoint,
+    close_vault_share_price: FixedPoint,
     normalized_time_remaining: FixedPoint,
 ) -> FixedPoint:
     """See API for documentation."""
@@ -111,8 +111,8 @@ def _calc_close_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(bond_amount.scaled_value),
-        str(open_share_price.scaled_value),
-        str(close_share_price.scaled_value),
+        str(open_vault_share_price.scaled_value),
+        str(close_vault_share_price.scaled_value),
         str(normalized_time_remaining.scaled_value),
     )
     return FixedPoint(scaled_value=int(short_returns))
@@ -188,10 +188,10 @@ def _calc_fees_out_given_bonds_in(
         * pool_state.pool_config.fees.curve
         * bonds_in
         * normalized_time_remaining
-    ) / pool_state.pool_config.initial_share_price
+    ) / pool_state.pool_config.initial_vault_share_price
     flat_fee = (
         bonds_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
-    ) / pool_state.pool_config.initial_share_price
+    ) / pool_state.pool_config.initial_vault_share_price
     gov_fee = (
         curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
     )
@@ -213,12 +213,12 @@ def _calc_fees_out_given_shares_in(
     curve_fee = (
         ((FixedPoint(1) / _calc_spot_price(pool_state)) - FixedPoint(1))
         * pool_state.pool_config.fees.curve
-        * pool_state.pool_config.initial_share_price
+        * pool_state.pool_config.initial_vault_share_price
         * shares_in
     )
     flat_fee = (
         shares_in * (FixedPoint(1) - normalized_time_remaining) * pool_state.pool_config.fees.flat
-    ) / pool_state.pool_config.initial_share_price
+    ) / pool_state.pool_config.initial_vault_share_price
     gov_fee = (
         curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
     )
@@ -237,7 +237,7 @@ def _calc_bonds_given_shares_and_rate(
         scaled_value=int(
             hyperdrivepy.calculate_initial_bond_reserves(
                 str(target_shares.scaled_value),
-                str(pool_state.pool_config.initial_share_price.scaled_value),
+                str(pool_state.pool_config.initial_vault_share_price.scaled_value),
                 str(target_rate.scaled_value),
                 str(pool_state.pool_config.position_duration),
                 str(pool_state.pool_config.time_stretch.scaled_value),
@@ -269,7 +269,7 @@ def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
                 pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
                 pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
                 budget=str(budget.scaled_value),
-                open_share_price=str(pool_state.pool_info.share_price.scaled_value),
+                open_vault_share_price=str(pool_state.pool_info.vault_share_price.scaled_value),
                 checkpoint_exposure=str(pool_state.exposure.scaled_value),
                 maybe_conservative_price=None,
                 maybe_max_iterations=None,

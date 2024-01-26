@@ -203,7 +203,7 @@ class TestBotToDb:
         expected_pool_config = {
             "contract_address": hyperdrive_contract_addresses.erc4626_hyperdrive,
             "base_token": hyperdrive_contract_addresses.base_token,
-            "initial_share_price": _to_unscaled_decimal(FixedPoint("1")),
+            "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
             "position_duration": 60 * 60 * 24 * 365,  # 1 year
@@ -242,7 +242,7 @@ class TestBotToDb:
             "zombie_share_reserves",
             "bond_reserves",
             "lp_total_supply",
-            "share_price",
+            "vault_share_price",
             "share_adjustment",
             "lp_share_price",
             "long_exposure",

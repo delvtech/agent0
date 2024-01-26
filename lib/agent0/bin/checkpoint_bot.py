@@ -47,7 +47,7 @@ def does_checkpoint_exist(hyperdrive_contract: IERC4626HyperdriveContract, check
     """
     checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
     logging.info("%s", checkpoint)
-    return checkpoint.sharePrice > 0
+    return checkpoint.vaultSharePrice > 0
 
 
 def get_config() -> tuple[EthConfig, EnvironmentConfig]:
