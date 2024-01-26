@@ -23,6 +23,9 @@ TRADE_AMOUNTS = [0.003, 1e4, 1e5]  # 0.003 is three times the minimum transactio
 PRECISION = FixedPoint(1e-5)
 YEAR_IN_SECONDS = 31_536_000
 
+# pylint: disable=missing-function-docstring,too-many-statements,logging-fstring-interpolation,missing-return-type-doc
+# pylint: disable=missing-return-doc,too-many-function-args
+
 
 @pytest.fixture(scope="function")
 def interactive_hyperdrive(chain: LocalChain) -> InteractiveHyperdrive:
