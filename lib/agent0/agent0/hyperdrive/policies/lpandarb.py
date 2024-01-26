@@ -61,32 +61,6 @@ def calc_shares_needed_for_bonds(
     return _shares_to_pool, _shares_to_gov
 
 
-def calc_reserves_to_hit_target_rate_closed_form(
-    target_rate: FixedPoint, interface: HyperdriveReadInterface
-) -> tuple[FixedPoint, FixedPoint, int, float]:
-    """Calculate the bonds and shares needed to hit the target fixed rate.
-
-    Using closed form solution.
-
-    For change in shares:
-    \Delta z = \frac{1}{\mu} \cdot (\frac{
-    \frac{c}{\mu}  \cdot (\mu \cdot z)^{1 - t} + y^{1 - t}}{(\frac{c}{\mu} + (1 + r')^{1 - t})})^\frac{1}{1-t} - z
-    in algebraic terms:
-    delta_z = (1 / mu) * (
-            ((c / mu) * (mu * z) ** (1 - t) + y ** (1 - t))
-            / ((c / mu) + (1 + r) ** (1 - t))
-        ) ** (1 / (1 - t)) - z
-
-    For change in bonds:
-    \Delta y = (\frac{\frac{c}{\mu}  \cdot (\mu \cdot z)^{1 - t} + y^{1 - t}}{(\frac{c}{\mu}  \cdot (\frac{1}{1 + r'})^{1 - t} + 1)})^\frac{1}{1-t} -y
-    in algebraic terms:
-    delta_y = (
-            ((c / mu) * (mu * z) ** (1 - t) + y ** (1 - t))
-            / ((c / mu) * (1 / (1 + r)) ** (1 - t) + 1)
-        ) ** (1 / (1 - t)) - y
-    """
-
-
 def calc_reserves_to_hit_target_rate(
     target_rate: FixedPoint, interface: HyperdriveReadInterface
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
