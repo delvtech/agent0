@@ -304,6 +304,7 @@ def invariant_check(
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
+    # pylint: disable=too-many-statements
     failed = False
 
     exception_message: list[str] = ["Fuzz Long/Short Maturity Values Invariant Check"]
@@ -352,7 +353,8 @@ def invariant_check(
         if actual_vault_shares < expected_vault_shares:
             difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
             exception_message.append(
-                f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=} after mature long. {difference_in_wei=}. "
+                f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=} after mature long. "
+                f"{difference_in_wei=}. "
             )
             exception_data["invariance_check:expected_long_vault_shares"] = expected_vault_shares
             exception_data["invariance_check:actual_long_vault_shares"] = actual_vault_shares
@@ -415,7 +417,8 @@ def invariant_check(
         if actual_vault_shares < expected_vault_shares:
             difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
             exception_message.append(
-                f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=} after mature short. {difference_in_wei=}. "
+                f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=} after mature short. "
+                f"{difference_in_wei=}. "
             )
             exception_data["invariance_check:expected_short_vault_shares"] = expected_vault_shares
             exception_data["invariance_check:actual_short_vault_shares"] = actual_vault_shares
