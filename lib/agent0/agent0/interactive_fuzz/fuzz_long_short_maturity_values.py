@@ -334,6 +334,31 @@ def invariant_check(
             exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
 
+        # Check vault shares after long matures
+        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        expected_vault_shares = (
+            pool_state.pool_info.share_reserves
+            + (
+                pool_state.pool_info.shorts_outstanding
+                + (pool_state.pool_info.shorts_outstanding * pool_state.pool_config.fees.flat)
+            )
+            / pool_state.pool_info.vault_share_price
+            + pool_state.gov_fees_accrued
+            + pool_state.pool_info.withdrawal_shares_proceeds
+            + pool_state.pool_info.zombie_share_reserves
+        )
+        actual_vault_shares = pool_state.vault_shares
+
+        if actual_vault_shares < expected_vault_shares:
+            difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
+            exception_message.append(
+                f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=} after mature long. {difference_in_wei=}. "
+            )
+            exception_data["invariance_check:expected_long_vault_shares"] = expected_vault_shares
+            exception_data["invariance_check:actual_long_vault_shares"] = actual_vault_shares
+            exception_data["invariance_check:long_vault_shares_difference_in_wei"] = difference_in_wei
+            failed = True
+
     elif isinstance(open_trade_event, OpenShort) and isinstance(close_trade_event, CloseShort):
         # Ensure we close the trade for all of the opened bonds
         assert close_trade_event.bond_amount == open_trade_event.bond_amount
@@ -371,33 +396,33 @@ def invariant_check(
             exception_data["invariance_check:expected_short_base_amount"] = expected_short_base_amount
             exception_data["invariance_check:short_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
+
+        # Check vault shares after short matures
+        pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+        expected_vault_shares = (
+            pool_state.pool_info.share_reserves
+            + (
+                pool_state.pool_info.shorts_outstanding
+                + (pool_state.pool_info.shorts_outstanding * pool_state.pool_config.fees.flat)
+            )
+            / pool_state.pool_info.vault_share_price
+            + pool_state.gov_fees_accrued
+            + pool_state.pool_info.withdrawal_shares_proceeds
+            + pool_state.pool_info.zombie_share_reserves
+        )
+        actual_vault_shares = pool_state.vault_shares
+
+        if actual_vault_shares < expected_vault_shares:
+            difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
+            exception_message.append(
+                f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=} after mature short. {difference_in_wei=}. "
+            )
+            exception_data["invariance_check:expected_short_vault_shares"] = expected_vault_shares
+            exception_data["invariance_check:actual_short_vault_shares"] = actual_vault_shares
+            exception_data["invariance_check:short_vault_shares_difference_in_wei"] = difference_in_wei
+            failed = True
     else:
         raise ValueError("Invalid types for open/close trade events")
-
-    # We check vault shares heres here after both trades
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-    expected_vault_shares = (
-        pool_state.pool_info.share_reserves
-        + (
-            pool_state.pool_info.shorts_outstanding
-            + (pool_state.pool_info.shorts_outstanding * pool_state.pool_config.fees.flat)
-        )
-        / pool_state.pool_info.vault_share_price
-        + pool_state.gov_fees_accrued
-        + pool_state.pool_info.withdrawal_shares_proceeds
-        + pool_state.pool_info.zombie_share_reserves
-    )
-    actual_vault_shares = pool_state.vault_shares
-
-    if actual_vault_shares < expected_vault_shares:
-        difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
-        exception_message.append(
-            f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=}. {difference_in_wei=}. "
-        )
-        exception_data["invariance_check:expected_vault_shares"] = expected_vault_shares
-        exception_data["invariance_check:actual_vault_shares"] = actual_vault_shares
-        exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
-        failed = True
 
     if failed:
         logging.critical("\n".join(exception_message))
