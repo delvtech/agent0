@@ -57,5 +57,10 @@ def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
 
+    # mockHyperdriveMath still exists in artifacts on infra, but it shouldn't be there.
+    # Hence, we remove it here
+    if "mockHyperdriveMath" in addresses_json:
+        del addresses_json["mockHyperdriveMath"]
+
     addresses = HyperdriveAddresses(**{camel_to_snake(key): value for key, value in addresses_json.items()})
     return addresses
