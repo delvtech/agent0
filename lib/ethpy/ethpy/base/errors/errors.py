@@ -85,6 +85,7 @@ def decode_error_selector_for_contract(error_selector: str, contract: Contract) 
         ]
         error_name = "InsufficientLiquidity: "
         error_name += insufficient_liquidity_reason[enum_selector_int]
+        return error_name
 
     abi = contract.abi
     if not abi:
