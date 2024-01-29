@@ -78,7 +78,7 @@ def test_funding_and_trades(chain: LocalChain):
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = InteractiveHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
-        initial_fixed_rate=FixedPoint("0.05"),
+        initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches 2 pools on the same local chain
