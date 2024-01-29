@@ -535,9 +535,9 @@ async def async_smart_contract_transact(
         orig_exception: list[Exception] = [err]
         try:
             smart_contract_preview_transaction(
-                contract=contract,
-                signer_address=signer.address,
-                function_name_or_signature=function_name_or_signature,
+                contract,
+                signer.address,
+                function_name_or_signature,
                 *fn_args,
                 block_number=BlockNumber(block_number),
                 read_retry_count=1,  # No retries for this preview
@@ -697,9 +697,9 @@ def smart_contract_transact(
         orig_exception: list[Exception] = [err]
         try:
             smart_contract_preview_transaction(
-                contract=contract,
-                signer_address=signer.address,
-                function_name_or_signature=function_name_or_signature,
+                contract,
+                signer.address,
+                function_name_or_signature,
                 *fn_args,
                 block_number=BlockNumber(block_number),
                 read_retry_count=1,  # No retries for this preview
