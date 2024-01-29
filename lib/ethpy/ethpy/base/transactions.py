@@ -152,7 +152,7 @@ def smart_contract_preview_transaction(
         The arguments passed to the contract method.
     block_number: BlockNumber | None
         If set, will query the chain on the specified block
-    read_retry_count: BlockNumber | None
+    read_retry_count: int | None
         The number of times to retry the read call if it fails. Defaults to 5.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.

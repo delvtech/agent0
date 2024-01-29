@@ -31,7 +31,7 @@ from agent0.test_utils import assert_never
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
 
-DEFAULT_READ_RETRY_COUNT = 5
+from ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
 
 
 async def async_execute_single_agent_trade(
