@@ -12,7 +12,7 @@ from ethpy import EthConfig
 from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
-from web3.exceptions import ContractLogicError, ContractPanicError
+from web3.exceptions import ContractCustomError, ContractPanicError
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
@@ -495,8 +495,10 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "addLiquidity"
             # This throws a contract logic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractLogicError)
-            assert "TRANSFER_FROM_FAILED" in exc.orig_exception.args[0]
+            assert isinstance(exc.orig_exception, ContractPanicError)
+            assert (
+                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
+            )
 
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_zero(
@@ -514,10 +516,8 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "removeLiquidity"
             # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_close_long_from_zero(
@@ -536,10 +536,8 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeLong"
             # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_close_short_from_zero(
@@ -558,10 +556,8 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeShort"
             # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_share_from_zero(
@@ -597,10 +593,8 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "removeLiquidity"
             # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_close_long_from_nonzero(
@@ -618,10 +612,8 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeLong"
             # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_close_short_from_nonzero(
@@ -639,10 +631,8 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeShort"
             # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractPanicError)
-            assert (
-                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-            )
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_from_nonzero(
