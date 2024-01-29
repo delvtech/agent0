@@ -155,6 +155,15 @@ OpenShort = ABIEvent(
     type="event",
 )
 
+PauseStatusUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="isPaused", type="bool"),
+    ],
+    name="PauseStatusUpdated",
+    type="event",
+)
+
 PauserUpdated = ABIEvent(
     anonymous=False,
     inputs=[

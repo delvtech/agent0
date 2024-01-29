@@ -7,17 +7,19 @@ https://github.com/delvtech/pypechain"""
 # remove this pylint diable when we upgreade to 3.11
 # pylint: disable=import-self
 
+from .ERC20ForwarderFactoryContract import *
 from .ERC4626Target0DeployerContract import *
 from .IHyperdriveTypes import *
-from .ForwarderFactoryContract import *
 from .IERC4626HyperdriveContract import *
 from .IERC4626HyperdriveTypes import *
 from .ERC4626HyperdriveDeployerCoordinatorContract import *
+from .HyperdriveDeployerCoordinatorTypes import *
 from .HyperdriveFactoryContract import *
 from .HyperdriveFactoryTypes import *
 from .ERC4626Target3DeployerContract import *
 from .ERC4626HyperdriveContract import *
 from .ERC4626HyperdriveTypes import *
+from .ERC4626Target4DeployerContract import *
 from .ERC4626Target1DeployerContract import *
 from .ERC4626Target2DeployerContract import *
 from .ERC20MintableContract import *
