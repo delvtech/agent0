@@ -13,7 +13,6 @@ from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
-from hyperdrivepy import get_time_stretch
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
