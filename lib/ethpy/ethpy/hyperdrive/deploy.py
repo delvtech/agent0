@@ -312,7 +312,7 @@ def _deploy_base_and_vault(
 
 def _mint_and_approve(
     web3,
-    funding_account,
+    funding_account: LocalAccount,
     funding_contract: ERC20MintableContract,
     contract_to_approve: HyperdriveFactoryContract,
     mint_amount: FixedPoint,
