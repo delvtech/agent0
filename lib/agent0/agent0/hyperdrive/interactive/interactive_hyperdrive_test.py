@@ -10,7 +10,6 @@ from fixedpointmath import FixedPoint
 from pandas import Series
 
 from agent0.hyperdrive.interactive.chain import Chain
-from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.policies import Zoo
 from agent0.hyperdrive.state import HyperdriveWallet
 
