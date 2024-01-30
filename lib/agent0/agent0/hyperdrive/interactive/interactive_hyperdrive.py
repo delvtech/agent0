@@ -35,7 +35,14 @@ from eth_typing import BlockNumber, ChecksumAddress
 from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive import (
+    BASE_TOKEN_SYMBOL,
+    AssetIdPrefix,
+    DeployedHyperdrivePool,
+    ReceiptBreakdown,
+    deploy_hyperdrive_from_factory,
+    encode_asset_id,
+)
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
@@ -611,8 +618,10 @@ class InteractiveHyperdrive:
         ---------
         base: FixedPoint, optional
             The amount of base to fund the agent with. Defaults to 0.
+            If a private key is provided then the base amount is added to their previous balance.
         eth: FixedPoint, optional
             The amount of ETH to fund the agent with. Defaults to 10.
+            If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
         policy: HyperdrivePolicy, optional
@@ -635,11 +644,9 @@ class InteractiveHyperdrive:
             base = FixedPoint(0)
         if eth is None:
             eth = FixedPoint(10)
-
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.rng
-
         out_agent = InteractiveHyperdriveAgent(
             base=base,
             eth=eth,
@@ -957,6 +964,7 @@ class InteractiveHyperdrive:
     ) -> HyperdriveAgent:
         # pylint: disable=too-many-arguments
         agent_private_key = make_private_key() if private_key is None else private_key
+
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
@@ -965,12 +973,22 @@ class InteractiveHyperdrive:
                 InteractiveHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.rng)
             ),
         )
-
+        # Update wallet to agent's previous budget
+        if private_key is not None:  # address already existed
+            agent.wallet.balance.amount = self.interface.get_eth_base_balances(agent)[1]
+            agent.wallet.lp_tokens = self.interface.hyperdrive_contract.functions.balanceOf(
+                encode_asset_id(AssetIdPrefix.LP, 0),
+                agent.checksum_address,
+            )
+            agent.wallet.withdraw_shares = self.interface.hyperdrive_contract.functions.balanceOf(
+                encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0),
+                agent.checksum_address,
+            )
         # Fund agent
         if eth > 0 or base > 0:
             self._add_funds(agent, base, eth)
 
-        # establish max approval for the hyperdrive contract
+        # Establish max approval for the hyperdrive contract
         asyncio.run(
             set_max_approval(
                 [agent],
@@ -979,7 +997,6 @@ class InteractiveHyperdrive:
                 str(self.interface.hyperdrive_contract.address),
             )
         )
-
         # Register the username if it was provided
         if name is not None:
             add_addr_to_username(name, [agent.address], self.db_session)
@@ -1239,49 +1256,56 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
+    ) -> OpenLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
+    ) -> CloseLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
+    ) -> OpenShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
+    ) -> CloseShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
+    ) -> AddLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
+    ) -> RemoveLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
+    ) -> RedeemWithdrawalShares:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
