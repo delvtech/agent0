@@ -638,15 +638,19 @@ def test_share_price_quincunx(chain: Chain):
     arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
-    NUMBER_OF_COMPOUNDING_PERIODS = 5
-    for _ in range(NUMBER_OF_COMPOUNDING_PERIODS):
-        chain.advance_time(YEAR_IN_SECONDS // NUMBER_OF_COMPOUNDING_PERIODS, create_checkpoints=False)
+    number_of_compounding_periods = 5
+    for _ in range(number_of_compounding_periods):
+        chain.advance_time(YEAR_IN_SECONDS // number_of_compounding_periods, create_checkpoints=False)
         arbitrage_andy.open_long(FixedPoint(20))
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Ending   share price: {ending_share_price}")
     assert (
         ending_share_price - 1 > initial_variable_rate
-    ), f"Expected ending share price to be {float(initial_variable_rate)}, got {float(ending_share_price-1)}, difference of {float(ending_share_price-1-initial_variable_rate)} ({float((ending_share_price-1-initial_variable_rate)/initial_variable_rate):.2f}%)"
+    ), (
+        f"Expected ending share price to be {float(initial_variable_rate)}, got {float(ending_share_price-1)}"
+        f" with a difference of {float(ending_share_price-1-initial_variable_rate)} "
+        f"({float((ending_share_price-1-initial_variable_rate)/initial_variable_rate):.2f}%)"
+    )
 
 
 @pytest.mark.anvil
