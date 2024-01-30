@@ -5,7 +5,7 @@ import logging
 from decimal import Decimal
 
 import pytest
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
+from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
 from pandas import Series
 
@@ -477,6 +477,28 @@ def test_access_deployer_account(chain: LocalChain):
 
 
 @pytest.mark.anvil
+def test_access_deployer_liquidity(chain: LocalChain):
+    """Remove liquidity from the deployer account."""
+    config = InteractiveHyperdrive.Config(
+        initial_liquidity=FixedPoint(100),
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    privkey = chain.get_deployer_account_private_key()  # anvil account 0
+    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    assert (
+        FixedPoint(
+            scaled_value=interactive_hyperdrive.interface.hyperdrive_contract.functions.balanceOf(
+                encode_asset_id(AssetIdPrefix.LP, 0),
+                larry.checksum_address,
+            ).call()
+        )
+        == larry.wallet.lp_tokens
+    )
+    # Hyperdrive pool steals 2 * minimumShareReserves from the initial deployer's liquidity
+    assert larry.wallet.lp_tokens == config.initial_liquidity - 2 * config.minimum_share_reserves
+
+
+@pytest.mark.anvil
 def test_remove_deployer_liquidity(chain: LocalChain):
     """Remove liquidity from the deployer account."""
     config = InteractiveHyperdrive.Config(
@@ -485,11 +507,17 @@ def test_remove_deployer_liquidity(chain: LocalChain):
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
-    # Ideally this would hold the accurate number of LP tokens, but the amount from initialization isn't
-    # included in acquire_data. Instead, we hack some coins into his wallet, to avoid error checks.
-    larry.wallet.lp_tokens = FixedPoint(100)
-    # I don't know how many shares he actually has, so I'm guessing here.
-    larry.remove_liquidity(shares=FixedPoint(5))
+    larry.remove_liquidity(shares=larry.wallet.lp_tokens)
+    assert larry.wallet.lp_tokens == 0
+    assert (
+        FixedPoint(
+            scaled_value=interactive_hyperdrive.interface.hyperdrive_contract.functions.balanceOf(
+                encode_asset_id(AssetIdPrefix.LP, 0),
+                larry.checksum_address,
+            ).call()
+        )
+        == 0
+    )
 
 
 @pytest.mark.anvil

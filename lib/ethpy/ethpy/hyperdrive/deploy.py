@@ -220,46 +220,23 @@ def _deploy_hyperdrive_factory(
         Containing the deployed factory and the deploy coordinator contracts.
     """
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
-
-    # Deploy factory
-    forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-
+    # Deploy forwarder factory
+    forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(w3=web3, account=deploy_account_addr)
     # Set config from forwarder factory contract here
     factory_deploy_config.linkerFactory = forwarder_factory_contract.address
     factory_deploy_config.linkerCodeHash = forwarder_factory_contract.functions.ERC20LINK_HASH().call()
-
+    # Deploy hyperdrive factory
     factory_contract = HyperdriveFactoryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config),
     )
-    core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-    target0_contract = ERC4626Target0DeployerContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-    target1_contract = ERC4626Target1DeployerContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-    target2_contract = ERC4626Target2DeployerContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-    target3_contract = ERC4626Target3DeployerContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-    target4_contract = ERC4626Target4DeployerContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
+    core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target0_contract = ERC4626Target0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target1_contract = ERC4626Target1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target2_contract = ERC4626Target2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target3_contract = ERC4626Target3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target4_contract = ERC4626Target4DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     deployer_contract = ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
@@ -272,7 +249,6 @@ def _deploy_hyperdrive_factory(
             target4Deployer=target4_contract.address,
         ),
     )
-
     add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(deployer_contract.address)
     function_name = add_deployer_coordinator_function.fn_name
     function_args = add_deployer_coordinator_function.args
@@ -284,7 +260,6 @@ def _deploy_hyperdrive_factory(
         *function_args,
     )
     assert receipt["status"] == 1, f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}"
-
     return factory_contract, deployer_contract
 
 
@@ -337,7 +312,7 @@ def _deploy_base_and_vault(
 
 def _mint_and_approve(
     web3,
-    funding_account,
+    funding_account: LocalAccount,
     funding_contract: ERC20MintableContract,
     contract_to_approve: HyperdriveFactoryContract,
     mint_amount: FixedPoint,

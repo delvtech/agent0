@@ -9,6 +9,8 @@ from fixedpointmath import FixedPoint
 if TYPE_CHECKING:
     from typing import Type
 
+    from eth_typing import ChecksumAddress
+
     from agent0.hyperdrive.policies import HyperdrivePolicy
     from agent0.hyperdrive.state import HyperdriveWallet
 
@@ -80,6 +82,11 @@ class InteractiveHyperdriveAgent:
             The agent's current wallet.
         """
         return self.agent.wallet
+
+    @property
+    def checksum_address(self) -> ChecksumAddress:
+        """Return the checksum address of the account."""
+        return self.agent.checksum_address
 
     def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
         """Adds additional funds to the agent.

@@ -32,14 +32,21 @@ from chainsync.db.hyperdrive import (
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
-from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
+from ethpy.hyperdrive import (
+    BASE_TOKEN_SYMBOL,
+    AssetIdPrefix,
+    DeployedHyperdrivePool,
+    ReceiptBreakdown,
+    deploy_hyperdrive_from_factory,
+    encode_asset_id,
+)
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from numpy.random._generator import Generator
+from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
@@ -611,8 +618,10 @@ class InteractiveHyperdrive:
         ---------
         base: FixedPoint, optional
             The amount of base to fund the agent with. Defaults to 0.
+            If a private key is provided then the base amount is added to their previous balance.
         eth: FixedPoint, optional
             The amount of ETH to fund the agent with. Defaults to 10.
+            If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
         policy: HyperdrivePolicy, optional
@@ -635,11 +644,9 @@ class InteractiveHyperdrive:
             base = FixedPoint(0)
         if eth is None:
             eth = FixedPoint(10)
-
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.rng
-
         out_agent = InteractiveHyperdriveAgent(
             base=base,
             eth=eth,
@@ -957,6 +964,7 @@ class InteractiveHyperdrive:
     ) -> HyperdriveAgent:
         # pylint: disable=too-many-arguments
         agent_private_key = make_private_key() if private_key is None else private_key
+
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
@@ -965,12 +973,26 @@ class InteractiveHyperdrive:
                 InteractiveHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.rng)
             ),
         )
-
+        # Update wallet to agent's previous budget
+        if private_key is not None:  # address already existed
+            agent.wallet.balance.amount = self.interface.get_eth_base_balances(agent)[1]
+            agent.wallet.lp_tokens = FixedPoint(
+                scaled_value=self.interface.hyperdrive_contract.functions.balanceOf(
+                    encode_asset_id(AssetIdPrefix.LP, 0),
+                    agent.checksum_address,
+                ).call()
+            )
+            agent.wallet.withdraw_shares = FixedPoint(
+                scaled_value=self.interface.hyperdrive_contract.functions.balanceOf(
+                    encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0),
+                    agent.checksum_address,
+                ).call()
+            )
         # Fund agent
         if eth > 0 or base > 0:
             self._add_funds(agent, base, eth)
 
-        # establish max approval for the hyperdrive contract
+        # Establish max approval for the hyperdrive contract
         asyncio.run(
             set_max_approval(
                 [agent],
@@ -979,7 +1001,6 @@ class InteractiveHyperdrive:
                 str(self.interface.hyperdrive_contract.address),
             )
         )
-
         # Register the username if it was provided
         if name is not None:
             add_addr_to_username(name, [agent.address], self.db_session)
@@ -1293,7 +1314,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.OPEN_LONG:
                 return OpenLong(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1303,7 +1324,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.CLOSE_LONG:
                 return CloseLong(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1313,7 +1334,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.OPEN_SHORT:
                 return OpenShort(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1323,7 +1344,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.CLOSE_SHORT:
                 return CloseShort(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1333,7 +1354,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.ADD_LIQUIDITY:
                 return AddLiquidity(
-                    provider=to_checksum_address(tx_receipt.provider),
+                    provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_price=tx_receipt.vault_share_price,
@@ -1342,7 +1363,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.REMOVE_LIQUIDITY:
                 return RemoveLiquidity(
-                    provider=to_checksum_address(tx_receipt.provider),
+                    provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_price=tx_receipt.vault_share_price,
@@ -1352,7 +1373,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
                 return RedeemWithdrawalShares(
-                    provider=to_checksum_address(tx_receipt.provider),
+                    provider=Web3.to_checksum_address(tx_receipt.provider),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_price=tx_receipt.vault_share_price,
@@ -1373,8 +1394,8 @@ class InteractiveHyperdrive:
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
             db_balances = chainsync_get_current_wallet(
-                self.db_session, wallet_address=[agent.agent.checksum_address], coerce_float=False
+                self.db_session, wallet_address=[agent.checksum_address], coerce_float=False
             )
             agent.agent.wallet = build_wallet_positions_from_data(
-                agent.agent.checksum_address, db_balances, self.interface.base_token_contract
+                agent.checksum_address, db_balances, self.interface.base_token_contract
             )
