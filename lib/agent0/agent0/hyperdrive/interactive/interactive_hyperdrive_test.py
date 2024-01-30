@@ -1,6 +1,7 @@
 """Tests interactive hyperdrive end to end."""
 
 import datetime
+import logging
 from decimal import Decimal
 
 import pytest
@@ -8,15 +9,20 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 from pandas import Series
 
+from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.policies import Zoo
 from agent0.hyperdrive.state import HyperdriveWallet
 
 from .chain import LocalChain
 from .interactive_hyperdrive import InteractiveHyperdrive
 
+YEAR_IN_SECONDS = 31_536_000
+
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
 # ruff: noqa: PLR2004 (comparison against magic values (literals like numbers))
+# allow non-lazy logging
+# pylint: disable=logging-fstring-interpolation
 
 
 @pytest.mark.anvil
@@ -590,3 +596,55 @@ def test_policy_config_forgotten(chain: LocalChain):
         policy=Zoo.random,
     )
     assert alice.agent.policy is not None
+
+
+@pytest.mark.anvil
+def test_share_price_compounding_quincunx(chain: Chain):
+    """Share price when compounding by quincunx (one fifth of a year) should increase by more than the APR."""
+    # setup
+    initial_variable_rate = FixedPoint("0.045")
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        initial_variable_rate=initial_variable_rate,
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.interface
+    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
+    number_of_compounding_periods = 5
+    for _ in range(number_of_compounding_periods):
+        chain.advance_time(YEAR_IN_SECONDS // number_of_compounding_periods, create_checkpoints=False)
+        # This calls the mock yield source's accrue interest function, which acts to compound return
+        interactive_hyperdrive._create_checkpoint()  # pylint: disable=protected-access
+    ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
+    logging.info(f"Ending   share price: {ending_share_price}")
+    assert ending_share_price - 1 > initial_variable_rate, (
+        f"Expected ending share price to be {float(initial_variable_rate)}, got {float(ending_share_price-1)}"
+        f" with a difference of {float(ending_share_price-1-initial_variable_rate)} "
+        f"({float((ending_share_price-1-initial_variable_rate)/initial_variable_rate):.2f}%)"
+    )
+
+
+@pytest.mark.anvil
+def test_share_price_compounding_annus(chain: Chain):
+    """Share price when compounding by annus (one year) should increase by exactly the APR (no compounding)."""
+    # setup
+    initial_variable_rate = FixedPoint("0.045")
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        initial_variable_rate=initial_variable_rate,
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.interface
+    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
+    chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+    ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
+    logging.info(f"Ending   share price: {ending_share_price}")
+    assert ending_share_price - 1 == initial_variable_rate
