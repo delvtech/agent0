@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
-from web3 import Web3
 
 if TYPE_CHECKING:
     from typing import Type
