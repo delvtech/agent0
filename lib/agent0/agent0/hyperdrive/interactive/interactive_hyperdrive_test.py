@@ -617,6 +617,7 @@ def test_share_price_compounding_quincunx(chain: Chain):
     number_of_compounding_periods = 5
     for _ in range(number_of_compounding_periods):
         chain.advance_time(YEAR_IN_SECONDS // number_of_compounding_periods, create_checkpoints=False)
+        # This calls the mock yield source's accrue interest function, which acts to compound return
         interactive_hyperdrive._create_checkpoint()  # pylint: disable=protected-access
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Ending   share price: {ending_share_price}")
