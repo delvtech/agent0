@@ -77,7 +77,7 @@ def create_arbitrage_andy(interactive_hyperdrive) -> InteractiveHyperdriveAgent:
     andy_base = FixedPoint(1e9)
     andy_config = Zoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
-        minimum_trade_amount=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount,
+        minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     return interactive_hyperdrive.init_agent(
         base=andy_base, name="andy", policy=Zoo.lp_and_arb, policy_config=andy_config
@@ -113,14 +113,14 @@ def test_open_long(
     manual_agent.open_short(bonds=FixedPoint(trade_amount))
 
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # arbitrage it back (the only trade capable of this is a long)
     arbitrage_andy.execute_policy_action()
 
     # report results
-    fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    variable_rate = interactive_hyperdrive.hyperdrive_interface.current_pool_state.variable_rate
+    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
@@ -141,14 +141,14 @@ def test_open_short(
     manual_agent.open_long(base=FixedPoint(trade_amount))
 
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # arbitrage it back (the only trade capable of this is a short)
     arbitrage_andy.execute_policy_action()
 
     # report results
-    fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    variable_rate = interactive_hyperdrive.hyperdrive_interface.current_pool_state.variable_rate
+    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
@@ -167,16 +167,16 @@ def test_close_long(
 ):
     """Close a long to hit the target rate."""
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # give andy a long position twice the trade amount, to be sufficiently large when closing
-    pool_bonds_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
-    pool_shares_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
-    block_time_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+    pool_bonds_before = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
+    pool_shares_before = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
+    block_time_before = interactive_hyperdrive.interface.current_pool_state.block_time
     event = arbitrage_andy.open_long(base=FixedPoint(3 * trade_amount))
-    pool_bonds_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
-    pool_shares_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
-    block_time_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+    pool_bonds_after = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
+    pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
+    block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
     d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
     d_time = block_time_after - block_time_before
@@ -203,7 +203,7 @@ def test_close_long(
     )
 
     # report fixed rate
-    logging.info("fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # change the fixed rate
     event = manual_agent.open_long(base=FixedPoint(trade_amount))
@@ -215,19 +215,19 @@ def test_close_long(
         event.base_amount,
     )
     # report fixed rate
-    logging.info("fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # arbitrage it all back in one trade
-    pool_bonds_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
-    pool_shares_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
-    block_time_before = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+    pool_bonds_before = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
+    pool_shares_before = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
+    block_time_before = interactive_hyperdrive.interface.current_pool_state.block_time
     event_list = arbitrage_andy.execute_policy_action()
     logging.info("Andy executed %s", event_list)
     event = event_list[0] if isinstance(event_list, list) else event_list
     assert isinstance(event, CloseLong)
-    pool_bonds_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.bond_reserves
-    pool_shares_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.share_reserves
-    block_time_after = interactive_hyperdrive.hyperdrive_interface.current_pool_state.block_time
+    pool_bonds_after = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
+    pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
+    block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
     d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
     d_time = block_time_after - block_time_before
@@ -245,8 +245,8 @@ def test_close_long(
     )
 
     # report results
-    fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    variable_rate = interactive_hyperdrive.hyperdrive_interface.current_pool_state.variable_rate
+    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
@@ -258,7 +258,7 @@ def test_close_long(
 def test_already_at_target(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
     """Already at target, do nothing."""
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # modify Andy to be done_on_empty
     andy_interactive_policy = arbitrage_andy.agent.policy
@@ -275,8 +275,8 @@ def test_already_at_target(interactive_hyperdrive: InteractiveHyperdrive, arbitr
     arbitrage_andy.execute_policy_action()
 
     # report results
-    fixed_rate = interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate()
-    variable_rate = interactive_hyperdrive.hyperdrive_interface.current_pool_state.variable_rate
+    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
@@ -305,12 +305,12 @@ def test_reduce_long(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_an
 def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_andy: InteractiveHyperdriveAgent):
     """Reduce a short position."""
 
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # give Andy a short
     event = arbitrage_andy.open_short(bonds=FixedPoint(10))
 
-    logging.info("fixed rate after open short is %s", interactive_hyperdrive.hyperdrive_interface.calc_fixed_rate())
+    logging.info("fixed rate after open short is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # advance time to maturity
     interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS / 2), create_checkpoints=False)
@@ -333,25 +333,25 @@ def test_predict_open_long(chain: Chain):
     )
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
-    pool_state = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
     starting_bond_reserves = pool_state.pool_info.bond_reserves
     starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state)
+    stating_price = interactive_hyperdrive.interface.calc_spot_price(pool_state)
     logging.info("starting bond_reserves is %s (%s)", starting_bond_reserves, type(starting_bond_reserves).__name__)
     logging.info("starting share_reserves is %s (%s)", starting_share_reserves, type(starting_share_reserves).__name__)
     logging.info("starting spot price is %s (%s)", stating_price, type(stating_price).__name__)
 
     # start with bonds_needed, convert to base_needed
     bonds_needed = FixedPoint(100_000)
-    spot_price = interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state)
+    spot_price = interactive_hyperdrive.interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
-    shares_needed = interactive_hyperdrive.hyperdrive_interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-    vault_share_price = interactive_hyperdrive.hyperdrive_interface.current_pool_state.pool_info.vault_share_price
+    shares_needed = interactive_hyperdrive.interface.calc_shares_in_given_bonds_out_down(bonds_needed)
+    vault_share_price = interactive_hyperdrive.interface.current_pool_state.pool_info.vault_share_price
     base_needed = shares_needed * vault_share_price
     # use rust to predict trade outcome
-    bonds_after_fees = interactive_hyperdrive.hyperdrive_interface.calc_open_long(base_needed)
+    bonds_after_fees = interactive_hyperdrive.interface.calc_open_long(base_needed)
     logging.info("bonds_after_fees is %s", bonds_after_fees)
     bond_fees = bonds_after_fees * price_discount * curve_fee
     bond_fees_to_pool = bond_fees * (FixedPoint(1) - governance_fee)
@@ -369,7 +369,7 @@ def test_predict_open_long(chain: Chain):
     logging.info("predicted delta shares is %s", predicted_delta_shares)
 
     # measure pool before trade
-    pool_state_before = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_state_before = deepcopy(interactive_hyperdrive.interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
     # do the trade
@@ -386,7 +386,7 @@ def test_predict_open_long(chain: Chain):
         actual_event_base,
     )
     # measure pool after trade
-    pool_state_after = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_state_after = deepcopy(interactive_hyperdrive.interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
     pool_shares_after = pool_state_after.pool_info.share_reserves
     logging.info("pool bonds after is %s", pool_bonds_after)
@@ -416,22 +416,22 @@ def test_predict_open_short(chain: Chain):
     )
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
-    pool_state = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
     starting_bond_reserves = pool_state.pool_info.bond_reserves
     starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state)
+    stating_price = interactive_hyperdrive.interface.calc_spot_price(pool_state)
     logging.info("starting bond_reserves is %s (%s)", starting_bond_reserves, type(starting_bond_reserves).__name__)
     logging.info("starting share_reserves is %s (%s)", starting_share_reserves, type(starting_share_reserves).__name__)
     logging.info("starting spot price is %s (%s)", stating_price, type(stating_price).__name__)
 
     # start with bonds_needed, convert to base_needed
     bonds_needed = FixedPoint(100_000)
-    spot_price = interactive_hyperdrive.hyperdrive_interface.calc_spot_price(pool_state)
+    spot_price = interactive_hyperdrive.interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
     # use rust to predict trade outcome
-    shares_before_fees = interactive_hyperdrive.hyperdrive_interface.calc_shares_out_given_bonds_in_down(bonds_needed)
+    shares_before_fees = interactive_hyperdrive.interface.calc_shares_out_given_bonds_in_down(bonds_needed)
     logging.info("shares_before_fees is %s", shares_before_fees)
     fees = bonds_needed * price_discount * curve_fee
     fees_to_pool = fees * (FixedPoint(1) - governance_fee)
@@ -447,7 +447,7 @@ def test_predict_open_short(chain: Chain):
     logging.info("predicted delta shares is %s", predicted_delta_shares)
 
     # # measure pool before trade
-    pool_state_before = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_state_before = deepcopy(interactive_hyperdrive.interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
     # # do the trade
@@ -464,7 +464,7 @@ def test_predict_open_short(chain: Chain):
         actual_event_base,
     )
     # # measure pool after trade
-    pool_state_after = deepcopy(interactive_hyperdrive.hyperdrive_interface.current_pool_state)
+    pool_state_after = deepcopy(interactive_hyperdrive.interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
     pool_shares_after = pool_state_after.pool_info.share_reserves
     logging.info("pool bonds after is %s", pool_bonds_after)

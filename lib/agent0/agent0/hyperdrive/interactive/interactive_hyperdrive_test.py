@@ -103,21 +103,21 @@ def test_funding_and_trades(chain: LocalChain):
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent0.agent)
+    ) = interactive_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.agent)
     assert chain_base_balance == FixedPoint(1_111_111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0001")
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_hyperdrive_2.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent1.agent)
+    ) = interactive_hyperdrive_2.interface.get_eth_base_balances(hyperdrive_agent1.agent)
     assert chain_base_balance == FixedPoint(222_222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0001")
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_hyperdrive.hyperdrive_interface.get_eth_base_balances(hyperdrive_agent2.agent)
+    ) = interactive_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent2.agent)
     assert chain_base_balance == FixedPoint(333_333)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     # Since we initialized without parameters, and the default is 10 eth. We then added 333 eth.
@@ -190,7 +190,7 @@ def test_block_timestamp_interval(chain: LocalChain):
 
     # We need the underlying hyperdrive interface here to test time
     interactive_hyperdrive = InteractiveHyperdrive(chain)
-    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    hyperdrive_interface = interactive_hyperdrive.interface
     hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
 
     current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
@@ -208,7 +208,7 @@ def test_advance_time(chain: LocalChain):
     """Advance time by 3600 seconds then 1 week."""
     # We need the underlying hyperdrive interface here to test time
     interactive_hyperdrive = InteractiveHyperdrive(chain)
-    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    hyperdrive_interface = interactive_hyperdrive.interface
 
     current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Testing passing in seconds
@@ -232,7 +232,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     # We need the underlying hyperdrive interface here to test time
     config = InteractiveHyperdrive.Config(checkpoint_duration=3600)
     interactive_hyperdrive = InteractiveHyperdrive(chain, config)
-    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    hyperdrive_interface = interactive_hyperdrive.interface
 
     # TODO there is a non-determininstic element here, the first advance time for 600 seconds
     # may push the time forward past a checkpoint boundary depending on the current time,
@@ -287,7 +287,7 @@ def test_save_load_snapshot(chain: LocalChain):
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     initial_pool_config = InteractiveHyperdrive.Config()
     interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    hyperdrive_interface = interactive_hyperdrive.interface
 
     # Generate funded trading agents from the interactive object
     # Make trades to set the initial state
@@ -305,7 +305,7 @@ def test_save_load_snapshot(chain: LocalChain):
     init_eth_on_chain, init_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     init_agent_wallet = hyperdrive_agent.wallet.copy()
     init_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False).copy()
-    init_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    init_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     init_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     # Make a few trades to change the state
@@ -320,7 +320,7 @@ def test_save_load_snapshot(chain: LocalChain):
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     assert check_eth_on_chain != init_eth_on_chain
@@ -339,7 +339,7 @@ def test_save_load_snapshot(chain: LocalChain):
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     assert check_eth_on_chain == init_eth_on_chain
@@ -363,7 +363,7 @@ def test_save_load_snapshot(chain: LocalChain):
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     assert check_eth_on_chain != init_eth_on_chain
@@ -382,7 +382,7 @@ def test_save_load_snapshot(chain: LocalChain):
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     assert check_eth_on_chain == init_eth_on_chain
@@ -406,7 +406,7 @@ def test_save_load_snapshot(chain: LocalChain):
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     assert check_eth_on_chain != init_eth_on_chain
@@ -425,7 +425,7 @@ def test_save_load_snapshot(chain: LocalChain):
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.wallet
     check_db_wallet = interactive_hyperdrive.get_current_wallet(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state().pool_info
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
     assert check_eth_on_chain == init_eth_on_chain

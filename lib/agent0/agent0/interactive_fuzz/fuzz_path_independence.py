@@ -187,7 +187,7 @@ def fuzz_path_independence(
         # Randomly grab some trades & close them one at a time
         # guarantee closing trades within the same checkpoint by getting the checkpoint id before
         # and after closing trades, then asserting they're the same
-        starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+        starting_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
         try:
             close_trades(random_trade_events)
         except ContractCallException:
@@ -195,7 +195,7 @@ def fuzz_path_independence(
             # These trades get logged as info
             continue
 
-        ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+        ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
         if starting_checkpoint_id != ending_checkpoint_id:
             message = "Trades were not closed in the same checkpoint"
             logging.warning(message)
@@ -209,10 +209,10 @@ def fuzz_path_independence(
         # On first run, save final state
         if check_data is None:
             check_data = {}
-            pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
-            check_data["present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
-            check_data["effective_share_reserves"] = (
-                interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(pool_state)
+            pool_state = interactive_hyperdrive.interface.get_hyperdrive_state()
+            check_data["present_value"] = interactive_hyperdrive.interface.calc_present_value(pool_state)
+            check_data["effective_share_reserves"] = interactive_hyperdrive.interface.calc_effective_share_reserves(
+                pool_state
             )
             check_data["initial_pool_state"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
@@ -256,7 +256,7 @@ def fuzz_path_independence(
                 rollbar_data.update(error.exception_data)
 
                 report = build_crash_trade_result(
-                    error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
+                    error, interactive_hyperdrive.interface, agent.agent, additional_info=additional_info
                 )
                 # Crash reporting already going to file in logging
                 log_hyperdrive_crash_report(
@@ -409,13 +409,11 @@ def invariant_check(
     failed = False
     exception_message: list[str] = ["Fuzz Path Independence Invariant Check"]
     exception_data: dict[str, Any] = {}
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+    pool_state = interactive_hyperdrive.interface.get_hyperdrive_state()
 
     # Effective share reserves
     expected_effective_share_reserves = FixedPoint(check_data["effective_share_reserves"])
-    actual_effective_share_reserves = interactive_hyperdrive.hyperdrive_interface.calc_effective_share_reserves(
-        pool_state
-    )
+    actual_effective_share_reserves = interactive_hyperdrive.interface.calc_effective_share_reserves(pool_state)
     if not fp_isclose(
         expected_effective_share_reserves,
         actual_effective_share_reserves,
@@ -435,7 +433,7 @@ def invariant_check(
 
     # Present value
     expected_present_value = FixedPoint(check_data["present_value"])
-    actual_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
+    actual_present_value = interactive_hyperdrive.interface.calc_present_value(pool_state)
     if not fp_isclose(
         expected_present_value, actual_present_value, abs_tol=FixedPoint(str(check_epsilon["present_value"]))
     ):

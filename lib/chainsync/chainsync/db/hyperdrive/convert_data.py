@@ -138,7 +138,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
 
 
 def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
-    """Converts a pool_info_dict from a call in hyperdrive_interface to the postgres data type
+    """Converts a pool_info_dict from a call in hyperdrive interface to the postgres data type
 
     Arguments
     ---------
@@ -167,7 +167,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
 
 
 def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointInfo:
-    """Converts a checkpoint_info_dict from a call in hyperdrive_interface to the postgres data type
+    """Converts a checkpoint_info_dict from a call in hyperdrive interface to the postgres data type
 
     Arguments
     ---------

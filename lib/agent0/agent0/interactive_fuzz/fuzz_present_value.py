@@ -79,10 +79,10 @@ def fuzz_present_value(
         fuzz_test_name="fuzz_present_value",
     )
 
-    initial_pool_state = interactive_hyperdrive.hyperdrive_interface.current_pool_state
+    initial_pool_state = interactive_hyperdrive.interface.current_pool_state
     check_data: dict[str, Any] = {
         "initial_lp_share_price": initial_pool_state.pool_info.lp_share_price,
-        "initial_present_value": interactive_hyperdrive.hyperdrive_interface.calc_present_value(initial_pool_state),
+        "initial_present_value": interactive_hyperdrive.interface.calc_present_value(initial_pool_state),
     }
     agent = interactive_hyperdrive.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000))
 
@@ -100,15 +100,15 @@ def fuzz_present_value(
             agent.add_funds(base=FixedPoint("1e10") - agent.wallet.balance.amount)
 
         # Set up trade amount bounds
-        min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
+        min_trade = interactive_hyperdrive.interface.pool_config.minimum_transaction_amount
         max_budget = agent.wallet.balance.amount
         trade_amount = None
 
         # Execute the trade
         match trade_type:
             case HyperdriveActionType.OPEN_LONG:
-                max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_long(
-                    max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                max_trade = interactive_hyperdrive.interface.calc_max_long(
+                    max_budget, interactive_hyperdrive.interface.current_pool_state
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
@@ -118,8 +118,8 @@ def fuzz_present_value(
                 maturity_time, open_trade = next(iter(agent.wallet.longs.items()))
                 trade_event = agent.close_long(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.OPEN_SHORT:
-                max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_short(
-                    max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                max_trade = interactive_hyperdrive.interface.calc_max_short(
+                    max_budget, interactive_hyperdrive.interface.current_pool_state
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
@@ -130,8 +130,8 @@ def fuzz_present_value(
                 trade_event = agent.close_short(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.ADD_LIQUIDITY:
                 # recompute initial present value for liquidity actions
-                check_data["initial_present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(
-                    interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                check_data["initial_present_value"] = interactive_hyperdrive.interface.calc_present_value(
+                    interactive_hyperdrive.interface.current_pool_state
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(
@@ -141,8 +141,8 @@ def fuzz_present_value(
                 trade_event = agent.add_liquidity(trade_amount)
             case HyperdriveActionType.REMOVE_LIQUIDITY:
                 # recompute initial present value for liquidity actions
-                check_data["initial_present_value"] = interactive_hyperdrive.hyperdrive_interface.calc_present_value(
-                    interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                check_data["initial_present_value"] = interactive_hyperdrive.interface.calc_present_value(
+                    interactive_hyperdrive.interface.current_pool_state
                 )
                 trade_amount = agent.wallet.lp_tokens
                 trade_event = agent.remove_liquidity(agent.wallet.lp_tokens)
@@ -180,7 +180,7 @@ def fuzz_present_value(
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
-                error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
+                error, interactive_hyperdrive.interface, agent.agent, additional_info=additional_info
             )
             # Crash reporting already going to file in logging
             log_hyperdrive_crash_report(
@@ -284,7 +284,7 @@ def invariant_check(
     failed = False
     exception_message: list[str] = ["Fuzz Present Value Invariant Check"]
     exception_data: dict[str, Any] = {}
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+    pool_state = interactive_hyperdrive.interface.get_hyperdrive_state()
 
     # LP share price
     # for any trade, LP share price shouldn't change by more than 0.1%
@@ -303,8 +303,8 @@ def invariant_check(
     # present value should always be >= idle
     # idle shares are the shares that are not reserved by open positions
     # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
-    current_present_value = interactive_hyperdrive.hyperdrive_interface.calc_present_value(pool_state)
-    idle_shares = interactive_hyperdrive.hyperdrive_interface.get_idle_shares(pool_state.block_number)
+    current_present_value = interactive_hyperdrive.interface.calc_present_value(pool_state)
+    idle_shares = interactive_hyperdrive.interface.get_idle_shares(pool_state.block_number)
     if current_present_value < idle_shares:
         difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
         exception_message.append("The present value is not greater than or equal to the idle.")

@@ -46,7 +46,7 @@ for _ in range(10):
 out_events = []
 out_transactions = []
 for i_hd in [interactive_hyperdrive, interactive_hyperdrive2, interactive_hyperdrive3]:
-    hyperdrive = i_hd.hyperdrive_interface
+    hyperdrive = i_hd.interface
 
     # Get all event objects from the contract
     hyperdrive_event_objs = hyperdrive.hyperdrive_contract.events
@@ -63,7 +63,7 @@ for i_hd in [interactive_hyperdrive, interactive_hyperdrive2, interactive_hyperd
         for event in events:
             parsed_event = {
                 "block_number": event["blockNumber"],
-                "hyperdrive_contract_address": i_hd.hyperdrive_interface.hyperdrive_contract.address,
+                "hyperdrive_contract_address": i_hd.interface.hyperdrive_contract.address,
                 "event": event["event"],
                 "args": dict(event["args"]),
             }

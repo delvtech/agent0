@@ -88,9 +88,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         scaled_value=int(
             np.floor(
                 rng.uniform(
-                    low=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount.scaled_value,
-                    high=interactive_hyperdrive.hyperdrive_interface.calc_max_long(
-                        FixedPoint(1e9), interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                    low=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount.scaled_value,
+                    high=interactive_hyperdrive.interface.calc_max_long(
+                        FixedPoint(1e9), interactive_hyperdrive.interface.current_pool_state
                     ).scaled_value,
                 )
             )
@@ -109,7 +109,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=long_trade_amount)
 
-    starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+    starting_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
 
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
@@ -121,7 +121,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
-    ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+    ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
 
     # Ensure open + close are within same checkpoint
     assert starting_checkpoint_id == ending_checkpoint_id
@@ -131,9 +131,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         scaled_value=int(
             np.floor(
                 rng.uniform(
-                    low=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount.scaled_value,
-                    high=interactive_hyperdrive.hyperdrive_interface.calc_max_short(
-                        FixedPoint(1e9), interactive_hyperdrive.hyperdrive_interface.current_pool_state
+                    low=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount.scaled_value,
+                    high=interactive_hyperdrive.interface.calc_max_short(
+                        FixedPoint(1e9), interactive_hyperdrive.interface.current_pool_state
                     ).scaled_value,
                 )
             )
@@ -152,7 +152,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
     logging.info("Open a short...")
     open_short_event = short_agent.open_short(bonds=short_trade_amount)
-    starting_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+    starting_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
 
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
@@ -164,7 +164,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
     )
-    ending_checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
+    ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
 
     # Ensure open + close are within same checkpoint
     assert starting_checkpoint_id == ending_checkpoint_id
@@ -207,7 +207,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
         else:
             agent = short_agent.agent
         report = build_crash_trade_result(
-            error, interactive_hyperdrive.hyperdrive_interface, agent, additional_info=additional_info
+            error, interactive_hyperdrive.interface, agent, additional_info=additional_info
         )
         # Crash reporting already going to file in logging
         log_hyperdrive_crash_report(
