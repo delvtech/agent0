@@ -162,6 +162,7 @@ def fuzz_path_independence(
     # In case all paths failed, we keep track of all tickers and crash reports for all paths
 
     trade_paths = []
+    ticker_paths = []
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
         logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
@@ -193,6 +194,9 @@ def fuzz_path_independence(
         except ContractCallException:
             # Trades can fail here due to invalid order, we ignore and move on
             # These trades get logged as info
+            # We track the ticker for each failed path here. This bookkeeping is only
+            # used if all paths fail
+            ticker_paths.append(interactive_hyperdrive.get_ticker())
             continue
 
         ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
@@ -275,6 +279,7 @@ def fuzz_path_independence(
         rollbar_data = {
             "fuzz_random_seed": random_seed,
             "close_random_paths": [[trade for _, trade in path] for path in trade_paths],
+            "ticker_paths": ticker_paths,
         }
         rollbar.report_message(
             warning_message,
