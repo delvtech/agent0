@@ -6,10 +6,8 @@ import logging
 from typing import TypeVar
 
 from eth_account.signers.local import LocalAccount
-from eth_typing import ChecksumAddress
 from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
-from web3 import Web3
 
 from agent0.base import MarketType, Trade
 from agent0.base.agents import EthAgent
@@ -43,10 +41,6 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         super().__init__(account, initial_budget, policy)
         # Reinitialize the wallet to the subclass
         self.wallet = HyperdriveWallet(address=self.wallet.address, balance=self.wallet.balance)
-
-    @property
-    def checksum_address(self) -> ChecksumAddress:
-        return Web3.to_checksum_address(self.address)
 
     def get_liquidation_trades(
         self, interface: HyperdriveReadInterface, randomize_trades: bool, interactive_mode: bool

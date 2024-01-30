@@ -85,11 +85,11 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
 
     @property
     def checksum_address(self) -> ChecksumAddress:
-        """Return the checksum address of the account"""
+        """Return the checksum address of the account."""
         return Web3.to_checksum_address(self.address)
 
     def get_trades(self, interface: MarketInterface) -> list[Trade[MarketAction]]:
-        """Helper function for computing a agent trade
+        """Helper function for computing a agent trade.
 
         Arguments
         ---------

@@ -19,29 +19,16 @@ from chainsync.dashboard.usernames import build_user_mapping
 from chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user, initialize_session
 from chainsync.db.hyperdrive import get_checkpoint_info
 from chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
-from chainsync.db.hyperdrive import (
-    get_latest_block_number_from_analysis_table,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_ticker,
-    get_total_wallet_pnl_over_time,
-    get_wallet_deltas,
-    get_wallet_pnl,
-)
+from chainsync.db.hyperdrive import (get_latest_block_number_from_analysis_table, get_pool_analysis, get_pool_config,
+                                     get_pool_info, get_ticker, get_total_wallet_pnl_over_time, get_wallet_deltas,
+                                     get_wallet_pnl)
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import (
-    BASE_TOKEN_SYMBOL,
-    AssetIdPrefix,
-    DeployedHyperdrivePool,
-    ReceiptBreakdown,
-    deploy_hyperdrive_from_factory,
-    encode_asset_id,
-)
+from ethpy.hyperdrive import (BASE_TOKEN_SYMBOL, AssetIdPrefix, DeployedHyperdrivePool, ReceiptBreakdown,
+                              deploy_hyperdrive_from_factory, encode_asset_id)
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
@@ -60,16 +47,8 @@ from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStat
 from agent0.test_utils import assert_never
 
 from .chain import Chain
-from .event_types import (
-    AddLiquidity,
-    CloseLong,
-    CloseShort,
-    CreateCheckpoint,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
+from .event_types import (AddLiquidity, CloseLong, CloseShort, CreateCheckpoint, OpenLong, OpenShort,
+                          RedeemWithdrawalShares, RemoveLiquidity)
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
@@ -546,7 +525,7 @@ class InteractiveHyperdrive:
         return deploy_hyperdrive_from_factory(
             chain.rpc_uri,
             chain.get_deployer_account_private_key(),
-            config.initial_liquidity,
+            config.initial_liquidity,# + 2 * config.minimum_share_reserves, 
             config.initial_variable_rate,
             config.initial_fixed_apr,
             config.initial_time_stretch_apr,
@@ -976,13 +955,17 @@ class InteractiveHyperdrive:
         # Update wallet to agent's previous budget
         if private_key is not None:  # address already existed
             agent.wallet.balance.amount = self.interface.get_eth_base_balances(agent)[1]
-            agent.wallet.lp_tokens = self.interface.hyperdrive_contract.functions.balanceOf(
-                encode_asset_id(AssetIdPrefix.LP, 0),
-                agent.checksum_address,
+            agent.wallet.lp_tokens = FixedPoint(
+                scaled_value=self.interface.hyperdrive_contract.functions.balanceOf(
+                    encode_asset_id(AssetIdPrefix.LP, 0),
+                    agent.checksum_address,
+                ).call()
             )
-            agent.wallet.withdraw_shares = self.interface.hyperdrive_contract.functions.balanceOf(
-                encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0),
-                agent.checksum_address,
+            agent.wallet.withdraw_shares = FixedPoint(
+                scaled_value=self.interface.hyperdrive_contract.functions.balanceOf(
+                    encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0),
+                    agent.checksum_address,
+                ).call()
             )
         # Fund agent
         if eth > 0 or base > 0:
@@ -1256,49 +1239,56 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
+    ) -> OpenLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
+    ) -> CloseLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
+    ) -> OpenShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
+    ) -> CloseShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
+    ) -> AddLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
+    ) -> RemoveLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
+    ) -> RedeemWithdrawalShares:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
@@ -1390,8 +1380,8 @@ class InteractiveHyperdrive:
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
             db_balances = chainsync_get_current_wallet(
-                self.db_session, wallet_address=[agent.agent.checksum_address], coerce_float=False
+                self.db_session, wallet_address=[agent.checksum_address], coerce_float=False
             )
             agent.agent.wallet = build_wallet_positions_from_data(
-                agent.agent.checksum_address, db_balances, self.interface.base_token_contract
+                agent.checksum_address, db_balances, self.interface.base_token_contract
             )
