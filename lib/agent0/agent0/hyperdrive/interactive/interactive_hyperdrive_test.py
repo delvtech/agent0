@@ -1,6 +1,7 @@
 """Tests interactive hyperdrive end to end."""
 
 import datetime
+import logging
 from decimal import Decimal
 
 import pytest
@@ -8,15 +9,43 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from fixedpointmath import FixedPoint
 from pandas import Series
 
+from agent0.hyperdrive.interactive.chain import Chain
+from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.policies import Zoo
 from agent0.hyperdrive.state import HyperdriveWallet
 
 from .chain import LocalChain
 from .interactive_hyperdrive import InteractiveHyperdrive
 
+YEAR_IN_SECONDS = 31_536_000
+
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
 # ruff: noqa: PLR2004 (comparison against magic values (literals like numbers))
+# allow non-lazy logging
+# pylint: disable=logging-fstring-interpolation
+
+
+def create_arbitrage_andy(interactive_hyperdrive) -> InteractiveHyperdriveAgent:
+    """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
+
+    Arguments
+    ---------
+    interactive_hyperdrive: InteractiveHyperdrive
+        Interactive hyperdrive.
+
+    Returns
+    -------
+    InteractiveHyperdriveAgent
+        Arbitrage Andy interactive hyperdrive agent."""
+    andy_base = FixedPoint(1e9)
+    andy_config = Zoo.lp_and_arb.Config(
+        lp_portion=FixedPoint(0),
+        minimum_trade_amount=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount,
+    )
+    return interactive_hyperdrive.init_agent(
+        base=andy_base, name="andy", policy=Zoo.lp_and_arb, policy_config=andy_config
+    )
 
 
 @pytest.mark.anvil
@@ -590,3 +619,53 @@ def test_policy_config_forgotten(chain: LocalChain):
         policy=Zoo.random,
     )
     assert alice.agent.policy is not None
+
+
+@pytest.mark.anvil
+def test_share_price_quincunx(chain: Chain):
+    """Share price when compounding by quincunx."""
+    # setup
+    initial_variable_rate = FixedPoint("0.045")
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        initial_variable_rate=initial_variable_rate,
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
+    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
+    NUMBER_OF_COMPOUNDING_PERIODS = 5
+    for _ in range(NUMBER_OF_COMPOUNDING_PERIODS):
+        chain.advance_time(YEAR_IN_SECONDS // NUMBER_OF_COMPOUNDING_PERIODS, create_checkpoints=False)
+        arbitrage_andy.open_long(FixedPoint(20))
+    ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
+    logging.info(f"Ending   share price: {ending_share_price}")
+    assert (
+        ending_share_price - 1 > initial_variable_rate
+    ), f"Expected ending share price to be {float(initial_variable_rate)}, got {float(ending_share_price-1)}, difference of {float(ending_share_price-1-initial_variable_rate)} ({float((ending_share_price-1-initial_variable_rate)/initial_variable_rate):.2f}%)"
+
+
+@pytest.mark.anvil
+def test_share_price_annus(chain: Chain):
+    """Share price when compounding by annus."""
+    # setup
+    initial_variable_rate = FixedPoint("0.045")
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        initial_variable_rate=initial_variable_rate,
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
+    chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+    ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
+    logging.info(f"Ending   share price: {ending_share_price}")
+    assert ending_share_price - 1 == initial_variable_rate
