@@ -38,7 +38,6 @@ from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, DeployedHyperdrivePool, ReceiptBreakdown, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
-from hyperdrivepy import get_time_stretch
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from numpy.random._generator import Generator
 from web3._utils.threads import Timeout
@@ -104,17 +103,57 @@ class InteractiveHyperdrive:
             The log level to log crashes at. Defaults to critical.
         crash_log_ticker: bool | None, optional
             Whether to log the trade ticker in crash reports. Defaults to False.
+        crash_report_additional_info: dict[str, Any] | None, optional
+            Additional information to include in the crash report.
         rng_seed: int | None, optional
             The seed for the random number generator. Defaults to None.
         rng: Generator | None, optional
             The experiment's stateful random number generator. Defaults to creating a generator from
             the provided random seed if not set.
+        calc_pnl: bool
+            Whether to calculate pnl. Defaults to True.
         initial_liquidity: FixedPoint
             The amount of money to be provided by the `deploy_account` for initial pool liquidity.
         initial_variable_rate: FixedPoint
             The starting variable rate for an underlying yield source.
-        initial_fixed_rate: FixedPoint
+        initial_fixed_apr: FixedPoint
             The fixed rate of the pool on initialization.
+        initial_time_stretch_apr: FixedPoint
+            The rate to target for the time stretch.
+        factory_checkpoint_duration_resolution: int
+            The resolution for checkpoint durations
+        factory_min_checkpoint_duration: int
+            The factory's minimum checkpoint duration
+        factory_max_checkpoint_duration: int
+            The factory's maximum checkpoint duration
+        factory_min_position_duration: int
+            The factory's minimum position duration
+        factory_max_position_duration: int
+            The factory's maximum position duration
+        factory_min_fixed_apr: FixedPoint
+            The factory's minimum fixed rate
+        factory_max_fixed_apr: FixedPoint
+            The factory's maximum fixed rate
+        factory_min_time_stretch_apr: FixedPoint
+            The factory's minimum time stretch rate
+        factory_max_time_stretch_apr: FixedPoint
+            The factory's maximum time stretch rate
+        factory_min_curve_fee: FixedPoint
+            The lower bound on the curve fee that governance can set.
+        factory_min_flat_fee: FixedPoint
+            The lower bound on the flat fee that governance can set.
+        factory_min_governance_lp_fee: FixedPoint
+            The lower bound on the governance lp fee that governance can set.
+        factory_min_governance_zombie_fee: FixedPoint
+            The lower bound on the governance zombie fee that governance can set.
+        factory_max_curve_fee: FixedPoint
+            The upper bound on the curve fee that governance can set.
+        factory_max_flat_fee: FixedPoint
+            The upper bound on the flat fee that governance can set.
+        factory_max_governance_lp_fee: FixedPoint
+            The upper bound on the governance lp fee that governance can set.
+        factory_max_governance_zombie_fee: FixedPoint
+            The upper bound on the governance zombie fee that governance can set.
         minimum_share_reserves: FixedPoint
             The minimum share reserves.
         minimum_transaction_amount: FixedPoint
@@ -123,9 +162,6 @@ class InteractiveHyperdrive:
             The duration of a position prior to maturity (in seconds).
         checkpoint_duration: int
             The duration of a checkpoint (in seconds).
-        time_stretch: FixedPoint, optional
-            A parameter which decreases slippage around a target rate.
-            Defaults to a value computed from the initial_fixed_rate and position_duration.
         curve_fee: FixedPoint
             The LP fee applied to the curve portion of a trade.
         flat_fee: FixedPoint
@@ -135,16 +171,6 @@ class InteractiveHyperdrive:
         governance_zombie_fee: FixedPoint
             The portion of the zombie interest that is given to governance as a fee.
             The portion of the zombie interest that will go to LPs is 1 - governance_zombie_fee.
-        max_curve_fee: FixedPoint
-            The upper bound on the curve fee that governance can set.
-        max_flat_fee: FixedPoint
-            The upper bound on the flat fee that governance can set.
-        max_governance_lp_fee: FixedPoint
-            The upper bound on the governance lp fee that governance can set.
-        max_governance_zombie_fee: FixedPoint
-            The upper bound on the governance zombie fee that governance can set.
-        calc_pnl: bool
-            Whether to calculate pnl. Defaults to True.
         """
 
         # Environment variables
@@ -166,31 +192,35 @@ class InteractiveHyperdrive:
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
-        initial_fixed_rate: FixedPoint = FixedPoint("0.05")
+        initial_fixed_apr: FixedPoint = FixedPoint("0.05")
+        initial_time_stretch_apr: FixedPoint = FixedPoint("0.05")
 
         # Factory Deploy Config variables
         factory_checkpoint_duration_resolution: int = 60 * 60  # 1 hour
         factory_min_checkpoint_duration: int = 60 * 60  # 1 hour
         factory_max_checkpoint_duration: int = 60 * 60 * 24  # 1 day
-        factory_min_position_duration: int = 60 * 60 * 24 * 7  # 7 days
+        factory_min_position_duration: int = 60 * 60 * 24  # 1 day
         factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
-        # NOTE we differ in min fees here, since we'd like to turn off fees for some
-        # interactive fuzz testing
+        # We match defaults here from the deploy script in hyperdrive
+        factory_min_fixed_apr: FixedPoint = FixedPoint("0.01")  # 1%
+        factory_max_fixed_apr: FixedPoint = FixedPoint("0.5")  # 50%
+        factory_min_time_stretch_apr: FixedPoint = FixedPoint("0.01")  # 1%
+        factory_max_time_stretch_apr: FixedPoint = FixedPoint("0.5")  # 50%
+        # Factory min/max of fees span the full range for testing
         factory_min_curve_fee: FixedPoint = FixedPoint("0")
         factory_min_flat_fee: FixedPoint = FixedPoint("0")
         factory_min_governance_lp_fee: FixedPoint = FixedPoint("0")
         factory_min_governance_zombie_fee: FixedPoint = FixedPoint("0")
-        factory_max_curve_fee: FixedPoint = FixedPoint("0.1")  # 10%
-        factory_max_flat_fee: FixedPoint = FixedPoint("0.001")  # .1%
-        factory_max_governance_lp_fee: FixedPoint = FixedPoint("0.15")  # 15%
-        factory_max_governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
+        factory_max_curve_fee: FixedPoint = FixedPoint("1")
+        factory_max_flat_fee: FixedPoint = FixedPoint("1")
+        factory_max_governance_lp_fee: FixedPoint = FixedPoint("1")
+        factory_max_governance_zombie_fee: FixedPoint = FixedPoint("1")
 
         # Pool Deploy Config variables
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         position_duration: int = 604_800  # 1 week
         checkpoint_duration: int = 3_600  # 1 hour
-        time_stretch: FixedPoint | None = None
         curve_fee: FixedPoint = FixedPoint("0.01")  # 1%
         flat_fee: FixedPoint = FixedPoint("0.0005")  # 0.05%
         governance_lp_fee: FixedPoint = FixedPoint("0.15")  # 15%
@@ -204,12 +234,6 @@ class InteractiveHyperdrive:
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
-            if self.time_stretch is None:
-                self.time_stretch = FixedPoint(
-                    scaled_value=int(
-                        get_time_stretch(str(self.initial_fixed_rate.scaled_value), str(self.position_duration))
-                    )
-                )
 
         @property
         def _factory_min_fees(self) -> Fees:
@@ -482,8 +506,6 @@ class InteractiveHyperdrive:
 
     def _deploy_hyperdrive(self, config: Config, chain: Chain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
-        assert config.time_stretch is not None
-
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
             hyperdriveGovernance="",  # will be determined in the deploy function
@@ -494,6 +516,10 @@ class InteractiveHyperdrive:
             maxCheckpointDuration=config.factory_max_checkpoint_duration,
             minPositionDuration=config.factory_min_position_duration,
             maxPositionDuration=config.factory_max_position_duration,
+            minFixedAPR=config.factory_min_fixed_apr.scaled_value,
+            maxFixedAPR=config.factory_max_fixed_apr.scaled_value,
+            minTimeStretchAPR=config.factory_min_time_stretch_apr.scaled_value,
+            maxTimeStretchAPR=config.factory_max_time_stretch_apr.scaled_value,
             minFees=config._factory_min_fees,  # pylint: disable=protected-access
             maxFees=config._factory_max_fees,  # pylint: disable=protected-access
             linkerFactory="",  # will be determined in the deploy function
@@ -508,7 +534,7 @@ class InteractiveHyperdrive:
             minimumTransactionAmount=config.minimum_transaction_amount.scaled_value,
             positionDuration=config.position_duration,
             checkpointDuration=config.checkpoint_duration,
-            timeStretch=config.time_stretch.scaled_value,
+            timeStretch=0,
             governance=ADDRESS_ZERO,  # address(0)
             feeCollector=ADDRESS_ZERO,  # address(0)
             fees=config._fees,  # pylint: disable=protected-access
@@ -519,7 +545,8 @@ class InteractiveHyperdrive:
             chain.get_deployer_account_private_key(),
             config.initial_liquidity,
             config.initial_variable_rate,
-            config.initial_fixed_rate,
+            config.initial_fixed_apr,
+            config.initial_time_stretch_apr,
             factory_deploy_config,
             pool_deploy_config,
         )

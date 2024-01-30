@@ -13,7 +13,6 @@ from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy_hyperdrive_from_factory
 from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
-from hyperdrivepy import get_time_stretch
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
@@ -153,7 +152,8 @@ def launch_local_hyperdrive_pool(
     # liquidity as the first trade of the pool.
     initial_liquidity = FixedPoint(1_000)
     initial_variable_rate = FixedPoint("0.05")
-    initial_fixed_rate = FixedPoint("0.05")  # 5%
+    initial_fixed_apr = FixedPoint("0.05")  # 5%
+    initial_time_stretch_apr = FixedPoint("0.05")  # 5%
 
     # Factory initialization parameters
     factory_checkpoint_duration_resolution: int = 60 * 60  # 1 hour
@@ -161,6 +161,10 @@ def launch_local_hyperdrive_pool(
     factory_max_checkpoint_duration: int = 60 * 60 * 24  # 1 day
     factory_min_position_duration: int = 60 * 60 * 24 * 7  # 7 days
     factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
+    factory_min_fixed_apr: FixedPoint = FixedPoint("0.01")  # 1%
+    factory_max_fixed_apr: FixedPoint = FixedPoint("0.5")  # 50%
+    factory_min_time_stretch_apr: FixedPoint = FixedPoint("0.01")  # 1%
+    factory_max_time_stretch_apr: FixedPoint = FixedPoint("0.5")  # 50%
 
     factory_min_fees = Fees(
         curve=FixedPoint("0.001").scaled_value,  # .1%
@@ -183,9 +187,6 @@ def launch_local_hyperdrive_pool(
     # This likely should get fixed by adjusting the time_stretch parameter
     position_duration = 60 * 60 * 24 * 365  # 1 year
     checkpoint_duration = 3600  # 1 hour
-    time_stretch = FixedPoint(
-        scaled_value=int(get_time_stretch(str(initial_fixed_rate.scaled_value), str(position_duration)))
-    )
     fees = Fees(
         curve=FixedPoint("0.01").scaled_value,  # 1%
         flat=FixedPoint("0.0005").scaled_value,  # .05%
@@ -203,6 +204,10 @@ def launch_local_hyperdrive_pool(
         maxCheckpointDuration=factory_max_checkpoint_duration,
         minPositionDuration=factory_min_position_duration,
         maxPositionDuration=factory_max_position_duration,
+        minFixedAPR=factory_min_fixed_apr.scaled_value,
+        maxFixedAPR=factory_max_fixed_apr.scaled_value,
+        minTimeStretchAPR=factory_min_time_stretch_apr.scaled_value,
+        maxTimeStretchAPR=factory_max_time_stretch_apr.scaled_value,
         minFees=factory_min_fees,  # pylint: disable=protected-access
         maxFees=factory_max_fees,  # pylint: disable=protected-access
         linkerFactory="",  # will be determined in the deploy function
@@ -217,7 +222,7 @@ def launch_local_hyperdrive_pool(
         minimumTransactionAmount=minimum_transaction_amount.scaled_value,
         positionDuration=position_duration,
         checkpointDuration=checkpoint_duration,
-        timeStretch=time_stretch.scaled_value,
+        timeStretch=0,
         governance=ADDRESS_ZERO,  # address(0)
         feeCollector=ADDRESS_ZERO,  # address(0)
         fees=fees,
@@ -227,7 +232,8 @@ def launch_local_hyperdrive_pool(
         deployer_private_key,
         initial_liquidity,
         initial_variable_rate,
-        initial_fixed_rate,
+        initial_fixed_apr,
+        initial_time_stretch_apr,
         factory_deploy_config,
         pool_deploy_config,
     )

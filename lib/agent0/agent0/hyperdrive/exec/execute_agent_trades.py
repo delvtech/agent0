@@ -6,6 +6,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
+from ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
 from ethpy.hyperdrive import ReceiptBreakdown
 from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from web3.types import Nonce
@@ -30,8 +31,6 @@ from agent0.test_utils import assert_never
 
 if TYPE_CHECKING:
     from agent0.hyperdrive.agents import HyperdriveAgent
-
-DEFAULT_READ_RETRY_COUNT = 5
 
 
 async def async_execute_single_agent_trade(

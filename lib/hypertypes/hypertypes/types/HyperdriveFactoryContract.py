@@ -131,14 +131,53 @@ class HyperdriveFactoryDefaultPausersContractFunction(ContractFunction):
 class HyperdriveFactoryDeployAndInitializeContractFunction(ContractFunction):
     """ContractFunction for the deployAndInitialize method."""
 
-    def __call__(self, deployerCoordinator: str, deployConfig: PoolDeployConfig, extraData: bytes, contribution: int, apr: int, initializeExtraData: bytes) -> HyperdriveFactoryDeployAndInitializeContractFunction:  # type: ignore
+    def __call__(self, deploymentId: bytes, deployerCoordinator: str, config: PoolDeployConfig, extraData: bytes, contribution: int, fixedAPR: int, timeStretchAPR: int, initializeExtraData: bytes, salt: bytes) -> HyperdriveFactoryDeployAndInitializeContractFunction:  # type: ignore
         clone = super().__call__(
+            dataclass_to_tuple(deploymentId),
             dataclass_to_tuple(deployerCoordinator),
-            dataclass_to_tuple(deployConfig),
+            dataclass_to_tuple(config),
             dataclass_to_tuple(extraData),
             dataclass_to_tuple(contribution),
-            dataclass_to_tuple(apr),
+            dataclass_to_tuple(fixedAPR),
+            dataclass_to_tuple(timeStretchAPR),
             dataclass_to_tuple(initializeExtraData),
+            dataclass_to_tuple(salt),
+        )
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryDeployTargetContractFunction(ContractFunction):
+    """ContractFunction for the deployTarget method."""
+
+    def __call__(self, deploymentId: bytes, deployerCoordinator: str, config: PoolDeployConfig, extraData: bytes, fixedAPR: int, timeStretchAPR: int, targetIndex: int, salt: bytes) -> HyperdriveFactoryDeployTargetContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(deploymentId),
+            dataclass_to_tuple(deployerCoordinator),
+            dataclass_to_tuple(config),
+            dataclass_to_tuple(extraData),
+            dataclass_to_tuple(fixedAPR),
+            dataclass_to_tuple(timeStretchAPR),
+            dataclass_to_tuple(targetIndex),
+            dataclass_to_tuple(salt),
         )
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -405,6 +444,33 @@ class HyperdriveFactoryHyperdriveGovernanceContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
+class HyperdriveFactoryInstancesToDeployerCoordinatorsContractFunction(ContractFunction):
+    """ContractFunction for the instancesToDeployerCoordinators method."""
+
+    def __call__(self, instance: str) -> HyperdriveFactoryInstancesToDeployerCoordinatorsContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(instance))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
 class HyperdriveFactoryIsDeployerCoordinatorContractFunction(ContractFunction):
     """ContractFunction for the isDeployerCoordinator method."""
 
@@ -457,33 +523,6 @@ class HyperdriveFactoryIsInstanceContractFunction(ContractFunction):
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(bool, rename_returned_types(structs, return_types, raw_values))
-
-
-class HyperdriveFactoryIsOfficialContractFunction(ContractFunction):
-    """ContractFunction for the isOfficial method."""
-
-    def __call__(self, instance: str) -> HyperdriveFactoryIsOfficialContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(instance))
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> int:
-        """returns int."""
-        # Define the expected return types from the smart contract call
-
-        return_types = int
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class HyperdriveFactoryLinkerCodeHashContractFunction(ContractFunction):
@@ -594,10 +633,64 @@ class HyperdriveFactoryMaxFeesContractFunction(ContractFunction):
         return cast(Fees, rename_returned_types(structs, return_types, raw_values))
 
 
+class HyperdriveFactoryMaxFixedAPRContractFunction(ContractFunction):
+    """ContractFunction for the maxFixedAPR method."""
+
+    def __call__(self) -> HyperdriveFactoryMaxFixedAPRContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
 class HyperdriveFactoryMaxPositionDurationContractFunction(ContractFunction):
     """ContractFunction for the maxPositionDuration method."""
 
     def __call__(self) -> HyperdriveFactoryMaxPositionDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMaxTimeStretchAPRContractFunction(ContractFunction):
+    """ContractFunction for the maxTimeStretchAPR method."""
+
+    def __call__(self) -> HyperdriveFactoryMaxTimeStretchAPRContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -675,10 +768,64 @@ class HyperdriveFactoryMinFeesContractFunction(ContractFunction):
         return cast(Fees, rename_returned_types(structs, return_types, raw_values))
 
 
+class HyperdriveFactoryMinFixedAPRContractFunction(ContractFunction):
+    """ContractFunction for the minFixedAPR method."""
+
+    def __call__(self) -> HyperdriveFactoryMinFixedAPRContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
 class HyperdriveFactoryMinPositionDurationContractFunction(ContractFunction):
     """ContractFunction for the minPositionDuration method."""
 
     def __call__(self) -> HyperdriveFactoryMinPositionDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMinTimeStretchAPRContractFunction(ContractFunction):
+    """ContractFunction for the minTimeStretchAPR method."""
+
+    def __call__(self) -> HyperdriveFactoryMinTimeStretchAPRContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -922,11 +1069,55 @@ class HyperdriveFactoryUpdateMaxFeesContractFunction(ContractFunction):
         # Call the function
 
 
+class HyperdriveFactoryUpdateMaxFixedAPRContractFunction(ContractFunction):
+    """ContractFunction for the updateMaxFixedAPR method."""
+
+    def __call__(self, maxFixedAPR: int) -> HyperdriveFactoryUpdateMaxFixedAPRContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(maxFixedAPR))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
 class HyperdriveFactoryUpdateMaxPositionDurationContractFunction(ContractFunction):
     """ContractFunction for the updateMaxPositionDuration method."""
 
     def __call__(self, maxPositionDuration: int) -> HyperdriveFactoryUpdateMaxPositionDurationContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(maxPositionDuration))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMaxTimeStretchAPRContractFunction(ContractFunction):
+    """ContractFunction for the updateMaxTimeStretchAPR method."""
+
+    def __call__(self, maxTimeStretchAPR: int) -> HyperdriveFactoryUpdateMaxTimeStretchAPRContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(maxTimeStretchAPR))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -988,6 +1179,28 @@ class HyperdriveFactoryUpdateMinFeesContractFunction(ContractFunction):
         # Call the function
 
 
+class HyperdriveFactoryUpdateMinFixedAPRContractFunction(ContractFunction):
+    """ContractFunction for the updateMinFixedAPR method."""
+
+    def __call__(self, minFixedAPR: int) -> HyperdriveFactoryUpdateMinFixedAPRContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(minFixedAPR))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
 class HyperdriveFactoryUpdateMinPositionDurationContractFunction(ContractFunction):
     """ContractFunction for the updateMinPositionDuration method."""
 
@@ -1010,11 +1223,11 @@ class HyperdriveFactoryUpdateMinPositionDurationContractFunction(ContractFunctio
         # Call the function
 
 
-class HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
-    """ContractFunction for the versionCounter method."""
+class HyperdriveFactoryUpdateMinTimeStretchAPRContractFunction(ContractFunction):
+    """ContractFunction for the updateMinTimeStretchAPR method."""
 
-    def __call__(self) -> HyperdriveFactoryVersionCounterContractFunction:  # type: ignore
-        clone = super().__call__()
+    def __call__(self, minTimeStretchAPR: int) -> HyperdriveFactoryUpdateMinTimeStretchAPRContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(minTimeStretchAPR))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1025,16 +1238,11 @@ class HyperdriveFactoryVersionCounterContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ) -> int:
-        """returns int."""
+    ) -> None:
+        """returns None."""
         # Define the expected return types from the smart contract call
 
-        return_types = int
-
         # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class HyperdriveFactoryContractFunctions(ContractFunctions):
@@ -1047,6 +1255,8 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
     defaultPausers: HyperdriveFactoryDefaultPausersContractFunction
 
     deployAndInitialize: HyperdriveFactoryDeployAndInitializeContractFunction
+
+    deployTarget: HyperdriveFactoryDeployTargetContractFunction
 
     feeCollector: HyperdriveFactoryFeeCollectorContractFunction
 
@@ -1066,11 +1276,11 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     hyperdriveGovernance: HyperdriveFactoryHyperdriveGovernanceContractFunction
 
+    instancesToDeployerCoordinators: HyperdriveFactoryInstancesToDeployerCoordinatorsContractFunction
+
     isDeployerCoordinator: HyperdriveFactoryIsDeployerCoordinatorContractFunction
 
     isInstance: HyperdriveFactoryIsInstanceContractFunction
-
-    isOfficial: HyperdriveFactoryIsOfficialContractFunction
 
     linkerCodeHash: HyperdriveFactoryLinkerCodeHashContractFunction
 
@@ -1080,13 +1290,21 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     maxFees: HyperdriveFactoryMaxFeesContractFunction
 
+    maxFixedAPR: HyperdriveFactoryMaxFixedAPRContractFunction
+
     maxPositionDuration: HyperdriveFactoryMaxPositionDurationContractFunction
+
+    maxTimeStretchAPR: HyperdriveFactoryMaxTimeStretchAPRContractFunction
 
     minCheckpointDuration: HyperdriveFactoryMinCheckpointDurationContractFunction
 
     minFees: HyperdriveFactoryMinFeesContractFunction
 
+    minFixedAPR: HyperdriveFactoryMinFixedAPRContractFunction
+
     minPositionDuration: HyperdriveFactoryMinPositionDurationContractFunction
+
+    minTimeStretchAPR: HyperdriveFactoryMinTimeStretchAPRContractFunction
 
     removeDeployerCoordinator: HyperdriveFactoryRemoveDeployerCoordinatorContractFunction
 
@@ -1108,15 +1326,21 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     updateMaxFees: HyperdriveFactoryUpdateMaxFeesContractFunction
 
+    updateMaxFixedAPR: HyperdriveFactoryUpdateMaxFixedAPRContractFunction
+
     updateMaxPositionDuration: HyperdriveFactoryUpdateMaxPositionDurationContractFunction
+
+    updateMaxTimeStretchAPR: HyperdriveFactoryUpdateMaxTimeStretchAPRContractFunction
 
     updateMinCheckpointDuration: HyperdriveFactoryUpdateMinCheckpointDurationContractFunction
 
     updateMinFees: HyperdriveFactoryUpdateMinFeesContractFunction
 
+    updateMinFixedAPR: HyperdriveFactoryUpdateMinFixedAPRContractFunction
+
     updateMinPositionDuration: HyperdriveFactoryUpdateMinPositionDurationContractFunction
 
-    versionCounter: HyperdriveFactoryVersionCounterContractFunction
+    updateMinTimeStretchAPR: HyperdriveFactoryUpdateMinTimeStretchAPRContractFunction
 
     def __init__(
         self,
@@ -1157,6 +1381,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="deployAndInitialize",
+        )
+        self.deployTarget = HyperdriveFactoryDeployTargetContractFunction.factory(
+            "deployTarget",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="deployTarget",
         )
         self.feeCollector = HyperdriveFactoryFeeCollectorContractFunction.factory(
             "feeCollector",
@@ -1230,6 +1462,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="hyperdriveGovernance",
         )
+        self.instancesToDeployerCoordinators = HyperdriveFactoryInstancesToDeployerCoordinatorsContractFunction.factory(
+            "instancesToDeployerCoordinators",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="instancesToDeployerCoordinators",
+        )
         self.isDeployerCoordinator = HyperdriveFactoryIsDeployerCoordinatorContractFunction.factory(
             "isDeployerCoordinator",
             w3=w3,
@@ -1245,14 +1485,6 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="isInstance",
-        )
-        self.isOfficial = HyperdriveFactoryIsOfficialContractFunction.factory(
-            "isOfficial",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="isOfficial",
         )
         self.linkerCodeHash = HyperdriveFactoryLinkerCodeHashContractFunction.factory(
             "linkerCodeHash",
@@ -1286,6 +1518,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="maxFees",
         )
+        self.maxFixedAPR = HyperdriveFactoryMaxFixedAPRContractFunction.factory(
+            "maxFixedAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxFixedAPR",
+        )
         self.maxPositionDuration = HyperdriveFactoryMaxPositionDurationContractFunction.factory(
             "maxPositionDuration",
             w3=w3,
@@ -1293,6 +1533,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="maxPositionDuration",
+        )
+        self.maxTimeStretchAPR = HyperdriveFactoryMaxTimeStretchAPRContractFunction.factory(
+            "maxTimeStretchAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxTimeStretchAPR",
         )
         self.minCheckpointDuration = HyperdriveFactoryMinCheckpointDurationContractFunction.factory(
             "minCheckpointDuration",
@@ -1310,6 +1558,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="minFees",
         )
+        self.minFixedAPR = HyperdriveFactoryMinFixedAPRContractFunction.factory(
+            "minFixedAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="minFixedAPR",
+        )
         self.minPositionDuration = HyperdriveFactoryMinPositionDurationContractFunction.factory(
             "minPositionDuration",
             w3=w3,
@@ -1317,6 +1573,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="minPositionDuration",
+        )
+        self.minTimeStretchAPR = HyperdriveFactoryMinTimeStretchAPRContractFunction.factory(
+            "minTimeStretchAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="minTimeStretchAPR",
         )
         self.removeDeployerCoordinator = HyperdriveFactoryRemoveDeployerCoordinatorContractFunction.factory(
             "removeDeployerCoordinator",
@@ -1400,6 +1664,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateMaxFees",
         )
+        self.updateMaxFixedAPR = HyperdriveFactoryUpdateMaxFixedAPRContractFunction.factory(
+            "updateMaxFixedAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMaxFixedAPR",
+        )
         self.updateMaxPositionDuration = HyperdriveFactoryUpdateMaxPositionDurationContractFunction.factory(
             "updateMaxPositionDuration",
             w3=w3,
@@ -1407,6 +1679,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="updateMaxPositionDuration",
+        )
+        self.updateMaxTimeStretchAPR = HyperdriveFactoryUpdateMaxTimeStretchAPRContractFunction.factory(
+            "updateMaxTimeStretchAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMaxTimeStretchAPR",
         )
         self.updateMinCheckpointDuration = HyperdriveFactoryUpdateMinCheckpointDurationContractFunction.factory(
             "updateMinCheckpointDuration",
@@ -1424,6 +1704,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateMinFees",
         )
+        self.updateMinFixedAPR = HyperdriveFactoryUpdateMinFixedAPRContractFunction.factory(
+            "updateMinFixedAPR",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMinFixedAPR",
+        )
         self.updateMinPositionDuration = HyperdriveFactoryUpdateMinPositionDurationContractFunction.factory(
             "updateMinPositionDuration",
             w3=w3,
@@ -1432,13 +1720,13 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateMinPositionDuration",
         )
-        self.versionCounter = HyperdriveFactoryVersionCounterContractFunction.factory(
-            "versionCounter",
+        self.updateMinTimeStretchAPR = HyperdriveFactoryUpdateMinTimeStretchAPRContractFunction.factory(
+            "updateMinTimeStretchAPR",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="versionCounter",
+            function_identifier="updateMinTimeStretchAPR",
         )
 
 
@@ -2430,6 +2718,82 @@ class HyperdriveFactoryMaxFeesUpdatedContractEvent(ContractEvent):
         )
 
 
+class HyperdriveFactoryMaxFixedAPRUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MaxFixedAPRUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMaxFixedAPRUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxFixedAPRUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMaxFixedAPRUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxFixedAPRUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class HyperdriveFactoryMaxPositionDurationUpdatedContractEvent(ContractEvent):
     """ContractEvent for MaxPositionDurationUpdated."""
 
@@ -2491,6 +2855,82 @@ class HyperdriveFactoryMaxPositionDurationUpdatedContractEvent(ContractEvent):
     @classmethod
     def create_filter(  # type: ignore
         cls: Type["HyperdriveFactoryMaxPositionDurationUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MaxTimeStretchAPRUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent"],
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -2658,6 +3098,82 @@ class HyperdriveFactoryMinFeesUpdatedContractEvent(ContractEvent):
         )
 
 
+class HyperdriveFactoryMinFixedAPRUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MinFixedAPRUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMinFixedAPRUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMinFixedAPRUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMinFixedAPRUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMinFixedAPRUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class HyperdriveFactoryMinPositionDurationUpdatedContractEvent(ContractEvent):
     """ContractEvent for MinPositionDurationUpdated."""
 
@@ -2734,6 +3250,82 @@ class HyperdriveFactoryMinPositionDurationUpdatedContractEvent(ContractEvent):
         )
 
 
+class HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MinTimeStretchAPRUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class HyperdriveFactoryContractEvents(ContractEvents):
     """ContractEvents for the HyperdriveFactory contract."""
 
@@ -2763,13 +3355,21 @@ class HyperdriveFactoryContractEvents(ContractEvents):
 
     MaxFeesUpdated: HyperdriveFactoryMaxFeesUpdatedContractEvent
 
+    MaxFixedAPRUpdated: HyperdriveFactoryMaxFixedAPRUpdatedContractEvent
+
     MaxPositionDurationUpdated: HyperdriveFactoryMaxPositionDurationUpdatedContractEvent
+
+    MaxTimeStretchAPRUpdated: HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent
 
     MinCheckpointDurationUpdated: HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent
 
     MinFeesUpdated: HyperdriveFactoryMinFeesUpdatedContractEvent
 
+    MinFixedAPRUpdated: HyperdriveFactoryMinFixedAPRUpdatedContractEvent
+
     MinPositionDurationUpdated: HyperdriveFactoryMinPositionDurationUpdatedContractEvent
+
+    MinTimeStretchAPRUpdated: HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent
 
     def __init__(
         self,
@@ -2876,6 +3476,12 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 "MaxFeesUpdated", w3=w3, contract_abi=abi, address=address, event_name="MaxFeesUpdated"
             ),
         )
+        self.MaxFixedAPRUpdated = cast(
+            HyperdriveFactoryMaxFixedAPRUpdatedContractEvent,
+            HyperdriveFactoryMaxFixedAPRUpdatedContractEvent.factory(
+                "MaxFixedAPRUpdated", w3=w3, contract_abi=abi, address=address, event_name="MaxFixedAPRUpdated"
+            ),
+        )
         self.MaxPositionDurationUpdated = cast(
             HyperdriveFactoryMaxPositionDurationUpdatedContractEvent,
             HyperdriveFactoryMaxPositionDurationUpdatedContractEvent.factory(
@@ -2884,6 +3490,16 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 contract_abi=abi,
                 address=address,
                 event_name="MaxPositionDurationUpdated",
+            ),
+        )
+        self.MaxTimeStretchAPRUpdated = cast(
+            HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent,
+            HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent.factory(
+                "MaxTimeStretchAPRUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MaxTimeStretchAPRUpdated",
             ),
         )
         self.MinCheckpointDurationUpdated = cast(
@@ -2902,6 +3518,12 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 "MinFeesUpdated", w3=w3, contract_abi=abi, address=address, event_name="MinFeesUpdated"
             ),
         )
+        self.MinFixedAPRUpdated = cast(
+            HyperdriveFactoryMinFixedAPRUpdatedContractEvent,
+            HyperdriveFactoryMinFixedAPRUpdatedContractEvent.factory(
+                "MinFixedAPRUpdated", w3=w3, contract_abi=abi, address=address, event_name="MinFixedAPRUpdated"
+            ),
+        )
         self.MinPositionDurationUpdated = cast(
             HyperdriveFactoryMinPositionDurationUpdatedContractEvent,
             HyperdriveFactoryMinPositionDurationUpdatedContractEvent.factory(
@@ -2910,6 +3532,16 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 contract_abi=abi,
                 address=address,
                 event_name="MinPositionDurationUpdated",
+            ),
+        )
+        self.MinTimeStretchAPRUpdated = cast(
+            HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent,
+            HyperdriveFactoryMinTimeStretchAPRUpdatedContractEvent.factory(
+                "MinTimeStretchAPRUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MinTimeStretchAPRUpdated",
             ),
         )
 
@@ -2934,6 +3566,10 @@ hyperdrivefactory_abi: ABI = cast(
                         {"name": "maxCheckpointDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "minPositionDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "maxPositionDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "minFixedAPR", "type": "uint256", "internalType": "uint256"},
+                        {"name": "maxFixedAPR", "type": "uint256", "internalType": "uint256"},
+                        {"name": "minTimeStretchAPR", "type": "uint256", "internalType": "uint256"},
+                        {"name": "maxTimeStretchAPR", "type": "uint256", "internalType": "uint256"},
                         {
                             "name": "minFees",
                             "type": "tuple",
@@ -2988,9 +3624,10 @@ hyperdrivefactory_abi: ABI = cast(
             "type": "function",
             "name": "deployAndInitialize",
             "inputs": [
+                {"name": "_deploymentId", "type": "bytes32", "internalType": "bytes32"},
                 {"name": "_deployerCoordinator", "type": "address", "internalType": "address"},
                 {
-                    "name": "_deployConfig",
+                    "name": "_config",
                     "type": "tuple",
                     "internalType": "struct IHyperdrive.PoolDeployConfig",
                     "components": [
@@ -3019,11 +3656,56 @@ hyperdrivefactory_abi: ABI = cast(
                 },
                 {"name": "_extraData", "type": "bytes", "internalType": "bytes"},
                 {"name": "_contribution", "type": "uint256", "internalType": "uint256"},
-                {"name": "_apr", "type": "uint256", "internalType": "uint256"},
+                {"name": "_fixedAPR", "type": "uint256", "internalType": "uint256"},
+                {"name": "_timeStretchAPR", "type": "uint256", "internalType": "uint256"},
                 {"name": "_initializeExtraData", "type": "bytes", "internalType": "bytes"},
+                {"name": "_salt", "type": "bytes32", "internalType": "bytes32"},
             ],
             "outputs": [{"name": "", "type": "address", "internalType": "contract IHyperdrive"}],
             "stateMutability": "payable",
+        },
+        {
+            "type": "function",
+            "name": "deployTarget",
+            "inputs": [
+                {"name": "_deploymentId", "type": "bytes32", "internalType": "bytes32"},
+                {"name": "_deployerCoordinator", "type": "address", "internalType": "address"},
+                {
+                    "name": "_config",
+                    "type": "tuple",
+                    "internalType": "struct IHyperdrive.PoolDeployConfig",
+                    "components": [
+                        {"name": "baseToken", "type": "address", "internalType": "contract IERC20"},
+                        {"name": "linkerFactory", "type": "address", "internalType": "address"},
+                        {"name": "linkerCodeHash", "type": "bytes32", "internalType": "bytes32"},
+                        {"name": "minimumShareReserves", "type": "uint256", "internalType": "uint256"},
+                        {"name": "minimumTransactionAmount", "type": "uint256", "internalType": "uint256"},
+                        {"name": "positionDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "checkpointDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "timeStretch", "type": "uint256", "internalType": "uint256"},
+                        {"name": "governance", "type": "address", "internalType": "address"},
+                        {"name": "feeCollector", "type": "address", "internalType": "address"},
+                        {
+                            "name": "fees",
+                            "type": "tuple",
+                            "internalType": "struct IHyperdrive.Fees",
+                            "components": [
+                                {"name": "curve", "type": "uint256", "internalType": "uint256"},
+                                {"name": "flat", "type": "uint256", "internalType": "uint256"},
+                                {"name": "governanceLP", "type": "uint256", "internalType": "uint256"},
+                                {"name": "governanceZombie", "type": "uint256", "internalType": "uint256"},
+                            ],
+                        },
+                    ],
+                },
+                {"name": "_extraData", "type": "bytes", "internalType": "bytes"},
+                {"name": "_fixedAPR", "type": "uint256", "internalType": "uint256"},
+                {"name": "_timeStretchAPR", "type": "uint256", "internalType": "uint256"},
+                {"name": "_targetIndex", "type": "uint256", "internalType": "uint256"},
+                {"name": "_salt", "type": "bytes32", "internalType": "bytes32"},
+            ],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "nonpayable",
         },
         {
             "type": "function",
@@ -3096,6 +3778,13 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "instancesToDeployerCoordinators",
+            "inputs": [{"name": "instance", "type": "address", "internalType": "address"}],
+            "outputs": [{"name": "deployCoordinator", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "isDeployerCoordinator",
             "inputs": [{"name": "", "type": "address", "internalType": "address"}],
             "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
@@ -3106,13 +3795,6 @@ hyperdrivefactory_abi: ABI = cast(
             "name": "isInstance",
             "inputs": [{"name": "", "type": "address", "internalType": "address"}],
             "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
-            "stateMutability": "view",
-        },
-        {
-            "type": "function",
-            "name": "isOfficial",
-            "inputs": [{"name": "instance", "type": "address", "internalType": "address"}],
-            "outputs": [{"name": "version", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
         },
         {
@@ -3157,7 +3839,21 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "maxFixedAPR",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "maxPositionDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "maxTimeStretchAPR",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
@@ -3190,7 +3886,21 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "minFixedAPR",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "minPositionDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "minTimeStretchAPR",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
@@ -3282,8 +3992,22 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "updateMaxFixedAPR",
+            "inputs": [{"name": "_maxFixedAPR", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
             "name": "updateMaxPositionDuration",
             "inputs": [{"name": "_maxPositionDuration", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMaxTimeStretchAPR",
+            "inputs": [{"name": "_maxTimeStretchAPR", "type": "uint256", "internalType": "uint256"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -3315,6 +4039,13 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "updateMinFixedAPR",
+            "inputs": [{"name": "_minFixedAPR", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
             "name": "updateMinPositionDuration",
             "inputs": [{"name": "_minPositionDuration", "type": "uint256", "internalType": "uint256"}],
             "outputs": [],
@@ -3322,10 +4053,10 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "versionCounter",
-            "inputs": [],
-            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
-            "stateMutability": "view",
+            "name": "updateMinTimeStretchAPR",
+            "inputs": [{"name": "_minTimeStretchAPR", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
         },
         {
             "type": "event",
@@ -3352,7 +4083,7 @@ hyperdrivefactory_abi: ABI = cast(
             "type": "event",
             "name": "Deployed",
             "inputs": [
-                {"name": "version", "type": "uint256", "indexed": True, "internalType": "uint256"},
+                {"name": "deployerCoordinator", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "hyperdrive", "type": "address", "indexed": False, "internalType": "address"},
                 {
                     "name": "config",
@@ -3464,9 +4195,23 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "event",
+            "name": "MaxFixedAPRUpdated",
+            "inputs": [{"name": "newMaxFixedAPR", "type": "uint256", "indexed": False, "internalType": "uint256"}],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
             "name": "MaxPositionDurationUpdated",
             "inputs": [
                 {"name": "newMaxPositionDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MaxTimeStretchAPRUpdated",
+            "inputs": [
+                {"name": "newMaxTimeStretchAPR", "type": "uint256", "indexed": False, "internalType": "uint256"}
             ],
             "anonymous": False,
         },
@@ -3499,36 +4244,74 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "event",
+            "name": "MinFixedAPRUpdated",
+            "inputs": [{"name": "newMinFixedAPR", "type": "uint256", "indexed": False, "internalType": "uint256"}],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
             "name": "MinPositionDurationUpdated",
             "inputs": [
                 {"name": "newMinPositionDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
             ],
             "anonymous": False,
         },
+        {
+            "type": "event",
+            "name": "MinTimeStretchAPRUpdated",
+            "inputs": [
+                {"name": "newMinTimeStretchAPR", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "error",
+            "name": "AddressEmptyCode",
+            "inputs": [{"name": "target", "type": "address", "internalType": "address"}],
+        },
+        {
+            "type": "error",
+            "name": "AddressInsufficientBalance",
+            "inputs": [{"name": "account", "type": "address", "internalType": "address"}],
+        },
         {"type": "error", "name": "DeployerCoordinatorAlreadyAdded", "inputs": []},
         {"type": "error", "name": "DeployerCoordinatorIndexMismatch", "inputs": []},
         {"type": "error", "name": "DeployerCoordinatorNotAdded", "inputs": []},
         {"type": "error", "name": "EndIndexTooLarge", "inputs": []},
+        {"type": "error", "name": "ExpInvalidExponent", "inputs": []},
+        {"type": "error", "name": "FailedInnerCall", "inputs": []},
         {"type": "error", "name": "InvalidCheckpointDuration", "inputs": []},
         {"type": "error", "name": "InvalidCheckpointDurationResolution", "inputs": []},
         {"type": "error", "name": "InvalidDeployConfig", "inputs": []},
         {"type": "error", "name": "InvalidDeployerCoordinator", "inputs": []},
         {"type": "error", "name": "InvalidFees", "inputs": []},
+        {"type": "error", "name": "InvalidFixedAPR", "inputs": []},
         {"type": "error", "name": "InvalidIndexes", "inputs": []},
         {"type": "error", "name": "InvalidMaxCheckpointDuration", "inputs": []},
         {"type": "error", "name": "InvalidMaxFees", "inputs": []},
+        {"type": "error", "name": "InvalidMaxFixedAPR", "inputs": []},
         {"type": "error", "name": "InvalidMaxPositionDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMaxTimeStretchAPR", "inputs": []},
         {"type": "error", "name": "InvalidMinCheckpointDuration", "inputs": []},
         {"type": "error", "name": "InvalidMinFees", "inputs": []},
+        {"type": "error", "name": "InvalidMinFixedAPR", "inputs": []},
         {"type": "error", "name": "InvalidMinPositionDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMinTimeStretchAPR", "inputs": []},
         {"type": "error", "name": "InvalidPositionDuration", "inputs": []},
+        {"type": "error", "name": "InvalidTimeStretchAPR", "inputs": []},
+        {"type": "error", "name": "LnInvalidInput", "inputs": []},
+        {
+            "type": "error",
+            "name": "SafeERC20FailedOperation",
+            "inputs": [{"name": "token", "type": "address", "internalType": "address"}],
+        },
         {"type": "error", "name": "TransferFailed", "inputs": []},
         {"type": "error", "name": "Unauthorized", "inputs": []},
     ],
 )
 # pylint: disable=line-too-long
 hyperdrivefactory_bytecode = HexStr(
-    "0x608060405260016002553480156200001657600080fd5b5060405162002b3738038062002b37833981016040819052620000399162000556565b80608001518160a00151108062000064575080608001518160a0015162000061919062000688565b15155b156200008357604051630219d66360e11b815260040160405180910390fd5b60a0810151600881905560c08201511080620000b3575080608001518160c00151620000b0919062000688565b15155b15620000d25760405163f9c0959d60e01b815260040160405180910390fd5b60c0810151600981905560e0820151108062000102575080608001518160e00151620000ff919062000688565b15155b156200012157604051633007ad0160e11b815260040160405180910390fd5b60e0810151600a8190556101008201511080620001535750806080015181610100015162000150919062000688565b15155b15620001725760405163cfb699cb60e01b815260040160405180910390fd5b610100810151600b5561014081015151670de0b6b3a76400001080620001a85750670de0b6b3a764000081610140015160200151115b80620001c45750670de0b6b3a764000081610140015160400151115b80620001e05750670de0b6b3a764000081610140015160600151115b15620001ff5760405163161071fb60e11b815260040160405180910390fd5b61014081015180516010819055602082015160115560408201516012556060909101516013556101208201515111806200024a57508061014001516020015181610120015160200151115b806200026757508061014001516040015181610120015160400151115b806200028457508061014001516060015181610120015160600151115b15620002a3576040516315b05a8f60e01b815260040160405180910390fd5b6101208101518051600c55602080820151600d55604080830151600e55606092830151600f558351600180546001600160a01b03199081166001600160a01b03938416179091558386015160048054831691841691909117905593850151600780549095169116179092559082015180516200032492601492019062000360565b50610160810151600580546001600160a01b0319166001600160a01b0390921691909117905561018081015160065560800151600055620006ab565b828054828255906000526020600020908101928215620003b8579160200282015b82811115620003b857825182546001600160a01b0319166001600160a01b0390911617825560209092019160019091019062000381565b50620003c6929150620003ca565b5090565b5b80821115620003c65760008155600101620003cb565b634e487b7160e01b600052604160045260246000fd5b6040516101a081016001600160401b03811182821017156200041d576200041d620003e1565b60405290565b80516001600160a01b03811681146200043b57600080fd5b919050565b600082601f8301126200045257600080fd5b815160206001600160401b0380831115620004715762000471620003e1565b8260051b604051601f19603f83011681018181108482111715620004995762000499620003e1565b604052938452858101830193838101925087851115620004b857600080fd5b83870191505b84821015620004e257620004d28262000423565b83529183019190830190620004be565b979650505050505050565b6000608082840312156200050057600080fd5b604051608081016001600160401b0381118282101715620005255762000525620003e1565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b6000602082840312156200056957600080fd5b81516001600160401b03808211156200058157600080fd5b9083019061026082860312156200059757600080fd5b620005a1620003f7565b620005ac8362000423565b8152620005bc6020840162000423565b6020820152604083015182811115620005d457600080fd5b620005e28782860162000440565b604083015250620005f66060840162000423565b60608201526080830151608082015260a083015160a082015260c083015160c082015260e083015160e08201526101009150818301518282015261012091506200064386838501620004ed565b8282015262000657866101a08501620004ed565b6101408201526200066c610220840162000423565b6101608201526102409290920151610180830152509392505050565b600082620006a657634e487b7160e01b600052601260045260246000fd5b500690565b61247c80620006bb6000396000f3fe6080604052600436106102305760003560e01c8063bc30e7a11161012e578063dd6d30c1116100ab578063e83e34b11161006f578063e83e34b11461066a578063eb71f66c1461067f578063ec895f111461069f578063f8c09e59146106bf578063fe3d5aeb146106ef57600080fd5b8063dd6d30c1146105e9578063e0e2daaa146105ff578063e1b39c8014610615578063e33315551461062a578063e71f34b31461064a57600080fd5b8063d0f96b92116100f2578063d0f96b921461055d578063d2c35ce814610573578063daac24da14610593578063daf012e6146105b3578063dd2b8fbb146105c957600080fd5b8063bc30e7a1146104d2578063c1722563146104f2578063c415b95c14610514578063c905a4b514610534578063cd2cdf581461054a57600080fd5b80636e95d67c116101bc5780638efc0986116101805780638efc09861461043a57806399623bb1146104505780639af2526214610470578063a64c90bf14610490578063b2561263146104b257600080fd5b80636e95d67c146103985780636f6d5c4a146103ad57806377b81aac146103cd57806385229785146103fa5780638e127cf51461041a57600080fd5b8063421caba811610203578063421caba8146102b75780634fbfee77146102d75780635720c9d5146102f75780635aa6e675146103205780636b44e6be1461035857600080fd5b806310d1dc3e1461023557806311e77bfe146102575780632885e3ac14610277578063411c303514610297575b600080fd5b34801561024157600080fd5b50610255610250366004611d34565b61070f565b005b34801561026357600080fd5b50610255610272366004611d4c565b6107f9565b34801561028357600080fd5b50610255610292366004611d34565b6108cb565b3480156102a357600080fd5b506102556102b2366004611d8d565b610a03565b3480156102c357600080fd5b506102556102d2366004611db9565b610bbb565b3480156102e357600080fd5b506102556102f2366004611d4c565b610cab565b34801561030357600080fd5b5061030d60085481565b6040519081526020015b60405180910390f35b34801561032c57600080fd5b50600154610340906001600160a01b031681565b6040516001600160a01b039091168152602001610317565b34801561036457600080fd5b50610388610373366004611db9565b60186020526000908152604090205460ff1681565b6040519015158152602001610317565b3480156103a457600080fd5b5060175461030d565b3480156103b957600080fd5b506102556103c8366004611d4c565b610d08565b3480156103d957600080fd5b5061030d6103e8366004611db9565b60036020526000908152604090205481565b34801561040657600080fd5b50610255610415366004611db9565b610dac565b34801561042657600080fd5b50610255610435366004611d4c565b610e20565b34801561044657600080fd5b5061030d600b5481565b34801561045c57600080fd5b50600554610340906001600160a01b031681565b34801561047c57600080fd5b5061025561048b366004611ddd565b610ec4565b34801561049c57600080fd5b506104a5610f38565b6040516103179190611e52565b3480156104be57600080fd5b506102556104cd366004611db9565b610f9a565b3480156104de57600080fd5b506104a56104ed366004611e9f565b61100e565b3480156104fe57600080fd5b5061050761112a565b6040516103179190611ec1565b34801561052057600080fd5b50600754610340906001600160a01b031681565b34801561054057600080fd5b5061030d60065481565b610340610558366004612021565b611182565b34801561056957600080fd5b5061030d60005481565b34801561057f57600080fd5b5061025561058e366004611db9565b6117da565b34801561059f57600080fd5b506103406105ae366004611d4c565b61184e565b3480156105bf57600080fd5b5061030d600a5481565b3480156105d557600080fd5b506102556105e4366004611db9565b61187e565b3480156105f557600080fd5b5061030d60025481565b34801561060b57600080fd5b5061030d60095481565b34801561062157600080fd5b5060155461030d565b34801561063657600080fd5b50600454610340906001600160a01b031681565b34801561065657600080fd5b50610255610665366004611d4c565b6118f2565b34801561067657600080fd5b50610507611996565b34801561068b57600080fd5b5061025561069a366004611d4c565b6119ee565b3480156106ab57600080fd5b506104a56106ba366004611e9f565b611a86565b3480156106cb57600080fd5b506103886106da366004611db9565b60166020526000908152604090205460ff1681565b3480156106fb57600080fd5b5061034061070a366004611d4c565b611b9b565b6001546001600160a01b03163314610739576040516282b42960e81b815260040160405180910390fd5b6010548135118061074f57506011546020820135115b8061075f57506012546040820135115b8061076f57506013546060820135115b1561078d576040516315b05a8f60e01b815260040160405180910390fd5b8035600c819055602080830135600d819055604080850135600e819055606080870135600f819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a150565b6001546001600160a01b03163314610823576040516282b42960e81b815260040160405180910390fd5b806008546108319190612165565b15158061084a5750806009546108479190612165565b15155b80610861575080600a5461085e9190612165565b15155b80610878575080600b546108759190612165565b15155b15610896576040516311b75c1560e31b815260040160405180910390fd5b60008190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a906020016107ee565b6001546001600160a01b031633146108f5576040516282b42960e81b815260040160405180910390fd5b670de0b6b3a7640000813511806109175750670de0b6b3a76400008160200135115b8061092d5750670de0b6b3a76400008160400135115b806109435750670de0b6b3a76400008160600135115b806109505750600c548135105b806109605750600d546020820135105b806109705750600e546040820135105b806109805750600f546060820135105b1561099e5760405163161071fb60e11b815260040160405180910390fd5b80356010819055602080830135601181905560408085013560128190556060808701356013819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a7906080016107ee565b6001546001600160a01b03163314610a2d576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03821660009081526016602052604090205460ff16610a6657604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b031660158281548110610a8357610a83612187565b6000918252602090912001546001600160a01b031614610ab657604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601660205260409020805460ff1916905560158054610ae6906001906121b3565b81548110610af657610af6612187565b600091825260209091200154601580546001600160a01b039092169183908110610b2257610b22612187565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055506015805480610b6157610b616121c6565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6001546001600160a01b03163314610be5576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03811660009081526016602052604090205460ff1615610c1f5760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b038116600081815260166020526040808220805460ff1916600190811790915560158054918201815583527f55f448fdea98c4d29eb340757ef0a66cd03dbb9538908a6a81d96026b71ec4750180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6001546001600160a01b03163314610cd5576040516282b42960e81b815260040160405180910390fd5b600681905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6001546001600160a01b03163314610d32576040516282b42960e81b815260040160405180910390fd5b600854811080610d4d5750600054610d4a9082612165565b15155b80610d595750600a5481115b15610d775760405163f9c0959d60e01b815260040160405180910390fd5b60098190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f2906020016107ee565b6001546001600160a01b03163314610dd6576040516282b42960e81b815260040160405180910390fd5b600580546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6001546001600160a01b03163314610e4a576040516282b42960e81b815260040160405180910390fd5b600054811080610e655750600054610e629082612165565b15155b80610e71575060095481115b15610e8f57604051630219d66360e11b815260040160405180910390fd5b60088190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b7631906020016107ee565b6001546001600160a01b03163314610eee576040516282b42960e81b815260040160405180910390fd5b610efa60148383611cbc565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc388282604051610f2c9291906121dc565b60405180910390a15050565b60606014805480602002602001604051908101604052809291908181526020018280548015610f9057602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610f72575b5050505050905090565b6001546001600160a01b03163314610fc4576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab90600090a250565b60608183111561103157604051633b2735ab60e11b815260040160405180910390fd5b6017548211156110545760405163e0f7becb60e01b815260040160405180910390fd5b61105e83836121b3565b61106990600161222a565b67ffffffffffffffff81111561108157611081611eee565b6040519080825280602002602001820160405280156110aa578160200160208202803683370190505b509050825b82811161112357601781815481106110c9576110c9612187565b6000918252602090912001546001600160a01b0316826110e986846121b3565b815181106110f9576110f9612187565b6001600160a01b03909216602092830291909101909101528061111b8161223d565b9150506110af565b5092915050565b6111556040518060800160405280600081526020016000815260200160008152602001600081525090565b5060408051608081018252600c548152600d546020820152600e5491810191909152600f54606082015290565b6001600160a01b03861660009081526016602052604081205460ff166111bb57604051636e623f0f60e01b815260040160405180910390fd5b6008548660c0015110806111d457506009548660c00151115b806111ef57506000548660c001516111ec9190612165565b15155b1561120d57604051635428734d60e01b815260040160405180910390fd5b600a548660a0015110806112265750600b548660a00151115b8061124357508560c001518660a001516112409190612165565b15155b156112615760405163253fffcf60e11b815260040160405180910390fd5b601054610140870151511180611281575060115461014087015160200151115b80611296575060125461014087015160400151115b806112ab575060135461014087015160600151115b806112bd5750600c5461014087015151105b806112d25750600d5461014087015160200151105b806112e75750600e5461014087015160400151105b806112fc5750600f5461014087015160600151105b1561131a57604051632d8768f960e01b815260040160405180910390fd5b60208601516001600160a01b03161515806113385750604086015115155b8061135057506101208601516001600160a01b031615155b8061136857506101008601516001600160a01b031615155b156113865760405163e8c02dd760e01b815260040160405180910390fd5b6005546001600160a01b03908116602088015260065460408089019190915260075482166101208901523061010089015251630c46909760e11b815260009189169063188d212e906113de908a908a90600401612364565b6020604051808303816000875af11580156113fd573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611421919061238f565b6002546001600160a01b03808316600090815260036020526040908190208390556004549091166101008b015251919250907f9409438224258854b5587daf29ca81c2676ed86cd439240ca7aaa0c6e17cfa76906114849084908b908b906123ac565b60405180910390a26017805460018082019092557fc624b66cc0138b8fabc209247f72d758e1cf3343756d543badbf24212bed8c150180546001600160a01b0319166001600160a01b0384169081179091556000908152601860205260408120805460ff19169092179091553486116115975761150186346121b3565b60408051606081018252338152600160208201528082018790529051631df417fd60e21b81529192506001600160a01b038416916377d05ff491899161154e9183918b91906004016123e7565b60206040518083038185885af115801561156c573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190611591919061242d565b50611654565b50865134906115b1906001600160a01b0316333089611bb0565b87516115c7906001600160a01b03168388611c3f565b60408051606081018252338152600160208201528082018690529051631df417fd60e21b81526001600160a01b038416916377d05ff49161160f918a918a91906004016123e7565b6020604051808303816000875af115801561162e573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611652919061242d565b505b80156116c557604051600090339083908381818185875af1925050503d806000811461169c576040519150601f19603f3d011682016040523d82523d6000602084013e6116a1565b606091505b50509050806116c3576040516312171d8360e31b815260040160405180910390fd5b505b60005b60145481101561176b57826001600160a01b0316637180c8ca601483815481106116f4576116f4612187565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b15801561174857600080fd5b505af115801561175c573d6000803e3d6000fd5b505050508060010190506116c8565b506004805460405163ab033ea960e01b81526001600160a01b039182169281019290925283169063ab033ea990602401600060405180830381600087803b1580156117b557600080fd5b505af11580156117c9573d6000803e3d6000fd5b50939b9a5050505050505050505050565b6001546001600160a01b03163314611804576040516282b42960e81b815260040160405180910390fd5b600780546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b60006017828154811061186357611863612187565b6000918252602090912001546001600160a01b031692915050565b6001546001600160a01b031633146118a8576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6001546001600160a01b0316331461191c576040516282b42960e81b815260040160405180910390fd5b60095481108061193757506000546119349082612165565b15155b806119435750600b5481115b1561196157604051633007ad0160e11b815260040160405180910390fd5b600a8190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f178906020016107ee565b6119c16040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526010548152601154602082015260125491810191909152601354606082015290565b6001546001600160a01b03163314611a18576040516282b42960e81b815260040160405180910390fd5b600a54811080611a335750600054611a309082612165565b15155b15611a515760405163cfb699cb60e01b815260040160405180910390fd5b600b8190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b906020016107ee565b606081831115611aa957604051633b2735ab60e11b815260040160405180910390fd5b601554821115611acc5760405163e0f7becb60e01b815260040160405180910390fd5b611ad683836121b3565b611ae190600161222a565b67ffffffffffffffff811115611af957611af9611eee565b604051908082528060200260200182016040528015611b22578160200160208202803683370190505b509050825b8281116111235760158181548110611b4157611b41612187565b6000918252602090912001546001600160a01b031682611b6186846121b3565b81518110611b7157611b71612187565b6001600160a01b039092166020928302919091019091015280611b938161223d565b915050611b27565b60006015828154811061186357611863612187565b60006040516323b872dd60e01b81528460048201528360248201528260448201526020600060648360008a5af13d15601f3d1160016000511416171691505080611c385760405162461bcd60e51b81526020600482015260146024820152731514905394d1915497d19493d357d1905253115160621b60448201526064015b60405180910390fd5b5050505050565b600060405163095ea7b360e01b8152836004820152826024820152602060006044836000895af13d15601f3d1160016000511416171691505080611cb65760405162461bcd60e51b815260206004820152600e60248201526d1054141493d59157d1905253115160921b6044820152606401611c2f565b50505050565b828054828255906000526020600020908101928215611d0f579160200282015b82811115611d0f5781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190611cdc565b50611d1b929150611d1f565b5090565b5b80821115611d1b5760008155600101611d20565b600060808284031215611d4657600080fd5b50919050565b600060208284031215611d5e57600080fd5b5035919050565b6001600160a01b0381168114611d7a57600080fd5b50565b8035611d8881611d65565b919050565b60008060408385031215611da057600080fd5b8235611dab81611d65565b946020939093013593505050565b600060208284031215611dcb57600080fd5b8135611dd681611d65565b9392505050565b60008060208385031215611df057600080fd5b823567ffffffffffffffff80821115611e0857600080fd5b818501915085601f830112611e1c57600080fd5b813581811115611e2b57600080fd5b8660208260051b8501011115611e4057600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015611e935783516001600160a01b031683529284019291840191600101611e6e565b50909695505050505050565b60008060408385031215611eb257600080fd5b50508035926020909101359150565b81518152602080830151908201526040808301519082015260608083015190820152608081015b92915050565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff81118282101715611f2857611f28611eee565b60405290565b600060808284031215611f4057600080fd5b6040516080810181811067ffffffffffffffff82111715611f6357611f63611eee565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b600082601f830112611fa557600080fd5b813567ffffffffffffffff80821115611fc057611fc0611eee565b604051601f8301601f19908116603f01168101908282118183101715611fe857611fe8611eee565b8160405283815286602085880101111561200157600080fd5b836020870160208301376000602085830101528094505050505092915050565b60008060008060008086880361026081121561203c57600080fd5b873561204781611d65565b96506101c0601f198201121561205c57600080fd5b50612065611f04565b61207160208901611d7d565b815261207f60408901611d7d565b6020820152606088013560408201526080880135606082015260a0880135608082015260c088013560a082015260e088013560c08201526101008089013560e08301526101206120d0818b01611d7d565b8284015261014091506120e4828b01611d7d565b908301526120f68a6101608b01611f2e565b9082015294506101e087013567ffffffffffffffff8082111561211857600080fd5b6121248a838b01611f94565b95506102008901359450610220890135935061024089013591508082111561214b57600080fd5b5061215889828a01611f94565b9150509295509295509295565b60008261218257634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b81810381811115611ee857611ee861219d565b634e487b7160e01b600052603160045260246000fd5b60208082528181018390526000908460408401835b8681101561221f57823561220481611d65565b6001600160a01b0316825291830191908301906001016121f1565b509695505050505050565b80820180821115611ee857611ee861219d565b60006001820161224f5761224f61219d565b5060010190565b80516001600160a01b03168252602081015161227d60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e0830152610100808201516122d5828501826001600160a01b03169052565b5050610120818101516001600160a01b031690830152610140808201518051828501526020810151610160850152604081015161018085015260608101516101a0850152611cb6565b6000815180845260005b8181101561234457602081850181015186830182015201612328565b506000602082860101526020601f19601f83011685010191505092915050565b60006101e06123738386612256565b806101c08401526123868184018561231e565b95945050505050565b6000602082840312156123a157600080fd5b8151611dd681611d65565b6001600160a01b038416815260006102006123ca6020840186612256565b806101e08401526123dd8184018561231e565b9695505050505050565b8381528260208201526060604082015260018060a01b03825116606082015260208201511515608082015260006040830151606060a08401526123dd60c084018261231e565b60006020828403121561243f57600080fd5b505191905056fea2646970667358221220b4aaf0d63c7a455572efc037a197120b3566a91f0d3c15de358cc1586a7dd7cf64736f6c63430008130033"
+    "0x60806040523480156200001157600080fd5b5060405162003b5138038062003b518339810160408190526200003491620005cd565b80608001518160a0015110806200005f575080608001518160a001516200005c919062000729565b15155b156200007e57604051630219d66360e11b815260040160405180910390fd5b60a0810151600681905560c08201511080620000ae575080608001518160c00151620000ab919062000729565b15155b15620000cd5760405163f9c0959d60e01b815260040160405180910390fd5b60c0810151600781905560e08201511080620000fd575080608001518160e00151620000fa919062000729565b15155b156200011c57604051633007ad0160e11b815260040160405180910390fd5b60e0810151600881905561010082015110806200014e575080608001518161010001516200014b919062000729565b15155b156200016d5760405163cfb699cb60e01b815260040160405180910390fd5b6101008101516009556101408101516101208201511115620001a2576040516330554de160e01b815260040160405180910390fd5b610120810151600a55610140810151600b556101808101516101608201511115620001e0576040516383ebdfb760e01b815260040160405180910390fd5b610160810151600c55610180810151600d556101c081015151670de0b6b3a764000010806200021f5750670de0b6b3a7640000816101c0015160200151115b806200023b5750670de0b6b3a7640000816101c0015160400151115b80620002575750670de0b6b3a7640000816101c0015160600151115b15620002765760405163161071fb60e11b815260040160405180910390fd5b6101c081015180516012819055602082015160135560408201516014556060909101516015556101a0820151511180620002c15750806101c0015160200151816101a0015160200151115b80620002de5750806101c0015160400151816101a0015160400151115b80620002fb5750806101c0015160600151816101a0015160600151115b156200031a576040516315b05a8f60e01b815260040160405180910390fd5b6101a08101518051600e55602080820151600f556040808301516010556060928301516011558351600080546001600160a01b03199081166001600160a01b03938416179091558386015160018054831691841691909117905593850151600480549095169116179092559082015180516200039b926016920190620003d7565b506101e0810151600280546001600160a01b0319166001600160a01b03909216919091179055610200810151600355608001516005556200074c565b8280548282559060005260206000209081019282156200042f579160200282015b828111156200042f57825182546001600160a01b0319166001600160a01b03909116178255602090920191600190910190620003f8565b506200043d92915062000441565b5090565b5b808211156200043d576000815560010162000442565b634e487b7160e01b600052604160045260246000fd5b60405161022081016001600160401b038111828210171562000494576200049462000458565b60405290565b80516001600160a01b0381168114620004b257600080fd5b919050565b600082601f830112620004c957600080fd5b815160206001600160401b0380831115620004e857620004e862000458565b8260051b604051601f19603f8301168101818110848211171562000510576200051062000458565b6040529384528581018301938381019250878511156200052f57600080fd5b83870191505b84821015620005595762000549826200049a565b8352918301919083019062000535565b979650505050505050565b6000608082840312156200057757600080fd5b604051608081016001600160401b03811182821017156200059c576200059c62000458565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b600060208284031215620005e057600080fd5b81516001600160401b0380821115620005f857600080fd5b908301906102e082860312156200060e57600080fd5b620006186200046e565b62000623836200049a565b815262000633602084016200049a565b60208201526040830151828111156200064b57600080fd5b6200065987828601620004b7565b6040830152506200066d606084016200049a565b60608201526080838101519082015260a0808401519082015260c0808401519082015260e08084015190820152610100808401519082015261012080840151908201526101408084015190820152610160808401519082015261018080840151908201526101a09150620006e48683850162000564565b82820152620006f886610220850162000564565b6101c08201526200070d6102a084016200049a565b6101e08201526102c09290920151610200830152509392505050565b6000826200074757634e487b7160e01b600052601260045260246000fd5b500690565b6133f5806200075c6000396000f3fe6080604052600436106102885760003560e01c80639af252621161015a578063daac24da116100c1578063e71f34b31161007a578063e71f34b31461078d578063e83e34b1146107ad578063eb71f66c146107c2578063ec895f11146107e2578063f8c09e5914610802578063fe3d5aeb1461083257600080fd5b8063daac24da146106ec578063daf012e61461070c578063dd2b8fbb14610722578063e0e2daaa14610742578063e1b39c8014610758578063e33315551461076d57600080fd5b8063c415b95c11610113578063c415b95c14610654578063c905a4b514610674578063d0f96b921461068a578063d23d7ea3146106a0578063d2c35ce8146106b6578063d6f50169146106d657600080fd5b80639af252621461059a578063a64c90bf146105ba578063b2561263146105dc578063bc30e7a1146105fc578063bf9bd5cd1461061c578063c17225631461063257600080fd5b80636b44e6be116101fe57806383b361e8116101b757806383b361e8146104e457806385229785146105045780638e127cf5146105245780638efc09861461054457806397b0e8ce1461055a57806399623bb11461057a57600080fd5b80636b44e6be146104065780636be6d7d4146104465780636c8cc865146104665780636e95d67c1461049c5780636f6d5c4a146104b15780637324b145146104d157600080fd5b8063421caba811610250578063421caba81461032f578063488007601461034f5780634fbfee77146103785780635720c9d5146103985780635aa6e675146103ae578063628027a3146103e657600080fd5b806310d1dc3e1461028d57806311e77bfe146102af5780631978ebcf146102cf5780632885e3ac146102ef578063411c30351461030f575b600080fd5b34801561029957600080fd5b506102ad6102a8366004612b09565b610852565b005b3480156102bb57600080fd5b506102ad6102ca366004612b1b565b61093c565b3480156102db57600080fd5b506102ad6102ea366004612b1b565b610a0e565b3480156102fb57600080fd5b506102ad61030a366004612b09565b610a90565b34801561031b57600080fd5b506102ad61032a366004612b59565b610bc8565b34801561033b57600080fd5b506102ad61034a366004612b85565b610d80565b34801561035b57600080fd5b50610365600d5481565b6040519081526020015b60405180910390f35b34801561038457600080fd5b506102ad610393366004612b1b565b610e70565b3480156103a457600080fd5b5061036560065481565b3480156103ba57600080fd5b506000546103ce906001600160a01b031681565b6040516001600160a01b03909116815260200161036f565b3480156103f257600080fd5b506102ad610401366004612b1b565b610ecd565b34801561041257600080fd5b50610436610421366004612b85565b601b6020526000908152604090205460ff1681565b604051901515815260200161036f565b34801561045257600080fd5b506103ce610461366004612d87565b610f4f565b34801561047257600080fd5b506103ce610481366004612b85565b6019602052600090815260409020546001600160a01b031681565b3480156104a857600080fd5b50601a54610365565b3480156104bd57600080fd5b506102ad6104cc366004612b1b565b611041565b6103ce6104df366004612e1b565b6110e5565b3480156104f057600080fd5b506102ad6104ff366004612b1b565b611590565b34801561051057600080fd5b506102ad61051f366004612b85565b611612565b34801561053057600080fd5b506102ad61053f366004612b1b565b611686565b34801561055057600080fd5b5061036560095481565b34801561056657600080fd5b506102ad610575366004612b1b565b61172a565b34801561058657600080fd5b506002546103ce906001600160a01b031681565b3480156105a657600080fd5b506102ad6105b5366004612ed9565b6117ac565b3480156105c657600080fd5b506105cf611820565b60405161036f9190612f4e565b3480156105e857600080fd5b506102ad6105f7366004612b85565b611882565b34801561060857600080fd5b506105cf610617366004612f9b565b6118f4565b34801561062857600080fd5b50610365600b5481565b34801561063e57600080fd5b50610647611a10565b60405161036f9190612fbd565b34801561066057600080fd5b506004546103ce906001600160a01b031681565b34801561068057600080fd5b5061036560035481565b34801561069657600080fd5b5061036560055481565b3480156106ac57600080fd5b50610365600a5481565b3480156106c257600080fd5b506102ad6106d1366004612b85565b611a68565b3480156106e257600080fd5b50610365600c5481565b3480156106f857600080fd5b506103ce610707366004612b1b565b611adc565b34801561071857600080fd5b5061036560085481565b34801561072e57600080fd5b506102ad61073d366004612b85565b611b0c565b34801561074e57600080fd5b5061036560075481565b34801561076457600080fd5b50601754610365565b34801561077957600080fd5b506001546103ce906001600160a01b031681565b34801561079957600080fd5b506102ad6107a8366004612b1b565b611b80565b3480156107b957600080fd5b50610647611c24565b3480156107ce57600080fd5b506102ad6107dd366004612b1b565b611c7c565b3480156107ee57600080fd5b506105cf6107fd366004612f9b565b611d14565b34801561080e57600080fd5b5061043661081d366004612b85565b60186020526000908152604090205460ff1681565b34801561083e57600080fd5b506103ce61084d366004612b1b565b611e29565b6000546001600160a01b0316331461087c576040516282b42960e81b815260040160405180910390fd5b6012548135118061089257506013546020820135115b806108a257506014546040820135115b806108b257506015546060820135115b156108d0576040516315b05a8f60e01b815260040160405180910390fd5b8035600e819055602080830135600f81905560408085013560108190556060808701356011819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a150565b6000546001600160a01b03163314610966576040516282b42960e81b815260040160405180910390fd5b806006546109749190612ffe565b15158061098d57508060075461098a9190612ffe565b15155b806109a45750806008546109a19190612ffe565b15155b806109bb5750806009546109b89190612ffe565b15155b156109d9576040516311b75c1560e31b815260040160405180910390fd5b60058190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a90602001610931565b6000546001600160a01b03163314610a38576040516282b42960e81b815260040160405180910390fd5b600b54811115610a5b57604051631670f79760e01b815260040160405180910390fd5b600a8190556040518181527faab0ee9100629c405a4d75336e1640cc81e0608fb0d7f17389c06ee8d4f0219190602001610931565b6000546001600160a01b03163314610aba576040516282b42960e81b815260040160405180910390fd5b670de0b6b3a764000081351180610adc5750670de0b6b3a76400008160200135115b80610af25750670de0b6b3a76400008160400135115b80610b085750670de0b6b3a76400008160600135115b80610b155750600e548135105b80610b255750600f546020820135105b80610b3557506010546040820135105b80610b4557506011546060820135105b15610b635760405163161071fb60e11b815260040160405180910390fd5b80356012819055602080830135601381905560408085013560148190556060808701356015819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a790608001610931565b6000546001600160a01b03163314610bf2576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03821660009081526018602052604090205460ff16610c2b57604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b031660178281548110610c4857610c48613012565b6000918252602090912001546001600160a01b031614610c7b57604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601860205260409020805460ff1916905560178054610cab9060019061303e565b81548110610cbb57610cbb613012565b600091825260209091200154601780546001600160a01b039092169183908110610ce757610ce7613012565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055506017805480610d2657610d26613051565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6000546001600160a01b03163314610daa576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03811660009081526018602052604090205460ff1615610de45760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b038116600081815260186020526040808220805460ff1916600190811790915560178054918201815583527fc624b66cc0138b8fabc209247f72d758e1cf3343756d543badbf24212bed8c150180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6000546001600160a01b03163314610e9a576040516282b42960e81b815260040160405180910390fd5b600381905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6000546001600160a01b03163314610ef7576040516282b42960e81b815260040160405180910390fd5b600c54811015610f1a57604051630a35539d60e41b815260040160405180910390fd5b600d8190556040518181527fa9e7961bb3342715dbecc208087a6a9df8986d524b3a0a829fd90f5a2f5ba53e90602001610931565b6001600160a01b03871660009081526018602052604081205460ff16610f8857604051636e623f0f60e01b815260040160405180910390fd5b610f93878686611e3e565b60408051336020808301919091528183018c905282518083038401815260608301938490528051910120633e61c84960e11b9092526000916001600160a01b038b1691637cc3909291610ff0918c908c908a908a9060640161317f565b6020604051808303816000875af115801561100f573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061103391906131be565b9a9950505050505050505050565b6000546001600160a01b0316331461106b576040516282b42960e81b815260040160405180910390fd5b60065481108061108657506005546110839082612ffe565b15155b80611092575060085481115b156110b05760405163f9c0959d60e01b815260040160405180910390fd5b60078190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f290602001610931565b6001600160a01b03881660009081526018602052604081205460ff1661111e57604051636e623f0f60e01b815260040160405180910390fd5b611129888686611e3e565b60408051336020808301919091528183018d90528251808303840181526060830193849052805191012063311fa43160e21b9092526000916001600160a01b038c169163c47e90c491611184918d908d9089906064016131db565b6020604051808303816000875af11580156111a3573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906111c791906131be565b6001600160a01b038181166000908152601960205260409081902080546001600160a01b0319168e84169081179091556001549092166101008d015251919250907f2b2f18d6a5803b503bcb3d887ccd7a77aa7e1e644a4c99effef843bf3e307157906112399084908d908d90613216565b60405180910390a2601a805460018082019092557f057c384a7d1c54f3a1b2e5e67b2617b8224fdfd1ea7234eea573a6ff665ff63e0180546001600160a01b0319166001600160a01b0384169081179091556000908152601b60205260408120805460ff191690921790915534881161134c576112b6883461303e565b60408051606081018252338152600160208201528082018890529051631df417fd60e21b81529192506001600160a01b038416916377d05ff4918b916113039183918d9190600401613247565b60206040518083038185885af1158015611321573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190611346919061328d565b50611409565b5088513490611366906001600160a01b031633308b612117565b895161137c906001600160a01b0316838a612184565b60408051606081018252338152600160208201528082018790529051631df417fd60e21b81526001600160a01b038416916377d05ff4916113c4918c918c9190600401613247565b6020604051808303816000875af11580156113e3573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611407919061328d565b505b801561147a57604051600090339083908381818185875af1925050503d8060008114611451576040519150601f19603f3d011682016040523d82523d6000602084013e611456565b606091505b5050905080611478576040516312171d8360e31b815260040160405180910390fd5b505b60005b60165481101561152057826001600160a01b0316637180c8ca601683815481106114a9576114a9613012565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b1580156114fd57600080fd5b505af1158015611511573d6000803e3d6000fd5b5050505080600101905061147d565b5060015460405163ab033ea960e01b81526001600160a01b0391821660048201529083169063ab033ea990602401600060405180830381600087803b15801561156857600080fd5b505af115801561157c573d6000803e3d6000fd5b50939e9d5050505050505050505050505050565b6000546001600160a01b031633146115ba576040516282b42960e81b815260040160405180910390fd5b600d548111156115dd57604051635a8f655760e01b815260040160405180910390fd5b600c8190556040518181527f490eb2a91746aa933c9ffe2f7939aa06498f3259139f8805f008b12c8c697a4690602001610931565b6000546001600160a01b0316331461163c576040516282b42960e81b815260040160405180910390fd5b600280546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6000546001600160a01b031633146116b0576040516282b42960e81b815260040160405180910390fd5b6005548110806116cb57506005546116c89082612ffe565b15155b806116d7575060075481115b156116f557604051630219d66360e11b815260040160405180910390fd5b60068190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b763190602001610931565b6000546001600160a01b03163314611754576040516282b42960e81b815260040160405180910390fd5b600a548110156117775760405163019cfb7b60e61b815260040160405180910390fd5b600b8190556040518181527f4fa35c11ce9a45ae882c154ecb53ab5cac52a74a5b9b0373be36deb30c78297890602001610931565b6000546001600160a01b031633146117d6576040516282b42960e81b815260040160405180910390fd5b6117e260168383612a91565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc3882826040516118149291906132a6565b60405180910390a15050565b6060601680548060200260200160405190810160405280929190818152602001828054801561187857602002820191906000526020600020905b81546001600160a01b0316815260019091019060200180831161185a575b5050505050905090565b6000546001600160a01b031633146118ac576040516282b42960e81b815260040160405180910390fd5b600080546001600160a01b0319166001600160a01b038316908117825560405190917f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab91a250565b60608183111561191757604051633b2735ab60e11b815260040160405180910390fd5b601a5482111561193a5760405163e0f7becb60e01b815260040160405180910390fd5b611944838361303e565b61194f9060016132f4565b67ffffffffffffffff81111561196757611967612ba2565b604051908082528060200260200182016040528015611990578160200160208202803683370190505b509050825b828111611a0957601a81815481106119af576119af613012565b6000918252602090912001546001600160a01b0316826119cf868461303e565b815181106119df576119df613012565b6001600160a01b039092166020928302919091019091015280611a0181613307565b915050611995565b5092915050565b611a3b6040518060800160405280600081526020016000815260200160008152602001600081525090565b5060408051608081018252600e548152600f54602082015260105491810191909152601154606082015290565b6000546001600160a01b03163314611a92576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b6000601a8281548110611af157611af1613012565b6000918252602090912001546001600160a01b031692915050565b6000546001600160a01b03163314611b36576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6000546001600160a01b03163314611baa576040516282b42960e81b815260040160405180910390fd5b600754811080611bc55750600554611bc29082612ffe565b15155b80611bd1575060095481115b15611bef57604051633007ad0160e11b815260040160405180910390fd5b60088190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f17890602001610931565b611c4f6040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526012548152601354602082015260145491810191909152601554606082015290565b6000546001600160a01b03163314611ca6576040516282b42960e81b815260040160405180910390fd5b600854811080611cc15750600554611cbe9082612ffe565b15155b15611cdf5760405163cfb699cb60e01b815260040160405180910390fd5b60098190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b90602001610931565b606081831115611d3757604051633b2735ab60e11b815260040160405180910390fd5b601754821115611d5a5760405163e0f7becb60e01b815260040160405180910390fd5b611d64838361303e565b611d6f9060016132f4565b67ffffffffffffffff811115611d8757611d87612ba2565b604051908082528060200260200182016040528015611db0578160200160208202803683370190505b509050825b828111611a095760178181548110611dcf57611dcf613012565b6000918252602090912001546001600160a01b031682611def868461303e565b81518110611dff57611dff613012565b6001600160a01b039092166020928302919091019091015280611e2181613307565b915050611db5565b600060178281548110611af157611af1613012565b6006548360c001511080611e5757506007548360c00151115b80611e7257506005548360c00151611e6f9190612ffe565b15155b15611e9057604051635428734d60e01b815260040160405180910390fd5b6008548360a001511080611ea957506009548360a00151115b80611ec657508260c001518360a00151611ec39190612ffe565b15155b15611ee45760405163253fffcf60e11b815260040160405180910390fd5b601254610140840151511180611f04575060135461014084015160200151115b80611f19575060145461014084015160400151115b80611f2e575060155461014084015160600151115b80611f405750600e5461014084015151105b80611f555750600f5461014084015160200151105b80611f6a575060105461014084015160400151105b80611f7f575060115461014084015160600151105b15611f9d57604051632d8768f960e01b815260040160405180910390fd5b60208301516001600160a01b0316151580611fbb5750604083015115155b80611fd357506101208301516001600160a01b031615155b80611feb57506101008301516001600160a01b031615155b80611ff9575060e083015115155b156120175760405163e8c02dd760e01b815260040160405180910390fd5b600a548210806120285750600b5482115b15612046576040516330554de160e01b815260040160405180910390fd5b600061206b6611c37937e0800061206585671bc16d674ec80000612214565b90612232565b600c5490915061207b9082612232565b8210806120ae57506120ab6120a2671bc16d674ec8000061209c8685612232565b90612248565b600d549061225d565b82115b156120cc576040516383ebdfb760e01b815260040160405180910390fd5b60006120dc838660a00151612272565b6002546001600160a01b0390811660208801526003546040880152600454166101208701523061010087015260e09095019490945250505050565b6040516001600160a01b03848116602483015283811660448301526064820183905261217e9186918216906323b872dd906084015b604051602081830303815290604052915060e01b6020820180516001600160e01b038381831617835250505050612359565b50505050565b604080516001600160a01b038416602482015260448082018490528251808303909101815260649091019091526020810180516001600160e01b031663095ea7b360e01b1790526121d584826123c6565b61217e576040516001600160a01b0384811660248301526000604483015261220a91869182169063095ea7b39060640161214c565b61217e8482612359565b600061222983670de0b6b3a76400008461246e565b90505b92915050565b60008183116122415781612229565b5090919050565b60006122298383670de0b6b3a764000061246e565b600081831161226c5782612229565b50919050565b6000806122a3612294612286866064613320565b66a5bbed86c5a00090612248565b6748cd4072281e000090612214565b90506122b7670de0b6b3a764000082612214565b9050826301e13380036122cb57905061222c565b60006123006122df86866301e1338061246e565b6122f190670de0b6b3a76400006132f4565b670de0b6b3a764000090612214565b905060006123206122f1670de0b6b3a764000080896301e133808861248c565b905061234f61232e82612523565b61233790613337565b61234084612523565b61234990613337565b90612214565b9695505050505050565b600061236e6001600160a01b0384168361273f565b905080516000141580156123935750808060200190518101906123919190613353565b155b156123c157604051635274afe760e01b81526001600160a01b03841660048201526024015b60405180910390fd5b505050565b6000806000846001600160a01b0316846040516123e39190613375565b6000604051808303816000865af19150503d8060008114612420576040519150601f19603f3d011682016040523d82523d6000602084013e612425565b606091505b509150915081801561244f57508051158061244f57508080602001905181019061244f9190613353565b801561246557506000856001600160a01b03163b115b95945050505050565b600082600019048411830215820261248557600080fd5b5091020490565b60008061249d846301e13380612214565b905060006124ab8683612248565b6124bd90670de0b6b3a76400006132f4565b9050670de0b6b3a764000081106124f1576124ea6124e3670de0b6b3a764000086612214565b829061274d565b9050612509565b6125066124e3670de0b6b3a7640000866127a4565b90505b6125178161209c898b612248565b98975050505050505050565b60008082136125455760405163e61b497560e01b815260040160405180910390fd5b5060606fffffffffffffffffffffffffffffffff821160071b82811c67ffffffffffffffff1060061b1782811c63ffffffff1060051b1782811c61ffff1060041b1782811c60ff10600390811b90911783811c600f1060021b1783811c909110600190811b90911783811c90911017609f81810383019390931b90921c6c465772b2bbbb5f824b15207a3081018102821d6d0388eaa27412d5aca026815d636e018102821d6d0df99ac502031bf953eff472fdcc018102821d6d13cdffb29d51d99322bdff5f2211018102821d6d0a0f742023def783a307a986912e018102821d6d01920d8043ca89b5239253284e42018102821d6c0b7a86d7375468fac667a0a527016c29508e458543d8aa4df2abee7882018202831d6d0139601a2efabe717e604cbb4894018202831d6d02247f7a7b6594320649aa03aba1018202831d6c8c3f38e95a6b1ff2ab1c3b343619018202831d6d02384773bdf1ac5676facced60901901820290921d6cb9a025d814b29c212b8b1a07cd190102780a09507084cc699bb0e71ea869ffffffffffffffffffffffff190105711340daa0d5f769dba1915cef59f0815a550602605f19919091017d0267a36c0c95b3975ab3ee5b203a7614a3f75373f047d803ae7b6687f2b302017d57115e47018c7177eebf7cd370a3356a1b7863008a5ae8028c72b88642840160ae1d90565b6060612229838360006127b9565b6000816000036127665750670de0b6b3a764000061222c565b826000036127765750600061222c565b81600061278285612523565b9050818102612799670de0b6b3a764000082613391565b905061234f81612858565b600061222983670de0b6b3a7640000846129e3565b6060814710156127de5760405163cd78605960e01b81523060048201526024016123b8565b600080856001600160a01b031684866040516127fa9190613375565b60006040518083038185875af1925050503d8060008114612837576040519150601f19603f3d011682016040523d82523d6000602084013e61283c565b606091505b509150915061284c868383612a09565b925050505b9392505050565b6000680248ce36a70cb26b3e19821361287357506000919050565b680755bf798b4a1bf1e5821261289c576040516373a2d6b160e01b815260040160405180910390fd5b6503782dace9d9604e83901b059150600060606bb17217f7d1cf79abc9e3b39884821b056001605f1b01901d6bb17217f7d1cf79abc9e3b39881029093036c240c330e9fb2d9cbaf0fd5aafb1981018102606090811d6d0277594991cfc85f6e2461837cd9018202811d6d1a521255e34f6a5061b25ef1c9c319018202811d6db1bbb201f443cf962f1a1d3db4a5018202811d6e02c72388d9f74f51a9331fed693f1419018202811d6e05180bb14799ab47a8a8cb2a527d57016d02d16720577bd19bf614176fe9ea6c10fe68e7fd37d0007b713f765084018402831d9081019084016d01d3967ed30fc4f89c02bab5708119010290911d6e0587f503bb6ea29d25fcb740196450019091026d360d7aeea093263ecc6e0ecb291760621b010574029d9dc38563c32e5c2f6dc192ee70ef65f9978af30260c3939093039290921c92915050565b60008260001904841183021582026129fa57600080fd5b50910281810615159190040190565b606082612a1e57612a1982612a65565b612851565b8151158015612a3557506001600160a01b0384163b155b15612a5e57604051639996b31560e01b81526001600160a01b03851660048201526024016123b8565b5080612851565b805115612a755780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b50565b828054828255906000526020600020908101928215612ae4579160200282015b82811115612ae45781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190612ab1565b50612af0929150612af4565b5090565b5b80821115612af05760008155600101612af5565b60006080828403121561226c57600080fd5b600060208284031215612b2d57600080fd5b5035919050565b6001600160a01b0381168114612a8e57600080fd5b8035612b5481612b34565b919050565b60008060408385031215612b6c57600080fd5b8235612b7781612b34565b946020939093013593505050565b600060208284031215612b9757600080fd5b813561285181612b34565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff81118282101715612bdc57612bdc612ba2565b60405290565b600060808284031215612bf457600080fd5b6040516080810181811067ffffffffffffffff82111715612c1757612c17612ba2565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b60006101c08284031215612c5b57600080fd5b612c63612bb8565b9050612c6e82612b49565b8152612c7c60208301612b49565b602082015260408201356040820152606082013560608201526080820135608082015260a082013560a082015260c082013560c082015260e082013560e0820152610100612ccb818401612b49565b90820152610120612cdd838201612b49565b90820152610140612cf084848301612be2565b9082015292915050565b600082601f830112612d0b57600080fd5b813567ffffffffffffffff80821115612d2657612d26612ba2565b604051601f8301601f19908116603f01168101908282118183101715612d4e57612d4e612ba2565b81604052838152866020858801011115612d6757600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000806000806000806000806102a0898b031215612da457600080fd5b883597506020890135612db681612b34565b9650612dc58a60408b01612c48565b955061020089013567ffffffffffffffff811115612de257600080fd5b612dee8b828c01612cfa565b989b979a509598610220810135976102408201359750610260820135965061028090910135945092505050565b60008060008060008060008060006102c08a8c031215612e3a57600080fd5b8935985060208a0135612e4c81612b34565b9750612e5b8b60408c01612c48565b96506102008a013567ffffffffffffffff80821115612e7957600080fd5b612e858d838e01612cfa565b97506102208c013596506102408c013595506102608c013594506102808c0135915080821115612eb457600080fd5b50612ec18c828d01612cfa565b9250506102a08a013590509295985092959850929598565b60008060208385031215612eec57600080fd5b823567ffffffffffffffff80821115612f0457600080fd5b818501915085601f830112612f1857600080fd5b813581811115612f2757600080fd5b8660208260051b8501011115612f3c57600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015612f8f5783516001600160a01b031683529284019291840191600101612f6a565b50909695505050505050565b60008060408385031215612fae57600080fd5b50508035926020909101359150565b815181526020808301519082015260408083015190820152606080830151908201526080810161222c565b634e487b7160e01b600052601260045260246000fd5b60008261300d5761300d612fe8565b500690565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b8181038181111561222c5761222c613028565b634e487b7160e01b600052603160045260246000fd5b80516001600160a01b03168252602081015161308e60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e0830152610100808201516130e6828501826001600160a01b03169052565b5050610120818101516001600160a01b031690830152610140808201518051828501526020810151610160850152604081015161018085015260608101516101a085015261217e565b60005b8381101561314a578181015183820152602001613132565b50506000910152565b6000815180845261316b81602086016020860161312f565b601f01601f19169290920160200192915050565b60006102408783526131946020840188613067565b806101e08401526131a781840187613153565b610200840195909552505061022001529392505050565b6000602082840312156131d057600080fd5b815161285181612b34565b60006102208683526131f06020840187613067565b806101e084015261320381840186613153565b9150508261020083015295945050505050565b6001600160a01b038416815260006102006132346020840186613067565b806101e084015261234f81840185613153565b8381528260208201526060604082015260018060a01b03825116606082015260208201511515608082015260006040830151606060a084015261234f60c0840182613153565b60006020828403121561329f57600080fd5b5051919050565b60208082528181018390526000908460408401835b868110156132e95782356132ce81612b34565b6001600160a01b0316825291830191908301906001016132bb565b509695505050505050565b8082018082111561222c5761222c613028565b60006001820161331957613319613028565b5060010190565b808202811582820484141761222c5761222c613028565b6000600160ff1b820161334c5761334c613028565b5060000390565b60006020828403121561336557600080fd5b8151801515811461285157600080fd5b6000825161338781846020870161312f565b9190910192915050565b6000826133a0576133a0612fe8565b600160ff1b8214600019841416156133ba576133ba613028565b50059056fea26469706673582212209a74d523c3b23b3d6f969aeaad0f5de8d46f588b8641420541f111714e9c0edb64736f6c63430008140033"
 )
 
 

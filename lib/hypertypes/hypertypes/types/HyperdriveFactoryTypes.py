@@ -37,6 +37,10 @@ class FactoryConfig:
     maxCheckpointDuration: int
     minPositionDuration: int
     maxPositionDuration: int
+    minFixedAPR: int
+    maxFixedAPR: int
+    minTimeStretchAPR: int
+    maxTimeStretchAPR: int
     minFees: IHyperdrive.Fees
     maxFees: IHyperdrive.Fees
     linkerFactory: str
@@ -64,7 +68,7 @@ DefaultPausersUpdated = ABIEvent(
 Deployed = ABIEvent(
     anonymous=False,
     inputs=[
-        ABIEventParams(indexed=True, name="version", type="uint256"),
+        ABIEventParams(indexed=True, name="deployerCoordinator", type="address"),
         ABIEventParams(indexed=False, name="hyperdrive", type="address"),
         ABIEventParams(indexed=False, name="config", type="tuple"),
         ABIEventParams(indexed=False, name="extraData", type="bytes"),
@@ -163,12 +167,30 @@ MaxFeesUpdated = ABIEvent(
     type="event",
 )
 
+MaxFixedAPRUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMaxFixedAPR", type="uint256"),
+    ],
+    name="MaxFixedAPRUpdated",
+    type="event",
+)
+
 MaxPositionDurationUpdated = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=False, name="newMaxPositionDuration", type="uint256"),
     ],
     name="MaxPositionDurationUpdated",
+    type="event",
+)
+
+MaxTimeStretchAPRUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMaxTimeStretchAPR", type="uint256"),
+    ],
+    name="MaxTimeStretchAPRUpdated",
     type="event",
 )
 
@@ -190,11 +212,29 @@ MinFeesUpdated = ABIEvent(
     type="event",
 )
 
+MinFixedAPRUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMinFixedAPR", type="uint256"),
+    ],
+    name="MinFixedAPRUpdated",
+    type="event",
+)
+
 MinPositionDurationUpdated = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=False, name="newMinPositionDuration", type="uint256"),
     ],
     name="MinPositionDurationUpdated",
+    type="event",
+)
+
+MinTimeStretchAPRUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMinTimeStretchAPR", type="uint256"),
+    ],
+    name="MinTimeStretchAPRUpdated",
     type="event",
 )
