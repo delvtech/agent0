@@ -32,7 +32,6 @@ from chainsync.db.hyperdrive import (
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
-from eth_utils.address import to_checksum_address
 from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import (
@@ -47,6 +46,7 @@ from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from numpy.random._generator import Generator
+from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
@@ -1256,56 +1256,49 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong:
-        ...
+    ) -> OpenLong: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong:
-        ...
+    ) -> CloseLong: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort:
-        ...
+    ) -> OpenShort: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort:
-        ...
+    ) -> CloseShort: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity:
-        ...
+    ) -> AddLiquidity: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity:
-        ...
+    ) -> RemoveLiquidity: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares:
-        ...
+    ) -> RedeemWithdrawalShares: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
-        ...
+    ) -> (
+        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
+    ): ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
@@ -1317,7 +1310,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.OPEN_LONG:
                 return OpenLong(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1327,7 +1320,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.CLOSE_LONG:
                 return CloseLong(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1337,7 +1330,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.OPEN_SHORT:
                 return OpenShort(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1347,7 +1340,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.CLOSE_SHORT:
                 return CloseShort(
-                    trader=to_checksum_address(tx_receipt.trader),
+                    trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -1357,7 +1350,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.ADD_LIQUIDITY:
                 return AddLiquidity(
-                    provider=to_checksum_address(tx_receipt.provider),
+                    provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_price=tx_receipt.vault_share_price,
@@ -1366,7 +1359,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.REMOVE_LIQUIDITY:
                 return RemoveLiquidity(
-                    provider=to_checksum_address(tx_receipt.provider),
+                    provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_price=tx_receipt.vault_share_price,
@@ -1376,7 +1369,7 @@ class InteractiveHyperdrive:
 
             case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
                 return RedeemWithdrawalShares(
-                    provider=to_checksum_address(tx_receipt.provider),
+                    provider=Web3.to_checksum_address(tx_receipt.provider),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_price=tx_receipt.vault_share_price,
