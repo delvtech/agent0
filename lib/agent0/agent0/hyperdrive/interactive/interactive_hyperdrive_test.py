@@ -26,28 +26,6 @@ YEAR_IN_SECONDS = 31_536_000
 # pylint: disable=logging-fstring-interpolation
 
 
-def create_arbitrage_andy(interactive_hyperdrive) -> InteractiveHyperdriveAgent:
-    """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
-
-    Arguments
-    ---------
-    interactive_hyperdrive: InteractiveHyperdrive
-        Interactive hyperdrive.
-
-    Returns
-    -------
-    InteractiveHyperdriveAgent
-        Arbitrage Andy interactive hyperdrive agent."""
-    andy_base = FixedPoint(1e9)
-    andy_config = Zoo.lp_and_arb.Config(
-        lp_portion=FixedPoint(0),
-        minimum_trade_amount=interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount,
-    )
-    return interactive_hyperdrive.init_agent(
-        base=andy_base, name="andy", policy=Zoo.lp_and_arb, policy_config=andy_config
-    )
-
-
 @pytest.mark.anvil
 def _ensure_db_wallet_matches_agent_wallet(
     interactive_hyperdrive: InteractiveHyperdrive, agent_wallet: HyperdriveWallet
@@ -622,8 +600,8 @@ def test_policy_config_forgotten(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_share_price_quincunx(chain: Chain):
-    """Share price when compounding by quincunx."""
+def test_share_price_compounding_quincunx(chain: Chain):
+    """Share price when compounding by quincunx (one fifth of a year) should increase by more than the APR."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
     interactive_config = InteractiveHyperdrive.Config(
@@ -634,14 +612,13 @@ def test_share_price_quincunx(chain: Chain):
         initial_variable_rate=initial_variable_rate,
     )
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
-    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
-    arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
+    hyperdrive_interface = interactive_hyperdrive.interface
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
     number_of_compounding_periods = 5
     for _ in range(number_of_compounding_periods):
         chain.advance_time(YEAR_IN_SECONDS // number_of_compounding_periods, create_checkpoints=False)
-        arbitrage_andy.open_long(FixedPoint(20))
+        interactive_hyperdrive._create_checkpoint()
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Ending   share price: {ending_share_price}")
     assert ending_share_price - 1 > initial_variable_rate, (
@@ -652,8 +629,8 @@ def test_share_price_quincunx(chain: Chain):
 
 
 @pytest.mark.anvil
-def test_share_price_annus(chain: Chain):
-    """Share price when compounding by annus."""
+def test_share_price_compounding_annus(chain: Chain):
+    """Share price when compounding by annus (one year) should increase by exactly the APR (no compounding)."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
     interactive_config = InteractiveHyperdrive.Config(
@@ -664,7 +641,7 @@ def test_share_price_annus(chain: Chain):
         initial_variable_rate=initial_variable_rate,
     )
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
-    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    hyperdrive_interface = interactive_hyperdrive.interface
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
     chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
