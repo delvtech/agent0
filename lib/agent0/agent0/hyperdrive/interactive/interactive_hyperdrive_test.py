@@ -644,9 +644,7 @@ def test_share_price_quincunx(chain: Chain):
         arbitrage_andy.open_long(FixedPoint(20))
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Ending   share price: {ending_share_price}")
-    assert (
-        ending_share_price - 1 > initial_variable_rate
-    ), (
+    assert ending_share_price - 1 > initial_variable_rate, (
         f"Expected ending share price to be {float(initial_variable_rate)}, got {float(ending_share_price-1)}"
         f" with a difference of {float(ending_share_price-1-initial_variable_rate)} "
         f"({float((ending_share_price-1-initial_variable_rate)/initial_variable_rate):.2f}%)"
