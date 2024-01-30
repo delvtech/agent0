@@ -49,9 +49,7 @@ def execute_random_trades(
     time_diffs = None
     if advance_time:
         # Generate the total time elapsed for all trades
-        max_advance_time = rng.integers(
-            low=0, high=interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration
-        )
+        max_advance_time = rng.integers(low=0, high=interactive_hyperdrive.interface.pool_config.position_duration)
         # Generate intermediate points between 0 and max_advance_time, sorted in ascending order
         # Generating number of trades + 1 since cumulative diff results in one less
         intermediate_points = np.sort(rng.integers(low=0, high=max_advance_time, size=num_trades + 1))
@@ -105,15 +103,15 @@ def _get_open_trade_amount(
     FixedPoint
         The trade amount, bound by the min & max amount allowed.
     """
-    min_trade = interactive_hyperdrive.hyperdrive_interface.pool_config.minimum_transaction_amount
+    min_trade = interactive_hyperdrive.interface.pool_config.minimum_transaction_amount
     match trade_type:
         case HyperdriveActionType.OPEN_LONG:
-            max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_long(
-                max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
+            max_trade = interactive_hyperdrive.interface.calc_max_long(
+                max_budget, interactive_hyperdrive.interface.current_pool_state
             )
         case HyperdriveActionType.OPEN_SHORT:
-            max_trade = interactive_hyperdrive.hyperdrive_interface.calc_max_short(
-                max_budget, interactive_hyperdrive.hyperdrive_interface.current_pool_state
+            max_trade = interactive_hyperdrive.interface.calc_max_short(
+                max_budget, interactive_hyperdrive.interface.current_pool_state
             )
         case _:
             raise ValueError(f"Invalid {trade_type=}\nOnly opening trades are allowed.")
@@ -125,13 +123,15 @@ def _get_open_trade_amount(
 @overload
 def _execute_trade(
     trade_type: Literal[HyperdriveActionType.OPEN_LONG], trade_amount: FixedPoint, agent: InteractiveHyperdriveAgent
-) -> OpenLong: ...
+) -> OpenLong:
+    ...
 
 
 @overload
 def _execute_trade(
     trade_type: Literal[HyperdriveActionType.OPEN_SHORT], trade_amount: FixedPoint, agent: InteractiveHyperdriveAgent
-) -> OpenShort: ...
+) -> OpenShort:
+    ...
 
 
 def _execute_trade(

@@ -177,7 +177,7 @@ class Chain:
             # followed by creating a checkpoint for that pool.
             # TODO support multiple pools with different checkpoint durations
             checkpoint_durations = [
-                pool.hyperdrive_interface.pool_config.checkpoint_duration for pool in self._deployed_hyperdrive_pools
+                pool.interface.pool_config.checkpoint_duration for pool in self._deployed_hyperdrive_pools
             ]
             if not all(checkpoint_durations[0] == x for x in checkpoint_durations):
                 raise NotImplementedError("All pools on this chain must have the same checkpoint duration")

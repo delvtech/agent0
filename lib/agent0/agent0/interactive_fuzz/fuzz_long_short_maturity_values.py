@@ -110,19 +110,19 @@ def fuzz_long_short_maturity_values(
     assert all(maturity_time == trade_maturity_times[0] for maturity_time in trade_maturity_times)
 
     # Starting checkpoint is automatically created by sending transactions
-    starting_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
+    starting_checkpoint = interactive_hyperdrive.interface.current_pool_state.checkpoint
 
     # Advance the time to a little more than the position duration
     logging.info("Advance time...")
-    position_duration = interactive_hyperdrive.hyperdrive_interface.pool_config.position_duration
+    position_duration = interactive_hyperdrive.interface.pool_config.position_duration
     chain.advance_time(position_duration + 30, create_checkpoints=False)
 
     # Create a checkpoint
     logging.info("Create a checkpoint...")
     # Get the maturity checkpoint for the previously created checkpoint
-    checkpoint_id = interactive_hyperdrive.hyperdrive_interface.calc_checkpoint_id()
-    interactive_hyperdrive.hyperdrive_interface.create_checkpoint(signer.agent, checkpoint_time=checkpoint_id)
-    maturity_checkpoint = interactive_hyperdrive.hyperdrive_interface.current_pool_state.checkpoint
+    checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+    interactive_hyperdrive.interface.create_checkpoint(signer.agent, checkpoint_time=checkpoint_id)
+    maturity_checkpoint = interactive_hyperdrive.interface.current_pool_state.checkpoint
 
     # Ensure this maturity checkpoint is the maturity of all open positions
     for trade_maturity_time in trade_maturity_times:
@@ -175,7 +175,7 @@ def fuzz_long_short_maturity_values(
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
-                error, interactive_hyperdrive.hyperdrive_interface, agent.agent, additional_info=additional_info
+                error, interactive_hyperdrive.interface, agent.agent, additional_info=additional_info
             )
             # Crash reporting already going to file in logging
             log_hyperdrive_crash_report(
@@ -315,7 +315,7 @@ def invariant_check(
         assert close_trade_event.bond_amount == open_trade_event.bond_amount
 
         # 0.05 would be a 5% fee.
-        flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
+        flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
         actual_long_base_amount = close_trade_event.base_amount
@@ -344,7 +344,7 @@ def invariant_check(
         closing_vault_share_price = maturity_checkpoint.vault_share_price
 
         # interested accrued in shares = (c1 / c0 + flat_fee) * dy - c1 * dz
-        flat_fee_percent = interactive_hyperdrive.hyperdrive_interface.pool_config.fees.flat
+        flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # get the share amount, c1 * dz part of the equation.
         share_reserves_delta = open_trade_event.bond_amount
@@ -377,7 +377,7 @@ def invariant_check(
         raise ValueError("Invalid types for open/close trade events")
 
     # Check vault shares after trades matures
-    pool_state = interactive_hyperdrive.hyperdrive_interface.get_hyperdrive_state()
+    pool_state = interactive_hyperdrive.interface.get_hyperdrive_state()
     expected_vault_shares = (
         pool_state.pool_info.share_reserves
         + (

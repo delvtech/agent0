@@ -293,23 +293,19 @@ class InteractiveHyperdrive:
         )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain)
-        self.hyperdrive_interface = HyperdriveReadWriteInterface(
+        self.interface = HyperdriveReadWriteInterface(
             self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
             web3=chain._web3,
         )
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        self._deploy_block_number = self.hyperdrive_interface.get_block_number(
-            self.hyperdrive_interface.get_current_block()
-        )
+        self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
 
         # Make a copy of the dataclass to avoid changing the base class
         self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(
-            self.hyperdrive_interface.hyperdrive_contract.address
-        )
+        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(self.interface.hyperdrive_contract.address)
 
         # Store the db_id here for later reference
         self._db_name = self.postgres_config.POSTGRES_DB
@@ -375,7 +371,7 @@ class InteractiveHyperdrive:
                 "lookback_block_limit": 10000,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
-                "contract_addresses": self.hyperdrive_interface.addresses,
+                "contract_addresses": self.interface.addresses,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -387,7 +383,7 @@ class InteractiveHyperdrive:
                 "start_block": start_block,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
-                "contract_addresses": self.hyperdrive_interface.addresses,
+                "contract_addresses": self.interface.addresses,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -435,7 +431,7 @@ class InteractiveHyperdrive:
         try:
             with Timeout(self.data_pipeline_timeout) as _timeout:
                 while True:
-                    latest_mined_block = self.hyperdrive_interface.web3.eth.get_block_number()
+                    latest_mined_block = self.interface.web3.eth.get_block_number()
                     analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
                     if latest_mined_block > analysis_latest_block_number:
                         _timeout.sleep(polling_interval)
@@ -464,14 +460,14 @@ class InteractiveHyperdrive:
 
         acquire_data(
             start_block=start_block,  # Start block is the block hyperdrive was deployed
-            interface=self.hyperdrive_interface,
+            interface=self.interface,
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
         )
         data_analysis(
             start_block=start_block,
-            interface=self.hyperdrive_interface,
+            interface=self.interface,
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
@@ -559,7 +555,7 @@ class InteractiveHyperdrive:
         variable_rate: FixedPoint
             The new variable rate for the pool.
         """
-        self.hyperdrive_interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
+        self.interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
@@ -571,21 +567,19 @@ class InteractiveHyperdrive:
         Creating checkpoints is called by the chain's `advance_time`.
         """
         if checkpoint_time is None:
-            block_timestamp = self.hyperdrive_interface.get_block_timestamp(
-                self.hyperdrive_interface.get_current_block()
-            )
-            checkpoint_time = self.hyperdrive_interface.calc_checkpoint_id(
-                self.hyperdrive_interface.pool_config.checkpoint_duration, block_timestamp
+            block_timestamp = self.interface.get_block_timestamp(self.interface.get_current_block())
+            checkpoint_time = self.interface.calc_checkpoint_id(
+                self.interface.pool_config.checkpoint_duration, block_timestamp
             )
 
         if check_if_exists:
-            checkpoint = self.hyperdrive_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
+            checkpoint = self.interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
             # If it exists, don't create a checkpoint and return None.
             if checkpoint.vaultSharePrice > 0:
                 return None
 
         try:
-            tx_receipt = self.hyperdrive_interface.create_checkpoint(
+            tx_receipt = self.interface.create_checkpoint(
                 self._deployed_hyperdrive.deploy_account, checkpoint_time=checkpoint_time
             )
         except AssertionError as exc:
@@ -980,9 +974,9 @@ class InteractiveHyperdrive:
         asyncio.run(
             set_max_approval(
                 [agent],
-                self.hyperdrive_interface.web3,
-                self.hyperdrive_interface.base_token_contract,
-                str(self.hyperdrive_interface.hyperdrive_contract.address),
+                self.interface.web3,
+                self.interface.base_token_contract,
+                str(self.interface.hyperdrive_contract.address),
             )
         )
 
@@ -998,15 +992,15 @@ class InteractiveHyperdrive:
 
         if eth > FixedPoint(0):
             # Eth is a set balance call
-            eth_balance, _ = self.hyperdrive_interface.get_eth_base_balances(agent)
+            eth_balance, _ = self.interface.get_eth_base_balances(agent)
             new_eth_balance = eth_balance + eth
-            _ = set_anvil_account_balance(self.hyperdrive_interface.web3, agent.address, new_eth_balance.scaled_value)
+            _ = set_anvil_account_balance(self.interface.web3, agent.address, new_eth_balance.scaled_value)
 
         if base > FixedPoint(0):
             # We mint base
             _ = smart_contract_transact(
-                self.hyperdrive_interface.web3,
-                self.hyperdrive_interface.base_token_contract,
+                self.interface.web3,
+                self.interface.base_token_contract,
                 self._deployed_hyperdrive.deploy_account,
                 "mint(address,uint256)",
                 agent.checksum_address,
@@ -1042,7 +1036,7 @@ class InteractiveHyperdrive:
             # TODO when we allow for async, we likely would want to ignore slippage checks here
             # We only get anvil state dump here, since it's an on chain call
             # and we don't want to do it when e.g., slippage happens
-            trade_result.anvil_state = get_anvil_state_dump(self.hyperdrive_interface.web3)
+            trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
             if self.crash_log_ticker:
                 if trade_result.additional_info is None:
                     trade_result.additional_info = {"ticker": self.get_ticker()}
@@ -1072,7 +1066,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1089,7 +1083,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1106,7 +1100,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.OPEN_SHORT, bonds)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1123,7 +1117,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_SHORT, bonds, maturity_time=maturity_time)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1140,7 +1134,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1157,7 +1151,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1174,7 +1168,7 @@ class InteractiveHyperdrive:
         agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1195,7 +1189,7 @@ class InteractiveHyperdrive:
 
         agent.policy.set_next_action_from_sub_policy()
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.hyperdrive_interface, [agent], liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
         # Experimental changes runs data pipeline in thread
@@ -1218,7 +1212,7 @@ class InteractiveHyperdrive:
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
-                self.hyperdrive_interface,
+                self.interface,
                 [agent],
                 liquidate=True,
                 randomize_liquidation=randomize,
@@ -1245,49 +1239,56 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
+    ) -> OpenLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
+    ) -> CloseLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
+    ) -> OpenShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
+    ) -> CloseShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
+    ) -> AddLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
+    ) -> RemoveLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
+    ) -> RedeemWithdrawalShares:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
@@ -1374,7 +1375,7 @@ class InteractiveHyperdrive:
         2. Load all agent's wallets from the db.
         """
         # Set internal state block number to 0 to enusre it updates
-        self.hyperdrive_interface.last_state_block_number = BlockNumber(0)
+        self.interface.last_state_block_number = BlockNumber(0)
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
@@ -1382,5 +1383,5 @@ class InteractiveHyperdrive:
                 self.db_session, wallet_address=[agent.agent.checksum_address], coerce_float=False
             )
             agent.agent.wallet = build_wallet_positions_from_data(
-                agent.agent.checksum_address, db_balances, self.hyperdrive_interface.base_token_contract
+                agent.agent.checksum_address, db_balances, self.interface.base_token_contract
             )

@@ -20,14 +20,12 @@ def advance_time_before_checkpoint(
         An instantiated InteractiveHyperdrive object.
     """
 
-    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
-        interactive_hyperdrive.hyperdrive_interface.get_current_block()
+    current_block_time = interactive_hyperdrive.interface.get_block_timestamp(
+        interactive_hyperdrive.interface.get_current_block()
     )
-    time_since_last_checkpoint = (
-        current_block_time % interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
-    )
+    time_since_last_checkpoint = current_block_time % interactive_hyperdrive.interface.pool_config.checkpoint_duration
     time_to_next_checkpoint = (
-        interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - time_since_last_checkpoint
+        interactive_hyperdrive.interface.pool_config.checkpoint_duration - time_since_last_checkpoint
     )
     advance_upper_bound = time_to_next_checkpoint - 100  # minus 100 seconds to avoid edge cases
 
@@ -54,14 +52,12 @@ def advance_time_after_checkpoint(chain: LocalChain, interactive_hyperdrive: Int
         An instantiated InteractiveHyperdrive object.
     """
     # Advance enough time to make sure we're not going to cross a boundary during our trades
-    current_block_time = interactive_hyperdrive.hyperdrive_interface.get_block_timestamp(
-        interactive_hyperdrive.hyperdrive_interface.get_current_block()
+    current_block_time = interactive_hyperdrive.interface.get_block_timestamp(
+        interactive_hyperdrive.interface.get_current_block()
     )
-    time_since_last_checkpoint = (
-        current_block_time % interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration
-    )
+    time_since_last_checkpoint = current_block_time % interactive_hyperdrive.interface.pool_config.checkpoint_duration
     time_to_next_checkpoint = (
-        interactive_hyperdrive.hyperdrive_interface.pool_config.checkpoint_duration - time_since_last_checkpoint
+        interactive_hyperdrive.interface.pool_config.checkpoint_duration - time_since_last_checkpoint
     )
 
     # Add a small amount to ensure we're not at the edge of a checkpoint
