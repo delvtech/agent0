@@ -2,7 +2,6 @@
 
 from dataclasses import asdict
 from datetime import datetime
-from decimal import Decimal
 
 from ethpy.base import fetch_contract_transactions_for_block
 from ethpy.hyperdrive.interface import HyperdriveReadInterface
