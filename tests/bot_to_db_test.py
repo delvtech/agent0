@@ -238,26 +238,30 @@ class TestBotToDb:
         expected_pool_info_keys = [
             # Keys from contract call
             "block_number",
+            "timestamp",
             "share_reserves",
+            "share_adjustment",
             "zombie_base_proceeds",
             "zombie_share_reserves",
             "bond_reserves",
             "lp_total_supply",
             "vault_share_price",
-            "share_adjustment",
-            "lp_share_price",
-            "long_exposure",
             "longs_outstanding",
             "long_average_maturity_time",
             "shorts_outstanding",
             "short_average_maturity_time",
             "withdrawal_shares_ready_to_withdraw",
             "withdrawal_shares_proceeds",
+            "lp_share_price",
+            "long_exposure",
             # Added keys
-            "timestamp",
-            "variable_rate",
-            # Calculated keys
+            "epoch_timestamp",
             "total_supply_withdrawal_shares",
+            "gov_fees_accrued",
+            "hyperdrive_base_balance",
+            "hyperdrive_eth_balance",
+            "variable_rate",
+            "vault_shares",
         ]
         # Convert to sets and compare
         assert set(db_pool_info.columns) == set(expected_pool_info_keys)
