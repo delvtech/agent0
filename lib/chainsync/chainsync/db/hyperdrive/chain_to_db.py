@@ -86,11 +86,15 @@ def data_chain_to_db(interface: HyperdriveReadInterface, block: BlockData, sessi
     pool_info_dict = asdict(pool_state.pool_info)
     pool_info_dict["block_number"] = int(pool_state.block_number)
     pool_info_dict["timestamp"] = datetime.utcfromtimestamp(pool_state.block_time)
+
+    # Adding additional fields
+    pool_info_dict["epoch_timestamp"] = pool_state.block_time
     pool_info_dict["total_supply_withdrawal_shares"] = pool_state.total_supply_withdrawal_shares
+    pool_info_dict["gov_fees_accrued"] = pool_state.gov_fees_accrued
+    pool_info_dict["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
+    pool_info_dict["hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
+    pool_info_dict["variable_rate"] = pool_state.variable_rate
+    pool_info_dict["vault_shares"] = pool_state.vault_shares
+
     block_pool_info = convert_pool_info(pool_info_dict)
-    # Add variable rate to this dictionary
-    # TODO ideally we'd add this information to a separate table, along with other non-poolinfo data
-    # but data exposed from the hyperdrive interface.
-    # Converts to Decimal for database
-    block_pool_info.variable_rate = Decimal(str(pool_state.variable_rate))
     add_pool_infos([block_pool_info], session)

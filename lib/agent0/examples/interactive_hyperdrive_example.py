@@ -85,12 +85,11 @@ close_short_event = hyperdrive_agent1.close_short(
 
 # LP
 add_lp_event = hyperdrive_agent2.add_liquidity(base=FixedPoint(44444))
-# Add a long to ensure there are withdraw shares to withdraw
-open_long_event = hyperdrive_agent2.open_long(base=FixedPoint(55555))
 remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.wallet.lp_tokens)
-# Close the long to ensure the withdrawal share is ready to withdraw
-hyperdrive_agent2.close_long(maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount)
-withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdrive_agent2.wallet.withdraw_shares)
+
+# The above trades doesn't result in withdraw shares, but the function below allows you
+# to withdrawal shares from the pool.
+# withdraw_shares_event = hyperdrive_agent2.redeem_withdraw_share(shares=hyperdrive_agent2.wallet.withdraw_shares)
 
 # %%
 # Get data from database under the hood
