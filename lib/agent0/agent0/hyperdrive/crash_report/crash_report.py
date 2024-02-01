@@ -23,10 +23,9 @@ from web3.types import RPCEndpoint
 from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
-
     from agent0.base import Trade
     from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive.interface import HyperdriveReadInterface
     from agent0.hyperdrive.state import HyperdriveMarketAction
 
 

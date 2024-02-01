@@ -17,8 +17,7 @@ from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveMarketAction
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
-
+    from agent0.hyperdrive.interface import HyperdriveReadInterface
     from agent0.hyperdrive.state import HyperdriveWallet
 
 # pylint: disable=too-many-arguments, too-many-locals

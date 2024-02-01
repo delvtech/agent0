@@ -23,8 +23,9 @@ from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+
+    from agent0.hyperdrive.interface import HyperdriveReadInterface
 
 # ruff: noqa: PLR2004 (magic values used for counter)
 

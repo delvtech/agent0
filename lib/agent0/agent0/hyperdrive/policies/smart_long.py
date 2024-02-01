@@ -13,8 +13,7 @@ from agent0.hyperdrive.state import HyperdriveMarketAction
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
-
+    from agent0.hyperdrive.interface import HyperdriveReadInterface
     from agent0.hyperdrive.state import HyperdriveWallet
 # pylint: disable=too-few-public-methods
 

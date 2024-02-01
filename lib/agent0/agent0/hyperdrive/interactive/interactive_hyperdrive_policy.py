@@ -6,10 +6,10 @@ import logging
 from dataclasses import dataclass
 from typing import Type
 
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
+from agent0.hyperdrive.interface import HyperdriveReadInterface
 from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet
 

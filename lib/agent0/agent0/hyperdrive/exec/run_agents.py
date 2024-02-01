@@ -13,12 +13,12 @@ from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
-from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME
+from agent0.hyperdrive.interface import HyperdriveReadWriteInterface
 from agent0.hyperdrive.state import HyperdriveWallet, Long, Short
 
 from .create_and_fund_user_account import create_and_fund_user_account

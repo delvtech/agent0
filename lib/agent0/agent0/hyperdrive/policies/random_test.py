@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
@@ -21,6 +20,7 @@ from agent0.hyperdrive.exec import (
     create_and_fund_user_account,
     setup_experiment,
 )
+from agent0.hyperdrive.interface import HyperdriveReadWriteInterface
 from agent0.hyperdrive.policies import Zoo
 from agent0.hyperdrive.state import HyperdriveActionType, TradeStatus
 

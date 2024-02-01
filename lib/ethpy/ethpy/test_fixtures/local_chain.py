@@ -11,12 +11,13 @@ from eth_typing import URI
 from ethpy.base import initialize_web3_with_http_provider
 from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses, deploy_hyperdrive_from_factory
-from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
+
+from agent0.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name
