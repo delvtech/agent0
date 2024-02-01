@@ -24,8 +24,7 @@ from agent0.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
 
 if TYPE_CHECKING:
     from agent0.base import Trade
-    from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface
-    from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive import HyperdriveAgent, HyperdriveMarketAction, HyperdriveReadInterface
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

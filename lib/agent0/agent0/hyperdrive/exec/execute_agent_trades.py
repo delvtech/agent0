@@ -30,7 +30,7 @@ from agent0.hyperdrive.crash_report import (
 from agent0.test_utils import assert_never
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive import HyperdriveAgent
 
 
 async def async_execute_single_agent_trade(

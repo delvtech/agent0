@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
     from agent0 import AccountKeyConfig
     from agent0.base.config import AgentConfig, EnvironmentConfig
-    from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive import HyperdriveAgent
 
 START_LATENCY = 1
 BACKOFF = 2

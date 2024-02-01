@@ -20,7 +20,7 @@ from hypertypes import ERC20MintableContract
 from web3.types import Nonce, TxReceipt
 
 from agent0 import AccountKeyConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive import HyperdriveAgent
 
 FUND_RETRY_COUNT = 5
 DEFAULT_READ_RETRY_COUNT = 5
