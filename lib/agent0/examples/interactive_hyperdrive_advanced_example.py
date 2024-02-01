@@ -6,8 +6,8 @@
 
 from fixedpointmath import FixedPoint
 
+from agent0.hyperdrive import PolicyZoo
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.hyperdrive.policies import Zoo
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
@@ -34,7 +34,7 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 # Generate funded trading agents from the interactive object
 # Names are reflected on output data frames and plots later
 hyperdrive_random_agent = interactive_hyperdrive.init_agent(
-    base=FixedPoint(100000), eth=FixedPoint(100), name="random_bot", policy=Zoo.random
+    base=FixedPoint(100000), eth=FixedPoint(100), name="random_bot", policy=PolicyZoo.random
 )
 
 # %%

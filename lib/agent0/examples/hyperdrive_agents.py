@@ -9,8 +9,8 @@ from fixedpointmath import FixedPoint
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive import PolicyZoo
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import Zoo
 
 # %%
 
@@ -42,12 +42,12 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Zoo.arbitrage,
+        policy=PolicyZoo.arbitrage,
         number_of_agents=0,
         # Fixed budgets
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
-        policy_config=Zoo.arbitrage.Config(
+        policy_config=PolicyZoo.arbitrage.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,  # No slippage tolerance for arb bot
             trade_amount=FixedPoint(10),  # Open 10 base or short 10 bonds
             high_fixed_rate_thresh=FixedPoint(0.1),  # Upper fixed rate threshold
@@ -55,23 +55,23 @@ agent_config: list[AgentConfig] = [
         ),
     ),
     AgentConfig(
-        policy=Zoo.random,
+        policy=PolicyZoo.random,
         number_of_agents=0,
         # Fixed budget
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
-        policy_config=Zoo.random.Config(
+        policy_config=PolicyZoo.random.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
         ),
     ),
     AgentConfig(
-        policy=Zoo.lp_and_arb,
+        policy=PolicyZoo.lp_and_arb,
         number_of_agents=0,
         # Fixed budgets
         base_budget_wei=BASE_BUDGET_PER_BOT,
         eth_budget_wei=ETH_BUDGET_PER_BOT,
-        policy_config=Zoo.lp_and_arb.Config(
+        policy_config=PolicyZoo.lp_and_arb.Config(
             slippage_tolerance=None,  # No slippage tolerance for arb bot
             lp_portion=FixedPoint("0.5"),  # LP with 50% of capital
             high_fixed_rate_thresh=FixedPoint(0.01),  # Amount over variable rate to arbitrage

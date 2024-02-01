@@ -4,8 +4,8 @@ import pandas as pd
 from chainsync.db.hyperdrive import get_transactions
 from fixedpointmath import FixedPoint
 
+from agent0.hyperdrive import PolicyZoo
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.hyperdrive.policies import Zoo
 
 # This is meant to be a standalone script, no need for global upper_case naming style
 # pylint: disable=invalid-name
@@ -21,14 +21,14 @@ interactive_hyperdrive3 = InteractiveHyperdrive(chain, initial_pool_config)
 # Generate funded trading agents from the interactive object
 # Names are reflected on output data frames and plots later
 hyperdrive_agent0 = interactive_hyperdrive.init_agent(
-    base=FixedPoint(100000), eth=FixedPoint(100), name="alice", policy=Zoo.random
+    base=FixedPoint(100000), eth=FixedPoint(100), name="alice", policy=PolicyZoo.random
 )
 hyperdrive_agent1 = interactive_hyperdrive2.init_agent(
-    base=FixedPoint(100000), eth=FixedPoint(100), name="bob", policy=Zoo.random
+    base=FixedPoint(100000), eth=FixedPoint(100), name="bob", policy=PolicyZoo.random
 )
 # Omission of name defaults to wallet address
 hyperdrive_agent2 = interactive_hyperdrive2.init_agent(
-    base=FixedPoint(100000), eth=FixedPoint(100), name="bob", policy=Zoo.random
+    base=FixedPoint(100000), eth=FixedPoint(100), name="bob", policy=PolicyZoo.random
 )
 
 for _ in range(10):

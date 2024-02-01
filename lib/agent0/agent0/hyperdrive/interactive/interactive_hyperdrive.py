@@ -51,11 +51,16 @@ from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
 from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveReadWriteInterface, TradeResult, TradeStatus
+from agent0.hyperdrive import (
+    HyperdriveActionType,
+    HyperdriveBasePolicy,
+    HyperdriveReadWriteInterface,
+    TradeResult,
+    TradeStatus,
+)
 from agent0.hyperdrive.agents import HyperdriveAgent
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
-from agent0.hyperdrive.policies import HyperdrivePolicy
 from agent0.test_utils import assert_never
 
 from .chain import Chain
@@ -607,8 +612,8 @@ class InteractiveHyperdrive:
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-        policy: Type[HyperdrivePolicy] | None = None,
-        policy_config: HyperdrivePolicy.Config | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
         private_key: str | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
@@ -957,8 +962,8 @@ class InteractiveHyperdrive:
         base: FixedPoint,
         eth: FixedPoint,
         name: str | None,
-        policy: Type[HyperdrivePolicy] | None,
-        policy_config: HyperdrivePolicy.Config | None,
+        policy: Type[HyperdriveBasePolicy] | None,
+        policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> HyperdriveAgent:
         # pylint: disable=too-many-arguments
@@ -1259,49 +1264,56 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
+    ) -> OpenLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
+    ) -> CloseLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
+    ) -> OpenShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
+    ) -> CloseShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
+    ) -> AddLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
+    ) -> RemoveLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
+    ) -> RedeemWithdrawalShares:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown

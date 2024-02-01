@@ -10,13 +10,13 @@ from fixedpointmath import FixedPoint
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction
 
-from .hyperdrive_policy import HyperdrivePolicy
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 
 
-class Arbitrage(HyperdrivePolicy):
+class Arbitrage(HyperdriveBasePolicy):
     """Agent that arbitrages based on the fixed rate
 
     .. note::
@@ -49,7 +49,7 @@ class Arbitrage(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes

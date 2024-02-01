@@ -13,7 +13,7 @@ from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 
-from .hyperdrive_policy import HyperdrivePolicy
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.state import PoolState
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 
 
-class Random(HyperdrivePolicy):
+class Random(HyperdriveBasePolicy):
     """Random agent."""
 
     @classmethod
@@ -43,7 +43,7 @@ class Random(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes

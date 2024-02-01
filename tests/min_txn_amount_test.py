@@ -17,9 +17,8 @@ from web3.exceptions import ContractCustomError
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction, HyperdriveWallet
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -36,7 +35,7 @@ if TYPE_CHECKING:
 SMALL_TRADE_AMOUNT = FixedPoint(scaled_value=1000)
 
 
-class InvalidAddLiquidity(HyperdrivePolicy):
+class InvalidAddLiquidity(HyperdriveBasePolicy):
     """An agent that submits an invalid add liquidity due to min txn amount."""
 
     def action(
@@ -62,7 +61,7 @@ class InvalidAddLiquidity(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidRemoveLiquidity(HyperdrivePolicy):
+class InvalidRemoveLiquidity(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity due to min txn amount."""
 
     counter = 0
@@ -99,7 +98,7 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidOpenLong(HyperdrivePolicy):
+class InvalidOpenLong(HyperdriveBasePolicy):
     """An agent that submits an invalid open long due to min txn amount."""
 
     def action(
@@ -127,7 +126,7 @@ class InvalidOpenLong(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidOpenShort(HyperdrivePolicy):
+class InvalidOpenShort(HyperdriveBasePolicy):
     """An agent that submits an invalid open short due to min txn amount."""
 
     def action(
@@ -154,7 +153,7 @@ class InvalidOpenShort(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidCloseLong(HyperdrivePolicy):
+class InvalidCloseLong(HyperdriveBasePolicy):
     """An agent that submits an invalid close long due to min txn amount."""
 
     counter = 0
@@ -196,7 +195,7 @@ class InvalidCloseLong(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidCloseShort(HyperdrivePolicy):
+class InvalidCloseShort(HyperdriveBasePolicy):
     """An agent that submits an invalid close short due to min txn amount."""
 
     counter = 0
@@ -242,7 +241,7 @@ class TestMinTxAmount:
     """Test pipeline from bots making invalid trades."""
 
     def _build_and_run_with_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdrivePolicy]
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
     ):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"

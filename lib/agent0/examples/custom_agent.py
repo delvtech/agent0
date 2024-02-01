@@ -12,9 +12,8 @@ from fixedpointmath import FixedPoint
 from agent0 import initialize_accounts
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction
+from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
@@ -39,11 +38,11 @@ LIQUIDATE = False
 # TODO this bot is almost identical to the one defined in test_fixtures for system tests
 # On one hand, this bot is nice for an example since it shows all trades
 # On the other, duplicated code between the two bots
-class CustomCycleTradesPolicy(HyperdrivePolicy):
+class CustomCycleTradesPolicy(HyperdriveBasePolicy):
     """An agent that simply cycles through all trades"""
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes

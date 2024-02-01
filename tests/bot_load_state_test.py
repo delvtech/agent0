@@ -20,12 +20,11 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
 
 
-class WalletTestPolicy(HyperdrivePolicy):
+class WalletTestPolicy(HyperdriveBasePolicy):
     """An agent that simply cycles through all trades."""
 
     COUNTER_ADD_LIQUIDITY = 0
@@ -33,7 +32,7 @@ class WalletTestPolicy(HyperdrivePolicy):
     COUNTER_OPEN_SHORT = 2
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy.
 
         Attributes

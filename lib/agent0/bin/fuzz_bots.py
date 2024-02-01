@@ -12,9 +12,8 @@ from web3.types import RPCEndpoint
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveReadInterface
+from agent0.hyperdrive import HyperdriveReadInterface, PolicyZoo
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import Zoo
 
 STOP_CHAIN_ON_CRASH = False
 
@@ -55,12 +54,12 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=Zoo.random,
+        policy=PolicyZoo.random,
         number_of_agents=3,
         # Fixed budget
         base_budget_wei=BASE_BUDGET_PER_BOT.scaled_value,
         eth_budget_wei=ETH_BUDGET_PER_BOT.scaled_value,
-        policy_config=Zoo.random.Config(
+        policy_config=PolicyZoo.random.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
             randomly_ignore_slippage_tolerance=True,

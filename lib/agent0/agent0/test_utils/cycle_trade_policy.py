@@ -9,17 +9,16 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
-from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
 
 
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
-class CycleTradesPolicy(HyperdrivePolicy):
+class CycleTradesPolicy(HyperdriveBasePolicy):
     """A agent that simply cycles through all trades"""
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes

@@ -11,13 +11,13 @@ from fixedpointmath import FixedPoint
 from agent0.base import MarketType, Trade
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 
-from .hyperdrive_policy import HyperdrivePolicy
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 
 
-class Deterministic(HyperdrivePolicy):
+class Deterministic(HyperdriveBasePolicy):
     """Deterministic trading for testing and other purposes."""
 
     @classmethod
@@ -38,7 +38,7 @@ class Deterministic(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy.
 
         Attributes

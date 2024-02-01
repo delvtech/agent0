@@ -17,9 +17,8 @@ from web3.exceptions import ContractCustomError, ContractPanicError
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction, HyperdriveWallet
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
 # Start by defining policies for failed trades
 # One policy per failed trade
 # Starting with empty wallet, catching any closing trades.
-class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
+class InvalidRemoveLiquidityFromZero(HyperdriveBasePolicy):
     """An agent that submits a remove liquidity with a zero wallet."""
 
     def action(
@@ -61,7 +60,7 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidCloseLongFromZero(HyperdrivePolicy):
+class InvalidCloseLongFromZero(HyperdriveBasePolicy):
     """An agent that submits a close long with a zero wallet."""
 
     def action(
@@ -92,7 +91,7 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidCloseShortFromZero(HyperdrivePolicy):
+class InvalidCloseShortFromZero(HyperdriveBasePolicy):
     """An agent that submits a close short with a zero wallet."""
 
     def action(
@@ -123,7 +122,7 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
+class InvalidRedeemWithdrawFromZero(HyperdriveBasePolicy):
     """An agent that submits a redeem withdrawal share with a zero wallet."""
 
     def action(
@@ -151,7 +150,7 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         return action_list, True
 
 
-class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
+class InvalidRemoveLiquidityFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
     counter = 0
@@ -188,7 +187,7 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidCloseLongFromNonZero(HyperdrivePolicy):
+class InvalidCloseLongFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid close long with a non-zero wallet."""
 
     counter = 0
@@ -230,7 +229,7 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidCloseShortFromNonZero(HyperdrivePolicy):
+class InvalidCloseShortFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid close short with a non-zero wallet."""
 
     counter = 0
@@ -272,7 +271,7 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
+class InvalidRedeemWithdrawInPool(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity when not enough ready to withdrawal."""
 
     counter = 0
@@ -323,7 +322,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
+class InvalidRedeemWithdrawFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
     counter = 0
@@ -379,7 +378,7 @@ class TestInvalidTrades:
     """Test pipeline from bots making trades to viewing the trades in the db."""
 
     def _build_and_run_with_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdrivePolicy]
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
     ):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
@@ -430,7 +429,7 @@ class TestInvalidTrades:
         assert False, "Agent was successful with known invalid trade"
 
     def _build_and_run_with_non_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdrivePolicy]
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
     ):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"

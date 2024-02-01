@@ -5,7 +5,7 @@ from agent0.base.policies import BasePolicy
 from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
 
 
-class HyperdrivePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]):
+class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
 
     def action(

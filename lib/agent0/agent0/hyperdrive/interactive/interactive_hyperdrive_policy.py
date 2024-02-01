@@ -9,18 +9,23 @@ from typing import Type
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
-from agent0.hyperdrive.policies import HyperdrivePolicy
+from agent0.hyperdrive import (
+    HyperdriveActionType,
+    HyperdriveBasePolicy,
+    HyperdriveMarketAction,
+    HyperdriveReadInterface,
+    HyperdriveWallet,
+)
 
 
-class InteractiveHyperdrivePolicy(HyperdrivePolicy):
+class InteractiveHyperdrivePolicy(HyperdriveBasePolicy):
     """Policy for interactive hyperdrive.
     This policy works by allowing the caller to call `set_next_action` to specify the next action to take
     during the main trading loop.
     """
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Configuration for the interactive hyperdrive policy.
 
         Attributes
@@ -31,8 +36,8 @@ class InteractiveHyperdrivePolicy(HyperdrivePolicy):
             The configuration for the sub-policy.
         """
 
-        sub_policy: Type[HyperdrivePolicy] | None = None
-        sub_policy_config: HyperdrivePolicy.Config | None = None
+        sub_policy: Type[HyperdriveBasePolicy] | None = None
+        sub_policy_config: HyperdriveBasePolicy.Config | None = None
 
     def __init__(self, policy_config: Config):
         """Initialize the bot.

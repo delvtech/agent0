@@ -10,14 +10,14 @@ from fixedpointmath import FixedPoint, FixedPointMath
 from agent0.base import WEI, Trade
 from agent0.hyperdrive import HyperdriveMarketAction
 
-from .hyperdrive_policy import HyperdrivePolicy
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 # pylint: disable=too-few-public-methods
 
 
-class SmartLong(HyperdrivePolicy):
+class SmartLong(HyperdriveBasePolicy):
     """Agent that opens longs to push the fixed-rate towards the variable-rate."""
 
     @classmethod
@@ -40,7 +40,7 @@ class SmartLong(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes

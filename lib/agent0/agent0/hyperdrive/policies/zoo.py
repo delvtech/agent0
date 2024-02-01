@@ -12,7 +12,7 @@ from .smart_long import SmartLong
 
 
 # Container for all the policies
-class Zoo(NamedTuple):
+class PolicyZoo(NamedTuple):
     """All policies in agent0."""
 
     random = Random

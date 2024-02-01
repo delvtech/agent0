@@ -13,8 +13,7 @@ from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveMarketAction
-from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
+from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
@@ -182,7 +181,7 @@ def apply_step(
 
 
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
-class LPandArb(HyperdrivePolicy):
+class LPandArb(HyperdriveBasePolicy):
     """LP and Arbitrage in a fixed proportion."""
 
     @classmethod
@@ -208,7 +207,7 @@ class LPandArb(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy.
 
         Attributes
