@@ -19,7 +19,7 @@ from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses
 from sqlalchemy.orm import Session
 
-from agent0.hyperdrive.interface import HyperdriveReadInterface
+from agent0.hyperdrive import HyperdriveReadInterface
 
 _SLEEP_AMOUNT = 1
 

@@ -17,15 +17,15 @@ from web3.exceptions import ContractCustomError
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
     from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
 
-    from agent0.hyperdrive.interface import HyperdriveReadInterface
+    from agent0.hyperdrive import HyperdriveReadInterface
 
 # ruff: noqa: PLR2004 (magic values used for counter)
 

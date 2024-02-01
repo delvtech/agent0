@@ -9,13 +9,12 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.interface import HyperdriveReadInterface
-    from agent0.hyperdrive.state import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 
 
 class Deterministic(HyperdrivePolicy):

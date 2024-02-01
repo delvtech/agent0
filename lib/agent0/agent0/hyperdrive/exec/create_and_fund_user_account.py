@@ -9,8 +9,8 @@ from ethpy.base import set_anvil_account_balance, smart_contract_transact
 
 from agent0 import AccountKeyConfig
 from agent0.base.make_key import make_private_key
+from agent0.hyperdrive import HyperdriveReadInterface
 from agent0.hyperdrive.agents import HyperdriveAgent
-from agent0.hyperdrive.interface import HyperdriveReadInterface
 
 if TYPE_CHECKING:
     from hypertypes import ERC20MintableContract

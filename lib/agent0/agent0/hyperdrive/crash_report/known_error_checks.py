@@ -3,7 +3,7 @@
 from ethpy.base.errors import ContractCallException
 from web3.exceptions import ContractCustomError, ContractLogicError
 
-from agent0.hyperdrive.state import HyperdriveActionType, TradeResult
+from agent0.hyperdrive import HyperdriveActionType, TradeResult
 from agent0.test_utils import assert_never
 
 

@@ -17,7 +17,7 @@ from web3 import HTTPProvider
 from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
 
-from agent0.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
+from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name

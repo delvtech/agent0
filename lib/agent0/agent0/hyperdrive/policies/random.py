@@ -10,16 +10,15 @@ from ethpy.base.errors import ContractCallException, ContractCallType
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.state import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdrivePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive.state import PoolState
 
-    from agent0.hyperdrive.interface import HyperdriveReadInterface
-    from agent0.hyperdrive.state import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 
 
 class Random(HyperdrivePolicy):

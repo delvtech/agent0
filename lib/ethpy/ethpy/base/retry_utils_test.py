@@ -3,7 +3,7 @@
 import pytest
 from ethpy.base import retry_call
 
-from agent0.hyperdrive.interface import HyperdriveReadInterface
+from agent0.hyperdrive import HyperdriveReadInterface
 
 
 @pytest.mark.anvil

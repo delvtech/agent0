@@ -11,21 +11,21 @@ from ethpy.hyperdrive import ReceiptBreakdown
 from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade
-from agent0.hyperdrive.crash_report import (
-    build_crash_trade_result,
-    check_for_invalid_balance,
-    check_for_min_txn_amount,
-    check_for_slippage,
-)
-from agent0.hyperdrive.interface import HyperdriveReadWriteInterface
-from agent0.hyperdrive.state import (
+from agent0.hyperdrive import (
     HyperdriveActionType,
     HyperdriveMarketAction,
+    HyperdriveReadWriteInterface,
     HyperdriveWalletDeltas,
     Long,
     Short,
     TradeResult,
     TradeStatus,
+)
+from agent0.hyperdrive.crash_report import (
+    build_crash_trade_result,
+    check_for_invalid_balance,
+    check_for_min_txn_amount,
+    check_for_slippage,
 )
 from agent0.test_utils import assert_never
 
@@ -83,15 +83,15 @@ async def async_execute_single_agent_trade(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test what the limit number of trades an agent can make in one block
-    wallet_deltas_or_exception: list[
-        tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException
-    ] = await asyncio.gather(
-        *[
-            async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
-            for i, trade_object in enumerate(trades)
-        ],
-        # Instead of throwing exception, return the exception to the caller here
-        return_exceptions=True,
+    wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException] = (
+        await asyncio.gather(
+            *[
+                async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
+                for i, trade_object in enumerate(trades)
+            ],
+            # Instead of throwing exception, return the exception to the caller here
+            return_exceptions=True,
+        )
     )
 
     # TODO Here, gather returns results based on original order of trades, but this order isn't guaranteed

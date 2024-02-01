@@ -20,13 +20,12 @@ from hyperlogs.rollbar_utilities import log_rollbar_exception
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.hyperdrive.state import HyperdriveWallet, TradeResult, TradeStatus
+from agent0.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
 
 if TYPE_CHECKING:
     from agent0.base import Trade
+    from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface
     from agent0.hyperdrive.agents import HyperdriveAgent
-    from agent0.hyperdrive.interface import HyperdriveReadInterface
-    from agent0.hyperdrive.state import HyperdriveMarketAction
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

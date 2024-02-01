@@ -13,12 +13,11 @@ from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
+from agent0.hyperdrive import HyperdriveMarketAction
 from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive.interface import HyperdriveReadInterface
-    from agent0.hyperdrive.state import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
 
 # pylint: disable=too-many-arguments, too-many-locals
 

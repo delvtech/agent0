@@ -8,7 +8,7 @@ from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3.types import BlockData
 
-from agent0.hyperdrive.interface import HyperdriveReadInterface
+from agent0.hyperdrive import HyperdriveReadInterface
 
 from .convert_data import (
     convert_checkpoint_info,
