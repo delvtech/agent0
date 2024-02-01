@@ -1,5 +1,5 @@
 """Stateful objects for Hyperdrive AMM"""
-from .agents import (
+from .agent import (
     HyperdriveActionType,
     HyperdriveAgent,
     HyperdriveMarketAction,

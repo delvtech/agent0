@@ -9,7 +9,7 @@ from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.base.agents import EthAgent
+from agent0.base.agent import EthAgent
 from agent0.base.policies import BasePolicy
 
 from .. import HyperdriveReadInterface
