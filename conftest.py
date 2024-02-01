@@ -7,15 +7,9 @@ import os
 
 import pytest
 from chainsync.test_fixtures import database_engine, db_api, db_session, dummy_session, psql_docker
+from ethpy.test_fixtures import init_local_hyperdrive_pool, local_chain, local_hyperdrive_pool
 
-from agent0.hyperdrive.test_fixtures import (
-    hyperdrive_read_interface,
-    hyperdrive_read_write_interface,
-    init_local_hyperdrive_pool,
-    local_chain,
-    local_hyperdrive_pool,
-)
-from agent0.test_fixtures import chain
+from agent0.test_fixtures import chain, hyperdrive_read_interface, hyperdrive_read_write_interface
 from agent0.test_utils import cycle_trade_policy
 
 # Hack to allow for vscode debugger to throw exception immediately
@@ -58,15 +52,15 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 # TODO this means pytest can only be ran from this directory
 __all__ = [
     "chain",
+    "cycle_trade_policy",
     "database_engine",
     "db_api",
     "db_session",
     "dummy_session",
-    "psql_docker",
-    "local_chain",
-    "init_local_hyperdrive_pool",
-    "local_hyperdrive_pool",
-    "cycle_trade_policy",
     "hyperdrive_read_interface",
     "hyperdrive_read_write_interface",
+    "init_local_hyperdrive_pool",
+    "local_chain",
+    "local_hyperdrive_pool",
+    "psql_docker",
 ]

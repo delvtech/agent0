@@ -7,18 +7,18 @@ from typing import TYPE_CHECKING, TypeVar
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType
+from agent0.base import EthAgent, MarketType
 from agent0.base.policies import BasePolicy
 
+from ..interface import HyperdriveReadInterface
+from .hyperdrive_actions import HyperdriveMarketAction
 from .hyperdrive_wallet import HyperdriveWallet
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
 
-    from agent0.base import EthAgent, Trade
+    from agent0.base import Trade
 
-    from .. import HyperdriveReadInterface
-    from .hyperdrive_actions import HyperdriveMarketAction
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 

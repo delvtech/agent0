@@ -24,6 +24,7 @@ from eth_typing import URI
 from ethpy import EthConfig
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
+from ethpy.test_fixtures import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
@@ -32,7 +33,6 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive import HyperdriveReadInterface
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.test_fixtures.local_chain import DeployedHyperdrivePool
 from agent0.test_utils import CycleTradesPolicy
 
 

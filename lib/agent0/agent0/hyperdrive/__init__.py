@@ -4,8 +4,6 @@ from .agent import (
     HyperdriveActionType,
     HyperdriveAgent,
     HyperdriveMarketAction,
-    HyperdriveReadInterface,
-    HyperdriveReadWriteInterface,
     HyperdriveWallet,
     HyperdriveWalletDeltas,
     Long,

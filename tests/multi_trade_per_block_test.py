@@ -25,9 +25,9 @@ from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
+    from ethpy.test_fixtures import DeployedHyperdrivePool
 
     from agent0.hyperdrive import HyperdriveReadInterface
-    from agent0.hyperdrive.test_fixtures.local_chain import DeployedHyperdrivePool
 
 
 class MultiTradePolicy(HyperdriveBasePolicy):

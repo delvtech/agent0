@@ -24,7 +24,7 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.base import MarketType, Trade
 
-from .. import HyperdriveActionType, HyperdriveMarketAction
+from ..agent import HyperdriveActionType, HyperdriveMarketAction
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
     _get_eth_base_balances,
