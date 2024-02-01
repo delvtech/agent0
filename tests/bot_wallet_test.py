@@ -18,8 +18,9 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 
 def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveReadInterface) -> None:

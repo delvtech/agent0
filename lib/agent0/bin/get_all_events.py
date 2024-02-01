@@ -4,8 +4,8 @@ import pandas as pd
 from chainsync.db.hyperdrive import get_transactions
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive import PolicyZoo
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.policies import PolicyZoo
 
 # This is meant to be a standalone script, no need for global upper_case naming style
 # pylint: disable=invalid-name

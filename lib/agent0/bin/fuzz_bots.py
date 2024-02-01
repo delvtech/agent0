@@ -12,8 +12,9 @@ from web3.types import RPCEndpoint
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveReadInterface, PolicyZoo
+from agent0.hyperdrive import HyperdriveReadInterface
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.hyperdrive.policies import PolicyZoo
 
 STOP_CHAIN_ON_CRASH = False
 

@@ -54,13 +54,13 @@ from agent0.base.make_key import make_private_key
 from agent0.hyperdrive import (
     HyperdriveActionType,
     HyperdriveAgent,
-    HyperdriveBasePolicy,
     HyperdriveReadWriteInterface,
     TradeResult,
     TradeStatus,
 )
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
 from .chain import Chain
@@ -1264,49 +1264,56 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
+    ) -> OpenLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
+    ) -> CloseLong:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
+    ) -> OpenShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
+    ) -> CloseShort:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
+    ) -> AddLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
+    ) -> RemoveLiquidity:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
+    ) -> RedeemWithdrawalShares:
+        ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
+    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
+        ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown

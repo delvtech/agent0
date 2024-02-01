@@ -8,11 +8,11 @@ from copy import deepcopy
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive import PolicyZoo
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
+from agent0.hyperdrive.policies import PolicyZoo
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name

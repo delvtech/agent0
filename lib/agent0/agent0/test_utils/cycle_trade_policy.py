@@ -9,7 +9,8 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 
 # Build custom policy

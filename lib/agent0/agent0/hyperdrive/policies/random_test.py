@@ -14,13 +14,14 @@ from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveReadWriteInterface, PolicyZoo, TradeStatus
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveReadWriteInterface, TradeStatus
 from agent0.hyperdrive.exec import (
     async_execute_agent_trades,
     async_fund_agents,
     create_and_fund_user_account,
     setup_experiment,
 )
+from agent0.hyperdrive.policies import PolicyZoo
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses

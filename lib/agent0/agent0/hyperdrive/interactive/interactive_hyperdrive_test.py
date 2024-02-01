@@ -9,8 +9,9 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
 from pandas import Series
 
-from agent0.hyperdrive import HyperdriveWallet, PolicyZoo
+from agent0.hyperdrive import HyperdriveWallet
 from agent0.hyperdrive.interactive.chain import Chain
+from agent0.hyperdrive.policies import PolicyZoo
 
 from .chain import LocalChain
 from .interactive_hyperdrive import InteractiveHyperdrive

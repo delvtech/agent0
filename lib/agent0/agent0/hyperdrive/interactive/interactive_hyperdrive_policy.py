@@ -9,13 +9,8 @@ from typing import Type
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.hyperdrive import (
-    HyperdriveActionType,
-    HyperdriveBasePolicy,
-    HyperdriveMarketAction,
-    HyperdriveReadInterface,
-    HyperdriveWallet,
-)
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 
 class InteractiveHyperdrivePolicy(HyperdriveBasePolicy):

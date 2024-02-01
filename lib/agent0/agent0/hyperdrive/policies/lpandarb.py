@@ -13,7 +13,8 @@ from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveBasePolicy, HyperdriveMarketAction
+from agent0.hyperdrive import HyperdriveMarketAction
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
