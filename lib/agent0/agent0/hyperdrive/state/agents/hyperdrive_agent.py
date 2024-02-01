@@ -12,7 +12,9 @@ from agent0.base import MarketType, Trade
 from agent0.base.agents import EthAgent
 from agent0.base.policies import BasePolicy
 
-from .. import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from .. import HyperdriveReadInterface
+from .hyperdrive_actions import HyperdriveMarketAction
+from .hyperdrive_wallet import HyperdriveWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 

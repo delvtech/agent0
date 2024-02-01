@@ -12,8 +12,8 @@ from ethpy.hyperdrive import ReceiptBreakdown
 if TYPE_CHECKING:
     from agent0.base import Trade
 
-    from .agents import HyperdriveAgent
     from .hyperdrive_actions import HyperdriveMarketAction
+    from .hyperdrive_agent import HyperdriveAgent
 
 
 class TradeStatus(Enum):
