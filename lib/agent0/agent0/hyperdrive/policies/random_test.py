@@ -25,7 +25,8 @@ from agent0.hyperdrive.policies import PolicyZoo
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+
+    from agent0.hyperdrive.test_fixtures.local_chain import DeployedHyperdrivePool
 
 # pylint: disable=too-many-locals
 
