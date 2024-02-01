@@ -9,8 +9,7 @@ from typing import Iterable
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import freezable
-from agent0.base.state import EthWallet, EthWalletDeltas
+from agent0.base import EthWallet, EthWalletDeltas, freezable
 
 
 @freezable()

@@ -12,7 +12,8 @@ from web3 import Web3
 
 from agent0.base import Quantity, TokenType, Trade
 from agent0.base.policies import BasePolicy, NoActionPolicy
-from agent0.base.state import EthWallet
+
+from .eth_wallet import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 MarketInterface = TypeVar("MarketInterface")
@@ -42,7 +43,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from agent0.base.agents import EthAgent
+            >>> from agent0.base import EthAgent
             >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
 
         Alternatively, you can also use the Account api to provide a pre-generated key:
@@ -50,7 +51,7 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from agent0.base.agents import EthAgent
+            >>> from agent0.base import EthAgent
             >>> agent = EthAgent(Account().from_key(agent_private_key))
 
         The EthAgent has the same properties as a Web3 LocalAgent.

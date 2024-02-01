@@ -12,8 +12,7 @@ from numpy.random import default_rng
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
 
-    from agent0.base import Trade
-    from agent0.base.state import EthWallet
+    from agent0.base import EthWallet, Trade
 
 Wallet = TypeVar("Wallet", bound="EthWallet")
 MarketInterface = TypeVar("MarketInterface")

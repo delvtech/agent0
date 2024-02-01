@@ -3,18 +3,22 @@
 from __future__ import annotations
 
 import logging
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType, Trade
-from agent0.base.agent import EthAgent
+from agent0.base import MarketType
 from agent0.base.policies import BasePolicy
 
-from .. import HyperdriveReadInterface
-from .hyperdrive_actions import HyperdriveMarketAction
 from .hyperdrive_wallet import HyperdriveWallet
+
+if TYPE_CHECKING:
+    from eth_account.signers.local import LocalAccount
+
+    from agent0.base import EthAgent, Trade
+
+    from .. import HyperdriveReadInterface
+    from .hyperdrive_actions import HyperdriveMarketAction
 
 Policy = TypeVar("Policy", bound=BasePolicy)
 

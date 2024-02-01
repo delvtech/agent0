@@ -1,6 +1,6 @@
 """Objects for bots to interface with Hyperdrive contracts and the Rust interface."""
 
-from .state import (
+from .agent import (
     HyperdriveActionType,
     HyperdriveAgent,
     HyperdriveMarketAction,
@@ -13,3 +13,4 @@ from .state import (
     TradeResult,
     TradeStatus,
 )
+from .interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
