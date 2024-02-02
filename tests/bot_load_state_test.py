@@ -11,6 +11,7 @@ import pytest
 from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveReadInterface
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
@@ -20,8 +21,8 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
-from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.exec import add_liquidity_trade, open_long_trade, open_short_trade, setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 
@@ -93,13 +94,13 @@ class WalletTestPolicy(HyperdriveBasePolicy):
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(111_111)))
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(22_222)))
+            action_list.append(open_long_trade(FixedPoint(22_222)))
         elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(33_333)))
+            action_list.append(open_short_trade(FixedPoint(33_333)))
         else:
             done_trading = True
         self.counter += 1

@@ -14,7 +14,9 @@ from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
+    from ethpy.hyperdrive import HyperdriveReadInterface
+
+    from agent0.hyperdrive import HyperdriveWallet
 
 
 class Deterministic(HyperdriveBasePolicy):

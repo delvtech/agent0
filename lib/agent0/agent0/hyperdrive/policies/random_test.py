@@ -9,12 +9,13 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
+from ethpy.hyperdrive import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveReadWriteInterface, TradeStatus
+from agent0.hyperdrive import HyperdriveActionType, TradeStatus
 from agent0.hyperdrive.exec import (
     async_execute_agent_trades,
     async_fund_agents,

@@ -12,13 +12,26 @@ from fixedpointmath import FixedPoint
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.hyperdrive.exec import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    redeem_withdraw_shares_trade,
+    remove_liquidity_trade,
+)
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
+    from ethpy.hyperdrive import HyperdriveReadInterface
     from ethpy.hyperdrive.state import PoolState
 
-    from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveWallet
+
+# We can allow unused arguments here because this is a template and extendable class.
+# pylint: disable=unused-argument
 
 
 class Random(HyperdriveBasePolicy):
@@ -185,7 +198,7 @@ class Random(HyperdriveBasePolicy):
         else:
             slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.open_short_trade(trade_amount, slippage)]
+        return [open_short_trade(trade_amount, slippage)]
 
     def close_random_short(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -214,7 +227,7 @@ class Random(HyperdriveBasePolicy):
         else:
             slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.close_short_trade(trade_amount, short_time, slippage)]
+        return [close_short_trade(trade_amount, short_time, slippage)]
 
     def open_long_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -251,7 +264,7 @@ class Random(HyperdriveBasePolicy):
         else:
             slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.open_long_trade(trade_amount, slippage)]
+        return [open_long_trade(trade_amount, slippage)]
 
     def close_random_long(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -280,7 +293,7 @@ class Random(HyperdriveBasePolicy):
         else:
             slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.close_long_trade(trade_amount, long_time, slippage)]
+        return [close_long_trade(trade_amount, long_time, slippage)]
 
     def add_liquidity_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -308,7 +321,7 @@ class Random(HyperdriveBasePolicy):
             interface.pool_config.minimum_transaction_amount, min(wallet.balance.amount, initial_trade_amount)
         )
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.add_liquidity_trade(trade_amount)]
+        return [add_liquidity_trade(trade_amount)]
 
     def remove_liquidity_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -342,7 +355,7 @@ class Random(HyperdriveBasePolicy):
         else:
             slippage = self.slippage_tolerance
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.remove_liquidity_trade(trade_amount, slippage)]
+        return [remove_liquidity_trade(trade_amount, slippage)]
 
     def redeem_withdraw_shares_with_random_amount(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -374,7 +387,7 @@ class Random(HyperdriveBasePolicy):
             interface.pool_config.minimum_transaction_amount, min(shares_available_to_withdraw, initial_trade_amount)
         )
         # return a trade using a specification that is parsable by the rest of the sim framework
-        return [interface.redeem_withdraw_shares_trade(trade_amount)]
+        return [redeem_withdraw_shares_trade(trade_amount)]
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet

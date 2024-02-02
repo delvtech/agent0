@@ -11,4 +11,3 @@ from .agent import (
     TradeResult,
     TradeStatus,
 )
-from .interface import HyperdriveReadInterface, HyperdriveReadWriteInterface

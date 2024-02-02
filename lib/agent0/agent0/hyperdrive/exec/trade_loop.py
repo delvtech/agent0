@@ -6,16 +6,11 @@ import asyncio
 import logging
 from datetime import datetime
 
+from ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.hyperdrive import (
-    HyperdriveAgent,
-    HyperdriveReadInterface,
-    HyperdriveReadWriteInterface,
-    TradeResult,
-    TradeStatus,
-)
+from agent0.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.test_utils import assert_never
 

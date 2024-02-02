@@ -23,8 +23,10 @@ from web3.types import RPCEndpoint
 from agent0.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
 
 if TYPE_CHECKING:
+    from ethpy.hyperdrive import HyperdriveReadInterface
+
     from agent0.base import Trade
-    from agent0.hyperdrive import HyperdriveAgent, HyperdriveMarketAction, HyperdriveReadInterface
+    from agent0.hyperdrive import HyperdriveAgent, HyperdriveMarketAction
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

@@ -9,11 +9,14 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction
+from agent0.hyperdrive.exec import close_long_trade, close_short_trade, open_long_trade, open_short_trade
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet
+    from ethpy.hyperdrive import HyperdriveReadInterface
+
+    from agent0.hyperdrive import HyperdriveWallet
 
 
 class Arbitrage(HyperdriveBasePolicy):
@@ -103,32 +106,30 @@ class Arbitrage(HyperdriveBasePolicy):
         for maturity_time, long in wallet.longs.items():
             # If matured
             if maturity_time < pool_state.block_time:
-                action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
 
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
             if maturity_time < pool_state.block_time:
-                action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
+                action_list.append(close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # High fixed rate detected
         if fixed_rate >= self.policy_config.high_fixed_rate_thresh:
             # Close all open shorts
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
-                    action_list.append(
-                        interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance)
-                    )
+                    action_list.append(close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
             # Open a new long
-            action_list.append(interface.open_long_trade(self.policy_config.trade_amount, self.slippage_tolerance))
+            action_list.append(open_long_trade(self.policy_config.trade_amount, self.slippage_tolerance))
 
         # Low fixed rate detected
         if fixed_rate <= self.policy_config.low_fixed_rate_thresh:
             # Close all open longs
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
-                    action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
+                    action_list.append(close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
             # Open a new short
-            action_list.append(interface.open_short_trade(self.policy_config.trade_amount, self.slippage_tolerance))
+            action_list.append(open_short_trade(self.policy_config.trade_amount, self.slippage_tolerance))
 
         return action_list, False

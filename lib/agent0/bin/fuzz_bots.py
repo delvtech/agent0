@@ -6,13 +6,13 @@ import logging
 import random
 import sys
 
+from ethpy.hyperdrive import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from hyperlogs.rollbar_utilities import initialize_rollbar
 from web3.types import RPCEndpoint
 
 from agent0 import initialize_accounts
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveReadInterface
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import PolicyZoo
 

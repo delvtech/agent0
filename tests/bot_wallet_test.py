@@ -9,7 +9,7 @@ from typing import cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
+from ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 from ethpy.hyperdrive.addresses import HyperdriveAddresses
 from ethpy.test_fixtures import DeployedHyperdrivePool
 from fixedpointmath import FixedPoint
@@ -18,8 +18,17 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
-from agent0.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.exec import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    redeem_withdraw_shares_trade,
+    remove_liquidity_trade,
+    setup_and_run_agent_loop,
+)
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 
@@ -108,29 +117,29 @@ class WalletTestAgainstChainPolicy(HyperdriveBasePolicy):
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(111_111)))
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(22_222), self.slippage_tolerance))
+            action_list.append(open_long_trade(FixedPoint(22_222), self.slippage_tolerance))
         elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(333), self.slippage_tolerance))
+            action_list.append(open_short_trade(FixedPoint(333), self.slippage_tolerance))
         elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
             # Remove All Liquidity
-            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
+            action_list.append(remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == self.COUNTER_CLOSE_LONGS:
             # Close All Longs
             assert len(wallet.longs) == 1
             for long_time, long in wallet.longs.items():
-                action_list.append(interface.close_long_trade(long.balance, long_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(long.balance, long_time, self.slippage_tolerance))
         elif self.counter == self.COUNTER_CLOSE_SHORTS:
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
-                action_list.append(interface.close_short_trade(short.balance, short_time, self.slippage_tolerance))
+                action_list.append(close_short_trade(short.balance, short_time, self.slippage_tolerance))
         elif self.counter == self.COUNTER_REDEEM_WITHDRAW_SHARES:
             # Redeem all withdrawal shares
-            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
+            action_list.append(redeem_withdraw_shares_trade(wallet.withdraw_shares))
         elif self.counter == self.COUNTER_CHECK:
             # One final check after the previous trade
             pass

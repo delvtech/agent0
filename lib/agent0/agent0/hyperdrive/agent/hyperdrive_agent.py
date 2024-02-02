@@ -5,11 +5,17 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, TypeVar
 
+from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import EthAgent, MarketType
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.interface import HyperdriveReadInterface
+from agent0.hyperdrive.exec import (
+    close_long_trade,
+    close_short_trade,
+    redeem_withdraw_shares_trade,
+    remove_liquidity_trade,
+)
 
 from .hyperdrive_actions import HyperdriveMarketAction
 from .hyperdrive_wallet import HyperdriveWallet
@@ -72,7 +78,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         for maturity_time, long in self.wallet.longs.items():
             logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
             if long.balance > minimum_transaction_amount:
-                action_list.append(interface.close_long_trade(long.balance, maturity_time))
+                action_list.append(close_long_trade(long.balance, maturity_time))
         for maturity_time, short in self.wallet.shorts.items():
             logging.debug(
                 "closing short: maturity_time=%g, balance=%s",
@@ -80,10 +86,10 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                 short.balance,
             )
             if short.balance > minimum_transaction_amount:
-                action_list.append(interface.close_short_trade(short.balance, maturity_time))
+                action_list.append(close_short_trade(short.balance, maturity_time))
         if self.wallet.lp_tokens > minimum_transaction_amount:
             logging.debug("closing lp: lp_tokens=%s", self.wallet.lp_tokens)
-            action_list.append(interface.remove_liquidity_trade(self.wallet.lp_tokens))
+            action_list.append(remove_liquidity_trade(self.wallet.lp_tokens))
 
         # We use the underlying policies rng object for randomizing liquidation trades
         if randomize_trades:
@@ -92,7 +98,7 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
         # Always set withdrawal shares to be last, as we need trades to close first before withdrawing
         if self.wallet.withdraw_shares > 0:
             logging.debug("closing withdrawal: withdrawal_tokens=%s", self.wallet.withdraw_shares)
-            action_list.append(interface.redeem_withdraw_shares_trade(self.wallet.withdraw_shares))
+            action_list.append(redeem_withdraw_shares_trade(self.wallet.withdraw_shares))
 
         # If interactive mode set to true, never set done_trading
         # If no more trades in wallet, set the done trading flag

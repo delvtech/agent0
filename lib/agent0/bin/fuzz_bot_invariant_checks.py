@@ -22,6 +22,7 @@ from typing import Any, NamedTuple, Sequence
 
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
+from ethpy.hyperdrive import HyperdriveReadInterface
 from ethpy.hyperdrive.state.pool_state import PoolState
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
@@ -31,7 +32,6 @@ from web3.exceptions import BlockNotFound
 from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
-from agent0.hyperdrive import HyperdriveReadInterface
 from agent0.hyperdrive.crash_report import build_crash_trade_result, get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose
 
