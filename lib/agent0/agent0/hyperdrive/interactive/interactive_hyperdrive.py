@@ -1259,56 +1259,49 @@ class InteractiveHyperdrive:
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong:
-        ...
+    ) -> OpenLong: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong:
-        ...
+    ) -> CloseLong: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort:
-        ...
+    ) -> OpenShort: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort:
-        ...
+    ) -> CloseShort: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity:
-        ...
+    ) -> AddLiquidity: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity:
-        ...
+    ) -> RemoveLiquidity: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares:
-        ...
+    ) -> RedeemWithdrawalShares: ...
 
     @overload
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
-        ...
+    ) -> (
+        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
+    ): ...
 
     def _build_event_obj_from_tx_receipt(
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
