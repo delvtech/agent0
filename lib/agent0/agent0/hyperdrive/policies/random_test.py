@@ -9,24 +9,24 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from eth_typing import URI
 from ethpy import EthConfig
-from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
+from ethpy.hyperdrive import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive import HyperdriveActionType, TradeStatus
 from agent0.hyperdrive.exec import (
     async_execute_agent_trades,
     async_fund_agents,
     create_and_fund_user_account,
     setup_experiment,
 )
-from agent0.hyperdrive.policies import Zoo
-from agent0.hyperdrive.state import HyperdriveActionType, TradeStatus
+from agent0.hyperdrive.policies import PolicyZoo
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+    from ethpy.test_fixtures import DeployedHyperdrivePool
 
 # pylint: disable=too-many-locals
 
@@ -71,11 +71,11 @@ class TestRandomPolicy:
         # Build agent config with no allowable trades
         agent_config: list[AgentConfig] = [
             AgentConfig(
-                policy=Zoo.random,
+                policy=PolicyZoo.random,
                 number_of_agents=1,
                 base_budget_wei=FixedPoint(1_000_000).scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint(100).scaled_value,  # 100 base
-                policy_config=Zoo.random.Config(slippage_tolerance=None),
+                policy_config=PolicyZoo.random.Config(slippage_tolerance=None),
             ),
         ]
 
@@ -141,11 +141,11 @@ class TestRandomPolicy:
         # Build agent config with no allowable trades
         agent_config: list[AgentConfig] = [
             AgentConfig(
-                policy=Zoo.random,
+                policy=PolicyZoo.random,
                 number_of_agents=1,
                 base_budget_wei=FixedPoint(1_000_000).scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint(100).scaled_value,  # 100 base
-                policy_config=Zoo.random.Config(
+                policy_config=PolicyZoo.random.Config(
                     slippage_tolerance=None,
                     trade_chance=FixedPoint(1.0),
                     allowable_actions=[],

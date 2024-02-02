@@ -6,21 +6,30 @@ from dataclasses import dataclass
 from typing import Type
 
 import pytest
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    redeem_withdraw_shares_trade,
+    remove_liquidity_trade,
+)
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
-class CycleTradesPolicy(HyperdrivePolicy):
+class CycleTradesPolicy(HyperdriveBasePolicy):
     """A agent that simply cycles through all trades"""
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes
@@ -71,29 +80,29 @@ class CycleTradesPolicy(HyperdrivePolicy):
 
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(trade_amount=FixedPoint(111_111)))
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == 1:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(22_222), self.slippage_tolerance))
+            action_list.append(open_long_trade(FixedPoint(22_222), self.slippage_tolerance))
         elif self.counter == 2:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(333), self.slippage_tolerance))
+            action_list.append(open_short_trade(FixedPoint(333), self.slippage_tolerance))
         elif self.counter == 3:
             # Remove All Liquidity
-            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
+            action_list.append(remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 4:
             # Close All Longs
             assert len(wallet.longs) == 1
             for long_time, long in wallet.longs.items():
-                action_list.append(interface.close_long_trade(long.balance, long_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(long.balance, long_time, self.slippage_tolerance))
         elif self.counter == 5:
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
-                action_list.append(interface.close_short_trade(short.balance, short_time, self.slippage_tolerance))
+                action_list.append(close_short_trade(short.balance, short_time, self.slippage_tolerance))
         elif self.counter == 6:
             # Redeem all withdrawal shares
-            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
+            action_list.append(redeem_withdraw_shares_trade(wallet.withdraw_shares))
         else:
             done_trading = True
         self.counter += 1

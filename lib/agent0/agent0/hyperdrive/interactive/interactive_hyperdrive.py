@@ -38,11 +38,11 @@ from ethpy.hyperdrive import (
     BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
     DeployedHyperdrivePool,
+    HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
     encode_asset_id,
 )
-from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from numpy.random._generator import Generator
@@ -52,11 +52,10 @@ from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
 from agent0.base.make_key import make_private_key
-from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveActionType, TradeResult, TradeStatus
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
 from .chain import Chain
@@ -608,8 +607,8 @@ class InteractiveHyperdrive:
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-        policy: Type[HyperdrivePolicy] | None = None,
-        policy_config: HyperdrivePolicy.Config | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
         private_key: str | None = None,
     ) -> InteractiveHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
@@ -958,8 +957,8 @@ class InteractiveHyperdrive:
         base: FixedPoint,
         eth: FixedPoint,
         name: str | None,
-        policy: Type[HyperdrivePolicy] | None,
-        policy_config: HyperdrivePolicy.Config | None,
+        policy: Type[HyperdriveBasePolicy] | None,
+        policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> HyperdriveAgent:
         # pylint: disable=too-many-arguments

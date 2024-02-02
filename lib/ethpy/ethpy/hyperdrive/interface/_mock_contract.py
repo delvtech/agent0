@@ -10,7 +10,7 @@ from hypertypes.utilities.conversions import fixedpoint_to_pool_config, fixedpoi
 from web3.types import Timestamp
 
 if TYPE_CHECKING:
-    from ..state import PoolState
+    from ethpy.hyperdrive.state import PoolState
 
 # We only worry about protected access for users outside of this folder
 # pylint: disable=protected-access

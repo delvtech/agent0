@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import fields
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from fixedpointmath import FixedPoint
 from hypertypes import Checkpoint, PoolConfig
@@ -15,7 +15,8 @@ from hypertypes.utilities.conversions import (
     pool_info_to_fixedpoint,
 )
 
-from .read_interface import HyperdriveReadInterface
+if TYPE_CHECKING:
+    from .read_interface import HyperdriveReadInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name

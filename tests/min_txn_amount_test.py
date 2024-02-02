@@ -17,14 +17,21 @@ from web3.exceptions import ContractCustomError
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    remove_liquidity_trade,
+)
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
+    from ethpy.test_fixtures import DeployedHyperdrivePool
 
 # ruff: noqa: PLR2004 (magic values used for counter)
 
@@ -35,7 +42,7 @@ if TYPE_CHECKING:
 SMALL_TRADE_AMOUNT = FixedPoint(scaled_value=1000)
 
 
-class InvalidAddLiquidity(HyperdrivePolicy):
+class InvalidAddLiquidity(HyperdriveBasePolicy):
     """An agent that submits an invalid add liquidity due to min txn amount."""
 
     def action(
@@ -57,11 +64,11 @@ class InvalidAddLiquidity(HyperdrivePolicy):
             and the second element defines if the agent is done trading
         """
         # pylint: disable=unused-argument
-        action_list = [interface.add_liquidity_trade(SMALL_TRADE_AMOUNT)]
+        action_list = [add_liquidity_trade(SMALL_TRADE_AMOUNT)]
         return action_list, True
 
 
-class InvalidRemoveLiquidity(HyperdrivePolicy):
+class InvalidRemoveLiquidity(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity due to min txn amount."""
 
     counter = 0
@@ -89,16 +96,16 @@ class InvalidRemoveLiquidity(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 2:
             # Remove liquidity
-            action_list.append(interface.remove_liquidity_trade(SMALL_TRADE_AMOUNT))
+            action_list.append(remove_liquidity_trade(SMALL_TRADE_AMOUNT))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
 
 
-class InvalidOpenLong(HyperdrivePolicy):
+class InvalidOpenLong(HyperdriveBasePolicy):
     """An agent that submits an invalid open long due to min txn amount."""
 
     def action(
@@ -122,11 +129,11 @@ class InvalidOpenLong(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Closing non-existent long
-        action_list.append(interface.open_long_trade(SMALL_TRADE_AMOUNT, self.slippage_tolerance))
+        action_list.append(open_long_trade(SMALL_TRADE_AMOUNT, self.slippage_tolerance))
         return action_list, True
 
 
-class InvalidOpenShort(HyperdrivePolicy):
+class InvalidOpenShort(HyperdriveBasePolicy):
     """An agent that submits an invalid open short due to min txn amount."""
 
     def action(
@@ -149,11 +156,11 @@ class InvalidOpenShort(HyperdrivePolicy):
         """
         # pylint: disable=unused-argument
         # Open a short for too few bonds
-        action_list = [interface.open_short_trade(SMALL_TRADE_AMOUNT, self.slippage_tolerance)]
+        action_list = [open_short_trade(SMALL_TRADE_AMOUNT, self.slippage_tolerance)]
         return action_list, True
 
 
-class InvalidCloseLong(HyperdrivePolicy):
+class InvalidCloseLong(HyperdriveBasePolicy):
     """An agent that submits an invalid close long due to min txn amount."""
 
     counter = 0
@@ -181,21 +188,21 @@ class InvalidCloseLong(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity for other valid trades
-            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
         if self.counter == 1:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
+            action_list.append(open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 2:
             # Closing existing long for a small trade amount
             assert len(wallet.longs) == 1
             for long_time in wallet.longs.keys():
-                action_list.append(interface.close_long_trade(SMALL_TRADE_AMOUNT, long_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(SMALL_TRADE_AMOUNT, long_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
 
 
-class InvalidCloseShort(HyperdrivePolicy):
+class InvalidCloseShort(HyperdriveBasePolicy):
     """An agent that submits an invalid close short due to min txn amount."""
 
     counter = 0
@@ -223,15 +230,15 @@ class InvalidCloseShort(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity for other valid trades
-            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
         if self.counter == 1:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
+            action_list.append(open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 2:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
             for short_time in wallet.shorts.keys():
-                action_list.append(interface.close_short_trade(SMALL_TRADE_AMOUNT, short_time, self.slippage_tolerance))
+                action_list.append(close_short_trade(SMALL_TRADE_AMOUNT, short_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
@@ -241,7 +248,7 @@ class TestMinTxAmount:
     """Test pipeline from bots making invalid trades."""
 
     def _build_and_run_with_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdrivePolicy]
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
     ):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"

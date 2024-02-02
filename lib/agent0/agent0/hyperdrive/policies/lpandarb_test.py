@@ -12,7 +12,7 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
-from agent0.hyperdrive.policies.zoo import Zoo
+from agent0.hyperdrive.policies import PolicyZoo
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
@@ -75,12 +75,12 @@ def create_arbitrage_andy(interactive_hyperdrive) -> InteractiveHyperdriveAgent:
     InteractiveHyperdriveAgent
         Arbitrage Andy interactive hyperdrive agent."""
     andy_base = FixedPoint(1e9)
-    andy_config = Zoo.lp_and_arb.Config(
+    andy_config = PolicyZoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
         minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     return interactive_hyperdrive.init_agent(
-        base=andy_base, name="andy", policy=Zoo.lp_and_arb, policy_config=andy_config
+        base=andy_base, name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
     )
 
 
@@ -263,11 +263,11 @@ def test_already_at_target(interactive_hyperdrive: InteractiveHyperdrive, arbitr
     # modify Andy to be done_on_empty
     andy_interactive_policy = arbitrage_andy.agent.policy
     assert hasattr(andy_interactive_policy, "sub_policy") and isinstance(
-        getattr(andy_interactive_policy, "sub_policy"), Zoo.lp_and_arb
+        getattr(andy_interactive_policy, "sub_policy"), PolicyZoo.lp_and_arb
     )
     andy_policy = getattr(andy_interactive_policy, "sub_policy")
     assert hasattr(andy_policy, "policy_config") and isinstance(
-        getattr(andy_policy, "policy_config"), Zoo.lp_and_arb.Config
+        getattr(andy_policy, "policy_config"), PolicyZoo.lp_and_arb.Config
     )
     andy_policy.policy_config.done_on_empty = True
 

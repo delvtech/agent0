@@ -19,17 +19,17 @@ from web3 import HTTPProvider
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
+    from ethpy.test_fixtures import DeployedHyperdrivePool
 
 
-class MultiTradePolicy(HyperdrivePolicy):
+class MultiTradePolicy(HyperdriveBasePolicy):
     """An agent that submits multiple trades per block."""
 
     counter = 0
@@ -58,14 +58,14 @@ class MultiTradePolicy(HyperdrivePolicy):
         if self.counter == 0:
             # Adding liquidity to make other trades valid
             action_list: list[Trade[HyperdriveMarketAction]] = [
-                interface.add_liquidity_trade(FixedPoint(1_111_111)),
+                add_liquidity_trade(FixedPoint(1_111_111)),
             ]
         elif self.counter == 1:
             # Adding in 3 trades at the same time:
             action_list: list[Trade[HyperdriveMarketAction]] = [
-                interface.add_liquidity_trade(FixedPoint(11_111)),
-                interface.open_long_trade(FixedPoint(22_222)),
-                interface.open_short_trade(FixedPoint(33_333)),
+                add_liquidity_trade(FixedPoint(11_111)),
+                open_long_trade(FixedPoint(22_222)),
+                open_short_trade(FixedPoint(33_333)),
             ]
             done_trading = True
         else:

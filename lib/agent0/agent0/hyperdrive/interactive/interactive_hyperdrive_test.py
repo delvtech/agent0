@@ -9,11 +9,10 @@ from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
 from pandas import Series
 
-from agent0.hyperdrive.interactive.chain import Chain
-from agent0.hyperdrive.policies import Zoo
-from agent0.hyperdrive.state import HyperdriveWallet
+from agent0.hyperdrive import HyperdriveWallet
+from agent0.hyperdrive.policies import PolicyZoo
 
-from .chain import LocalChain
+from .chain import Chain, LocalChain
 from .interactive_hyperdrive import InteractiveHyperdrive
 
 YEAR_IN_SECONDS = 31_536_000
@@ -602,12 +601,12 @@ def test_policy_config_none_rng(chain: LocalChain):
     """The policy config has rng set to None."""
     interactive_config = InteractiveHyperdrive.Config()
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
-    agent_policy = Zoo.random.Config()
+    agent_policy = PolicyZoo.random.Config()
     agent_policy.rng = None
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
         name="alice",
-        policy=Zoo.random,
+        policy=PolicyZoo.random,
         policy_config=agent_policy,
     )
     assert alice.agent.policy.rng is not None
@@ -621,7 +620,7 @@ def test_policy_config_forgotten(chain: LocalChain):
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
         name="alice",
-        policy=Zoo.random,
+        policy=PolicyZoo.random,
     )
     assert alice.agent.policy is not None
 

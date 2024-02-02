@@ -16,8 +16,7 @@ from chainsync.db.hyperdrive import (
     get_pool_config,
 )
 from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
 from sqlalchemy.orm import Session
 
 _SLEEP_AMOUNT = 1

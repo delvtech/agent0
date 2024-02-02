@@ -28,11 +28,10 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber
     from ethpy import EthConfig
     from ethpy.hyperdrive.addresses import HyperdriveAddresses
+    from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.types import Nonce
-
-    from ..receipt_breakdown import ReceiptBreakdown
 
 
 class HyperdriveReadWriteInterface(HyperdriveReadInterface):

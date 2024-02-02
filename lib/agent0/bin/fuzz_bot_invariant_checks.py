@@ -22,7 +22,7 @@ from typing import Any, NamedTuple, Sequence
 
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive import HyperdriveReadInterface
 from ethpy.hyperdrive.state.pool_state import PoolState
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes

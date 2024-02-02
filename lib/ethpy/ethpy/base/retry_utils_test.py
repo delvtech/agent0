@@ -1,16 +1,22 @@
 """Test executing transactions."""
 
+from typing import cast
+
 import pytest
-from ethpy.base import retry_call
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from eth_typing import URI
+from ethpy.base import initialize_web3_with_http_provider, retry_call
+from ethpy.test_fixtures import DeployedHyperdrivePool
+from web3 import HTTPProvider
 
 
 @pytest.mark.anvil
-def test_retry_call_success(hyperdrive_read_interface: HyperdriveReadInterface, caplog: pytest.LogCaptureFixture):
+def test_retry_call_success(local_hyperdrive_pool: DeployedHyperdrivePool, caplog: pytest.LogCaptureFixture):
     """Verify that a bogus call produces the correct number of retries."""
     retry_count = 5
     # getting the block should always work
-    _ = retry_call(retry_count, None, hyperdrive_read_interface.web3.eth.get_block, "latest", full_transactions=True)
+    rpc_uri = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
+    web3 = initialize_web3_with_http_provider(rpc_uri)
+    _ = retry_call(retry_count, None, web3.eth.get_block, "latest", full_transactions=True)
     retries = [r for r in caplog.records if r.message.startswith("Retry")]
     assert len(retries) == 0
 

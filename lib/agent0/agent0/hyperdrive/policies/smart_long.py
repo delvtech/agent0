@@ -8,18 +8,20 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint, FixedPointMath
 
 from agent0.base import WEI, Trade
-from agent0.hyperdrive.state import HyperdriveMarketAction
+from agent0.hyperdrive import HyperdriveMarketAction
+from agent0.hyperdrive.agent import close_long_trade, open_long_trade
 
-from .hyperdrive_policy import HyperdrivePolicy
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
+    from ethpy.hyperdrive import HyperdriveReadInterface
 
-    from agent0.hyperdrive.state import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveWallet
+
 # pylint: disable=too-few-public-methods
 
 
-class SmartLong(HyperdrivePolicy):
+class SmartLong(HyperdriveBasePolicy):
     """Agent that opens longs to push the fixed-rate towards the variable-rate."""
 
     @classmethod
@@ -42,7 +44,7 @@ class SmartLong(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy
 
         Attributes
@@ -104,7 +106,7 @@ class SmartLong(HyperdrivePolicy):
             # how to intelligently pick the length? using PNL I guess.
             if (pool_state.block_time - FixedPoint(long_time)) >= pool_state.pool_config.position_duration:
                 trade_amount = wallet.longs[long_time].balance  # close the whole thing
-                action_list.append(interface.close_long_trade(trade_amount, long_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(trade_amount, long_time, self.slippage_tolerance))
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
@@ -128,5 +130,5 @@ class SmartLong(HyperdrivePolicy):
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:
-                action_list.append(interface.open_long_trade(trade_amount, self.slippage_tolerance))
+                action_list.append(open_long_trade(trade_amount, self.slippage_tolerance))
         return action_list, False

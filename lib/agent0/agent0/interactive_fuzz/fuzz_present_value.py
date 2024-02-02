@@ -27,9 +27,9 @@ from typing import Any, NamedTuple, Sequence
 import numpy as np
 from fixedpointmath import FixedPoint
 
+from agent0.hyperdrive import HyperdriveActionType
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
-from agent0.hyperdrive.state.hyperdrive_actions import HyperdriveActionType
 from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose, setup_fuzz
 
 # tests have lots of stuff

@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
     from eth_typing import ChecksumAddress
 
-    from agent0.hyperdrive.policies import HyperdrivePolicy
-    from agent0.hyperdrive.state import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveWallet
+    from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
     from .event_types import (
         AddLiquidity,
@@ -44,8 +44,8 @@ class InteractiveHyperdriveAgent:
         eth: FixedPoint,
         name: str | None,
         pool: InteractiveHyperdrive,
-        policy: Type[HyperdrivePolicy] | None,
-        policy_config: HyperdrivePolicy.Config | None,
+        policy: Type[HyperdriveBasePolicy] | None,
+        policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.

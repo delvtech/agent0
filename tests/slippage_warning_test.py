@@ -20,7 +20,7 @@ from agent0.test_utils import CycleTradesPolicy
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+    from ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 class TestSlippageWarning:

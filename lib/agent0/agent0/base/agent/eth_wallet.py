@@ -11,7 +11,7 @@ from typing import Any, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-from agent0.base import Quantity, TokenType, freezable
+from agent0.base.types import Quantity, TokenType, freezable
 
 
 def check_non_zero(data: Any) -> None:

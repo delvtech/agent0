@@ -17,14 +17,22 @@ from web3.exceptions import ContractCustomError, ContractPanicError
 from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    redeem_withdraw_shares_trade,
+    remove_liquidity_trade,
+)
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
-    from ethpy.test_fixtures.local_chain import DeployedHyperdrivePool
+    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
+    from ethpy.test_fixtures import DeployedHyperdrivePool
 
 # ruff: noqa: PLR2004 (magic values used for counter)
 
@@ -32,7 +40,7 @@ if TYPE_CHECKING:
 # Start by defining policies for failed trades
 # One policy per failed trade
 # Starting with empty wallet, catching any closing trades.
-class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
+class InvalidRemoveLiquidityFromZero(HyperdriveBasePolicy):
     """An agent that submits a remove liquidity with a zero wallet."""
 
     def action(
@@ -56,11 +64,11 @@ class InvalidRemoveLiquidityFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Remove non-existing Liquidity
-        action_list.append(interface.remove_liquidity_trade(FixedPoint(20_000)))
+        action_list.append(remove_liquidity_trade(FixedPoint(20_000)))
         return action_list, True
 
 
-class InvalidCloseLongFromZero(HyperdrivePolicy):
+class InvalidCloseLongFromZero(HyperdriveBasePolicy):
     """An agent that submits a close long with a zero wallet."""
 
     def action(
@@ -84,14 +92,12 @@ class InvalidCloseLongFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         # Closing non-existent long
         action_list = [
-            interface.close_long_trade(
-                FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance
-            )
+            close_long_trade(FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance)
         ]
         return action_list, True
 
 
-class InvalidCloseShortFromZero(HyperdrivePolicy):
+class InvalidCloseShortFromZero(HyperdriveBasePolicy):
     """An agent that submits a close short with a zero wallet."""
 
     def action(
@@ -115,14 +121,12 @@ class InvalidCloseShortFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         # Closing non-existent short
         action_list = [
-            interface.close_short_trade(
-                FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance
-            )
+            close_short_trade(FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance)
         ]
         return action_list, True
 
 
-class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
+class InvalidRedeemWithdrawFromZero(HyperdriveBasePolicy):
     """An agent that submits a redeem withdrawal share with a zero wallet."""
 
     def action(
@@ -146,11 +150,11 @@ class InvalidRedeemWithdrawFromZero(HyperdrivePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Redeem non-existent withdrawal shares
-        action_list.append(interface.redeem_withdraw_shares_trade(FixedPoint(20_000)))
+        action_list.append(redeem_withdraw_shares_trade(FixedPoint(20_000)))
         return action_list, True
 
 
-class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
+class InvalidRemoveLiquidityFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
     counter = 0
@@ -178,16 +182,16 @@ class InvalidRemoveLiquidityFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(FixedPoint(10_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(10_000)))
         elif self.counter == 1:
             # Remove Liquidity for more than I have
-            action_list.append(interface.remove_liquidity_trade(FixedPoint(20_000)))
+            action_list.append(remove_liquidity_trade(FixedPoint(20_000)))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
 
 
-class InvalidCloseLongFromNonZero(HyperdrivePolicy):
+class InvalidCloseLongFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid close long with a non-zero wallet."""
 
     counter = 0
@@ -215,21 +219,21 @@ class InvalidCloseLongFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity, as we need liquidity in the pool for the other trades
-            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
         elif self.counter == 1:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
+            action_list.append(open_long_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 2:
             # Closing existent long for more than I have
             assert len(wallet.longs) == 1
             for long_time in wallet.longs.keys():
-                action_list.append(interface.close_long_trade(FixedPoint(20_000), long_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(FixedPoint(20_000), long_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
 
 
-class InvalidCloseShortFromNonZero(HyperdrivePolicy):
+class InvalidCloseShortFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid close short with a non-zero wallet."""
 
     counter = 0
@@ -257,21 +261,21 @@ class InvalidCloseShortFromNonZero(HyperdrivePolicy):
         done_trading = False
         if self.counter == 0:
             # Add liquidity, as we need liquidity in the pool for the other trades
-            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
         if self.counter == 1:
             # Open Short
-            action_list.append(interface.open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
+            action_list.append(open_short_trade(FixedPoint(10_000), self.slippage_tolerance))
         elif self.counter == 2:
             # Closing existent short for more than I have
             assert len(wallet.shorts) == 1
             for short_time in wallet.shorts.keys():
-                action_list.append(interface.close_short_trade(FixedPoint(20_000), short_time, self.slippage_tolerance))
+                action_list.append(close_short_trade(FixedPoint(20_000), short_time, self.slippage_tolerance))
             done_trading = True
         self.counter += 1
         return action_list, done_trading
 
 
-class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
+class InvalidRedeemWithdrawInPool(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity when not enough ready to withdrawal."""
 
     counter = 0
@@ -301,20 +305,20 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         # Valid add liquidity
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
         # Valid open long
         elif self.counter == 1:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(20_000), self.slippage_tolerance))
+            action_list.append(open_long_trade(FixedPoint(20_000), self.slippage_tolerance))
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
-            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
+            action_list.append(remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 3:
             # Attempt to redeem withdrawal shares that are not ready to withdrawal
             # since the open trades are not closed
             assert wallet.withdraw_shares > FixedPoint(0)
-            action_list.append(interface.redeem_withdraw_shares_trade(wallet.withdraw_shares))
+            action_list.append(redeem_withdraw_shares_trade(wallet.withdraw_shares))
             # Last trade, set flag
             done_trading = True
         self.counter += 1
@@ -322,7 +326,7 @@ class InvalidRedeemWithdrawInPool(HyperdrivePolicy):
         return action_list, done_trading
 
 
-class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
+class InvalidRedeemWithdrawFromNonZero(HyperdriveBasePolicy):
     """An agent that submits an invalid remove liquidity share with a non-zero wallet."""
 
     counter = 0
@@ -352,21 +356,21 @@ class InvalidRedeemWithdrawFromNonZero(HyperdrivePolicy):
         # Valid add liquidity
         if self.counter == 0:
             # Add liquidity
-            action_list.append(interface.add_liquidity_trade(FixedPoint(100_000)))
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
         # Valid open long
         elif self.counter == 1:
             # Open Long
-            action_list.append(interface.open_long_trade(FixedPoint(20_000), self.slippage_tolerance))
+            action_list.append(open_long_trade(FixedPoint(20_000), self.slippage_tolerance))
         # Valid remove liquidity
         elif self.counter == 2:
             # Remove all liquidity
-            action_list.append(interface.remove_liquidity_trade(wallet.lp_tokens))
+            action_list.append(remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 3:
             # Attempt to redeem withdrawal shares more than what I have
             # since the open trades are not closed
             assert wallet.withdraw_shares > FixedPoint(0)
             assert wallet.withdraw_shares < FixedPoint(20_000)
-            action_list.append(interface.redeem_withdraw_shares_trade(FixedPoint(20_000)))
+            action_list.append(redeem_withdraw_shares_trade(FixedPoint(20_000)))
             # Last trade, set flag
             done_trading = True
         self.counter += 1
@@ -378,7 +382,7 @@ class TestInvalidTrades:
     """Test pipeline from bots making trades to viewing the trades in the db."""
 
     def _build_and_run_with_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdrivePolicy]
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
     ):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
@@ -429,7 +433,7 @@ class TestInvalidTrades:
         assert False, "Agent was successful with known invalid trade"
 
     def _build_and_run_with_non_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdrivePolicy]
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
     ):
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"

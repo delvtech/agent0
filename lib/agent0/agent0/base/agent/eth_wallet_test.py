@@ -7,7 +7,7 @@ import unittest
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-from agent0.base import Quantity, TokenType
+from agent0.base.types import Quantity, TokenType
 
 from .eth_wallet import EthWallet
 

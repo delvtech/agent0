@@ -18,7 +18,7 @@ from fixedpointmath import FixedPoint
 from hyperlogs import setup_logging
 from hypertypes import IERC4626HyperdriveContract
 
-from agent0.base.agents import EthAgent
+from agent0.base import EthAgent
 from agent0.base.config import EnvironmentConfig
 
 # Checkpoint bot has a lot going on

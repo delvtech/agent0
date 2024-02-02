@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import datetime
 
 from ethpy.base import fetch_contract_transactions_for_block
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
+from ethpy.hyperdrive import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3.types import BlockData

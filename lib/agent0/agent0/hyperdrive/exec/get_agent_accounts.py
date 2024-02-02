@@ -16,7 +16,7 @@ from web3.types import TxReceipt
 
 from agent0 import AccountKeyConfig
 from agent0.base.config import AgentConfig
-from agent0.hyperdrive.agents import HyperdriveAgent
+from agent0.hyperdrive import HyperdriveAgent
 
 RETRY_COUNT = 5
 

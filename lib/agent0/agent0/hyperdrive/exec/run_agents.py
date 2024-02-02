@@ -12,14 +12,13 @@ from typing import TYPE_CHECKING
 from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
 from ethpy import build_eth_config
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
-from ethpy.hyperdrive.interface import HyperdriveReadWriteInterface
+from ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME
-from agent0.hyperdrive.state import HyperdriveWallet, Long, Short
+from agent0.hyperdrive import HyperdriveWallet, Long, Short
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import async_fund_agents
@@ -34,7 +33,7 @@ if TYPE_CHECKING:
 
     from agent0 import AccountKeyConfig
     from agent0.base.config import AgentConfig, EnvironmentConfig
-    from agent0.hyperdrive.agents import HyperdriveAgent
+    from agent0.hyperdrive import HyperdriveAgent
 
 START_LATENCY = 1
 BACKOFF = 2

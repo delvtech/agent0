@@ -55,18 +55,18 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 
 # Importing all fixtures here and defining here
 # This allows for users of fixtures to not have to import all dependency fixtures when running
-# TODO this means pytest can only be ran from this directory
+# NOTE: this means pytest can only be ran from this directory
 __all__ = [
     "chain",
+    "cycle_trade_policy",
     "database_engine",
     "db_api",
     "db_session",
     "dummy_session",
-    "psql_docker",
-    "local_chain",
-    "init_local_hyperdrive_pool",
-    "local_hyperdrive_pool",
-    "cycle_trade_policy",
     "hyperdrive_read_interface",
     "hyperdrive_read_write_interface",
+    "init_local_hyperdrive_pool",
+    "local_chain",
+    "local_hyperdrive_pool",
+    "psql_docker",
 ]

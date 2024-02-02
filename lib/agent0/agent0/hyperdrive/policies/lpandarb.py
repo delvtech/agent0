@@ -1,4 +1,4 @@
-"""Agent policy for LP trading that also arbitrage on the fixed rate."""
+"""Agent policy for LP trading that can also arbitrage on the fixed rate."""
 
 from __future__ import annotations
 
@@ -13,13 +13,21 @@ from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
-from agent0.hyperdrive.policies.hyperdrive_policy import HyperdrivePolicy
-from agent0.hyperdrive.state import HyperdriveMarketAction
+from agent0.hyperdrive import HyperdriveMarketAction
+from agent0.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+)
+
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.interface import HyperdriveReadInterface
+    from ethpy.hyperdrive import HyperdriveReadInterface
 
-    from agent0.hyperdrive.state import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveWallet
 
 # pylint: disable=too-many-arguments, too-many-locals
 
@@ -184,7 +192,7 @@ def apply_step(
 
 
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
-class LPandArb(HyperdrivePolicy):
+class LPandArb(HyperdriveBasePolicy):
     """LP and Arbitrage in a fixed proportion."""
 
     @classmethod
@@ -210,7 +218,7 @@ class LPandArb(HyperdrivePolicy):
         return super().describe(raw_description)
 
     @dataclass(kw_only=True)
-    class Config(HyperdrivePolicy.Config):
+    class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy.
 
         Attributes
@@ -283,7 +291,7 @@ class LPandArb(HyperdrivePolicy):
         if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
             action_list.append(
-                interface.add_liquidity_trade(
+                add_liquidity_trade(
                     trade_amount=lp_amount,
                     min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
                     max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
@@ -305,12 +313,12 @@ class LPandArb(HyperdrivePolicy):
         for maturity_time, long in wallet.longs.items():
             # If matured
             if maturity_time < interface.current_pool_state.block_time and long.balance > self.minimum_trade_amount:
-                action_list.append(interface.close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
+                action_list.append(close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
         # Close shorts if matured
         for maturity_time, short in wallet.shorts.items():
             # If matured
             if maturity_time < interface.current_pool_state.block_time and short.balance > self.minimum_trade_amount:
-                action_list.append(interface.close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
+                action_list.append(close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed = FixedPoint(0)
@@ -346,7 +354,7 @@ class LPandArb(HyperdrivePolicy):
                         logging.info("reducing short by %s", reduce_short_amount)
                         logging.info("reduce_short_amount*curve_portion = %s", reduce_short_amount * curve_portion)
                         action_list.append(
-                            interface.close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
+                            close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
                         )
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > self.minimum_trade_amount:
@@ -356,7 +364,7 @@ class LPandArb(HyperdrivePolicy):
                 amount_base = (
                     min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.vault_share_price
                 )
-                action_list.append(interface.open_long_trade(amount_base, self.slippage_tolerance))
+                action_list.append(open_long_trade(amount_base, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
             # Reduce longs first, if we have them
@@ -374,14 +382,12 @@ class LPandArb(HyperdrivePolicy):
                     if reduce_long_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_long_amount * curve_portion
                         logging.debug("reducing long by %s", reduce_long_amount)
-                        action_list.append(
-                            interface.close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance)
-                        )
+                        action_list.append(close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance))
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                 amount_bonds = min(bonds_needed, max_short_bonds)
-                action_list.append(interface.open_short_trade(amount_bonds, self.slippage_tolerance))
+                action_list.append(open_short_trade(amount_bonds, self.slippage_tolerance))
 
         if self.policy_config.done_on_empty and len(action_list) == 0:
             return [], True
