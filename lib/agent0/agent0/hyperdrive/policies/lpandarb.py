@@ -1,4 +1,4 @@
-"""Agent policy for LP trading that also arbitrage on the fixed rate."""
+"""Agent policy for LP trading that can also arbitrage on the fixed rate."""
 
 from __future__ import annotations
 
@@ -14,7 +14,8 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction
-from agent0.hyperdrive.policies import HyperdriveBasePolicy
+
+from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveReadInterface, HyperdriveWallet

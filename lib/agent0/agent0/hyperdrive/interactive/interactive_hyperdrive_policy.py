@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Type
+from typing import TYPE_CHECKING, Type
 
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveReadInterface, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveMarketAction
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
+
+if TYPE_CHECKING:
+    from agent0.hyperdrive import HyperdriveActionType, HyperdriveReadInterface, HyperdriveWallet
 
 
 class InteractiveHyperdrivePolicy(HyperdriveBasePolicy):

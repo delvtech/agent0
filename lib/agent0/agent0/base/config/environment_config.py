@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from hyperlogs import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, ExtendedJSONEncoder
 
-from agent0.base import FrozenClass, freezable
+from ..types import FrozenClass, freezable
 
 DEFAULT_USERNAME = "changeme"
 
