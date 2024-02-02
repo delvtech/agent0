@@ -14,7 +14,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction
-from agent0.hyperdrive.exec import (
+from agent0.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,

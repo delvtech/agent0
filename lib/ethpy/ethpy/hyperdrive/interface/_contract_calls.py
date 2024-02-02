@@ -11,7 +11,7 @@ from ethpy.base import (
     smart_contract_preview_transaction,
     smart_contract_transact,
 )
-from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
+from ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from ethpy.hyperdrive.transactions import parse_logs
 from fixedpointmath import FixedPoint
 from hypertypes import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract

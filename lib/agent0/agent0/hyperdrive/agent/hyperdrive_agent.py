@@ -10,14 +10,9 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import EthAgent, MarketType
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.exec import (
-    close_long_trade,
-    close_short_trade,
-    redeem_withdraw_shares_trade,
-    remove_liquidity_trade,
-)
 
 from .hyperdrive_actions import HyperdriveMarketAction
+from .hyperdrive_trades import close_long_trade, close_short_trade, redeem_withdraw_shares_trade, remove_liquidity_trade
 from .hyperdrive_wallet import HyperdriveWallet
 
 if TYPE_CHECKING:

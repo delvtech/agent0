@@ -9,7 +9,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction
-from agent0.hyperdrive.exec import close_long_trade, close_short_trade, open_long_trade, open_short_trade
+from agent0.hyperdrive.agent import close_long_trade, close_short_trade, open_long_trade, open_short_trade
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 

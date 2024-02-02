@@ -22,7 +22,8 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.hyperdrive.exec import add_liquidity_trade, open_long_trade, open_short_trade, setup_and_run_agent_loop
+from agent0.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 

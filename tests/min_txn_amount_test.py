@@ -18,15 +18,15 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.hyperdrive.exec import (
+from agent0.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
     open_long_trade,
     open_short_trade,
     remove_liquidity_trade,
-    setup_and_run_agent_loop,
 )
+from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
