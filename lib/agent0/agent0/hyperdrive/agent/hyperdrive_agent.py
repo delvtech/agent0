@@ -9,8 +9,8 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import EthAgent, MarketType
 from agent0.base.policies import BasePolicy
+from agent0.hyperdrive.interface import HyperdriveReadInterface
 
-from ..interface import HyperdriveReadInterface
 from .hyperdrive_actions import HyperdriveMarketAction
 from .hyperdrive_wallet import HyperdriveWallet
 

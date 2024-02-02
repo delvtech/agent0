@@ -9,7 +9,7 @@ from .base import BasePolicy, MarketInterface, Wallet
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
 
-    from ..types import Trade
+    from agent0.base.types import Trade
 
 
 # pylint: disable=too-few-public-methods

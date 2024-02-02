@@ -10,7 +10,7 @@ from ethpy.eth_config import EthConfig
 from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses
 from web3 import HTTPProvider
 
-from ..hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
+from agent0.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name

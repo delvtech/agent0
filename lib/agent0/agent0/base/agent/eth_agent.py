@@ -10,8 +10,9 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 
-from ..policies import BasePolicy, NoActionPolicy
-from ..types import Quantity, TokenType, Trade
+from agent0.base.policies import BasePolicy, NoActionPolicy
+from agent0.base.types import Quantity, TokenType, Trade
+
 from .eth_wallet import EthWallet
 
 Policy = TypeVar("Policy", bound=BasePolicy)
