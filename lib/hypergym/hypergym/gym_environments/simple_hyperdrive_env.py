@@ -51,7 +51,7 @@ class SimpleHyperdriveEnv(gym.Env):
         short_bond_amount: FixedPoint = FixedPoint(1000)
         reward_scale: float = 1e-18
         window_size: int = 10
-        episode_length: int = 100
+        episode_length: int = 200
 
         # Other bots config
         num_random_bots: int = 3
@@ -65,7 +65,8 @@ class SimpleHyperdriveEnv(gym.Env):
         gym_config: Config,
     ):
         """Initializes the environment"""
-        local_chain_config = LocalChain.Config()
+        # TODO parameterize these in the gym config
+        local_chain_config = LocalChain.Config(block_timestamp_interval=3600)
         self.chain = LocalChain(local_chain_config)
         initial_pool_config = InteractiveHyperdrive.Config()
         self.interactive_hyperdrive = InteractiveHyperdrive(self.chain, initial_pool_config)
@@ -206,6 +207,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 short = list(agent_wallet.shorts.values())[0]
                 # Close short
                 try:
+                    # print(f"Closing short {short.maturity_time} with balance {short.balance}")
                     trade_result = self.rl_bot.close_short(short.maturity_time, short.balance)
                     self._base_delta += trade_result.base_amount.scaled_value
                 except Exception as err:
@@ -214,6 +216,7 @@ class SimpleHyperdriveEnv(gym.Env):
                     terminated = True
             # Open a long position
             try:
+                # print(f"Opening long with base amount {self.gym_config.long_base_amount}")
                 trade_result = self.rl_bot.open_long(self.gym_config.long_base_amount)
                 self._base_delta -= trade_result.base_amount.scaled_value
             except Exception as err:
@@ -229,6 +232,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 long = list(agent_wallet.longs.values())[0]
                 # Close long
                 try:
+                    # print(f"Closing long {long.maturity_time} with balance {long.balance}")
                     trade_result = self.rl_bot.close_long(long.maturity_time, long.balance)
                     self._base_delta += trade_result.base_amount.scaled_value
                 except Exception as err:
@@ -237,6 +241,7 @@ class SimpleHyperdriveEnv(gym.Env):
                     terminated = True
             # Open a short position
             try:
+                # print(f"Opening short with bond amount {self.gym_config.short_bond_amount}")
                 trade_result = self.rl_bot.open_short(self.gym_config.short_bond_amount)
                 self._base_delta -= trade_result.base_amount.scaled_value
             except Exception as err:
@@ -286,9 +291,7 @@ class SimpleHyperdriveEnv(gym.Env):
             else:
                 raise ValueError
 
-        # Reset base delta for this step
-        self._base_delta = 0.0
-
+        # print(f"Action: {action}")
         trade = False
         if (action == Actions.Buy.value and self._position == Positions.Short) or (
             action == Actions.Sell.value and self._position == Positions.Long
@@ -334,6 +337,7 @@ class SimpleHyperdriveEnv(gym.Env):
         return self._obs_buffer
 
     def _calculate_reward(self) -> float:
+        # The total delta for this episode
         raw_reward = self._base_delta
 
         # Testing only using base difference for reward,
