@@ -70,9 +70,19 @@ class SimpleHyperdriveEnv(gym.Env):
         initial_pool_config = InteractiveHyperdrive.Config()
         self.interactive_hyperdrive = InteractiveHyperdrive(self.chain, initial_pool_config)
 
-        self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget)
-        # Defining variable to store list of random bots
-        self.random_bots = []
+        # Define the rl bot
+        self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget, name="rl_bot")
+        # Define the random bots
+        self.random_bots = [
+            self.interactive_hyperdrive.init_agent(
+                base=gym_config.random_bot_budget,
+                policy=PolicyZoo.random,
+                # TODO set the seed per random bot here for reproducability
+                policy_config=PolicyZoo.random.Config(),
+                name="random_bot_" + str(i),
+            )
+            for i in range(gym_config.num_random_bots)
+        ]
 
         # Save a snapshot of initial conditions for resets
         self.chain.save_snapshot()
@@ -169,17 +179,6 @@ class SimpleHyperdriveEnv(gym.Env):
         # Load the snapshot for initial conditions
         self.chain.load_snapshot()
 
-        # Define the random bots
-        self.random_bots = [
-            self.interactive_hyperdrive.init_agent(
-                base=self.gym_config.random_bot_budget,
-                policy=PolicyZoo.random,
-                # TODO set the seed per random bot here for reproducability
-                policy_config=PolicyZoo.random.Config(),
-            )
-            for i in range(self.gym_config.num_random_bots)
-        ]
-
         # Reset internal member variables
         self._position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
@@ -204,11 +203,10 @@ class SimpleHyperdriveEnv(gym.Env):
             if len(agent_wallet.shorts) > 0:
                 # Sanity check, only one short open
                 assert len(agent_wallet.shorts) == 1
+                short = list(agent_wallet.shorts.values())[0]
                 # Close short
                 try:
-                    trade_result = self.rl_bot.close_short(
-                        agent_wallet.shorts[0].maturity_time, agent_wallet.shorts[0].balance
-                    )
+                    trade_result = self.rl_bot.close_short(short.maturity_time, short.balance)
                     self._base_delta += trade_result.base_amount.scaled_value
                 except Exception as err:
                     print(f"Warning: Failed to close short: {err=}")
@@ -228,11 +226,10 @@ class SimpleHyperdriveEnv(gym.Env):
             if len(agent_wallet.longs) > 0:
                 # Sanity check, only one long open
                 assert len(agent_wallet.longs) == 1
+                long = list(agent_wallet.longs.values())[0]
                 # Close long
                 try:
-                    trade_result = self.rl_bot.close_long(
-                        agent_wallet.longs[0].maturity_time, agent_wallet.longs[0].balance
-                    )
+                    trade_result = self.rl_bot.close_long(long.maturity_time, long.balance)
                     self._base_delta += trade_result.base_amount.scaled_value
                 except Exception as err:
                     print(f"Warning: Failed to close long: {err=}")
@@ -326,7 +323,13 @@ class SimpleHyperdriveEnv(gym.Env):
         self._obs_buffer = (
             pool_state_df[["lp_share_price", "spot_price"]].iloc[-self.gym_config.window_size :].to_numpy()
         )
-        pass
+        # If not enough data points, we left pad with zeros
+        if self._obs_buffer.shape[0] < self.gym_config.window_size:
+            pad_size = self.gym_config.window_size - self._obs_buffer.shape[0]
+            self._obs_buffer = np.pad(self._obs_buffer, ((pad_size, 0), (0, 0)))
+
+        # Sanity check
+        assert self._obs_buffer.shape == (self.gym_config.window_size, 2)
 
         return self._obs_buffer
 
