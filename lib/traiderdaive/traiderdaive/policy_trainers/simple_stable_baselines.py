@@ -2,11 +2,11 @@ import os
 
 import gymnasium as gym
 import numpy as np
-from hypergym import SimpleHyperdriveEnv
 from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor, load_results
 from stable_baselines3.common.results_plotter import ts2xy
+from traiderdaive import SimpleHyperdriveEnv
 
 # Stable baselines repo: https://github.com/DLR-RM/stable-baselines3
 # The limiting factors of what algorithms you can use depend on the action space
@@ -68,10 +68,10 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
 
 # Create log dirs
-log_dir = "./hypergym_logs/"
+log_dir = "./traiderdaive_logs/"
 os.makedirs(log_dir, exist_ok=True)
 
-env = gym.make("hypergym/simple_hyperdrive_env", gym_config=gym_config)
+env = gym.make("traiderdaive/simple_hyperdrive_env", gym_config=gym_config)
 
 env = Monitor(env, log_dir)
 
