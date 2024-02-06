@@ -18,8 +18,6 @@ from traiderdaive import SimpleHyperdriveEnv
 # following algorithms:
 # ARS, A2C, DDPG, HER, PPO, RecurrentPPO, SAC, TD3, TQC, TRPO
 
-gym_config = SimpleHyperdriveEnv.Config()
-
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
     """
@@ -67,26 +65,28 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         return True
 
 
-# Create log dirs
-log_dir = ".traiderdaive_logs/"
-os.makedirs(log_dir, exist_ok=True)
+if __name__ == "__main__":
+    # Create log dirs
+    log_dir = ".traiderdaive_logs/"
+    os.makedirs(log_dir, exist_ok=True)
 
-env = gym.make("traiderdaive/simple_hyperdrive_env", gym_config=gym_config)
+    gym_config = SimpleHyperdriveEnv.Config()
+    env = gym.make("traiderdaive/simple_hyperdrive_env", gym_config=gym_config)
 
-env = Monitor(env, log_dir)
+    env = Monitor(env, log_dir)
 
-# Create the callback
-callback = SaveOnBestTrainingRewardCallback(check_freq=10, log_dir=log_dir)
+    # Create the callback
+    callback = SaveOnBestTrainingRewardCallback(check_freq=10, log_dir=log_dir)
 
-# Training
-# model = PPO("MlpPolicy", env, verbose=1)
-model = A2C("MlpPolicy", env, verbose=1, device="cpu")
-model.learn(total_timesteps=100000, callback=callback)
+    # Training
+    # model = PPO("MlpPolicy", env, verbose=1)
+    model = A2C("MlpPolicy", env, verbose=1, device="cpu")
+    model.learn(total_timesteps=100000, callback=callback)
 
-## Evaluation
-# obs, info = env.reset()
-# while True:
-#    action, _states = model.predict(obs, deterministic=True)
-#    obs, reward, terminated, truncated, info = env.step(action)
-#    if terminated or truncated:
-#        obs, info = env.reset()
+    ## Evaluation
+    # obs, info = env.reset()
+    # while True:
+    #    action, _states = model.predict(obs, deterministic=True)
+    #    obs, reward, terminated, truncated, info = env.step(action)
+    #    if terminated or truncated:
+    #        obs, info = env.reset()
