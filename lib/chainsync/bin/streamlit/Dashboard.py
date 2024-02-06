@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
-from chainsync import PostgresConfig
 from chainsync.dashboard import (
     build_fixed_rate,
     build_leaderboard,
@@ -43,8 +42,6 @@ gc.collect()
 
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
-
-postgres_config = PostgresConfig()
 
 # Load and connect to postgres
 session = initialize_session()
