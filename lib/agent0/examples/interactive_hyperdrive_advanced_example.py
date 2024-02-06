@@ -34,7 +34,13 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 # Generate funded trading agents from the interactive object
 # Names are reflected on output data frames and plots later
 hyperdrive_random_agent = interactive_hyperdrive.init_agent(
-    base=FixedPoint(100000), eth=FixedPoint(100), name="random_bot", policy=PolicyZoo.random
+    base=FixedPoint(100000),
+    eth=FixedPoint(100),
+    name="random_bot",
+    # The underlying policy to attach to this agent
+    policy=PolicyZoo.random,
+    # The configuration for the underlying policy
+    policy_config=PolicyZoo.random.Config(rng_seed=123),
 )
 
 # %%
@@ -43,6 +49,10 @@ hyperdrive_random_agent = interactive_hyperdrive.init_agent(
 # i.e., creating new pools, creating new agents, and adding funds.
 # Only one snapshot can be saved at a time.
 chain.save_snapshot()
+
+# %%
+# Loads the snapshot of the state.
+chain.load_snapshot()
 
 # %%
 # Execute interactive trade
@@ -57,13 +67,16 @@ for i in range(10):
     trade_events: list = hyperdrive_random_agent.execute_policy_action()
     random_trade_events.extend(trade_events)
 random_trade_events  # pyright: ignore
-# %%
-# Loads the snapshot of the state.
-chain.load_snapshot()
 
 # %%
 # Set the underlying yield variable rate
 interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
+
+# %%
+# Get the command dashboard UI on this session.
+# Note that the interactive hyperdrive script must be running or paused (i.e., before cleanup is called)
+# for the following command to work, as the database must be running for the dashboard to be populated.
+print(interactive_hyperdrive.get_dashboard_command())
 
 # %%
 # cleanup resources

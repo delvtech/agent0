@@ -129,8 +129,11 @@ class Chain:
 
         If create_checkpoints is True, it will also create intermediate when advancing time.
 
-        .. note:: This advances the chain for all pool connected to this chain.
-        .. note:: This function is a best effort attempt at being exact in advancing time, but the final result
+        .. note::
+            This advances the chain for all pool connected to this chain.
+
+        .. note::
+            This function is a best effort attempt at being exact in advancing time, but the final result
             may be off by a second.
 
         Arguments

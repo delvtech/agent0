@@ -34,7 +34,6 @@ from chainsync.db.hyperdrive import (
     get_ticker,
     get_wallet_pnl,
 )
-from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
 
@@ -46,9 +45,6 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # Load and connect to postgres
 session = initialize_session()
-
-# TODO remove this connection and add in process to periodically calculate closing pnl
-eth_config = build_eth_config()
 
 # pool config data is static, so just read once
 config_data = get_pool_config(session, coerce_float=False)

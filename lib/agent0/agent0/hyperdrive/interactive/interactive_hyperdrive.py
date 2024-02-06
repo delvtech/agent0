@@ -950,6 +950,41 @@ class InteractiveHyperdrive:
         ]
         return out
 
+    def get_dashboard_command(self) -> str:
+        """Prints the streamlit dashboard command to run to connect with the interactive hyperdrive.
+        The user can then copy/paste the command into a new terminal to run the dashboard.
+
+        .. note::
+            While there can be a function in interactive hyperdrive to actually run the dashboard,
+            streamlit launches a web server under the hood, which doesn't play nice with the interactive process.
+            Here, our options are (1) make the dashboard blocking and (2) run it in a subprocess. If we make the
+            dashboard blocking, control is never passed back to the caller, which may affect interactive hyperdrive
+            cleanup, as well as introducing a deadlock in the interactive hyperdrive script. If we run the dashboard
+            in a subprocess, it's up to the caller to halt execution so that the server stays up and running.
+            Neither of these options is ideal, hence, we simply add a helper function to print the streamlit command
+            and leave it to the user to control the streamlit process.
+
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database. As an aside, this very much aligns with the restrictions of running
+            the dashboard in a subprocess.
+
+        Returns
+        -------
+        str
+            The streamlit dashboard cli command to connect with the interactive hyperdrive.
+        """
+
+        dashboard_run_command = ""
+        # Gather env variables for postgres connection
+        # Note this is assuming the dataclass attribute names are identical to the environment variables
+        for key, val in asdict(self.postgres_config).items():
+            dashboard_run_command += f"{key}={val} "
+
+        dashboard_run_command += "streamlit run lib/chainsync/bin/streamlit/Dashboard.py"
+
+        return dashboard_run_command
+
     ### Private agent methods ###
 
     def _init_agent(
