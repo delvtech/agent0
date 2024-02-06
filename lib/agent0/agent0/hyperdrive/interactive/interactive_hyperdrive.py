@@ -954,18 +954,20 @@ class InteractiveHyperdrive:
         """Prints the streamlit dashboard command to run to connect with the interactive hyperdrive.
         The user can then copy/paste the command into a new terminal to run the dashboard.
 
-        .. note:: While there can be a function in interactive hyperdrive to actually run the dashboard,
-        streamlit launches a web server under the hood, which doesn't play nice with the interactive process.
-        Here, our options are (1) make the dashboard blocking and (2) run it in a subprocess. If we make the dashboard
-        blocking, control is never passed back to the caller, which may affect interactive hyperdrive cleanup, as well
-        as introducing a deadlock in the interactive hyperdrive script. If we run the dashboard in a subprocess, it's up
-        to the caller to halt execution so that the server stays up and running. Neither of these options is ideal,
-        hence, we simply add a helper function to print the streamlit command and leave it to the user to control
-        the streamlit process.
+        .. note::
+            While there can be a function in interactive hyperdrive to actually run the dashboard,
+            streamlit launches a web server under the hood, which doesn't play nice with the interactive process.
+            Here, our options are (1) make the dashboard blocking and (2) run it in a subprocess. If we make the
+            dashboard blocking, control is never passed back to the caller, which may affect interactive hyperdrive
+            cleanup, as well as introducing a deadlock in the interactive hyperdrive script. If we run the dashboard
+            in a subprocess, it's up to the caller to halt execution so that the server stays up and running.
+            Neither of these options is ideal, hence, we simply add a helper function to print the streamlit command
+            and leave it to the user to control the streamlit process.
 
-        .. note:: The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
-        connect with the underlying database. As an aside, this very much aligns with the restrictions of running the
-        dashboard in a subprocess.
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database. As an aside, this very much aligns with the restrictions of running
+            the dashboard in a subprocess.
 
         Returns
         -------
