@@ -47,9 +47,8 @@ class SimpleHyperdriveEnv(gym.Env):
         # RL Bot Config
         # The constant trade amounts for longs and shorts
         rl_agent_budget: FixedPoint = FixedPoint(1_000_000)
-        long_base_amount: FixedPoint = FixedPoint(1000)
-        short_bond_amount: FixedPoint = FixedPoint(1000)
-        reward_scale: float = 1e-19
+        trade_base_amount: FixedPoint = FixedPoint(1000)
+        reward_scale: float = 1e-17
         window_size: int = 10
         episode_length: int = 200
 
@@ -217,7 +216,7 @@ class SimpleHyperdriveEnv(gym.Env):
             # Open a long position
             try:
                 # print(f"Opening long with base amount {self.gym_config.long_base_amount}")
-                trade_result = self.rl_bot.open_long(self.gym_config.long_base_amount)
+                trade_result = self.rl_bot.open_long(self.gym_config.trade_base_amount)
                 self._base_delta -= trade_result.base_amount.scaled_value
             except Exception as err:
                 print(f"Warning: Failed to open long: {err=}")
@@ -242,7 +241,11 @@ class SimpleHyperdriveEnv(gym.Env):
             # Open a short position
             try:
                 # print(f"Opening short with bond amount {self.gym_config.short_bond_amount}")
-                trade_result = self.rl_bot.open_short(self.gym_config.short_bond_amount)
+                # TODO calc max short can fail with low short values
+                max_short = self.interactive_hyperdrive.interface.calc_max_short(
+                    self.gym_config.trade_base_amount, self.interactive_hyperdrive.interface.current_pool_state
+                )
+                trade_result = self.rl_bot.open_short(max_short)
                 self._base_delta -= trade_result.base_amount.scaled_value
             except Exception as err:
                 print(f"Warning: Failed to open short: {err=}")
@@ -292,6 +295,9 @@ class SimpleHyperdriveEnv(gym.Env):
                 self._position = Positions.Long
             else:
                 raise ValueError
+
+        # Reset base delta per trade
+        self._base_delta = 0.0
 
         # print(f"Action: {action}")
         trade = False
