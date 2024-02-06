@@ -34,7 +34,13 @@ interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
 # Generate funded trading agents from the interactive object
 # Names are reflected on output data frames and plots later
 hyperdrive_random_agent = interactive_hyperdrive.init_agent(
-    base=FixedPoint(100000), eth=FixedPoint(100), name="random_bot", policy=PolicyZoo.random
+    base=FixedPoint(100000),
+    eth=FixedPoint(100),
+    name="random_bot",
+    # The underlying policy to attach to this agent
+    policy=PolicyZoo.random,
+    # The configuration for the underlying policy
+    policy_config=PolicyZoo.random.Config(rng_seed=123),
 )
 
 # %%
