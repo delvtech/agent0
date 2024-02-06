@@ -12,22 +12,11 @@ from ethpy.base import initialize_web3_with_http_provider
 from ethpy.base.receipts import get_transaction_logs
 from ethpy.base.transactions import smart_contract_transact
 from fixedpointmath import FixedPoint
-from hypertypes import (
-    ERC20ForwarderFactoryContract,
-    ERC20MintableContract,
-    ERC4626HyperdriveCoreDeployerContract,
-    ERC4626HyperdriveDeployerCoordinatorContract,
-    ERC4626Target0DeployerContract,
-    ERC4626Target1DeployerContract,
-    ERC4626Target2DeployerContract,
-    ERC4626Target3DeployerContract,
-    ERC4626Target4DeployerContract,
-    FactoryConfig,
-    HyperdriveFactoryContract,
-    IERC4626HyperdriveContract,
-    MockERC4626Contract,
-    PoolDeployConfig,
-)
+from hypertypes import (ERC20ForwarderFactoryContract, ERC20MintableContract, ERC4626HyperdriveCoreDeployerContract,
+                        ERC4626HyperdriveDeployerCoordinatorContract, ERC4626Target0DeployerContract,
+                        ERC4626Target1DeployerContract, ERC4626Target2DeployerContract, ERC4626Target3DeployerContract,
+                        ERC4626Target4DeployerContract, FactoryConfig, HyperdriveFactoryContract,
+                        IERC4626HyperdriveContract, MockERC4626Contract, PoolDeployConfig)
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -406,6 +395,19 @@ def _deploy_and_initialize_hyperdrive_pool(
     # concatenated with a hard coded 4 byte hex
     deployment_id = bytes(28) + bytes.fromhex("deadbeef")
     salt = bytes(28) + bytes.fromhex("deadbabe")
+
+    min_checkpoint_duration = factory_contract.functions.minCheckpointDuration().call()
+    max_checkpoint_duration = factory_contract.functions.maxCheckpointDuration().call()
+    if (
+        pool_deploy_config.checkpointDuration < min_checkpoint_duration
+        or
+        pool_deploy_config.checkpointDuration > max_checkpoint_duration
+    ):
+        raise ValueError(
+            f"{pool_deploy_config.checkpointDuration=} must be between "
+            f"{min_checkpoint_duration=} and {max_checkpoint_duration=}"
+        )
+
 
     # There are 5 contracts to deploy, we call deployTarget on all of them
     for target_index in range(5):
