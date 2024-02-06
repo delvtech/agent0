@@ -3,7 +3,7 @@ import os
 import gymnasium as gym
 import numpy as np
 from hypergym import SimpleHyperdriveEnv
-from stable_baselines3 import PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor, load_results
 from stable_baselines3.common.results_plotter import ts2xy
@@ -79,8 +79,9 @@ env = Monitor(env, log_dir)
 callback = SaveOnBestTrainingRewardCallback(check_freq=10, log_dir=log_dir)
 
 # Training
-model = PPO("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=10000, callback=callback)
+# model = PPO("MlpPolicy", env, verbose=1)
+model = A2C("MlpPolicy", env, verbose=1, device="cpu")
+model.learn(total_timesteps=100000, callback=callback)
 
 ## Evaluation
 # obs, info = env.reset()

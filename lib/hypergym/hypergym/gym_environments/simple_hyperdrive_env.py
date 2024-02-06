@@ -49,7 +49,7 @@ class SimpleHyperdriveEnv(gym.Env):
         rl_agent_budget: FixedPoint = FixedPoint(1_000_000)
         long_base_amount: FixedPoint = FixedPoint(1000)
         short_bond_amount: FixedPoint = FixedPoint(1000)
-        reward_scale: float = 1e-18
+        reward_scale: float = 1e-19
         window_size: int = 10
         episode_length: int = 200
 
@@ -183,7 +183,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # Reset internal member variables
         self._position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
-        self._base_delta = 0
+        self._base_delta = 0.0
         self._step_count = 0
 
         # Get first observation and info
@@ -251,11 +251,13 @@ class SimpleHyperdriveEnv(gym.Env):
         return terminated
 
     def step(self, action: Actions) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
-        """Resets the environment to an initial internal state.
+        """Takes a step in the the environment.
+
         Arguments
         ---------
         action: ActType
             An action provided by the agent to update the environment state
+
         Returns
         -------
         observation: ObsType
