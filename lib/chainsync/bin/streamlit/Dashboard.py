@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
+from chainsync import PostgresConfig
 from chainsync.dashboard import (
     build_fixed_rate,
     build_leaderboard,
@@ -34,7 +35,6 @@ from chainsync.db.hyperdrive import (
     get_ticker,
     get_wallet_pnl,
 )
-from ethpy import build_eth_config
 
 # pylint: disable=invalid-name
 
@@ -44,11 +44,10 @@ gc.collect()
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
 st.set_option("deprecation.showPyplotGlobalUse", False)
 
+postgres_config = PostgresConfig()
+
 # Load and connect to postgres
 session = initialize_session()
-
-# TODO remove this connection and add in process to periodically calculate closing pnl
-eth_config = build_eth_config()
 
 # pool config data is static, so just read once
 config_data = get_pool_config(session, coerce_float=False)

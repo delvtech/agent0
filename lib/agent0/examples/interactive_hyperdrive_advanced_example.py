@@ -45,6 +45,10 @@ hyperdrive_random_agent = interactive_hyperdrive.init_agent(
 chain.save_snapshot()
 
 # %%
+# Loads the snapshot of the state.
+chain.load_snapshot()
+
+# %%
 # Execute interactive trade
 open_long_event_1 = hyperdrive_random_agent.open_long(base=FixedPoint(11111))
 open_long_event_1  # pyright: ignore
@@ -57,13 +61,16 @@ for i in range(10):
     trade_events: list = hyperdrive_random_agent.execute_policy_action()
     random_trade_events.extend(trade_events)
 random_trade_events  # pyright: ignore
-# %%
-# Loads the snapshot of the state.
-chain.load_snapshot()
 
 # %%
 # Set the underlying yield variable rate
 interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
+
+# %%
+# Get the command dashboard UI on this session.
+# Note that the interactive hyperdrive script must be running or paused (i.e., before cleanup is called)
+# for the following command to work, as the database must be running for the dashboard to be populated.
+print(interactive_hyperdrive.get_dashboard_command())
 
 # %%
 # cleanup resources
