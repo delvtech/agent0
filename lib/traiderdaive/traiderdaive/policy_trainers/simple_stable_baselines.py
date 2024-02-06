@@ -68,7 +68,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
 
 # Create log dirs
-log_dir = "./traiderdaive_logs/"
+log_dir = ".traiderdaive_logs/"
 os.makedirs(log_dir, exist_ok=True)
 
 env = gym.make("traiderdaive/simple_hyperdrive_env", gym_config=gym_config)
