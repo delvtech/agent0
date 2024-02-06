@@ -246,7 +246,33 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for opening a Hyperdrive long.
         """
-        maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, interface.current_pool_state)
+        try:
+            maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, interface.current_pool_state)
+        # TODO pyo3 throws a PanicException here, which is derived from BaseException
+        # Ideally, we would import the exact exception in python here, but pyo3 doesn't
+        # expose this exception. Need to (1) fix the underlying calc_max_short bug, or
+        # (2) throw a python exception in the underlying rust code when this happens.
+        except BaseException as orig_exception:  # pylint: disable=broad-except
+            # TODO while this isn't strictly a contract call exception, we used the class
+            # to keep track of the original exception
+            exception = ContractCallException(
+                "Random policy: Error in rust call to calc_max_long",
+                orig_exception=orig_exception,
+                contract_call_type=ContractCallType.READ,
+                function_name_or_signature="rust::calc_max_long",
+                fn_args=(wallet.balance.amount, interface.current_pool_state),
+            )
+            crash_report = build_crash_trade_result(exception, interface)
+            # TODO get these parameters from config
+            log_hyperdrive_crash_report(
+                crash_report,
+                logging.ERROR,
+                crash_report_to_file=True,
+                crash_report_file_prefix="",
+                log_to_rollbar=True,
+            )
+            # We don't return a trade here if this fails
+            return []
         if maximum_trade_amount <= interface.pool_config.minimum_transaction_amount:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
