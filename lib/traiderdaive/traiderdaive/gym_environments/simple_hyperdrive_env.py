@@ -1,3 +1,5 @@
+"""A simple hyperdrive rl gym environment."""
+
 from __future__ import annotations
 
 import warnings
@@ -18,23 +20,44 @@ warnings.filterwarnings("ignore")
 
 
 class Actions(Enum):
-    Sell = 0
-    Buy = 1
+    """The actions that can be taken in the environment. These actions map directly to what the RL bot outputs."""
+
+    SELL = 0
+    BUY = 1
 
 
 class Positions(Enum):
-    Short = 0
-    Long = 1
+    """The positions that the agent can hold. These positions are one step behind an action.
+
+    For example:
+    - If the action is to buy and the current position is a short, then the trader will close their
+    short position (if it exists) and open a long position, and swap the current position to Long.
+
+    - If the action is to sell and the current position is a long, then the trader will close their
+    long position (if it exists) and open a short position, and swap the current position to Short.
+
+    - Otherwise, take no action
+    """
+
+    SHORT = 0
+    LONG = 1
 
     def opposite(self):
-        return Positions.Short if self == Positions.Long else Positions.Long
+        """Swaps the current position to the other position.
+
+        Returns
+        -------
+        Positions
+            The other position
+        """
+        return Positions.SHORT if self == Positions.LONG else Positions.LONG
 
 
 # TODO there's lots of things here that can be abstracted to share code between this and full_hyperdrive_env
 class SimpleHyperdriveEnv(gym.Env):
-    """
-    A simple hyperdrive environment that allows for 2 positions, long and short
-    """
+    """A simple hyperdrive environment that allows for 2 positions, long and short."""
+
+    # pylint: disable=too-many-instance-attributes
 
     @dataclass(kw_only=True)
     class Config:
@@ -152,17 +175,25 @@ class SimpleHyperdriveEnv(gym.Env):
         self._base_delta: float = 0.0
         self._step_count = 0
 
-    def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, Any]]:
+    def reset(
+        self,
+        *,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """Resets the environment to an initial internal state.
 
         Arguments
         ---------
         seed: int | None
             The seed to initialize the random generator to pass for each bot
+        options: dict[str, Any] | None
+            Additional information to specify how the environment is reset (optional,
+            depending on the specific environment)
 
         Returns
         -------
-        tuple[ObsType, dict[str, Any]]
+        tuple[np.ndarray, dict[str, Any]]
             The observation and info from the environment
         """
 
@@ -196,7 +227,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         Returns
         -------
-        terminated: bool
+        bool
             Whether the agent reaches the terminal state due to a failed trade.
         """
         assert self._position is not None
@@ -205,7 +236,7 @@ class SimpleHyperdriveEnv(gym.Env):
         agent_wallet = self.rl_bot.wallet
 
         self._position = self._position.opposite()
-        if self._position == Positions.Long:
+        if self._position == Positions.LONG:
             # Close short position (if exists), open long
             if len(agent_wallet.shorts) > 0:
                 # Sanity check, only one short open
@@ -231,7 +262,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 # Terminate if error
                 terminated = True
 
-        elif self._position == Positions.Short:
+        elif self._position == Positions.SHORT:
             # Close long position (if exists), open short
             if len(agent_wallet.longs) > 0:
                 # Sanity check, only one long open
@@ -300,10 +331,10 @@ class SimpleHyperdriveEnv(gym.Env):
 
         # Initial condition, ensure first trade always goes through
         if self._position is None:
-            if action == Actions.Buy.value:
-                self._position = Positions.Short
-            elif action == Actions.Sell.value:
-                self._position = Positions.Long
+            if action == Actions.BUY.value:
+                self._position = Positions.SHORT
+            elif action == Actions.SELL.value:
+                self._position = Positions.LONG
             else:
                 raise ValueError
 
@@ -312,8 +343,8 @@ class SimpleHyperdriveEnv(gym.Env):
         self._base_delta = 0.0
 
         trade = False
-        if (action == Actions.Buy.value and self._position == Positions.Short) or (
-            action == Actions.Sell.value and self._position == Positions.Long
+        if (action == Actions.BUY.value and self._position == Positions.SHORT) or (
+            action == Actions.SELL.value and self._position == Positions.LONG
         ):
             trade = True
 
@@ -348,7 +379,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # If not enough data points, we left pad with zeros
         if self._obs_buffer.shape[0] < self.gym_config.window_size:
             pad_size = self.gym_config.window_size - self._obs_buffer.shape[0]
-            self._obs_buffer = np.pad(self._obs_buffer, ((pad_size, 0), (0, 0)))
+            self._obs_buffer = np.pad(self._obs_buffer, pad_width=((pad_size, 0), (0, 0)))
 
         # Sanity check
         assert self._obs_buffer.shape == (self.gym_config.window_size, 2)
@@ -406,3 +437,7 @@ class SimpleHyperdriveEnv(gym.Env):
         #        print(f"Warning: Failed to preview close short: {err=}")
 
         return raw_reward * self.gym_config.reward_scale
+
+    def render(self) -> None:
+        """Renders the environment. No rendering available for hyperdrive env."""
+        return None

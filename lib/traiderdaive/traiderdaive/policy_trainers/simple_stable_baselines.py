@@ -1,3 +1,5 @@
+"""Simple stable baselines policy trainer"""
+
 import os
 
 import gymnasium as gym
@@ -20,16 +22,23 @@ from traiderdaive import SimpleHyperdriveEnv
 
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
-    """
-    Callback for saving a model (the check is done every ``check_freq`` steps)
+    """Callback for saving a model (the check is done every ``check_freq`` steps)
     based on the training reward (in practice, we recommend using ``EvalCallback``).
-    :param check_freq: (int)
-    :param log_dir: (str) Path to the folder where the model will be saved.
-      It must contains the file created by the ``Monitor`` wrapper.
-    :param verbose: (int)
     """
 
     def __init__(self, check_freq: int, log_dir: str, verbose=1):
+        """Initializes the callback class.
+
+        Attributes
+        ----------
+        check_freq: int
+            How often to check and save the model.
+        log_dir: str
+            Path to the folder where the model will be saved.
+            It must contains the file created by the ``Monitor`` wrapper.
+        verbose: int
+            The verbosity level
+        """
         super().__init__(verbose)
         self.check_freq = check_freq
         self.log_dir = log_dir
@@ -51,7 +60,8 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                 if self.verbose > 0:
                     print(f"Num timesteps: {self.num_timesteps}")
                     print(
-                        f"Best mean reward: {self.best_mean_reward:.2f} - Last mean reward per episode: {mean_reward:.2f}"
+                        f"Best mean reward: {self.best_mean_reward:.2f} - "
+                        f"Last mean reward per episode: {mean_reward:.2f}"
                     )
 
                 # New best model, you could save the agent here
@@ -65,7 +75,9 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         return True
 
 
-if __name__ == "__main__":
+def run_train():
+    """Runs training to generate a RL model."""
+    # TODO parameterize these variables
     # Create log dirs
     log_dir = ".traider_models/"
     os.makedirs(log_dir, exist_ok=True)
@@ -82,10 +94,6 @@ if __name__ == "__main__":
     model = A2C("MlpPolicy", env, verbose=1, device="cpu")
     model.learn(total_timesteps=100000, callback=callback)
 
-    ## Evaluation
-    # obs, info = env.reset()
-    # while True:
-    #    action, _states = model.predict(obs, deterministic=True)
-    #    obs, reward, terminated, truncated, info = env.step(action)
-    #    if terminated or truncated:
-    #        obs, info = env.reset()
+
+if __name__ == "__main__":
+    run_train()

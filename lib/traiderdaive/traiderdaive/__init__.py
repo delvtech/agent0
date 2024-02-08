@@ -1,3 +1,5 @@
+"""The gym environments for hyperdrive. Also registers the environment to gym."""
+
 from gymnasium.envs.registration import register
 
 from .gym_environments.simple_hyperdrive_env import SimpleHyperdriveEnv
