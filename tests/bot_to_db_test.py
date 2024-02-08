@@ -330,7 +330,7 @@ class TestBotToDb:
 
             # TODO differentiate between the first and second openLong
             if txn["input_method"] == "openLong":
-                assert txn["input_params_base_amount"] == Decimal(22_222)
+                assert txn["input_params_amount"] == Decimal(22_222)
                 # Filter for all deltas of this trade
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 # Ensure number of token deltas
@@ -371,7 +371,7 @@ class TestBotToDb:
 
             if txn["input_method"] == "removeLiquidity":
                 # TODO change this to expected num lp
-                assert txn["input_params_shares"] == actual_num_lp
+                assert txn["input_params_lp_shares"] == actual_num_lp
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == expected_number_of_deltas + 1  # 3 deltas for withdraw shares
                 lp_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "LP"]
@@ -429,7 +429,7 @@ class TestBotToDb:
 
             if txn["input_method"] == "redeemWithdrawalShares":
                 # TODO change this to expected withdrawal shares
-                assert txn["input_params_shares"] == actual_num_withdrawal
+                assert txn["input_params_withdrawal_shares"] == actual_num_withdrawal
                 block_wallet_deltas = db_wallet_delta[db_wallet_delta["block_number"] == block_number]
                 assert len(block_wallet_deltas) == expected_number_of_deltas
                 withdrawal_delta_df = block_wallet_deltas[block_wallet_deltas["base_token_type"] == "WITHDRAWAL_SHARE"]

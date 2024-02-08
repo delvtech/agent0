@@ -139,50 +139,50 @@ class HyperdriveTransaction(Base):
     # The params list is exhaustive against all possible methods
     input_method: Mapped[Union[str, None]] = mapped_column(String, default=None)
 
+    # Call data options
+    input_params_options_destination: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    input_params_options_as_base: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
+
     # Method: initialize
     input_params_contribution: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    input_params_destination: Mapped[Union[str, None]] = mapped_column(String, default=None)
-    input_params_as_underlying: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
 
     # Method: openLong
-    input_params_base_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_min_output: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # input_params_destination
-    # input_params_as_underlying
+    input_params_min_vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
     # Method: openShort
     input_params_bond_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_max_deposit: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # input_params_destination
-    # input_params_as_underlying
+    # input_params_min_vault_share_price
 
     # Method: closeLong
     input_params_maturity_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     # input_params_bond_amount
     # input_params_min_output
-    # input_params_destination
-    # input_params_as_underlying
 
     # Method: closeShort
     # input_params_maturity_time
     # input_params_bond_amount
     # input_params_min_output
-    # input_params_destination
-    # input_params_as_underlying
 
     # Method: addLiquidity
     # input_params_contribution
+    input_params_min_lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_min_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     input_params_max_apr: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # input_params_destination
-    # input_params_as_underlying
 
     # Method: removeLiquidity
-    input_params_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_lp_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    input_params_min_output_per_share: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # input_params_min_output
     # input_params_destination
     # input_params_as_underlying
+
+    # Method: redeemWithdrawawlShares
+    input_params_withdrawal_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    # input_params_min_output_per_share
 
     #### Fields from event logs ####
     # Addresses in event logs
