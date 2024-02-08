@@ -67,7 +67,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
 if __name__ == "__main__":
     # Create log dirs
-    log_dir = ".traiderdaive_logs/"
+    log_dir = ".traider_models/"
     os.makedirs(log_dir, exist_ok=True)
 
     gym_config = SimpleHyperdriveEnv.Config()
