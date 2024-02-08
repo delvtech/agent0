@@ -12,11 +12,8 @@ if __name__ == "__main__":
 
     gym_config = SimpleHyperdriveEnv.Config()
     env = gym.make("traiderdaive/simple_hyperdrive_env", gym_config=gym_config)
-
     env = Monitor(env, log_dir)
 
-    # Training
-    # model = PPO("MlpPolicy", env, verbose=1)
     model = A2C.load(log_dir + "/best_model.zip", device="cpu")
 
     # Run Evaluation
@@ -30,4 +27,6 @@ if __name__ == "__main__":
     # Run dashboard from env
     dashboard_cmd = env.interactive_hyperdrive.get_dashboard_command()
     print(dashboard_cmd)
-    pass
+
+    # Put breakpoint here to keep the database running under the hood when accessing the dashboard
+    # TODO fix this workflow

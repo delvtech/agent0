@@ -47,7 +47,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
             x, y = ts2xy(load_results(self.log_dir), "timesteps")
             if len(x) > 0:
                 # Mean training reward over the last 100 episodes
-                mean_reward = np.mean(y[-100:])
+                mean_reward = float(np.mean(y[-100:]))
                 if self.verbose > 0:
                     print(f"Num timesteps: {self.num_timesteps}")
                     print(
@@ -79,7 +79,6 @@ if __name__ == "__main__":
     callback = SaveOnBestTrainingRewardCallback(check_freq=10, log_dir=log_dir)
 
     # Training
-    # model = PPO("MlpPolicy", env, verbose=1)
     model = A2C("MlpPolicy", env, verbose=1, device="cpu")
     model.learn(total_timesteps=100000, callback=callback)
 

@@ -152,16 +152,14 @@ class SimpleHyperdriveEnv(gym.Env):
         self._base_delta: float = 0.0
         self._step_count = 0
 
-    def reset(
-        self, seed: int | None = None, options: dict[str, Any] | None = None
-    ) -> tuple[np.ndarray, dict[str, Any]]:
+    def reset(self, seed: int | None = None) -> tuple[np.ndarray, dict[str, Any]]:
         """Resets the environment to an initial internal state.
+
         Arguments
         ---------
         seed: int | None
             The seed to initialize the random generator to pass for each bot
-        options: dict[str, Any] | None
-            A dictionary of options to pass to the environment
+
         Returns
         -------
         tuple[ObsType, dict[str, Any]]
@@ -192,6 +190,15 @@ class SimpleHyperdriveEnv(gym.Env):
         return observation, info
 
     def do_trade(self) -> bool:
+        """Performs a trade in the environment. This function swaps the current position the agent holds,
+        i.e., if the position is now long, the agent will close the open short and open a new long, and
+        if the position is now short, the agent will close the open long and open a new short.
+
+        Returns
+        -------
+        terminated: bool
+            Whether the agent reaches the terminal state due to a failed trade.
+        """
         assert self._position is not None
         terminated = False
 
@@ -209,7 +216,8 @@ class SimpleHyperdriveEnv(gym.Env):
                     # print(f"Closing short {short.maturity_time} with balance {short.balance}")
                     trade_result = self.rl_bot.close_short(short.maturity_time, short.balance)
                     self._base_delta += trade_result.base_amount.scaled_value
-                except Exception as err:
+                except Exception as err:  # pylint: disable=broad-except
+                    # TODO use logging here
                     print(f"Warning: Failed to close short: {err=}")
                     # Terminate if error
                     terminated = True
@@ -218,7 +226,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 # print(f"Opening long with base amount {self.gym_config.long_base_amount}")
                 trade_result = self.rl_bot.open_long(self.gym_config.trade_base_amount)
                 self._base_delta -= trade_result.base_amount.scaled_value
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 print(f"Warning: Failed to open long: {err=}")
                 # Terminate if error
                 terminated = True
@@ -234,7 +242,7 @@ class SimpleHyperdriveEnv(gym.Env):
                     # print(f"Closing long {long.maturity_time} with balance {long.balance}")
                     trade_result = self.rl_bot.close_long(long.maturity_time, long.balance)
                     self._base_delta += trade_result.base_amount.scaled_value
-                except Exception as err:
+                except Exception as err:  # pylint: disable=broad-except
                     print(f"Warning: Failed to close long: {err=}")
                     # Terminate if error
                     terminated = True
@@ -247,7 +255,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 )
                 trade_result = self.rl_bot.open_short(max_short)
                 self._base_delta -= trade_result.base_amount.scaled_value
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 print(f"Warning: Failed to open short: {err=}")
                 # Terminate if error
                 terminated = True
@@ -263,26 +271,29 @@ class SimpleHyperdriveEnv(gym.Env):
 
         Returns
         -------
-        observation: ObsType
-            An element of the environment's observation_space.
-        reward: float
-            Reward for taking the action.
-        terminated: bool
-            Whether the agent reaches the terminal state, which can be positive or negative.
-            If true, user needs to call reset
-        truncated: bool
-            Whether the truncation condition outside the scope of the MDP is satisfied,
-            e.g., timelimit, or agent going out of bounds.
-            If true, user needs to call reset
-        info: dict[str, Any]
-            Contains auxiliary diagnostic information for debugging, learning, logging.
+        tuple[np.ndarray, float, bool, bool, dict[str, Any]]
+            Contains the following
+
+            observation: ObsType
+                An element of the environment's observation_space.
+            reward: float
+                Reward for taking the action.
+            terminated: bool
+                Whether the agent reaches the terminal state, which can be positive or negative.
+                If true, user needs to call reset
+            truncated: bool
+                Whether the truncation condition outside the scope of the MDP is satisfied,
+                e.g., timelimit, or agent going out of bounds.
+                If true, user needs to call reset
+            info: dict[str, Any]
+                Contains auxiliary diagnostic information for debugging, learning, logging.
         """
 
         # Run other bots
         for random_bot in self.random_bots:
             try:
                 random_bot.execute_policy_action()
-            except Exception as err:
+            except Exception as err:  # pylint: disable=broad-except
                 print(f"Warning: Failed to execute random bot: {err=}")
                 # We ignore errors in random bots
                 continue
@@ -297,9 +308,9 @@ class SimpleHyperdriveEnv(gym.Env):
                 raise ValueError
 
         # Reset base delta per trade
+        # This sets reward calculation to be sparse, i.e., the wallet delta for this step only
         self._base_delta = 0.0
 
-        # print(f"Action: {action}")
         trade = False
         if (action == Actions.Buy.value and self._position == Positions.Short) or (
             action == Actions.Sell.value and self._position == Positions.Long
