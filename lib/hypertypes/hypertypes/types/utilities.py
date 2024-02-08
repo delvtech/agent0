@@ -8,6 +8,9 @@ from __future__ import annotations
 from dataclasses import fields, is_dataclass
 from typing import Any, Tuple, TypeVar, cast
 
+from eth_utils.abi import collapse_if_tuple
+from web3.types import ABIFunction
+
 T = TypeVar("T")
 
 
@@ -108,3 +111,26 @@ def rename_returned_types(
     # cover case of single return value
     converted_value = tuple_to_dataclass(return_types, structs, raw_values)
     return converted_value
+
+
+def get_abi_input_types(abi: ABIFunction) -> list[str]:
+    """Gets all the solidity input types for a function or error.
+
+    Cribbed from web3._utils.abi.py file.
+
+    Parameters
+    ----------
+
+    abi: ABIFunction
+        The ABIFunction or ABIError that we want to get input types for.
+
+    Returns
+    -------
+    list[str]
+        A list of solidity input types.
+
+    """
+
+    if "inputs" not in abi and (abi.get("type") == "fallback" or abi.get("type") == "receive"):
+        return []
+    return [collapse_if_tuple(cast(dict[str, Any], arg)) for arg in abi.get("inputs", [])]

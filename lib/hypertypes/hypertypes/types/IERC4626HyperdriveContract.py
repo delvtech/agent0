@@ -20,10 +20,16 @@ https://github.com/delvtech/pypechain"""
 # methods are overriden with specific arguments instead of generic *args, **kwargs
 # pylint: disable=arguments-differ
 
+# consumers have too many opinions on line length
+# pylint: disable=line-too-long
+
+
 from __future__ import annotations
 
 from typing import Any, Iterable, NamedTuple, Sequence, Type, cast
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
@@ -39,10 +45,10 @@ from web3.contract.contract import (
     ContractFunctions,
 )
 from web3.exceptions import FallbackNotFound
-from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
+from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
 from .IHyperdriveTypes import Checkpoint, Fees, MarketState, Options, PoolConfig, PoolInfo, WithdrawPool
-from .utilities import dataclass_to_tuple, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
 
 structs = {
     "Options": Options,
@@ -693,9 +699,9 @@ class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
         maturityTime: int
         bondProceeds: int
 
-    def __call__(self, baseAmount: int, minOutput: int, minVaultSharePrice: int, options: Options) -> IERC4626HyperdriveOpenLongContractFunction:  # type: ignore
+    def __call__(self, amount: int, minOutput: int, minVaultSharePrice: int, options: Options) -> IERC4626HyperdriveOpenLongContractFunction:  # type: ignore
         clone = super().__call__(
-            dataclass_to_tuple(baseAmount),
+            dataclass_to_tuple(amount),
             dataclass_to_tuple(minOutput),
             dataclass_to_tuple(minVaultSharePrice),
             dataclass_to_tuple(options),
@@ -846,10 +852,12 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction)
         """The return named tuple for RedeemWithdrawalShares."""
 
         proceeds: int
-        sharesRedeemed: int
+        withdrawalSharesRedeemed: int
 
-    def __call__(self, shares: int, minOutput: int, options: Options) -> IERC4626HyperdriveRedeemWithdrawalSharesContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(shares), dataclass_to_tuple(minOutput), dataclass_to_tuple(options))
+    def __call__(self, withdrawalShares: int, minOutputPerShare: int, options: Options) -> IERC4626HyperdriveRedeemWithdrawalSharesContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(withdrawalShares), dataclass_to_tuple(minOutputPerShare), dataclass_to_tuple(options)
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -878,11 +886,13 @@ class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for RemoveLiquidity."""
 
-        baseProceeds: int
+        proceeds: int
         withdrawalShares: int
 
-    def __call__(self, shares: int, minOutput: int, options: Options) -> IERC4626HyperdriveRemoveLiquidityContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(shares), dataclass_to_tuple(minOutput), dataclass_to_tuple(options))
+    def __call__(self, lpShares: int, minOutputPerShare: int, options: Options) -> IERC4626HyperdriveRemoveLiquidityContractFunction:  # type: ignore
+        clone = super().__call__(
+            dataclass_to_tuple(lpShares), dataclass_to_tuple(minOutputPerShare), dataclass_to_tuple(options)
+        )
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -3139,6 +3149,2102 @@ class IERC4626HyperdriveContractEvents(ContractEvents):
         )
 
 
+class IERC4626HyperdriveBatchInputLengthMismatchContractError:
+    """ContractError for BatchInputLengthMismatch."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveBatchInputLengthMismatchContractError",
+    ) -> None:
+        self.selector = "0xba430d38"
+        self.signature = "BatchInputLengthMismatch()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveBatchInputLengthMismatchContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "BatchInputLengthMismatch" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveBatchInputLengthMismatchContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "BatchInputLengthMismatch" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveBelowMinimumContributionContractError:
+    """ContractError for BelowMinimumContribution."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveBelowMinimumContributionContractError",
+    ) -> None:
+        self.selector = "0xabed41c4"
+        self.signature = "BelowMinimumContribution()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveBelowMinimumContributionContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "BelowMinimumContribution" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveBelowMinimumContributionContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "BelowMinimumContribution" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError:
+    """ContractError for DecreasedPresentValueWhenAddingLiquidity."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError",
+    ) -> None:
+        self.selector = "0x309b2a42"
+        self.signature = "DecreasedPresentValueWhenAddingLiquidity()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "DecreasedPresentValueWhenAddingLiquidity" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "DecreasedPresentValueWhenAddingLiquidity" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveExpInvalidExponentContractError:
+    """ContractError for ExpInvalidExponent."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveExpInvalidExponentContractError",
+    ) -> None:
+        self.selector = "0x73a2d6b1"
+        self.signature = "ExpInvalidExponent()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveExpInvalidExponentContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "ExpInvalidExponent" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveExpInvalidExponentContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "ExpInvalidExponent" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveExpiredDeadlineContractError:
+    """ContractError for ExpiredDeadline."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveExpiredDeadlineContractError",
+    ) -> None:
+        self.selector = "0xf87d9271"
+        self.signature = "ExpiredDeadline()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveExpiredDeadlineContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "ExpiredDeadline" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveExpiredDeadlineContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "ExpiredDeadline" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInsufficientBalanceContractError:
+    """ContractError for InsufficientBalance."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInsufficientBalanceContractError",
+    ) -> None:
+        self.selector = "0xf4d678b8"
+        self.signature = "InsufficientBalance()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInsufficientBalanceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InsufficientBalance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInsufficientBalanceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InsufficientBalance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInsufficientLiquidityContractError:
+    """ContractError for InsufficientLiquidity."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInsufficientLiquidityContractError",
+    ) -> None:
+        self.selector = "0x780daf16"
+        self.signature = "InsufficientLiquidity(uint8)"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInsufficientLiquidityContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InsufficientLiquidity" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInsufficientLiquidityContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InsufficientLiquidity" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidAprContractError:
+    """ContractError for InvalidApr."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidAprContractError",
+    ) -> None:
+        self.selector = "0x76c22a22"
+        self.signature = "InvalidApr()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidAprContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidApr" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidAprContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidApr" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidBaseTokenContractError:
+    """ContractError for InvalidBaseToken."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidBaseTokenContractError",
+    ) -> None:
+        self.selector = "0x0e442a4a"
+        self.signature = "InvalidBaseToken()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidBaseTokenContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidBaseToken" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidBaseTokenContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidBaseToken" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidCheckpointTimeContractError:
+    """ContractError for InvalidCheckpointTime."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidCheckpointTimeContractError",
+    ) -> None:
+        self.selector = "0xecd29e81"
+        self.signature = "InvalidCheckpointTime()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidCheckpointTimeContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidCheckpointTime" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidCheckpointTimeContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidCheckpointTime" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidERC20BridgeContractError:
+    """ContractError for InvalidERC20Bridge."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidERC20BridgeContractError",
+    ) -> None:
+        self.selector = "0x2aab8bd3"
+        self.signature = "InvalidERC20Bridge()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidERC20BridgeContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidERC20Bridge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidERC20BridgeContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidERC20Bridge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidFeeDestinationContractError:
+    """ContractError for InvalidFeeDestination."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidFeeDestinationContractError",
+    ) -> None:
+        self.selector = "0x2b44eccc"
+        self.signature = "InvalidFeeDestination()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidFeeDestinationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidFeeDestination" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidFeeDestinationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidFeeDestination" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidInitialVaultSharePriceContractError:
+    """ContractError for InvalidInitialVaultSharePrice."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidInitialVaultSharePriceContractError",
+    ) -> None:
+        self.selector = "0x094b19ad"
+        self.signature = "InvalidInitialVaultSharePrice()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidInitialVaultSharePriceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidInitialVaultSharePrice" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidInitialVaultSharePriceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidInitialVaultSharePrice" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidShareReservesContractError:
+    """ContractError for InvalidShareReserves."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidShareReservesContractError",
+    ) -> None:
+        self.selector = "0xb0bfcdbe"
+        self.signature = "InvalidShareReserves()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidShareReservesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidShareReserves" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidShareReservesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidShareReserves" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidSignatureContractError:
+    """ContractError for InvalidSignature."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidSignatureContractError",
+    ) -> None:
+        self.selector = "0x8baa579f"
+        self.signature = "InvalidSignature()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidSignatureContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidSignature" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidSignatureContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidSignature" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidTimestampContractError:
+    """ContractError for InvalidTimestamp."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidTimestampContractError",
+    ) -> None:
+        self.selector = "0xb7d09497"
+        self.signature = "InvalidTimestamp()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidTimestampContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidTimestamp" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidTimestampContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidTimestamp" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveLnInvalidInputContractError:
+    """ContractError for LnInvalidInput."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveLnInvalidInputContractError",
+    ) -> None:
+        self.selector = "0xe61b4975"
+        self.signature = "LnInvalidInput()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveLnInvalidInputContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "LnInvalidInput" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveLnInvalidInputContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "LnInvalidInput" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveMinimumSharePriceContractError:
+    """ContractError for MinimumSharePrice."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveMinimumSharePriceContractError",
+    ) -> None:
+        self.selector = "0x42af972b"
+        self.signature = "MinimumSharePrice()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveMinimumSharePriceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "MinimumSharePrice" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveMinimumSharePriceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "MinimumSharePrice" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveMinimumTransactionAmountContractError:
+    """ContractError for MinimumTransactionAmount."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveMinimumTransactionAmountContractError",
+    ) -> None:
+        self.selector = "0x423bbb46"
+        self.signature = "MinimumTransactionAmount()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveMinimumTransactionAmountContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "MinimumTransactionAmount" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveMinimumTransactionAmountContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "MinimumTransactionAmount" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveNegativePresentValueContractError:
+    """ContractError for NegativePresentValue."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveNegativePresentValueContractError",
+    ) -> None:
+        self.selector = "0xaeeb825d"
+        self.signature = "NegativePresentValue()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveNegativePresentValueContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "NegativePresentValue" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveNegativePresentValueContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "NegativePresentValue" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveNotPayableContractError:
+    """ContractError for NotPayable."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveNotPayableContractError",
+    ) -> None:
+        self.selector = "0x1574f9f3"
+        self.signature = "NotPayable()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveNotPayableContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "NotPayable" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveNotPayableContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "NotPayable" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveOutputLimitContractError:
+    """ContractError for OutputLimit."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveOutputLimitContractError",
+    ) -> None:
+        self.selector = "0xc9726517"
+        self.signature = "OutputLimit()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveOutputLimitContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "OutputLimit" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveOutputLimitContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "OutputLimit" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdrivePoolAlreadyInitializedContractError:
+    """ContractError for PoolAlreadyInitialized."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdrivePoolAlreadyInitializedContractError",
+    ) -> None:
+        self.selector = "0x7983c051"
+        self.signature = "PoolAlreadyInitialized()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdrivePoolAlreadyInitializedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "PoolAlreadyInitialized" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdrivePoolAlreadyInitializedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "PoolAlreadyInitialized" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdrivePoolIsPausedContractError:
+    """ContractError for PoolIsPaused."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdrivePoolIsPausedContractError",
+    ) -> None:
+        self.selector = "0x21081abf"
+        self.signature = "PoolIsPaused()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdrivePoolIsPausedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "PoolIsPaused" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdrivePoolIsPausedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "PoolIsPaused" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveRestrictedZeroAddressContractError:
+    """ContractError for RestrictedZeroAddress."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveRestrictedZeroAddressContractError",
+    ) -> None:
+        self.selector = "0xf0dd15fd"
+        self.signature = "RestrictedZeroAddress()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveRestrictedZeroAddressContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "RestrictedZeroAddress" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveRestrictedZeroAddressContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "RestrictedZeroAddress" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveReturnDataContractError:
+    """ContractError for ReturnData."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveReturnDataContractError",
+    ) -> None:
+        self.selector = "0xdcc81126"
+        self.signature = "ReturnData(bytes)"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveReturnDataContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "ReturnData" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveReturnDataContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "ReturnData" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveSweepFailedContractError:
+    """ContractError for SweepFailed."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveSweepFailedContractError",
+    ) -> None:
+        self.selector = "0x9eec2ff8"
+        self.signature = "SweepFailed()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveSweepFailedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "SweepFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveSweepFailedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "SweepFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveTransferFailedContractError:
+    """ContractError for TransferFailed."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveTransferFailedContractError",
+    ) -> None:
+        self.selector = "0x90b8ec18"
+        self.signature = "TransferFailed()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveTransferFailedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "TransferFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveTransferFailedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "TransferFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveUnauthorizedContractError:
+    """ContractError for Unauthorized."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnauthorizedContractError",
+    ) -> None:
+        self.selector = "0x82b42900"
+        self.signature = "Unauthorized()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnauthorizedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "Unauthorized" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnauthorizedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "Unauthorized" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveUnexpectedSuccessContractError:
+    """ContractError for UnexpectedSuccess."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnexpectedSuccessContractError",
+    ) -> None:
+        self.selector = "0x8bb0a34b"
+        self.signature = "UnexpectedSuccess()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnexpectedSuccessContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnexpectedSuccess" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnexpectedSuccessContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnexpectedSuccess" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveUnsafeCastToInt128ContractError:
+    """ContractError for UnsafeCastToInt128."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnsafeCastToInt128ContractError",
+    ) -> None:
+        self.selector = "0xa5353be5"
+        self.signature = "UnsafeCastToInt128()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnsafeCastToInt128ContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToInt128" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnsafeCastToInt128ContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToInt128" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveUnsafeCastToUint112ContractError:
+    """ContractError for UnsafeCastToUint112."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnsafeCastToUint112ContractError",
+    ) -> None:
+        self.selector = "0x10d62a2e"
+        self.signature = "UnsafeCastToUint112()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnsafeCastToUint112ContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToUint112" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnsafeCastToUint112ContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToUint112" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveUnsafeCastToUint128ContractError:
+    """ContractError for UnsafeCastToUint128."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnsafeCastToUint128ContractError",
+    ) -> None:
+        self.selector = "0x1e15f2a2"
+        self.signature = "UnsafeCastToUint128()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnsafeCastToUint128ContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToUint128" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnsafeCastToUint128ContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToUint128" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveUnsupportedTokenContractError:
+    """ContractError for UnsupportedToken."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnsupportedTokenContractError",
+    ) -> None:
+        self.selector = "0x6a172882"
+        self.signature = "UnsupportedToken()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnsupportedTokenContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsupportedToken" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnsupportedTokenContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsupportedToken" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveContractErrors:
+    """ContractErrors for the IERC4626Hyperdrive contract."""
+
+    BatchInputLengthMismatch: IERC4626HyperdriveBatchInputLengthMismatchContractError
+
+    BelowMinimumContribution: IERC4626HyperdriveBelowMinimumContributionContractError
+
+    DecreasedPresentValueWhenAddingLiquidity: IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError
+
+    ExpInvalidExponent: IERC4626HyperdriveExpInvalidExponentContractError
+
+    ExpiredDeadline: IERC4626HyperdriveExpiredDeadlineContractError
+
+    InsufficientBalance: IERC4626HyperdriveInsufficientBalanceContractError
+
+    InsufficientLiquidity: IERC4626HyperdriveInsufficientLiquidityContractError
+
+    InvalidApr: IERC4626HyperdriveInvalidAprContractError
+
+    InvalidBaseToken: IERC4626HyperdriveInvalidBaseTokenContractError
+
+    InvalidCheckpointTime: IERC4626HyperdriveInvalidCheckpointTimeContractError
+
+    InvalidERC20Bridge: IERC4626HyperdriveInvalidERC20BridgeContractError
+
+    InvalidFeeDestination: IERC4626HyperdriveInvalidFeeDestinationContractError
+
+    InvalidInitialVaultSharePrice: IERC4626HyperdriveInvalidInitialVaultSharePriceContractError
+
+    InvalidShareReserves: IERC4626HyperdriveInvalidShareReservesContractError
+
+    InvalidSignature: IERC4626HyperdriveInvalidSignatureContractError
+
+    InvalidTimestamp: IERC4626HyperdriveInvalidTimestampContractError
+
+    LnInvalidInput: IERC4626HyperdriveLnInvalidInputContractError
+
+    MinimumSharePrice: IERC4626HyperdriveMinimumSharePriceContractError
+
+    MinimumTransactionAmount: IERC4626HyperdriveMinimumTransactionAmountContractError
+
+    NegativePresentValue: IERC4626HyperdriveNegativePresentValueContractError
+
+    NotPayable: IERC4626HyperdriveNotPayableContractError
+
+    OutputLimit: IERC4626HyperdriveOutputLimitContractError
+
+    PoolAlreadyInitialized: IERC4626HyperdrivePoolAlreadyInitializedContractError
+
+    PoolIsPaused: IERC4626HyperdrivePoolIsPausedContractError
+
+    RestrictedZeroAddress: IERC4626HyperdriveRestrictedZeroAddressContractError
+
+    ReturnData: IERC4626HyperdriveReturnDataContractError
+
+    SweepFailed: IERC4626HyperdriveSweepFailedContractError
+
+    TransferFailed: IERC4626HyperdriveTransferFailedContractError
+
+    Unauthorized: IERC4626HyperdriveUnauthorizedContractError
+
+    UnexpectedSuccess: IERC4626HyperdriveUnexpectedSuccessContractError
+
+    UnsafeCastToInt128: IERC4626HyperdriveUnsafeCastToInt128ContractError
+
+    UnsafeCastToUint112: IERC4626HyperdriveUnsafeCastToUint112ContractError
+
+    UnsafeCastToUint128: IERC4626HyperdriveUnsafeCastToUint128ContractError
+
+    UnsupportedToken: IERC4626HyperdriveUnsupportedTokenContractError
+
+    def __init__(
+        self,
+    ) -> None:
+        self.BatchInputLengthMismatch = IERC4626HyperdriveBatchInputLengthMismatchContractError()
+        self.BelowMinimumContribution = IERC4626HyperdriveBelowMinimumContributionContractError()
+        self.DecreasedPresentValueWhenAddingLiquidity = (
+            IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError()
+        )
+        self.ExpInvalidExponent = IERC4626HyperdriveExpInvalidExponentContractError()
+        self.ExpiredDeadline = IERC4626HyperdriveExpiredDeadlineContractError()
+        self.InsufficientBalance = IERC4626HyperdriveInsufficientBalanceContractError()
+        self.InsufficientLiquidity = IERC4626HyperdriveInsufficientLiquidityContractError()
+        self.InvalidApr = IERC4626HyperdriveInvalidAprContractError()
+        self.InvalidBaseToken = IERC4626HyperdriveInvalidBaseTokenContractError()
+        self.InvalidCheckpointTime = IERC4626HyperdriveInvalidCheckpointTimeContractError()
+        self.InvalidERC20Bridge = IERC4626HyperdriveInvalidERC20BridgeContractError()
+        self.InvalidFeeDestination = IERC4626HyperdriveInvalidFeeDestinationContractError()
+        self.InvalidInitialVaultSharePrice = IERC4626HyperdriveInvalidInitialVaultSharePriceContractError()
+        self.InvalidShareReserves = IERC4626HyperdriveInvalidShareReservesContractError()
+        self.InvalidSignature = IERC4626HyperdriveInvalidSignatureContractError()
+        self.InvalidTimestamp = IERC4626HyperdriveInvalidTimestampContractError()
+        self.LnInvalidInput = IERC4626HyperdriveLnInvalidInputContractError()
+        self.MinimumSharePrice = IERC4626HyperdriveMinimumSharePriceContractError()
+        self.MinimumTransactionAmount = IERC4626HyperdriveMinimumTransactionAmountContractError()
+        self.NegativePresentValue = IERC4626HyperdriveNegativePresentValueContractError()
+        self.NotPayable = IERC4626HyperdriveNotPayableContractError()
+        self.OutputLimit = IERC4626HyperdriveOutputLimitContractError()
+        self.PoolAlreadyInitialized = IERC4626HyperdrivePoolAlreadyInitializedContractError()
+        self.PoolIsPaused = IERC4626HyperdrivePoolIsPausedContractError()
+        self.RestrictedZeroAddress = IERC4626HyperdriveRestrictedZeroAddressContractError()
+        self.ReturnData = IERC4626HyperdriveReturnDataContractError()
+        self.SweepFailed = IERC4626HyperdriveSweepFailedContractError()
+        self.TransferFailed = IERC4626HyperdriveTransferFailedContractError()
+        self.Unauthorized = IERC4626HyperdriveUnauthorizedContractError()
+        self.UnexpectedSuccess = IERC4626HyperdriveUnexpectedSuccessContractError()
+        self.UnsafeCastToInt128 = IERC4626HyperdriveUnsafeCastToInt128ContractError()
+        self.UnsafeCastToUint112 = IERC4626HyperdriveUnsafeCastToUint112ContractError()
+        self.UnsafeCastToUint128 = IERC4626HyperdriveUnsafeCastToUint128ContractError()
+        self.UnsupportedToken = IERC4626HyperdriveUnsupportedTokenContractError()
+
+        self._all = [
+            self.BatchInputLengthMismatch,
+            self.BelowMinimumContribution,
+            self.DecreasedPresentValueWhenAddingLiquidity,
+            self.ExpInvalidExponent,
+            self.ExpiredDeadline,
+            self.InsufficientBalance,
+            self.InsufficientLiquidity,
+            self.InvalidApr,
+            self.InvalidBaseToken,
+            self.InvalidCheckpointTime,
+            self.InvalidERC20Bridge,
+            self.InvalidFeeDestination,
+            self.InvalidInitialVaultSharePrice,
+            self.InvalidShareReserves,
+            self.InvalidSignature,
+            self.InvalidTimestamp,
+            self.LnInvalidInput,
+            self.MinimumSharePrice,
+            self.MinimumTransactionAmount,
+            self.NegativePresentValue,
+            self.NotPayable,
+            self.OutputLimit,
+            self.PoolAlreadyInitialized,
+            self.PoolIsPaused,
+            self.RestrictedZeroAddress,
+            self.ReturnData,
+            self.SweepFailed,
+            self.TransferFailed,
+            self.Unauthorized,
+            self.UnexpectedSuccess,
+            self.UnsafeCastToInt128,
+            self.UnsafeCastToUint112,
+            self.UnsafeCastToUint128,
+            self.UnsupportedToken,
+        ]
+
+    def decode_custom_error(self, data: str) -> tuple[Any, ...]:
+        """Decodes a custom contract error."""
+        selector = data[:10]
+        for err in self._all:
+            if err.selector == selector:
+                return err.decode_error_data(HexBytes(data[10:]))
+
+        raise ValueError(f"IERC4626Hyperdrive does not have a selector matching {selector}")
+
+
 ierc4626hyperdrive_abi: ABI = cast(
     ABI,
     [
@@ -3475,7 +5581,7 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
             "name": "openLong",
             "inputs": [
-                {"name": "_baseAmount", "type": "uint256", "internalType": "uint256"},
+                {"name": "_amount", "type": "uint256", "internalType": "uint256"},
                 {"name": "_minOutput", "type": "uint256", "internalType": "uint256"},
                 {"name": "_minVaultSharePrice", "type": "uint256", "internalType": "uint256"},
                 {
@@ -3556,8 +5662,8 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
             "name": "redeemWithdrawalShares",
             "inputs": [
-                {"name": "_shares", "type": "uint256", "internalType": "uint256"},
-                {"name": "_minOutput", "type": "uint256", "internalType": "uint256"},
+                {"name": "_withdrawalShares", "type": "uint256", "internalType": "uint256"},
+                {"name": "_minOutputPerShare", "type": "uint256", "internalType": "uint256"},
                 {
                     "name": "_options",
                     "type": "tuple",
@@ -3571,7 +5677,7 @@ ierc4626hyperdrive_abi: ABI = cast(
             ],
             "outputs": [
                 {"name": "proceeds", "type": "uint256", "internalType": "uint256"},
-                {"name": "sharesRedeemed", "type": "uint256", "internalType": "uint256"},
+                {"name": "withdrawalSharesRedeemed", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "nonpayable",
         },
@@ -3579,8 +5685,8 @@ ierc4626hyperdrive_abi: ABI = cast(
             "type": "function",
             "name": "removeLiquidity",
             "inputs": [
-                {"name": "_shares", "type": "uint256", "internalType": "uint256"},
-                {"name": "_minOutput", "type": "uint256", "internalType": "uint256"},
+                {"name": "_lpShares", "type": "uint256", "internalType": "uint256"},
+                {"name": "_minOutputPerShare", "type": "uint256", "internalType": "uint256"},
                 {
                     "name": "_options",
                     "type": "tuple",
@@ -3593,7 +5699,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "baseProceeds", "type": "uint256", "internalType": "uint256"},
+                {"name": "proceeds", "type": "uint256", "internalType": "uint256"},
                 {"name": "withdrawalShares", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "nonpayable",
@@ -3965,11 +6071,14 @@ class IERC4626HyperdriveContract(Contract):
             super().__init__(address=address)
             self.functions = IERC4626HyperdriveContractFunctions(ierc4626hyperdrive_abi, self.w3, address)  # type: ignore
             self.events = IERC4626HyperdriveContractEvents(ierc4626hyperdrive_abi, self.w3, address)  # type: ignore
+            self.errors = IERC4626HyperdriveContractErrors()
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
 
     events: IERC4626HyperdriveContractEvents
+
+    errors: IERC4626HyperdriveContractErrors = IERC4626HyperdriveContractErrors()
 
     functions: IERC4626HyperdriveContractFunctions
 
@@ -4054,5 +6163,6 @@ class IERC4626HyperdriveContract(Contract):
         """
         contract = super().factory(w3, class_name, **kwargs)
         contract.functions = IERC4626HyperdriveContractFunctions(ierc4626hyperdrive_abi, w3, None)
+        contract.errors = IERC4626HyperdriveContractErrors()
 
         return contract

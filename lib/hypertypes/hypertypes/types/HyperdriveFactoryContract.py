@@ -20,10 +20,16 @@ https://github.com/delvtech/pypechain"""
 # methods are overriden with specific arguments instead of generic *args, **kwargs
 # pylint: disable=arguments-differ
 
+# consumers have too many opinions on line length
+# pylint: disable=line-too-long
+
+
 from __future__ import annotations
 
 from typing import Any, Iterable, NamedTuple, Sequence, Type, cast
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
@@ -39,11 +45,11 @@ from web3.contract.contract import (
     ContractFunctions,
 )
 from web3.exceptions import FallbackNotFound
-from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
+from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
 from .HyperdriveFactoryTypes import FactoryConfig
 from .IHyperdriveTypes import Fees, PoolDeployConfig
-from .utilities import dataclass_to_tuple, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
 
 structs = {
     "Fees": Fees,
@@ -2338,82 +2344,6 @@ class HyperdriveFactoryHyperdriveGovernanceUpdatedContractEvent(ContractEvent):
         )
 
 
-class HyperdriveFactoryImplementationUpdatedContractEvent(ContractEvent):
-    """ContractEvent for ImplementationUpdated."""
-
-    # super() get_logs and create_filter methods are generic, while our version adds values & types
-    # pylint: disable=arguments-differ
-
-    # @combomethod destroys return types, so we are redefining functions as both class and instance
-    # pylint: disable=function-redefined
-
-    # pylint: disable=useless-parent-delegation
-    def __init__(self, *argument_names: tuple[str]) -> None:
-        super().__init__(*argument_names)
-
-    def get_logs(  # type: ignore
-        self: "HyperdriveFactoryImplementationUpdatedContractEvent",
-        argument_filters: dict[str, Any] | None = None,
-        fromBlock: BlockIdentifier | None = None,
-        toBlock: BlockIdentifier | None = None,
-        block_hash: HexBytes | None = None,
-    ) -> Iterable[EventData]:
-        return cast(
-            Iterable[EventData],
-            super().get_logs(
-                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
-            ),
-        )
-
-    @classmethod
-    def get_logs(  # type: ignore
-        cls: Type["HyperdriveFactoryImplementationUpdatedContractEvent"],
-        argument_filters: dict[str, Any] | None = None,
-        fromBlock: BlockIdentifier | None = None,
-        toBlock: BlockIdentifier | None = None,
-        block_hash: HexBytes | None = None,
-    ) -> Iterable[EventData]:
-        return cast(
-            Iterable[EventData],
-            super().get_logs(
-                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
-            ),
-        )
-
-    def create_filter(  # type: ignore
-        self: "HyperdriveFactoryImplementationUpdatedContractEvent",
-        *,  # PEP 3102
-        argument_filters: dict[str, Any] | None = None,
-        fromBlock: BlockIdentifier | None = None,
-        toBlock: BlockIdentifier = "latest",
-        address: ChecksumAddress | None = None,
-        topics: Sequence[Any] | None = None,
-    ) -> LogFilter:
-        return cast(
-            LogFilter,
-            super().create_filter(
-                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
-            ),
-        )
-
-    @classmethod
-    def create_filter(  # type: ignore
-        cls: Type["HyperdriveFactoryImplementationUpdatedContractEvent"],
-        *,  # PEP 3102
-        argument_filters: dict[str, Any] | None = None,
-        fromBlock: BlockIdentifier | None = None,
-        toBlock: BlockIdentifier = "latest",
-        address: ChecksumAddress | None = None,
-        topics: Sequence[Any] | None = None,
-    ) -> LogFilter:
-        return cast(
-            LogFilter,
-            super().create_filter(
-                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
-            ),
-        )
-
-
 class HyperdriveFactoryLinkerCodeHashUpdatedContractEvent(ContractEvent):
     """ContractEvent for LinkerCodeHashUpdated."""
 
@@ -3345,8 +3275,6 @@ class HyperdriveFactoryContractEvents(ContractEvents):
 
     HyperdriveGovernanceUpdated: HyperdriveFactoryHyperdriveGovernanceUpdatedContractEvent
 
-    ImplementationUpdated: HyperdriveFactoryImplementationUpdatedContractEvent
-
     LinkerCodeHashUpdated: HyperdriveFactoryLinkerCodeHashUpdatedContractEvent
 
     LinkerFactoryUpdated: HyperdriveFactoryLinkerFactoryUpdatedContractEvent
@@ -3440,12 +3368,6 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 contract_abi=abi,
                 address=address,
                 event_name="HyperdriveGovernanceUpdated",
-            ),
-        )
-        self.ImplementationUpdated = cast(
-            HyperdriveFactoryImplementationUpdatedContractEvent,
-            HyperdriveFactoryImplementationUpdatedContractEvent.factory(
-                "ImplementationUpdated", w3=w3, contract_abi=abi, address=address, event_name="ImplementationUpdated"
             ),
         )
         self.LinkerCodeHashUpdated = cast(
@@ -3544,6 +3466,1917 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 event_name="MinTimeStretchAPRUpdated",
             ),
         )
+
+
+class HyperdriveFactoryAddressEmptyCodeContractError:
+    """ContractError for AddressEmptyCode."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryAddressEmptyCodeContractError",
+    ) -> None:
+        self.selector = "0x9996b315"
+        self.signature = "AddressEmptyCode(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryAddressEmptyCodeContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "AddressEmptyCode" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryAddressEmptyCodeContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "AddressEmptyCode" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryAddressInsufficientBalanceContractError:
+    """ContractError for AddressInsufficientBalance."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryAddressInsufficientBalanceContractError",
+    ) -> None:
+        self.selector = "0xcd786059"
+        self.signature = "AddressInsufficientBalance(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryAddressInsufficientBalanceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "AddressInsufficientBalance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryAddressInsufficientBalanceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "AddressInsufficientBalance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryDeployerCoordinatorAlreadyAddedContractError:
+    """ContractError for DeployerCoordinatorAlreadyAdded."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryDeployerCoordinatorAlreadyAddedContractError",
+    ) -> None:
+        self.selector = "0xbd34634f"
+        self.signature = "DeployerCoordinatorAlreadyAdded()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorAlreadyAddedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "DeployerCoordinatorAlreadyAdded" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorAlreadyAddedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "DeployerCoordinatorAlreadyAdded" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryDeployerCoordinatorIndexMismatchContractError:
+    """ContractError for DeployerCoordinatorIndexMismatch."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryDeployerCoordinatorIndexMismatchContractError",
+    ) -> None:
+        self.selector = "0x3c9c032c"
+        self.signature = "DeployerCoordinatorIndexMismatch()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorIndexMismatchContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "DeployerCoordinatorIndexMismatch" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorIndexMismatchContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "DeployerCoordinatorIndexMismatch" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryDeployerCoordinatorNotAddedContractError:
+    """ContractError for DeployerCoordinatorNotAdded."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryDeployerCoordinatorNotAddedContractError",
+    ) -> None:
+        self.selector = "0x4bf121ab"
+        self.signature = "DeployerCoordinatorNotAdded()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryDeployerCoordinatorNotAddedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "DeployerCoordinatorNotAdded" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryDeployerCoordinatorNotAddedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "DeployerCoordinatorNotAdded" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryEndIndexTooLargeContractError:
+    """ContractError for EndIndexTooLarge."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryEndIndexTooLargeContractError",
+    ) -> None:
+        self.selector = "0xe0f7becb"
+        self.signature = "EndIndexTooLarge()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryEndIndexTooLargeContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "EndIndexTooLarge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryEndIndexTooLargeContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "EndIndexTooLarge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryExpInvalidExponentContractError:
+    """ContractError for ExpInvalidExponent."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryExpInvalidExponentContractError",
+    ) -> None:
+        self.selector = "0x73a2d6b1"
+        self.signature = "ExpInvalidExponent()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryExpInvalidExponentContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "ExpInvalidExponent" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryExpInvalidExponentContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "ExpInvalidExponent" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryFailedInnerCallContractError:
+    """ContractError for FailedInnerCall."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryFailedInnerCallContractError",
+    ) -> None:
+        self.selector = "0x1425ea42"
+        self.signature = "FailedInnerCall()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryFailedInnerCallContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "FailedInnerCall" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryFailedInnerCallContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "FailedInnerCall" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidCheckpointDurationContractError:
+    """ContractError for InvalidCheckpointDuration."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidCheckpointDurationContractError",
+    ) -> None:
+        self.selector = "0x5428734d"
+        self.signature = "InvalidCheckpointDuration()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidCheckpointDurationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidCheckpointDurationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidCheckpointDurationResolutionContractError:
+    """ContractError for InvalidCheckpointDurationResolution."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidCheckpointDurationResolutionContractError",
+    ) -> None:
+        self.selector = "0x8dbae0a8"
+        self.signature = "InvalidCheckpointDurationResolution()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidCheckpointDurationResolutionContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidCheckpointDurationResolution" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidCheckpointDurationResolutionContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidCheckpointDurationResolution" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidDeployConfigContractError:
+    """ContractError for InvalidDeployConfig."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidDeployConfigContractError",
+    ) -> None:
+        self.selector = "0xe8c02dd7"
+        self.signature = "InvalidDeployConfig()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidDeployConfigContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidDeployConfig" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidDeployConfigContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidDeployConfig" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidDeployerCoordinatorContractError:
+    """ContractError for InvalidDeployerCoordinator."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidDeployerCoordinatorContractError",
+    ) -> None:
+        self.selector = "0x6e623f0f"
+        self.signature = "InvalidDeployerCoordinator()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidDeployerCoordinatorContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidDeployerCoordinator" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidDeployerCoordinatorContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidDeployerCoordinator" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidFeesContractError:
+    """ContractError for InvalidFees."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidFeesContractError",
+    ) -> None:
+        self.selector = "0x2d8768f9"
+        self.signature = "InvalidFees()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidFeesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidFees" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidFeesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidFees" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidFixedAPRContractError:
+    """ContractError for InvalidFixedAPR."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidFixedAPRContractError",
+    ) -> None:
+        self.selector = "0x30554de1"
+        self.signature = "InvalidFixedAPR()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidFixedAPRContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidFixedAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidFixedAPRContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidFixedAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidIndexesContractError:
+    """ContractError for InvalidIndexes."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidIndexesContractError",
+    ) -> None:
+        self.selector = "0x764e6b56"
+        self.signature = "InvalidIndexes()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidIndexesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidIndexes" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidIndexesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidIndexes" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMaxCheckpointDurationContractError:
+    """ContractError for InvalidMaxCheckpointDuration."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMaxCheckpointDurationContractError",
+    ) -> None:
+        self.selector = "0xf9c0959d"
+        self.signature = "InvalidMaxCheckpointDuration()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMaxCheckpointDurationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMaxCheckpointDurationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMaxFeesContractError:
+    """ContractError for InvalidMaxFees."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMaxFeesContractError",
+    ) -> None:
+        self.selector = "0x2c20e3f6"
+        self.signature = "InvalidMaxFees()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMaxFeesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxFees" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMaxFeesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxFees" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMaxFixedAPRContractError:
+    """ContractError for InvalidMaxFixedAPR."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMaxFixedAPRContractError",
+    ) -> None:
+        self.selector = "0x673edec0"
+        self.signature = "InvalidMaxFixedAPR()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMaxFixedAPRContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxFixedAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMaxFixedAPRContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxFixedAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMaxPositionDurationContractError:
+    """ContractError for InvalidMaxPositionDuration."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMaxPositionDurationContractError",
+    ) -> None:
+        self.selector = "0xcfb699cb"
+        self.signature = "InvalidMaxPositionDuration()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMaxPositionDurationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxPositionDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMaxPositionDurationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxPositionDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMaxTimeStretchAPRContractError:
+    """ContractError for InvalidMaxTimeStretchAPR."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMaxTimeStretchAPRContractError",
+    ) -> None:
+        self.selector = "0xa35539d0"
+        self.signature = "InvalidMaxTimeStretchAPR()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMaxTimeStretchAPRContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxTimeStretchAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMaxTimeStretchAPRContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxTimeStretchAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMinCheckpointDurationContractError:
+    """ContractError for InvalidMinCheckpointDuration."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMinCheckpointDurationContractError",
+    ) -> None:
+        self.selector = "0x0433acc6"
+        self.signature = "InvalidMinCheckpointDuration()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMinCheckpointDurationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMinCheckpointDurationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMinFeesContractError:
+    """ContractError for InvalidMinFees."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMinFeesContractError",
+    ) -> None:
+        self.selector = "0x15b05a8f"
+        self.signature = "InvalidMinFees()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMinFeesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinFees" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMinFeesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinFees" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMinFixedAPRContractError:
+    """ContractError for InvalidMinFixedAPR."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMinFixedAPRContractError",
+    ) -> None:
+        self.selector = "0x1670f797"
+        self.signature = "InvalidMinFixedAPR()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMinFixedAPRContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinFixedAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMinFixedAPRContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinFixedAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMinPositionDurationContractError:
+    """ContractError for InvalidMinPositionDuration."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMinPositionDurationContractError",
+    ) -> None:
+        self.selector = "0x600f5a02"
+        self.signature = "InvalidMinPositionDuration()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMinPositionDurationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinPositionDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMinPositionDurationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinPositionDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMinTimeStretchAPRContractError:
+    """ContractError for InvalidMinTimeStretchAPR."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMinTimeStretchAPRContractError",
+    ) -> None:
+        self.selector = "0x5a8f6557"
+        self.signature = "InvalidMinTimeStretchAPR()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMinTimeStretchAPRContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinTimeStretchAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMinTimeStretchAPRContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinTimeStretchAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidPositionDurationContractError:
+    """ContractError for InvalidPositionDuration."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidPositionDurationContractError",
+    ) -> None:
+        self.selector = "0x4a7fff9e"
+        self.signature = "InvalidPositionDuration()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidPositionDurationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidPositionDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidPositionDurationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidPositionDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidTimeStretchAPRContractError:
+    """ContractError for InvalidTimeStretchAPR."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidTimeStretchAPRContractError",
+    ) -> None:
+        self.selector = "0x83ebdfb7"
+        self.signature = "InvalidTimeStretchAPR()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidTimeStretchAPRContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidTimeStretchAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidTimeStretchAPRContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidTimeStretchAPR" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryLnInvalidInputContractError:
+    """ContractError for LnInvalidInput."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryLnInvalidInputContractError",
+    ) -> None:
+        self.selector = "0xe61b4975"
+        self.signature = "LnInvalidInput()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryLnInvalidInputContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "LnInvalidInput" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryLnInvalidInputContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "LnInvalidInput" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactorySafeERC20FailedOperationContractError:
+    """ContractError for SafeERC20FailedOperation."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactorySafeERC20FailedOperationContractError",
+    ) -> None:
+        self.selector = "0x5274afe7"
+        self.signature = "SafeERC20FailedOperation(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactorySafeERC20FailedOperationContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "SafeERC20FailedOperation" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactorySafeERC20FailedOperationContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "SafeERC20FailedOperation" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryTransferFailedContractError:
+    """ContractError for TransferFailed."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryTransferFailedContractError",
+    ) -> None:
+        self.selector = "0x90b8ec18"
+        self.signature = "TransferFailed()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryTransferFailedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "TransferFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryTransferFailedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "TransferFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryUnauthorizedContractError:
+    """ContractError for Unauthorized."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryUnauthorizedContractError",
+    ) -> None:
+        self.selector = "0x82b42900"
+        self.signature = "Unauthorized()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryUnauthorizedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "Unauthorized" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryUnauthorizedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "Unauthorized" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryContractErrors:
+    """ContractErrors for the HyperdriveFactory contract."""
+
+    AddressEmptyCode: HyperdriveFactoryAddressEmptyCodeContractError
+
+    AddressInsufficientBalance: HyperdriveFactoryAddressInsufficientBalanceContractError
+
+    DeployerCoordinatorAlreadyAdded: HyperdriveFactoryDeployerCoordinatorAlreadyAddedContractError
+
+    DeployerCoordinatorIndexMismatch: HyperdriveFactoryDeployerCoordinatorIndexMismatchContractError
+
+    DeployerCoordinatorNotAdded: HyperdriveFactoryDeployerCoordinatorNotAddedContractError
+
+    EndIndexTooLarge: HyperdriveFactoryEndIndexTooLargeContractError
+
+    ExpInvalidExponent: HyperdriveFactoryExpInvalidExponentContractError
+
+    FailedInnerCall: HyperdriveFactoryFailedInnerCallContractError
+
+    InvalidCheckpointDuration: HyperdriveFactoryInvalidCheckpointDurationContractError
+
+    InvalidCheckpointDurationResolution: HyperdriveFactoryInvalidCheckpointDurationResolutionContractError
+
+    InvalidDeployConfig: HyperdriveFactoryInvalidDeployConfigContractError
+
+    InvalidDeployerCoordinator: HyperdriveFactoryInvalidDeployerCoordinatorContractError
+
+    InvalidFees: HyperdriveFactoryInvalidFeesContractError
+
+    InvalidFixedAPR: HyperdriveFactoryInvalidFixedAPRContractError
+
+    InvalidIndexes: HyperdriveFactoryInvalidIndexesContractError
+
+    InvalidMaxCheckpointDuration: HyperdriveFactoryInvalidMaxCheckpointDurationContractError
+
+    InvalidMaxFees: HyperdriveFactoryInvalidMaxFeesContractError
+
+    InvalidMaxFixedAPR: HyperdriveFactoryInvalidMaxFixedAPRContractError
+
+    InvalidMaxPositionDuration: HyperdriveFactoryInvalidMaxPositionDurationContractError
+
+    InvalidMaxTimeStretchAPR: HyperdriveFactoryInvalidMaxTimeStretchAPRContractError
+
+    InvalidMinCheckpointDuration: HyperdriveFactoryInvalidMinCheckpointDurationContractError
+
+    InvalidMinFees: HyperdriveFactoryInvalidMinFeesContractError
+
+    InvalidMinFixedAPR: HyperdriveFactoryInvalidMinFixedAPRContractError
+
+    InvalidMinPositionDuration: HyperdriveFactoryInvalidMinPositionDurationContractError
+
+    InvalidMinTimeStretchAPR: HyperdriveFactoryInvalidMinTimeStretchAPRContractError
+
+    InvalidPositionDuration: HyperdriveFactoryInvalidPositionDurationContractError
+
+    InvalidTimeStretchAPR: HyperdriveFactoryInvalidTimeStretchAPRContractError
+
+    LnInvalidInput: HyperdriveFactoryLnInvalidInputContractError
+
+    SafeERC20FailedOperation: HyperdriveFactorySafeERC20FailedOperationContractError
+
+    TransferFailed: HyperdriveFactoryTransferFailedContractError
+
+    Unauthorized: HyperdriveFactoryUnauthorizedContractError
+
+    def __init__(
+        self,
+    ) -> None:
+        self.AddressEmptyCode = HyperdriveFactoryAddressEmptyCodeContractError()
+        self.AddressInsufficientBalance = HyperdriveFactoryAddressInsufficientBalanceContractError()
+        self.DeployerCoordinatorAlreadyAdded = HyperdriveFactoryDeployerCoordinatorAlreadyAddedContractError()
+        self.DeployerCoordinatorIndexMismatch = HyperdriveFactoryDeployerCoordinatorIndexMismatchContractError()
+        self.DeployerCoordinatorNotAdded = HyperdriveFactoryDeployerCoordinatorNotAddedContractError()
+        self.EndIndexTooLarge = HyperdriveFactoryEndIndexTooLargeContractError()
+        self.ExpInvalidExponent = HyperdriveFactoryExpInvalidExponentContractError()
+        self.FailedInnerCall = HyperdriveFactoryFailedInnerCallContractError()
+        self.InvalidCheckpointDuration = HyperdriveFactoryInvalidCheckpointDurationContractError()
+        self.InvalidCheckpointDurationResolution = HyperdriveFactoryInvalidCheckpointDurationResolutionContractError()
+        self.InvalidDeployConfig = HyperdriveFactoryInvalidDeployConfigContractError()
+        self.InvalidDeployerCoordinator = HyperdriveFactoryInvalidDeployerCoordinatorContractError()
+        self.InvalidFees = HyperdriveFactoryInvalidFeesContractError()
+        self.InvalidFixedAPR = HyperdriveFactoryInvalidFixedAPRContractError()
+        self.InvalidIndexes = HyperdriveFactoryInvalidIndexesContractError()
+        self.InvalidMaxCheckpointDuration = HyperdriveFactoryInvalidMaxCheckpointDurationContractError()
+        self.InvalidMaxFees = HyperdriveFactoryInvalidMaxFeesContractError()
+        self.InvalidMaxFixedAPR = HyperdriveFactoryInvalidMaxFixedAPRContractError()
+        self.InvalidMaxPositionDuration = HyperdriveFactoryInvalidMaxPositionDurationContractError()
+        self.InvalidMaxTimeStretchAPR = HyperdriveFactoryInvalidMaxTimeStretchAPRContractError()
+        self.InvalidMinCheckpointDuration = HyperdriveFactoryInvalidMinCheckpointDurationContractError()
+        self.InvalidMinFees = HyperdriveFactoryInvalidMinFeesContractError()
+        self.InvalidMinFixedAPR = HyperdriveFactoryInvalidMinFixedAPRContractError()
+        self.InvalidMinPositionDuration = HyperdriveFactoryInvalidMinPositionDurationContractError()
+        self.InvalidMinTimeStretchAPR = HyperdriveFactoryInvalidMinTimeStretchAPRContractError()
+        self.InvalidPositionDuration = HyperdriveFactoryInvalidPositionDurationContractError()
+        self.InvalidTimeStretchAPR = HyperdriveFactoryInvalidTimeStretchAPRContractError()
+        self.LnInvalidInput = HyperdriveFactoryLnInvalidInputContractError()
+        self.SafeERC20FailedOperation = HyperdriveFactorySafeERC20FailedOperationContractError()
+        self.TransferFailed = HyperdriveFactoryTransferFailedContractError()
+        self.Unauthorized = HyperdriveFactoryUnauthorizedContractError()
+
+        self._all = [
+            self.AddressEmptyCode,
+            self.AddressInsufficientBalance,
+            self.DeployerCoordinatorAlreadyAdded,
+            self.DeployerCoordinatorIndexMismatch,
+            self.DeployerCoordinatorNotAdded,
+            self.EndIndexTooLarge,
+            self.ExpInvalidExponent,
+            self.FailedInnerCall,
+            self.InvalidCheckpointDuration,
+            self.InvalidCheckpointDurationResolution,
+            self.InvalidDeployConfig,
+            self.InvalidDeployerCoordinator,
+            self.InvalidFees,
+            self.InvalidFixedAPR,
+            self.InvalidIndexes,
+            self.InvalidMaxCheckpointDuration,
+            self.InvalidMaxFees,
+            self.InvalidMaxFixedAPR,
+            self.InvalidMaxPositionDuration,
+            self.InvalidMaxTimeStretchAPR,
+            self.InvalidMinCheckpointDuration,
+            self.InvalidMinFees,
+            self.InvalidMinFixedAPR,
+            self.InvalidMinPositionDuration,
+            self.InvalidMinTimeStretchAPR,
+            self.InvalidPositionDuration,
+            self.InvalidTimeStretchAPR,
+            self.LnInvalidInput,
+            self.SafeERC20FailedOperation,
+            self.TransferFailed,
+            self.Unauthorized,
+        ]
+
+    def decode_custom_error(self, data: str) -> tuple[Any, ...]:
+        """Decodes a custom contract error."""
+        selector = data[:10]
+        for err in self._all:
+            if err.selector == selector:
+                return err.decode_error_data(HexBytes(data[10:]))
+
+        raise ValueError(f"HyperdriveFactory does not have a selector matching {selector}")
 
 
 hyperdrivefactory_abi: ABI = cast(
@@ -4150,12 +5983,6 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "event",
-            "name": "ImplementationUpdated",
-            "inputs": [{"name": "newDeployer", "type": "address", "indexed": True, "internalType": "address"}],
-            "anonymous": False,
-        },
-        {
-            "type": "event",
             "name": "LinkerCodeHashUpdated",
             "inputs": [{"name": "newLinkerCodeHash", "type": "bytes32", "indexed": True, "internalType": "bytes32"}],
             "anonymous": False,
@@ -4311,7 +6138,7 @@ hyperdrivefactory_abi: ABI = cast(
 )
 # pylint: disable=line-too-long
 hyperdrivefactory_bytecode = HexStr(
-    "0x60806040523480156200001157600080fd5b5060405162003b5138038062003b518339810160408190526200003491620005cd565b80608001518160a0015110806200005f575080608001518160a001516200005c919062000729565b15155b156200007e57604051630219d66360e11b815260040160405180910390fd5b60a0810151600681905560c08201511080620000ae575080608001518160c00151620000ab919062000729565b15155b15620000cd5760405163f9c0959d60e01b815260040160405180910390fd5b60c0810151600781905560e08201511080620000fd575080608001518160e00151620000fa919062000729565b15155b156200011c57604051633007ad0160e11b815260040160405180910390fd5b60e0810151600881905561010082015110806200014e575080608001518161010001516200014b919062000729565b15155b156200016d5760405163cfb699cb60e01b815260040160405180910390fd5b6101008101516009556101408101516101208201511115620001a2576040516330554de160e01b815260040160405180910390fd5b610120810151600a55610140810151600b556101808101516101608201511115620001e0576040516383ebdfb760e01b815260040160405180910390fd5b610160810151600c55610180810151600d556101c081015151670de0b6b3a764000010806200021f5750670de0b6b3a7640000816101c0015160200151115b806200023b5750670de0b6b3a7640000816101c0015160400151115b80620002575750670de0b6b3a7640000816101c0015160600151115b15620002765760405163161071fb60e11b815260040160405180910390fd5b6101c081015180516012819055602082015160135560408201516014556060909101516015556101a0820151511180620002c15750806101c0015160200151816101a0015160200151115b80620002de5750806101c0015160400151816101a0015160400151115b80620002fb5750806101c0015160600151816101a0015160600151115b156200031a576040516315b05a8f60e01b815260040160405180910390fd5b6101a08101518051600e55602080820151600f556040808301516010556060928301516011558351600080546001600160a01b03199081166001600160a01b03938416179091558386015160018054831691841691909117905593850151600480549095169116179092559082015180516200039b926016920190620003d7565b506101e0810151600280546001600160a01b0319166001600160a01b03909216919091179055610200810151600355608001516005556200074c565b8280548282559060005260206000209081019282156200042f579160200282015b828111156200042f57825182546001600160a01b0319166001600160a01b03909116178255602090920191600190910190620003f8565b506200043d92915062000441565b5090565b5b808211156200043d576000815560010162000442565b634e487b7160e01b600052604160045260246000fd5b60405161022081016001600160401b038111828210171562000494576200049462000458565b60405290565b80516001600160a01b0381168114620004b257600080fd5b919050565b600082601f830112620004c957600080fd5b815160206001600160401b0380831115620004e857620004e862000458565b8260051b604051601f19603f8301168101818110848211171562000510576200051062000458565b6040529384528581018301938381019250878511156200052f57600080fd5b83870191505b84821015620005595762000549826200049a565b8352918301919083019062000535565b979650505050505050565b6000608082840312156200057757600080fd5b604051608081016001600160401b03811182821017156200059c576200059c62000458565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b600060208284031215620005e057600080fd5b81516001600160401b0380821115620005f857600080fd5b908301906102e082860312156200060e57600080fd5b620006186200046e565b62000623836200049a565b815262000633602084016200049a565b60208201526040830151828111156200064b57600080fd5b6200065987828601620004b7565b6040830152506200066d606084016200049a565b60608201526080838101519082015260a0808401519082015260c0808401519082015260e08084015190820152610100808401519082015261012080840151908201526101408084015190820152610160808401519082015261018080840151908201526101a09150620006e48683850162000564565b82820152620006f886610220850162000564565b6101c08201526200070d6102a084016200049a565b6101e08201526102c09290920151610200830152509392505050565b6000826200074757634e487b7160e01b600052601260045260246000fd5b500690565b6133f5806200075c6000396000f3fe6080604052600436106102885760003560e01c80639af252621161015a578063daac24da116100c1578063e71f34b31161007a578063e71f34b31461078d578063e83e34b1146107ad578063eb71f66c146107c2578063ec895f11146107e2578063f8c09e5914610802578063fe3d5aeb1461083257600080fd5b8063daac24da146106ec578063daf012e61461070c578063dd2b8fbb14610722578063e0e2daaa14610742578063e1b39c8014610758578063e33315551461076d57600080fd5b8063c415b95c11610113578063c415b95c14610654578063c905a4b514610674578063d0f96b921461068a578063d23d7ea3146106a0578063d2c35ce8146106b6578063d6f50169146106d657600080fd5b80639af252621461059a578063a64c90bf146105ba578063b2561263146105dc578063bc30e7a1146105fc578063bf9bd5cd1461061c578063c17225631461063257600080fd5b80636b44e6be116101fe57806383b361e8116101b757806383b361e8146104e457806385229785146105045780638e127cf5146105245780638efc09861461054457806397b0e8ce1461055a57806399623bb11461057a57600080fd5b80636b44e6be146104065780636be6d7d4146104465780636c8cc865146104665780636e95d67c1461049c5780636f6d5c4a146104b15780637324b145146104d157600080fd5b8063421caba811610250578063421caba81461032f578063488007601461034f5780634fbfee77146103785780635720c9d5146103985780635aa6e675146103ae578063628027a3146103e657600080fd5b806310d1dc3e1461028d57806311e77bfe146102af5780631978ebcf146102cf5780632885e3ac146102ef578063411c30351461030f575b600080fd5b34801561029957600080fd5b506102ad6102a8366004612b09565b610852565b005b3480156102bb57600080fd5b506102ad6102ca366004612b1b565b61093c565b3480156102db57600080fd5b506102ad6102ea366004612b1b565b610a0e565b3480156102fb57600080fd5b506102ad61030a366004612b09565b610a90565b34801561031b57600080fd5b506102ad61032a366004612b59565b610bc8565b34801561033b57600080fd5b506102ad61034a366004612b85565b610d80565b34801561035b57600080fd5b50610365600d5481565b6040519081526020015b60405180910390f35b34801561038457600080fd5b506102ad610393366004612b1b565b610e70565b3480156103a457600080fd5b5061036560065481565b3480156103ba57600080fd5b506000546103ce906001600160a01b031681565b6040516001600160a01b03909116815260200161036f565b3480156103f257600080fd5b506102ad610401366004612b1b565b610ecd565b34801561041257600080fd5b50610436610421366004612b85565b601b6020526000908152604090205460ff1681565b604051901515815260200161036f565b34801561045257600080fd5b506103ce610461366004612d87565b610f4f565b34801561047257600080fd5b506103ce610481366004612b85565b6019602052600090815260409020546001600160a01b031681565b3480156104a857600080fd5b50601a54610365565b3480156104bd57600080fd5b506102ad6104cc366004612b1b565b611041565b6103ce6104df366004612e1b565b6110e5565b3480156104f057600080fd5b506102ad6104ff366004612b1b565b611590565b34801561051057600080fd5b506102ad61051f366004612b85565b611612565b34801561053057600080fd5b506102ad61053f366004612b1b565b611686565b34801561055057600080fd5b5061036560095481565b34801561056657600080fd5b506102ad610575366004612b1b565b61172a565b34801561058657600080fd5b506002546103ce906001600160a01b031681565b3480156105a657600080fd5b506102ad6105b5366004612ed9565b6117ac565b3480156105c657600080fd5b506105cf611820565b60405161036f9190612f4e565b3480156105e857600080fd5b506102ad6105f7366004612b85565b611882565b34801561060857600080fd5b506105cf610617366004612f9b565b6118f4565b34801561062857600080fd5b50610365600b5481565b34801561063e57600080fd5b50610647611a10565b60405161036f9190612fbd565b34801561066057600080fd5b506004546103ce906001600160a01b031681565b34801561068057600080fd5b5061036560035481565b34801561069657600080fd5b5061036560055481565b3480156106ac57600080fd5b50610365600a5481565b3480156106c257600080fd5b506102ad6106d1366004612b85565b611a68565b3480156106e257600080fd5b50610365600c5481565b3480156106f857600080fd5b506103ce610707366004612b1b565b611adc565b34801561071857600080fd5b5061036560085481565b34801561072e57600080fd5b506102ad61073d366004612b85565b611b0c565b34801561074e57600080fd5b5061036560075481565b34801561076457600080fd5b50601754610365565b34801561077957600080fd5b506001546103ce906001600160a01b031681565b34801561079957600080fd5b506102ad6107a8366004612b1b565b611b80565b3480156107b957600080fd5b50610647611c24565b3480156107ce57600080fd5b506102ad6107dd366004612b1b565b611c7c565b3480156107ee57600080fd5b506105cf6107fd366004612f9b565b611d14565b34801561080e57600080fd5b5061043661081d366004612b85565b60186020526000908152604090205460ff1681565b34801561083e57600080fd5b506103ce61084d366004612b1b565b611e29565b6000546001600160a01b0316331461087c576040516282b42960e81b815260040160405180910390fd5b6012548135118061089257506013546020820135115b806108a257506014546040820135115b806108b257506015546060820135115b156108d0576040516315b05a8f60e01b815260040160405180910390fd5b8035600e819055602080830135600f81905560408085013560108190556060808701356011819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a150565b6000546001600160a01b03163314610966576040516282b42960e81b815260040160405180910390fd5b806006546109749190612ffe565b15158061098d57508060075461098a9190612ffe565b15155b806109a45750806008546109a19190612ffe565b15155b806109bb5750806009546109b89190612ffe565b15155b156109d9576040516311b75c1560e31b815260040160405180910390fd5b60058190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a90602001610931565b6000546001600160a01b03163314610a38576040516282b42960e81b815260040160405180910390fd5b600b54811115610a5b57604051631670f79760e01b815260040160405180910390fd5b600a8190556040518181527faab0ee9100629c405a4d75336e1640cc81e0608fb0d7f17389c06ee8d4f0219190602001610931565b6000546001600160a01b03163314610aba576040516282b42960e81b815260040160405180910390fd5b670de0b6b3a764000081351180610adc5750670de0b6b3a76400008160200135115b80610af25750670de0b6b3a76400008160400135115b80610b085750670de0b6b3a76400008160600135115b80610b155750600e548135105b80610b255750600f546020820135105b80610b3557506010546040820135105b80610b4557506011546060820135105b15610b635760405163161071fb60e11b815260040160405180910390fd5b80356012819055602080830135601381905560408085013560148190556060808701356015819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a790608001610931565b6000546001600160a01b03163314610bf2576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03821660009081526018602052604090205460ff16610c2b57604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b031660178281548110610c4857610c48613012565b6000918252602090912001546001600160a01b031614610c7b57604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601860205260409020805460ff1916905560178054610cab9060019061303e565b81548110610cbb57610cbb613012565b600091825260209091200154601780546001600160a01b039092169183908110610ce757610ce7613012565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055506017805480610d2657610d26613051565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6000546001600160a01b03163314610daa576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03811660009081526018602052604090205460ff1615610de45760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b038116600081815260186020526040808220805460ff1916600190811790915560178054918201815583527fc624b66cc0138b8fabc209247f72d758e1cf3343756d543badbf24212bed8c150180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6000546001600160a01b03163314610e9a576040516282b42960e81b815260040160405180910390fd5b600381905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6000546001600160a01b03163314610ef7576040516282b42960e81b815260040160405180910390fd5b600c54811015610f1a57604051630a35539d60e41b815260040160405180910390fd5b600d8190556040518181527fa9e7961bb3342715dbecc208087a6a9df8986d524b3a0a829fd90f5a2f5ba53e90602001610931565b6001600160a01b03871660009081526018602052604081205460ff16610f8857604051636e623f0f60e01b815260040160405180910390fd5b610f93878686611e3e565b60408051336020808301919091528183018c905282518083038401815260608301938490528051910120633e61c84960e11b9092526000916001600160a01b038b1691637cc3909291610ff0918c908c908a908a9060640161317f565b6020604051808303816000875af115801561100f573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061103391906131be565b9a9950505050505050505050565b6000546001600160a01b0316331461106b576040516282b42960e81b815260040160405180910390fd5b60065481108061108657506005546110839082612ffe565b15155b80611092575060085481115b156110b05760405163f9c0959d60e01b815260040160405180910390fd5b60078190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f290602001610931565b6001600160a01b03881660009081526018602052604081205460ff1661111e57604051636e623f0f60e01b815260040160405180910390fd5b611129888686611e3e565b60408051336020808301919091528183018d90528251808303840181526060830193849052805191012063311fa43160e21b9092526000916001600160a01b038c169163c47e90c491611184918d908d9089906064016131db565b6020604051808303816000875af11580156111a3573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906111c791906131be565b6001600160a01b038181166000908152601960205260409081902080546001600160a01b0319168e84169081179091556001549092166101008d015251919250907f2b2f18d6a5803b503bcb3d887ccd7a77aa7e1e644a4c99effef843bf3e307157906112399084908d908d90613216565b60405180910390a2601a805460018082019092557f057c384a7d1c54f3a1b2e5e67b2617b8224fdfd1ea7234eea573a6ff665ff63e0180546001600160a01b0319166001600160a01b0384169081179091556000908152601b60205260408120805460ff191690921790915534881161134c576112b6883461303e565b60408051606081018252338152600160208201528082018890529051631df417fd60e21b81529192506001600160a01b038416916377d05ff4918b916113039183918d9190600401613247565b60206040518083038185885af1158015611321573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190611346919061328d565b50611409565b5088513490611366906001600160a01b031633308b612117565b895161137c906001600160a01b0316838a612184565b60408051606081018252338152600160208201528082018790529051631df417fd60e21b81526001600160a01b038416916377d05ff4916113c4918c918c9190600401613247565b6020604051808303816000875af11580156113e3573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611407919061328d565b505b801561147a57604051600090339083908381818185875af1925050503d8060008114611451576040519150601f19603f3d011682016040523d82523d6000602084013e611456565b606091505b5050905080611478576040516312171d8360e31b815260040160405180910390fd5b505b60005b60165481101561152057826001600160a01b0316637180c8ca601683815481106114a9576114a9613012565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b1580156114fd57600080fd5b505af1158015611511573d6000803e3d6000fd5b5050505080600101905061147d565b5060015460405163ab033ea960e01b81526001600160a01b0391821660048201529083169063ab033ea990602401600060405180830381600087803b15801561156857600080fd5b505af115801561157c573d6000803e3d6000fd5b50939e9d5050505050505050505050505050565b6000546001600160a01b031633146115ba576040516282b42960e81b815260040160405180910390fd5b600d548111156115dd57604051635a8f655760e01b815260040160405180910390fd5b600c8190556040518181527f490eb2a91746aa933c9ffe2f7939aa06498f3259139f8805f008b12c8c697a4690602001610931565b6000546001600160a01b0316331461163c576040516282b42960e81b815260040160405180910390fd5b600280546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6000546001600160a01b031633146116b0576040516282b42960e81b815260040160405180910390fd5b6005548110806116cb57506005546116c89082612ffe565b15155b806116d7575060075481115b156116f557604051630219d66360e11b815260040160405180910390fd5b60068190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b763190602001610931565b6000546001600160a01b03163314611754576040516282b42960e81b815260040160405180910390fd5b600a548110156117775760405163019cfb7b60e61b815260040160405180910390fd5b600b8190556040518181527f4fa35c11ce9a45ae882c154ecb53ab5cac52a74a5b9b0373be36deb30c78297890602001610931565b6000546001600160a01b031633146117d6576040516282b42960e81b815260040160405180910390fd5b6117e260168383612a91565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc3882826040516118149291906132a6565b60405180910390a15050565b6060601680548060200260200160405190810160405280929190818152602001828054801561187857602002820191906000526020600020905b81546001600160a01b0316815260019091019060200180831161185a575b5050505050905090565b6000546001600160a01b031633146118ac576040516282b42960e81b815260040160405180910390fd5b600080546001600160a01b0319166001600160a01b038316908117825560405190917f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab91a250565b60608183111561191757604051633b2735ab60e11b815260040160405180910390fd5b601a5482111561193a5760405163e0f7becb60e01b815260040160405180910390fd5b611944838361303e565b61194f9060016132f4565b67ffffffffffffffff81111561196757611967612ba2565b604051908082528060200260200182016040528015611990578160200160208202803683370190505b509050825b828111611a0957601a81815481106119af576119af613012565b6000918252602090912001546001600160a01b0316826119cf868461303e565b815181106119df576119df613012565b6001600160a01b039092166020928302919091019091015280611a0181613307565b915050611995565b5092915050565b611a3b6040518060800160405280600081526020016000815260200160008152602001600081525090565b5060408051608081018252600e548152600f54602082015260105491810191909152601154606082015290565b6000546001600160a01b03163314611a92576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b6000601a8281548110611af157611af1613012565b6000918252602090912001546001600160a01b031692915050565b6000546001600160a01b03163314611b36576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6000546001600160a01b03163314611baa576040516282b42960e81b815260040160405180910390fd5b600754811080611bc55750600554611bc29082612ffe565b15155b80611bd1575060095481115b15611bef57604051633007ad0160e11b815260040160405180910390fd5b60088190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f17890602001610931565b611c4f6040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526012548152601354602082015260145491810191909152601554606082015290565b6000546001600160a01b03163314611ca6576040516282b42960e81b815260040160405180910390fd5b600854811080611cc15750600554611cbe9082612ffe565b15155b15611cdf5760405163cfb699cb60e01b815260040160405180910390fd5b60098190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b90602001610931565b606081831115611d3757604051633b2735ab60e11b815260040160405180910390fd5b601754821115611d5a5760405163e0f7becb60e01b815260040160405180910390fd5b611d64838361303e565b611d6f9060016132f4565b67ffffffffffffffff811115611d8757611d87612ba2565b604051908082528060200260200182016040528015611db0578160200160208202803683370190505b509050825b828111611a095760178181548110611dcf57611dcf613012565b6000918252602090912001546001600160a01b031682611def868461303e565b81518110611dff57611dff613012565b6001600160a01b039092166020928302919091019091015280611e2181613307565b915050611db5565b600060178281548110611af157611af1613012565b6006548360c001511080611e5757506007548360c00151115b80611e7257506005548360c00151611e6f9190612ffe565b15155b15611e9057604051635428734d60e01b815260040160405180910390fd5b6008548360a001511080611ea957506009548360a00151115b80611ec657508260c001518360a00151611ec39190612ffe565b15155b15611ee45760405163253fffcf60e11b815260040160405180910390fd5b601254610140840151511180611f04575060135461014084015160200151115b80611f19575060145461014084015160400151115b80611f2e575060155461014084015160600151115b80611f405750600e5461014084015151105b80611f555750600f5461014084015160200151105b80611f6a575060105461014084015160400151105b80611f7f575060115461014084015160600151105b15611f9d57604051632d8768f960e01b815260040160405180910390fd5b60208301516001600160a01b0316151580611fbb5750604083015115155b80611fd357506101208301516001600160a01b031615155b80611feb57506101008301516001600160a01b031615155b80611ff9575060e083015115155b156120175760405163e8c02dd760e01b815260040160405180910390fd5b600a548210806120285750600b5482115b15612046576040516330554de160e01b815260040160405180910390fd5b600061206b6611c37937e0800061206585671bc16d674ec80000612214565b90612232565b600c5490915061207b9082612232565b8210806120ae57506120ab6120a2671bc16d674ec8000061209c8685612232565b90612248565b600d549061225d565b82115b156120cc576040516383ebdfb760e01b815260040160405180910390fd5b60006120dc838660a00151612272565b6002546001600160a01b0390811660208801526003546040880152600454166101208701523061010087015260e09095019490945250505050565b6040516001600160a01b03848116602483015283811660448301526064820183905261217e9186918216906323b872dd906084015b604051602081830303815290604052915060e01b6020820180516001600160e01b038381831617835250505050612359565b50505050565b604080516001600160a01b038416602482015260448082018490528251808303909101815260649091019091526020810180516001600160e01b031663095ea7b360e01b1790526121d584826123c6565b61217e576040516001600160a01b0384811660248301526000604483015261220a91869182169063095ea7b39060640161214c565b61217e8482612359565b600061222983670de0b6b3a76400008461246e565b90505b92915050565b60008183116122415781612229565b5090919050565b60006122298383670de0b6b3a764000061246e565b600081831161226c5782612229565b50919050565b6000806122a3612294612286866064613320565b66a5bbed86c5a00090612248565b6748cd4072281e000090612214565b90506122b7670de0b6b3a764000082612214565b9050826301e13380036122cb57905061222c565b60006123006122df86866301e1338061246e565b6122f190670de0b6b3a76400006132f4565b670de0b6b3a764000090612214565b905060006123206122f1670de0b6b3a764000080896301e133808861248c565b905061234f61232e82612523565b61233790613337565b61234084612523565b61234990613337565b90612214565b9695505050505050565b600061236e6001600160a01b0384168361273f565b905080516000141580156123935750808060200190518101906123919190613353565b155b156123c157604051635274afe760e01b81526001600160a01b03841660048201526024015b60405180910390fd5b505050565b6000806000846001600160a01b0316846040516123e39190613375565b6000604051808303816000865af19150503d8060008114612420576040519150601f19603f3d011682016040523d82523d6000602084013e612425565b606091505b509150915081801561244f57508051158061244f57508080602001905181019061244f9190613353565b801561246557506000856001600160a01b03163b115b95945050505050565b600082600019048411830215820261248557600080fd5b5091020490565b60008061249d846301e13380612214565b905060006124ab8683612248565b6124bd90670de0b6b3a76400006132f4565b9050670de0b6b3a764000081106124f1576124ea6124e3670de0b6b3a764000086612214565b829061274d565b9050612509565b6125066124e3670de0b6b3a7640000866127a4565b90505b6125178161209c898b612248565b98975050505050505050565b60008082136125455760405163e61b497560e01b815260040160405180910390fd5b5060606fffffffffffffffffffffffffffffffff821160071b82811c67ffffffffffffffff1060061b1782811c63ffffffff1060051b1782811c61ffff1060041b1782811c60ff10600390811b90911783811c600f1060021b1783811c909110600190811b90911783811c90911017609f81810383019390931b90921c6c465772b2bbbb5f824b15207a3081018102821d6d0388eaa27412d5aca026815d636e018102821d6d0df99ac502031bf953eff472fdcc018102821d6d13cdffb29d51d99322bdff5f2211018102821d6d0a0f742023def783a307a986912e018102821d6d01920d8043ca89b5239253284e42018102821d6c0b7a86d7375468fac667a0a527016c29508e458543d8aa4df2abee7882018202831d6d0139601a2efabe717e604cbb4894018202831d6d02247f7a7b6594320649aa03aba1018202831d6c8c3f38e95a6b1ff2ab1c3b343619018202831d6d02384773bdf1ac5676facced60901901820290921d6cb9a025d814b29c212b8b1a07cd190102780a09507084cc699bb0e71ea869ffffffffffffffffffffffff190105711340daa0d5f769dba1915cef59f0815a550602605f19919091017d0267a36c0c95b3975ab3ee5b203a7614a3f75373f047d803ae7b6687f2b302017d57115e47018c7177eebf7cd370a3356a1b7863008a5ae8028c72b88642840160ae1d90565b6060612229838360006127b9565b6000816000036127665750670de0b6b3a764000061222c565b826000036127765750600061222c565b81600061278285612523565b9050818102612799670de0b6b3a764000082613391565b905061234f81612858565b600061222983670de0b6b3a7640000846129e3565b6060814710156127de5760405163cd78605960e01b81523060048201526024016123b8565b600080856001600160a01b031684866040516127fa9190613375565b60006040518083038185875af1925050503d8060008114612837576040519150601f19603f3d011682016040523d82523d6000602084013e61283c565b606091505b509150915061284c868383612a09565b925050505b9392505050565b6000680248ce36a70cb26b3e19821361287357506000919050565b680755bf798b4a1bf1e5821261289c576040516373a2d6b160e01b815260040160405180910390fd5b6503782dace9d9604e83901b059150600060606bb17217f7d1cf79abc9e3b39884821b056001605f1b01901d6bb17217f7d1cf79abc9e3b39881029093036c240c330e9fb2d9cbaf0fd5aafb1981018102606090811d6d0277594991cfc85f6e2461837cd9018202811d6d1a521255e34f6a5061b25ef1c9c319018202811d6db1bbb201f443cf962f1a1d3db4a5018202811d6e02c72388d9f74f51a9331fed693f1419018202811d6e05180bb14799ab47a8a8cb2a527d57016d02d16720577bd19bf614176fe9ea6c10fe68e7fd37d0007b713f765084018402831d9081019084016d01d3967ed30fc4f89c02bab5708119010290911d6e0587f503bb6ea29d25fcb740196450019091026d360d7aeea093263ecc6e0ecb291760621b010574029d9dc38563c32e5c2f6dc192ee70ef65f9978af30260c3939093039290921c92915050565b60008260001904841183021582026129fa57600080fd5b50910281810615159190040190565b606082612a1e57612a1982612a65565b612851565b8151158015612a3557506001600160a01b0384163b155b15612a5e57604051639996b31560e01b81526001600160a01b03851660048201526024016123b8565b5080612851565b805115612a755780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b50565b828054828255906000526020600020908101928215612ae4579160200282015b82811115612ae45781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190612ab1565b50612af0929150612af4565b5090565b5b80821115612af05760008155600101612af5565b60006080828403121561226c57600080fd5b600060208284031215612b2d57600080fd5b5035919050565b6001600160a01b0381168114612a8e57600080fd5b8035612b5481612b34565b919050565b60008060408385031215612b6c57600080fd5b8235612b7781612b34565b946020939093013593505050565b600060208284031215612b9757600080fd5b813561285181612b34565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff81118282101715612bdc57612bdc612ba2565b60405290565b600060808284031215612bf457600080fd5b6040516080810181811067ffffffffffffffff82111715612c1757612c17612ba2565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b60006101c08284031215612c5b57600080fd5b612c63612bb8565b9050612c6e82612b49565b8152612c7c60208301612b49565b602082015260408201356040820152606082013560608201526080820135608082015260a082013560a082015260c082013560c082015260e082013560e0820152610100612ccb818401612b49565b90820152610120612cdd838201612b49565b90820152610140612cf084848301612be2565b9082015292915050565b600082601f830112612d0b57600080fd5b813567ffffffffffffffff80821115612d2657612d26612ba2565b604051601f8301601f19908116603f01168101908282118183101715612d4e57612d4e612ba2565b81604052838152866020858801011115612d6757600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000806000806000806000806102a0898b031215612da457600080fd5b883597506020890135612db681612b34565b9650612dc58a60408b01612c48565b955061020089013567ffffffffffffffff811115612de257600080fd5b612dee8b828c01612cfa565b989b979a509598610220810135976102408201359750610260820135965061028090910135945092505050565b60008060008060008060008060006102c08a8c031215612e3a57600080fd5b8935985060208a0135612e4c81612b34565b9750612e5b8b60408c01612c48565b96506102008a013567ffffffffffffffff80821115612e7957600080fd5b612e858d838e01612cfa565b97506102208c013596506102408c013595506102608c013594506102808c0135915080821115612eb457600080fd5b50612ec18c828d01612cfa565b9250506102a08a013590509295985092959850929598565b60008060208385031215612eec57600080fd5b823567ffffffffffffffff80821115612f0457600080fd5b818501915085601f830112612f1857600080fd5b813581811115612f2757600080fd5b8660208260051b8501011115612f3c57600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015612f8f5783516001600160a01b031683529284019291840191600101612f6a565b50909695505050505050565b60008060408385031215612fae57600080fd5b50508035926020909101359150565b815181526020808301519082015260408083015190820152606080830151908201526080810161222c565b634e487b7160e01b600052601260045260246000fd5b60008261300d5761300d612fe8565b500690565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b8181038181111561222c5761222c613028565b634e487b7160e01b600052603160045260246000fd5b80516001600160a01b03168252602081015161308e60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e0830152610100808201516130e6828501826001600160a01b03169052565b5050610120818101516001600160a01b031690830152610140808201518051828501526020810151610160850152604081015161018085015260608101516101a085015261217e565b60005b8381101561314a578181015183820152602001613132565b50506000910152565b6000815180845261316b81602086016020860161312f565b601f01601f19169290920160200192915050565b60006102408783526131946020840188613067565b806101e08401526131a781840187613153565b610200840195909552505061022001529392505050565b6000602082840312156131d057600080fd5b815161285181612b34565b60006102208683526131f06020840187613067565b806101e084015261320381840186613153565b9150508261020083015295945050505050565b6001600160a01b038416815260006102006132346020840186613067565b806101e084015261234f81840185613153565b8381528260208201526060604082015260018060a01b03825116606082015260208201511515608082015260006040830151606060a084015261234f60c0840182613153565b60006020828403121561329f57600080fd5b5051919050565b60208082528181018390526000908460408401835b868110156132e95782356132ce81612b34565b6001600160a01b0316825291830191908301906001016132bb565b509695505050505050565b8082018082111561222c5761222c613028565b60006001820161331957613319613028565b5060010190565b808202811582820484141761222c5761222c613028565b6000600160ff1b820161334c5761334c613028565b5060000390565b60006020828403121561336557600080fd5b8151801515811461285157600080fd5b6000825161338781846020870161312f565b9190910192915050565b6000826133a0576133a0612fe8565b600160ff1b8214600019841416156133ba576133ba613028565b50059056fea26469706673582212209a74d523c3b23b3d6f969aeaad0f5de8d46f588b8641420541f111714e9c0edb64736f6c63430008140033"
+    "0x60806040523480156200001157600080fd5b5060405162003b5138038062003b518339810160408190526200003491620005cd565b80608001518160a0015110806200005f575080608001518160a001516200005c919062000729565b15155b156200007e57604051630219d66360e11b815260040160405180910390fd5b60a0810151600681905560c08201511080620000ae575080608001518160c00151620000ab919062000729565b15155b15620000cd5760405163f9c0959d60e01b815260040160405180910390fd5b60c0810151600781905560e08201511080620000fd575080608001518160e00151620000fa919062000729565b15155b156200011c57604051633007ad0160e11b815260040160405180910390fd5b60e0810151600881905561010082015110806200014e575080608001518161010001516200014b919062000729565b15155b156200016d5760405163cfb699cb60e01b815260040160405180910390fd5b6101008101516009556101408101516101208201511115620001a2576040516330554de160e01b815260040160405180910390fd5b610120810151600a55610140810151600b556101808101516101608201511115620001e0576040516383ebdfb760e01b815260040160405180910390fd5b610160810151600c55610180810151600d556101c081015151670de0b6b3a764000010806200021f5750670de0b6b3a7640000816101c0015160200151115b806200023b5750670de0b6b3a7640000816101c0015160400151115b80620002575750670de0b6b3a7640000816101c0015160600151115b15620002765760405163161071fb60e11b815260040160405180910390fd5b6101c081015180516012819055602082015160135560408201516014556060909101516015556101a0820151511180620002c15750806101c0015160200151816101a0015160200151115b80620002de5750806101c0015160400151816101a0015160400151115b80620002fb5750806101c0015160600151816101a0015160600151115b156200031a576040516315b05a8f60e01b815260040160405180910390fd5b6101a08101518051600e55602080820151600f556040808301516010556060928301516011558351600080546001600160a01b03199081166001600160a01b03938416179091558386015160018054831691841691909117905593850151600480549095169116179092559082015180516200039b926016920190620003d7565b506101e0810151600280546001600160a01b0319166001600160a01b03909216919091179055610200810151600355608001516005556200074c565b8280548282559060005260206000209081019282156200042f579160200282015b828111156200042f57825182546001600160a01b0319166001600160a01b03909116178255602090920191600190910190620003f8565b506200043d92915062000441565b5090565b5b808211156200043d576000815560010162000442565b634e487b7160e01b600052604160045260246000fd5b60405161022081016001600160401b038111828210171562000494576200049462000458565b60405290565b80516001600160a01b0381168114620004b257600080fd5b919050565b600082601f830112620004c957600080fd5b815160206001600160401b0380831115620004e857620004e862000458565b8260051b604051601f19603f8301168101818110848211171562000510576200051062000458565b6040529384528581018301938381019250878511156200052f57600080fd5b83870191505b84821015620005595762000549826200049a565b8352918301919083019062000535565b979650505050505050565b6000608082840312156200057757600080fd5b604051608081016001600160401b03811182821017156200059c576200059c62000458565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b600060208284031215620005e057600080fd5b81516001600160401b0380821115620005f857600080fd5b908301906102e082860312156200060e57600080fd5b620006186200046e565b62000623836200049a565b815262000633602084016200049a565b60208201526040830151828111156200064b57600080fd5b6200065987828601620004b7565b6040830152506200066d606084016200049a565b60608201526080838101519082015260a0808401519082015260c0808401519082015260e08084015190820152610100808401519082015261012080840151908201526101408084015190820152610160808401519082015261018080840151908201526101a09150620006e48683850162000564565b82820152620006f886610220850162000564565b6101c08201526200070d6102a084016200049a565b6101e08201526102c09290920151610200830152509392505050565b6000826200074757634e487b7160e01b600052601260045260246000fd5b500690565b6133f5806200075c6000396000f3fe6080604052600436106102885760003560e01c80639af252621161015a578063daac24da116100c1578063e71f34b31161007a578063e71f34b31461078d578063e83e34b1146107ad578063eb71f66c146107c2578063ec895f11146107e2578063f8c09e5914610802578063fe3d5aeb1461083257600080fd5b8063daac24da146106ec578063daf012e61461070c578063dd2b8fbb14610722578063e0e2daaa14610742578063e1b39c8014610758578063e33315551461076d57600080fd5b8063c415b95c11610113578063c415b95c14610654578063c905a4b514610674578063d0f96b921461068a578063d23d7ea3146106a0578063d2c35ce8146106b6578063d6f50169146106d657600080fd5b80639af252621461059a578063a64c90bf146105ba578063b2561263146105dc578063bc30e7a1146105fc578063bf9bd5cd1461061c578063c17225631461063257600080fd5b80636b44e6be116101fe57806383b361e8116101b757806383b361e8146104e457806385229785146105045780638e127cf5146105245780638efc09861461054457806397b0e8ce1461055a57806399623bb11461057a57600080fd5b80636b44e6be146104065780636be6d7d4146104465780636c8cc865146104665780636e95d67c1461049c5780636f6d5c4a146104b15780637324b145146104d157600080fd5b8063421caba811610250578063421caba81461032f578063488007601461034f5780634fbfee77146103785780635720c9d5146103985780635aa6e675146103ae578063628027a3146103e657600080fd5b806310d1dc3e1461028d57806311e77bfe146102af5780631978ebcf146102cf5780632885e3ac146102ef578063411c30351461030f575b600080fd5b34801561029957600080fd5b506102ad6102a8366004612b09565b610852565b005b3480156102bb57600080fd5b506102ad6102ca366004612b1b565b61093c565b3480156102db57600080fd5b506102ad6102ea366004612b1b565b610a0e565b3480156102fb57600080fd5b506102ad61030a366004612b09565b610a90565b34801561031b57600080fd5b506102ad61032a366004612b59565b610bc8565b34801561033b57600080fd5b506102ad61034a366004612b85565b610d80565b34801561035b57600080fd5b50610365600d5481565b6040519081526020015b60405180910390f35b34801561038457600080fd5b506102ad610393366004612b1b565b610e70565b3480156103a457600080fd5b5061036560065481565b3480156103ba57600080fd5b506000546103ce906001600160a01b031681565b6040516001600160a01b03909116815260200161036f565b3480156103f257600080fd5b506102ad610401366004612b1b565b610ecd565b34801561041257600080fd5b50610436610421366004612b85565b601b6020526000908152604090205460ff1681565b604051901515815260200161036f565b34801561045257600080fd5b506103ce610461366004612d87565b610f4f565b34801561047257600080fd5b506103ce610481366004612b85565b6019602052600090815260409020546001600160a01b031681565b3480156104a857600080fd5b50601a54610365565b3480156104bd57600080fd5b506102ad6104cc366004612b1b565b611041565b6103ce6104df366004612e1b565b6110e5565b3480156104f057600080fd5b506102ad6104ff366004612b1b565b611590565b34801561051057600080fd5b506102ad61051f366004612b85565b611612565b34801561053057600080fd5b506102ad61053f366004612b1b565b611686565b34801561055057600080fd5b5061036560095481565b34801561056657600080fd5b506102ad610575366004612b1b565b61172a565b34801561058657600080fd5b506002546103ce906001600160a01b031681565b3480156105a657600080fd5b506102ad6105b5366004612ed9565b6117ac565b3480156105c657600080fd5b506105cf611820565b60405161036f9190612f4e565b3480156105e857600080fd5b506102ad6105f7366004612b85565b611882565b34801561060857600080fd5b506105cf610617366004612f9b565b6118f4565b34801561062857600080fd5b50610365600b5481565b34801561063e57600080fd5b50610647611a10565b60405161036f9190612fbd565b34801561066057600080fd5b506004546103ce906001600160a01b031681565b34801561068057600080fd5b5061036560035481565b34801561069657600080fd5b5061036560055481565b3480156106ac57600080fd5b50610365600a5481565b3480156106c257600080fd5b506102ad6106d1366004612b85565b611a68565b3480156106e257600080fd5b50610365600c5481565b3480156106f857600080fd5b506103ce610707366004612b1b565b611adc565b34801561071857600080fd5b5061036560085481565b34801561072e57600080fd5b506102ad61073d366004612b85565b611b0c565b34801561074e57600080fd5b5061036560075481565b34801561076457600080fd5b50601754610365565b34801561077957600080fd5b506001546103ce906001600160a01b031681565b34801561079957600080fd5b506102ad6107a8366004612b1b565b611b80565b3480156107b957600080fd5b50610647611c24565b3480156107ce57600080fd5b506102ad6107dd366004612b1b565b611c7c565b3480156107ee57600080fd5b506105cf6107fd366004612f9b565b611d14565b34801561080e57600080fd5b5061043661081d366004612b85565b60186020526000908152604090205460ff1681565b34801561083e57600080fd5b506103ce61084d366004612b1b565b611e29565b6000546001600160a01b0316331461087c576040516282b42960e81b815260040160405180910390fd5b6012548135118061089257506013546020820135115b806108a257506014546040820135115b806108b257506015546060820135115b156108d0576040516315b05a8f60e01b815260040160405180910390fd5b8035600e819055602080830135600f81905560408085013560108190556060808701356011819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a150565b6000546001600160a01b03163314610966576040516282b42960e81b815260040160405180910390fd5b806006546109749190612ffe565b15158061098d57508060075461098a9190612ffe565b15155b806109a45750806008546109a19190612ffe565b15155b806109bb5750806009546109b89190612ffe565b15155b156109d9576040516311b75c1560e31b815260040160405180910390fd5b60058190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a90602001610931565b6000546001600160a01b03163314610a38576040516282b42960e81b815260040160405180910390fd5b600b54811115610a5b57604051631670f79760e01b815260040160405180910390fd5b600a8190556040518181527faab0ee9100629c405a4d75336e1640cc81e0608fb0d7f17389c06ee8d4f0219190602001610931565b6000546001600160a01b03163314610aba576040516282b42960e81b815260040160405180910390fd5b670de0b6b3a764000081351180610adc5750670de0b6b3a76400008160200135115b80610af25750670de0b6b3a76400008160400135115b80610b085750670de0b6b3a76400008160600135115b80610b155750600e548135105b80610b255750600f546020820135105b80610b3557506010546040820135105b80610b4557506011546060820135105b15610b635760405163161071fb60e11b815260040160405180910390fd5b80356012819055602080830135601381905560408085013560148190556060808701356015819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a790608001610931565b6000546001600160a01b03163314610bf2576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03821660009081526018602052604090205460ff16610c2b57604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b031660178281548110610c4857610c48613012565b6000918252602090912001546001600160a01b031614610c7b57604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601860205260409020805460ff1916905560178054610cab9060019061303e565b81548110610cbb57610cbb613012565b600091825260209091200154601780546001600160a01b039092169183908110610ce757610ce7613012565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055506017805480610d2657610d26613051565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6000546001600160a01b03163314610daa576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03811660009081526018602052604090205460ff1615610de45760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b038116600081815260186020526040808220805460ff1916600190811790915560178054918201815583527fc624b66cc0138b8fabc209247f72d758e1cf3343756d543badbf24212bed8c150180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6000546001600160a01b03163314610e9a576040516282b42960e81b815260040160405180910390fd5b600381905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6000546001600160a01b03163314610ef7576040516282b42960e81b815260040160405180910390fd5b600c54811015610f1a57604051630a35539d60e41b815260040160405180910390fd5b600d8190556040518181527fa9e7961bb3342715dbecc208087a6a9df8986d524b3a0a829fd90f5a2f5ba53e90602001610931565b6001600160a01b03871660009081526018602052604081205460ff16610f8857604051636e623f0f60e01b815260040160405180910390fd5b610f93878686611e3e565b60408051336020808301919091528183018c905282518083038401815260608301938490528051910120633e61c84960e11b9092526000916001600160a01b038b1691637cc3909291610ff0918c908c908a908a9060640161317f565b6020604051808303816000875af115801561100f573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061103391906131be565b9a9950505050505050505050565b6000546001600160a01b0316331461106b576040516282b42960e81b815260040160405180910390fd5b60065481108061108657506005546110839082612ffe565b15155b80611092575060085481115b156110b05760405163f9c0959d60e01b815260040160405180910390fd5b60078190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f290602001610931565b6001600160a01b03881660009081526018602052604081205460ff1661111e57604051636e623f0f60e01b815260040160405180910390fd5b611129888686611e3e565b60408051336020808301919091528183018d90528251808303840181526060830193849052805191012063311fa43160e21b9092526000916001600160a01b038c169163c47e90c491611184918d908d9089906064016131db565b6020604051808303816000875af11580156111a3573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906111c791906131be565b6001600160a01b038181166000908152601960205260409081902080546001600160a01b0319168e84169081179091556001549092166101008d015251919250907f2b2f18d6a5803b503bcb3d887ccd7a77aa7e1e644a4c99effef843bf3e307157906112399084908d908d90613216565b60405180910390a2601a805460018082019092557f057c384a7d1c54f3a1b2e5e67b2617b8224fdfd1ea7234eea573a6ff665ff63e0180546001600160a01b0319166001600160a01b0384169081179091556000908152601b60205260408120805460ff191690921790915534881161134c576112b6883461303e565b60408051606081018252338152600160208201528082018890529051631df417fd60e21b81529192506001600160a01b038416916377d05ff4918b916113039183918d9190600401613247565b60206040518083038185885af1158015611321573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190611346919061328d565b50611409565b5088513490611366906001600160a01b031633308b612117565b895161137c906001600160a01b0316838a612184565b60408051606081018252338152600160208201528082018790529051631df417fd60e21b81526001600160a01b038416916377d05ff4916113c4918c918c9190600401613247565b6020604051808303816000875af11580156113e3573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611407919061328d565b505b801561147a57604051600090339083908381818185875af1925050503d8060008114611451576040519150601f19603f3d011682016040523d82523d6000602084013e611456565b606091505b5050905080611478576040516312171d8360e31b815260040160405180910390fd5b505b60005b60165481101561152057826001600160a01b0316637180c8ca601683815481106114a9576114a9613012565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b1580156114fd57600080fd5b505af1158015611511573d6000803e3d6000fd5b5050505080600101905061147d565b5060015460405163ab033ea960e01b81526001600160a01b0391821660048201529083169063ab033ea990602401600060405180830381600087803b15801561156857600080fd5b505af115801561157c573d6000803e3d6000fd5b50939e9d5050505050505050505050505050565b6000546001600160a01b031633146115ba576040516282b42960e81b815260040160405180910390fd5b600d548111156115dd57604051635a8f655760e01b815260040160405180910390fd5b600c8190556040518181527f490eb2a91746aa933c9ffe2f7939aa06498f3259139f8805f008b12c8c697a4690602001610931565b6000546001600160a01b0316331461163c576040516282b42960e81b815260040160405180910390fd5b600280546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6000546001600160a01b031633146116b0576040516282b42960e81b815260040160405180910390fd5b6005548110806116cb57506005546116c89082612ffe565b15155b806116d7575060075481115b156116f557604051630219d66360e11b815260040160405180910390fd5b60068190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b763190602001610931565b6000546001600160a01b03163314611754576040516282b42960e81b815260040160405180910390fd5b600a548110156117775760405163019cfb7b60e61b815260040160405180910390fd5b600b8190556040518181527f4fa35c11ce9a45ae882c154ecb53ab5cac52a74a5b9b0373be36deb30c78297890602001610931565b6000546001600160a01b031633146117d6576040516282b42960e81b815260040160405180910390fd5b6117e260168383612a91565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc3882826040516118149291906132a6565b60405180910390a15050565b6060601680548060200260200160405190810160405280929190818152602001828054801561187857602002820191906000526020600020905b81546001600160a01b0316815260019091019060200180831161185a575b5050505050905090565b6000546001600160a01b031633146118ac576040516282b42960e81b815260040160405180910390fd5b600080546001600160a01b0319166001600160a01b038316908117825560405190917f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab91a250565b60608183111561191757604051633b2735ab60e11b815260040160405180910390fd5b601a5482111561193a5760405163e0f7becb60e01b815260040160405180910390fd5b611944838361303e565b61194f9060016132f4565b67ffffffffffffffff81111561196757611967612ba2565b604051908082528060200260200182016040528015611990578160200160208202803683370190505b509050825b828111611a0957601a81815481106119af576119af613012565b6000918252602090912001546001600160a01b0316826119cf868461303e565b815181106119df576119df613012565b6001600160a01b039092166020928302919091019091015280611a0181613307565b915050611995565b5092915050565b611a3b6040518060800160405280600081526020016000815260200160008152602001600081525090565b5060408051608081018252600e548152600f54602082015260105491810191909152601154606082015290565b6000546001600160a01b03163314611a92576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b6000601a8281548110611af157611af1613012565b6000918252602090912001546001600160a01b031692915050565b6000546001600160a01b03163314611b36576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6000546001600160a01b03163314611baa576040516282b42960e81b815260040160405180910390fd5b600754811080611bc55750600554611bc29082612ffe565b15155b80611bd1575060095481115b15611bef57604051633007ad0160e11b815260040160405180910390fd5b60088190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f17890602001610931565b611c4f6040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526012548152601354602082015260145491810191909152601554606082015290565b6000546001600160a01b03163314611ca6576040516282b42960e81b815260040160405180910390fd5b600854811080611cc15750600554611cbe9082612ffe565b15155b15611cdf5760405163cfb699cb60e01b815260040160405180910390fd5b60098190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b90602001610931565b606081831115611d3757604051633b2735ab60e11b815260040160405180910390fd5b601754821115611d5a5760405163e0f7becb60e01b815260040160405180910390fd5b611d64838361303e565b611d6f9060016132f4565b67ffffffffffffffff811115611d8757611d87612ba2565b604051908082528060200260200182016040528015611db0578160200160208202803683370190505b509050825b828111611a095760178181548110611dcf57611dcf613012565b6000918252602090912001546001600160a01b031682611def868461303e565b81518110611dff57611dff613012565b6001600160a01b039092166020928302919091019091015280611e2181613307565b915050611db5565b600060178281548110611af157611af1613012565b6006548360c001511080611e5757506007548360c00151115b80611e7257506005548360c00151611e6f9190612ffe565b15155b15611e9057604051635428734d60e01b815260040160405180910390fd5b6008548360a001511080611ea957506009548360a00151115b80611ec657508260c001518360a00151611ec39190612ffe565b15155b15611ee45760405163253fffcf60e11b815260040160405180910390fd5b601254610140840151511180611f04575060135461014084015160200151115b80611f19575060145461014084015160400151115b80611f2e575060155461014084015160600151115b80611f405750600e5461014084015151105b80611f555750600f5461014084015160200151105b80611f6a575060105461014084015160400151105b80611f7f575060115461014084015160600151105b15611f9d57604051632d8768f960e01b815260040160405180910390fd5b60208301516001600160a01b0316151580611fbb5750604083015115155b80611fd357506101208301516001600160a01b031615155b80611feb57506101008301516001600160a01b031615155b80611ff9575060e083015115155b156120175760405163e8c02dd760e01b815260040160405180910390fd5b600a548210806120285750600b5482115b15612046576040516330554de160e01b815260040160405180910390fd5b600061206b6611c37937e0800061206585671bc16d674ec80000612214565b90612232565b600c5490915061207b9082612232565b8210806120ae57506120ab6120a2671bc16d674ec8000061209c8685612232565b90612248565b600d549061225d565b82115b156120cc576040516383ebdfb760e01b815260040160405180910390fd5b60006120dc838660a00151612272565b6002546001600160a01b0390811660208801526003546040880152600454166101208701523061010087015260e09095019490945250505050565b6040516001600160a01b03848116602483015283811660448301526064820183905261217e9186918216906323b872dd906084015b604051602081830303815290604052915060e01b6020820180516001600160e01b038381831617835250505050612359565b50505050565b604080516001600160a01b038416602482015260448082018490528251808303909101815260649091019091526020810180516001600160e01b031663095ea7b360e01b1790526121d584826123c6565b61217e576040516001600160a01b0384811660248301526000604483015261220a91869182169063095ea7b39060640161214c565b61217e8482612359565b600061222983670de0b6b3a76400008461246e565b90505b92915050565b60008183116122415781612229565b5090919050565b60006122298383670de0b6b3a764000061246e565b600081831161226c5782612229565b50919050565b6000806122a3612294612286866064613320565b66a5bbed86c5a00090612248565b6748cd4072281e000090612214565b90506122b7670de0b6b3a764000082612214565b9050826301e13380036122cb57905061222c565b60006123006122df86866301e1338061246e565b6122f190670de0b6b3a76400006132f4565b670de0b6b3a764000090612214565b905060006123206122f1670de0b6b3a764000080896301e133808861248c565b905061234f61232e82612523565b61233790613337565b61234084612523565b61234990613337565b90612214565b9695505050505050565b600061236e6001600160a01b0384168361273f565b905080516000141580156123935750808060200190518101906123919190613353565b155b156123c157604051635274afe760e01b81526001600160a01b03841660048201526024015b60405180910390fd5b505050565b6000806000846001600160a01b0316846040516123e39190613375565b6000604051808303816000865af19150503d8060008114612420576040519150601f19603f3d011682016040523d82523d6000602084013e612425565b606091505b509150915081801561244f57508051158061244f57508080602001905181019061244f9190613353565b801561246557506000856001600160a01b03163b115b95945050505050565b600082600019048411830215820261248557600080fd5b5091020490565b60008061249d846301e13380612214565b905060006124ab8683612248565b6124bd90670de0b6b3a76400006132f4565b9050670de0b6b3a764000081106124f1576124ea6124e3670de0b6b3a764000086612214565b829061274d565b9050612509565b6125066124e3670de0b6b3a7640000866127a4565b90505b6125178161209c898b612248565b98975050505050505050565b60008082136125455760405163e61b497560e01b815260040160405180910390fd5b5060606fffffffffffffffffffffffffffffffff821160071b82811c67ffffffffffffffff1060061b1782811c63ffffffff1060051b1782811c61ffff1060041b1782811c60ff10600390811b90911783811c600f1060021b1783811c909110600190811b90911783811c90911017609f81810383019390931b90921c6c465772b2bbbb5f824b15207a3081018102821d6d0388eaa27412d5aca026815d636e018102821d6d0df99ac502031bf953eff472fdcc018102821d6d13cdffb29d51d99322bdff5f2211018102821d6d0a0f742023def783a307a986912e018102821d6d01920d8043ca89b5239253284e42018102821d6c0b7a86d7375468fac667a0a527016c29508e458543d8aa4df2abee7882018202831d6d0139601a2efabe717e604cbb4894018202831d6d02247f7a7b6594320649aa03aba1018202831d6c8c3f38e95a6b1ff2ab1c3b343619018202831d6d02384773bdf1ac5676facced60901901820290921d6cb9a025d814b29c212b8b1a07cd190102780a09507084cc699bb0e71ea869ffffffffffffffffffffffff190105711340daa0d5f769dba1915cef59f0815a550602605f19919091017d0267a36c0c95b3975ab3ee5b203a7614a3f75373f047d803ae7b6687f2b302017d57115e47018c7177eebf7cd370a3356a1b7863008a5ae8028c72b88642840160ae1d90565b6060612229838360006127b9565b6000816000036127665750670de0b6b3a764000061222c565b826000036127765750600061222c565b81600061278285612523565b9050818102612799670de0b6b3a764000082613391565b905061234f81612858565b600061222983670de0b6b3a7640000846129e3565b6060814710156127de5760405163cd78605960e01b81523060048201526024016123b8565b600080856001600160a01b031684866040516127fa9190613375565b60006040518083038185875af1925050503d8060008114612837576040519150601f19603f3d011682016040523d82523d6000602084013e61283c565b606091505b509150915061284c868383612a09565b925050505b9392505050565b6000680248ce36a70cb26b3e19821361287357506000919050565b680755bf798b4a1bf1e5821261289c576040516373a2d6b160e01b815260040160405180910390fd5b6503782dace9d9604e83901b059150600060606bb17217f7d1cf79abc9e3b39884821b056001605f1b01901d6bb17217f7d1cf79abc9e3b39881029093036c240c330e9fb2d9cbaf0fd5aafb1981018102606090811d6d0277594991cfc85f6e2461837cd9018202811d6d1a521255e34f6a5061b25ef1c9c319018202811d6db1bbb201f443cf962f1a1d3db4a5018202811d6e02c72388d9f74f51a9331fed693f1419018202811d6e05180bb14799ab47a8a8cb2a527d57016d02d16720577bd19bf614176fe9ea6c10fe68e7fd37d0007b713f765084018402831d9081019084016d01d3967ed30fc4f89c02bab5708119010290911d6e0587f503bb6ea29d25fcb740196450019091026d360d7aeea093263ecc6e0ecb291760621b010574029d9dc38563c32e5c2f6dc192ee70ef65f9978af30260c3939093039290921c92915050565b60008260001904841183021582026129fa57600080fd5b50910281810615159190040190565b606082612a1e57612a1982612a65565b612851565b8151158015612a3557506001600160a01b0384163b155b15612a5e57604051639996b31560e01b81526001600160a01b03851660048201526024016123b8565b5080612851565b805115612a755780518082602001fd5b604051630a12f52160e11b815260040160405180910390fd5b50565b828054828255906000526020600020908101928215612ae4579160200282015b82811115612ae45781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190612ab1565b50612af0929150612af4565b5090565b5b80821115612af05760008155600101612af5565b60006080828403121561226c57600080fd5b600060208284031215612b2d57600080fd5b5035919050565b6001600160a01b0381168114612a8e57600080fd5b8035612b5481612b34565b919050565b60008060408385031215612b6c57600080fd5b8235612b7781612b34565b946020939093013593505050565b600060208284031215612b9757600080fd5b813561285181612b34565b634e487b7160e01b600052604160045260246000fd5b604051610160810167ffffffffffffffff81118282101715612bdc57612bdc612ba2565b60405290565b600060808284031215612bf457600080fd5b6040516080810181811067ffffffffffffffff82111715612c1757612c17612ba2565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b60006101c08284031215612c5b57600080fd5b612c63612bb8565b9050612c6e82612b49565b8152612c7c60208301612b49565b602082015260408201356040820152606082013560608201526080820135608082015260a082013560a082015260c082013560c082015260e082013560e0820152610100612ccb818401612b49565b90820152610120612cdd838201612b49565b90820152610140612cf084848301612be2565b9082015292915050565b600082601f830112612d0b57600080fd5b813567ffffffffffffffff80821115612d2657612d26612ba2565b604051601f8301601f19908116603f01168101908282118183101715612d4e57612d4e612ba2565b81604052838152866020858801011115612d6757600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000806000806000806000806102a0898b031215612da457600080fd5b883597506020890135612db681612b34565b9650612dc58a60408b01612c48565b955061020089013567ffffffffffffffff811115612de257600080fd5b612dee8b828c01612cfa565b989b979a509598610220810135976102408201359750610260820135965061028090910135945092505050565b60008060008060008060008060006102c08a8c031215612e3a57600080fd5b8935985060208a0135612e4c81612b34565b9750612e5b8b60408c01612c48565b96506102008a013567ffffffffffffffff80821115612e7957600080fd5b612e858d838e01612cfa565b97506102208c013596506102408c013595506102608c013594506102808c0135915080821115612eb457600080fd5b50612ec18c828d01612cfa565b9250506102a08a013590509295985092959850929598565b60008060208385031215612eec57600080fd5b823567ffffffffffffffff80821115612f0457600080fd5b818501915085601f830112612f1857600080fd5b813581811115612f2757600080fd5b8660208260051b8501011115612f3c57600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015612f8f5783516001600160a01b031683529284019291840191600101612f6a565b50909695505050505050565b60008060408385031215612fae57600080fd5b50508035926020909101359150565b815181526020808301519082015260408083015190820152606080830151908201526080810161222c565b634e487b7160e01b600052601260045260246000fd5b60008261300d5761300d612fe8565b500690565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b8181038181111561222c5761222c613028565b634e487b7160e01b600052603160045260246000fd5b80516001600160a01b03168252602081015161308e60208401826001600160a01b03169052565b5060408101516040830152606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e0830152610100808201516130e6828501826001600160a01b03169052565b5050610120818101516001600160a01b031690830152610140808201518051828501526020810151610160850152604081015161018085015260608101516101a085015261217e565b60005b8381101561314a578181015183820152602001613132565b50506000910152565b6000815180845261316b81602086016020860161312f565b601f01601f19169290920160200192915050565b60006102408783526131946020840188613067565b806101e08401526131a781840187613153565b610200840195909552505061022001529392505050565b6000602082840312156131d057600080fd5b815161285181612b34565b60006102208683526131f06020840187613067565b806101e084015261320381840186613153565b9150508261020083015295945050505050565b6001600160a01b038416815260006102006132346020840186613067565b806101e084015261234f81840185613153565b8381528260208201526060604082015260018060a01b03825116606082015260208201511515608082015260006040830151606060a084015261234f60c0840182613153565b60006020828403121561329f57600080fd5b5051919050565b60208082528181018390526000908460408401835b868110156132e95782356132ce81612b34565b6001600160a01b0316825291830191908301906001016132bb565b509695505050505050565b8082018082111561222c5761222c613028565b60006001820161331957613319613028565b5060010190565b808202811582820484141761222c5761222c613028565b6000600160ff1b820161334c5761334c613028565b5060000390565b60006020828403121561336557600080fd5b8151801515811461285157600080fd5b6000825161338781846020870161312f565b9190910192915050565b6000826133a0576133a0612fe8565b600160ff1b8214600019841416156133ba576133ba613028565b50059056fea26469706673582212206d6352d599950b848dbf528d8a8c2e0d6bab33570fbd0ab7508f8b09c1a6b69964736f6c63430008140033"
 )
 
 
@@ -4327,11 +6154,14 @@ class HyperdriveFactoryContract(Contract):
             super().__init__(address=address)
             self.functions = HyperdriveFactoryContractFunctions(hyperdrivefactory_abi, self.w3, address)  # type: ignore
             self.events = HyperdriveFactoryContractEvents(hyperdrivefactory_abi, self.w3, address)  # type: ignore
+            self.errors = HyperdriveFactoryContractErrors()
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
 
     events: HyperdriveFactoryContractEvents
+
+    errors: HyperdriveFactoryContractErrors = HyperdriveFactoryContractErrors()
 
     functions: HyperdriveFactoryContractFunctions
 
@@ -4421,5 +6251,6 @@ class HyperdriveFactoryContract(Contract):
         """
         contract = super().factory(w3, class_name, **kwargs)
         contract.functions = HyperdriveFactoryContractFunctions(hyperdrivefactory_abi, w3, None)
+        contract.errors = HyperdriveFactoryContractErrors()
 
         return contract
