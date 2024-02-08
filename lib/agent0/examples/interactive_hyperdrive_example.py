@@ -94,7 +94,9 @@ remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.wa
 # %%
 # Get data from database under the hood
 pool_config = interactive_hyperdrive.get_pool_config()
-pool_state = interactive_hyperdrive.get_pool_state()
+# The underlying data is in Decimal format, which is lossless. We don't care about precision
+# here, and pandas need a numerical float for plotting, so we coerce decimals to floats here
+pool_state = interactive_hyperdrive.get_pool_state(coerce_float=True)
 # TODO checkpoint info doesn't play nice with advancing time.
 # This is because we don't create checkpoints when we advance time.
 checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
@@ -102,7 +104,7 @@ checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
 current_wallet = interactive_hyperdrive.get_current_wallet()
 ticker = interactive_hyperdrive.get_ticker()
 wallet_positions = interactive_hyperdrive.get_wallet_positions()
-total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time()
+total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time(coerce_float=True)
 
 # %%
 print(pool_state)
