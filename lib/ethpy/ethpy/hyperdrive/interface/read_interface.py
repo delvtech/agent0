@@ -123,7 +123,7 @@ class HyperdriveReadInterface:
             address=web3.to_checksum_address(self.yield_address)
         )
         self.hyperdrive_factory_contract: HyperdriveFactoryContract = HyperdriveFactoryContract.factory(w3=self.web3)(
-            web3.to_checksum_address(self.addresses.hyperdrive_factory)
+            web3.to_checksum_address(self.addresses.factory)
         )
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
