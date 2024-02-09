@@ -101,7 +101,9 @@ def fuzz_long_short_maturity_values(
 
     # Open some trades
     logging.info("Open random trades...")
-    trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=False)
+    trade_events = execute_random_trades(
+        num_trades, chain, rng, interactive_hyperdrive, advance_time=False, percent_max=FixedPoint("1")
+    )
 
     # Ensure all trades open are within the same checkpoint
     trade_maturity_times = []

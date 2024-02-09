@@ -20,6 +20,7 @@ def execute_random_trades(
     rng: Generator,
     interactive_hyperdrive: InteractiveHyperdrive,
     advance_time: bool = False,
+    percent_max: FixedPoint = FixedPoint("0.75"),
 ) -> list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]]:
     """Conduct some trades specified by the trade list.
     If advance time is true, the sum of all time passed between all trades will be between 0 and the position duration.
@@ -38,6 +39,8 @@ def execute_random_trades(
         If True, advance time a random amount between 0 and the position duration after each trade.
         Defaults to False, which follows the anvil settings.
         Typically this advances one block and 12 seconds between each trade.
+    percent_max: FixedPoint, optional
+        A percentage of the max trade to use for the upper bound for the trade, defaults to FixedPoint("0.75").
 
     Returns
     -------
@@ -61,7 +64,7 @@ def execute_random_trades(
     # Do the trades
     trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]] = []
     for trade_index, trade_type in enumerate([rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]):
-        trade_amount = _get_open_trade_amount(trade_type, rng, interactive_hyperdrive)
+        trade_amount = _get_open_trade_amount(trade_type, rng, interactive_hyperdrive, percent_max=percent_max)
         # the short trade amount is technically bonds, but we know that will be less than the required base
         agent = interactive_hyperdrive.init_agent(base=trade_amount, eth=FixedPoint(100))
         trade_event = _execute_trade(trade_type, trade_amount, agent)
