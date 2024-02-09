@@ -120,10 +120,12 @@ class SimpleHyperdriveEnv(gym.Env):
         # This binary action space with a position state variable results in one of the 4 following trades:
         # - If the current position is short and the agent's action is to long, the environment will
         #     close the short position and open a long position. The current position is then set to long.
-        # - If the current position is long and the agent's action is to long, this is noop (i.e., hold long position)
+        # - If the current position is long and the agent's action is to long, this is noop
+        #     (i.e., hold long position)
         # - If the current position is long and the agent's action is to short, the environment will
-        #   close the long position and open a short position. The current position is then set to short.
-        # - If the current position is short and the agent's action is to short, this is noop (i.e., hold short position)
+        #     close the long position and open a short position. The current position is then set to short.
+        # - If the current position is short and the agent's action is to short, this is noop
+        #     (i.e., hold short position)
         self.action_space = spaces.Discrete(len(Actions))
 
         # The space of observations from the environment
