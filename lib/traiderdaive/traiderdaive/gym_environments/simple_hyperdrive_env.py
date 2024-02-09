@@ -22,18 +22,18 @@ warnings.filterwarnings("ignore")
 class Actions(Enum):
     """The actions that can be taken in the environment. These actions map directly to what the RL bot outputs."""
 
-    SELL = 0
-    BUY = 1
+    SHORT = 0
+    LONG = 1
 
 
-class Positions(Enum):
-    """The positions that the agent can hold. These positions are one step behind an action.
+class CurrentPosition(Enum):
+    """The positions that the agent holds. These positions are one step behind an action.
 
     For example:
-    - If the action is to buy and the current position is a short, then the trader will close their
+    - If the action is to long and the current position is a short, then the trader will close their
     short position (if it exists) and open a long position, and swap the current position to Long.
 
-    - If the action is to sell and the current position is a long, then the trader will close their
+    - If the action is to short and the current position is a long, then the trader will close their
     long position (if it exists) and open a short position, and swap the current position to Short.
 
     - Otherwise, take no action
@@ -50,7 +50,7 @@ class Positions(Enum):
         Positions
             The other position
         """
-        return Positions.SHORT if self == Positions.LONG else Positions.LONG
+        return CurrentPosition.SHORT if self == CurrentPosition.LONG else CurrentPosition.LONG
 
 
 # TODO there's lots of things here that can be abstracted to share code between this and full_hyperdrive_env
@@ -115,15 +115,15 @@ class SimpleHyperdriveEnv(gym.Env):
 
         self.gym_config = gym_config
 
-        # This action space encompasses buy and sell of bonds based on the current taken position
+        # This action space encompasses longing and shorting bonds based on the current taken position
         # Following https://github.com/AminHP/gym-anytrading/tree/master
         # This binary action space with a position state variable results in one of the 4 following trades:
-        # - If the current position is short and the agent's action is to buy, the environment will
+        # - If the current position is short and the agent's action is to long, the environment will
         #     close the short position and open a long position. The current position is then set to long.
-        # - If the current position is long and the agent's action is to buy, this is noop (i.e., hold long position)
-        # - If the current position is long and the agent's action is to sell, the environment will
+        # - If the current position is long and the agent's action is to long, this is noop (i.e., hold long position)
+        # - If the current position is long and the agent's action is to short, the environment will
         #   close the long position and open a short position. The current position is then set to short.
-        # - If the current position is short and the agent's action is to sell, this is noop (i.e., hold short position)
+        # - If the current position is short and the agent's action is to short, this is noop (i.e., hold short position)
         self.action_space = spaces.Discrete(len(Actions))
 
         # The space of observations from the environment
@@ -168,7 +168,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # })
 
         # episode variables
-        self._position = None
+        self._current_position = None
         self._open_position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
         # The amount of base lost/gained in one step
@@ -209,7 +209,7 @@ class SimpleHyperdriveEnv(gym.Env):
         self.chain.load_snapshot()
 
         # Reset internal member variables
-        self._position = None
+        self._current_position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
         self._base_delta = 0.0
         self._step_count = 0
@@ -230,13 +230,13 @@ class SimpleHyperdriveEnv(gym.Env):
         bool
             Whether the agent reaches the terminal state due to a failed trade.
         """
-        assert self._position is not None
+        assert self._current_position is not None
         terminated = False
 
         agent_wallet = self.rl_bot.wallet
 
-        self._position = self._position.opposite()
-        if self._position == Positions.LONG:
+        self._current_position = self._current_position.opposite()
+        if self._current_position == CurrentPosition.LONG:
             # Close short position (if exists), open long
             if len(agent_wallet.shorts) > 0:
                 # Sanity check, only one short open
@@ -262,7 +262,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 # Terminate if error
                 terminated = True
 
-        elif self._position == Positions.SHORT:
+        elif self._current_position == CurrentPosition.SHORT:
             # Close long position (if exists), open short
             if len(agent_wallet.longs) > 0:
                 # Sanity check, only one long open
@@ -330,11 +330,11 @@ class SimpleHyperdriveEnv(gym.Env):
                 continue
 
         # Initial condition, ensure first trade always goes through
-        if self._position is None:
-            if action == Actions.BUY.value:
-                self._position = Positions.SHORT
-            elif action == Actions.SELL.value:
-                self._position = Positions.LONG
+        if self._current_position is None:
+            if action == Actions.LONG.value:
+                self._current_position = CurrentPosition.SHORT
+            elif action == Actions.SHORT.value:
+                self._current_position = CurrentPosition.LONG
             else:
                 raise ValueError
 
@@ -343,8 +343,8 @@ class SimpleHyperdriveEnv(gym.Env):
         self._base_delta = 0.0
 
         trade = False
-        if (action == Actions.BUY.value and self._position == Positions.SHORT) or (
-            action == Actions.SELL.value and self._position == Positions.LONG
+        if (action == Actions.LONG.value and self._current_position == CurrentPosition.SHORT) or (
+            action == Actions.SHORT.value and self._current_position == CurrentPosition.LONG
         ):
             trade = True
 
