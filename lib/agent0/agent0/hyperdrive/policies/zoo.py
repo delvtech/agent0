@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from .arbitrage import Arbitrage
 from .deterministic import Deterministic
 from .lpandarb import LPandArb
 from .random import Random
@@ -16,7 +15,6 @@ class PolicyZoo(NamedTuple):
     """All policies in agent0."""
 
     random = Random
-    arbitrage = Arbitrage
     smart_long = SmartLong
     lp_and_arb = LPandArb
     deterministic = Deterministic

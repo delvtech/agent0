@@ -407,6 +407,17 @@ def _deploy_and_initialize_hyperdrive_pool(
     deployment_id = bytes(28) + bytes.fromhex("deadbeef")
     salt = bytes(28) + bytes.fromhex("deadbabe")
 
+    min_checkpoint_duration = factory_contract.functions.minCheckpointDuration().call()
+    max_checkpoint_duration = factory_contract.functions.maxCheckpointDuration().call()
+    if (
+        pool_deploy_config.checkpointDuration < min_checkpoint_duration
+        or pool_deploy_config.checkpointDuration > max_checkpoint_duration
+    ):
+        raise ValueError(
+            f"{pool_deploy_config.checkpointDuration=} must be between "
+            f"{min_checkpoint_duration=} and {max_checkpoint_duration=}"
+        )
+
     # There are 5 contracts to deploy, we call deployTarget on all of them
     for target_index in range(5):
         deploy_target_function = factory_contract.functions.deployTarget(

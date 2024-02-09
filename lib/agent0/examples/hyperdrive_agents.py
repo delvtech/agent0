@@ -42,19 +42,6 @@ env_config = EnvironmentConfig(
 
 agent_config: list[AgentConfig] = [
     AgentConfig(
-        policy=PolicyZoo.arbitrage,
-        number_of_agents=0,
-        # Fixed budgets
-        base_budget_wei=BASE_BUDGET_PER_BOT,
-        eth_budget_wei=ETH_BUDGET_PER_BOT,
-        policy_config=PolicyZoo.arbitrage.Config(
-            slippage_tolerance=SLIPPAGE_TOLERANCE,  # No slippage tolerance for arb bot
-            trade_amount=FixedPoint(10),  # Open 10 base or short 10 bonds
-            high_fixed_rate_thresh=FixedPoint(0.1),  # Upper fixed rate threshold
-            low_fixed_rate_thresh=FixedPoint(0.02),  # Lower fixed rate threshold
-        ),
-    ),
-    AgentConfig(
         policy=PolicyZoo.random,
         number_of_agents=0,
         # Fixed budget
