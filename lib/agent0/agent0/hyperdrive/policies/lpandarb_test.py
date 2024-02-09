@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
+from typing import NamedTuple
 
 import pytest
 from fixedpointmath import FixedPoint
@@ -13,6 +14,8 @@ from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from agent0.hyperdrive.policies import PolicyZoo
+from ethpy.hyperdrive.interface.read_interface import HyperdriveReadInterface
+from ethpy.hyperdrive.state import PoolState
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
@@ -321,10 +324,105 @@ def test_reduce_short(interactive_hyperdrive: InteractiveHyperdrive, arbitrage_a
     logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
 
+Deltas = NamedTuple("Deltas", [("base", FixedPoint), ("bonds", FixedPoint), ("shares", FixedPoint)])
+TradeDeltas = NamedTuple("TradeDeltas", [("user", Deltas), ("pool", Deltas), ("fee", Deltas), ("governance", Deltas)])
+
+def predict_long(hyperdrive_interface: HyperdriveReadInterface, pool_state: PoolState|None = None, base:FixedPoint|None=None, bonds:FixedPoint|None=None, verbose: bool = False) -> TradeDeltas:
+    if pool_state is None:
+        pool_state = deepcopy(hyperdrive_interface.current_pool_state)
+    spot_price = hyperdrive_interface.calc_spot_price(pool_state)
+    price_discount = FixedPoint(1) - spot_price
+    curve_fee = pool_state.pool_config.fees.curve
+    governance_fee = pool_state.pool_config.fees.governance_lp
+    share_price = hyperdrive_interface.current_pool_state.pool_info.share_price
+    bonds_needed = bonds
+    base_needed: FixedPoint|None = None
+    if base is not None and bonds is None:
+        base_needed = base
+    elif bonds is not None and base is None:
+        # we need to calculate base_needed
+        bonds_needed = bonds
+        shares_needed = hyperdrive_interface.calc_shares_in_given_bonds_out_down(bonds_needed)
+        shares_needed /= (FixedPoint(1) - price_discount * curve_fee * (FixedPoint(1) - governance_fee))
+        base_needed = shares_needed * share_price
+    else:
+        raise ValueError("predict_long(): Need to specify either bonds or base, but not both.")
+    # continue with common logic, now that we have base_needed
+    assert base_needed is not None
+    bonds_after_fees = hyperdrive_interface.calc_open_long(base_needed)
+    if verbose:
+        logging.info("predict_long(): bonds_after_fees is %s", bonds_after_fees)
+    bond_fees = bonds_after_fees * price_discount * curve_fee
+    bond_fees_to_pool = bond_fees * (FixedPoint(1) - governance_fee)
+    bond_fees_to_gov = bond_fees * governance_fee
+    bonds_before_fees = bonds_after_fees + bond_fees_to_pool + bond_fees_to_gov
+    if verbose:
+        logging.info("predict_long(): bonds_before_fees is %s", bonds_before_fees)
+        logging.info("predict_long(): bond_fees_to_pool is %s", bond_fees_to_pool)
+        logging.info("predict_long(): bond_fees_to_gov is %s", bond_fees_to_gov)
+    predicted_delta_bonds = -bonds_after_fees - bond_fees_to_gov
+    predicted_delta_base = base_needed * (FixedPoint(1) - price_discount * curve_fee * governance_fee)
+    predicted_delta_shares = predicted_delta_bonds / share_price
+    if verbose:
+        logging.info("predict_long(): predicted delta bonds is %s", predicted_delta_bonds)
+        logging.info("predict_long(): predicted delta shares is %s", predicted_delta_shares)
+    return TradeDeltas(
+        user=Deltas(bonds=bonds_after_fees,base=base_needed,shares=base_needed/share_price),
+        pool=Deltas(base=predicted_delta_base, shares=predicted_delta_shares, bonds=predicted_delta_bonds),
+        fee=Deltas(bonds=bond_fees_to_pool, base=bond_fees_to_pool*spot_price, shares=bond_fees_to_pool*spot_price*share_price),
+        governance=Deltas(bonds=bond_fees_to_gov, base=bond_fees_to_gov*spot_price, shares=bond_fees_to_gov*spot_price*share_price),
+        )
+
+@pytest.mark.anvil
+def test_share_price_quincunx(chain: Chain):
+    """Share price when compounding by quincunx."""
+    # setup
+    initial_variable_rate=FixedPoint("0.045")
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        initial_variable_rate=initial_variable_rate,
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
+    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.share_price}")
+    NUMBER_OF_COMPOUNDING_PERIODS = 5
+    for _ in range(NUMBER_OF_COMPOUNDING_PERIODS):
+        chain.advance_time(YEAR_IN_SECONDS//NUMBER_OF_COMPOUNDING_PERIODS, create_checkpoints=False)
+        arbitrage_andy.open_long(FixedPoint(20))
+    ending_share_price = hyperdrive_interface.current_pool_state.pool_info.share_price
+    logging.info(f"Ending   share price: {ending_share_price}")
+    assert ending_share_price-1>initial_variable_rate, f"Expected ending share price to be {float(initial_variable_rate)}, got {float(ending_share_price-1)}, difference of {float(ending_share_price-1-initial_variable_rate)} ({float((ending_share_price-1-initial_variable_rate)/initial_variable_rate):.2f}%)"
+
+@pytest.mark.anvil
+def test_share_price_annus(chain: Chain):
+    """Share price when compounding by annus."""
+    # setup
+    initial_variable_rate=FixedPoint("0.045")
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0),
+        curve_fee=FixedPoint(0),
+        flat_fee=FixedPoint(0),
+        initial_variable_rate=initial_variable_rate,
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
+    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.share_price}")
+    chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+    ending_share_price = hyperdrive_interface.current_pool_state.pool_info.share_price
+    logging.info(f"Ending   share price: {ending_share_price}")
+    assert ending_share_price-1==initial_variable_rate
 
 @pytest.mark.anvil
 def test_predict_open_long(chain: Chain):
-    """Predict oucome of an open long."""
+    """Predict outcome of an open long."""
+    # setup
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
@@ -332,44 +430,50 @@ def test_predict_open_long(chain: Chain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    hyperdrive_interface = interactive_hyperdrive.hyperdrive_interface
     arbitrage_andy = create_arbitrage_andy(interactive_hyperdrive=interactive_hyperdrive)
-    pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
+    pool_state = deepcopy(hyperdrive_interface.current_pool_state)
     starting_bond_reserves = pool_state.pool_info.bond_reserves
     starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = interactive_hyperdrive.interface.calc_spot_price(pool_state)
+    stating_price = hyperdrive_interface.calc_spot_price(pool_state)
     logging.info("starting bond_reserves is %s (%s)", starting_bond_reserves, type(starting_bond_reserves).__name__)
     logging.info("starting share_reserves is %s (%s)", starting_share_reserves, type(starting_share_reserves).__name__)
     logging.info("starting spot price is %s (%s)", stating_price, type(stating_price).__name__)
 
-    # start with bonds_needed, convert to base_needed
+    # convert from bonds to base, if needed
     bonds_needed = FixedPoint(100_000)
-    spot_price = interactive_hyperdrive.interface.calc_spot_price(pool_state)
+    spot_price = hyperdrive_interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
-    shares_needed = interactive_hyperdrive.interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-    vault_share_price = interactive_hyperdrive.interface.current_pool_state.pool_info.vault_share_price
-    base_needed = shares_needed * vault_share_price
+    shares_needed = hyperdrive_interface.calc_shares_in_given_bonds_out_down(bonds_needed)
+    shares_needed /= (FixedPoint(1) - price_discount * curve_fee * (FixedPoint(1) - governance_fee))
+    share_price = hyperdrive_interface.current_pool_state.pool_info.share_price
+    base_needed = shares_needed * share_price
     # use rust to predict trade outcome
-    bonds_after_fees = interactive_hyperdrive.interface.calc_open_long(base_needed)
-    logging.info("bonds_after_fees is %s", bonds_after_fees)
+    bonds_after_fees = hyperdrive_interface.calc_open_long(base_needed)
+    delta = predict_long(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    assert bonds_after_fees == delta.user.bonds
+    delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed, verbose=True)
+    assert bonds_after_fees == delta.user.bonds
     bond_fees = bonds_after_fees * price_discount * curve_fee
     bond_fees_to_pool = bond_fees * (FixedPoint(1) - governance_fee)
+    assert bond_fees_to_pool == delta.fee.bonds
     bond_fees_to_gov = bond_fees * governance_fee
+    assert bond_fees_to_gov == delta.governance.bonds
     bonds_before_fees = bonds_after_fees + bond_fees_to_pool + bond_fees_to_gov
-    logging.info("bonds_before_fees is %s", bonds_before_fees)
     logging.info("bond_fees_to_pool is %s", bond_fees_to_pool)
     logging.info("bond_fees_to_gov is %s", bond_fees_to_gov)
 
     predicted_delta_bonds = -bonds_after_fees - bond_fees_to_gov
-    predicted_delta_shares = (
-        base_needed / vault_share_price * (FixedPoint(1) - price_discount * curve_fee * governance_fee)
-    )
+    assert predicted_delta_bonds == delta.pool.bonds
+    predicted_delta_shares = base_needed / share_price * (FixedPoint(1) - price_discount * curve_fee * governance_fee)
+    assert predicted_delta_shares == delta.pool.shares
     logging.info("predicted delta bonds is %s", predicted_delta_bonds)
     logging.info("predicted delta shares is %s", predicted_delta_shares)
 
     # measure pool before trade
-    pool_state_before = deepcopy(interactive_hyperdrive.interface.current_pool_state)
+    pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
     # do the trade
@@ -386,7 +490,7 @@ def test_predict_open_long(chain: Chain):
         actual_event_base,
     )
     # measure pool after trade
-    pool_state_after = deepcopy(interactive_hyperdrive.interface.current_pool_state)
+    pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
     pool_shares_after = pool_state_after.pool_info.share_reserves
     logging.info("pool bonds after is %s", pool_bonds_after)
