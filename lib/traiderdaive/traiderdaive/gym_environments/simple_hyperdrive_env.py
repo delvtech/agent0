@@ -80,7 +80,7 @@ class SimpleHyperdriveEnv(gym.Env):
         random_bot_budget: FixedPoint = FixedPoint(1_000_000)
 
     # Defines allowed render modes and fps
-    metadata = metadata = {"render_modes": ["human"], "render_fps": 4}
+    metadata = {"render_modes": ["human"], "render_fps": 4}
 
     def __init__(
         self,
