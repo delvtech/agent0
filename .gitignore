@@ -33,6 +33,9 @@ __pypackages__/
 # Interactive snapshot state directory
 .interactive_state
 
+# Default traiderdaive model output
+.traider_models
+
 # build directories
 .build
 *.egg-info

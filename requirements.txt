@@ -2,6 +2,7 @@
 -e lib/agent0[base]
 -e lib/chainsync[base]
 -e lib/ethpy[base]
+-e lib/traiderdaive[base]
 -e lib/hypertypes[base]
 --find-links="packages/hyperdrivepy"
 hyperdrivepy
