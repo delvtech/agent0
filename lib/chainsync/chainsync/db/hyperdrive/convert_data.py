@@ -456,16 +456,35 @@ def _build_hyperdrive_transaction_object(
     input_params = transaction_dict["input"]["params"]
     out_dict["input_params_contribution"] = _convert_scaled_value_to_decimal(input_params.get("_contribution", None))
     out_dict["input_params_apr"] = _convert_scaled_value_to_decimal(input_params.get("_apr", None))
-    out_dict["input_params_destination"] = input_params.get("_destination", None)
-    out_dict["input_params_as_underlying"] = input_params.get("_asUnderlying", None)
-    out_dict["input_params_base_amount"] = _convert_scaled_value_to_decimal(input_params.get("_baseAmount", None))
+    out_dict["input_params_amount"] = _convert_scaled_value_to_decimal(input_params.get("_amount", None))
     out_dict["input_params_min_output"] = _convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
+    out_dict["input_params_min_vault_share_price"] = _convert_scaled_value_to_decimal(
+        input_params.get("_minVaultSharePrice", None)
+    )
     out_dict["input_params_bond_amount"] = _convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
     out_dict["input_params_max_deposit"] = _convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
     out_dict["input_params_maturity_time"] = input_params.get("_maturityTime", None)
+    out_dict["input_params_min_lp_share_price"] = _convert_scaled_value_to_decimal(
+        input_params.get("_minLpSharePrice", None)
+    )
     out_dict["input_params_min_apr"] = _convert_scaled_value_to_decimal(input_params.get("_minApr", None))
     out_dict["input_params_max_apr"] = _convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
-    out_dict["input_params_shares"] = _convert_scaled_value_to_decimal(input_params.get("_shares", None))
+    out_dict["input_params_lp_shares"] = _convert_scaled_value_to_decimal(input_params.get("_lpShares", None))
+    out_dict["input_params_min_output_per_share"] = _convert_scaled_value_to_decimal(
+        input_params.get("_minOutputPerShare", None)
+    )
+    out_dict["input_params_withdrawal_shares"] = _convert_scaled_value_to_decimal(
+        input_params.get("_withdrawalShares", None)
+    )
+
+    input_params_options = input_params.get("_options", None)
+    if input_params_options is not None:
+        out_dict["input_params_options_destination"] = input_params_options.get("_destination", None)
+        out_dict["input_params_options_as_base"] = input_params_options.get("_asBase", None)
+    else:
+        out_dict["input_params_options_destination"] = None
+        out_dict["input_params_options_as_base"] = None
+
     # Assuming one TransferSingle per transfer
     # TODO Fix this below eventually
     # There can be two transfer singles

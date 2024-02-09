@@ -5,6 +5,7 @@ https://github.com/delvtech/pypechain """
 
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
@@ -122,15 +123,6 @@ HyperdriveGovernanceUpdated = ABIEvent(
     type="event",
 )
 
-ImplementationUpdated = ABIEvent(
-    anonymous=False,
-    inputs=[
-        ABIEventParams(indexed=True, name="newDeployer", type="address"),
-    ],
-    name="ImplementationUpdated",
-    type="event",
-)
-
 LinkerCodeHashUpdated = ABIEvent(
     anonymous=False,
     inputs=[
@@ -237,4 +229,247 @@ MinTimeStretchAPRUpdated = ABIEvent(
     ],
     name="MinTimeStretchAPRUpdated",
     type="event",
+)
+
+
+@dataclass
+class ErrorInfo:
+    """Custom contract error information."""
+
+    name: str
+    selector: str
+    signature: str
+    inputs: list[ErrorParams]
+
+
+@dataclass
+class ErrorParams:
+    """Parameter info for custom contract errors."""
+
+    name: str
+    solidity_type: str
+    python_type: str
+
+
+AddressEmptyCodeError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="target", python_type="str", solidity_type="address"),
+    ],
+    name="AddressEmptyCode",
+    selector="0x9996b315",
+    signature="AddressEmptyCode(address)",
+)
+
+AddressInsufficientBalanceError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="account", python_type="str", solidity_type="address"),
+    ],
+    name="AddressInsufficientBalance",
+    selector="0xcd786059",
+    signature="AddressInsufficientBalance(address)",
+)
+
+DeployerCoordinatorAlreadyAddedError = ErrorInfo(
+    inputs=[],
+    name="DeployerCoordinatorAlreadyAdded",
+    selector="0xbd34634f",
+    signature="DeployerCoordinatorAlreadyAdded()",
+)
+
+DeployerCoordinatorIndexMismatchError = ErrorInfo(
+    inputs=[],
+    name="DeployerCoordinatorIndexMismatch",
+    selector="0x3c9c032c",
+    signature="DeployerCoordinatorIndexMismatch()",
+)
+
+DeployerCoordinatorNotAddedError = ErrorInfo(
+    inputs=[],
+    name="DeployerCoordinatorNotAdded",
+    selector="0x4bf121ab",
+    signature="DeployerCoordinatorNotAdded()",
+)
+
+EndIndexTooLargeError = ErrorInfo(
+    inputs=[],
+    name="EndIndexTooLarge",
+    selector="0xe0f7becb",
+    signature="EndIndexTooLarge()",
+)
+
+ExpInvalidExponentError = ErrorInfo(
+    inputs=[],
+    name="ExpInvalidExponent",
+    selector="0x73a2d6b1",
+    signature="ExpInvalidExponent()",
+)
+
+FailedInnerCallError = ErrorInfo(
+    inputs=[],
+    name="FailedInnerCall",
+    selector="0x1425ea42",
+    signature="FailedInnerCall()",
+)
+
+InvalidCheckpointDurationError = ErrorInfo(
+    inputs=[],
+    name="InvalidCheckpointDuration",
+    selector="0x5428734d",
+    signature="InvalidCheckpointDuration()",
+)
+
+InvalidCheckpointDurationResolutionError = ErrorInfo(
+    inputs=[],
+    name="InvalidCheckpointDurationResolution",
+    selector="0x8dbae0a8",
+    signature="InvalidCheckpointDurationResolution()",
+)
+
+InvalidDeployConfigError = ErrorInfo(
+    inputs=[],
+    name="InvalidDeployConfig",
+    selector="0xe8c02dd7",
+    signature="InvalidDeployConfig()",
+)
+
+InvalidDeployerCoordinatorError = ErrorInfo(
+    inputs=[],
+    name="InvalidDeployerCoordinator",
+    selector="0x6e623f0f",
+    signature="InvalidDeployerCoordinator()",
+)
+
+InvalidFeesError = ErrorInfo(
+    inputs=[],
+    name="InvalidFees",
+    selector="0x2d8768f9",
+    signature="InvalidFees()",
+)
+
+InvalidFixedAPRError = ErrorInfo(
+    inputs=[],
+    name="InvalidFixedAPR",
+    selector="0x30554de1",
+    signature="InvalidFixedAPR()",
+)
+
+InvalidIndexesError = ErrorInfo(
+    inputs=[],
+    name="InvalidIndexes",
+    selector="0x764e6b56",
+    signature="InvalidIndexes()",
+)
+
+InvalidMaxCheckpointDurationError = ErrorInfo(
+    inputs=[],
+    name="InvalidMaxCheckpointDuration",
+    selector="0xf9c0959d",
+    signature="InvalidMaxCheckpointDuration()",
+)
+
+InvalidMaxFeesError = ErrorInfo(
+    inputs=[],
+    name="InvalidMaxFees",
+    selector="0x2c20e3f6",
+    signature="InvalidMaxFees()",
+)
+
+InvalidMaxFixedAPRError = ErrorInfo(
+    inputs=[],
+    name="InvalidMaxFixedAPR",
+    selector="0x673edec0",
+    signature="InvalidMaxFixedAPR()",
+)
+
+InvalidMaxPositionDurationError = ErrorInfo(
+    inputs=[],
+    name="InvalidMaxPositionDuration",
+    selector="0xcfb699cb",
+    signature="InvalidMaxPositionDuration()",
+)
+
+InvalidMaxTimeStretchAPRError = ErrorInfo(
+    inputs=[],
+    name="InvalidMaxTimeStretchAPR",
+    selector="0xa35539d0",
+    signature="InvalidMaxTimeStretchAPR()",
+)
+
+InvalidMinCheckpointDurationError = ErrorInfo(
+    inputs=[],
+    name="InvalidMinCheckpointDuration",
+    selector="0x0433acc6",
+    signature="InvalidMinCheckpointDuration()",
+)
+
+InvalidMinFeesError = ErrorInfo(
+    inputs=[],
+    name="InvalidMinFees",
+    selector="0x15b05a8f",
+    signature="InvalidMinFees()",
+)
+
+InvalidMinFixedAPRError = ErrorInfo(
+    inputs=[],
+    name="InvalidMinFixedAPR",
+    selector="0x1670f797",
+    signature="InvalidMinFixedAPR()",
+)
+
+InvalidMinPositionDurationError = ErrorInfo(
+    inputs=[],
+    name="InvalidMinPositionDuration",
+    selector="0x600f5a02",
+    signature="InvalidMinPositionDuration()",
+)
+
+InvalidMinTimeStretchAPRError = ErrorInfo(
+    inputs=[],
+    name="InvalidMinTimeStretchAPR",
+    selector="0x5a8f6557",
+    signature="InvalidMinTimeStretchAPR()",
+)
+
+InvalidPositionDurationError = ErrorInfo(
+    inputs=[],
+    name="InvalidPositionDuration",
+    selector="0x4a7fff9e",
+    signature="InvalidPositionDuration()",
+)
+
+InvalidTimeStretchAPRError = ErrorInfo(
+    inputs=[],
+    name="InvalidTimeStretchAPR",
+    selector="0x83ebdfb7",
+    signature="InvalidTimeStretchAPR()",
+)
+
+LnInvalidInputError = ErrorInfo(
+    inputs=[],
+    name="LnInvalidInput",
+    selector="0xe61b4975",
+    signature="LnInvalidInput()",
+)
+
+SafeERC20FailedOperationError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="token", python_type="str", solidity_type="address"),
+    ],
+    name="SafeERC20FailedOperation",
+    selector="0x5274afe7",
+    signature="SafeERC20FailedOperation(address)",
+)
+
+TransferFailedError = ErrorInfo(
+    inputs=[],
+    name="TransferFailed",
+    selector="0x90b8ec18",
+    signature="TransferFailed()",
+)
+
+UnauthorizedError = ErrorInfo(
+    inputs=[],
+    name="Unauthorized",
+    selector="0x82b42900",
+    signature="Unauthorized()",
 )

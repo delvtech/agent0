@@ -5,6 +5,7 @@ https://github.com/delvtech/pypechain """
 
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
@@ -33,3 +34,22 @@ class Deployment:
     target2: str
     target3: str
     target4: str
+
+
+@dataclass
+class ErrorInfo:
+    """Custom contract error information."""
+
+    name: str
+    selector: str
+    signature: str
+    inputs: list[ErrorParams]
+
+
+@dataclass
+class ErrorParams:
+    """Parameter info for custom contract errors."""
+
+    name: str
+    solidity_type: str
+    python_type: str

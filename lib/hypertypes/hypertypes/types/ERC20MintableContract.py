@@ -20,6 +20,10 @@ https://github.com/delvtech/pypechain"""
 # methods are overriden with specific arguments instead of generic *args, **kwargs
 # pylint: disable=arguments-differ
 
+# consumers have too many opinions on line length
+# pylint: disable=line-too-long
+
+
 from __future__ import annotations
 
 from typing import Any, Iterable, NamedTuple, Sequence, Type, cast, overload

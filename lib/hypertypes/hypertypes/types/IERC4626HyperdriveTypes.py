@@ -5,6 +5,7 @@ https://github.com/delvtech/pypechain """
 
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
@@ -16,6 +17,8 @@ https://github.com/delvtech/pypechain """
 # but it's easier to generate
 # pylint: disable=no-else-return
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from web3.types import ABIEvent, ABIEventParams
 
@@ -210,4 +213,266 @@ TransferSingle = ABIEvent(
     ],
     name="TransferSingle",
     type="event",
+)
+
+
+@dataclass
+class ErrorInfo:
+    """Custom contract error information."""
+
+    name: str
+    selector: str
+    signature: str
+    inputs: list[ErrorParams]
+
+
+@dataclass
+class ErrorParams:
+    """Parameter info for custom contract errors."""
+
+    name: str
+    solidity_type: str
+    python_type: str
+
+
+BatchInputLengthMismatchError = ErrorInfo(
+    inputs=[],
+    name="BatchInputLengthMismatch",
+    selector="0xba430d38",
+    signature="BatchInputLengthMismatch()",
+)
+
+BelowMinimumContributionError = ErrorInfo(
+    inputs=[],
+    name="BelowMinimumContribution",
+    selector="0xabed41c4",
+    signature="BelowMinimumContribution()",
+)
+
+DecreasedPresentValueWhenAddingLiquidityError = ErrorInfo(
+    inputs=[],
+    name="DecreasedPresentValueWhenAddingLiquidity",
+    selector="0x309b2a42",
+    signature="DecreasedPresentValueWhenAddingLiquidity()",
+)
+
+ExpInvalidExponentError = ErrorInfo(
+    inputs=[],
+    name="ExpInvalidExponent",
+    selector="0x73a2d6b1",
+    signature="ExpInvalidExponent()",
+)
+
+ExpiredDeadlineError = ErrorInfo(
+    inputs=[],
+    name="ExpiredDeadline",
+    selector="0xf87d9271",
+    signature="ExpiredDeadline()",
+)
+
+InsufficientBalanceError = ErrorInfo(
+    inputs=[],
+    name="InsufficientBalance",
+    selector="0xf4d678b8",
+    signature="InsufficientBalance()",
+)
+
+InsufficientLiquidityError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="reason", python_type="int", solidity_type="uint8"),
+    ],
+    name="InsufficientLiquidity",
+    selector="0x780daf16",
+    signature="InsufficientLiquidity(uint8)",
+)
+
+InvalidAprError = ErrorInfo(
+    inputs=[],
+    name="InvalidApr",
+    selector="0x76c22a22",
+    signature="InvalidApr()",
+)
+
+InvalidBaseTokenError = ErrorInfo(
+    inputs=[],
+    name="InvalidBaseToken",
+    selector="0x0e442a4a",
+    signature="InvalidBaseToken()",
+)
+
+InvalidCheckpointTimeError = ErrorInfo(
+    inputs=[],
+    name="InvalidCheckpointTime",
+    selector="0xecd29e81",
+    signature="InvalidCheckpointTime()",
+)
+
+InvalidERC20BridgeError = ErrorInfo(
+    inputs=[],
+    name="InvalidERC20Bridge",
+    selector="0x2aab8bd3",
+    signature="InvalidERC20Bridge()",
+)
+
+InvalidFeeDestinationError = ErrorInfo(
+    inputs=[],
+    name="InvalidFeeDestination",
+    selector="0x2b44eccc",
+    signature="InvalidFeeDestination()",
+)
+
+InvalidInitialVaultSharePriceError = ErrorInfo(
+    inputs=[],
+    name="InvalidInitialVaultSharePrice",
+    selector="0x094b19ad",
+    signature="InvalidInitialVaultSharePrice()",
+)
+
+InvalidShareReservesError = ErrorInfo(
+    inputs=[],
+    name="InvalidShareReserves",
+    selector="0xb0bfcdbe",
+    signature="InvalidShareReserves()",
+)
+
+InvalidSignatureError = ErrorInfo(
+    inputs=[],
+    name="InvalidSignature",
+    selector="0x8baa579f",
+    signature="InvalidSignature()",
+)
+
+InvalidTimestampError = ErrorInfo(
+    inputs=[],
+    name="InvalidTimestamp",
+    selector="0xb7d09497",
+    signature="InvalidTimestamp()",
+)
+
+LnInvalidInputError = ErrorInfo(
+    inputs=[],
+    name="LnInvalidInput",
+    selector="0xe61b4975",
+    signature="LnInvalidInput()",
+)
+
+MinimumSharePriceError = ErrorInfo(
+    inputs=[],
+    name="MinimumSharePrice",
+    selector="0x42af972b",
+    signature="MinimumSharePrice()",
+)
+
+MinimumTransactionAmountError = ErrorInfo(
+    inputs=[],
+    name="MinimumTransactionAmount",
+    selector="0x423bbb46",
+    signature="MinimumTransactionAmount()",
+)
+
+NegativePresentValueError = ErrorInfo(
+    inputs=[],
+    name="NegativePresentValue",
+    selector="0xaeeb825d",
+    signature="NegativePresentValue()",
+)
+
+NotPayableError = ErrorInfo(
+    inputs=[],
+    name="NotPayable",
+    selector="0x1574f9f3",
+    signature="NotPayable()",
+)
+
+OutputLimitError = ErrorInfo(
+    inputs=[],
+    name="OutputLimit",
+    selector="0xc9726517",
+    signature="OutputLimit()",
+)
+
+PoolAlreadyInitializedError = ErrorInfo(
+    inputs=[],
+    name="PoolAlreadyInitialized",
+    selector="0x7983c051",
+    signature="PoolAlreadyInitialized()",
+)
+
+PoolIsPausedError = ErrorInfo(
+    inputs=[],
+    name="PoolIsPaused",
+    selector="0x21081abf",
+    signature="PoolIsPaused()",
+)
+
+RestrictedZeroAddressError = ErrorInfo(
+    inputs=[],
+    name="RestrictedZeroAddress",
+    selector="0xf0dd15fd",
+    signature="RestrictedZeroAddress()",
+)
+
+ReturnDataError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="data", python_type="bytes", solidity_type="bytes"),
+    ],
+    name="ReturnData",
+    selector="0xdcc81126",
+    signature="ReturnData(bytes)",
+)
+
+SweepFailedError = ErrorInfo(
+    inputs=[],
+    name="SweepFailed",
+    selector="0x9eec2ff8",
+    signature="SweepFailed()",
+)
+
+TransferFailedError = ErrorInfo(
+    inputs=[],
+    name="TransferFailed",
+    selector="0x90b8ec18",
+    signature="TransferFailed()",
+)
+
+UnauthorizedError = ErrorInfo(
+    inputs=[],
+    name="Unauthorized",
+    selector="0x82b42900",
+    signature="Unauthorized()",
+)
+
+UnexpectedSuccessError = ErrorInfo(
+    inputs=[],
+    name="UnexpectedSuccess",
+    selector="0x8bb0a34b",
+    signature="UnexpectedSuccess()",
+)
+
+UnsafeCastToInt128Error = ErrorInfo(
+    inputs=[],
+    name="UnsafeCastToInt128",
+    selector="0xa5353be5",
+    signature="UnsafeCastToInt128()",
+)
+
+UnsafeCastToUint112Error = ErrorInfo(
+    inputs=[],
+    name="UnsafeCastToUint112",
+    selector="0x10d62a2e",
+    signature="UnsafeCastToUint112()",
+)
+
+UnsafeCastToUint128Error = ErrorInfo(
+    inputs=[],
+    name="UnsafeCastToUint128",
+    selector="0x1e15f2a2",
+    signature="UnsafeCastToUint128()",
+)
+
+UnsupportedTokenError = ErrorInfo(
+    inputs=[],
+    name="UnsupportedToken",
+    selector="0x6a172882",
+    signature="UnsupportedToken()",
 )

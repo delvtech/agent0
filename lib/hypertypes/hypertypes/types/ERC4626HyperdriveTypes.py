@@ -5,6 +5,7 @@ https://github.com/delvtech/pypechain """
 
 # super() call methods are generic, while our version adds values & types
 # pylint: disable=arguments-differ
+
 # contracts have PascalCase names
 # pylint: disable=invalid-name
 # contracts control how many attributes and arguments we have in generated code
@@ -16,6 +17,8 @@ https://github.com/delvtech/pypechain """
 # but it's easier to generate
 # pylint: disable=no-else-return
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from web3.types import ABIEvent, ABIEventParams
 
@@ -210,4 +213,79 @@ TransferSingle = ABIEvent(
     ],
     name="TransferSingle",
     type="event",
+)
+
+
+@dataclass
+class ErrorInfo:
+    """Custom contract error information."""
+
+    name: str
+    selector: str
+    signature: str
+    inputs: list[ErrorParams]
+
+
+@dataclass
+class ErrorParams:
+    """Parameter info for custom contract errors."""
+
+    name: str
+    solidity_type: str
+    python_type: str
+
+
+AddressEmptyCodeError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="target", python_type="str", solidity_type="address"),
+    ],
+    name="AddressEmptyCode",
+    selector="0x9996b315",
+    signature="AddressEmptyCode(address)",
+)
+
+AddressInsufficientBalanceError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="account", python_type="str", solidity_type="address"),
+    ],
+    name="AddressInsufficientBalance",
+    selector="0xcd786059",
+    signature="AddressInsufficientBalance(address)",
+)
+
+FailedInnerCallError = ErrorInfo(
+    inputs=[],
+    name="FailedInnerCall",
+    selector="0x1425ea42",
+    signature="FailedInnerCall()",
+)
+
+InvalidBaseTokenError = ErrorInfo(
+    inputs=[],
+    name="InvalidBaseToken",
+    selector="0x0e442a4a",
+    signature="InvalidBaseToken()",
+)
+
+ReentrancyGuardReentrantCallError = ErrorInfo(
+    inputs=[],
+    name="ReentrancyGuardReentrantCall",
+    selector="0x3ee5aeb5",
+    signature="ReentrancyGuardReentrantCall()",
+)
+
+SafeERC20FailedOperationError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="token", python_type="str", solidity_type="address"),
+    ],
+    name="SafeERC20FailedOperation",
+    selector="0x5274afe7",
+    signature="SafeERC20FailedOperation(address)",
+)
+
+UnexpectedSuccessError = ErrorInfo(
+    inputs=[],
+    name="UnexpectedSuccess",
+    selector="0x8bb0a34b",
+    signature="UnexpectedSuccess()",
 )
