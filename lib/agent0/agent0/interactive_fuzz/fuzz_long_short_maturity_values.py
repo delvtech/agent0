@@ -404,6 +404,17 @@ def invariant_check(
         exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
 
+    # Check that idle shares is always positive for solvency
+    solvency = interactive_hyperdrive.interface.get_idle_shares(pool_state.block_number)
+    if not solvency > FixedPoint(0):
+        exception_message.append(
+            f"{solvency=} is expected to be greater than 0. "
+            f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
+            f"{pool_state.pool_config.minimum_share_reserves=})."
+        )
+        exception_data["invariance_check:solvency"] = solvency
+        failed = True
+
     if failed:
         logging.critical("\n".join(exception_message))
         raise FuzzAssertionException(*exception_message, exception_data=exception_data)
