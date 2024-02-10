@@ -8,14 +8,19 @@ from decimal import Decimal
 from typing import NamedTuple
 
 import pytest
-from fixedpointmath import FixedPoint
-
-from agent0.hyperdrive.interactive.chain import Chain
-from agent0.hyperdrive.interactive import InteractiveHyperdrive
 from ethpy.hyperdrive.interface.read_interface import HyperdriveReadInterface
 from ethpy.hyperdrive.state import PoolState
+from fixedpointmath import FixedPoint
+
+from agent0.hyperdrive.interactive import InteractiveHyperdrive
+from agent0.hyperdrive.interactive.chain import Chain
 
 # pylint: disable=logging-fstring-interpolation
+# pylint: disable=too-many-locals
+# allow magic value comparison (like < 1e-16)
+# ruff: noqa: PLR2004
+# allow lots of statements
+# ruff: noqa: PLR0915
 
 YEAR_IN_SECONDS = 31_536_000
 BLOCKS_IN_YEAR = YEAR_IN_SECONDS / 12
@@ -66,6 +71,7 @@ def predict_long(
     -------
     TradeDeltas
         The predicted deltas of base, bonds, and shares.
+
     """
     if pool_state is None:
         pool_state = deepcopy(hyperdrive_interface.current_pool_state)
@@ -169,6 +175,7 @@ def predict_short(
     -------
     TradeDeltas
         The predicted deltas of base, bonds, and shares.
+
     """
     if pool_state is None:
         pool_state = deepcopy(hyperdrive_interface.current_pool_state)
@@ -251,22 +258,6 @@ def test_predict_open_long_bonds(chain: Chain):
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     pool_state = deepcopy(hyperdrive_interface.current_pool_state)
-    starting_bond_reserves = pool_state.pool_info.bond_reserves
-    starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = hyperdrive_interface.calc_spot_price(pool_state)
-    logging.info(
-        "starting bond_reserves is %s (%s)",
-        starting_bond_reserves,
-        type(starting_bond_reserves).__name__,
-    )
-    logging.info(
-        "starting share_reserves is %s (%s)",
-        starting_share_reserves,
-        type(starting_share_reserves).__name__,
-    )
-    logging.info(
-        "starting spot price is %s (%s)", stating_price, type(stating_price).__name__
-    )
 
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
@@ -315,9 +306,7 @@ def test_predict_open_long_bonds(chain: Chain):
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
-    pool_base_before = (
-        pool_shares_before * pool_state_before.pool_info.vault_share_price
-    )
+    pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
     # do the trade
     event = agent.open_long(base=base_needed)
     event = event[0] if isinstance(event, list) else event
@@ -383,22 +372,6 @@ def test_predict_open_long_base(chain: Chain):
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     pool_state = deepcopy(hyperdrive_interface.current_pool_state)
-    starting_bond_reserves = pool_state.pool_info.bond_reserves
-    starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = hyperdrive_interface.calc_spot_price(pool_state)
-    logging.info(
-        "starting bond_reserves is %s (%s)",
-        starting_bond_reserves,
-        type(starting_bond_reserves).__name__,
-    )
-    logging.info(
-        "starting share_reserves is %s (%s)",
-        starting_share_reserves,
-        type(starting_share_reserves).__name__,
-    )
-    logging.info(
-        "starting spot price is %s (%s)", stating_price, type(stating_price).__name__
-    )
 
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
@@ -506,22 +479,6 @@ def test_predict_open_short_bonds(chain: Chain):
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
-    starting_bond_reserves = pool_state.pool_info.bond_reserves
-    starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = hyperdrive_interface.calc_spot_price(pool_state)
-    logging.info(
-        "starting bond_reserves is %s (%s)",
-        starting_bond_reserves,
-        type(starting_bond_reserves).__name__,
-    )
-    logging.info(
-        "starting share_reserves is %s (%s)",
-        starting_share_reserves,
-        type(starting_share_reserves).__name__,
-    )
-    logging.info(
-        "starting spot price is %s (%s)", stating_price, type(stating_price).__name__
-    )
 
     bonds_needed = FixedPoint(100_000)
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
@@ -563,7 +520,9 @@ def test_predict_open_short_bonds(chain: Chain):
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
-    pool_base_before = pool_shares_before * stating_price
+    pool_base_before = (
+        pool_shares_before * pool_state_before.pool_info.vault_share_price
+    )
     # # do the trade
     event = agent.open_short(bonds=bonds_needed)
     event = event[0] if isinstance(event, list) else event
@@ -628,22 +587,6 @@ def test_predict_open_short_base(chain: Chain):
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
-    starting_bond_reserves = pool_state.pool_info.bond_reserves
-    starting_share_reserves = pool_state.pool_info.share_reserves
-    stating_price = hyperdrive_interface.calc_spot_price(pool_state)
-    logging.info(
-        "starting bond_reserves is %s (%s)",
-        starting_bond_reserves,
-        type(starting_bond_reserves).__name__,
-    )
-    logging.info(
-        "starting share_reserves is %s (%s)",
-        starting_share_reserves,
-        type(starting_share_reserves).__name__,
-    )
-    logging.info(
-        "starting spot price is %s (%s)", stating_price, type(stating_price).__name__
-    )
 
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
     price_discount = FixedPoint(1) - spot_price
@@ -659,8 +602,6 @@ def test_predict_open_short_base(chain: Chain):
             / hyperdrive_interface.current_pool_state.pool_info.vault_share_price
         )
     )
-    # adjust for fees
-    # bonds_needed /= (FixedPoint(1) - price_discount * curve_fee)
     logging.info("bonds_needed is %s", bonds_needed)
     # use rust to predict trade outcome
     shares_before_fees = hyperdrive_interface.calc_shares_out_given_bonds_in_down(
