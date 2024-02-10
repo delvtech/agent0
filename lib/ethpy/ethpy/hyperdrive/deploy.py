@@ -156,7 +156,7 @@ def deploy_hyperdrive_from_factory(
         deploy_account=deploy_account,
         hyperdrive_contract_addresses=HyperdriveAddresses(
             base_token=Web3.to_checksum_address(base_token_contract.address),
-            hyperdrive_factory=Web3.to_checksum_address(factory_contract.address),
+            factory=Web3.to_checksum_address(factory_contract.address),
             erc4626_hyperdrive=hyperdrive_checksum_address,
             # We don't deploy a steth hyperdrive here, so we don't set this address
             steth_hyperdrive=Web3.to_checksum_address(ADDRESS_ZERO),

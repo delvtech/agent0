@@ -19,7 +19,7 @@ class HyperdriveAddresses:
 
     base_token: Address | ChecksumAddress = attr.ib()
     erc4626_hyperdrive: Address | ChecksumAddress = attr.ib()
-    hyperdrive_factory: Address | ChecksumAddress = attr.ib()
+    factory: Address | ChecksumAddress = attr.ib()
     steth_hyperdrive: Address | ChecksumAddress = attr.ib()
 
 
