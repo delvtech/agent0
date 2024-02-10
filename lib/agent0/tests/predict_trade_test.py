@@ -11,6 +11,7 @@ import pytest
 from ethpy.hyperdrive.interface.read_interface import HyperdriveReadInterface
 from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
+from tabulate import tabulate
 
 from agent0.hyperdrive.interactive import InteractiveHyperdrive
 from agent0.hyperdrive.interactive.chain import Chain
@@ -43,6 +44,35 @@ TradeDeltas = NamedTuple(
         ("governance", Deltas),
     ],
 )
+
+def test_prediction_example(chain: Chain):
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0.1),
+        curve_fee=FixedPoint(0.01),
+        flat_fee=FixedPoint(0),
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    base_needed = FixedPoint(100)
+    delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed, verbose=True)
+    event = agent.open_long(base=base_needed)
+    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+
+    # Preparing data for tabulation
+    data = [
+        ["user"] + list([float(delta.user.base), float(delta.user.bonds), float(delta.user.shares)]),
+        ["pool"] + list([float(delta.pool.base), float(delta.pool.bonds), float(delta.pool.shares)]),
+        ["fee"] + list([float(delta.fee.base), float(delta.fee.bonds), float(delta.fee.shares)]),
+        ["governance"] + list([float(delta.governance.base), float(delta.governance.bonds), float(delta.governance.shares)]),
+    ]
+
+    # Headers for the table
+    headers = ["Entity", "Base", "Bonds", "Shares"]
+
+    # Display the table
+    print("\n", end="")
+    print(tabulate(data, headers=headers, tablefmt="grid"))
 
 
 def predict_long(
