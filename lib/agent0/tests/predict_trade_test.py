@@ -189,9 +189,9 @@ def predict_short(
     base_after_fees = shares_after_fees * share_price
     if verbose:
         logging.info("predict_short(): shares_before_fees is %s", shares_before_fees)
-        logging.info("predict_short(): shares_after_fees is %s", shares_after_fees)
-        logging.info("predict_short(): base_fees_to_pool is %s", base_fees_to_pool)
-        logging.info("predict_short(): base_fees_to_gov is %s", base_fees_to_gov)
+        logging.info("predict_short(): predicted user delta shares is%s", shares_after_fees)
+        logging.info("predict_short(): predicted fee delta base is %s", base_fees_to_pool)
+        logging.info("predict_short(): predicted governance delta base is %s", base_fees_to_gov)
     predicted_delta_bonds = bonds_needed
     predicted_delta_shares = -shares_before_fees + base_fees_to_pool
     predicted_delta_base = predicted_delta_shares * share_price
@@ -256,8 +256,6 @@ def test_predict_open_long_bonds(chain: Chain):
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
     pool_shares_after = pool_state_after.pool_info.share_reserves
     pool_base_after = pool_shares_after * pool_state_after.pool_info.vault_share_price
-    logging.info("pool bonds after is %s", pool_bonds_after)
-    logging.info("pool shares after is %s", pool_shares_after)
     actual_delta_bonds = pool_bonds_after - pool_bonds_before
     actual_delta_shares = pool_shares_after - pool_shares_before
     actual_delta_base = pool_base_after - pool_base_before
@@ -268,8 +266,7 @@ def test_predict_open_long_bonds(chain: Chain):
     # does our prediction match the input
     assert abs(Decimal(str(delta.user.base - base_needed))) < 1e-16
     # does the actual outcome match the prediction
-    user_base_after = agent.agent.wallet.balance.amount
-    actual_delta_user_base = user_base_before - user_base_after
+    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
     actual_delta_user_bonds = list(agent.agent.wallet.longs.values())[0].balance
@@ -358,8 +355,7 @@ def test_predict_open_long_base(chain: Chain):
     # does our prediction match the input
     assert abs(Decimal(str(delta.user.base - base_needed))) < 1e-16
     # does the actual outcome match the prediction
-    user_base_after = agent.agent.wallet.balance.amount
-    actual_delta_user_base = user_base_before - user_base_after
+    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
 
@@ -387,9 +383,9 @@ def test_predict_open_short_bonds(chain: Chain):
 
     bonds_needed = FixedPoint(100_000)
     delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
-    logging.info("shares_after_fees is %s", delta.user.shares)
-    logging.info("base_fees_to_pool is %s", delta.fee.base)
-    logging.info("base_fees_to_gov is %s", delta.governance.base)
+    logging.info("predicted user delta shares is %s", delta.user.shares)
+    logging.info("predicted fee delta base is %s", delta.fee.base)
+    logging.info("predicted governance delta base is %s", delta.governance.base)
     logging.info("predicted pool delta bonds is %s", delta.pool.bonds)
     logging.info("predicted pool delta shares is %s", delta.pool.shares)
     logging.info("predicted pool delta base is %s", delta.pool.base)
@@ -412,15 +408,14 @@ def test_predict_open_short_bonds(chain: Chain):
     actual_delta_bonds = pool_bonds_after - pool_bonds_before
     actual_delta_shares = pool_shares_after - pool_shares_before
     actual_delta_base = pool_base_after - pool_base_before
-    logging.info("actual delta bonds is %s", actual_delta_bonds)
-    logging.info("actual delta shares is %s", actual_delta_shares)
+    logging.info("actual pool delta bonds is %s", actual_delta_bonds)
+    logging.info("actual pool delta shares is %s", actual_delta_shares)
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
     assert abs(Decimal(str(delta.user.bonds - bonds_needed))) < 1e-16
     # does the actual outcome match the prediction
-    user_base_after = agent.agent.wallet.balance.amount
-    actual_delta_user_base = user_base_before - user_base_after
+    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
@@ -456,9 +451,9 @@ def test_predict_open_short_base(chain: Chain):
         (base_needed / hyperdrive_interface.current_pool_state.pool_info.vault_share_price)
     )
     delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
-    logging.info("shares_after_fees is %s", delta.user.shares)
-    logging.info("base_fees_to_pool is %s", delta.fee.base)
-    logging.info("base_fees_to_gov is %s", delta.governance.base)
+    logging.info("predicted user delta shares is%s", delta.user.shares)
+    logging.info("predicted fee delta base is %s", delta.fee.base)
+    logging.info("predicted governance delta base is %s", delta.governance.base)
     logging.info("predicted delta bonds is %s", delta.pool.bonds)
     logging.info("predicted delta shares is %s", delta.pool.shares)
     logging.info("predicted delta base is %s", delta.pool.base)
@@ -488,8 +483,7 @@ def test_predict_open_short_base(chain: Chain):
     # does our prediction match the input
     assert abs(Decimal(str(delta.user.bonds - bonds_needed))) < 1e-16
     # does the actual outcome match the prediction
-    user_base_after = agent.agent.wallet.balance.amount
-    actual_delta_user_base = user_base_before - user_base_after
+    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
