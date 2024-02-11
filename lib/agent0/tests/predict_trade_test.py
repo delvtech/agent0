@@ -45,6 +45,17 @@ TradeDeltas = NamedTuple(
     ],
 )
 
+def format_table(delta: TradeDeltas):
+    formatted_data = [[account] + [float(metric) for metric in getattr(delta, account)] for account in ["user", "pool", "fee", "governance"]]
+    return tabulate(formatted_data, headers=["Entity", "Base", "Bonds", "Shares"], tablefmt="grid")
+
+def print_table(delta: TradeDeltas):
+    print("\n", end="")
+    print(format_table(delta))
+
+def log_table(delta: TradeDeltas):
+    logging.info("\n%s",format_table(delta))
+
 def test_prediction_example(chain: Chain):
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -55,25 +66,34 @@ def test_prediction_example(chain: Chain):
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     base_needed = FixedPoint(100)
-    delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed, verbose=True)
+    delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_long(base=base_needed)
     log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    log_table(delta)
 
-    # Preparing data for tabulation
-    data = [
-        ["user"] + list([float(delta.user.base), float(delta.user.bonds), float(delta.user.shares)]),
-        ["pool"] + list([float(delta.pool.base), float(delta.pool.bonds), float(delta.pool.shares)]),
-        ["fee"] + list([float(delta.fee.base), float(delta.fee.bonds), float(delta.fee.shares)]),
-        ["governance"] + list([float(delta.governance.base), float(delta.governance.bonds), float(delta.governance.shares)]),
-    ]
+def test_predict_opposite_units(chain: Chain):
+    """Show ability to predict an open long with bonds and open short with base."""
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0.1),
+        curve_fee=FixedPoint(0.01),
+        flat_fee=FixedPoint(0),
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
-    # Headers for the table
-    headers = ["Entity", "Base", "Bonds", "Shares"]
+    # specify bonds for an open long
+    bonds_needed = FixedPoint(100)
+    delta = predict_long(interactive_hyperdrive.interface, bonds=bonds_needed)
+    event = agent.open_long(base=delta.user.base)
+    log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
 
-    # Display the table
-    print("\n", end="")
-    print(tabulate(data, headers=headers, tablefmt="grid"))
-
+    # specify base for an open short
+    base_needed = FixedPoint(100)
+    delta = predict_short(interactive_hyperdrive.interface, base=base_needed)
+    event = agent.open_short(bonds=delta.user.bonds)
+    log_event("short", "base ", base_needed, event[0] if isinstance(event, list) else event)
+    log_table(delta)
 
 def predict_long(
     hyperdrive_interface: HyperdriveReadInterface,
