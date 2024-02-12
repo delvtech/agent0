@@ -318,7 +318,7 @@ class HyperdriveReadInterface:
             block_number = self.get_block_number(self.get_current_block())
         return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
 
-    def get_idle_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_idle_shares(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the balance of idle shares that the Hyperdrive pool has.
 
         Arguments
