@@ -10,7 +10,8 @@ from ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterfa
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
+from agent0.base.agent import TradeStatus
+from agent0.hyperdrive import HyperdriveAgent, HyperdriveTradeResult
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.test_utils import assert_never
 
@@ -82,7 +83,7 @@ def trade_if_new_block(
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
         )
         last_executed_block = latest_block_number
@@ -100,7 +101,7 @@ def trade_if_new_block(
 
 
 def check_result(
-    trade_results: list[TradeResult],
+    trade_results: list[HyperdriveTradeResult],
     interface: HyperdriveReadInterface,
     halt_on_errors: bool,
     halt_on_slippage: bool,

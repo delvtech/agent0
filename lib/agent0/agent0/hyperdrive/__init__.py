@@ -4,10 +4,9 @@ from .agent import (
     HyperdriveActionType,
     HyperdriveAgent,
     HyperdriveMarketAction,
+    HyperdriveTradeResult,
     HyperdriveWallet,
     HyperdriveWalletDeltas,
     Long,
     Short,
-    TradeResult,
-    TradeStatus,
 )

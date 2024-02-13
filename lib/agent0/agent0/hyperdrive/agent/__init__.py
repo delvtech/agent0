@@ -12,5 +12,5 @@ from .hyperdrive_actions import (
     remove_liquidity_trade,
 )
 from .hyperdrive_agent import HyperdriveAgent
+from .hyperdrive_trade_result import HyperdriveTradeResult
 from .hyperdrive_wallet import HyperdriveWallet, HyperdriveWalletDeltas, Long, Short
-from .trade_result import TradeResult, TradeStatus

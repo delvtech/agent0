@@ -4,7 +4,7 @@ from ethpy.hyperdrive import HyperdriveReadInterface
 
 from agent0.base import Trade
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveTradeResult, HyperdriveWallet
 
 
 class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]):
@@ -30,7 +30,7 @@ class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]
         """
         raise NotImplementedError
 
-    def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
+    def post_action(self, interface: HyperdriveReadInterface, trade_results: list[HyperdriveTradeResult]) -> None:
         """Function that gets called after actions have been executed. This allows the policy
         to e.g., do additional bookkeeping based on the results of the executed actions.
 

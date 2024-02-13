@@ -51,8 +51,9 @@ from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
+from agent0.base.agent import TradeStatus
 from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, HyperdriveTradeResult
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
@@ -1076,12 +1077,14 @@ class InteractiveHyperdrive:
 
         # TODO do we want to report a status here?
 
-    def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
+    def _handle_trade_result(
+        self, trade_results: list[HyperdriveTradeResult] | HyperdriveTradeResult
+    ) -> ReceiptBreakdown:
         # Sanity check, should only be one trade result
         if isinstance(trade_results, list):
             assert len(trade_results) == 1
             trade_result = trade_results[0]
-        elif isinstance(trade_results, TradeResult):
+        elif isinstance(trade_results, HyperdriveTradeResult):
             trade_result = trade_results
         else:
             assert False
@@ -1120,7 +1123,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1137,7 +1140,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1154,7 +1157,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.OPEN_SHORT, bonds)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1171,7 +1174,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_SHORT, bonds, maturity_time=maturity_time)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1188,7 +1191,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1205,7 +1208,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1222,7 +1225,7 @@ class InteractiveHyperdrive:
         assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1243,7 +1246,7 @@ class InteractiveHyperdrive:
             raise ValueError("Must pass in a policy in the constructor to execute policy action.")
 
         agent.policy.set_next_action_from_sub_policy()
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
         )
 
@@ -1265,7 +1268,7 @@ class InteractiveHyperdrive:
     def _liquidate(
         self, agent: HyperdriveAgent, randomize: bool
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
-        trade_results: list[TradeResult] = asyncio.run(
+        trade_results: list[HyperdriveTradeResult] = asyncio.run(
             async_execute_agent_trades(
                 self.interface,
                 [agent],

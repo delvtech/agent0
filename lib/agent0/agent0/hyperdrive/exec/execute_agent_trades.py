@@ -12,14 +12,14 @@ from ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown
 from web3.types import Nonce
 
 from agent0.base import Quantity, TokenType, Trade
+from agent0.base.agent import TradeStatus
 from agent0.hyperdrive import (
     HyperdriveActionType,
     HyperdriveMarketAction,
+    HyperdriveTradeResult,
     HyperdriveWalletDeltas,
     Long,
     Short,
-    TradeResult,
-    TradeStatus,
 )
 from agent0.hyperdrive.crash_report import (
     build_crash_trade_result,
@@ -39,7 +39,7 @@ async def async_execute_single_agent_trade(
     liquidate: bool,
     randomize_liquidation: bool,
     interactive_mode: bool,
-) -> list[TradeResult]:
+) -> list[HyperdriveTradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
 
@@ -119,7 +119,7 @@ async def async_execute_single_agent_trade(
             assert isinstance(wallet_delta, HyperdriveWalletDeltas)
             assert isinstance(tx_receipt, ReceiptBreakdown)
             agent.wallet.update(wallet_delta)
-            trade_result = TradeResult(
+            trade_result = HyperdriveTradeResult(
                 status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
             )
         trade_results.append(trade_result)
@@ -142,7 +142,7 @@ async def async_execute_agent_trades(
     liquidate: bool,
     randomize_liquidation: bool = False,
     interactive_mode: bool = False,
-) -> list[TradeResult]:
+) -> list[HyperdriveTradeResult]:
     """Hyperdrive forever into the sunset.
 
     Arguments
@@ -166,7 +166,7 @@ async def async_execute_agent_trades(
     """
     # Make calls per agent to execute_single_agent_trade
     # Await all trades to finish before continuing
-    gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
+    gathered_trade_results: list[list[HyperdriveTradeResult]] = await asyncio.gather(
         *[
             async_execute_single_agent_trade(agent, interface, liquidate, randomize_liquidation, interactive_mode)
             for agent in agents

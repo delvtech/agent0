@@ -20,7 +20,8 @@ from hyperlogs.rollbar_utilities import log_rollbar_exception
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
+from agent0.base.agent import TradeStatus
+from agent0.hyperdrive import HyperdriveTradeResult, HyperdriveWallet
 
 if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveReadInterface
@@ -56,7 +57,7 @@ def build_crash_trade_result(
     agent: HyperdriveAgent | None = None,
     trade_object: Trade[HyperdriveMarketAction] | None = None,
     additional_info: dict[str, Any] | None = None,
-) -> TradeResult:
+) -> HyperdriveTradeResult:
     """Build the trade result object when a crash happens.
 
     Arguments
@@ -77,7 +78,7 @@ def build_crash_trade_result(
     TradeResult
         The trade result object.
     """
-    trade_result = TradeResult(
+    trade_result = HyperdriveTradeResult(
         status=TradeStatus.FAIL,
         agent=agent,
         trade_object=trade_object,
@@ -181,7 +182,7 @@ def build_crash_trade_result(
 
 # pylint: disable=too-many-locals
 def log_hyperdrive_crash_report(
-    trade_result: TradeResult,
+    trade_result: HyperdriveTradeResult,
     log_level: int | None = None,
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,

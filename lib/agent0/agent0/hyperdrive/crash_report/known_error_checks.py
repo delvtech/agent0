@@ -3,11 +3,11 @@
 from ethpy.base.errors import ContractCallException
 from web3.exceptions import ContractCustomError, ContractLogicError
 
-from agent0.hyperdrive import HyperdriveActionType, TradeResult
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveTradeResult
 from agent0.test_utils import assert_never
 
 
-def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
+def check_for_invalid_balance(trade_result: HyperdriveTradeResult) -> HyperdriveTradeResult:
     """Detects invalid balance errors in trade_result and adds additional information to the
     exception in trade_result
 
@@ -141,7 +141,7 @@ def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
     return trade_result
 
 
-def check_for_slippage(trade_result: TradeResult) -> TradeResult:
+def check_for_slippage(trade_result: HyperdriveTradeResult) -> HyperdriveTradeResult:
     """Detects slippage errors in trade_result and adds additional information to the
     exception in trade_result
 
@@ -184,7 +184,7 @@ def check_for_slippage(trade_result: TradeResult) -> TradeResult:
     return trade_result
 
 
-def check_for_min_txn_amount(trade_result: TradeResult) -> TradeResult:
+def check_for_min_txn_amount(trade_result: HyperdriveTradeResult) -> HyperdriveTradeResult:
     """Detects minimum transaction amount errors in trade_result and adds additional information to the
     exception in trade_result
 
