@@ -10,7 +10,6 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import EthAgent, MarketType
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive import TradeResult
 
 from .hyperdrive_actions import (
     HyperdriveMarketAction,
@@ -131,17 +130,3 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions
-
-    def post_action(self, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
-
-        Arguments
-        ---------
-        trade_results: list[TradeResult]
-            A list of TradeResult objects, one for each trade made by the agent.
-            The order of the list matches the original order of `agent.action`.
-            TradeResult contains any information about the trade,
-            as well as any errors that the trade resulted in.
-        """
-        # Base class does noop by default.

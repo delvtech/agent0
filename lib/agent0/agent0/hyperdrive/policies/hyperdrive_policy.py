@@ -4,7 +4,7 @@ from ethpy.hyperdrive import HyperdriveReadInterface
 
 from agent0.base import Trade
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
 
 
 class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]):
@@ -29,3 +29,17 @@ class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]
             and the second element defines if the agent is done trading.
         """
         raise NotImplementedError
+
+    def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
+        """Function that gets called after actions have been executed. This allows the policy
+        to e.g., do additional bookkeeping based on the results of the executed actions.
+
+        Arguments
+        ---------
+        trade_results: list[TradeResult]
+            A list of TradeResult objects, one for each trade made by the agent.
+            The order of the list matches the original order of `agent.action`.
+            TradeResult contains any information about the trade,
+            as well as any errors that the trade resulted in.
+        """
+        # Base class does noop by default.
