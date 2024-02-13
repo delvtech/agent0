@@ -31,6 +31,8 @@ class TradeResult:
         The trade object that was executed
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     status: TradeStatus
     # TODO add base trade object here
     tx_receipt: ReceiptBreakdown | None = None

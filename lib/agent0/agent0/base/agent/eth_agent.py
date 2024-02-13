@@ -10,7 +10,6 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 
-from agent0.base.agent import TradeResult
 from agent0.base.policies import BasePolicy, NoActionPolicy
 from agent0.base.types import Quantity, TokenType, Trade
 

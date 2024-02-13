@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
-from agent0.base.agent import TradeResult
-
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
 
