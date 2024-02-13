@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
@@ -122,6 +123,15 @@ async def async_execute_single_agent_trade(
                 status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
             )
         trade_results.append(trade_result)
+
+    # Calls the agent with the trade results in case the policy needs to do bookkeeping
+    # We copy a subset of fields from the trade results to avoid changing the original
+    # trade result for crash reporting
+    # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent
+    # If this is the case, we can selectively create a new TradeResult object with a subset
+    # of data
+    trade_result_copy = deepcopy(trade_results)
+    agent.post_action(interface, trade_result_copy)
 
     return trade_results
 
