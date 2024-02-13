@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
+from agent0.base.agent import TradeResult
+
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
 
@@ -83,6 +85,29 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             and the second element defines if the agent is done trading.
         """
         raise NotImplementedError
+
+    def post_action(
+        self,
+        interface: MarketInterface,
+        trade_results: list[TradeResult],
+    ):
+        """Function that gets called after actions have been executed. This allows the policy
+        to e.g., do additional bookkeeping based on the results of the executed actions.
+
+        Arguments
+        ---------
+        interface: MarketInterface
+            The trading market interface.
+
+        trade_results: list[TradeResult]
+            A list of TradeResult objects, one for each trade made by the agent.
+            The order of the list matches the original order of `agent.action`.
+            TradeResult contains any information about the trade,
+            as well as any errors that the trade resulted in.
+        """
+
+        # Default post action is noop
+        pass
 
     @classmethod
     def describe(cls, raw_description: str) -> str:

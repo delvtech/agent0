@@ -10,6 +10,7 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 
+from agent0.base.agent import TradeResult
 from agent0.base.policies import BasePolicy, NoActionPolicy
 from agent0.base.types import Quantity, TokenType, Trade
 
@@ -105,3 +106,20 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         actions: list[Trade[MarketAction]]
         (actions, self.done_trading) = self.policy.action(interface, self.wallet)
         return actions
+
+    def post_action(self, interface: MarketInterface, trade_results: list[TradeResult]) -> None:
+        """Function that gets called after actions have been executed. This allows the policy
+        to e.g., do additional bookkeeping based on the results of the executed actions.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The interface for the market on which this agent will be executing trades (MarketActions)
+
+        trade_results: list[TradeResult]
+            A list of TradeResult objects, one for each trade made by the agent.
+            The order of the list matches the original order of `agent.action`.
+            TradeResult contains any information about the trade,
+            as well as any errors that the trade resulted in.
+        """
+        self.policy.post_action(interface, trade_results)
