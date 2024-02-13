@@ -131,7 +131,7 @@ async def async_execute_single_agent_trade(
     # If this is the case, we can selectively create a new TradeResult object with a subset
     # of data
     trade_result_copy = deepcopy(trade_results)
-    agent.post_action(trade_result_copy)
+    agent.post_action(interface, trade_result_copy)
 
     return trade_results
 
