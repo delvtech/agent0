@@ -40,9 +40,8 @@ class HyperdriveTradeResult(TradeResult):
         The anvil state dump when the exception occurred
     """
 
-    agent: HyperdriveAgent | None = None
-    # Narrowing trade object type for Hyperdrive
     trade_object: Trade[HyperdriveMarketAction] | None = None
+    agent: HyperdriveAgent | None = None
     # Flags for known errors
     is_slippage: bool = False
     is_invalid_balance: bool = False

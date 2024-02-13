@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from ethpy.hyperdrive import ReceiptBreakdown
 
 if TYPE_CHECKING:
-    from agent0.base import BaseMarketAction, Trade
+    from agent0.base import Trade
 
 
 class TradeStatus(Enum):
@@ -32,7 +32,7 @@ class TradeResult:
     """
 
     status: TradeStatus
-    trade_object: Trade[BaseMarketAction] | None = None
+    # TODO add base trade object here
     tx_receipt: ReceiptBreakdown | None = None
     contract_call: dict[str, Any] | None = None
     # Optional fields for crash reporting

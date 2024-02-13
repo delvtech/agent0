@@ -86,29 +86,6 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """
         raise NotImplementedError
 
-    def post_action(
-        self,
-        interface: MarketInterface,
-        trade_results: list[TradeResult],
-    ):
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
-
-        Arguments
-        ---------
-        interface: MarketInterface
-            The trading market interface.
-
-        trade_results: list[TradeResult]
-            A list of TradeResult objects, one for each trade made by the agent.
-            The order of the list matches the original order of `agent.action`.
-            TradeResult contains any information about the trade,
-            as well as any errors that the trade resulted in.
-        """
-
-        # Default post action is noop
-        pass
-
     @classmethod
     def describe(cls, raw_description: str) -> str:
         """Describe the policy in a user friendly manner that allows newcomers to decide whether to use it.
