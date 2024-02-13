@@ -22,22 +22,30 @@ class HyperdriveTradeResult(TradeResult):
 
     Attributes
     ----------
-    agent: HyperdriveAgent
-        The agent that was executing the trade
     trade_object: Trade[HyperdriveMarketAction]
         The trade object that was executed
-    exception: Exception | None
-        The exception that was thrown
+    agent: HyperdriveAgent
+        The agent that was executing the trade
+    is_slippage: bool
+        Whether the trade resulted in a slippage
+    is_invalid_balance: bool
+        Whether the trade resulted in an invalid balance
+    is_min_txn_amount: bool
+        Whether the trade resulted in a minimum transaction amount
     pool_config: dict[str, Any]
         The configuration of the pool
     pool_info: dict[str, Any]
         The information of the pool
     checkpoint_info: dict[str, Any]
         The information of the latest checkpoint
-    additional_info: dict[str, Any]
-        Additional information used for crash reporting
-    anvil_state: str | None
-        The anvil state dump when the exception occurred
+    contract_addresses: dict[str, Any]
+        The addresses of the hyperdrive contracts
+    raw_pool_config: dict[str, Any]
+        The pool configuration directly from solidity
+    raw_pool_info: dict[str, Any]
+        The pool information directly from solidity
+    raw_checkpoint: dict[str, Any]
+        The checkpoint information directly from solidity
     """
 
     trade_object: Trade[HyperdriveMarketAction] | None = None
