@@ -10,7 +10,6 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import EthAgent, MarketType
 from agent0.base.policies import BasePolicy
-from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 from .hyperdrive_actions import (
     HyperdriveMarketAction,
@@ -20,7 +19,6 @@ from .hyperdrive_actions import (
     remove_liquidity_trade,
 )
 from .hyperdrive_wallet import HyperdriveWallet
-from .trade_result import TradeResult
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
@@ -132,22 +130,3 @@ class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarket
                 if action.market_action.trade_amount <= 0:
                     raise ValueError("Trade amount cannot be zero or negative.")
         return actions
-
-    def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
-        Arguments
-        ---------
-        interface: HyperdriveReadInterface
-            The interface for the market on which this agent will be executing trades (MarketActions)
-        trade_results: list[TradeResult]
-            A list of TradeResult objects, one for each trade made by the agent.
-            The order of the list matches the original order of `agent.action`.
-            TradeResult contains any information about the trade,
-            as well as any errors that the trade resulted in.
-        """
-        # TODO to avoid adding a post action in base policy, we only call post action
-        # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
-        # way down
-        if isinstance(self.policy, HyperdriveBasePolicy):
-            self.policy.post_action(interface, trade_results)
