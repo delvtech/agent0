@@ -48,6 +48,18 @@ class RandomHold(Random):
         """
         return super().describe(raw_description)
 
+    @dataclass(kw_only=True)
+    class Config(Random.Config):
+        """Custom config arguments for this policy
+
+        Attributes
+        ----------
+        max_open_positions: int
+            The maximum number of open positions
+        """
+
+        max_open_positions: int = 100
+
     @dataclass
     class _Position:
         # The minimum close time for this position.
@@ -61,7 +73,7 @@ class RandomHold(Random):
         ready_to_close: bool = False
         txn_sent: bool = False
 
-    def __init__(self, policy_config: Random.Config) -> None:
+    def __init__(self, policy_config: Config) -> None:
         """Initializes the bot
 
         Arguments
@@ -73,6 +85,7 @@ class RandomHold(Random):
         # TODO using a list for now, but likely should use a different data structure
         # to allow for fast "close all positions with a close time <= current time"
         self.open_positions: list[RandomHold._Position] = []
+        self.max_open_positions = policy_config.max_open_positions
 
         super().__init__(policy_config)
 
@@ -124,9 +137,13 @@ class RandomHold(Random):
             all_available_actions = []
         else:
             all_available_actions = [
+                HyperdriveActionType.ADD_LIQUIDITY,
+            ]
+        # We hard cap the number of open positions to keep track of
+        if len(self.open_positions) < self.max_open_positions:
+            all_available_actions = [
                 HyperdriveActionType.OPEN_LONG,
                 HyperdriveActionType.OPEN_SHORT,
-                HyperdriveActionType.ADD_LIQUIDITY,
             ]
         if long_ready_to_close:  # if the agent has longs ready to close
             all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
