@@ -133,12 +133,12 @@ class RandomHold(Random):
             all_available_actions = [
                 HyperdriveActionType.ADD_LIQUIDITY,
             ]
-        # We hard cap the number of open positions to keep track of
-        if len(self.open_positions) < self.max_open_positions:
-            all_available_actions = [
-                HyperdriveActionType.OPEN_LONG,
-                HyperdriveActionType.OPEN_SHORT,
-            ]
+            # We hard cap the number of open positions to keep track of
+            if len(self.open_positions) < self.max_open_positions:
+                all_available_actions = [
+                    HyperdriveActionType.OPEN_LONG,
+                    HyperdriveActionType.OPEN_SHORT,
+                ]
         if long_ready_to_close:  # if the agent has longs ready to close
             all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
         if short_ready_to_close:  # if the agent has shorts ready to close
