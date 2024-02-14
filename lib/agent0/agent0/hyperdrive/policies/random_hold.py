@@ -92,6 +92,11 @@ class RandomHold(Random):
     def generate_random_hold_time(self, interface: HyperdriveReadInterface) -> int:
         """Generate a random hold time in seconds, uniform between 0 and 2*position_duration
 
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+
         Returns
         -------
         int
@@ -159,6 +164,20 @@ class RandomHold(Random):
     def close_random_long(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
+        """Closes a random long that's ready to be closed.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        list[Trade[HyperdriveMarketAction]]
+            A list with a single Trade element for closing a Hyperdrive short.
+        """
         # We scan open positions and select a long that's ready to be closed
         longs_ready_to_close: list[RandomHold._Position] = [
             position
@@ -182,6 +201,20 @@ class RandomHold(Random):
     def close_random_short(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> list[Trade[HyperdriveMarketAction]]:
+        """Closes a random short that's ready to be closed.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            Interface for the market on which this agent will be executing trades (MarketActions).
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        list[Trade[HyperdriveMarketAction]]
+            A list with a single Trade element for closing a Hyperdrive short.
+        """
         # We scan open positions and select a short that's ready to be closed
         shorts_ready_to_close: list[RandomHold._Position] = [
             position
