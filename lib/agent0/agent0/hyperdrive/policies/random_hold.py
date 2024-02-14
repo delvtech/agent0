@@ -261,8 +261,6 @@ class RandomHold(Random):
             HyperdriveActionType.CLOSE_SHORT,
         ):
             position_submitted = [position for position in self.open_positions if position.txn_sent]
-            assert len(position_submitted) <= 1
-
             # If a close action is submitted, sanity check that we book kept the close position
             assert len(position_submitted) == 1
             # Reset txn flag, and retry at a later time
