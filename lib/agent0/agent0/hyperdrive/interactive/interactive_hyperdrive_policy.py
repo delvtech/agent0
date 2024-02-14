@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Type
 from fixedpointmath import FixedPoint
 
 from agent0.base import MarketType, Trade
-from agent0.hyperdrive import HyperdriveMarketAction
+from agent0.hyperdrive import HyperdriveMarketAction, TradeResult
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
@@ -144,3 +144,22 @@ class InteractiveHyperdrivePolicy(HyperdriveBasePolicy):
             ]
         # Since we're executing trade by trade, this bot is never "done" trading
         return trades, False
+
+    def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
+        """Function that gets called after actions have been executed. This allows the policy
+        to e.g., do additional bookkeeping based on the results of the executed actions.
+        Interactive hyperdrive policy calls the underlying sub policy's post action.
+
+        Arguments
+        ---------
+        interface: MarketInterface
+            The trading market interface.
+        trade_results: list[HyperdriveTradeResult]
+            A list of HyperdriveTradeResult objects, one for each trade made by the agent.
+            The order of the list matches the original order of `agent.action`.
+            HyperdriveTradeResult contains any information about the trade,
+            as well as any errors that the trade resulted in.
+        """
+
+        if self.sub_policy is not None:
+            self.sub_policy.post_action(interface, trade_results)
