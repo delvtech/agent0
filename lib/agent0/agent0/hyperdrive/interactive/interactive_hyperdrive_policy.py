@@ -146,18 +146,16 @@ class InteractiveHyperdrivePolicy(HyperdriveBasePolicy):
         return trades, False
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
-        Interactive hyperdrive policy calls the underlying sub policy's post action.
+        """Interactive hyperdrive policy calls the underlying sub policy's post action.
 
         Arguments
         ---------
-        interface: MarketInterface
-            The trading market interface.
-        trade_results: list[HyperdriveTradeResult]
-            A list of HyperdriveTradeResult objects, one for each trade made by the agent.
+        interface: HyperdriveReadInterface
+            The hyperdrive trading market interface.
+        trade_results: list[TradeResult]
+            A list of TradeResult objects, one for each trade made by the agent.
             The order of the list matches the original order of `agent.action`.
-            HyperdriveTradeResult contains any information about the trade,
+            TradeResult contains any information about the trade,
             as well as any errors that the trade resulted in.
         """
 

@@ -47,12 +47,14 @@ class RandomHold(Random):
             The maximum number of open positions
         min_hold_time: int
             The minimum hold time in seconds. Defaults to 0
-        min_hold_time: int
+        max_hold_time: int
             The minimum hold time in seconds. Defaults to 2 * position_duration.
         """
 
         max_open_positions: int = 100
         min_hold_time: int = 0
+        # Can't default here, as we don't know the position duration at the time of constructing the config
+        # Hence, we set the default when we use it
         max_hold_time: int | None = None
 
     @dataclass
@@ -192,7 +194,7 @@ class RandomHold(Random):
 
         # Select a random one
         long_to_close = longs_ready_to_close[self.rng.integers(len(longs_ready_to_close))]
-        # Set flag that the transaction was sent
+        # Set flag that this is the transaction that was sent for bookkeeping in post action
         long_to_close.txn_sent = True
 
         ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
@@ -241,18 +243,16 @@ class RandomHold(Random):
         return [close_short_trade(short_to_close.bond_amount, short_to_close.maturity_time, slippage)]
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
-        Random hold updates open position bookkeeping if the submitted trade went through
+        """Random hold updates open position bookkeeping based on which positions were closed.
 
         Arguments
         ---------
-        interface: MarketInterface
-            The trading market interface.
-        trade_results: list[HyperdriveTradeResult]
-            A list of HyperdriveTradeResult objects, one for each trade made by the agent.
+        interface: HyperdriveReadInterface
+            The hyperdrive trading market interface.
+        trade_results: list[TradeResult]
+            A list of TradeResult objects, one for each trade made by the agent.
             The order of the list matches the original order of `agent.action`.
-            HyperdriveTradeResult contains any information about the trade,
+            TradeResult contains any information about the trade,
             as well as any errors that the trade resulted in.
         """
         # NOTE this function is assuming no more than one close per step
