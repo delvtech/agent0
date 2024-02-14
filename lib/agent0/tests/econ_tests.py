@@ -11,7 +11,7 @@ YEAR_IN_SECONDS = 31_536_000
 
 
 @pytest.mark.anvil
-def test_asymmetry(chain: Chain):
+def test_symmetry(chain: Chain):
     """Does in equal out?
 
     One may be under the impression swaps between x and y have the same result, irrespective of direction.
