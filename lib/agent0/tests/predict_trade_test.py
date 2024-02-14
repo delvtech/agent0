@@ -17,6 +17,8 @@ from agent0.hyperdrive.interactive import InteractiveHyperdrive
 from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 
+# it's just a test
+# pylint: disable=missing-function-docstring,missing-return-doc,missing-return-type-doc
 # pylint: disable=logging-fstring-interpolation
 # pylint: disable=too-many-locals
 # allow magic value comparison (like < 1e-16)
