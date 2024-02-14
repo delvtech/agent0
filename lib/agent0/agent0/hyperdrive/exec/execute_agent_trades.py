@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from ethpy.base import retry_call
@@ -26,6 +27,7 @@ from agent0.hyperdrive.crash_report import (
     check_for_min_txn_amount,
     check_for_slippage,
 )
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
 if TYPE_CHECKING:
@@ -122,6 +124,20 @@ async def async_execute_single_agent_trade(
                 status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
             )
         trade_results.append(trade_result)
+
+    # TODO to avoid adding a post action in base policy, we only call post action
+    # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
+    # way down
+    if isinstance(agent.policy, HyperdriveBasePolicy):
+        # Calls the agent with the trade results in case the policy needs to do bookkeeping
+        # We copy a subset of fields from the trade results to avoid changing the original
+        # trade result for crash reporting
+        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent
+        # If this is the case, we can selectively create a new TradeResult object with a subset
+        # of data
+        trade_result_copy = deepcopy(trade_results)
+        # TODO can't put post_action in agent due to circular import, so we call the policy post_action here
+        agent.policy.post_action(interface, trade_result_copy)
 
     return trade_results
 
