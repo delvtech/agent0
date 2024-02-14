@@ -45,16 +45,25 @@ TradeDeltas = NamedTuple(
     ],
 )
 
+
 def format_table(delta: TradeDeltas):
-    formatted_data = [[account] + [float(metric) for metric in getattr(delta, account)] for account in ["user", "pool", "fee", "governance"]]
-    return tabulate(formatted_data, headers=["Entity", "Base", "Bonds", "Shares"], tablefmt="grid")
+    formatted_data = [
+        [account] + [float(metric) for metric in getattr(delta, account)]
+        for account in ["user", "pool", "fee", "governance"]
+    ]
+    return tabulate(
+        formatted_data, headers=["Entity", "Base", "Bonds", "Shares"], tablefmt="grid"
+    )
+
 
 def print_table(delta: TradeDeltas):
     print("\n", end="")
     print(format_table(delta))
 
+
 def log_table(delta: TradeDeltas):
-    logging.info("\n%s",format_table(delta))
+    logging.info("\n%s", format_table(delta))
+
 
 def test_prediction_example(chain: Chain):
     interactive_config = InteractiveHyperdrive.Config(
@@ -66,10 +75,15 @@ def test_prediction_example(chain: Chain):
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     base_needed = FixedPoint(100)
-    delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
+    delta = predict_long(
+        hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed
+    )
     event = agent.open_long(base=base_needed)
-    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "long", "base", base_needed, event[0] if isinstance(event, list) else event
+    )
     log_table(delta)
+
 
 def test_predict_opposite_units(chain: Chain):
     """Show ability to predict an open long with bonds and open short with base."""
@@ -86,14 +100,19 @@ def test_predict_opposite_units(chain: Chain):
     bonds_needed = FixedPoint(100)
     delta = predict_long(interactive_hyperdrive.interface, bonds=bonds_needed)
     event = agent.open_long(base=delta.user.base)
-    log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event
+    )
 
     # specify base for an open short
     base_needed = FixedPoint(100)
     delta = predict_short(interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_short(bonds=delta.user.bonds)
-    log_event("short", "base ", base_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "short", "base ", base_needed, event[0] if isinstance(event, list) else event
+    )
     log_table(delta)
+
 
 def predict_long(
     hyperdrive_interface: HyperdriveReadInterface,
@@ -136,14 +155,20 @@ def predict_long(
     elif bonds is not None and base is None:
         # we need to calculate base_needed
         bonds_needed = bonds
-        shares_needed = hyperdrive_interface.calc_shares_in_given_bonds_out_up(bonds_needed)
+        shares_needed = hyperdrive_interface.calc_shares_in_given_bonds_out_up(
+            bonds_needed
+        )
         shares_needed /= FixedPoint(1) - price_discount * curve_fee
         share_price_on_next_block = share_price * (
-            FixedPoint(1) + hyperdrive_interface.get_variable_rate(pool_state.block_number) / FixedPoint(BLOCKS_IN_YEAR)
+            FixedPoint(1)
+            + hyperdrive_interface.get_variable_rate(pool_state.block_number)
+            / FixedPoint(BLOCKS_IN_YEAR)
         )
         base_needed = shares_needed * share_price_on_next_block
     else:
-        raise ValueError("predict_long(): Need to specify either bonds or base, but not both.")
+        raise ValueError(
+            "predict_long(): Need to specify either bonds or base, but not both."
+        )
     # continue with common logic, now that we have base_needed
     assert base_needed is not None
     bonds_after_fees = hyperdrive_interface.calc_open_long(base_needed)
@@ -165,12 +190,24 @@ def predict_long(
     # predicted_delta_shares = predicted_delta_bonds / share_price
     predicted_delta_shares = base_needed / share_price * gov_scaling_factor
     if verbose:
-        logging.info("predict_long(): predicted pool delta bonds is %s", predicted_delta_bonds)
-        logging.info("predict_long(): predicted pool delta shares is %s", predicted_delta_shares)
-        logging.info("predict_long(): predicted pool delta base is %s", predicted_delta_base)
+        logging.info(
+            "predict_long(): predicted pool delta bonds is %s", predicted_delta_bonds
+        )
+        logging.info(
+            "predict_long(): predicted pool delta shares is %s", predicted_delta_shares
+        )
+        logging.info(
+            "predict_long(): predicted pool delta base is %s", predicted_delta_base
+        )
     return TradeDeltas(
-        user=Deltas(bonds=bonds_after_fees, base=base_needed, shares=base_needed / share_price),
-        pool=Deltas(base=predicted_delta_base, shares=predicted_delta_shares, bonds=predicted_delta_bonds),
+        user=Deltas(
+            bonds=bonds_after_fees, base=base_needed, shares=base_needed / share_price
+        ),
+        pool=Deltas(
+            base=predicted_delta_base,
+            shares=predicted_delta_shares,
+            bonds=predicted_delta_bonds,
+        ),
         fee=Deltas(
             bonds=bond_fees_to_pool,
             base=bond_fees_to_pool * spot_price,
@@ -227,11 +264,19 @@ def predict_short(
         base_needed = base
         # bonds_needed = hyperdrive_interface.calc_bonds_in_given_shares_out(base_needed / share_price)
         # this is the wrong direction for the swap, but we don't have the function in the other direction
-        bonds_needed = hyperdrive_interface.calc_bonds_out_given_shares_in_down(base_needed / share_price)
-        bonds_needed /= FixedPoint(1) - price_discount * curve_fee * (FixedPoint(1) - governance_fee)
+        bonds_needed = hyperdrive_interface.calc_bonds_out_given_shares_in_down(
+            base_needed / share_price
+        )
+        bonds_needed /= FixedPoint(1) - price_discount * curve_fee * (
+            FixedPoint(1) - governance_fee
+        )
     else:
-        raise ValueError("predict_short(): Need to specify either bonds or base, but not both.")
-    shares_before_fees = hyperdrive_interface.calc_shares_out_given_bonds_in_down(bonds_needed)
+        raise ValueError(
+            "predict_short(): Need to specify either bonds or base, but not both."
+        )
+    shares_before_fees = hyperdrive_interface.calc_shares_out_given_bonds_in_down(
+        bonds_needed
+    )
     base_fees = bonds_needed * price_discount * curve_fee
     base_fees_to_pool = base_fees * (FixedPoint(1) - governance_fee)
     base_fees_to_gov = base_fees * governance_fee
@@ -239,24 +284,44 @@ def predict_short(
     base_after_fees = shares_after_fees * share_price
     if verbose:
         logging.info("predict_short(): shares_before_fees is %s", shares_before_fees)
-        logging.info("predict_short(): predicted user delta shares is%s", shares_after_fees)
-        logging.info("predict_short(): predicted fee delta base is %s", base_fees_to_pool)
-        logging.info("predict_short(): predicted governance delta base is %s", base_fees_to_gov)
+        logging.info(
+            "predict_short(): predicted user delta shares is%s", shares_after_fees
+        )
+        logging.info(
+            "predict_short(): predicted fee delta base is %s", base_fees_to_pool
+        )
+        logging.info(
+            "predict_short(): predicted governance delta base is %s", base_fees_to_gov
+        )
     predicted_delta_bonds = bonds_needed
     predicted_delta_shares = -shares_before_fees + base_fees_to_pool
     predicted_delta_base = predicted_delta_shares * share_price
     if verbose:
-        logging.info("predict_short(): predicted pool delta bonds is %s", predicted_delta_bonds)
-        logging.info("predict_short(): predicted pool delta shares is %s", predicted_delta_shares)
-        logging.info("predict_short(): predicted pool delta base is %s", predicted_delta_base)
+        logging.info(
+            "predict_short(): predicted pool delta bonds is %s", predicted_delta_bonds
+        )
+        logging.info(
+            "predict_short(): predicted pool delta shares is %s", predicted_delta_shares
+        )
+        logging.info(
+            "predict_short(): predicted pool delta base is %s", predicted_delta_base
+        )
     return TradeDeltas(
         user=Deltas(bonds=bonds_needed, base=base_after_fees, shares=shares_after_fees),
-        pool=Deltas(base=predicted_delta_base, shares=predicted_delta_shares, bonds=predicted_delta_bonds),
+        pool=Deltas(
+            base=predicted_delta_base,
+            shares=predicted_delta_shares,
+            bonds=predicted_delta_bonds,
+        ),
         fee=Deltas(
-            bonds=base_fees_to_pool / spot_price, base=base_fees_to_pool, shares=base_fees_to_pool / share_price
+            bonds=base_fees_to_pool / spot_price,
+            base=base_fees_to_pool,
+            shares=base_fees_to_pool / share_price,
         ),
         governance=Deltas(
-            bonds=base_fees_to_gov / spot_price, base=base_fees_to_gov, shares=base_fees_to_gov / share_price
+            bonds=base_fees_to_gov / spot_price,
+            base=base_fees_to_gov,
+            shares=base_fees_to_gov / share_price,
         ),
     )
 
@@ -285,11 +350,15 @@ def test_predict_open_long_bonds(chain: Chain):
     shares_needed /= FixedPoint(1) - price_discount * curve_fee
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
     share_price_on_next_block = share_price * (
-        FixedPoint(1) + hyperdrive_interface.get_variable_rate(pool_state.block_number) / FixedPoint(BLOCKS_IN_YEAR)
+        FixedPoint(1)
+        + hyperdrive_interface.get_variable_rate(pool_state.block_number)
+        / FixedPoint(BLOCKS_IN_YEAR)
     )
     base_needed = shares_needed * share_price_on_next_block
     # use rust to predict trade outcome
-    delta = predict_long(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    delta = predict_long(
+        hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True
+    )
 
     # measure user wallet before trade
     user_base_before = agent.agent.wallet.balance.amount
@@ -297,10 +366,14 @@ def test_predict_open_long_bonds(chain: Chain):
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
-    pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
+    pool_base_before = (
+        pool_shares_before * pool_state_before.pool_info.vault_share_price
+    )
     # do the trade
     event = agent.open_long(base=base_needed)
-    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "long", "base", base_needed, event[0] if isinstance(event, list) else event
+    )
     # measure pool after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -323,8 +396,12 @@ def test_predict_open_long_bonds(chain: Chain):
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
+    bonds_discrepancy = Decimal(
+        str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds)
+    )
+    shares_discrepancy = Decimal(
+        str((actual_delta_shares - delta.pool.shares) / delta.pool.shares)
+    )
     logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
     logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
 
@@ -332,7 +409,12 @@ def test_predict_open_long_bonds(chain: Chain):
     assert abs(shares_discrepancy) < 1e-7
 
 
-def log_event(trade_type: str, input_type: str, base_needed: FixedPoint, event: OpenLong | OpenShort):
+def log_event(
+    trade_type: str,
+    input_type: str,
+    base_needed: FixedPoint,
+    event: OpenLong | OpenShort,
+):
     """Log an event.
 
     Arguments
@@ -373,7 +455,9 @@ def test_predict_open_long_base(chain: Chain):
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
     base_needed = FixedPoint(100_000)
-    delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed, verbose=True)
+    delta = predict_long(
+        hyperdrive_interface=hyperdrive_interface, base=base_needed, verbose=True
+    )
     logging.info("bond_fees_to_pool is %s", delta.fee.bonds)
     logging.info("bond_fees_to_gov is %s", delta.governance.bonds)
     logging.info("predicted delta bonds is %s", delta.pool.bonds)
@@ -386,10 +470,14 @@ def test_predict_open_long_base(chain: Chain):
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
-    pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
+    pool_base_before = (
+        pool_shares_before * pool_state_before.pool_info.vault_share_price
+    )
     # do the trade
     event = agent.open_long(base=base_needed)
-    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "long", "base", base_needed, event[0] if isinstance(event, list) else event
+    )
     # measure pool's outcome after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -409,8 +497,12 @@ def test_predict_open_long_base(chain: Chain):
     logging.info("actual user delta base is %s", actual_delta_user_base)
     assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.bonds))
+    bonds_discrepancy = Decimal(
+        str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds)
+    )
+    shares_discrepancy = Decimal(
+        str((actual_delta_shares - delta.pool.shares) / delta.pool.bonds)
+    )
     logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
     logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
 
@@ -432,7 +524,9 @@ def test_predict_open_short_bonds(chain: Chain):
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
     bonds_needed = FixedPoint(100_000)
-    delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    delta = predict_short(
+        hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True
+    )
     logging.info("predicted user delta shares is %s", delta.user.shares)
     logging.info("predicted fee delta base is %s", delta.fee.base)
     logging.info("predicted governance delta base is %s", delta.governance.base)
@@ -446,10 +540,14 @@ def test_predict_open_short_bonds(chain: Chain):
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
     pool_shares_before = pool_state_before.pool_info.share_reserves
-    pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
+    pool_base_before = (
+        pool_shares_before * pool_state_before.pool_info.vault_share_price
+    )
     # # do the trade
     event = agent.open_short(bonds=bonds_needed)
-    log_event("short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event
+    )
     # # measure pool after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -471,8 +569,12 @@ def test_predict_open_short_bonds(chain: Chain):
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
+    bonds_discrepancy = Decimal(
+        str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds)
+    )
+    shares_discrepancy = Decimal(
+        str((actual_delta_shares - delta.pool.shares) / delta.pool.shares)
+    )
     logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
     logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
 
@@ -498,9 +600,14 @@ def test_predict_open_short_base(chain: Chain):
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
     # this is the wrong direction for the swap, but we don't have the function in the other direction
     bonds_needed = hyperdrive_interface.calc_bonds_out_given_shares_in_down(
-        (base_needed / hyperdrive_interface.current_pool_state.pool_info.vault_share_price)
+        (
+            base_needed
+            / hyperdrive_interface.current_pool_state.pool_info.vault_share_price
+        )
     )
-    delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    delta = predict_short(
+        hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True
+    )
     logging.info("predicted user delta shares is%s", delta.user.shares)
     logging.info("predicted fee delta base is %s", delta.fee.base)
     logging.info("predicted governance delta base is %s", delta.governance.base)
@@ -517,7 +624,9 @@ def test_predict_open_short_base(chain: Chain):
     pool_base_before = pool_shares_before * share_price
     # # do the trade
     event = agent.open_short(bonds=bonds_needed)
-    log_event("short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
+    log_event(
+        "short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event
+    )
     # # measure pool after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -539,8 +648,12 @@ def test_predict_open_short_base(chain: Chain):
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
+    bonds_discrepancy = Decimal(
+        str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds)
+    )
+    shares_discrepancy = Decimal(
+        str((actual_delta_shares - delta.pool.shares) / delta.pool.shares)
+    )
     logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
     logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
 
