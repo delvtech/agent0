@@ -173,6 +173,9 @@ class RandomHold(Random):
             for position in self.open_positions
             if position.ready_to_close and position.action_type == HyperdriveActionType.OPEN_LONG
         ]
+        # Sanity check, we should have at least one, otherwise close long wouldn't be an available action
+        assert len(longs_ready_to_close) > 0
+
         # Select a random one
         long_to_close = longs_ready_to_close[self.rng.integers(len(longs_ready_to_close))]
         # Set flag that the transaction was sent
@@ -210,6 +213,9 @@ class RandomHold(Random):
             for position in self.open_positions
             if position.ready_to_close and position.action_type == HyperdriveActionType.OPEN_SHORT
         ]
+        # Sanity check, we should have at least one, otherwise close short wouldn't be an available action
+        assert len(shorts_ready_to_close) > 0
+
         # Select a random one
         short_to_close = shorts_ready_to_close[self.rng.integers(len(shorts_ready_to_close))]
         # Set flag that the transaction was sent
