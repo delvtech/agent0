@@ -19,9 +19,6 @@ if TYPE_CHECKING:
 
     from agent0.hyperdrive import HyperdriveWallet
 
-# We can allow unused arguments here because this is a template and extendable class.
-# pylint: disable=unused-argument
-
 
 class RandomHold(Random):
     """Random agent that opens random positions with random hold position times."""
