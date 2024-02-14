@@ -178,7 +178,7 @@ class RandomHold(Random):
         ]
         # Select a random one
         long_to_close = longs_ready_to_close[self.rng.integers(len(longs_ready_to_close))]
-        # Set flag
+        # Set flag that the transaction was sent
         long_to_close.txn_sent = True
 
         ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
@@ -215,7 +215,7 @@ class RandomHold(Random):
         ]
         # Select a random one
         short_to_close = shorts_ready_to_close[self.rng.integers(len(shorts_ready_to_close))]
-        # Set flag
+        # Set flag that the transaction was sent
         short_to_close.txn_sent = True
 
         ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
