@@ -7,6 +7,7 @@ from typing import NamedTuple
 from .deterministic import Deterministic
 from .lpandarb import LPandArb
 from .random import Random
+from .random_hold import RandomHold
 from .smart_long import SmartLong
 
 
@@ -15,6 +16,7 @@ class PolicyZoo(NamedTuple):
     """All policies in agent0."""
 
     random = Random
+    random_hold = RandomHold
     smart_long = SmartLong
     lp_and_arb = LPandArb
     deterministic = Deterministic
