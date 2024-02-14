@@ -5,19 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from ethpy.hyperdrive import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
 from agent0.base.types import Trade
-from agent0.hyperdrive import TradeStatus
-from agent0.hyperdrive.agent import (
-    HyperdriveActionType,
-    HyperdriveMarketAction,
-    HyperdriveWallet,
-    TradeResult,
-    close_long_trade,
-    close_short_trade,
-)
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, TradeResult, TradeStatus
+from agent0.hyperdrive.agent import close_long_trade, close_short_trade
 
 from .random import Random
 
@@ -25,7 +17,7 @@ if TYPE_CHECKING:
     from ethpy.hyperdrive import HyperdriveReadInterface
     from ethpy.hyperdrive.state import PoolState
 
-    from agent0.hyperdrive.agent import HyperdriveWallet
+    from agent0.hyperdrive import HyperdriveWallet
 
 # We can allow unused arguments here because this is a template and extendable class.
 # pylint: disable=unused-argument
