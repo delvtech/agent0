@@ -45,9 +45,15 @@ class RandomHold(Random):
         ----------
         max_open_positions: int
             The maximum number of open positions
+        min_hold_time: int
+            The minimum hold time in seconds. Defaults to 0
+        min_hold_time: int
+            The minimum hold time in seconds. Defaults to 2 * position_duration.
         """
 
         max_open_positions: int = 100
+        min_hold_time: int = 0
+        max_hold_time: int | None = None
 
     @dataclass
     class _Position:
@@ -75,6 +81,8 @@ class RandomHold(Random):
         # to allow for fast "close all positions with a close time <= current time"
         self.open_positions: list[RandomHold._Position] = []
         self.max_open_positions = policy_config.max_open_positions
+        self.min_hold_time = policy_config.min_hold_time
+        self.max_hold_time = policy_config.max_hold_time
 
         super().__init__(policy_config)
 
@@ -91,7 +99,11 @@ class RandomHold(Random):
         int
             A random hold time in seconds.
         """
-        return self.rng.integers(0, interface.pool_config.position_duration * 2)
+        if self.max_hold_time is not None:
+            max_hold_time = self.max_hold_time
+        else:
+            max_hold_time = interface.pool_config.position_duration * 2
+        return self.rng.integers(self.min_hold_time, max_hold_time)
 
     def get_available_actions(
         self,
@@ -117,7 +129,7 @@ class RandomHold(Random):
         # Scan for positions ready to close
         current_block_time = int(pool_state.block_time)
         for position in self.open_positions:
-            if position.min_close_time > current_block_time:
+            if position.min_close_time <= current_block_time:
                 position.ready_to_close = True
                 if position.action_type == HyperdriveActionType.OPEN_LONG:
                     long_ready_to_close = True
@@ -135,10 +147,12 @@ class RandomHold(Random):
             ]
             # We hard cap the number of open positions to keep track of
             if len(self.open_positions) < self.max_open_positions:
-                all_available_actions = [
-                    HyperdriveActionType.OPEN_LONG,
-                    HyperdriveActionType.OPEN_SHORT,
-                ]
+                all_available_actions.extend(
+                    [
+                        HyperdriveActionType.OPEN_LONG,
+                        HyperdriveActionType.OPEN_SHORT,
+                    ]
+                )
         if long_ready_to_close:  # if the agent has longs ready to close
             all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
         if short_ready_to_close:  # if the agent has shorts ready to close
@@ -227,6 +241,20 @@ class RandomHold(Random):
         return [close_short_trade(short_to_close.balance, short_to_close.maturity_time, slippage)]
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
+        """Function that gets called after actions have been executed. This allows the policy
+        to e.g., do additional bookkeeping based on the results of the executed actions.
+        Random hold updates open position bookkeeping if the submitted trade went through
+
+        Arguments
+        ---------
+        interface: MarketInterface
+            The trading market interface.
+        trade_results: list[HyperdriveTradeResult]
+            A list of HyperdriveTradeResult objects, one for each trade made by the agent.
+            The order of the list matches the original order of `agent.action`.
+            HyperdriveTradeResult contains any information about the trade,
+            as well as any errors that the trade resulted in.
+        """
         # NOTE this function is assuming no more than one close per step
         assert len(trade_results) <= 1
         if len(trade_results) == 0:
@@ -234,29 +262,39 @@ class RandomHold(Random):
 
         # Get the relevant fields from the trade results,
         result = trade_results[0]
+        tx_receipt = result.tx_receipt
         assert result.trade_object is not None
-        result_action = result.trade_object.market_action
+        result_action_type = result.trade_object.market_action.action_type
 
         # If the trade was successful and the transaction was successful,
         # we add the trade to bookkeeping and generate a close time
-        if result.status == TradeStatus.SUCCESS and result_action.action_type in (
+        if result.status == TradeStatus.SUCCESS and result_action_type in (
             HyperdriveActionType.OPEN_LONG,
             HyperdriveActionType.OPEN_SHORT,
         ):
             current_block_time = interface.get_block_timestamp(interface.get_current_block())
             close_time = current_block_time + self.generate_random_hold_time(interface)
-            # Open longs/shorts should have a maturity time
-            assert result_action.maturity_time is not None
+            # Open longs/shorts, if successful, should have a transaction receipt
+            assert tx_receipt is not None
+            maturity_time = tx_receipt.maturity_time_seconds
+            # Receipt breakdown defaults to 0 maturity time, so we ensure the tx receipt actually
+            # returns a maturity time here
+            assert maturity_time > 0
+            # All closing positions take bonds as the argument, so we always get the bond amount
+            # in bookkeeping from the tx receipt
+            bond_amount = tx_receipt.bond_amount
+            assert bond_amount > 0
+
             self.open_positions.append(
                 RandomHold._Position(
                     min_close_time=close_time,
-                    action_type=result_action.action_type,
-                    balance=result_action.trade_amount,
-                    maturity_time=result_action.maturity_time,
+                    action_type=result_action_type,
+                    balance=bond_amount,
+                    maturity_time=maturity_time,
                 )
             )
         # If the close trade was unsuccessful, we reset the txn_set flag
-        elif result.status == TradeStatus.FAIL and result_action.action_type in (
+        elif result.status == TradeStatus.FAIL and result_action_type in (
             HyperdriveActionType.CLOSE_LONG,
             HyperdriveActionType.CLOSE_SHORT,
         ):
