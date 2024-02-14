@@ -62,7 +62,7 @@ class RandomHold(Random):
         # not to close if the block time is before min_close_time
         min_close_time: int
         action_type: HyperdriveActionType
-        balance: FixedPoint
+        bond_amount: FixedPoint
         maturity_time: int
         # Status flags
         ready_to_close: bool = False
@@ -200,7 +200,7 @@ class RandomHold(Random):
             slippage = None
         else:
             slippage = self.slippage_tolerance
-        return [close_long_trade(long_to_close.balance, long_to_close.maturity_time, slippage)]
+        return [close_long_trade(long_to_close.bond_amount, long_to_close.maturity_time, slippage)]
 
     def close_random_short(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -238,7 +238,7 @@ class RandomHold(Random):
             slippage = None
         else:
             slippage = self.slippage_tolerance
-        return [close_short_trade(short_to_close.balance, short_to_close.maturity_time, slippage)]
+        return [close_short_trade(short_to_close.bond_amount, short_to_close.maturity_time, slippage)]
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
         """Function that gets called after actions have been executed. This allows the policy
@@ -289,7 +289,7 @@ class RandomHold(Random):
                 RandomHold._Position(
                     min_close_time=close_time,
                     action_type=result_action_type,
-                    balance=bond_amount,
+                    bond_amount=bond_amount,
                     maturity_time=maturity_time,
                 )
             )
