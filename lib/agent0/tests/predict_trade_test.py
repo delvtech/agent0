@@ -4,17 +4,13 @@ A trade results in changes to 4 accounts, measured in 3 units.
     accounts: pool, user, fee, governance
     units: base, bonds, shares
 Knowing the impact on each of these ahead of time can be useful, depending on the application.
-
-This is useful for deciding how much to trade.
-LP and Arb bot uses this logic to hit a target rate.
-
-The 7 tests below include:
-3 tests that are simple demonstrations of how to do a prediction.
-    test_prediction_example: Demonstrate the simplest case of a prediction.
+    This is useful for deciding how much to trade.
+    LP and Arb bot uses this logic to hit a target rate.
+3 tests are simple demonstrations of how to do a prediction.
     Simplest case: test_prediction_example
     Open long with bonds as input: test_open_long_bonds
-    Open short with base as input: test_open_short_bonds
-4 tests that check prediction accuracy, spanning the cases of opening a long/short with bonds/base as inputs.
+    Open short with base as input: test_open_short_base
+4 tests check prediction accuracy, spanning the cases of opening a long/short with bonds/base as inputs.
     Open long:
         with bonds as input: test_predict_open_long_bonds
         with base as input: test_predict_open_long_base
@@ -156,7 +152,7 @@ def test_open_long_bonds(chain: Chain):
     _log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
 
 
-def test_open_short_bonds(chain: Chain):
+def test_open_short_base(chain: Chain):
     """Demonstrate abililty to open short with base as input."""
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
