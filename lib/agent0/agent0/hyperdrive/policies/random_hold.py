@@ -255,7 +255,7 @@ class RandomHold(Random):
                     maturity_time=result_action.maturity_time,
                 )
             )
-        # If the close trade was unsuccesssful, we reset the txn_set flag
+        # If the close trade was unsuccessful, we reset the txn_set flag
         elif result.status == TradeStatus.FAIL and result_action.action_type in (
             HyperdriveActionType.CLOSE_LONG,
             HyperdriveActionType.CLOSE_SHORT,
