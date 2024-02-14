@@ -57,7 +57,7 @@ class RandomHold(Random):
         min_close_time: int
         action_type: HyperdriveActionType
         balance: FixedPoint
-        maturity_time: int | None
+        maturity_time: int
         # Status flags
         ready_to_close: bool = False
         txn_sent: bool = False
@@ -231,8 +231,7 @@ class RandomHold(Random):
         return [close_short_trade(short_to_close.balance, short_to_close.maturity_time, slippage)]
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        # We only update bookkeeping if the trade went through
-        # NOTE this is assuming no more than one close per step
+        # NOTE this function is assuming no more than one close per step
         assert len(trade_results) <= 1
         if len(trade_results) == 0:
             return
@@ -250,6 +249,8 @@ class RandomHold(Random):
         ):
             current_block_time = interface.get_block_timestamp(interface.get_current_block())
             close_time = current_block_time + self.generate_random_hold_time(interface)
+            # Open longs/shorts should have a maturity time
+            assert result_action.maturity_time is not None
             self.open_positions.append(
                 RandomHold._Position(
                     min_close_time=close_time,
