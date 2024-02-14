@@ -76,7 +76,7 @@ agent_config: list[AgentConfig] = [
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
             randomly_ignore_slippage_tolerance=True,
-            max_open_positions=500,
+            max_open_positions=2000,
         ),
     ),
 ]
