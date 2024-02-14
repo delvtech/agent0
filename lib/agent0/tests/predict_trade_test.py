@@ -1,4 +1,30 @@
-"""Test predicting the outcome of a trade."""
+"""Test our ability to predict the outcome of a trade, with an input of bonds or base being traded.
+
+A trade results in changes to 4 accounts, measured in 3 units.
+    accounts: pool, user, fee, governance
+    units: base, bonds, shares
+Knowing the impact on each of these ahead of time can be useful, depending on the application.
+
+This is useful for deciding how much to trade.
+LP and Arb bot uses this logic to hit a target rate.
+
+The 7 tests below include:
+3 tests that are simple demonstrations of how to do a prediction.
+    test_prediction_example: Demonstrate the simplest case of a prediction.
+    Simplest case: test_prediction_example
+    Open long with bonds as input: test_open_long_bonds
+    Open short with base as input: test_open_short_bonds
+4 tests that check prediction accuracy, spanning the cases of opening a long/short with bonds/base as inputs.
+    Open long:
+        with bonds as input: test_predict_open_long_bonds
+        with base as input: test_predict_open_long_base
+    Open short:
+        with bonds as input: test_predict_open_short_bonds
+        with base as input: test_predict_open_short_base
+The four prediction tests check:
+- does our prediction match the input?
+- predicted delta matches actual delta (for user and pool)
+"""
 
 from __future__ import annotations
 
@@ -18,7 +44,6 @@ from agent0.hyperdrive.interactive.chain import Chain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 
 # it's just a test
-# pylint: disable=missing-function-docstring,missing-return-doc,missing-return-type-doc
 # pylint: disable=logging-fstring-interpolation
 # pylint: disable=too-many-locals
 # allow magic value comparison (like < 1e-16)
@@ -48,7 +73,7 @@ TradeDeltas = NamedTuple(
 )
 
 
-def format_table(delta: TradeDeltas):
+def _format_table(delta: TradeDeltas):
     formatted_data = [
         [account] + [float(metric) for metric in getattr(delta, account)]
         for account in ["user", "pool", "fee", "governance"]
@@ -56,16 +81,49 @@ def format_table(delta: TradeDeltas):
     return tabulate(formatted_data, headers=["Entity", "Base", "Bonds", "Shares"], tablefmt="grid")
 
 
-def print_table(delta: TradeDeltas):
+def _print_table(delta: TradeDeltas):
     print("\n", end="")
-    print(format_table(delta))
+    print(_format_table(delta))
 
 
-def log_table(delta: TradeDeltas):
-    logging.info("\n%s", format_table(delta))
+def _log_table(delta: TradeDeltas):
+    logging.info("\n%s", _format_table(delta))
+
+
+def _log_event(
+    trade_type: str,
+    input_type: str,
+    base_needed: FixedPoint,
+    event: OpenLong | OpenShort,
+):
+    logging.info(
+        "opened %s with input %s=%s, output Δbonds= %s%s, Δbase= %s%s",
+        trade_type,
+        input_type,
+        base_needed,
+        "+" if event.bond_amount > 0 else "",
+        event.bond_amount,
+        "+" if event.base_amount > 0 else "",
+        event.base_amount,
+    )
 
 
 def test_prediction_example(chain: Chain):
+    """Demonstrate the simplest case of a prediction.
+
+    Output:
+        +------------+--------------+---------------+--------------+
+        | Entity     |         Base |         Bonds |       Shares |
+        +============+==============+===============+==============+
+        | user       | 100          |  104.95       | 100          |
+        +------------+--------------+---------------+--------------+
+        | pool       |  99.9952     | -104.955      |  99.9952     |
+        +------------+--------------+---------------+--------------+
+        | fee        |   0.0428367  |    0.0449786  |   0.0428367  |
+        +------------+--------------+---------------+--------------+
+        | governance |   0.00475964 |    0.00499762 |   0.00475964 |
+        +------------+--------------+---------------+--------------+
+    """
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
@@ -77,12 +135,12 @@ def test_prediction_example(chain: Chain):
     base_needed = FixedPoint(100)
     delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_long(base=base_needed)
-    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
-    log_table(delta)
+    _log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    _log_table(delta)
 
 
-def test_predict_opposite_units(chain: Chain):
-    """Show ability to predict an open long with bonds and open short with base."""
+def test_open_long_bonds(chain: Chain):
+    """Demonstrate abililty to open long with bonds as input."""
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
@@ -92,18 +150,28 @@ def test_predict_opposite_units(chain: Chain):
     interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
-    # specify bonds for an open long
     bonds_needed = FixedPoint(100)
     delta = predict_long(interactive_hyperdrive.interface, bonds=bonds_needed)
     event = agent.open_long(base=delta.user.base)
-    log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
+    _log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
 
-    # specify base for an open short
+
+def test_open_short_bonds(chain: Chain):
+    """Demonstrate abililty to open short with base as input."""
+    interactive_config = InteractiveHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0.1),
+        curve_fee=FixedPoint(0.01),
+        flat_fee=FixedPoint(0),
+    )
+    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+
     base_needed = FixedPoint(100)
     delta = predict_short(interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_short(bonds=delta.user.bonds)
-    log_event("short", "base ", base_needed, event[0] if isinstance(event, list) else event)
-    log_table(delta)
+    _log_event("short", "base ", base_needed, event[0] if isinstance(event, list) else event)
+    _log_table(delta)
 
 
 def predict_long(
@@ -173,7 +241,6 @@ def predict_long(
     # this is done to take into account the effect of the governance fee on pool reserves
     gov_scaling_factor = FixedPoint(1) - price_discount * curve_fee * governance_fee
     predicted_delta_base = base_needed * gov_scaling_factor
-    # predicted_delta_shares = predicted_delta_bonds / share_price
     predicted_delta_shares = base_needed / share_price * gov_scaling_factor
     if verbose:
         logging.info("predict_long(): predicted pool delta bonds is %s", predicted_delta_bonds)
@@ -226,7 +293,6 @@ def predict_short(
     -------
     TradeDeltas
         The predicted deltas of base, bonds, and shares.
-
     """
     if pool_state is None:
         pool_state = deepcopy(hyperdrive_interface.current_pool_state)
@@ -240,7 +306,6 @@ def predict_short(
     elif base is not None and bonds is None:
         # we need to calculate bonds_needed
         base_needed = base
-        # bonds_needed = hyperdrive_interface.calc_bonds_in_given_shares_out(base_needed / share_price)
         # this is the wrong direction for the swap, but we don't have the function in the other direction
         bonds_needed = hyperdrive_interface.calc_bonds_out_given_shares_in_down(base_needed / share_price)
         bonds_needed /= FixedPoint(1) - price_discount * curve_fee * (FixedPoint(1) - governance_fee)
@@ -323,7 +388,7 @@ def test_predict_open_long_bonds(chain: Chain):
     pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
     # do the trade
     event = agent.open_long(base=base_needed)
-    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    _log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
     # measure pool after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -353,37 +418,6 @@ def test_predict_open_long_bonds(chain: Chain):
 
     assert abs(bonds_discrepancy) < 1e-7
     assert abs(shares_discrepancy) < 1e-7
-
-
-def log_event(
-    trade_type: str,
-    input_type: str,
-    base_needed: FixedPoint,
-    event: OpenLong | OpenShort,
-):
-    """Log an event.
-
-    Arguments
-    ---------
-    trade_type: str
-        The type of trade.
-    input_type: str
-        The input for the trade.
-    base_needed: FixedPoint
-        The amount of base needed.
-    event: OpenLong|OpenShort
-        The object of the event.
-    """
-    logging.info(
-        "opened %s with input %s=%s, output Δbonds= %s%s, Δbase= %s%s",
-        trade_type,
-        input_type,
-        base_needed,
-        "+" if event.bond_amount > 0 else "",
-        event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
-    )
 
 
 @pytest.mark.anvil
@@ -417,7 +451,7 @@ def test_predict_open_long_base(chain: Chain):
     pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
     # do the trade
     event = agent.open_long(base=base_needed)
-    log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
+    _log_event("long", "base", base_needed, event[0] if isinstance(event, list) else event)
     # measure pool's outcome after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -448,7 +482,7 @@ def test_predict_open_long_base(chain: Chain):
 
 @pytest.mark.anvil
 def test_predict_open_short_bonds(chain: Chain):
-    """Predict oucome of an open short, for a given amount of bonds."""
+    """Predict outcome of an open short, for a given amount of bonds."""
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
@@ -477,7 +511,7 @@ def test_predict_open_short_bonds(chain: Chain):
     pool_base_before = pool_shares_before * pool_state_before.pool_info.vault_share_price
     # # do the trade
     event = agent.open_short(bonds=bonds_needed)
-    log_event("short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
+    _log_event("short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
     # # measure pool after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
@@ -510,7 +544,7 @@ def test_predict_open_short_bonds(chain: Chain):
 
 @pytest.mark.anvil
 def test_predict_open_short_base(chain: Chain):
-    """Predict oucome of an open short, for a given amount of base."""
+    """Predict outcome of an open short, for a given amount of base."""
     interactive_config = InteractiveHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
@@ -545,7 +579,7 @@ def test_predict_open_short_base(chain: Chain):
     pool_base_before = pool_shares_before * share_price
     # # do the trade
     event = agent.open_short(bonds=bonds_needed)
-    log_event("short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
+    _log_event("short", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
     # # measure pool after trade
     pool_state_after = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_after = pool_state_after.pool_info.bond_reserves
