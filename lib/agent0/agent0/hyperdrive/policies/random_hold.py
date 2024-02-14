@@ -186,8 +186,6 @@ class RandomHold(Random):
             slippage = None
         else:
             slippage = self.slippage_tolerance
-        # Longs should have a maturity time set
-        assert long_to_close.maturity_time is not None
         return [close_long_trade(long_to_close.balance, long_to_close.maturity_time, slippage)]
 
     def close_random_short(
@@ -226,8 +224,6 @@ class RandomHold(Random):
             slippage = None
         else:
             slippage = self.slippage_tolerance
-        # Shorts should have a maturity time set
-        assert short_to_close.maturity_time is not None
         return [close_short_trade(short_to_close.balance, short_to_close.maturity_time, slippage)]
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
