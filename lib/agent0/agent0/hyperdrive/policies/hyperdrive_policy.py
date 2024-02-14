@@ -33,6 +33,7 @@ class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
         """Function that gets called after actions have been executed. This allows the policy
         to e.g., do additional bookkeeping based on the results of the executed actions.
+
         Arguments
         ---------
         interface: MarketInterface
