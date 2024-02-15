@@ -22,17 +22,16 @@ Install agent0 libraries by following the installation instructions found [on th
 > If you want the ability to PR new agent policies into our repo then we recommend you make a fork of the delvtech/agent0 repo.
 > ([repo link](https://github.com/delvtech/agent0), [GitHub fork instructions](https://docs.github.com/en/get-started/quickstart/fork-a-repo?tool=webui&platform=mac)).
 
-
 1.2.
 Run the agent0 tests to verify that everything installed correctly by executing `python -m pytest` from the repository root. Make sure you have enabled the correct Python environment, and installed the `requirements-dev.txt` file first.
 
-
 ## Interactive Hyperdrive
 
-You can run Interactive Hyperdrive directly once the libraries are installed. See our [example script](https://github.com/delvtech/agent0/blob/main/lib/agent0/examples/interactive_hyperdrive_example.py) to get started.
+Interactive Hyperdrive also requires the user to install [Foundry](https://book.getfoundry.sh/getting-started/installation), which we use to run the Anvil local testnet node, as well as [docker](https://docs.docker.com/engine/install/) for hosting the node and a database.
+
+With these tools installed, you can run Interactive Hyperdrive directly. See our [example script](https://github.com/delvtech/agent0/blob/main/lib/agent0/examples/interactive_hyperdrive_example.py) to get started.
 
 If you wish to deploy autonomous bots (for example, to execute trading policies in a continuous loop), then follow the remaining steps:
-
 
 ## Step 2: Set your configuration
 
@@ -75,7 +74,6 @@ Run the script once to generate an environment file (the name of the file is tak
 ```bash
 python lib/agent0/examples/hyperdrive_agents.py
 ```
-
 
 > **💡NOTE:**
 > This will generate new environment variables for the agents and write them to the specified `ENV_FILE`.
