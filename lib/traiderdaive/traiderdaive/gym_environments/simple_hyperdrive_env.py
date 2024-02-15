@@ -228,6 +228,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # Reset internal member variables
         self._current_position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
+        self._prev_pnl = 0.0
         self._step_count = 0
 
         # Get first observation and info
