@@ -77,6 +77,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         # Other bots config
         num_random_bots: int = 3
+        num_random_hold_bots: int = 3
         random_bot_budget: FixedPoint = FixedPoint(1_000_000)
 
     # Defines allowed render modes and fps
@@ -106,6 +107,22 @@ class SimpleHyperdriveEnv(gym.Env):
             )
             for i in range(gym_config.num_random_bots)
         ]
+
+        self.random_bots.extend(
+            [
+                self.interactive_hyperdrive.init_agent(
+                    base=gym_config.random_bot_budget,
+                    policy=PolicyZoo.random_hold,
+                    # TODO set the seed per random bot here for reproducability
+                    policy_config=PolicyZoo.random_hold.Config(
+                        trade_chance=FixedPoint("0.8"),
+                        max_open_positions=1000,
+                    ),
+                    name="random_bot_" + str(i),
+                )
+                for i in range(gym_config.num_random_hold_bots)
+            ]
+        )
 
         # Save a snapshot of initial conditions for resets
         self.chain.save_snapshot()
