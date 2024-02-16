@@ -1438,12 +1438,12 @@ class InteractiveHyperdrive:
             )
 
     def _save_policy_state(self, save_dir: str) -> None:
-        """Loads the policy from file
+        """Saves the policy state from file.
 
         Arguments
         ---------
-        load_dir: str
-            The directory to load the state from.
+        save_dir: str
+            The directory to save the state to.
         """
         # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
         policy_file_prefix = save_dir + "/" + self.interface.hyperdrive_contract.address + "-"
@@ -1454,7 +1454,7 @@ class InteractiveHyperdrive:
                 dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
 
     def _load_policy_state(self, load_dir: str) -> None:
-        """Loads the policy from file
+        """Loads the policy state from file.
 
         Arguments
         ---------
