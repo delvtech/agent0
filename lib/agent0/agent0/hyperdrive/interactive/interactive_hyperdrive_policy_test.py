@@ -99,6 +99,6 @@ def test_snapshot_policy_state(chain: LocalChain):
 
     # Ensure inner states were restored
     assert agent.agent.policy.sub_policy.outer_var == 2
-    assert agent.agent.policy.sub_policy.outer_list == [1]
+    assert agent.agent.policy.sub_policy.outer_list == [2]
     assert agent.agent.policy.sub_policy.inner_state.inner_var == 1
-    assert agent.agent.policy.sub_policy.inner_state.inner_list == [2]
+    assert agent.agent.policy.sub_policy.inner_state.inner_list == [1]

@@ -29,6 +29,7 @@ base = [
     "pandas",
     "nest_asyncio",
     "rollbar",
+    "dill",
 ]
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
