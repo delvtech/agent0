@@ -71,12 +71,13 @@ class SimpleHyperdriveEnv(gym.Env):
         # The constant trade amounts for longs and shorts
         rl_agent_budget: FixedPoint = FixedPoint(1_000_000)
         trade_base_amount: FixedPoint = FixedPoint(1000)
-        reward_scale: float = 1e-17
+        reward_scale: float = 1
         window_size: int = 10
         episode_length: int = 200
 
         # Other bots config
         num_random_bots: int = 3
+        num_random_hold_bots: int = 3
         random_bot_budget: FixedPoint = FixedPoint(1_000_000)
 
     # Defines allowed render modes and fps
@@ -106,6 +107,22 @@ class SimpleHyperdriveEnv(gym.Env):
             )
             for i in range(gym_config.num_random_bots)
         ]
+
+        self.random_bots.extend(
+            [
+                self.interactive_hyperdrive.init_agent(
+                    base=gym_config.random_bot_budget,
+                    policy=PolicyZoo.random_hold,
+                    # TODO set the seed per random bot here for reproducability
+                    policy_config=PolicyZoo.random_hold.Config(
+                        trade_chance=FixedPoint("0.8"),
+                        max_open_positions=1000,
+                    ),
+                    name="random_bot_" + str(i),
+                )
+                for i in range(gym_config.num_random_hold_bots)
+            ]
+        )
 
         # Save a snapshot of initial conditions for resets
         self.chain.save_snapshot()
@@ -171,10 +188,8 @@ class SimpleHyperdriveEnv(gym.Env):
 
         # episode variables
         self._current_position = None
-        self._open_position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
-        # The amount of base lost/gained in one step
-        self._base_delta: float = 0.0
+        self._prev_pnl: float = 0.0
         self._step_count = 0
 
     def reset(
@@ -213,7 +228,7 @@ class SimpleHyperdriveEnv(gym.Env):
         # Reset internal member variables
         self._current_position = None
         self._obs_buffer = np.zeros((self.gym_config.window_size, 2), dtype=np.float64)
-        self._base_delta = 0.0
+        self._prev_pnl = 0.0
         self._step_count = 0
 
         # Get first observation and info
@@ -246,9 +261,7 @@ class SimpleHyperdriveEnv(gym.Env):
                 short = list(agent_wallet.shorts.values())[0]
                 # Close short
                 try:
-                    # print(f"Closing short {short.maturity_time} with balance {short.balance}")
-                    trade_result = self.rl_bot.close_short(short.maturity_time, short.balance)
-                    self._base_delta += trade_result.base_amount.scaled_value
+                    self.rl_bot.close_short(short.maturity_time, short.balance)
                 except Exception as err:  # pylint: disable=broad-except
                     # TODO use logging here
                     print(f"Warning: Failed to close short: {err=}")
@@ -256,9 +269,7 @@ class SimpleHyperdriveEnv(gym.Env):
                     terminated = True
             # Open a long position
             try:
-                # print(f"Opening long with base amount {self.gym_config.long_base_amount}")
-                trade_result = self.rl_bot.open_long(self.gym_config.trade_base_amount)
-                self._base_delta -= trade_result.base_amount.scaled_value
+                self.rl_bot.open_long(self.gym_config.trade_base_amount)
             except Exception as err:  # pylint: disable=broad-except
                 print(f"Warning: Failed to open long: {err=}")
                 # Terminate if error
@@ -272,22 +283,18 @@ class SimpleHyperdriveEnv(gym.Env):
                 long = list(agent_wallet.longs.values())[0]
                 # Close long
                 try:
-                    # print(f"Closing long {long.maturity_time} with balance {long.balance}")
-                    trade_result = self.rl_bot.close_long(long.maturity_time, long.balance)
-                    self._base_delta += trade_result.base_amount.scaled_value
+                    self.rl_bot.close_long(long.maturity_time, long.balance)
                 except Exception as err:  # pylint: disable=broad-except
                     print(f"Warning: Failed to close long: {err=}")
                     # Terminate if error
                     terminated = True
             # Open a short position
             try:
-                # print(f"Opening short with bond amount {self.gym_config.short_bond_amount}")
                 # TODO calc max short can fail with low short values
                 max_short = self.interactive_hyperdrive.interface.calc_max_short(
                     self.gym_config.trade_base_amount, self.interactive_hyperdrive.interface.current_pool_state
                 )
-                trade_result = self.rl_bot.open_short(max_short)
-                self._base_delta -= trade_result.base_amount.scaled_value
+                self.rl_bot.open_short(max_short)
             except Exception as err:  # pylint: disable=broad-except
                 print(f"Warning: Failed to open short: {err=}")
                 # Terminate if error
@@ -340,10 +347,6 @@ class SimpleHyperdriveEnv(gym.Env):
             else:
                 raise ValueError
 
-        # Reset base delta per trade
-        # This sets reward calculation to be sparse, i.e., the wallet delta for this step only
-        self._base_delta = 0.0
-
         trade = False
         if (action == Actions.LONG.value and self._current_position == CurrentPosition.SHORT) or (
             action == Actions.SHORT.value and self._current_position == CurrentPosition.LONG
@@ -352,7 +355,6 @@ class SimpleHyperdriveEnv(gym.Env):
 
         terminated = False
         if trade:
-            # Trading updates self._base_delta variable
             terminated = self.do_trade()
 
         observation = self._get_observation()
@@ -390,55 +392,23 @@ class SimpleHyperdriveEnv(gym.Env):
 
     def _calculate_reward(self) -> float:
         # The total delta for this episode
-        raw_reward = self._base_delta
 
-        # Testing only using base difference for reward,
-        # ignoring open positions
+        current_wallet = self.interactive_hyperdrive.get_current_wallet()
+        # Filter by rl bot
+        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
+        # The rl_bot_wallet shows the pnl of all positions
+        # Sum across all positions
+        # TODO one option here is to only look at base positions instead of sum across all positions.
+        # TODO handle the case where pnl calculation doesn't return a number
+        # when you can't close the position
+        total_pnl = float(rl_bot_wallet["pnl"].sum())
 
-        ## TODO these functions should be in hyperdrive_sdk
-        # assert self._account is not None
-        # current_block = self.web3.eth.get_block_number()
-        # if self._open_position and self._position == Positions.Long:
-        #    fn_args = (
-        #        self._open_position.maturity_time_seconds,
-        #        self._open_position.bond_amount.scaled_value,
-        #        0,
-        #        self._account.checksum_address,
-        #        True,
-        #    )
-        #    try:
-        #        position_pnl = smart_contract_preview_transaction(
-        #            self.hyperdrive_contract,
-        #            self._account.checksum_address,
-        #            "closeLong",
-        #            *fn_args,
-        #            block_identifier=current_block,
-        #        )
-        #        raw_reward += position_pnl["value"]
-        #    except Exception as err:
-        #        print(f"Warning: Failed to preview close long: {err=}")
+        # reward is in units of base
+        # We use the change in pnl as the reward
+        reward = total_pnl - self._prev_pnl
+        self._prev_pnl = total_pnl
 
-        # elif self._open_position and self._position == Positions.Short:
-        #    fn_args = (
-        #        self._open_position.maturity_time_seconds,
-        #        self._open_position.bond_amount.scaled_value,
-        #        0,
-        #        self._account.checksum_address,
-        #        True,
-        #    )
-        #    try:
-        #        position_pnl = smart_contract_preview_transaction(
-        #            self.hyperdrive_contract,
-        #            self._account.checksum_address,
-        #            "closeShort",
-        #            *fn_args,
-        #            block_identifier=current_block,
-        #        )
-        #        raw_reward += position_pnl["value"]
-        #    except Exception as err:
-        #        print(f"Warning: Failed to preview close short: {err=}")
-
-        return raw_reward * self.gym_config.reward_scale
+        return reward * self.gym_config.reward_scale
 
     def render(self) -> None:
         """Renders the environment. No rendering available for hyperdrive env."""

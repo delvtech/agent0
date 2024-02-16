@@ -279,7 +279,9 @@ class InteractiveHyperdrive:
             The configuration for the initial pool configuration
         """
         if config is None:
-            config = self.Config()
+            self.config = self.Config()
+        else:
+            self.config = config
 
         # Define agent0 configs with this setup
         # TODO currently getting the path based on this file's path
@@ -289,16 +291,16 @@ class InteractiveHyperdrive:
         full_path = os.path.realpath(__file__)
         current_file_dir, _ = os.path.split(full_path)
         abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
-        self.calc_pnl = config.calc_pnl
+        self.calc_pnl = self.config.calc_pnl
 
         self.eth_config = EthConfig(
             artifacts_uri="not_used",
             rpc_uri=chain.rpc_uri,
             abi_dir=abi_dir,
-            preview_before_trade=config.preview_before_trade,
+            preview_before_trade=self.config.preview_before_trade,
         )
         # Deploys a hyperdrive factory + pool on the chain
-        self._deployed_hyperdrive = self._deploy_hyperdrive(config, chain)
+        self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
         self.interface = HyperdriveReadWriteInterface(
             self.eth_config,
             self._deployed_hyperdrive.hyperdrive_contract_addresses,
@@ -333,19 +335,19 @@ class InteractiveHyperdrive:
         self._analysis_thread: Thread | None = None
 
         # Run the data pipeline in background threads if experimental mode
-        self.data_pipeline_timeout = config.data_pipeline_timeout
+        self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
         if self.chain.experimental_data_threading:
             self._launch_data_pipeline()
         else:
             self._run_blocking_data_pipeline()
 
-        self.rng = config.rng
-        self.log_to_rollbar = config.log_to_rollbar
-        self.rollbar_log_prefix = config.rollbar_log_prefix
-        self.crash_log_level = config.crash_log_level
-        self.crash_log_ticker = config.crash_log_ticker
-        self.crash_report_additional_info = config.crash_report_additional_info
+        self.rng = self.config.rng
+        self.log_to_rollbar = self.config.log_to_rollbar
+        self.rollbar_log_prefix = self.config.rollbar_log_prefix
+        self.crash_log_level = self.config.crash_log_level
+        self.crash_log_ticker = self.config.crash_log_ticker
+        self.crash_report_additional_info = self.config.crash_report_additional_info
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
