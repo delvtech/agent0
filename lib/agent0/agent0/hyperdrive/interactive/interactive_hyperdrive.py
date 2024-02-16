@@ -11,6 +11,7 @@ from decimal import Decimal
 from threading import Thread
 from typing import Any, Literal, Type, overload
 
+import dill
 import nest_asyncio
 import numpy as np
 import pandas as pd
@@ -1435,3 +1436,35 @@ class InteractiveHyperdrive:
             agent.agent.wallet = build_wallet_positions_from_data(
                 agent.checksum_address, db_balances, self.interface.base_token_contract
             )
+
+    def _save_policy_state(self, save_dir: str) -> None:
+        """Saves the policy state to file.
+
+        Arguments
+        ---------
+        save_dir: str
+            The directory to save the state to.
+        """
+        # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
+        policy_file_prefix = save_dir + "/" + self.interface.hyperdrive_contract.address + "-"
+        for agent in self._pool_agents:
+            policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
+            with open(policy_file, "wb") as file:
+                # We use dill, as pickle can't store local objects
+                dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
+
+    def _load_policy_state(self, load_dir: str) -> None:
+        """Loads the policy state from file.
+
+        Arguments
+        ---------
+        load_dir: str
+            The directory to load the state from.
+        """
+        # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
+        policy_file_prefix = load_dir + "/" + self.interface.hyperdrive_contract.address + "-"
+        for agent in self._pool_agents:
+            policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
+            with open(policy_file, "rb") as file:
+                # We use dill, as pickle can't store local objects
+                agent.agent.policy = dill.load(file)

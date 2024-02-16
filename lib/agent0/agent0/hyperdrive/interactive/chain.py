@@ -308,6 +308,11 @@ class Chain:
 
         # Save the db state
         self._dump_db(self._snapshot_dir)
+
+        # Need to save all agent's policy states
+        for pool in self._deployed_hyperdrive_pools:
+            pool._save_policy_state(self._snapshot_dir)  # pylint: disable=protected-access
+
         self._has_saved_snapshot = True
 
     def load_snapshot(self) -> None:
@@ -332,6 +337,7 @@ class Chain:
         # The hyperdrive interface in deployed pools need to wipe it's cache
         for pool in self._deployed_hyperdrive_pools:
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
+            pool._load_policy_state(self._snapshot_dir)  # pylint: disable=protected-access
 
         self.save_snapshot()
 
