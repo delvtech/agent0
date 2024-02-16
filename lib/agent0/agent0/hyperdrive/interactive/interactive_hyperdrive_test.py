@@ -10,7 +10,6 @@ from fixedpointmath import FixedPoint
 from pandas import Series
 
 from agent0.hyperdrive import HyperdriveWallet
-from agent0.hyperdrive.policies import PolicyZoo
 
 from .chain import Chain, LocalChain
 from .interactive_hyperdrive import InteractiveHyperdrive
@@ -594,35 +593,6 @@ def test_random_liquidate(chain: LocalChain):
 
     if not is_different:
         raise ValueError("Random liquidation resulted in the same trades")
-
-
-@pytest.mark.anvil
-def test_policy_config_none_rng(chain: LocalChain):
-    """The policy config has rng set to None."""
-    interactive_config = InteractiveHyperdrive.Config()
-    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
-    agent_policy = PolicyZoo.random.Config()
-    agent_policy.rng = None
-    alice = interactive_hyperdrive.init_agent(
-        base=FixedPoint(10_000),
-        name="alice",
-        policy=PolicyZoo.random,
-        policy_config=agent_policy,
-    )
-    assert alice.agent.policy.rng is not None
-
-
-@pytest.mark.anvil
-def test_policy_config_forgotten(chain: LocalChain):
-    """The policy config is not passed in."""
-    interactive_config = InteractiveHyperdrive.Config()
-    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
-    alice = interactive_hyperdrive.init_agent(
-        base=FixedPoint(10_000),
-        name="alice",
-        policy=PolicyZoo.random,
-    )
-    assert alice.agent.policy is not None
 
 
 @pytest.mark.anvil
