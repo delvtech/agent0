@@ -28,6 +28,8 @@ def build_ohlcv(pool_analysis: pd.DataFrame, freq: str | None = None) -> pd.Data
 
     spot_prices = pool_analysis[["timestamp", "spot_price"]].copy()
     spot_prices = spot_prices.set_index("timestamp")
+    if len(spot_prices) == 0:
+        return pd.DataFrame()
 
     # TODO this is filling groups without data with nans, is this desired?
     ohlcv = spot_prices.groupby([pd.Grouper(freq=freq)]).agg({"spot_price": ["first", "last", "max", "min"]})

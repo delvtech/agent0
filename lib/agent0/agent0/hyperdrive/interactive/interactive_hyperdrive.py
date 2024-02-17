@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import subprocess
 import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
@@ -343,6 +344,8 @@ class InteractiveHyperdrive:
         else:
             self._run_blocking_data_pipeline()
 
+        self.dashboard_subprocess: subprocess.Popen | None = None
+
         self.rng = self.config.rng
         self.log_to_rollbar = self.config.log_to_rollbar
         self.rollbar_log_prefix = self.config.rollbar_log_prefix
@@ -488,6 +491,8 @@ class InteractiveHyperdrive:
         if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
         self.db_session.close()
+        if self.dashboard_subprocess is not None:
+            self.dashboard_subprocess.kill()
 
     def __del__(self):
         # Attempt to close the session
@@ -953,40 +958,40 @@ class InteractiveHyperdrive:
         ]
         return out
 
-    def get_dashboard_command(self) -> str:
-        """Prints the streamlit dashboard command to run to connect with the interactive hyperdrive.
-        The user can then copy/paste the command into a new terminal to run the dashboard.
-
-        .. note::
-            While there can be a function in interactive hyperdrive to actually run the dashboard,
-            streamlit launches a web server under the hood, which doesn't play nice with the interactive process.
-            Here, our options are (1) make the dashboard blocking and (2) run it in a subprocess. If we make the
-            dashboard blocking, control is never passed back to the caller, which may affect interactive hyperdrive
-            cleanup, as well as introducing a deadlock in the interactive hyperdrive script. If we run the dashboard
-            in a subprocess, it's up to the caller to halt execution so that the server stays up and running.
-            Neither of these options is ideal, hence, we simply add a helper function to print the streamlit command
-            and leave it to the user to control the streamlit process.
+    def run_dashboard(self, blocking: bool = False) -> None:
+        """Runs the streamlit dashboard in a subprocess connected to interactive hyperdrive.
 
         .. note::
             The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
-            connect with the underlying database. As an aside, this very much aligns with the restrictions of running
-            the dashboard in a subprocess.
+            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
+            streamlit server. Passing ``blocking=True`` will block execution of the main
+            script in this function until a keypress is registered.
+
+        Arguments
+        ---------
+        blocking: bool
+            If True, will block execution of the main script in this function until a keypress is registered.
+            When in blocking mode, the server will be killed upon return of control to caller.
+            If False, will clean up subprocess in cleanup.
 
         Returns
         -------
         str
-            The streamlit dashboard cli command to connect with the interactive hyperdrive.
+            The streamlit dashboard cli command to run the dashboard server.
         """
 
-        dashboard_run_command = ""
-        # Gather env variables for postgres connection
-        # Note this is assuming the dataclass attribute names are identical to the environment variables
-        for key, val in asdict(self.postgres_config).items():
-            dashboard_run_command += f"{key}={val} "
+        # TODO streamlit is installed in virtual environment, so we hard code that here
+        dashboard_run_command = [".venv/bin/streamlit", "run", "lib/chainsync/bin/streamlit/Dashboard.py"]
+        env = os.environ.copy().update(asdict(self.postgres_config))
 
-        dashboard_run_command += "streamlit run lib/chainsync/bin/streamlit/Dashboard.py"
-
-        return dashboard_run_command
+        assert self.dashboard_subprocess == None
+        self.dashboard_subprocess = subprocess.Popen(
+            dashboard_run_command,
+            env=env,
+        )
+        if blocking:
+            input("Press any key to kill dashboard server.")
+            self.dashboard_subprocess.kill()
 
     ### Private agent methods ###
 

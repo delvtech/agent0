@@ -46,11 +46,6 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 # Load and connect to postgres
 session = initialize_session()
 
-# pool config data is static, so just read once
-config_data = get_pool_config(session, coerce_float=False)
-
-config_data = config_data.iloc[0]
-
 max_live_blocks = 5000
 max_ticker_rows = 1000
 # Live ticker
