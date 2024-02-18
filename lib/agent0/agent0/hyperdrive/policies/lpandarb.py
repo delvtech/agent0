@@ -21,6 +21,7 @@ from agent0.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
 )
+from agent0.utilities.predict import TradeDeltas, predict_long, predict_short
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
@@ -66,7 +67,13 @@ def calc_shares_needed_for_bonds(
         _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance_lp
     )
     _shares_to_pool -= _shares_to_gov
-    return _shares_to_pool, _shares_to_gov
+
+    if bonds_needed > 0:  # need more bonds in pool -> user sells bonds -> user opens short
+        delta = predict_short(hyperdrive_interface=interface,bonds=bonds_needed, pool_state=pool_state)
+    else:  # need less bonds in pool -> user buys bonds -> user opens long
+        delta = predict_long(hyperdrive_interface=interface,bonds=-bonds_needed, pool_state=pool_state)
+    # return _shares_to_pool, _shares_to_gov
+    return delta.pool.shares, delta.governance.shares
 
 
 def calc_reserves_to_hit_target_rate(

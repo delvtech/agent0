@@ -10,7 +10,6 @@ from .random import Random
 from .random_hold import RandomHold
 from .smart_long import SmartLong
 
-
 # Container for all the policies
 class PolicyZoo(NamedTuple):
     """All policies in agent0."""
