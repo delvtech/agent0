@@ -38,7 +38,7 @@ MAX_ITER = 50
 
 
 def calc_shares_needed_for_bonds(
-    bonds_needed: FixedPoint, pool_state: PoolState, interface: HyperdriveReadInterface
+    bonds_needed: FixedPoint, pool_state: PoolState, interface: HyperdriveReadInterface, minimum_trade_amount: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
 
@@ -60,24 +60,25 @@ def calc_shares_needed_for_bonds(
         _shares_to_gov: FixedPoint
             The associated shares going to governance.
     """
-    _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
-    spot_price = interface.calc_spot_price(pool_state)
-    price_discount = FixedPoint(1) - spot_price
-    _shares_to_gov = (
-        _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance_lp
-    )
-    _shares_to_pool -= _shares_to_gov
+    # _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
+    # spot_price = interface.calc_spot_price(pool_state)
+    # price_discount = FixedPoint(1) - spot_price
+    # _shares_to_gov = (
+    #     _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance_lp
+    # )
+    # _shares_to_pool -= _shares_to_gov
 
-    if bonds_needed > 0:  # need more bonds in pool -> user sells bonds -> user opens short
+    if bonds_needed > minimum_trade_amount:  # need more bonds in pool -> user sells bonds -> user opens short
         delta = predict_short(hyperdrive_interface=interface,bonds=bonds_needed, pool_state=pool_state)
-    else:  # need less bonds in pool -> user buys bonds -> user opens long
+    elif bonds_needed < -minimum_trade_amount:  # need less bonds in pool -> user buys bonds -> user opens long
         delta = predict_long(hyperdrive_interface=interface,bonds=-bonds_needed, pool_state=pool_state)
-    # return _shares_to_pool, _shares_to_gov
+    else:
+        return 0,0
     return delta.pool.shares, delta.governance.shares
 
 
 def calc_reserves_to_hit_target_rate(
-    target_rate: FixedPoint, interface: HyperdriveReadInterface
+    target_rate: FixedPoint, interface: HyperdriveReadInterface, minimum_trade_amount: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
@@ -128,7 +129,7 @@ def calc_reserves_to_hit_target_rate(
         # So we loop through, increasing the divisor until the share reserves are no longer negative.
         while avoid_negative_share_reserves is False:
             bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
-            shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+            shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface, minimum_trade_amount)
             # save bad first guess to a temporary variable
             temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
             predicted_rate = interface.calc_fixed_rate(temp_pool_state)
@@ -140,7 +141,7 @@ def calc_reserves_to_hit_target_rate(
             overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
-        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface, minimum_trade_amount)
         # update pool state with second guess and continue from there
         pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
         predicted_rate = interface.calc_fixed_rate(pool_state)
@@ -331,7 +332,7 @@ class LPandArb(HyperdriveBasePolicy):
         bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
             _, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
-                target_rate=interface.current_pool_state.variable_rate, interface=interface
+                target_rate=interface.current_pool_state.variable_rate, interface=interface, minimum_trade_amount=self.minimum_trade_amount
             )
             self.convergence_iters.append(iters)
             self.convergence_speed.append(speed)
