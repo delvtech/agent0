@@ -974,16 +974,11 @@ class InteractiveHyperdrive:
             If True, will block execution of the main script in this function until a keypress is registered.
             When in blocking mode, the server will be killed upon return of control to caller.
             If False, will clean up subprocess in cleanup.
-
-        Returns
-        -------
-        str
-            The streamlit dashboard cli command to run the dashboard server.
         """
 
         # TODO streamlit is installed in virtual environment, so we hard code that here
         dashboard_run_command = [".venv/bin/streamlit", "run", "lib/chainsync/bin/streamlit/Dashboard.py"]
-        env = os.environ.copy().update(asdict(self.postgres_config))
+        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
 
         assert self.dashboard_subprocess is None
         # Since dashboard is a non-terminating process, we need to manually control its lifecycle
