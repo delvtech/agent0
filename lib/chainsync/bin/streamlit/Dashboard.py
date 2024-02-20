@@ -73,7 +73,7 @@ while True:
     if freq is None:
         if len(pool_info) > 2:
             time_diff = pool_info.iloc[-1]["timestamp"] - pool_info.iloc[-2]["timestamp"]
-            if time_diff > pd.Timedelta("1T"):
+            if time_diff > pd.Timedelta("1min"):
                 freq = "D"
             else:
                 freq = "5T"
