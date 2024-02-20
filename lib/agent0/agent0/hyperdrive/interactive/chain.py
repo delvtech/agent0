@@ -34,14 +34,21 @@ class Chain:
 
     @dataclass
     class Config:
-        """The configuration for launching a local anvil node in a subprocess.
+        """The configuration for connecting to an anvil chain.
 
         Attributes
         ----------
         db_port: int
             The port to bind for the postgres container. Will fail if this port is being used.
+            Defaults to 5433.
         remove_existing_db_container: bool
-            Whether to remove the existing container if it exists on container launch
+            Whether to remove the existing container if it exists on container launch. Defaults to True
+        snapshot_dir: str
+            The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`.
+        saved_state_dir: str
+            The directory where the saved state will be stored. Defaults to `.interactive_state/`.
+        experimental_data_threading: bool
+            Flag for running the data pipeline in a separate thread. Defaults to False.
         """
 
         db_port: int = 5433
@@ -52,11 +59,10 @@ class Chain:
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
-
         Also launches a postgres docker container for gathering data.
 
-        Attributes
-        ----------
+        Arguments
+        ---------
         rpc_uri: str
             The uri for the chain to connect to, e.g., `http://127.0.0.1:8545`.
         config: Config | None
@@ -278,16 +284,17 @@ class Chain:
         """Loads the interactive state from the `save_state` function.
         Saving/loading state can be done across chains.
 
-        .. todo:: There are issues around load_state, namely:
-        1.  Anvil load state doesn't load the block number and timestamp.
-        2.  Anvil load state only loads the current state, not all previous states.
-        3.  There exists an issue with the underlying yield contract, as there is a `last_updated` var
-            that gets saved, but anvil doesn't load the original timestamp, so the yield contract throws an error.
-            (May be able to solve if we're able to solve issue 1 to correctly load the block number and
-            previous states.)
-        4.  To load the state in another chain, we need this function to load all original objects
-            created from the saved chain, e.g., interactive_hyperdrive and all agents they contain, and return
-            them from this function.
+        .. note:: This feature is currently unavailable. There are issues around load_state, namely:
+
+            - Anvil load state doesn't load the block number and timestamp.
+            - Anvil load state only loads the current state, not all previous states.
+            - There exists an issue with the underlying yield contract, as there is a `last_updated` var
+              that gets saved, but anvil doesn't load the original timestamp, so the yield contract throws an error.
+              (May be able to solve if we're able to solve issue 1 to correctly load the block number and
+              previous states.)
+            - To load the state in another chain, we need this function to load all original objects
+              created from the saved chain, e.g., interactive_hyperdrive and all agents they contain, and return
+              them from this function.
 
         Arguments
         ---------
@@ -317,7 +324,9 @@ class Chain:
 
     def load_snapshot(self) -> None:
         """Loads the previous snapshot using the `evm_revert` RPC call. Can load the snapshot multiple times.
-        Note: Saving/loading snapshot only persist on the same chain, not across chains.
+
+        .. note::
+            Saving/loading snapshot only persist on the same chain, not across chains.
         """
         # Loads the previous snapshot
         # When reverting snapshots, the chain deletes the previous snapshot, while we want it to persist.
@@ -460,8 +469,8 @@ class LocalChain(Chain):
 
         Also launch a postgres docker container for gathering data.
 
-        Attributes
-        ----------
+        Arguments
+        ---------
         config: Config | None
             The local chain configuration.
         """
