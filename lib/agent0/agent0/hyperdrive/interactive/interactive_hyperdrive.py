@@ -493,6 +493,7 @@ class InteractiveHyperdrive:
         self.db_session.close()
         if self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
 
     def __del__(self):
         # Attempt to close the session
@@ -985,13 +986,15 @@ class InteractiveHyperdrive:
         env = os.environ.copy().update(asdict(self.postgres_config))
 
         assert self.dashboard_subprocess is None
-        self.dashboard_subprocess = subprocess.Popen(
+        # Since dashboard is a non-terminating process, we need to manually control its lifecycle
+        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
             dashboard_run_command,
             env=env,
         )
         if blocking:
             input("Press any key to kill dashboard server.")
             self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
 
     ### Private agent methods ###
 
