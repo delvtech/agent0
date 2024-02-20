@@ -73,10 +73,8 @@ random_trade_events  # pyright: ignore
 interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
 
 # %%
-# Get the command dashboard UI on this session.
-# Note that the interactive hyperdrive script must be running or paused (i.e., before cleanup is called)
-# for the following command to work, as the database must be running for the dashboard to be populated.
-print(interactive_hyperdrive.get_dashboard_command())
+# Runs the dashboard in blocking mode, which waits for a keyboard press to exit the dashboard
+print(interactive_hyperdrive.run_dashboard(blocking=True))
 
 # %%
 # cleanup resources
