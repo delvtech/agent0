@@ -737,7 +737,8 @@ class InteractiveHyperdrive:
 
         # Get corresponding usernames
         usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
-        df.insert(df.columns.get_loc(addr_column), "username", usernames)
+        # Weird pandas type error
+        df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
         return df
 
     def _adjust_base_positions(self, in_df: pd.DataFrame, value_column: str, coerce_float: bool):
