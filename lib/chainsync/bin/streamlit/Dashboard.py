@@ -26,14 +26,7 @@ from chainsync.dashboard import (
     plot_rates,
 )
 from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import (
-    get_all_traders,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_ticker,
-    get_wallet_pnl,
-)
+from chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_info, get_ticker, get_wallet_pnl
 
 # pylint: disable=invalid-name
 
