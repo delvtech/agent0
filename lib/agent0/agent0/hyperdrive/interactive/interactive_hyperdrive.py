@@ -984,7 +984,7 @@ class InteractiveHyperdrive:
         dashboard_run_command = [".venv/bin/streamlit", "run", "lib/chainsync/bin/streamlit/Dashboard.py"]
         env = os.environ.copy().update(asdict(self.postgres_config))
 
-        assert self.dashboard_subprocess == None
+        assert self.dashboard_subprocess is None
         self.dashboard_subprocess = subprocess.Popen(
             dashboard_run_command,
             env=env,
