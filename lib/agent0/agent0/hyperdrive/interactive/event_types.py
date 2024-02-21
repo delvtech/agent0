@@ -19,9 +19,11 @@ class OpenLong:
     maturity_time: int
         The maturity time for the opened long
     base_amount: FixedPoint
-        The amount of longs opened in units of base.
-    vault_share_price: FixedPoint
-        The value of shares during the time of the trade.
+        The amount of input base for the open long, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of input shares for the longs open long, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
     bond_amount: FixedPoint
         The amount of longs opened in units of bonds.
     """
@@ -30,7 +32,8 @@ class OpenLong:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
     bond_amount: FixedPoint
 
 
@@ -47,9 +50,11 @@ class CloseLong:
     maturity_time: int
         The maturity time for the closed long
     base_amount: FixedPoint
-        The amount of longs closed in units of base.
-    vault_share_price: FixedPoint
-        The share price for the long.
+        The amount of base from closing the long, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of shares from closing the long, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
     bond_amount: FixedPoint
         The amount of longs closed in units of bonds.
     """
@@ -58,7 +63,8 @@ class CloseLong:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
     bond_amount: FixedPoint
 
 
@@ -75,9 +81,13 @@ class OpenShort:
     maturity_time: int
         The maturity time for the opened short
     base_amount: FixedPoint
-        The amount of shorts opened in units of base.
-    vault_share_price: FixedPoint
-        The share price for the short.
+        The amount of base spent from opening the short, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of shares spent from opening the short, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
+    base_proceeds: FixedPoint
+        The amount of base in the underlying short when shorting the bonds
     bond_amount: FixedPoint
         The amount of shorts opened in units of bonds.
     """
@@ -86,7 +96,9 @@ class OpenShort:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
+    base_proceeds: FixedPoint
     bond_amount: FixedPoint
 
 
@@ -103,9 +115,11 @@ class CloseShort:
     maturity_time: int
         The maturity time for the closed short
     base_amount: FixedPoint
-        The amount of shorts closed in units of base.
-    vault_share_price: FixedPoint
-        The share price for the short.
+        The amount of base retrieved from closing the short, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of shares retrieved from closing the short, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
     bond_amount: FixedPoint
         The amount of shorts closed in units of bonds.
     """
@@ -114,7 +128,8 @@ class CloseShort:
     asset_id: int
     maturity_time: int
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
     bond_amount: FixedPoint
 
 
@@ -129,9 +144,11 @@ class AddLiquidity:
     lp_amount: FixedPoint
         The amount of liquidity added in units of lp.
     base_amount: FixedPoint
-        The amount of liquidity added in units of base.
-    vault_share_price: FixedPoint
-        The share price for this trade.
+        The amount of base to add liquidity for, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of shares to add liquidity for, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
     lp_share_price: FixedPoint
         The lp share price for this trade.
     """
@@ -139,7 +156,8 @@ class AddLiquidity:
     provider: ChecksumAddress
     lp_amount: FixedPoint
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
     lp_share_price: FixedPoint
 
 
@@ -154,9 +172,11 @@ class RemoveLiquidity:
     lp_amount: FixedPoint
         The amount of liquidity removed in units of lp.
     base_amount: FixedPoint
-        The amount of liquidity removed in units of base.
-    vault_share_price: FixedPoint
-        The share price for this trade.
+        The amount of base to remove liquidity for, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of shares to remove liquidity for, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
     withdrawal_share_amount: FixedPoint
         The amount of withdrawal shares received from removing liquidity.
     lp_share_price: FixedPoint
@@ -166,7 +186,8 @@ class RemoveLiquidity:
     provider: ChecksumAddress
     lp_amount: FixedPoint
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
     withdrawal_share_amount: FixedPoint
     lp_share_price: FixedPoint
 
@@ -182,15 +203,18 @@ class RedeemWithdrawalShares:
     withdrawal_share_amount: FixedPoint
         The amount of withdrawal shares redeemed in units of shares.
     base_amount: FixedPoint
-        The amount of withdrawal shares redeemed in units of base.
-    vault_share_price: FixedPoint
-        The share price for this trade.
+        The amount of base to redeem withdrawal shares for, if `as_base` is True. 0 otherwise.
+    vault_share_amount: FixedPoint
+        The amount of shares to redeem withdrawal shares for, if `as_base` is False. 0 otherwise.
+    as_base: bool
+        If the input amount for the trade was in base or shares.
     """
 
     provider: ChecksumAddress
     withdrawal_share_amount: FixedPoint
     base_amount: FixedPoint
-    vault_share_price: FixedPoint
+    vault_share_amount: FixedPoint
+    as_base: bool
 
 
 @dataclass
