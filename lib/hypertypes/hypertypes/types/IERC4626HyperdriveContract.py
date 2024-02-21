@@ -339,6 +339,33 @@ class IERC4626HyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
         return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
+class IERC4626HyperdriveDecimalsContractFunction(ContractFunction):
+    """ContractFunction for the decimals method."""
+
+    def __call__(self) -> IERC4626HyperdriveDecimalsContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
 class IERC4626HyperdriveGetCheckpointContractFunction(ContractFunction):
     """ContractFunction for the getCheckpoint method."""
 
@@ -1343,6 +1370,8 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
 
     collectGovernanceFee: IERC4626HyperdriveCollectGovernanceFeeContractFunction
 
+    decimals: IERC4626HyperdriveDecimalsContractFunction
+
     getCheckpoint: IERC4626HyperdriveGetCheckpointContractFunction
 
     getCheckpointExposure: IERC4626HyperdriveGetCheckpointExposureContractFunction
@@ -1502,6 +1531,14 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="collectGovernanceFee",
+        )
+        self.decimals = IERC4626HyperdriveDecimalsContractFunction.factory(
+            "decimals",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="decimals",
         )
         self.getCheckpoint = IERC4626HyperdriveGetCheckpointContractFunction.factory(
             "getCheckpoint",
@@ -5382,6 +5419,13 @@ ierc4626hyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "decimals",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint8", "internalType": "uint8"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "getCheckpoint",
             "inputs": [{"name": "_checkpointTime", "type": "uint256", "internalType": "uint256"}],
             "outputs": [
@@ -5849,7 +5893,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "provider", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "lpAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
                 {"name": "lpSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -5882,7 +5927,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "assetId", "type": "uint256", "indexed": True, "internalType": "uint256"},
                 {"name": "maturityTime", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
                 {"name": "bondAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -5895,7 +5941,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "assetId", "type": "uint256", "indexed": True, "internalType": "uint256"},
                 {"name": "maturityTime", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
                 {"name": "bondAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -5934,7 +5981,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "provider", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "lpAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
                 {"name": "apr", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -5947,7 +5995,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "assetId", "type": "uint256", "indexed": True, "internalType": "uint256"},
                 {"name": "maturityTime", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
                 {"name": "bondAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -5960,7 +6009,9 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "assetId", "type": "uint256", "indexed": True, "internalType": "uint256"},
                 {"name": "maturityTime", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
+                {"name": "baseProceeds", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "bondAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -5984,7 +6035,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "provider", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "withdrawalShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
             ],
             "anonymous": False,
         },
@@ -5995,7 +6047,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "provider", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "lpAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
-                {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
                 {"name": "withdrawalShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "lpSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
