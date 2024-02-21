@@ -50,7 +50,7 @@ class CloseLong:
     maturity_time: int
         The maturity time for the closed long
     base_amount: FixedPoint
-        The amount longs closed in units of base.
+        The amount of longs closed in units of base.
     vault_share_amount: FixedPoint
         The amount of longs closed in units of shares.
     as_base: bool
@@ -146,9 +146,9 @@ class AddLiquidity:
     lp_amount: FixedPoint
         The amount of liquidity added in units of lp.
     base_amount: FixedPoint
-        The amount liquidity added, in units of base.
+        The amount of liquidity added, in units of base.
     vault_share_amount: FixedPoint
-        The amount liquidity added, in units of shares.
+        The amount of liquidity added, in units of shares.
     as_base: bool
         If the input amount for the trade was in base or shares.
     lp_share_price: FixedPoint
@@ -176,7 +176,7 @@ class RemoveLiquidity:
     base_amount: FixedPoint
         The amount of liquidity removed, in units of base.
     vault_share_amount: FixedPoint
-        The amount of liquidiyt removed, in units of shares.
+        The amount of liquidity removed, in units of shares.
     as_base: bool
         If the input amount for the trade was in base or shares.
     withdrawal_share_amount: FixedPoint
