@@ -48,9 +48,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         policy_config: Config
             The configuration for the policy.
         """
-        # We add this as a helper property so that subclasses can access the config without
+        # TODO: We add this as a helper property so that subclasses can access the config without
         # overwriting the __init__ function. The downside is that users of this member variable
-        # can't be type checked.
+        # can't be type checked. There's probably a way to do this with generics instead of Any.
         self.config: Any = policy_config
         self.slippage_tolerance = policy_config.slippage_tolerance
         # Generate rng if not set in config
