@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import pathlib
 import subprocess
 import time
 from dataclasses import asdict, dataclass
@@ -978,7 +979,12 @@ class InteractiveHyperdrive:
         """
 
         # TODO streamlit is installed in virtual environment, so we hard code that here
-        dashboard_run_command = [".venv/bin/streamlit", "run", "lib/chainsync/bin/streamlit/Dashboard.py"]
+        # In order to support this command in both notebooks and scripts, we reference
+        # the path to the virtual environment relative to this file.
+        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
+        streamlit_path = str(base_dir / ".venv" / "bin" / "streamlit")
+        dashboard_path = str(base_dir / "lib" / "chainsync" / "bin" / "streamlit" / "Dashboard.py")
+        dashboard_run_command = [streamlit_path, "run", dashboard_path]
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
 
         assert self.dashboard_subprocess is None
@@ -986,6 +992,8 @@ class InteractiveHyperdrive:
         self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
             dashboard_run_command,
             env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
         )
         if blocking:
             input("Press any key to kill dashboard server.")

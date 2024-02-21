@@ -69,7 +69,7 @@ while True:
             if time_diff > pd.Timedelta("1min"):
                 freq = "D"
             else:
-                freq = "5T"
+                freq = "5min"
 
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
     ticker = get_ticker(session, max_rows=max_ticker_rows, coerce_float=False, sort_desc=True)

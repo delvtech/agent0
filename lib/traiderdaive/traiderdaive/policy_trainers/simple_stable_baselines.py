@@ -29,8 +29,8 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
     def __init__(self, check_freq: int, log_dir: str, verbose=1):
         """Initializes the callback class.
 
-        Attributes
-        ----------
+        Arguments
+        ---------
         check_freq: int
             How often to check and save the model.
         log_dir: str

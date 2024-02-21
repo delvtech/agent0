@@ -2,7 +2,7 @@
 
 Agents can be deployed on-premesis or via cloud services.
 
-We have two flows for running agents: via atonomous deployment or via interactive hyperdrive.
+We have two flows for running agents: via autonomous deployment or via interactive hyperdrive.
 Each will be discussed below.
 
 ## Step 1: Install agent0

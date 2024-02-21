@@ -16,7 +16,7 @@ def build_ohlcv(pool_analysis: pd.DataFrame, freq: str | None = None) -> pd.Data
         The grouping frequency for the ohlcv plot.
         See https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
         for accepted values
-        If none, defaults to 5T
+        If none, defaults to 5min
 
     Returns
     -------
@@ -24,7 +24,7 @@ def build_ohlcv(pool_analysis: pd.DataFrame, freq: str | None = None) -> pd.Data
         The ready to plot dataframe for ohlcv
     """
     if freq is None:
-        freq = "5T"
+        freq = "5min"
 
     spot_prices = pool_analysis[["timestamp", "spot_price"]].copy()
     spot_prices = spot_prices.set_index("timestamp")
