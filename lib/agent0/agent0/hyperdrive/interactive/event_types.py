@@ -92,6 +92,8 @@ class OpenShort:
         The amount of shorts opened in units of bonds.
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     trader: ChecksumAddress
     asset_id: int
     maturity_time: int
