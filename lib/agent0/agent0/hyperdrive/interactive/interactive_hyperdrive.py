@@ -1367,7 +1367,8 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1377,7 +1378,8 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1387,7 +1389,9 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
+                    base_proceeds=tx_receipt.base_proceeds,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1397,7 +1401,8 @@ class InteractiveHyperdrive:
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -1406,7 +1411,8 @@ class InteractiveHyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
 
@@ -1415,7 +1421,8 @@ class InteractiveHyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
@@ -1425,7 +1432,8 @@ class InteractiveHyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     base_amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_price,
+                    vault_share_amount=tx_receipt.vault_share_amount,
+                    as_base=tx_receipt.as_base,
                 )
 
             case _:
