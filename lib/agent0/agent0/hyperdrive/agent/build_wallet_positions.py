@@ -1,3 +1,5 @@
+"""Functions to help build agent wallets from various sources."""
+
 import pandas as pd
 from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
@@ -27,6 +29,8 @@ def build_wallet_positions_from_chain(
     HyperdriveWallet
         The wallet object build from the provided data
     """
+    # pylint: disable=too-many-locals
+
     # Contract call to get base balance
     base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
     # TODO do we need to do error checking here?
@@ -123,6 +127,7 @@ def build_wallet_positions_from_db(
     HyperdriveWallet
         The wallet object build from the provided data
     """
+    # pylint: disable=too-many-locals
     # Contract call to get base balance
     base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
     # TODO do we need to do error checking here?
