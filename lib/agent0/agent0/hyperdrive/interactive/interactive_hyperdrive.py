@@ -56,8 +56,9 @@ from web3.exceptions import TimeExhausted
 
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
-from agent0.hyperdrive.exec import async_execute_agent_trades, build_wallet_positions_from_data, set_max_approval
+from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
@@ -1453,7 +1454,7 @@ class InteractiveHyperdrive:
             db_balances = chainsync_get_current_wallet(
                 self.db_session, wallet_address=[agent.checksum_address], coerce_float=False
             )
-            agent.agent.wallet = build_wallet_positions_from_data(
+            agent.agent.wallet = build_wallet_positions_from_db(
                 agent.checksum_address, db_balances, self.interface.base_token_contract
             )
 
