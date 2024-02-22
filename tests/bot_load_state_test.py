@@ -22,7 +22,14 @@ from agent0 import build_account_key_config_from_agent_config
 from agent0.base import Trade
 from agent0.base.config import AgentConfig, EnvironmentConfig
 from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
+from agent0.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    remove_liquidity_trade,
+)
 from agent0.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
@@ -33,6 +40,9 @@ class WalletTestPolicy(HyperdriveBasePolicy):
     COUNTER_ADD_LIQUIDITY = 0
     COUNTER_OPEN_LONG = 1
     COUNTER_OPEN_SHORT = 2
+    COUNTER_REMOVE_LIQUIDITY = 3
+    COUNTER_CLOSE_LONG = 4
+    COUNTER_CLOSE_SHORT = 5
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
@@ -83,38 +93,53 @@ class WalletTestPolicy(HyperdriveBasePolicy):
 
         if self.rerun:
             # assert wallet state was loaded from previous run
-            assert len(wallet.longs) == 1
+            assert len(wallet.longs) == 0
             assert len(wallet.shorts) == 1
-            # TODO would like to check long and lp value here,
-            # but the units there are in bonds and lp shares respectively,
-            # where the known value of the trade is in units of base.
-            assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(33_333)
+            assert wallet.lp_tokens == FixedPoint(1_111_111)
+            assert wallet.shorts[list(wallet.shorts.keys())[0]].balance == FixedPoint(22_222)
 
             # We want this bot to exit and crash after it's done the trades it needs to do
             done_trading = True
+            return [], done_trading
 
         if self.counter == self.COUNTER_ADD_LIQUIDITY:
             # Add liquidity
-            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(11_111_111)))
         elif self.counter == self.COUNTER_OPEN_LONG:
             # Open Long
             action_list.append(open_long_trade(FixedPoint(22_222)))
         elif self.counter == self.COUNTER_OPEN_SHORT:
             # Open Short
             action_list.append(open_short_trade(FixedPoint(33_333)))
+        elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
+            # Remove partial liquidity, should be 1_111_111 lp left
+            action_list.append(remove_liquidity_trade(trade_amount=wallet.lp_tokens - 1_111_111))
+        elif self.counter == self.COUNTER_CLOSE_LONG:
+            # Remove all longs
+            assert len(wallet.longs) == 1
+            long = list(wallet.longs.values())[0]
+            action_list.append(close_long_trade(trade_amount=long.balance, maturity_time=long.maturity_time))
+        elif self.counter == self.COUNTER_CLOSE_SHORT:
+            # Remove partial shorts, should be 22_222 shorts left
+            assert len(wallet.shorts) == 1
+            short = list(wallet.shorts.values())[0]
+            action_list.append(
+                close_short_trade(trade_amount=short.balance - 22_222, maturity_time=short.maturity_time)
+            )
+
         else:
             done_trading = True
         self.counter += 1
         return action_list, done_trading
 
 
-class TestBotToDb:
+class TestBotLoadState:
     """Test pipeline from bots making trades to viewing the trades in the db."""
 
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
     @pytest.mark.anvil
-    def test_bot_to_db(
+    def test_bot_load_state(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
         db_session: Session,
@@ -145,7 +170,7 @@ class TestBotToDb:
             AgentConfig(
                 policy=WalletTestPolicy,
                 number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                base_budget_wei=FixedPoint("100_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=WalletTestPolicy.Config(
                     slippage_tolerance=FixedPoint("0.0001"),
@@ -201,11 +226,11 @@ class TestBotToDb:
             AgentConfig(
                 policy=WalletTestPolicy,
                 number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
+                base_budget_wei=FixedPoint("100_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
                 policy_config=WalletTestPolicy.Config(
                     slippage_tolerance=FixedPoint("0.0001"),
-                    rerun=False,
+                    rerun=True,
                 ),
             ),
         ]
