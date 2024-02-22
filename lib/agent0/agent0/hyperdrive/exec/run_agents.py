@@ -445,12 +445,12 @@ def build_wallet_positions_from_chain(
     for event in close_long_events:
         maturity_time = event["args"]["maturityTime"]
         long_amount = FixedPoint(scaled_value=event["args"]["bondAmount"])
-        assert maturity_time in long_obj
+        assert maturity_time in long_obj, "ERROR: close event found without corresponding open event."
         long_obj[maturity_time].balance -= long_amount
     # Iterate through longs and remove any zero balance
     for k in list(long_obj.keys()):
         # Sanity check
-        assert long_obj[k].balance >= FixedPoint(0)
+        assert long_obj[k].balance >= FixedPoint(0), "ERROR: wallet deltas added up to be negative."
         if long_obj[k].balance == FixedPoint(0):
             del long_obj[k]
 
@@ -470,12 +470,12 @@ def build_wallet_positions_from_chain(
     for event in close_short_events:
         maturity_time = event["args"]["maturityTime"]
         short_amount = FixedPoint(scaled_value=event["args"]["bondAmount"])
-        assert maturity_time in short_obj
+        assert maturity_time in short_obj, "ERROR: close event found without corresponding open event."
         short_obj[maturity_time].balance -= short_amount
     # Iterate through longs and remove any zero balance
     for k in list(short_obj.keys()):
         # Sanity check
-        assert short_obj[k].balance >= FixedPoint(0)
+        assert short_obj[k].balance >= FixedPoint(0), "ERROR: wallet deltas added up to be negative."
         if short_obj[k].balance == FixedPoint(0):
             del short_obj[k]
 
