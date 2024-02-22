@@ -139,11 +139,13 @@ class TestBotLoadState:
     # TODO split this up into different functions that work with tests
     # pylint: disable=too-many-locals, too-many-statements
     @pytest.mark.anvil
+    @pytest.mark.parametrize("use_db_for_state_load", [True, False])
     def test_bot_load_state(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
         db_session: Session,
         db_api: str,
+        use_db_for_state_load: bool,
     ):
         """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # Run this test with develop mode on
@@ -183,11 +185,17 @@ class TestBotLoadState:
         account_key_config = build_account_key_config_from_agent_config(agent_config)
 
         # Build custom eth config pointing to local test chain
+        # We either pass in the db api url if we want to load from db
+        # Pass in none otherwise.
+        if use_db_for_state_load:
+            db_api_url = db_api
+        else:
+            db_api_url = None
         eth_config = EthConfig(
             # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
             artifacts_uri="not_used",
             rpc_uri=rpc_uri,
-            database_api_uri=db_api,
+            database_api_uri=db_api_url,
             # Using default abi dir
         )
 
@@ -197,6 +205,7 @@ class TestBotLoadState:
             account_key_config,
             eth_config=eth_config,
             contract_addresses=hyperdrive_contract_addresses,
+            load_wallet_state=False,
         )
 
         # Run acquire data to get data from chain to db
