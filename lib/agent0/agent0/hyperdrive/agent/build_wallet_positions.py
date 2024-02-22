@@ -7,7 +7,8 @@ from hexbytes import HexBytes
 from hypertypes import ERC20MintableContract, IERC4626HyperdriveContract
 
 from agent0.base import Quantity, TokenType
-from agent0.hyperdrive import HyperdriveWallet, Long, Short
+
+from .hyperdrive_wallet import HyperdriveWallet, Long, Short
 
 
 def build_wallet_positions_from_chain(
