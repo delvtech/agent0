@@ -18,12 +18,6 @@ if TYPE_CHECKING:
 
     from agent0.hyperdrive import HyperdriveWallet
 
-# pylint: disable=too-many-arguments, too-many-locals
-
-# constants
-TOLERANCE = 1e-18
-MAX_ITER = 50
-
 
 class SimpleLP(HyperdriveBasePolicy):
     """LP to maintain profitability."""
@@ -73,9 +67,8 @@ class SimpleLP(HyperdriveBasePolicy):
         policy_config: Config
             The custom arguments for this policy
         """
-        self.pnl_history: list[tuple[int, FixedPoint]] = []
-
         super().__init__(policy_config)
+        self.pnl_history: list[tuple[int, FixedPoint]] = []
 
     def time_weighted_average_pnl(self) -> FixedPoint:
         """Return the time-weighted average PNL."""
@@ -111,7 +104,8 @@ class SimpleLP(HyperdriveBasePolicy):
         action_list = []
 
         current_block = interface.get_current_block()
-        pnl = FixedPoint(0)  # interface.get_pnl(wallet)
+        pool_state = interface.get_hyperdrive_state(current_block)
+        pnl = pool_state.pool_info.lp_total_supply * pool_state.pool_info.lp_share_price
         self.pnl_history.append((interface.get_block_number(current_block), pnl))
 
         twapnl = self.time_weighted_average_pnl()
