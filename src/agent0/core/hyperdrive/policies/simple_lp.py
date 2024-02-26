@@ -45,14 +45,15 @@ class SimpleLP(HyperdriveBasePolicy):
         Attributes
         ----------
         lookback_length: int
-            How many blocks back to look when computing past PNL.
+            How many steps back to look when computing past PNL.
+            Each time `action` is called is a step.
         pnl_target: FixedPoint
             The target PNL for the bot to achieve, as a fraction improvement over the pnl at lookback_length
         delta_liquidity: FixedPoint
             How much liquidity to add or remove, depending on policy outcome.
         """
 
-        lookback_length: FixedPoint = FixedPoint(10)  # blocks
+        lookback_length: FixedPoint = FixedPoint("10")  # action calls
         pnl_target: FixedPoint = FixedPoint("1.0")
         delta_liquidity: FixedPoint = FixedPoint("100")
 
@@ -109,6 +110,8 @@ class SimpleLP(HyperdriveBasePolicy):
         pool_state = interface.get_hyperdrive_state(current_block)
         pnl = pool_state.pool_info.lp_total_supply * pool_state.pool_info.lp_share_price
         self.pnl_history.append((interface.get_block_number(current_block), pnl))
+        if len(self.pnl_history) > self.policy_config.lookback_length:
+            self.pnl_history = self.pnl_history[len(self.pnl_history) - self.policy_config.lookback_length :]
 
         twapnl = self.time_weighted_average_pnl()
         if twapnl > self.policy_config.pnl_target:
@@ -116,8 +119,5 @@ class SimpleLP(HyperdriveBasePolicy):
                 action_list.append(add_liquidity_trade(self.policy_config.delta_liquidity))
         elif twapnl < self.policy_config.pnl_target:
             action_list.append(remove_liquidity_trade(self.policy_config.delta_liquidity))
-
-        if len(self.pnl_history) > self.policy_config.lookback_length:
-            self.pnl_history = self.pnl_history[len(self.pnl_history) - self.policy_config.lookback_length :]
 
         return action_list, False
