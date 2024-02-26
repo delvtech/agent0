@@ -8,6 +8,7 @@ from .deterministic import Deterministic
 from .lpandarb import LPandArb
 from .random import Random
 from .random_hold import RandomHold
+from .simple_lp import SimpleLP
 from .smart_long import SmartLong
 
 
@@ -18,6 +19,7 @@ class PolicyZoo(NamedTuple):
     random = Random
     random_hold = RandomHold
     smart_long = SmartLong
+    simple_lp = SimpleLP
     lp_and_arb = LPandArb
     deterministic = Deterministic
 
