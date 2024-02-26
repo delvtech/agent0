@@ -44,17 +44,17 @@ class SimpleLP(HyperdriveBasePolicy):
 
         Attributes
         ----------
-        pnl_target: FixedPoint
-            The target PNL for the bot to achieve.
-        delta_liquidity: FixedPoint
-            How much liquidity to add or remove, depending on policy outcome.
         lookback_length: int
             How many blocks back to look when computing past PNL.
+        pnl_target: FixedPoint
+            The target PNL for the bot to achieve, as a fraction improvement over the pnl at lookback_length
+        delta_liquidity: FixedPoint
+            How much liquidity to add or remove, depending on policy outcome.
         """
 
+        lookback_length: FixedPoint = FixedPoint(10)  # blocks
         pnl_target: FixedPoint = FixedPoint("1.0")
         delta_liquidity: FixedPoint = FixedPoint("100")
-        lookback_length: FixedPoint = FixedPoint(10)
 
     def __init__(
         self,
@@ -71,14 +71,16 @@ class SimpleLP(HyperdriveBasePolicy):
         self.pnl_history: list[tuple[int, FixedPoint]] = []
 
     def time_weighted_average_pnl(self) -> FixedPoint:
-        """Return the time-weighted average PNL."""
+        """Return the time-weighted average PNL improvement."""
         if len(self.pnl_history) == 0:  # no history
             return FixedPoint(0)
         twapnl: FixedPoint = FixedPoint(0)
+        origin_time, origin_pnl = self.pnl_history[0]
         time_sum: FixedPoint = FixedPoint(0)
         for block_number, pnl in self.pnl_history:
-            time = self.pnl_history[0][0] - block_number
-            twapnl += pnl * time
+            time = origin_time - block_number
+            pnl_improvement = pnl / origin_pnl
+            twapnl += pnl_improvement * time
             time_sum += FixedPoint(time)
         twapnl /= time_sum
         return twapnl
