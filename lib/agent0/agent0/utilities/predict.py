@@ -77,13 +77,12 @@ def predict_long(
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
-    base_needed = None
     if base is not None and bonds is None:
         if for_pool is False:
             base_needed = base
         else:
             # scale up input to account for fees
-            base_needed /= FixedPoint(1) - price_discount * governance_fee
+            base_needed = base / (FixedPoint(1) - price_discount * governance_fee)
     elif bonds is not None and base is None:
         # we need to calculate base_needed
         bonds_needed = bonds
