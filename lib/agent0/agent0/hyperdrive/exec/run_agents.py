@@ -14,11 +14,10 @@ from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 
 from agent0.base import Quantity, TokenType
 from agent0.base.config import DEFAULT_USERNAME
-from agent0.hyperdrive import HyperdriveWallet, Long, Short
+from agent0.hyperdrive.agent import build_wallet_positions_from_chain, build_wallet_positions_from_db
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import async_fund_agents
@@ -26,10 +25,8 @@ from .setup_experiment import setup_experiment
 from .trade_loop import trade_if_new_block
 
 if TYPE_CHECKING:
-    import pandas as pd
     from ethpy import EthConfig
     from ethpy.hyperdrive import HyperdriveAddresses
-    from hypertypes import ERC20MintableContract
 
     from agent0 import AccountKeyConfig
     from agent0.base.config import AgentConfig, EnvironmentConfig
@@ -179,7 +176,7 @@ def setup_agents(
     wallet_addrs = [str(agent.checksum_address) for agent in agent_accounts]
 
     # Set up database
-    if not develop:
+    if not develop and eth_config.database_api_uri is not None:
         # Ignore this check if not develop
         if environment_config.username == DEFAULT_USERNAME:
             # Check for default name and exit if is default
@@ -189,18 +186,24 @@ def setup_agents(
 
     # Load existing balances
     if load_wallet_state:
-        # Get existing open positions from db api server
-        balances = balance_of(eth_config.database_api_uri, wallet_addrs)
-        # Set balances of wallets based on db and chain
-        for agent in agent_accounts:
-            # TODO is this the right location for this to happen?
-            # On one hand, doing it here makes sense because parameters such as db uri doesn't have to
-            # be passed in down all the function calls when wallets are initialized.
-            # On the other hand, we initialize empty wallets just to overwrite here.
-            # Keeping here for now for later discussion
-            agent.wallet = build_wallet_positions_from_data(
-                agent.checksum_address, balances, interface.base_token_contract
-            )
+        if eth_config.database_api_uri is not None:
+            # Get existing open positions from db api server
+            balances = balance_of(eth_config.database_api_uri, wallet_addrs)
+            # Set balances of wallets based on db and chain
+            for agent in agent_accounts:
+                # TODO is this the right location for this to happen?
+                # On one hand, doing it here makes sense because parameters such as db uri doesn't have to
+                # be passed in down all the function calls when wallets are initialized.
+                # On the other hand, we initialize empty wallets just to overwrite here.
+                # Keeping here for now for later discussion
+                agent.wallet = build_wallet_positions_from_db(
+                    agent.checksum_address, balances, interface.base_token_contract
+                )
+        else:
+            for agent in agent_accounts:
+                agent.wallet = build_wallet_positions_from_chain(
+                    agent.checksum_address, interface.hyperdrive_contract, interface.base_token_contract
+                )
 
     # If we're in liquidation mode, we explicitly set halt on errors to false
     # This is due to an expected error when redeeming withdrawal shares
@@ -314,69 +317,3 @@ def async_fund_agents_with_fake_user(
     user_account = create_and_fund_user_account(account_key_config, interface)
     asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, contract_addresses))
     return user_account
-
-
-def build_wallet_positions_from_data(
-    wallet_addr: str, db_balances: pd.DataFrame, base_contract: ERC20MintableContract
-) -> HyperdriveWallet:
-    """Builds a wallet position based on gathered data.
-
-    Arguments
-    ---------
-    wallet_addr: str
-        The checksum wallet address
-    db_balances: pd.DataFrame
-        The current positions dataframe gathered from the db (from the `balance_of` api call)
-    base_contract: Contract
-        The base contract to query the base amount from
-
-    Returns
-    -------
-    HyperdriveWallet
-        The wallet object build from the provided data
-    """
-    # Contract call to get base balance
-    base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
-    # TODO do we need to do error checking here?
-    base_obj = Quantity(amount=FixedPoint(scaled_value=base_amount), unit=TokenType.BASE)
-
-    # TODO We can also get lp and withdraw shares from chain?
-    wallet_balances = db_balances[db_balances["wallet_address"] == wallet_addr]
-
-    # Get longs
-    long_balances = wallet_balances[wallet_balances["base_token_type"] == "LONG"]
-    long_obj = {}
-    # Casting maturity_time to int due to values getting encoded as strings
-    for _, row in long_balances.iterrows():
-        maturity_time = int(row["maturity_time"])
-        long_obj[maturity_time] = Long(balance=FixedPoint(row["value"]), maturity_time=maturity_time)
-
-    short_balances = wallet_balances[wallet_balances["base_token_type"] == "SHORT"]
-    short_obj = {}
-    # Casting maturity_time to int due to values getting encoded as strings
-    for _, row in short_balances.iterrows():
-        maturity_time = int(row["maturity_time"])
-        short_obj[maturity_time] = Short(balance=FixedPoint(row["value"]), maturity_time=maturity_time)
-
-    lp_balances = wallet_balances[wallet_balances["base_token_type"] == "LP"]
-    assert len(lp_balances) <= 1
-    if len(lp_balances) == 0:
-        lp_obj = FixedPoint(0)
-    else:
-        lp_obj = FixedPoint(lp_balances.iloc[0]["value"])
-
-    withdraw_balances = wallet_balances[wallet_balances["base_token_type"] == "WITHDRAWAL_SHARE"]
-    assert len(withdraw_balances) <= 1
-    if len(withdraw_balances) == 0:
-        withdraw_obj = FixedPoint(0)
-    else:
-        withdraw_obj = FixedPoint(withdraw_balances.iloc[0]["value"])
-
-    return HyperdriveWallet(
-        address=HexBytes(wallet_addr),
-        balance=base_obj,
-        lp_tokens=lp_obj,
-        withdraw_shares=withdraw_obj,
-        longs=long_obj,
-        shorts=short_obj,
-    )

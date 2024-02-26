@@ -26,14 +26,7 @@ from chainsync.dashboard import (
     plot_rates,
 )
 from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import (
-    get_all_traders,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_ticker,
-    get_wallet_pnl,
-)
+from chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_info, get_ticker, get_wallet_pnl
 
 # pylint: disable=invalid-name
 
@@ -45,11 +38,6 @@ st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # Load and connect to postgres
 session = initialize_session()
-
-# pool config data is static, so just read once
-config_data = get_pool_config(session, coerce_float=False)
-
-config_data = config_data.iloc[0]
 
 max_live_blocks = 5000
 max_ticker_rows = 1000
@@ -78,10 +66,10 @@ while True:
     if freq is None:
         if len(pool_info) > 2:
             time_diff = pool_info.iloc[-1]["timestamp"] - pool_info.iloc[-2]["timestamp"]
-            if time_diff > pd.Timedelta("1T"):
+            if time_diff > pd.Timedelta("1min"):
                 freq = "D"
             else:
-                freq = "5T"
+                freq = "5min"
 
     pool_analysis = get_pool_analysis(session, start_block=-max_live_blocks, coerce_float=False)
     ticker = get_ticker(session, max_rows=max_ticker_rows, coerce_float=False, sort_desc=True)
