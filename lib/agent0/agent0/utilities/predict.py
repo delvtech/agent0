@@ -1,3 +1,5 @@
+"""Predict the outcome of trades."""
+
 from __future__ import annotations
 
 import logging
@@ -7,6 +9,11 @@ from typing import NamedTuple
 from ethpy.hyperdrive.interface.read_interface import HyperdriveReadInterface
 from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
+
+# need to cover a wide variety of cases
+# pylint: disable=too-many-arguments
+# being very explicit
+# pylint: disable=too-many-locals
 
 YEAR_IN_SECONDS = 31_536_000
 BLOCKS_IN_YEAR = YEAR_IN_SECONDS / 12
