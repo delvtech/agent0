@@ -72,8 +72,7 @@ def predict_long(
     if pool_state is None:
         pool_state = deepcopy(hyperdrive_interface.current_pool_state)
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
-    # price_discount = FixedPoint(1) - spot_price
-    price_discount = FixedPoint(1) / spot_price - FixedPoint(1)
+    price_discount = FixedPoint(1) - spot_price
     curve_fee = pool_state.pool_config.fees.curve
     governance_fee = pool_state.pool_config.fees.governance_lp
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
