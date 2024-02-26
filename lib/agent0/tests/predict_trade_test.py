@@ -1,11 +1,5 @@
-"""Test our ability to predict the outcome of a trade, with an input of bonds or base being traded.
+"""Test our ability to predict the outcome of a trade.
 
-A trade results in changes to 4 accounts, measured in 3 units.
-    accounts: pool, user, fee, governance
-    units: base, bonds, shares
-Knowing the impact on each of these ahead of time can be useful, depending on the application.
-    This is useful for deciding how much to trade.
-    LP and Arb bot uses this logic to hit a target rate.
 3 tests are simple demonstrations of how to do a prediction.
     Simplest case: test_prediction_example
     Open long with bonds as input: test_open_long_bonds
@@ -46,7 +40,7 @@ from agent0.utilities.predict import TradeDeltas, predict_long, predict_short
 # ruff: noqa: PLR0915
 
 YEAR_IN_SECONDS = 31_536_000
-BLOCKS_IN_YEAR = YEAR_IN_SECONDS / 12
+YEAR_IN_BLOCKS = YEAR_IN_SECONDS / 12
 
 
 def _format_table(delta: TradeDeltas):
@@ -174,11 +168,11 @@ def test_predict_open_long_bonds(chain: Chain):
     shares_needed /= FixedPoint(1) - price_discount * curve_fee
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
     share_price_on_next_block = share_price * (
-        FixedPoint(1) + hyperdrive_interface.get_variable_rate(pool_state.block_number) / FixedPoint(BLOCKS_IN_YEAR)
+        FixedPoint(1) + hyperdrive_interface.get_variable_rate(pool_state.block_number) / FixedPoint(YEAR_IN_BLOCKS)
     )
     base_needed = shares_needed * share_price_on_next_block
     # use rust to predict trade outcome
-    delta = predict_long(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    delta = predict_long(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
 
     # measure user wallet before trade
     user_base_before = agent.agent.wallet.balance.amount
@@ -236,7 +230,7 @@ def test_predict_open_long_base(chain: Chain):
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
     base_needed = FixedPoint(100_000)
-    delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed, verbose=True)
+    delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed)
     logging.info("bond_fees_to_pool is %s", delta.fee.bonds)
     logging.info("bond_fees_to_gov is %s", delta.governance.bonds)
     logging.info("predicted delta bonds is %s", delta.pool.bonds)
@@ -295,7 +289,7 @@ def test_predict_open_short_bonds(chain: Chain):
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
     bonds_needed = FixedPoint(100_000)
-    delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
     logging.info("predicted user delta shares is %s", delta.user.shares)
     logging.info("predicted fee delta base is %s", delta.fee.base)
     logging.info("predicted governance delta base is %s", delta.governance.base)
@@ -363,7 +357,7 @@ def test_predict_open_short_base(chain: Chain):
     bonds_needed = hyperdrive_interface.calc_bonds_out_given_shares_in_down(
         (base_needed / hyperdrive_interface.current_pool_state.pool_info.vault_share_price)
     )
-    delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed, verbose=True)
+    delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
     logging.info("predicted user delta shares is%s", delta.user.shares)
     logging.info("predicted fee delta base is %s", delta.fee.base)
     logging.info("predicted governance delta base is %s", delta.governance.base)
