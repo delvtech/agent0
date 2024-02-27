@@ -12,8 +12,6 @@ from .i_hyperdrive import IHyperdrive
 from .i_local_chain import ILocalChain
 from .i_local_hyperdrive import ILocalHyperdrive
 
-YEAR_IN_SECONDS = 31_536_000
-
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
 # ruff: noqa: PLR2004 (comparison against magic values (literals like numbers))
