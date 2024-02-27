@@ -4,10 +4,11 @@ import asyncio
 import logging
 import os
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, overload
+from typing import Any, Literal, Type, overload
 
 import nest_asyncio
 import numpy as np
+from eth_account.account import Account
 from ethpy import EthConfig
 from ethpy.hyperdrive import (
     HyperdriveAddresses,
@@ -20,9 +21,10 @@ from numpy.random._generator import Generator
 from web3 import Web3
 
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.hyperdrive.agent import build_wallet_positions_from_chain
 from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades
-from agent0.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
+from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
 from .chain import Chain
@@ -35,6 +37,7 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
+from .hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
@@ -78,7 +81,9 @@ class Hyperdrive:
                 self.rng = np.random.default_rng(self.rng_seed)
 
     class Addresses(HyperdriveAddresses):
-        # Subclass from the underlying addresses named tuple
+        """The addresses class that defines various addresses for Hyperdrive."""
+
+        # Subclass from the underlying addresses dataclass
         # We simply define a class method to initialize the address from
         # artifacts uri
 
@@ -132,7 +137,67 @@ class Hyperdrive:
             web3=chain._web3,
         )
 
-        self._pool_agents: list[LocalHyperdriveAgent] = []
+    def init_agent(
+        self,
+        private_key: str,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
+    ):
+        """Initializes an agent object given a private key.
+
+        .. warning::
+            The returned agent associated with the private key will give max approval
+            to the hyperdrive contract.
+
+        Arguments
+        ---------
+        private_key: str
+            The private key of the associated account.
+        policy: HyperdrivePolicy, optional
+            An optional policy to attach to this agent.
+        policy_config: HyperdrivePolicy, optional
+            The configuration for the attached policy.
+
+        Returns
+        -------
+        HyperdriveAgent
+            The agent object for a user to execute trades with.
+        """
+        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
+        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
+            policy_config.rng = self.config.rng
+        out_agent = InteractiveHyperdriveAgent(
+            pool=self,
+            policy=policy,
+            policy_config=policy_config,
+            private_key=private_key,
+        )
+        return out_agent
+
+    def _init_agent(
+        self,
+        policy: Type[HyperdriveBasePolicy] | None,
+        policy_config: HyperdriveBasePolicy.Config | None,
+        private_key: str,
+    ):
+        agent_account = Account().from_key(private_key)
+        # TODO add the public address to the chain object to avoid multiple objects
+        # with the same underlying account
+
+        # Setting the budget to 0 here, we'll update the wallet from the chain
+        agent = HyperdriveAgent(
+            agent_account,
+            initial_budget=FixedPoint(0),
+            policy=InteractiveHyperdrivePolicy(
+                InteractiveHyperdrivePolicy.Config(
+                    sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng
+                )
+            ),
+        )
+        agent.wallet = build_wallet_positions_from_chain(
+            agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
+        )
+        return agent
 
     # TODO this should be the base agent class for these calls
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:

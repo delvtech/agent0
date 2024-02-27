@@ -554,17 +554,23 @@ class LocalHyperdrive(Hyperdrive):
 
     def init_agent(
         self,
+        private_key: str | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-        policy: Type[HyperdriveBasePolicy] | None = None,
-        policy_config: HyperdriveBasePolicy.Config | None = None,
-        private_key: str | None = None,
     ) -> LocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
         ---------
+        private_key: str, optional
+            The private key of the associated account. Default is auto-generated.
+        policy: HyperdrivePolicy, optional
+            An optional policy to attach to this agent.
+        policy_config: HyperdrivePolicy, optional
+            The configuration for the attached policy.
         base: FixedPoint, optional
             The amount of base to fund the agent with. Defaults to 0.
             If a private key is provided then the base amount is added to their previous balance.
@@ -573,18 +579,11 @@ class LocalHyperdrive(Hyperdrive):
             If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
-        policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
-        policy_config: HyperdrivePolicy, optional
-            The configuration for the attached policy.
-        private_key: str, optional
-            The private key of the associated account. Default is auto-generated.
 
         Returns
         -------
-        InteractiveHyperdriveAgent
-            An object that contains the HyperdriveReadWriteInterface, Agents,
-            and provides access to the interactive Hyperdrive API.
+        LocalHyperdriveAgent
+            The agent object for a user to execute trades with.
         """
         # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
@@ -951,6 +950,8 @@ class LocalHyperdrive(Hyperdrive):
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> HyperdriveAgent:
+        # We overwrite the base init agents with different parameters
+        # pylint: disable=arguments-differ
         # pylint: disable=too-many-arguments
         agent_private_key = make_private_key() if private_key is None else private_key
 
@@ -1083,7 +1084,7 @@ class LocalHyperdrive(Hyperdrive):
         return out
 
     def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
-        out = super()._close_short(agent, bonds)
+        out = super()._close_short(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
