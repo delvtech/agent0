@@ -139,6 +139,8 @@ class IHyperdrive:
             web3=chain._web3,
         )
 
+        self._chain = chain
+
     def init_agent(
         self,
         private_key: str,
@@ -147,9 +149,8 @@ class IHyperdrive:
     ):
         """Initializes an agent object given a private key.
 
-        .. warning::
-            The returned agent associated with the private key will give max approval
-            to the hyperdrive contract.
+        .. note::
+            Due to the underlying bookkeeping, each agent object needs a unique private key.
 
         Arguments
         ---------
@@ -182,18 +183,19 @@ class IHyperdrive:
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
     ):
-        agent_account = Account().from_key(private_key)
-        # TODO add the public address to the chain object to avoid multiple objects
-        # with the same underlying account
-
         # Setting the budget to 0 here, we'll update the wallet from the chain
         agent = HyperdriveAgent(
-            agent_account,
+            Account().from_key(private_key),
             initial_budget=FixedPoint(0),
             policy=IHyperdrivePolicy(
                 IHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng)
             ),
         )
+
+        # TODO add the public address to the chain object to avoid multiple objects
+        # with the same underlying account
+        self._chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
+
         agent.wallet = build_wallet_positions_from_chain(
             agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
         )

@@ -222,6 +222,6 @@ def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool)
     with pytest.raises(ValueError):
         _ = interactive_remote_hyperdrive_0.init_agent(private_key=private_key)
 
-    # Initializing an agent with an existing key on a seperate pool should fail
+    # Initializing an agent with an existing key on a separate pool should fail
     with pytest.raises(ValueError):
         _ = interactive_remote_hyperdrive_1.init_agent(private_key=private_key)

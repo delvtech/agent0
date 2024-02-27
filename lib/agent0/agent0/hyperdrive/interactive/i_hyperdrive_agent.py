@@ -231,5 +231,10 @@ class IHyperdriveAgent:
         self._pool._add_funds(self.agent, base, eth)
 
     def set_max_approval(self) -> None:
-        """Sets the max approval to the hyperdrive contract"""
+        """Sets the max approval to the hyperdrive contract.
+
+        .. warning:: This sets the max approval to the underlying hyperdrive contract for
+        this wallet. Do this at your own risk.
+
+        """
         self._pool._set_max_approval(self.agent)

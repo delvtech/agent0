@@ -273,7 +273,7 @@ class ILocalHyperdrive(IHyperdrive):
 
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
-        self.chain = chain
+        self._chain = chain
 
         # We use this variable to control underlying threads when to exit.
         # When this varible is set to true, the underlying threads will exit.
@@ -284,7 +284,7 @@ class ILocalHyperdrive(IHyperdrive):
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._launch_data_pipeline()
         else:
             self._run_blocking_data_pipeline()
@@ -312,7 +312,7 @@ class ILocalHyperdrive(IHyperdrive):
         """
         # Sanity check, callers are responsible for determining experimental mode for clarity,
         # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
+        assert self._chain.experimental_data_threading
 
         if start_block is None:
             start_block = self._deploy_block_number
@@ -367,7 +367,7 @@ class ILocalHyperdrive(IHyperdrive):
     def _stop_data_pipeline(self):
         # Sanity check, callers are responsible for determining experimental mode for clarity,
         # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
+        assert self._chain.experimental_data_threading
 
         if self._data_thread is None or self._analysis_thread is None:
             raise ValueError("Data pipeline not running")
@@ -384,7 +384,7 @@ class ILocalHyperdrive(IHyperdrive):
     def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
         # Sanity check, callers are responsible for determining experimental mode,
         # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
+        assert self._chain.experimental_data_threading
 
         latest_mined_block: BlockNumber | None = None
         analysis_latest_block_number: int | None = None
@@ -407,7 +407,7 @@ class ILocalHyperdrive(IHyperdrive):
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
         # Sanity check, callers are responsible for determining experimental mode for clarity,
         # but we add a catch here to make sure
-        assert not self.chain.experimental_data_threading
+        assert not self._chain.experimental_data_threading
 
         # TODO these functions are not thread safe, need to fix if we expose async functions
         # Runs the data pipeline synchronously
@@ -437,7 +437,7 @@ class ILocalHyperdrive(IHyperdrive):
 
     def _cleanup(self):
         """Cleans up resources used by this object."""
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._stop_data_pipeline()
         self.db_session.close()
         if self.dashboard_subprocess is not None:
@@ -456,10 +456,10 @@ class ILocalHyperdrive(IHyperdrive):
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
     def __hash__(self):
         """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
-        return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
+        return hash((self._chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
 
     def __eq__(self, other):
-        return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
+        return (self._chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
             other.chain.rpc_uri,
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
@@ -521,7 +521,7 @@ class ILocalHyperdrive(IHyperdrive):
         """
         self.interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
     def _create_checkpoint(
@@ -594,7 +594,7 @@ class ILocalHyperdrive(IHyperdrive):
             The agent object for a user to execute trades with.
         """
         # pylint: disable=too-many-arguments
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+        if self._chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add a new agent after saving a snapshot")
         if base is None:
             base = FixedPoint(0)
@@ -653,7 +653,7 @@ class ILocalHyperdrive(IHyperdrive):
             A pandas dataframe that consists of the pool info per block.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._ensure_data_caught_up()
 
         pool_info = get_pool_info(self.db_session, coerce_float=coerce_float)
@@ -675,7 +675,7 @@ class ILocalHyperdrive(IHyperdrive):
             A pandas dataframe that consists of the checkpoint info per block.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._ensure_data_caught_up()
         return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
 
@@ -734,7 +734,7 @@ class ILocalHyperdrive(IHyperdrive):
                 The last block number that the position was updated.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._ensure_data_caught_up()
 
         # TODO potential improvement is to pivot the table so that columns are the token type
@@ -790,7 +790,7 @@ class ILocalHyperdrive(IHyperdrive):
                 A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._ensure_data_caught_up()
         out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
         out = self._add_username_to_dataframe(out, "wallet_address")
@@ -840,7 +840,7 @@ class ILocalHyperdrive(IHyperdrive):
                 The transaction hash that resulted in the deltas.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._ensure_data_caught_up()
         # We gather all deltas and calculate the current positions here
         # If computing this is too slow, we can get current positions from
@@ -893,7 +893,7 @@ class ILocalHyperdrive(IHyperdrive):
                 The total pnl of the agent at the specified block number.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
+        if self._chain.experimental_data_threading:
             self._ensure_data_caught_up()
         out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
@@ -1002,7 +1002,7 @@ class ILocalHyperdrive(IHyperdrive):
         self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
     ) -> None:
         # TODO this can be fixed by getting actual base values from the chain.
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+        if self._chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add funds to an agent after saving a snapshot")
 
         # Adding funds default to the deploy account
@@ -1019,7 +1019,7 @@ class ILocalHyperdrive(IHyperdrive):
                 self._initial_funds[agent.address] = base
 
         # Adding funds mines a block, so we run data pipeline here
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
     def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
@@ -1051,7 +1051,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._open_long(agent, base)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1059,7 +1059,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._close_long(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1067,7 +1067,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._open_short(agent, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1075,7 +1075,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._close_short(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1083,7 +1083,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._add_liquidity(agent, base)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1091,7 +1091,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._remove_liquidity(agent, shares)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1099,7 +1099,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._redeem_withdraw_share(agent, shares)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1109,7 +1109,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._execute_policy_action(agent)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
@@ -1119,7 +1119,7 @@ class ILocalHyperdrive(IHyperdrive):
         out = super()._liquidate(agent, randomize)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
+        if not self._chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
         return out
 
