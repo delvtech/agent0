@@ -949,7 +949,7 @@ class ILocalHyperdrive(IHyperdrive):
 
     ### Private agent methods ###
 
-    def _init_agent(
+    def _init_local_agent(
         self,
         base: FixedPoint,
         eth: FixedPoint,

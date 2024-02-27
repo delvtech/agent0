@@ -1,9 +1,18 @@
+"""Example script for using interactive hyperdrive to connect to a remote chain.
+Note that this script only works when there exists an anvil chain running in docker.
+"""
+
+# %%
+# Variables by themselves print out dataframes in a nice format in interactive mode
+# pylint: disable=pointless-statement
+
 from fixedpointmath import FixedPoint
 
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.interactive import IChain, IHyperdrive
 from agent0.hyperdrive.policies import PolicyZoo
 
+# %%
 chain = IChain("http://localhost:8545")
 
 
@@ -16,6 +25,8 @@ chain = IChain("http://localhost:8545")
 hyperdrive_addresses = IHyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/")
 hyperdrive_config = IHyperdrive.Config()
 hyperdrive_pool = IHyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
+
+# %%
 
 # We set the private key here. In practice, this would be in a private
 # env file somewhere, and we only access this through environment variables.
@@ -35,6 +46,7 @@ hyperdrive_agent0 = hyperdrive_pool.init_agent(
     policy_config=PolicyZoo.random.Config(rng_seed=123),
 )
 
+# %%
 # We expose this function for testing purposes, but the underlying function calls `mint` and `anvil_set_balance`,
 # which are likely to fail on any non-test network.
 hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
@@ -42,6 +54,7 @@ hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 # Set max approval
 hyperdrive_agent0.set_max_approval()
 
+# %%
 
 # Make trades
 # Return values here mirror the various events emitted from these contract calls
@@ -53,6 +66,7 @@ close_long_event = hyperdrive_agent0.close_long(
 )
 
 
+# %%
 random_trade_events = []
 for i in range(10):
     # NOTE Since a policy can execute multiple trades per action, the output events is a list

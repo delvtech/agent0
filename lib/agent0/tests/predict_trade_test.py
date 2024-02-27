@@ -108,7 +108,7 @@ def test_prediction_example(chain: ILocalChain):
     _log_table(delta)
 
 
-def test_open_long_bonds(chain: Chain):
+def test_open_long_bonds(chain: ILocalChain):
     """Demonstrate abililty to open long with bonds as input."""
     interactive_config = ILocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -125,7 +125,7 @@ def test_open_long_bonds(chain: Chain):
     _log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
 
 
-def test_open_short_base(chain: Chain):
+def test_open_short_base(chain: ILocalChain):
     """Demonstrate abililty to open short with base as input."""
     interactive_config = ILocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -144,7 +144,7 @@ def test_open_short_base(chain: Chain):
 
 
 @pytest.mark.anvil
-def test_predict_open_long_bonds(chain: Chain):
+def test_predict_open_long_bonds(chain: ILocalChain):
     """Predict outcome of an open long, for a given amount of bonds."""
     # setup
     interactive_config = ILocalHyperdrive.Config(
@@ -215,7 +215,7 @@ def test_predict_open_long_bonds(chain: Chain):
 
 
 @pytest.mark.anvil
-def test_predict_open_long_base(chain: Chain):
+def test_predict_open_long_base(chain: ILocalChain):
     """Predict outcome of an open long, for a given amount of base."""
     # setup
     interactive_config = ILocalHyperdrive.Config(
@@ -275,7 +275,7 @@ def test_predict_open_long_base(chain: Chain):
 
 
 @pytest.mark.anvil
-def test_predict_open_short_bonds(chain: Chain):
+def test_predict_open_short_bonds(chain: ILocalChain):
     """Predict outcome of an open short, for a given amount of bonds."""
     interactive_config = ILocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -337,7 +337,7 @@ def test_predict_open_short_bonds(chain: Chain):
 
 
 @pytest.mark.anvil
-def test_predict_open_short_base(chain: Chain):
+def test_predict_open_short_base(chain: ILocalChain):
     """Predict outcome of an open short, for a given amount of base."""
     interactive_config = ILocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term

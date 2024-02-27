@@ -31,6 +31,12 @@ if TYPE_CHECKING:
 
 
 class IHyperdriveAgent:
+    """Interactive Hyperdrive Agent.
+    This class is barebones with documentation, will just call the corresponding function
+    in the interactive hyperdrive class to keep all logic in the same place. Adding these
+    wrappers here for ease of use.
+    """
+
     def __init__(
         self,
         pool: IHyperdrive,

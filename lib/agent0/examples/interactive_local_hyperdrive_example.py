@@ -1,4 +1,4 @@
-"""Example script for using interactive hyperdrive."""
+"""Example script for using interactive hyperdrive to launch a local chain."""
 
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode

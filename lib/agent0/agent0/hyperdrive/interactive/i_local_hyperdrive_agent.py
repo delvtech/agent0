@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ILocalHyperdriveAgent(IHyperdriveAgent):
-    """Local Hyperdrive Agent.
+    """Interactive Local Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these
     wrappers here for ease of use.
@@ -59,4 +59,4 @@ class ILocalHyperdriveAgent(IHyperdriveAgent):
         # pylint: disable=too-many-arguments
         self._pool = pool
         self.name = name
-        self.agent = self._pool._init_agent(base, eth, name, policy, policy_config, private_key)
+        self.agent = self._pool._init_local_agent(base, eth, name, policy, policy_config, private_key)
