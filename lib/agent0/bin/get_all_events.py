@@ -4,7 +4,7 @@ import pandas as pd
 from chainsync.db.hyperdrive import get_transactions
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.hyperdrive.policies import PolicyZoo
 
 # This is meant to be a standalone script, no need for global upper_case naming style
@@ -12,10 +12,10 @@ from agent0.hyperdrive.policies import PolicyZoo
 
 local_chain_config = LocalChain.Config()
 chain = LocalChain(local_chain_config)
-initial_pool_config = InteractiveHyperdrive.Config()
-interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-interactive_hyperdrive2 = InteractiveHyperdrive(chain, initial_pool_config)
-interactive_hyperdrive3 = InteractiveHyperdrive(chain, initial_pool_config)
+initial_pool_config = LocalHyperdrive.Config()
+interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive2 = LocalHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive3 = LocalHyperdrive(chain, initial_pool_config)
 
 # %%
 # Generate funded trading agents from the interactive object

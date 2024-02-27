@@ -22,7 +22,7 @@ from web3 import Web3
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades
-from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
+from agent0.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
 from agent0.test_utils import assert_never
 
 from .chain import Chain
@@ -132,7 +132,7 @@ class Hyperdrive:
             web3=chain._web3,
         )
 
-        self._pool_agents: list[InteractiveHyperdriveAgent] = []
+        self._pool_agents: list[LocalHyperdriveAgent] = []
 
     # TODO this should be the base agent class for these calls
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:

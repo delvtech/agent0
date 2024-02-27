@@ -11,8 +11,8 @@ from pandas import Series
 
 from agent0.hyperdrive import HyperdriveWallet
 
-from .interactive_hyperdrive import InteractiveHyperdrive
 from .local_chain import LocalChain
+from .local_hyperdrive import LocalHyperdrive
 
 YEAR_IN_SECONDS = 31_536_000
 
@@ -24,9 +24,7 @@ YEAR_IN_SECONDS = 31_536_000
 
 
 @pytest.mark.anvil
-def _ensure_db_wallet_matches_agent_wallet(
-    interactive_hyperdrive: InteractiveHyperdrive, agent_wallet: HyperdriveWallet
-):
+def _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive: LocalHyperdrive, agent_wallet: HyperdriveWallet):
     # NOTE this function is assuming only one agent is making trades
 
     # Test against db
@@ -80,14 +78,14 @@ def test_funding_and_trades(chain: LocalChain):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
-    initial_pool_config = InteractiveHyperdrive.Config(
+    initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches 2 pools on the same local chain
-    interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-    interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive_2 = LocalHyperdrive(chain, initial_pool_config)
 
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later
@@ -193,7 +191,7 @@ def test_block_timestamp_interval(chain: LocalChain):
     # The chain in the test fixture defaults to 12 seconds
 
     # We need the underlying hyperdrive interface here to test time
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(chain)
     hyperdrive_interface = interactive_hyperdrive.interface
     hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
 
@@ -211,7 +209,7 @@ def test_block_timestamp_interval(chain: LocalChain):
 def test_advance_time(chain: LocalChain):
     """Advance time by 3600 seconds then 1 week."""
     # We need the underlying hyperdrive interface here to test time
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(chain)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
@@ -234,8 +232,8 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     chain._set_block_timestamp_interval(1)  # pylint: disable=protected-access
 
     # We need the underlying hyperdrive interface here to test time
-    config = InteractiveHyperdrive.Config(checkpoint_duration=3600)
-    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    config = LocalHyperdrive.Config(checkpoint_duration=3600)
+    interactive_hyperdrive = LocalHyperdrive(chain, config)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     # TODO there is a non-determininstic element here, the first advance time for 600 seconds
@@ -289,8 +287,8 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
 def test_save_load_snapshot(chain: LocalChain):
     """Save and load snapshot."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    initial_pool_config = InteractiveHyperdrive.Config()
-    interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+    initial_pool_config = LocalHyperdrive.Config()
+    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     # Generate funded trading agents from the interactive object
@@ -444,8 +442,8 @@ def test_save_load_snapshot(chain: LocalChain):
 def test_set_variable_rate(chain: LocalChain):
     """Set the variable rate."""
     # We need the underlying hyperdrive interface here to test time
-    config = InteractiveHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
-    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    config = LocalHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
+    interactive_hyperdrive = LocalHyperdrive(chain, config)
 
     # Make a trade to mine the block on this variable rate so it shows up in the data pipeline
     _ = interactive_hyperdrive.init_agent()
@@ -464,10 +462,10 @@ def test_set_variable_rate(chain: LocalChain):
 @pytest.mark.anvil
 def test_access_deployer_account(chain: LocalChain):
     """Access the deployer account."""
-    config = InteractiveHyperdrive.Config(
+    config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint("100"),
     )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    interactive_hyperdrive = LocalHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     pubkey = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
@@ -477,10 +475,10 @@ def test_access_deployer_account(chain: LocalChain):
 @pytest.mark.anvil
 def test_access_deployer_liquidity(chain: LocalChain):
     """Remove liquidity from the deployer account."""
-    config = InteractiveHyperdrive.Config(
+    config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(100),
     )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    interactive_hyperdrive = LocalHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
     assert (
@@ -499,10 +497,10 @@ def test_access_deployer_liquidity(chain: LocalChain):
 @pytest.mark.anvil
 def test_remove_deployer_liquidity(chain: LocalChain):
     """Remove liquidity from the deployer account."""
-    config = InteractiveHyperdrive.Config(
+    config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(100),
     )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, config)
+    interactive_hyperdrive = LocalHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
     larry.remove_liquidity(shares=larry.wallet.lp_tokens)
@@ -521,7 +519,7 @@ def test_remove_deployer_liquidity(chain: LocalChain):
 @pytest.mark.anvil
 def test_get_config_no_transactions(chain: LocalChain):
     """Get pool config before executing any transactions."""
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(chain)
     pool_config = interactive_hyperdrive.get_pool_config()
     assert isinstance(pool_config, Series)
 
@@ -529,7 +527,7 @@ def test_get_config_no_transactions(chain: LocalChain):
 @pytest.mark.anvil
 def test_get_config_with_transactions(chain: LocalChain):
     """Get pool config after executing one transaction."""
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(chain)
     agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), name="alice")
     agent0.open_long(base=FixedPoint(11_111))
     pool_config = interactive_hyperdrive.get_pool_config()
@@ -539,7 +537,7 @@ def test_get_config_with_transactions(chain: LocalChain):
 @pytest.mark.anvil
 def test_liquidate(chain: LocalChain):
     """Test liquidation."""
-    interactive_hyperdrive = InteractiveHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(chain)
     alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
     alice.open_long(base=FixedPoint(100))
     alice.open_short(bonds=FixedPoint(100))
@@ -555,8 +553,8 @@ def test_liquidate(chain: LocalChain):
 def test_random_liquidate(chain: LocalChain):
     """Test random liquidation."""
     # Explicitly setting a random seed to remove randomness in the test
-    interactive_config = InteractiveHyperdrive.Config(rng_seed=1234)
-    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    interactive_config = LocalHyperdrive.Config(rng_seed=1234)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
 
     # We run the same trades 5 times, and ensure there's at least one difference
@@ -600,14 +598,14 @@ def test_share_price_compounding_quincunx(chain: LocalChain):
     """Share price when compounding by quincunx (one fifth of a year) should increase by more than the APR."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
-    interactive_config = InteractiveHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0),
         curve_fee=FixedPoint(0),
         flat_fee=FixedPoint(0),
         initial_variable_rate=initial_variable_rate,
     )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
@@ -630,14 +628,14 @@ def test_share_price_compounding_annus(chain: LocalChain):
     """Share price when compounding by annus (one year) should increase by exactly the APR (no compounding)."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
-    interactive_config = InteractiveHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0),
         curve_fee=FixedPoint(0),
         flat_fee=FixedPoint(0),
         initial_variable_rate=initial_variable_rate,
     )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")

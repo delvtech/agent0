@@ -9,7 +9,7 @@ from fixedpointmath import FixedPoint
 from hyperlogs import setup_logging
 from numpy.random._generator import Generator
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
 
 def setup_fuzz(
@@ -24,7 +24,7 @@ def setup_fuzz(
     governance_lp_fee: FixedPoint | None = None,
     governance_zombie_fee: FixedPoint | None = None,
     var_interest: FixedPoint | None = None,
-) -> tuple[LocalChain, int, Generator, InteractiveHyperdrive]:
+) -> tuple[LocalChain, int, Generator, LocalHyperdrive]:
     """Setup the fuzz experiment.
 
     Arguments
@@ -94,7 +94,7 @@ def setup_fuzz(
         "fuzz_test_name": fuzz_test_name,
     }
 
-    initial_pool_config = InteractiveHyperdrive.Config(
+    initial_pool_config = LocalHyperdrive.Config(
         preview_before_trade=True,
         checkpoint_duration=60 * 60 * 24,  # 1 day
         # TODO calc_max_short doesn't work with a week position duration, setting to 30 days
@@ -119,6 +119,6 @@ def setup_fuzz(
     if var_interest is not None:
         initial_pool_config.initial_variable_rate = var_interest
 
-    interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
     return chain, random_seed, rng, interactive_hyperdrive

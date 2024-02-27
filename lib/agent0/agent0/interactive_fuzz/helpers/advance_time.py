@@ -2,12 +2,10 @@
 
 from numpy.random._generator import Generator
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
 
-def advance_time_before_checkpoint(
-    chain: LocalChain, rng: Generator, interactive_hyperdrive: InteractiveHyperdrive
-) -> None:
+def advance_time_before_checkpoint(chain: LocalChain, rng: Generator, interactive_hyperdrive: LocalHyperdrive) -> None:
     """Advance time on the chain a random amount that is less than the next checkpoint time.
 
     Arguments
@@ -41,7 +39,7 @@ def advance_time_before_checkpoint(
     assert len(checkpoint_info[interactive_hyperdrive]) == 0, "Checkpoint was created when it should not have been."
 
 
-def advance_time_after_checkpoint(chain: LocalChain, interactive_hyperdrive: InteractiveHyperdrive) -> None:
+def advance_time_after_checkpoint(chain: LocalChain, interactive_hyperdrive: LocalHyperdrive) -> None:
     """Advance time on the chain to the next checkpoint boundary plus some buffer.
 
     Arguments

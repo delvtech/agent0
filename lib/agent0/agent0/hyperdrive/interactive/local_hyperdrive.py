@@ -64,15 +64,15 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .hyperdrive import Hyperdrive
-from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 from .local_chain import LocalChain
+from .local_hyperdrive_agent import LocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
 
 
-class InteractiveHyperdrive(Hyperdrive):
+class LocalHyperdrive(Hyperdrive):
     """Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
     # Lots of attributes in config
@@ -292,7 +292,7 @@ class InteractiveHyperdrive(Hyperdrive):
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
-        self._pool_agents: list[InteractiveHyperdriveAgent] = []
+        self._pool_agents: list[LocalHyperdriveAgent] = []
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -560,7 +560,7 @@ class InteractiveHyperdrive(Hyperdrive):
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
         private_key: str | None = None,
-    ) -> InteractiveHyperdriveAgent:
+    ) -> LocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
@@ -596,7 +596,7 @@ class InteractiveHyperdrive(Hyperdrive):
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
-        out_agent = InteractiveHyperdriveAgent(
+        out_agent = LocalHyperdriveAgent(
             base=base,
             eth=eth,
             name=name,

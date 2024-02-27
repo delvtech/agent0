@@ -29,7 +29,7 @@ from fixedpointmath import FixedPoint
 from hypertypes.fixedpoint_types import CheckpointFP
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
@@ -283,7 +283,7 @@ def invariant_check(
     maturity_checkpoint: CheckpointFP,
     long_maturity_vals_epsilon: float,
     short_maturity_vals_epsilon: float,
-    interactive_hyperdrive: InteractiveHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
 

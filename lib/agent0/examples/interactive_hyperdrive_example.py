@@ -8,7 +8,7 @@ import datetime
 
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
@@ -26,10 +26,10 @@ chain = LocalChain(local_chain_config)
 # An "admin" user (as provided by the Chain object) is launched/funded here for deploying hyperdrive
 
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-initial_pool_config = InteractiveHyperdrive.Config()
+initial_pool_config = LocalHyperdrive.Config()
 # Launches 2 pools on the same local chain
-interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive_2 = LocalHyperdrive(chain, initial_pool_config)
 
 # %%
 # Generate funded trading agents from the interactive object

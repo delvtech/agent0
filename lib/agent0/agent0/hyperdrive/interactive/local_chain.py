@@ -25,7 +25,7 @@ from .chain import Chain
 from .event_types import CreateCheckpoint
 
 if TYPE_CHECKING:
-    from .interactive_hyperdrive import InteractiveHyperdrive
+    from .local_hyperdrive import LocalHyperdrive
 
 
 # pylint: disable=too-many-instance-attributes
@@ -123,7 +123,7 @@ class LocalChain(Chain):
         self._snapshot_dir = config.snapshot_dir
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
-        self._deployed_hyperdrive_pools: list[InteractiveHyperdrive] = []
+        self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
         self.experimental_data_threading = config.experimental_data_threading
 
         if config.block_timestamp_interval is not None:
@@ -183,7 +183,7 @@ class LocalChain(Chain):
     # pylint: disable=too-many-branches
     def advance_time(
         self, time_delta: int | timedelta, create_checkpoints: bool = True
-    ) -> dict[InteractiveHyperdrive, list[CreateCheckpoint]]:
+    ) -> dict[LocalHyperdrive, list[CreateCheckpoint]]:
         """Advance time for this chain using the `evm_mine` RPC call.
 
         This function looks at the timestamp of the current block, then
@@ -218,9 +218,7 @@ class LocalChain(Chain):
         else:
             time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
 
-        out_dict: dict[InteractiveHyperdrive, list[CreateCheckpoint]] = {
-            pool: [] for pool in self._deployed_hyperdrive_pools
-        }
+        out_dict: dict[LocalHyperdrive, list[CreateCheckpoint]] = {pool: [] for pool in self._deployed_hyperdrive_pools}
 
         # Don't checkpoint when advancing time if `create_checkpoints` is false
         # or there are no deployed pools
@@ -458,7 +456,7 @@ class LocalChain(Chain):
 
         return postgres_config, container
 
-    def _add_deployed_pool_to_bookkeeping(self, pool: InteractiveHyperdrive):
+    def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         if self._has_saved_snapshot:
             raise ValueError("Cannot add a new pool after saving a snapshot")
         self._deployed_hyperdrive_pools.append(pool)

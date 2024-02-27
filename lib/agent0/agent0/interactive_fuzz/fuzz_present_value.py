@@ -29,7 +29,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive import HyperdriveActionType
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose, setup_fuzz
 
 # tests have lots of stuff
@@ -265,7 +265,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 def invariant_check(
     check_data: dict[str, Any],
     test_epsilon: float,
-    interactive_hyperdrive: InteractiveHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
 
