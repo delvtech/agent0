@@ -16,11 +16,6 @@ if TYPE_CHECKING:
     from .i_local_hyperdrive import ILocalHyperdrive
 
 
-# We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
-# Hence, we call protected class methods in this class.
-# pylint: disable=protected-access
-
-
 class ILocalHyperdriveAgent(IHyperdriveAgent):
     """Local Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
@@ -59,23 +54,9 @@ class ILocalHyperdriveAgent(IHyperdriveAgent):
         private_key: str | None, optional
             The private key of the associated account. Default is auto-generated.
         """
+        # We overwrite the base init agents with different parameters
+        # pylint: disable=super-init-not-called
         # pylint: disable=too-many-arguments
         self._pool = pool
         self.name = name
         self.agent = self._pool._init_agent(base, eth, name, policy, policy_config, private_key)
-
-    def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
-        """Adds additional funds to the agent.
-
-        Arguments
-        ---------
-        base: FixedPoint
-            The amount of base to fund the agent with. Defaults to 0.
-        eth: FixedPoint
-            The amount of ETH to fund the agent with. Defaults to 0.
-        """
-        if base is None:
-            base = FixedPoint(0)
-        if eth is None:
-            eth = FixedPoint(0)
-        self._pool._add_funds(self.agent, base, eth)

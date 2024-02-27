@@ -34,6 +34,11 @@ hyperdrive_agent0 = hyperdrive_pool.init_agent(
     policy_config=PolicyZoo.random.Config(rng_seed=123),
 )
 
+# We expose this function for testing purposes, but the underlying function calls `mint` and `anvil_set_balance`,
+# which are likely to fail on any non-test network.
+hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
+
+
 # Make trades
 # Return values here mirror the various events emitted from these contract calls
 # These functions are blocking, but relatively easy to expose async versions of the

@@ -25,6 +25,10 @@ if TYPE_CHECKING:
     )
     from .i_hyperdrive import IHyperdrive
 
+# We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
+# Hence, we call protected class methods in this class.
+# pylint: disable=protected-access
+
 
 class IHyperdriveAgent:
     def __init__(
@@ -205,3 +209,23 @@ class IHyperdriveAgent:
             Events of the executed actions.
         """
         return self._pool._liquidate(self.agent, randomize)
+
+    def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
+        """Adds additional funds to the agent.
+
+        .. note:: This method calls `set_anvil_account_balance` and `mint` under the hood.
+        These functions are likely to fail on any non-test network, but we add them to the
+        interactive agent for convenience.
+
+        Arguments
+        ---------
+        base: FixedPoint
+            The amount of base to fund the agent with. Defaults to 0.
+        eth: FixedPoint
+            The amount of ETH to fund the agent with. Defaults to 0.
+        """
+        if base is None:
+            base = FixedPoint(0)
+        if eth is None:
+            eth = FixedPoint(0)
+        self._pool._add_funds(self.agent, base, eth)

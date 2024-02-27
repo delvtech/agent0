@@ -31,7 +31,6 @@ from chainsync.db.hyperdrive import (
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
-from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import (
     BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
@@ -1001,25 +1000,9 @@ class ILocalHyperdrive(IHyperdrive):
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add funds to an agent after saving a snapshot")
 
-        if eth > FixedPoint(0):
-            # Eth is a set balance call
-            eth_balance, _ = self.interface.get_eth_base_balances(agent)
-            new_eth_balance = eth_balance + eth
-            _ = set_anvil_account_balance(self.interface.web3, agent.address, new_eth_balance.scaled_value)
+        super()._add_funds(agent, base, eth, signer_account=self._deployed_hyperdrive.deploy_account)
 
         if base > FixedPoint(0):
-            # We mint base
-            _ = smart_contract_transact(
-                self.interface.web3,
-                self.interface.base_token_contract,
-                self._deployed_hyperdrive.deploy_account,
-                "mint(address,uint256)",
-                agent.checksum_address,
-                base.scaled_value,
-            )
-            # Update the agent's wallet balance
-            agent.wallet.balance.amount += base
-
             # Keep track of how much base has been minted for each agent
             if agent.address in self._initial_funds:
                 self._initial_funds[agent.address] += base
@@ -1029,8 +1012,6 @@ class ILocalHyperdrive(IHyperdrive):
         # Adding funds mines a block, so we run data pipeline here
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        # TODO do we want to report a status here?
 
     def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
         # Sanity check, should only be one trade result
