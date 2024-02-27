@@ -12,7 +12,7 @@ import numpy as np
 from fixedpointmath import FixedPoint
 from gymnasium import spaces
 
-from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
+from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.hyperdrive.policies import PolicyZoo
 
 # Global suppression of warnings, TODO fix
@@ -89,10 +89,10 @@ class SimpleHyperdriveEnv(gym.Env):
     ):
         """Initializes the environment"""
         # TODO parameterize these in the gym config
-        local_chain_config = LocalChain.Config(block_timestamp_interval=3600)
-        self.chain = LocalChain(local_chain_config)
-        initial_pool_config = LocalHyperdrive.Config()
-        self.interactive_hyperdrive = LocalHyperdrive(self.chain, initial_pool_config)
+        local_chain_config = ILocalChain.Config(block_timestamp_interval=3600)
+        self.chain = ILocalChain(local_chain_config)
+        initial_pool_config = ILocalHyperdrive.Config()
+        self.interactive_hyperdrive = ILocalHyperdrive(self.chain, initial_pool_config)
 
         # Define the rl bot
         self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget, name="rl_bot")

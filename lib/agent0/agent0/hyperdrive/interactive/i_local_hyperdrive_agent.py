@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from .hyperdrive_agent import InteractiveHyperdriveAgent
+from .i_hyperdrive_agent import IHyperdriveAgent
 
 if TYPE_CHECKING:
     from typing import Type
 
     from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
-    from .local_hyperdrive import LocalHyperdrive
+    from .i_local_hyperdrive import ILocalHyperdrive
 
 
 # We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 # pylint: disable=protected-access
 
 
-class LocalHyperdriveAgent(InteractiveHyperdriveAgent):
+class ILocalHyperdriveAgent(IHyperdriveAgent):
     """Local Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these
@@ -33,7 +33,7 @@ class LocalHyperdriveAgent(InteractiveHyperdriveAgent):
         base: FixedPoint,
         eth: FixedPoint,
         name: str | None,
-        pool: LocalHyperdrive,
+        pool: ILocalHyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,

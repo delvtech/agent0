@@ -9,12 +9,12 @@ from fixedpointmath import FixedPoint
 from hyperlogs import setup_logging
 from numpy.random._generator import Generator
 
-from agent0.hyperdrive.interactive import LocalChain, LocalHyperdrive
+from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 
 
 def setup_fuzz(
     log_filename: str,
-    chain_config: LocalChain.Config | None = None,
+    chain_config: ILocalChain.Config | None = None,
     log_to_stdout: bool = False,
     log_to_rollbar: bool = True,
     crash_log_level: int | None = None,
@@ -24,7 +24,7 @@ def setup_fuzz(
     governance_lp_fee: FixedPoint | None = None,
     governance_zombie_fee: FixedPoint | None = None,
     var_interest: FixedPoint | None = None,
-) -> tuple[LocalChain, int, Generator, LocalHyperdrive]:
+) -> tuple[ILocalChain, int, Generator, ILocalHyperdrive]:
     """Setup the fuzz experiment.
 
     Arguments
@@ -77,8 +77,8 @@ def setup_fuzz(
     )
 
     # Setup local chain
-    config = chain_config if chain_config else LocalChain.Config()
-    chain = LocalChain(config=config)
+    config = chain_config if chain_config else ILocalChain.Config()
+    chain = ILocalChain(config=config)
     random_seed = np.random.randint(
         low=1, high=99999999
     )  # No seed, we want this to be random every time it is executed
@@ -94,7 +94,7 @@ def setup_fuzz(
         "fuzz_test_name": fuzz_test_name,
     }
 
-    initial_pool_config = LocalHyperdrive.Config(
+    initial_pool_config = ILocalHyperdrive.Config(
         preview_before_trade=True,
         checkpoint_duration=60 * 60 * 24,  # 1 day
         # TODO calc_max_short doesn't work with a week position duration, setting to 30 days
@@ -119,6 +119,6 @@ def setup_fuzz(
     if var_interest is not None:
         initial_pool_config.initial_variable_rate = var_interest
 
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
 
     return chain, random_seed, rng, interactive_hyperdrive

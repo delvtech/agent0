@@ -8,16 +8,16 @@ from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
 
-from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
-from .local_chain import LocalChain
-from .local_hyperdrive import LocalHyperdrive
+from .i_hyperdrive_policy import IHyperdrivePolicy
+from .i_local_chain import ILocalChain
+from .i_local_hyperdrive import ILocalHyperdrive
 
 
 @pytest.mark.anvil
-def test_policy_config_forgotten(chain: LocalChain):
+def test_policy_config_forgotten(chain: ILocalChain):
     """The policy config is not passed in."""
-    interactive_config = LocalHyperdrive.Config()
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_config = ILocalHyperdrive.Config()
+    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
         name="alice",
@@ -27,10 +27,10 @@ def test_policy_config_forgotten(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_policy_config_none_rng(chain: LocalChain):
+def test_policy_config_none_rng(chain: ILocalChain):
     """The policy config has rng set to None."""
-    interactive_config = LocalHyperdrive.Config()
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_config = ILocalHyperdrive.Config()
+    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
     agent_policy = PolicyZoo.random.Config()
     agent_policy.rng = None
     alice = interactive_hyperdrive.init_agent(
@@ -43,7 +43,7 @@ def test_policy_config_none_rng(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_snapshot_policy_state(chain: LocalChain):
+def test_snapshot_policy_state(chain: ILocalChain):
     """Tests proper saving/loading of policy state during snapshotting."""
 
     # Define dummy class for deep state copy
@@ -71,13 +71,13 @@ def test_snapshot_policy_state(chain: LocalChain):
             return [], False
 
     # Initialize agent with sub policy
-    interactive_hyperdrive = LocalHyperdrive(chain)
+    interactive_hyperdrive = ILocalHyperdrive(chain)
     agent = interactive_hyperdrive.init_agent(policy=_SubPolicy)
     # Snapshot state
     chain.save_snapshot()
 
     # Sanity check and type narrowing
-    assert isinstance(agent.agent.policy, InteractiveHyperdrivePolicy)
+    assert isinstance(agent.agent.policy, IHyperdrivePolicy)
     assert agent.agent.policy.sub_policy is not None
     assert isinstance(agent.agent.policy.sub_policy, _SubPolicy)
     assert agent.agent.policy.sub_policy.outer_var == 2

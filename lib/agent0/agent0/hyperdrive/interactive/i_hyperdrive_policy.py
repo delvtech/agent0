@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from agent0.hyperdrive import HyperdriveActionType, HyperdriveWallet
 
 
-class InteractiveHyperdrivePolicy(HyperdriveBasePolicy):
+class IHyperdrivePolicy(HyperdriveBasePolicy):
     """Policy for interactive hyperdrive.
     This policy works by allowing the caller to call `set_next_action` to specify the next action to take
     during the main trading loop.

@@ -27,7 +27,6 @@ from agent0.hyperdrive.exec import async_execute_agent_trades
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
-from .chain import Chain
 from .event_types import (
     AddLiquidity,
     CloseLong,
@@ -37,15 +36,16 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .hyperdrive_agent import InteractiveHyperdriveAgent
-from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
+from .i_chain import IChain
+from .i_hyperdrive_agent import IHyperdriveAgent
+from .i_hyperdrive_policy import IHyperdrivePolicy
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
 nest_asyncio.apply()
 
 
-class Hyperdrive:
+class IHyperdrive:
     @dataclass(kw_only=True)
     class Config:
         """
@@ -88,7 +88,7 @@ class Hyperdrive:
         # artifacts uri
 
         @classmethod
-        def from_artifacts_uri(cls, artifacts_uri: str) -> Hyperdrive.Addresses:
+        def from_artifacts_uri(cls, artifacts_uri: str) -> IHyperdrive.Addresses:
             """Builds hyperdrive addresses from artifacts uri.
 
             Parameters
@@ -101,12 +101,12 @@ class Hyperdrive:
             return cls._from_ethpy_addresses(out)
 
         @classmethod
-        def _from_ethpy_addresses(cls, addresses: HyperdriveAddresses) -> Hyperdrive.Addresses:
-            return Hyperdrive.Addresses(**asdict(addresses))
+        def _from_ethpy_addresses(cls, addresses: HyperdriveAddresses) -> IHyperdrive.Addresses:
+            return IHyperdrive.Addresses(**asdict(addresses))
 
     def __init__(
         self,
-        chain: Chain,
+        chain: IChain,
         hyperdrive_addresses: Addresses,
         config: Config | None = None,
     ):
@@ -166,7 +166,7 @@ class Hyperdrive:
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
-        out_agent = InteractiveHyperdriveAgent(
+        out_agent = IHyperdriveAgent(
             pool=self,
             policy=policy,
             policy_config=policy_config,
@@ -188,10 +188,8 @@ class Hyperdrive:
         agent = HyperdriveAgent(
             agent_account,
             initial_budget=FixedPoint(0),
-            policy=InteractiveHyperdrivePolicy(
-                InteractiveHyperdrivePolicy.Config(
-                    sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng
-                )
+            policy=IHyperdrivePolicy(
+                IHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng)
             ),
         )
         agent.wallet = build_wallet_positions_from_chain(
@@ -202,7 +200,7 @@ class Hyperdrive:
     # TODO this should be the base agent class for these calls
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -213,7 +211,7 @@ class Hyperdrive:
 
     def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -224,7 +222,7 @@ class Hyperdrive:
 
     def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.OPEN_SHORT, bonds)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -235,7 +233,7 @@ class Hyperdrive:
 
     def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.CLOSE_SHORT, bonds, maturity_time=maturity_time)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -246,7 +244,7 @@ class Hyperdrive:
 
     def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -257,7 +255,7 @@ class Hyperdrive:
 
     def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -268,7 +266,7 @@ class Hyperdrive:
 
     def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
         # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
         # TODO expose async here to the caller eventually
         trade_results: list[TradeResult] = asyncio.run(
@@ -280,7 +278,7 @@ class Hyperdrive:
     def _execute_policy_action(
         self, agent: HyperdriveAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
+        assert isinstance(agent.policy, IHyperdrivePolicy)
         # Only allow executing agent policies if a policy was passed in the constructor
         if agent.policy.sub_policy is None:
             raise ValueError("Must pass in a policy in the constructor to execute policy action.")

@@ -23,13 +23,13 @@ if TYPE_CHECKING:
         RedeemWithdrawalShares,
         RemoveLiquidity,
     )
-    from .hyperdrive import Hyperdrive
+    from .i_hyperdrive import IHyperdrive
 
 
-class InteractiveHyperdriveAgent:
+class IHyperdriveAgent:
     def __init__(
         self,
-        pool: Hyperdrive,
+        pool: IHyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,

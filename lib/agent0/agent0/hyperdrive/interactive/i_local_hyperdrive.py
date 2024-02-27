@@ -63,22 +63,22 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .hyperdrive import Hyperdrive
-from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
-from .local_chain import LocalChain
-from .local_hyperdrive_agent import LocalHyperdriveAgent
+from .i_hyperdrive import IHyperdrive
+from .i_hyperdrive_policy import IHyperdrivePolicy
+from .i_local_chain import ILocalChain
+from .i_local_hyperdrive_agent import ILocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
 
 
-class LocalHyperdrive(Hyperdrive):
+class ILocalHyperdrive(IHyperdrive):
     """Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
-    class Config(Hyperdrive.Config):
+    class Config(IHyperdrive.Config):
         """The configuration for the initial pool configuration.
 
         Attributes
@@ -228,7 +228,7 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: LocalChain, config: Config | None = None):
+    def __init__(self, chain: ILocalChain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
@@ -252,7 +252,7 @@ class LocalHyperdrive(Hyperdrive):
 
         super().__init__(
             chain,
-            Hyperdrive.Addresses._from_ethpy_addresses(hyperdrive_contract_addresses),
+            IHyperdrive.Addresses._from_ethpy_addresses(hyperdrive_contract_addresses),
             config,
         )
 
@@ -292,7 +292,7 @@ class LocalHyperdrive(Hyperdrive):
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
-        self._pool_agents: list[LocalHyperdriveAgent] = []
+        self._pool_agents: list[ILocalHyperdriveAgent] = []
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -456,7 +456,7 @@ class LocalHyperdrive(Hyperdrive):
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(self, config: Config, chain: ILocalChain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
@@ -560,7 +560,7 @@ class LocalHyperdrive(Hyperdrive):
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-    ) -> LocalHyperdriveAgent:
+    ) -> ILocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
@@ -595,7 +595,7 @@ class LocalHyperdrive(Hyperdrive):
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
-        out_agent = LocalHyperdriveAgent(
+        out_agent = ILocalHyperdriveAgent(
             base=base,
             eth=eth,
             name=name,
@@ -959,10 +959,8 @@ class LocalHyperdrive(Hyperdrive):
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
             initial_budget=FixedPoint(0),
-            policy=InteractiveHyperdrivePolicy(
-                InteractiveHyperdrivePolicy.Config(
-                    sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng
-                )
+            policy=IHyperdrivePolicy(
+                IHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng)
             ),
         )
         # Update wallet to agent's previous budget

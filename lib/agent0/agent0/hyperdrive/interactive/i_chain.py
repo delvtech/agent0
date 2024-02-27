@@ -3,7 +3,7 @@ import contextlib
 from ethpy.base import initialize_web3_with_http_provider
 
 
-class Chain:
+class IChain:
     """A class that represents a ethereum node."""
 
     def __init__(self, rpc_uri: str):
