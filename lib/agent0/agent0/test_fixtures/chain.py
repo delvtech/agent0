@@ -5,8 +5,8 @@ import os
 from pathlib import Path
 from typing import Iterator
 
-import pytest
 import docker
+import pytest
 from docker.errors import DockerException
 
 from agent0.hyperdrive.interactive import LocalChain
