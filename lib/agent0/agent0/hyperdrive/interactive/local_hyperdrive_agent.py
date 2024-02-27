@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from .hyperdrive import Hyperdrive
+from .hyperdrive_agent import HyperdriveAgent
 from .local_hyperdrive import LocalHyperdrive
 
 if TYPE_CHECKING:
@@ -32,11 +32,8 @@ if TYPE_CHECKING:
 # Hence, we call protected class methods in this class.
 # pylint: disable=protected-access
 
-# TODO we create a base class for interactive hyperdrive agent, where the only
-# difference is the constructor taking a subset of the constructor of InteractiveHyperdriveAgent.
 
-
-class LocalHyperdriveAgent:
+class LocalHyperdriveAgent(HyperdriveAgent):
     """Interactive Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these
@@ -48,13 +45,13 @@ class LocalHyperdriveAgent:
         base: FixedPoint,
         eth: FixedPoint,
         name: str | None,
-        pool: Hyperdrive,
+        pool: LocalHyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
-        NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
+        NOTE: this constructor shouldn't be called directly, but rather from LocalHyperdrive's
         `init_agent` method.
 
         Arguments
@@ -65,7 +62,7 @@ class LocalHyperdriveAgent:
             The amount of ETH to fund the agent with.
         name: str | None
             The name of the agent. Defaults to the wallet address.
-        pool: InteractiveHyperdrive
+        pool: LocalHyperdrive
             The pool object that this agent belongs to.
         policy: HyperdrivePolicy | None
             An optional policy to attach to this agent.
