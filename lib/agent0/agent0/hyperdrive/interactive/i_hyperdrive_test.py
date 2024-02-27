@@ -72,7 +72,7 @@ def _ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: Hyperdr
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
 @pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_funding_and_trades(chain: ILocalChain, check_remote_chain: bool):
+def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool):
     """Deploy a local chain and point the remote interface to the local chain."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
