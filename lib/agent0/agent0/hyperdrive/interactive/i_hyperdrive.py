@@ -48,9 +48,11 @@ nest_asyncio.apply()
 
 
 class IHyperdrive:
+    """Interactive Hyperdrive class that supports connecting to an existing hyperdrive deployment."""
+
     @dataclass(kw_only=True)
     class Config:
-        """
+        """The configuration for the interactive hyperdrive class
         Attributes
         ----------
         preview_before_trade: bool, optional
@@ -93,11 +95,16 @@ class IHyperdrive:
         def from_artifacts_uri(cls, artifacts_uri: str) -> IHyperdrive.Addresses:
             """Builds hyperdrive addresses from artifacts uri.
 
-            Parameters
-            ----------
+            Arguments
+            ---------
             artifacts_uri: str
                 The uri of the artifacts server from which we get addresses.
                 E.g., `http://localhost:8080`.
+
+            Returns
+            -------
+            IHyperdrive.Addresses
+                The hyperdrive addresses object
             """
             out = fetch_hyperdrive_address_from_uri(artifacts_uri)
             return cls._from_ethpy_addresses(out)
