@@ -127,16 +127,21 @@ class SimpleLP(HyperdriveBasePolicy):
             A tuple where the first element is a list of actions,
             and the second element defines if the agent is done trading.
         """
-        action_list = []
-
+        # update PNL
         current_block = interface.get_current_block()
         pool_state = interface.get_hyperdrive_state(current_block)
-        pnl = pool_state.pool_info.lp_total_supply * pool_state.pool_info.lp_share_price
+        pnl = wallet.lp_tokens * pool_state.pool_info.lp_share_price
         self.pnl_history.append((FixedPoint(interface.get_block_number(current_block)), pnl))
+
+        # prune history
         if len(self.pnl_history) > self.policy_config.lookback_length:
             self.pnl_history = self.pnl_history[len(self.pnl_history) - self.policy_config.lookback_length :]
 
+        # compute time-weighted average
         twapnl = self.time_weighted_average_pnl()
+
+        # make trades based on pnl_target
+        action_list = []
         if twapnl < self.policy_config.pnl_target:
             if wallet.balance.amount >= self.policy_config.delta_liquidity:  # only add money if you can afford it!
                 action_list.append(add_liquidity_trade(self.policy_config.delta_liquidity))
