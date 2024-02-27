@@ -1,7 +1,7 @@
 """Tests interactive hyperdrive end to end."""
 
 import pytest
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
+from ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 from fixedpointmath import FixedPoint
 
 from agent0.base.make_key import make_private_key
