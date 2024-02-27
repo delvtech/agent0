@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive.hyperdrive import Hyperdrive
-
 if TYPE_CHECKING:
     from typing import Type
 
@@ -25,6 +23,7 @@ if TYPE_CHECKING:
         RedeemWithdrawalShares,
         RemoveLiquidity,
     )
+    from .hyperdrive import Hyperdrive
 
 
 class InteractiveHyperdriveAgent:

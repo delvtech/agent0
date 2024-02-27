@@ -7,25 +7,13 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from .hyperdrive_agent import InteractiveHyperdriveAgent
-from .local_hyperdrive import LocalHyperdrive
 
 if TYPE_CHECKING:
     from typing import Type
 
-    from eth_typing import ChecksumAddress
-
-    from agent0.hyperdrive import HyperdriveWallet
     from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
-    from .event_types import (
-        AddLiquidity,
-        CloseLong,
-        CloseShort,
-        OpenLong,
-        OpenShort,
-        RedeemWithdrawalShares,
-        RemoveLiquidity,
-    )
+    from .local_hyperdrive import LocalHyperdrive
 
 
 # We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private

@@ -47,10 +47,10 @@ from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
 from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.hyperdrive.crash_report import get_anvil_state_dump
-from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
+from agent0.hyperdrive.exec import set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 from .event_types import (
