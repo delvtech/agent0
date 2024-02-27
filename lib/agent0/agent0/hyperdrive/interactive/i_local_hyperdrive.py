@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import pathlib
 import subprocess
 import time
@@ -30,6 +29,7 @@ from chainsync.db.hyperdrive import (
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
+from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from ethpy.hyperdrive import (
     BASE_TOKEN_SYMBOL,
@@ -49,7 +49,6 @@ from agent0.base.make_key import make_private_key
 from agent0.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.hyperdrive.crash_report import get_anvil_state_dump
-from agent0.hyperdrive.exec import set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 
 from .event_types import (
@@ -982,25 +981,25 @@ class ILocalHyperdrive(IHyperdrive):
             self._add_funds(agent, base, eth)
 
         # Establish max approval for the hyperdrive contract
-        asyncio.run(
-            set_max_approval(
-                [agent],
-                self.interface.web3,
-                self.interface.base_token_contract,
-                str(self.interface.hyperdrive_contract.address),
-            )
-        )
+        self._set_max_approval(agent)
+
         # Register the username if it was provided
         if name is not None:
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:
+    def _add_funds(
+        self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
+    ) -> None:
         # TODO this can be fixed by getting actual base values from the chain.
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add funds to an agent after saving a snapshot")
 
-        super()._add_funds(agent, base, eth, signer_account=self._deployed_hyperdrive.deploy_account)
+        # Adding funds default to the deploy account
+        if signer_account is None:
+            signer_account = self._deployed_hyperdrive.deploy_account
+
+        super()._add_funds(agent, base, eth, signer_account=signer_account)
 
         if base > FixedPoint(0):
             # Keep track of how much base has been minted for each agent

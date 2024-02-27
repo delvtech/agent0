@@ -1,5 +1,6 @@
 from fixedpointmath import FixedPoint
 
+from agent0.base.make_key import make_private_key
 from agent0.hyperdrive.interactive import IChain, IHyperdrive
 from agent0.hyperdrive.policies import PolicyZoo
 
@@ -18,8 +19,8 @@ hyperdrive_pool = IHyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
 
 # We set the private key here. In practice, this would be in a private
 # env file somewhere, and we only access this through environment variables.
-# For now, this is hard coded to anvil account 0
-private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+# For now, we generate a random key and explicitly fund it
+private_key = make_private_key()
 
 # Init from private key and attach policy
 # This ties the hyperdrive_agent to the hyperdrive_pool here.
@@ -37,6 +38,9 @@ hyperdrive_agent0 = hyperdrive_pool.init_agent(
 # We expose this function for testing purposes, but the underlying function calls `mint` and `anvil_set_balance`,
 # which are likely to fail on any non-test network.
 hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
+
+# Set max approval
+hyperdrive_agent0.set_max_approval()
 
 
 # Make trades

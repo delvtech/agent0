@@ -229,3 +229,7 @@ class IHyperdriveAgent:
         if eth is None:
             eth = FixedPoint(0)
         self._pool._add_funds(self.agent, base, eth)
+
+    def set_max_approval(self) -> None:
+        """Sets the max approval to the hyperdrive contract"""
+        self._pool._set_max_approval(self.agent)

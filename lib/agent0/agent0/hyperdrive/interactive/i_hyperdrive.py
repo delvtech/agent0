@@ -25,7 +25,7 @@ from web3 import Web3
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.agent import build_wallet_positions_from_chain
 from agent0.hyperdrive.crash_report import log_hyperdrive_crash_report
-from agent0.hyperdrive.exec import async_execute_agent_trades
+from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
@@ -97,7 +97,7 @@ class IHyperdrive:
             ----------
             artifacts_uri: str
                 The uri of the artifacts server from which we get addresses.
-                E.g., `http://localhost:8080/artifacts.json`.
+                E.g., `http://localhost:8080`.
             """
             out = fetch_hyperdrive_address_from_uri(artifacts_uri)
             return cls._from_ethpy_addresses(out)
@@ -198,6 +198,17 @@ class IHyperdrive:
             agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
         )
         return agent
+
+    def _set_max_approval(self, agent: HyperdriveAgent):
+        # Establish max approval for the hyperdrive contract
+        asyncio.run(
+            set_max_approval(
+                [agent],
+                self.interface.web3,
+                self.interface.base_token_contract,
+                str(self.interface.hyperdrive_contract.address),
+            )
+        )
 
     def _add_funds(
         self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
