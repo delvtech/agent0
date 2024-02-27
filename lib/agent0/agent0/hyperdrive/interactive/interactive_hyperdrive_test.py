@@ -596,7 +596,7 @@ def test_random_liquidate(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_share_price_compounding_quincunx(chain: Chain):
+def test_share_price_compounding_quincunx(chain: LocalChain):
     """Share price when compounding by quincunx (one fifth of a year) should increase by more than the APR."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
@@ -626,7 +626,7 @@ def test_share_price_compounding_quincunx(chain: Chain):
 
 
 @pytest.mark.anvil
-def test_share_price_compounding_annus(chain: Chain):
+def test_share_price_compounding_annus(chain: LocalChain):
     """Share price when compounding by annus (one year) should increase by exactly the APR (no compounding)."""
     # setup
     initial_variable_rate = FixedPoint("0.045")

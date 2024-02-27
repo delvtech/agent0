@@ -62,7 +62,7 @@ from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
-from .chain import Chain
+from .chain import LocalChain
 from .event_types import (
     AddLiquidity,
     CloseLong,
@@ -272,13 +272,13 @@ class InteractiveHyperdrive:
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: Chain, config: Config | None = None):
+    def __init__(self, chain: LocalChain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
-        chain: Chain
-            The chain object to launch hyperdrive on
+        chain: LocalChain
+            The local chain object to launch hyperdrive on
         config: Config | None
             The configuration for the initial pool configuration
         """
@@ -305,9 +305,10 @@ class InteractiveHyperdrive:
         )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
+        self.hyperdrive_contract_addresses = self._deployed_hyperdrive.hyperdrive_contract_addresses
         self.interface = HyperdriveReadWriteInterface(
             self.eth_config,
-            self._deployed_hyperdrive.hyperdrive_contract_addresses,
+            self.hyperdrive_contract_addresses,
             web3=chain._web3,
         )
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
@@ -517,7 +518,7 @@ class InteractiveHyperdrive:
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: Chain) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
