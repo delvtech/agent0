@@ -23,10 +23,11 @@ class IChain:
         self._account_addrs: dict[str, bool] = {}
 
     def cleanup(self):
+        """General cleanup of resources of interactive hyperdrive."""
         pass
 
     def __del__(self):
-        """Kill postgres container in this class' destructor."""
+        """General cleanup of resources of interactive hyperdrive."""
         with contextlib.suppress(Exception):
             self.cleanup()
 

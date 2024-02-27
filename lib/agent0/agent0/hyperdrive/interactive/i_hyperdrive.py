@@ -1,3 +1,5 @@
+"""Defines the interactive hyperdrive class that encapsulates a hyperdrive pool."""
+
 from __future__ import annotations
 
 import asyncio
@@ -146,7 +148,7 @@ class IHyperdrive:
             web3=chain._web3,
         )
 
-        self._chain = chain
+        self.chain = chain
 
     def init_agent(
         self,
@@ -201,7 +203,7 @@ class IHyperdrive:
 
         # TODO add the public address to the chain object to avoid multiple objects
         # with the same underlying account
-        self._chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
+        self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
 
         agent.wallet = build_wallet_positions_from_chain(
             agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
