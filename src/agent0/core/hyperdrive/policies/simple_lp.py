@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, FixedPointMath
 
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction
@@ -69,22 +69,45 @@ class SimpleLP(HyperdriveBasePolicy):
             The custom arguments for this policy
         """
         super().__init__(policy_config)
-        self.pnl_history: list[tuple[int, FixedPoint]] = []
+        assert policy_config.pnl_target > FixedPoint(0), "PNL target must be greater than zero."
+        self.policy_config = policy_config
+        self.pnl_history: list[tuple[FixedPoint, FixedPoint]] = []
 
     def time_weighted_average_pnl(self) -> FixedPoint:
-        """Return the time-weighted average PNL improvement."""
-        if len(self.pnl_history) == 0:  # no history
+        """Return the time-weighted average PNL improvement.
+
+        This function returns a time-weighted average normalized profit change:
+        1. calculate the profit change ratio between consecutive profits
+          profit_change = (p_new - p_old) / p_old
+        2. calculate the time weight, which is 1 / time_spanned
+          time_weight = 1 / (t_new - t_old)
+        3. scale the profit change by the time weight to give a normalized profit change:
+          norm_profit_change = profit_change * time_weight
+        4. compute a weighted sum of normalized profit changes
+          weighted_sum = sum_i(norm_profit_change_i) / sum_j(time_weight_j)
+
+        This function assumes the self.pnl_history member attribute is a list of (time, pnl) pairs,
+        where the zero index dereferences the earliest pair.
+
+        """
+        if len(self.pnl_history) <= 1:  # not enough history
             return FixedPoint(0)
-        twapnl: FixedPoint = FixedPoint(0)
-        origin_time, origin_pnl = self.pnl_history[0]
-        time_sum: FixedPoint = FixedPoint(0)
-        for block_number, pnl in self.pnl_history:
-            time = origin_time - block_number
-            pnl_improvement = pnl / origin_pnl
-            twapnl += pnl_improvement * time
-            time_sum += FixedPoint(time)
-        twapnl /= time_sum
-        return twapnl
+        if self.pnl_history[0] == 0:  # if original pnl is zero then the improvement will be infinite
+            self.pnl_history = self.pnl_history[1:]  # remove the first element
+            return FixedPoint(0)  # need to ignore first pnl change to avoid inf %
+
+        weighted_sum = FixedPoint(0)
+        total_weight = FixedPoint(0)
+        for i in range(1, len(self.pnl_history)):
+            profit_change = (self.pnl_history[i][1] - self.pnl_history[i - 1][1]) / self.pnl_history[i - 1][1]
+            weight = 1 / (self.pnl_history[i][0] - self.pnl_history[i - 1][0])
+            weighted_sum += profit_change * weight
+            total_weight += weight
+
+        if total_weight == FixedPoint(0):
+            return FixedPoint(0)  # no valid data points to comptue the average
+
+        return weighted_sum / total_weight
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -109,15 +132,16 @@ class SimpleLP(HyperdriveBasePolicy):
         current_block = interface.get_current_block()
         pool_state = interface.get_hyperdrive_state(current_block)
         pnl = pool_state.pool_info.lp_total_supply * pool_state.pool_info.lp_share_price
-        self.pnl_history.append((interface.get_block_number(current_block), pnl))
+        self.pnl_history.append((FixedPoint(interface.get_block_number(current_block)), pnl))
         if len(self.pnl_history) > self.policy_config.lookback_length:
             self.pnl_history = self.pnl_history[len(self.pnl_history) - self.policy_config.lookback_length :]
 
         twapnl = self.time_weighted_average_pnl()
-        if twapnl > self.policy_config.pnl_target:
+        if twapnl < self.policy_config.pnl_target:
             if wallet.balance.amount >= self.policy_config.delta_liquidity:  # only add money if you can afford it!
                 action_list.append(add_liquidity_trade(self.policy_config.delta_liquidity))
-        elif twapnl < self.policy_config.pnl_target:
-            action_list.append(remove_liquidity_trade(self.policy_config.delta_liquidity))
+        elif twapnl > self.policy_config.pnl_target:
+            remove_amount = FixedPointMath.minimum(self.policy_config.delta_liquidity, wallet.lp_tokens)
+            action_list.append(remove_liquidity_trade(remove_amount))
 
         return action_list, False
