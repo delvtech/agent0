@@ -19,9 +19,9 @@ from docker.errors import NotFound
 from docker.models.containers import Container
 from web3.types import RPCEndpoint
 
-from agent0.base.interactive import Chain
 from agent0.hyperdrive.crash_report import get_anvil_state_dump
 
+from .chain import Chain
 from .event_types import CreateCheckpoint
 
 if TYPE_CHECKING:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import asdict, dataclass
 
+import nest_asyncio
 import numpy as np
 from ethpy import EthConfig
 from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
@@ -10,6 +11,10 @@ from numpy.random._generator import Generator
 
 from agent0.base.interactive.chain import Chain
 from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
+
+# In order to support both scripts and jupyter notebooks with underlying async functions,
+# we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
+nest_asyncio.apply()
 
 
 class Hyperdrive:

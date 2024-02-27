@@ -48,9 +48,8 @@ from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
-from agent0.base.interactive import Hyperdrive
 from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult
 from agent0.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
@@ -67,6 +66,7 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
+from .hyperdrive import Hyperdrive
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 from .local_chain import LocalChain
@@ -307,6 +307,7 @@ class InteractiveHyperdrive(Hyperdrive):
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
+        self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -973,7 +974,9 @@ class InteractiveHyperdrive(Hyperdrive):
             Account().from_key(agent_private_key),
             initial_budget=FixedPoint(0),
             policy=InteractiveHyperdrivePolicy(
-                InteractiveHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.rng)
+                InteractiveHyperdrivePolicy.Config(
+                    sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng
+                )
             ),
         )
         # Update wallet to agent's previous budget
@@ -1044,45 +1047,6 @@ class InteractiveHyperdrive(Hyperdrive):
             self._run_blocking_data_pipeline()
 
         # TODO do we want to report a status here?
-
-    def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
-        # Sanity check, should only be one trade result
-        if isinstance(trade_results, list):
-            assert len(trade_results) == 1
-            trade_result = trade_results[0]
-        elif isinstance(trade_results, TradeResult):
-            trade_result = trade_results
-        else:
-            assert False
-
-        if trade_result.status == TradeStatus.FAIL:
-            assert trade_result.exception is not None
-            # TODO when we allow for async, we likely would want to ignore slippage checks here
-            # We only get anvil state dump here, since it's an on chain call
-            # and we don't want to do it when e.g., slippage happens
-            trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
-            if self.config.crash_log_ticker:
-                if trade_result.additional_info is None:
-                    trade_result.additional_info = {"ticker": self.get_ticker()}
-                else:
-                    trade_result.additional_info["ticker"] = self.get_ticker()
-
-            # Defaults to CRITICAL
-            log_hyperdrive_crash_report(
-                trade_result,
-                log_level=self.config.crash_log_level,
-                crash_report_to_file=True,
-                crash_report_file_prefix="interactive_hyperdrive",
-                log_to_rollbar=self.config.log_to_rollbar,
-                rollbar_log_prefix=self.config.rollbar_log_prefix,
-                additional_info=self.config.crash_report_additional_info,
-            )
-            raise trade_result.exception
-
-        assert trade_result.status == TradeStatus.SUCCESS
-        tx_receipt = trade_result.tx_receipt
-        assert tx_receipt is not None
-        return tx_receipt
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long
