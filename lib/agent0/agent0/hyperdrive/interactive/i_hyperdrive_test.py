@@ -116,14 +116,16 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
     ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.agent)
     assert chain_base_balance == FixedPoint(1_111_111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
-    assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0001")
+    # This epsilon is a bit bigger than i_local_hyperdrive_test because we use this account
+    # for approval in the remote case, whereas we use the deployer account in the local case.
+    assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0002")
     (
         chain_eth_balance,
         chain_base_balance,
     ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent1.agent)
     assert chain_base_balance == FixedPoint(222_222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
-    assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0001")
+    assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0002")
 
     # Test trades
     add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))

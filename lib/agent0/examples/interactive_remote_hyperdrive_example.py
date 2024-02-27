@@ -18,7 +18,7 @@ from agent0.hyperdrive.policies import PolicyZoo
 chain = IChain("http://localhost:8545")
 
 
-# hyperdrive_addresses = Hyperdrive.Addresses(
+# hyperdrive_addresses = IHyperdrive.Addresses(
 #    base_token="0x0000000000000000000000000000000000000000",
 #    erc4626_hyperdrive="0x0000000000000000000000000000000000000000",
 #    factory="0x0000000000000000000000000000000000000000",
