@@ -54,13 +54,6 @@ class Chain:
             self.cleanup()
 
 
-class RemoteChain(Chain):
-    """Connects to a remote ethereum node."""
-
-    # We subclass chain without any overridding to differentiate remote chains from
-    # local chains.
-
-
 class LocalChain(Chain):
     """Launches a local anvil chain in a subprocess, along with a postgres container."""
 

@@ -1,0 +1,54 @@
+from fixedpointmath import FixedPoint
+
+from agent0.hyperdrive.interactive import Chain, Hyperdrive
+from agent0.hyperdrive.policies import PolicyZoo
+
+chain = Chain("http://localhost:8545")
+
+
+hyperdrive_config = Hyperdrive.Config(
+    # hyperdrive_addresses = Hyperdrive.Addresses(
+    #    base_token="0x0000000000000000000000000000000000000000",
+    #    erc4626_hyperdrive="0x0000000000000000000000000000000000000000",
+    #    factory="0x0000000000000000000000000000000000000000",
+    #    steth_hyperdrive="0x0000000000000000000000000000000000000000",
+    # )
+    hyperdrive_addresses=Hyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/"),
+)
+
+hyperdrive_pool = Hyperdrive(chain, hyperdrive_config)
+
+# We set the private key here. In practice, this would be in a private
+# env file somewhere, and we only access this through environment variables.
+# For now, this is hard coded to anvil account 0
+private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+
+# Init from private key
+# This ties the hyperdrive_agent to the hyperdrive_pool here.
+# We can connect to another hyperdrive pool and create a separate
+# agent object using the same private key, but the underlying wallet
+# object would then be out of date if both agents are making trades.
+hyperdrive_agent0 = hyperdrive_pool.init_agent(private_key=private_key)
+
+# Make trades
+# Return values here mirror the various events emitted from these contract calls
+# These functions are blocking, but relatively easy to expose async versions of the
+# trades below
+open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(11111))
+close_long_event = hyperdrive_agent0.close_long(
+    maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+)
+
+# Execute policies
+hyperdrive_agent1 = hyperdrive_pool.init_agent(
+    private_key=private_key,
+    policy=PolicyZoo.random,
+    # The configuration for the underlying policy
+    policy_config=PolicyZoo.random.Config(rng_seed=123),
+)
+
+random_trade_events = []
+for i in range(10):
+    # NOTE Since a policy can execute multiple trades per action, the output events is a list
+    trade_events: list = hyperdrive_agent1.execute_policy_action()
+    random_trade_events.extend(trade_events)
