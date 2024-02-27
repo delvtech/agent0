@@ -11,8 +11,8 @@ from pandas import Series
 
 from agent0.hyperdrive import HyperdriveWallet
 
-from .chain import Chain, LocalChain
 from .interactive_hyperdrive import InteractiveHyperdrive
+from .local_chain import LocalChain
 
 YEAR_IN_SECONDS = 31_536_000
 

@@ -1,4 +1,4 @@
 """Interactive hyperdrive"""
 
-from .chain import Chain, LocalChain
-from .interactive_hyperdrive import Hyperdrive, InteractiveHyperdrive
+from .interactive_hyperdrive import InteractiveHyperdrive
+from .local_chain import LocalChain

@@ -8,7 +8,7 @@ from typing import NamedTuple, Sequence
 
 from hyperlogs.rollbar_utilities import initialize_rollbar
 
-from agent0.hyperdrive.interactive.chain import LocalChain
+from agent0.hyperdrive.interactive import LocalChain
 from agent0.interactive_fuzz import (
     fuzz_long_short_maturity_values,
     fuzz_path_independence,

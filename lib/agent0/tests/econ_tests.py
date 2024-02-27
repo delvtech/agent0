@@ -1,17 +1,15 @@
 """Tests of economic intuition."""
 
 import pytest
-
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive
-from agent0.hyperdrive.interactive.chain import Chain
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 
 YEAR_IN_SECONDS = 31_536_000
 
 
 @pytest.mark.anvil
-def test_symmetry(chain: Chain):
+def test_symmetry(chain: LocalChain):
     """Does in equal out?
 
     One may be under the impression swaps between x and y have the same result, irrespective of direction.

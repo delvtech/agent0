@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import pathlib
 import subprocess
 import time
@@ -14,8 +13,6 @@ from threading import Thread
 from typing import Any, Literal, Type, overload
 
 import dill
-import nest_asyncio
-import numpy as np
 import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
@@ -35,27 +32,23 @@ from chainsync.db.hyperdrive import (
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
 from eth_typing import BlockNumber, ChecksumAddress
-from ethpy import EthConfig
 from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import (
     BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
     DeployedHyperdrivePool,
-    HyperdriveAddresses,
-    HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
     encode_asset_id,
-    fetch_hyperdrive_address_from_uri,
 )
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
-from numpy.random._generator import Generator
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
+from agent0.base.interactive import Hyperdrive
 from agent0.base.make_key import make_private_key
 from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.agent import build_wallet_positions_from_db
@@ -64,7 +57,6 @@ from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
-from .chain import Chain, LocalChain
 from .event_types import (
     AddLiquidity,
     CloseLong,
@@ -77,100 +69,10 @@ from .event_types import (
 )
 from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
 from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
+from .local_chain import LocalChain
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
-
-# In order to support both scripts and jupyter notebooks with underlying async functions,
-# we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
-nest_asyncio.apply()
-
-# TODO clean up this file
-# Likely should move all the agent specific method to `interactive_hyperdrive_agent`.
-# However, this makes the agent less barebones, and the agent requires lots of resources
-# from InteractiveHyperdrive.
-# pylint: disable=too-many-lines
-
-
-class Hyperdrive:
-    @dataclass(kw_only=True)
-    class Config:
-        """
-        Attributes
-        ----------
-        preview_before_trade: bool, optional
-            Whether to preview the position before executing a trade. Defaults to False.
-        rng_seed: int | None, optional
-            The seed for the random number generator. Defaults to None.
-        rng: Generator | None, optional
-            The experiment's stateful random number generator. Defaults to creating a generator from
-            the provided random seed if not set.
-        """
-
-        preview_before_trade: bool = False
-        rng_seed: int | None = None
-        rng: Generator | None = None
-
-        def __post_init__(self):
-            if self.rng is None:
-                self.rng = np.random.default_rng(self.rng_seed)
-
-    class Addresses(HyperdriveAddresses):
-        # Subclass from the underlying addresses named tuple
-        # We simply define a class method to initialize the address from
-        # artifacts uri
-
-        @classmethod
-        def from_artifacts_uri(cls, artifacts_uri: str) -> Hyperdrive.Addresses:
-            """Builds hyperdrive addresses from artifacts uri.
-
-            Parameters
-            ----------
-            artifacts_uri: str
-                The uri of the artifacts server from which we get addresses.
-                E.g., `http://localhost:8080/artifacts.json`.
-            """
-            out = fetch_hyperdrive_address_from_uri(artifacts_uri)
-            return cls._from_ethpy_addresses(out)
-
-        @classmethod
-        def _from_ethpy_addresses(cls, addresses: HyperdriveAddresses) -> Hyperdrive.Addresses:
-            return Hyperdrive.Addresses(**asdict(addresses))
-
-    def __init__(
-        self,
-        chain: Chain,
-        hyperdrive_addresses: Addresses,
-        config: Config | None = None,
-    ):
-        if config is None:
-            self.config = self.Config()
-        else:
-            self.config = config
-
-        # Define agent0 configs with this setup
-        # TODO currently getting the path based on this file's path
-        # This requires the entire monorepo to be check out, and will likely not work when
-        # installing agent0 by itself.
-        # This should get fixed when abis are exported in hypertypes.
-        full_path = os.path.realpath(__file__)
-        current_file_dir, _ = os.path.split(full_path)
-        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
-
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used",
-            rpc_uri=chain.rpc_uri,
-            abi_dir=abi_dir,
-            preview_before_trade=self.config.preview_before_trade,
-        )
-
-        self.interface = HyperdriveReadWriteInterface(
-            self.eth_config,
-            hyperdrive_addresses,
-            web3=chain._web3,
-        )
-
-        self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
 
 class InteractiveHyperdrive(Hyperdrive):

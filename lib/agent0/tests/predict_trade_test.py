@@ -26,8 +26,7 @@ import pytest
 from fixedpointmath import FixedPoint
 from tabulate import tabulate
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive
-from agent0.hyperdrive.interactive.chain import Chain
+from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.utilities.predict import TradeDeltas, predict_long, predict_short
 
@@ -78,7 +77,7 @@ def _log_event(
     )
 
 
-def test_prediction_example(chain: Chain):
+def test_prediction_example(chain: LocalChain):
     """Demonstrate the simplest case of a prediction.
 
     Output:

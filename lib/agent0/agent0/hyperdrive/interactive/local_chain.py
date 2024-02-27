@@ -17,9 +17,9 @@ from chainsync import PostgresConfig
 from chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from docker.errors import NotFound
 from docker.models.containers import Container
-from ethpy.base import initialize_web3_with_http_provider
 from web3.types import RPCEndpoint
 
+from agent0.base.interactive import Chain
 from agent0.hyperdrive.crash_report import get_anvil_state_dump
 
 from .event_types import CreateCheckpoint
@@ -29,31 +29,6 @@ if TYPE_CHECKING:
 
 
 # pylint: disable=too-many-instance-attributes
-class Chain:
-    """A class that represents a ethereum node."""
-
-    def __init__(self, rpc_uri: str):
-        """Initialize the Chain class that connects to an existing chain.
-        Also launches a postgres docker container for gathering data.
-
-        Arguments
-        ---------
-        rpc_uri: str
-            The uri for the chain to connect to, e.g., `http://127.0.0.1:8545`.
-        """
-        self.rpc_uri = rpc_uri
-        # Initialize web3 here for rpc calls
-        self._web3 = initialize_web3_with_http_provider(self.rpc_uri, reset_provider=False)
-
-    def cleanup(self):
-        pass
-
-    def __del__(self):
-        """Kill postgres container in this class' destructor."""
-        with contextlib.suppress(Exception):
-            self.cleanup()
-
-
 class LocalChain(Chain):
     """Launches a local anvil chain in a subprocess, along with a postgres container."""
 

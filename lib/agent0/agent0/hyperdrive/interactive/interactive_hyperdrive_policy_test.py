@@ -6,10 +6,11 @@ from fixedpointmath import FixedPoint
 
 from agent0.base import Trade
 from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.hyperdrive.interactive.chain import LocalChain
-from agent0.hyperdrive.interactive.interactive_hyperdrive import InteractiveHyperdrive
-from agent0.hyperdrive.interactive.interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
 from agent0.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
+
+from .interactive_hyperdrive import InteractiveHyperdrive
+from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
+from .local_chain import LocalChain
 
 
 @pytest.mark.anvil

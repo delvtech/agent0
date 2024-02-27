@@ -1,6 +1,6 @@
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import Chain, Hyperdrive
+from agent0.base.interactive import Chain, Hyperdrive
 from agent0.hyperdrive.policies import PolicyZoo
 
 chain = Chain("http://localhost:8545")
@@ -12,7 +12,7 @@ chain = Chain("http://localhost:8545")
 #    factory="0x0000000000000000000000000000000000000000",
 #    steth_hyperdrive="0x0000000000000000000000000000000000000000",
 # )
-hyperdrive_addresses = (Hyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/"),)
+hyperdrive_addresses = Hyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/")
 hyperdrive_config = Hyperdrive.Config()
 hyperdrive_pool = Hyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
 
