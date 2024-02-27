@@ -292,6 +292,16 @@ class ILocalHyperdrive(IHyperdrive):
         self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[ILocalHyperdriveAgent] = []
 
+    def get_hyperdrive_addresses(self) -> IHyperdrive.Addresses:
+        """Returns the hyperdrive addresses for this pool.
+
+        Returns
+        -------
+        IHyperdrive.Addresses
+            The hyperdrive addresses for this pool
+        """
+        return IHyperdrive.Addresses._from_ethpy_addresses(self._deployed_hyperdrive.hyperdrive_contract_addresses)
+
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
 
