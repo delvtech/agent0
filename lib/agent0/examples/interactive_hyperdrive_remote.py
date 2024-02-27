@@ -6,17 +6,15 @@ from agent0.hyperdrive.policies import PolicyZoo
 chain = Chain("http://localhost:8545")
 
 
-hyperdrive_config = Hyperdrive.Config(
-    # hyperdrive_addresses = Hyperdrive.Addresses(
-    #    base_token="0x0000000000000000000000000000000000000000",
-    #    erc4626_hyperdrive="0x0000000000000000000000000000000000000000",
-    #    factory="0x0000000000000000000000000000000000000000",
-    #    steth_hyperdrive="0x0000000000000000000000000000000000000000",
-    # )
-    hyperdrive_addresses=Hyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/"),
-)
-
-hyperdrive_pool = Hyperdrive(chain, hyperdrive_config)
+# hyperdrive_addresses = Hyperdrive.Addresses(
+#    base_token="0x0000000000000000000000000000000000000000",
+#    erc4626_hyperdrive="0x0000000000000000000000000000000000000000",
+#    factory="0x0000000000000000000000000000000000000000",
+#    steth_hyperdrive="0x0000000000000000000000000000000000000000",
+# )
+hyperdrive_addresses = (Hyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/"),)
+hyperdrive_config = Hyperdrive.Config()
+hyperdrive_pool = Hyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
 
 # We set the private key here. In practice, this would be in a private
 # env file somewhere, and we only access this through environment variables.

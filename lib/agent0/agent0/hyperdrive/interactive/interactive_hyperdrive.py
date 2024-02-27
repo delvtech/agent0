@@ -41,10 +41,12 @@ from ethpy.hyperdrive import (
     BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
     DeployedHyperdrivePool,
+    HyperdriveAddresses,
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
     encode_asset_id,
+    fetch_hyperdrive_address_from_uri,
 )
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
@@ -62,7 +64,7 @@ from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.test_utils import assert_never
 
-from .chain import LocalChain
+from .chain import Chain, LocalChain
 from .event_types import (
     AddLiquidity,
     CloseLong,
@@ -90,21 +92,100 @@ nest_asyncio.apply()
 # pylint: disable=too-many-lines
 
 
-class InteractiveHyperdrive:
+class Hyperdrive:
+    @dataclass(kw_only=True)
+    class Config:
+        """
+        Attributes
+        ----------
+        preview_before_trade: bool, optional
+            Whether to preview the position before executing a trade. Defaults to False.
+        rng_seed: int | None, optional
+            The seed for the random number generator. Defaults to None.
+        rng: Generator | None, optional
+            The experiment's stateful random number generator. Defaults to creating a generator from
+            the provided random seed if not set.
+        """
+
+        preview_before_trade: bool = False
+        rng_seed: int | None = None
+        rng: Generator | None = None
+
+        def __post_init__(self):
+            if self.rng is None:
+                self.rng = np.random.default_rng(self.rng_seed)
+
+    class Addresses(HyperdriveAddresses):
+        # Subclass from the underlying addresses named tuple
+        # We simply define a class method to initialize the address from
+        # artifacts uri
+
+        @classmethod
+        def from_artifacts_uri(cls, artifacts_uri: str) -> Hyperdrive.Addresses:
+            """Builds hyperdrive addresses from artifacts uri.
+
+            Parameters
+            ----------
+            artifacts_uri: str
+                The uri of the artifacts server from which we get addresses.
+                E.g., `http://localhost:8080/artifacts.json`.
+            """
+            out = fetch_hyperdrive_address_from_uri(artifacts_uri)
+            return cls._from_ethpy_addresses(out)
+
+        @classmethod
+        def _from_ethpy_addresses(cls, addresses: HyperdriveAddresses) -> Hyperdrive.Addresses:
+            return Hyperdrive.Addresses(**asdict(addresses))
+
+    def __init__(
+        self,
+        chain: Chain,
+        hyperdrive_addresses: Addresses,
+        config: Config | None = None,
+    ):
+        if config is None:
+            self.config = self.Config()
+        else:
+            self.config = config
+
+        # Define agent0 configs with this setup
+        # TODO currently getting the path based on this file's path
+        # This requires the entire monorepo to be check out, and will likely not work when
+        # installing agent0 by itself.
+        # This should get fixed when abis are exported in hypertypes.
+        full_path = os.path.realpath(__file__)
+        current_file_dir, _ = os.path.split(full_path)
+        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
+
+        self.eth_config = EthConfig(
+            artifacts_uri="not_used",
+            rpc_uri=chain.rpc_uri,
+            abi_dir=abi_dir,
+            preview_before_trade=self.config.preview_before_trade,
+        )
+
+        self.interface = HyperdriveReadWriteInterface(
+            self.eth_config,
+            hyperdrive_addresses,
+            web3=chain._web3,
+        )
+
+        self._pool_agents: list[InteractiveHyperdriveAgent] = []
+
+
+class InteractiveHyperdrive(Hyperdrive):
     """Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
-    class Config:
+    class Config(Hyperdrive.Config):
         """The configuration for the initial pool configuration.
 
         Attributes
         ----------
         data_pipeline_timeout: int
             The timeout for the data pipeline. Defaults to 60 seconds.
-        preview_before_trade: bool, optional
-            Whether to preview the position before executing a trade. Defaults to False.
         log_to_rollbar: bool, optional
             Whether to log crash reports to rollbar. Defaults to False.
         rollbar_log_prefix: str | None, optional
@@ -115,11 +196,6 @@ class InteractiveHyperdrive:
             Whether to log the trade ticker in crash reports. Defaults to False.
         crash_report_additional_info: dict[str, Any] | None, optional
             Additional information to include in the crash report.
-        rng_seed: int | None, optional
-            The seed for the random number generator. Defaults to None.
-        rng: Generator | None, optional
-            The experiment's stateful random number generator. Defaults to creating a generator from
-            the provided random seed if not set.
         calc_pnl: bool
             Whether to calculate pnl. Defaults to True.
         initial_liquidity: FixedPoint
@@ -185,16 +261,11 @@ class InteractiveHyperdrive:
 
         # Environment variables
         data_pipeline_timeout: int = 60
-        preview_before_trade: bool = False
         log_to_rollbar: bool = False
         rollbar_log_prefix: str | None = None
         crash_log_level: int = logging.CRITICAL
         crash_log_ticker: bool = False
         crash_report_additional_info: dict[str, Any] | None = None
-
-        # Random generators
-        rng_seed: int | None = None
-        rng: Generator | None = None
 
         # Data pipeline parameters
         calc_pnl: bool = True
@@ -237,13 +308,11 @@ class InteractiveHyperdrive:
         governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
 
         def __post_init__(self):
-            # Random generator
-            if self.rng is None:
-                self.rng = np.random.default_rng(self.rng_seed)
             if self.checkpoint_duration > self.position_duration:
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
+            super().__post_init__()
 
         @property
         def _factory_min_fees(self) -> Fees:
@@ -282,35 +351,24 @@ class InteractiveHyperdrive:
         config: Config | None
             The configuration for the initial pool configuration
         """
+
         if config is None:
             self.config = self.Config()
         else:
             self.config = config
 
-        # Define agent0 configs with this setup
-        # TODO currently getting the path based on this file's path
-        # This requires the entire monorepo to be check out, and will likely not work when
-        # installing agent0 by itself.
-        # This should get fixed when abis are exported in hypertypes.
-        full_path = os.path.realpath(__file__)
-        current_file_dir, _ = os.path.split(full_path)
-        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
         self.calc_pnl = self.config.calc_pnl
 
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used",
-            rpc_uri=chain.rpc_uri,
-            abi_dir=abi_dir,
-            preview_before_trade=self.config.preview_before_trade,
-        )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
-        self.hyperdrive_contract_addresses = self._deployed_hyperdrive.hyperdrive_contract_addresses
-        self.interface = HyperdriveReadWriteInterface(
-            self.eth_config,
-            self.hyperdrive_contract_addresses,
-            web3=chain._web3,
+        hyperdrive_contract_addresses = self._deployed_hyperdrive.hyperdrive_contract_addresses
+
+        super().__init__(
+            chain,
+            Hyperdrive.Addresses._from_ethpy_addresses(hyperdrive_contract_addresses),
+            config,
         )
+
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
         self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
@@ -331,7 +389,6 @@ class InteractiveHyperdrive:
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
-        self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
         # We use this variable to control underlying threads when to exit.
         # When this varible is set to true, the underlying threads will exit.
@@ -348,13 +405,6 @@ class InteractiveHyperdrive:
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
-
-        self.rng = self.config.rng
-        self.log_to_rollbar = self.config.log_to_rollbar
-        self.rollbar_log_prefix = self.config.rollbar_log_prefix
-        self.crash_log_level = self.config.crash_log_level
-        self.crash_log_ticker = self.config.crash_log_ticker
-        self.crash_report_additional_info = self.config.crash_report_additional_info
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -657,7 +707,7 @@ class InteractiveHyperdrive:
             eth = FixedPoint(10)
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.rng
+            policy_config.rng = self.config.rng
         out_agent = InteractiveHyperdriveAgent(
             base=base,
             eth=eth,
@@ -1109,7 +1159,7 @@ class InteractiveHyperdrive:
             # We only get anvil state dump here, since it's an on chain call
             # and we don't want to do it when e.g., slippage happens
             trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
-            if self.crash_log_ticker:
+            if self.config.crash_log_ticker:
                 if trade_result.additional_info is None:
                     trade_result.additional_info = {"ticker": self.get_ticker()}
                 else:
@@ -1118,12 +1168,12 @@ class InteractiveHyperdrive:
             # Defaults to CRITICAL
             log_hyperdrive_crash_report(
                 trade_result,
-                log_level=self.crash_log_level,
+                log_level=self.config.crash_log_level,
                 crash_report_to_file=True,
                 crash_report_file_prefix="interactive_hyperdrive",
-                log_to_rollbar=self.log_to_rollbar,
-                rollbar_log_prefix=self.rollbar_log_prefix,
-                additional_info=self.crash_report_additional_info,
+                log_to_rollbar=self.config.log_to_rollbar,
+                rollbar_log_prefix=self.config.rollbar_log_prefix,
+                additional_info=self.config.crash_report_additional_info,
             )
             raise trade_result.exception
 
