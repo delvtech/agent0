@@ -184,3 +184,44 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
     assert redeem_event.withdrawal_share_amount == remove_liquidity_event.withdrawal_share_amount
     assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
     _ensure_agent_wallet_is_correct(hyperdrive_agent0.wallet, interactive_remote_hyperdrive.interface)
+
+
+@pytest.mark.anvil
+@pytest.mark.parametrize("check_remote_chain", [True, False])
+def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool):
+    # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
+    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
+    initial_pool_config = ILocalHyperdrive.Config(
+        initial_liquidity=FixedPoint(1_000),
+        initial_fixed_apr=FixedPoint("0.05"),
+        position_duration=60 * 60 * 24 * 365,  # 1 year
+    )
+    # Launches a local hyperdrive pool
+    # This deploys the pool
+    interactive_local_hyperdrive_0 = ILocalHyperdrive(chain, initial_pool_config)
+    interactive_local_hyperdrive_1 = ILocalHyperdrive(chain, initial_pool_config)
+
+    # Gather relevant objects from the local hyperdrive
+    hyperdrive_addresses_0 = interactive_local_hyperdrive_0.get_hyperdrive_addresses()
+    hyperdrive_addresses_1 = interactive_local_hyperdrive_1.get_hyperdrive_addresses()
+
+    # Connect to the local chain using the remote hyperdrive interface
+    if check_remote_chain:
+        remote_chain = IChain(chain.rpc_uri)
+        interactive_remote_hyperdrive_0 = IHyperdrive(remote_chain, hyperdrive_addresses_0)
+        interactive_remote_hyperdrive_1 = IHyperdrive(remote_chain, hyperdrive_addresses_1)
+    else:
+        interactive_remote_hyperdrive_0 = IHyperdrive(chain, hyperdrive_addresses_0)
+        interactive_remote_hyperdrive_1 = IHyperdrive(chain, hyperdrive_addresses_1)
+
+    # Generate trading agents from the interactive object
+    private_key = make_private_key()
+    _ = interactive_remote_hyperdrive_0.init_agent(private_key=private_key)
+
+    # Initializing an agent with an existing key should fail
+    with pytest.raises(ValueError):
+        _ = interactive_remote_hyperdrive_0.init_agent(private_key=private_key)
+
+    # Initializing an agent with an existing key on a seperate pool should fail
+    with pytest.raises(ValueError):
+        _ = interactive_remote_hyperdrive_1.init_agent(private_key=private_key)
