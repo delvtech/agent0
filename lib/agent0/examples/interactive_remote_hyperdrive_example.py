@@ -5,6 +5,8 @@ Note that this script only works when there exists an anvil chain running in doc
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode
 # pylint: disable=pointless-statement
+# We expect this to be a script, hence no need for uppercase naming
+# pylint: disable=invalid-name
 
 from fixedpointmath import FixedPoint
 

@@ -24,7 +24,6 @@ class IChain:
 
     def cleanup(self):
         """General cleanup of resources of interactive hyperdrive."""
-        pass
 
     def __del__(self):
         """General cleanup of resources of interactive hyperdrive."""
