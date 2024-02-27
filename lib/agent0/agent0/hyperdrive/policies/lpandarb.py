@@ -21,6 +21,7 @@ from agent0.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
 )
+from agent0.utilities.predict import predict_long, predict_short
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
@@ -37,8 +38,11 @@ MAX_ITER = 50
 
 
 def calc_shares_needed_for_bonds(
-    bonds_needed: FixedPoint, pool_state: PoolState, interface: HyperdriveReadInterface
-) -> tuple[FixedPoint, FixedPoint]:
+    bonds_needed: FixedPoint,
+    pool_state: PoolState,
+    interface: HyperdriveReadInterface,
+    minimum_trade_amount: FixedPoint,
+) -> FixedPoint:
     """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
 
     Arguments
@@ -49,28 +53,26 @@ def calc_shares_needed_for_bonds(
         The hyperdrive pool state.
     interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
+    minimum_trade_amount: FixedPoint
+        The minimum amount of bonds needed to open a trade.
 
 
     Returns
     -------
-    tuple[FixedPoint, FixedPoint]
-        _shares_to_pool: FixedPoint
-            The change in shares in the pool for the given amount of bonds.
-        _shares_to_gov: FixedPoint
-            The associated shares going to governance.
+    FixedPoint
+        The change in shares in the pool for the given amount of bonds.
     """
-    _shares_to_pool = interface.calc_shares_out_given_bonds_in_down(abs(bonds_needed), pool_state)
-    spot_price = interface.calc_spot_price(pool_state)
-    price_discount = FixedPoint(1) - spot_price
-    _shares_to_gov = (
-        _shares_to_pool * price_discount * pool_state.pool_config.fees.curve * pool_state.pool_config.fees.governance_lp
-    )
-    _shares_to_pool -= _shares_to_gov
-    return _shares_to_pool, _shares_to_gov
+    if bonds_needed > minimum_trade_amount:  # need more bonds in pool -> user sells bonds -> user opens short
+        delta = predict_short(hyperdrive_interface=interface, bonds=bonds_needed, pool_state=pool_state, for_pool=True)
+    elif bonds_needed < -minimum_trade_amount:  # need less bonds in pool -> user buys bonds -> user opens long
+        delta = predict_long(hyperdrive_interface=interface, bonds=-bonds_needed, pool_state=pool_state, for_pool=True)
+    else:
+        return FixedPoint(0)
+    return abs(delta.pool.shares)
 
 
 def calc_reserves_to_hit_target_rate(
-    target_rate: FixedPoint, interface: HyperdriveReadInterface
+    target_rate: FixedPoint, interface: HyperdriveReadInterface, minimum_trade_amount: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
@@ -80,6 +82,8 @@ def calc_reserves_to_hit_target_rate(
         The target rate the pool will have after the calculated change in bonds and shares.
     interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
+    minimum_trade_amount: FixedPoint
+        The minimum amount of bonds needed to open a trade.
 
     Returns
     -------
@@ -121,9 +125,9 @@ def calc_reserves_to_hit_target_rate(
         # So we loop through, increasing the divisor until the share reserves are no longer negative.
         while avoid_negative_share_reserves is False:
             bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
-            shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+            shares_to_pool = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface, minimum_trade_amount)
             # save bad first guess to a temporary variable
-            temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool, shares_to_gov)
+            temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool)
             predicted_rate = interface.calc_fixed_rate(temp_pool_state)
             avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
             divisor *= FixedPoint(2)
@@ -133,9 +137,9 @@ def calc_reserves_to_hit_target_rate(
             overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
-        shares_to_pool, shares_to_gov = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface)
+        shares_to_pool = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface, minimum_trade_amount)
         # update pool state with second guess and continue from there
-        pool_state = apply_step(pool_state, bonds_needed, shares_to_pool, shares_to_gov)
+        pool_state = apply_step(pool_state, bonds_needed, shares_to_pool)
         predicted_rate = interface.calc_fixed_rate(pool_state)
         # update running totals
         total_shares_needed = (
@@ -157,8 +161,7 @@ def calc_reserves_to_hit_target_rate(
 def apply_step(
     pool_state: PoolState,
     bonds_needed: FixedPoint,
-    shares_needed: FixedPoint,
-    gov_fee: FixedPoint,
+    shares_to_pool: FixedPoint,
 ) -> PoolState:
     """Save a single convergence step into the pool info.
 
@@ -168,11 +171,8 @@ def apply_step(
         The current pool state.
     bonds_needed: FixedPoint
         The amount of bonds that is going to be traded.
-    shares_needed: FixedPoint
+    shares_to_pool: FixedPoint
         The amount of shares that is going to be traded.
-    gov_fee: FixedPoint
-        The associated governance fee.
-
 
     Returns
     -------
@@ -180,13 +180,9 @@ def apply_step(
         The updated pool state.
     """
     if bonds_needed > 0:  # short case
-        # shares_needed is what the user takes OUT: curve_fee less due to fees.
-        # gov_fee of that doesn't stay in the pool, going OUT to governance (same direction as user flow).
-        pool_state.pool_info.share_reserves += -shares_needed - gov_fee
+        pool_state.pool_info.share_reserves += -shares_to_pool  # take shares out of pool
     else:  # long case
-        # shares_needed is what the user pays IN: curve_fee more due to fees.
-        # gov_fee of that doesn't go to the pool, going OUT to governance (opposite direction of user flow).
-        pool_state.pool_info.share_reserves += shares_needed - gov_fee
+        pool_state.pool_info.share_reserves += shares_to_pool  # put shares in pool
     pool_state.pool_info.bond_reserves += bonds_needed
     return pool_state
 
@@ -324,7 +320,9 @@ class LPandArb(HyperdriveBasePolicy):
         bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
             _, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
-                target_rate=interface.current_pool_state.variable_rate, interface=interface
+                target_rate=interface.current_pool_state.variable_rate,
+                interface=interface,
+                minimum_trade_amount=self.minimum_trade_amount,
             )
             self.convergence_iters.append(iters)
             self.convergence_speed.append(speed)

@@ -15,7 +15,7 @@ from agent0.hyperdrive.policies import PolicyZoo
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
 
-TRADE_AMOUNTS = [0.003, 1e4, 1e5]  # 0.003 is three times the minimum transaction amount of local test deploy
+TRADE_AMOUNTS = [0.003, 1e7]  # 0.003 is three times the minimum transaction amount of local test deploy
 # We hit the target rate to the 5th decimal of precision.
 # That means 0.050001324091154488 is close enough to a target rate of 0.05.
 PRECISION = FixedPoint(1e-5)
