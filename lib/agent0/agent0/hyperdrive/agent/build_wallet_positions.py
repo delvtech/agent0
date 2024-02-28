@@ -31,6 +31,7 @@ def build_wallet_positions_from_chain(
         The wallet object build from the provided data
     """
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
 
     # Contract call to get base balance
     base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
