@@ -1,7 +1,7 @@
 """Functions to help build agent wallets from various sources."""
 
 import pandas as pd
-from ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
+from ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from hypertypes import ERC20MintableContract, IERC4626HyperdriveContract
@@ -31,6 +31,7 @@ def build_wallet_positions_from_chain(
         The wallet object build from the provided data
     """
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
 
     # Contract call to get base balance
     base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
@@ -47,52 +48,63 @@ def build_wallet_positions_from_chain(
     withdraw_amount: int = hyperdrive_contract.functions.balanceOf(asset_id, wallet_addr).call()
     withdraw_obj = FixedPoint(scaled_value=withdraw_amount)
 
-    # We need to gather all longs and shorts from events
+    # We need to gather all transfers of longs and shorts from events
     # and rebuild the current long/short positions
-    # Open Longs
-    open_long_events = hyperdrive_contract.events.OpenLong.get_logs(fromBlock=0)
     long_obj: dict[int, Long] = {}
-    for event in open_long_events:
-        maturity_time = event["args"]["maturityTime"]
-        long_amount = FixedPoint(scaled_value=event["args"]["bondAmount"])
-        # Add this balance to the wallet if it exists, create the long object if not
-        if maturity_time in long_obj:
-            long_obj[maturity_time].balance += long_amount
-        else:
-            long_obj[maturity_time] = Long(balance=long_amount, maturity_time=maturity_time)
-    # Close Longs
-    close_long_events = hyperdrive_contract.events.CloseLong.get_logs(fromBlock=0)
-    for event in close_long_events:
-        maturity_time = event["args"]["maturityTime"]
-        long_amount = FixedPoint(scaled_value=event["args"]["bondAmount"])
-        assert maturity_time in long_obj, "ERROR: close event found without corresponding open event."
-        long_obj[maturity_time].balance -= long_amount
-    # Iterate through longs and remove any zero balance
+    short_obj: dict[int, Short] = {}
+
+    # Get all transfer events with tokens going to the wallet and add to wallet objects
+    tokens_to_addr = hyperdrive_contract.events.TransferSingle.get_logs(
+        fromBlock="earliest",
+        argument_filters={"to": wallet_addr},
+    )
+    for event in tokens_to_addr:
+        token_id = event["args"]["id"]
+        token_value = event["args"]["value"]
+        event_prefix, event_maturity_time = decode_asset_id(token_id)
+        if event_prefix == AssetIdPrefix.LONG.value:
+            assert event_maturity_time > 0, "ERROR: Long token found without maturity time"
+            # Add this balance to the wallet if it exists, create the object if not
+            if event_maturity_time in long_obj:
+                long_obj[event_maturity_time].balance += FixedPoint(scaled_value=token_value)
+            else:
+                long_obj[event_maturity_time] = Long(
+                    balance=FixedPoint(scaled_value=token_value), maturity_time=event_maturity_time
+                )
+        elif event_prefix == AssetIdPrefix.SHORT.value:
+            assert event_maturity_time > 0, "ERROR: Short token found without maturity time"
+            # Add this balance to the wallet if it exists, create the object if not
+            if event_maturity_time in short_obj:
+                short_obj[event_maturity_time].balance += FixedPoint(scaled_value=token_value)
+            else:
+                short_obj[event_maturity_time] = Short(
+                    balance=FixedPoint(scaled_value=token_value), maturity_time=event_maturity_time
+                )
+
+    # Get all transfer events with tokens from the wallet and subtract from wallet objects
+    tokens_from_addr = hyperdrive_contract.events.TransferSingle.get_logs(
+        fromBlock="earliest",
+        argument_filters={"from": wallet_addr},
+    )
+    for event in tokens_from_addr:
+        token_id = event["args"]["id"]
+        token_value = event["args"]["value"]
+        event_prefix, event_maturity_time = decode_asset_id(token_id)
+        if event_prefix == AssetIdPrefix.LONG.value:
+            assert event_maturity_time > 0, "ERROR: Long token found without maturity time."
+            assert event_maturity_time in long_obj, "ERROR: transfer to found without corresponding transfer from."
+            long_obj[event_maturity_time].balance -= FixedPoint(scaled_value=token_value)
+        elif event_prefix == AssetIdPrefix.SHORT.value:
+            assert event_maturity_time > 0, "ERROR: Short token found without maturity time."
+            assert event_maturity_time in long_obj, "ERROR: transfer to found without corresponding transfer from."
+            short_obj[event_maturity_time].balance -= FixedPoint(scaled_value=token_value)
+
+    # Iterate through longs and shorts to remove any zero balance
     for k in list(long_obj.keys()):
         # Sanity check
         assert long_obj[k].balance >= FixedPoint(0), "ERROR: wallet deltas added up to be negative."
         if long_obj[k].balance == FixedPoint(0):
             del long_obj[k]
-
-    # Open Shorts
-    open_short_events = hyperdrive_contract.events.OpenShort.get_logs(fromBlock=0)
-    short_obj: dict[int, Short] = {}
-    for event in open_short_events:
-        maturity_time = event["args"]["maturityTime"]
-        short_amount = FixedPoint(scaled_value=event["args"]["bondAmount"])
-        # Add this balance to the wallet if it exists, create the short object if not
-        if maturity_time in short_obj:
-            short_obj[maturity_time].balance += short_amount
-        else:
-            short_obj[maturity_time] = Short(balance=short_amount, maturity_time=maturity_time)
-    # Close Shorts
-    close_short_events = hyperdrive_contract.events.CloseShort.get_logs(fromBlock=0)
-    for event in close_short_events:
-        maturity_time = event["args"]["maturityTime"]
-        short_amount = FixedPoint(scaled_value=event["args"]["bondAmount"])
-        assert maturity_time in short_obj, "ERROR: close event found without corresponding open event."
-        short_obj[maturity_time].balance -= short_amount
-    # Iterate through longs and remove any zero balance
     for k in list(short_obj.keys()):
         # Sanity check
         assert short_obj[k].balance >= FixedPoint(0), "ERROR: wallet deltas added up to be negative."

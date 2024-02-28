@@ -142,6 +142,20 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
     assert agent0_longs[0].maturity_time == open_long_event.maturity_time
     _ensure_agent_wallet_is_correct(hyperdrive_agent0.wallet, interactive_remote_hyperdrive.interface)
 
+    # Testing adding another agent to the pool after trades have been made, making a trade,
+    # then checking wallet
+    hyperdrive_agent2 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent2.add_funds(base=FixedPoint(111_111), eth=FixedPoint(111))
+    hyperdrive_agent2.set_max_approval()
+    open_long_event_2 = hyperdrive_agent2.open_long(base=FixedPoint(33_333))
+
+    assert open_long_event_2.base_amount == FixedPoint(33_333)
+    agent2_longs = list(hyperdrive_agent2.wallet.longs.values())
+    assert len(agent2_longs) == 1
+    assert agent2_longs[0].balance == open_long_event_2.bond_amount
+    assert agent2_longs[0].maturity_time == open_long_event_2.maturity_time
+    _ensure_agent_wallet_is_correct(hyperdrive_agent2.wallet, interactive_remote_hyperdrive.interface)
+
     # Remove liquidity
     remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
     assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
@@ -180,9 +194,13 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
     _ensure_agent_wallet_is_correct(hyperdrive_agent0.wallet, interactive_remote_hyperdrive.interface)
 
     # Redeem withdrawal shares
+    # Note that redeeming withdrawal shares for more than available in the pool
+    # will pull out as much withdrawal shares as possible
     redeem_event = hyperdrive_agent0.redeem_withdraw_share(shares=remove_liquidity_event.withdrawal_share_amount)
-    assert redeem_event.withdrawal_share_amount == remove_liquidity_event.withdrawal_share_amount
-    assert hyperdrive_agent0.wallet.withdraw_shares == FixedPoint(0)
+    assert (
+        hyperdrive_agent0.wallet.withdraw_shares
+        == remove_liquidity_event.withdrawal_share_amount - redeem_event.withdrawal_share_amount
+    )
     _ensure_agent_wallet_is_correct(hyperdrive_agent0.wallet, interactive_remote_hyperdrive.interface)
 
 
