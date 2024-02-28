@@ -46,6 +46,9 @@ from .i_hyperdrive_policy import IHyperdrivePolicy
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
+# TODO: nest_asyncio may cause compatibility issues with other libraries.
+# Also, Jupyter and ASYNC compatibility might be improved, removing the need for this.
+# See https://github.com/python/cpython/issues/66435.
 nest_asyncio.apply()
 
 
@@ -54,7 +57,8 @@ class IHyperdrive:
 
     @dataclass(kw_only=True)
     class Config:
-        """The configuration for the interactive hyperdrive class
+        """The configuration for the interactive hyperdrive class.
+
         Attributes
         ----------
         preview_before_trade: bool, optional
@@ -131,6 +135,7 @@ class IHyperdrive:
         # This requires the entire monorepo to be check out, and will likely not work when
         # installing agent0 by itself.
         # This should get fixed when abis are exported in hypertypes.
+        # https://github.com/delvtech/agent0/issues/1125
         full_path = os.path.realpath(__file__)
         current_file_dir, _ = os.path.split(full_path)
         abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
@@ -201,7 +206,7 @@ class IHyperdrive:
             ),
         )
 
-        # TODO add the public address to the chain object to avoid multiple objects
+        # Add the public address to the chain object to avoid multiple objects
         # with the same underlying account
         self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
 
@@ -246,7 +251,6 @@ class IHyperdrive:
             # Update the agent's wallet balance
             agent.wallet.balance.amount += base
 
-    # TODO this should be the base agent class for these calls
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Set the next action to open a long
         assert isinstance(agent.policy, IHyperdrivePolicy)

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 class ILocalHyperdriveAgent(IHyperdriveAgent):
     """Interactive Local Hyperdrive Agent.
+
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these
     wrappers here for ease of use.
@@ -34,6 +35,7 @@ class ILocalHyperdriveAgent(IHyperdriveAgent):
         private_key: str | None = None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
+
         NOTE: this constructor shouldn't be called directly, but rather from LocalHyperdrive's
         `init_agent` method.
 

@@ -1,5 +1,4 @@
 """Example script for using interactive hyperdrive to connect to a remote chain.
-Note that this script only works when there exists an anvil chain running in docker.
 """
 
 # %%
