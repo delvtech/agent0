@@ -5,13 +5,13 @@ from __future__ import annotations
 from numpy.random._generator import Generator
 
 from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
-from agent0.hyperdrive.interactive.interactive_hyperdrive_agent import InteractiveHyperdriveAgent
+from agent0.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
 
 
 def permute_trade_events(
-    trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]],
+    trade_events: list[tuple[ILocalHyperdriveAgent, OpenLong | OpenShort]],
     rng: Generator,
-) -> list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]]:
+) -> list[tuple[ILocalHyperdriveAgent, OpenLong | OpenShort]]:
     """Given a list of trade events, returns the list in random order.
 
     Arguments
@@ -33,7 +33,7 @@ def permute_trade_events(
 
 
 def close_trades(
-    trade_events: list[tuple[InteractiveHyperdriveAgent, OpenLong | OpenShort]],
+    trade_events: list[tuple[ILocalHyperdriveAgent, OpenLong | OpenShort]],
 ) -> None:
     """Close trades provided.
 

@@ -33,7 +33,7 @@ import numpy as np
 from fixedpointmath import FixedPoint
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import LocalChain
+from agent0.hyperdrive.interactive import ILocalChain
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     advance_time_after_checkpoint,
@@ -56,7 +56,7 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False):
+def fuzz_profit_check(chain_config: ILocalChain.Config | None = None, log_to_stdout: bool = False):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
@@ -226,7 +226,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
-    chain_config: LocalChain.Config
+    chain_config: ILocalChain.Config
     log_to_stdout: bool
 
 
@@ -244,7 +244,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        chain_config=ILocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
 

@@ -45,7 +45,7 @@ from fixedpointmath import FixedPoint
 from hyperlogs import ExtendedJSONEncoder
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     close_trades,
@@ -76,7 +76,7 @@ def fuzz_path_independence(
     lp_share_price_epsilon: float,
     effective_share_reserves_epsilon: float,
     present_value_epsilon: float,
-    chain_config: LocalChain.Config,
+    chain_config: ILocalChain.Config,
     log_to_stdout: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
@@ -304,7 +304,7 @@ class Args(NamedTuple):
     lp_share_price_epsilon: float
     effective_share_reserves_epsilon: float
     present_value_epsilon: float
-    chain_config: LocalChain.Config
+    chain_config: ILocalChain.Config
     log_to_stdout: bool
 
 
@@ -327,7 +327,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         lp_share_price_epsilon=namespace.lp_share_price_epsilon,
         effective_share_reserves_epsilon=namespace.effective_share_reserves_epsilon,
         present_value_epsilon=namespace.present_value_epsilon,
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
+        chain_config=ILocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
 
@@ -397,7 +397,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 def invariant_check(
     check_data: dict[str, Any],
     check_epsilon: dict[str, Any],
-    interactive_hyperdrive: InteractiveHyperdrive,
+    interactive_hyperdrive: ILocalHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
 

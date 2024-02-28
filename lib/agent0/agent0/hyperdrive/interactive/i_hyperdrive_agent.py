@@ -23,15 +23,14 @@ if TYPE_CHECKING:
         RedeemWithdrawalShares,
         RemoveLiquidity,
     )
-    from .interactive_hyperdrive import InteractiveHyperdrive
-
+    from .i_hyperdrive import IHyperdrive
 
 # We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
 # Hence, we call protected class methods in this class.
 # pylint: disable=protected-access
 
 
-class InteractiveHyperdriveAgent:
+class IHyperdriveAgent:
     """Interactive Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these
@@ -40,37 +39,28 @@ class InteractiveHyperdriveAgent:
 
     def __init__(
         self,
-        base: FixedPoint,
-        eth: FixedPoint,
-        name: str | None,
-        pool: InteractiveHyperdrive,
+        pool: IHyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
-        private_key: str | None = None,
+        private_key: str,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
-        NOTE: this constructor shouldn't be called directly, but rather from InteractiveHyperdrive's
+        NOTE: this constructor shouldn't be called directly, but rather from Hyperdrive's
         `init_agent` method.
 
         Arguments
         ---------
-        base: FixedPoint
-            The amount of base to fund the agent with.
-        eth: FixedPoint
-            The amount of ETH to fund the agent with.
-        name: str | None
-            The name of the agent. Defaults to the wallet address.
-        pool: InteractiveHyperdrive
+        pool: Hyperdrive
             The pool object that this agent belongs to.
-        policy: HyperdrivePolicy | None
+        policy: Type[HyperdriveBasePolicy] | None
             An optional policy to attach to this agent.
+        policy_config: HyperdriveBasePolicy.Config | None,
+            The configuration for the attached policy.
         private_key: str | None, optional
             The private key of the associated account. Default is auto-generated.
         """
-        # pylint: disable=too-many-arguments
         self._pool = pool
-        self.name = name
-        self.agent = self._pool._init_agent(base, eth, name, policy, policy_config, private_key)
+        self.agent = self._pool._init_agent(policy, policy_config, private_key)
 
     @property
     def wallet(self) -> HyperdriveWallet:
@@ -87,22 +77,6 @@ class InteractiveHyperdriveAgent:
     def checksum_address(self) -> ChecksumAddress:
         """Return the checksum address of the account."""
         return self.agent.checksum_address
-
-    def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
-        """Adds additional funds to the agent.
-
-        Arguments
-        ---------
-        base: FixedPoint
-            The amount of base to fund the agent with. Defaults to 0.
-        eth: FixedPoint
-            The amount of ETH to fund the agent with. Defaults to 0.
-        """
-        if base is None:
-            base = FixedPoint(0)
-        if eth is None:
-            eth = FixedPoint(0)
-        self._pool._add_funds(self.agent, base, eth)
 
     def open_long(self, base: FixedPoint) -> OpenLong:
         """Opens a long for this agent.
@@ -241,3 +215,32 @@ class InteractiveHyperdriveAgent:
             Events of the executed actions.
         """
         return self._pool._liquidate(self.agent, randomize)
+
+    def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
+        """Adds additional funds to the agent.
+
+        .. note:: This method calls `set_anvil_account_balance` and `mint` under the hood.
+        These functions are likely to fail on any non-test network, but we add them to the
+        interactive agent for convenience.
+
+        Arguments
+        ---------
+        base: FixedPoint
+            The amount of base to fund the agent with. Defaults to 0.
+        eth: FixedPoint
+            The amount of ETH to fund the agent with. Defaults to 0.
+        """
+        if base is None:
+            base = FixedPoint(0)
+        if eth is None:
+            eth = FixedPoint(0)
+        self._pool._add_funds(self.agent, base, eth)
+
+    def set_max_approval(self) -> None:
+        """Sets the max approval to the hyperdrive contract.
+
+        .. warning:: This sets the max approval to the underlying hyperdrive contract for
+        this wallet. Do this at your own risk.
+
+        """
+        self._pool._set_max_approval(self.agent)

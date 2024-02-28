@@ -4,23 +4,23 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
 
-import attr
 import requests
 from eth_typing import Address, ChecksumAddress
 from hypertypes.utilities.conversions import camel_to_snake
 
 
-@attr.s
+@dataclass(kw_only=True)
 class HyperdriveAddresses:
     """Addresses for deployed Hyperdrive contracts."""
 
     # pylint: disable=too-few-public-methods
 
-    base_token: Address | ChecksumAddress = attr.ib()
-    erc4626_hyperdrive: Address | ChecksumAddress = attr.ib()
-    factory: Address | ChecksumAddress = attr.ib()
-    steth_hyperdrive: Address | ChecksumAddress = attr.ib()
+    base_token: Address | ChecksumAddress
+    erc4626_hyperdrive: Address | ChecksumAddress
+    factory: Address | ChecksumAddress
+    steth_hyperdrive: Address | ChecksumAddress
 
 
 def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:

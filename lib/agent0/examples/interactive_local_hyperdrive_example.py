@@ -1,4 +1,4 @@
-"""Example script for using interactive hyperdrive."""
+"""Example script for using interactive hyperdrive to launch a local chain."""
 
 # %%
 # Variables by themselves print out dataframes in a nice format in interactive mode
@@ -8,16 +8,16 @@ import datetime
 
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
-local_chain_config = LocalChain.Config()
+local_chain_config = ILocalChain.Config()
 # Launches a local chain in a subprocess
 # This also launches a local postgres docker container for data under the hood, attached to the chain.
 # Each hyperdrive pool will have it's own database within this container
 # NOTE: LocalChain is a subclass of Chain
-chain = LocalChain(local_chain_config)
+chain = ILocalChain(local_chain_config)
 # Can connect to a specific existing chain
 # existing_chain = Chain("http://localhost:8545")
 
@@ -26,10 +26,10 @@ chain = LocalChain(local_chain_config)
 # An "admin" user (as provided by the Chain object) is launched/funded here for deploying hyperdrive
 
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-initial_pool_config = InteractiveHyperdrive.Config()
+initial_pool_config = ILocalHyperdrive.Config()
 # Launches 2 pools on the same local chain
-interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
-interactive_hyperdrive_2 = InteractiveHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive_2 = ILocalHyperdrive(chain, initial_pool_config)
 
 # %%
 # Generate funded trading agents from the interactive object

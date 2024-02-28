@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.hyperdrive.policies import PolicyZoo
 
@@ -13,16 +13,16 @@ from agent0.hyperdrive.policies import PolicyZoo
 
 
 @pytest.mark.anvil
-def test_random_hold_policy(chain: LocalChain):
+def test_random_hold_policy(chain: ILocalChain):
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
-    initial_pool_config = InteractiveHyperdrive.Config(
+    initial_pool_config = ILocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 7,  # 1 week
         checkpoint_duration=60 * 60 * 24,  # 1 day
     )
-    interactive_hyperdrive = InteractiveHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
     random_hold_agent = interactive_hyperdrive.init_agent(
         base=FixedPoint(1_111_111),
         eth=FixedPoint(111),

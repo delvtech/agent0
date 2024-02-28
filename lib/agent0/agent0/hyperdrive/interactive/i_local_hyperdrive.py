@@ -2,20 +2,15 @@
 
 from __future__ import annotations
 
-import asyncio
-import logging
-import os
 import pathlib
 import subprocess
 import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from threading import Thread
-from typing import Any, Literal, Type, overload
+from typing import Type
 
 import dill
-import nest_asyncio
-import numpy as np
 import pandas as pd
 from chainsync import PostgresConfig
 from chainsync.dashboard.usernames import build_user_mapping
@@ -34,35 +29,28 @@ from chainsync.db.hyperdrive import (
 )
 from chainsync.exec import acquire_data, data_analysis
 from eth_account.account import Account
+from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
-from ethpy import EthConfig
-from ethpy.base import set_anvil_account_balance, smart_contract_transact
 from ethpy.hyperdrive import (
     BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
     DeployedHyperdrivePool,
-    HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
     encode_asset_id,
 )
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
-from numpy.random._generator import Generator
-from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
 from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
 from agent0.hyperdrive.agent import build_wallet_positions_from_db
-from agent0.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
-from agent0.hyperdrive.exec import async_execute_agent_trades, set_max_approval
+from agent0.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.test_utils import assert_never
 
-from .chain import Chain
 from .event_types import (
     AddLiquidity,
     CloseLong,
@@ -73,53 +61,30 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .interactive_hyperdrive_agent import InteractiveHyperdriveAgent
-from .interactive_hyperdrive_policy import InteractiveHyperdrivePolicy
+from .i_hyperdrive import IHyperdrive
+from .i_hyperdrive_policy import IHyperdrivePolicy
+from .i_local_chain import ILocalChain
+from .i_local_hyperdrive_agent import ILocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
 
-# In order to support both scripts and jupyter notebooks with underlying async functions,
-# we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
-nest_asyncio.apply()
 
-# TODO clean up this file
-# Likely should move all the agent specific method to `interactive_hyperdrive_agent`.
-# However, this makes the agent less barebones, and the agent requires lots of resources
-# from InteractiveHyperdrive.
-# pylint: disable=too-many-lines
-
-
-class InteractiveHyperdrive:
-    """Hyperdrive class that supports an interactive interface for running tests and experiments."""
+class ILocalHyperdrive(IHyperdrive):
+    """Interactive Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
-    class Config:
+    class Config(IHyperdrive.Config):
         """The configuration for the initial pool configuration.
 
         Attributes
         ----------
         data_pipeline_timeout: int
             The timeout for the data pipeline. Defaults to 60 seconds.
-        preview_before_trade: bool, optional
-            Whether to preview the position before executing a trade. Defaults to False.
-        log_to_rollbar: bool, optional
-            Whether to log crash reports to rollbar. Defaults to False.
-        rollbar_log_prefix: str | None, optional
-            The prefix to prepend to rollbar exception messages.
-        crash_log_level: int, optional
-            The log level to log crashes at. Defaults to critical.
         crash_log_ticker: bool | None, optional
             Whether to log the trade ticker in crash reports. Defaults to False.
-        crash_report_additional_info: dict[str, Any] | None, optional
-            Additional information to include in the crash report.
-        rng_seed: int | None, optional
-            The seed for the random number generator. Defaults to None.
-        rng: Generator | None, optional
-            The experiment's stateful random number generator. Defaults to creating a generator from
-            the provided random seed if not set.
         calc_pnl: bool
             Whether to calculate pnl. Defaults to True.
         initial_liquidity: FixedPoint
@@ -185,16 +150,7 @@ class InteractiveHyperdrive:
 
         # Environment variables
         data_pipeline_timeout: int = 60
-        preview_before_trade: bool = False
-        log_to_rollbar: bool = False
-        rollbar_log_prefix: str | None = None
-        crash_log_level: int = logging.CRITICAL
         crash_log_ticker: bool = False
-        crash_report_additional_info: dict[str, Any] | None = None
-
-        # Random generators
-        rng_seed: int | None = None
-        rng: Generator | None = None
 
         # Data pipeline parameters
         calc_pnl: bool = True
@@ -237,13 +193,11 @@ class InteractiveHyperdrive:
         governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
 
         def __post_init__(self):
-            # Random generator
-            if self.rng is None:
-                self.rng = np.random.default_rng(self.rng_seed)
             if self.checkpoint_duration > self.position_duration:
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
+            super().__post_init__()
 
         @property
         def _factory_min_fees(self) -> Fees:
@@ -272,44 +226,34 @@ class InteractiveHyperdrive:
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: Chain, config: Config | None = None):
+    def __init__(self, chain: ILocalChain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
-        chain: Chain
-            The chain object to launch hyperdrive on
+        chain: LocalChain
+            The local chain object to launch hyperdrive on
         config: Config | None
             The configuration for the initial pool configuration
         """
+
         if config is None:
             self.config = self.Config()
         else:
             self.config = config
 
-        # Define agent0 configs with this setup
-        # TODO currently getting the path based on this file's path
-        # This requires the entire monorepo to be check out, and will likely not work when
-        # installing agent0 by itself.
-        # This should get fixed when abis are exported in hypertypes.
-        full_path = os.path.realpath(__file__)
-        current_file_dir, _ = os.path.split(full_path)
-        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
         self.calc_pnl = self.config.calc_pnl
 
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used",
-            rpc_uri=chain.rpc_uri,
-            abi_dir=abi_dir,
-            preview_before_trade=self.config.preview_before_trade,
-        )
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
-        self.interface = HyperdriveReadWriteInterface(
-            self.eth_config,
-            self._deployed_hyperdrive.hyperdrive_contract_addresses,
-            web3=chain._web3,
+        hyperdrive_contract_addresses = self._deployed_hyperdrive.hyperdrive_contract_addresses
+
+        super().__init__(
+            chain,
+            IHyperdrive.Addresses._from_ethpy_addresses(hyperdrive_contract_addresses),
+            config,
         )
+
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
         self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
@@ -330,7 +274,6 @@ class InteractiveHyperdrive:
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
-        self._pool_agents: list[InteractiveHyperdriveAgent] = []
 
         # We use this variable to control underlying threads when to exit.
         # When this varible is set to true, the underlying threads will exit.
@@ -347,13 +290,18 @@ class InteractiveHyperdrive:
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
+        self._pool_agents: list[ILocalHyperdriveAgent] = []
 
-        self.rng = self.config.rng
-        self.log_to_rollbar = self.config.log_to_rollbar
-        self.rollbar_log_prefix = self.config.rollbar_log_prefix
-        self.crash_log_level = self.config.crash_log_level
-        self.crash_log_ticker = self.config.crash_log_ticker
-        self.crash_report_additional_info = self.config.crash_report_additional_info
+    def get_hyperdrive_addresses(self) -> IHyperdrive.Addresses:
+        """Returns the hyperdrive addresses for this pool.
+
+        Returns
+        -------
+        IHyperdrive.Addresses
+            The hyperdrive addresses for this pool
+        """
+        # pylint: disable=protected-access
+        return IHyperdrive.Addresses._from_ethpy_addresses(self._deployed_hyperdrive.hyperdrive_contract_addresses)
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -517,7 +465,7 @@ class InteractiveHyperdrive:
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: Chain) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(self, config: Config, chain: ILocalChain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
@@ -615,17 +563,23 @@ class InteractiveHyperdrive:
 
     def init_agent(
         self,
+        private_key: str | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-        policy: Type[HyperdriveBasePolicy] | None = None,
-        policy_config: HyperdriveBasePolicy.Config | None = None,
-        private_key: str | None = None,
-    ) -> InteractiveHyperdriveAgent:
+    ) -> ILocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
         ---------
+        private_key: str, optional
+            The private key of the associated account. Default is auto-generated.
+        policy: HyperdrivePolicy, optional
+            An optional policy to attach to this agent.
+        policy_config: HyperdrivePolicy, optional
+            The configuration for the attached policy.
         base: FixedPoint, optional
             The amount of base to fund the agent with. Defaults to 0.
             If a private key is provided then the base amount is added to their previous balance.
@@ -634,18 +588,11 @@ class InteractiveHyperdrive:
             If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
-        policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
-        policy_config: HyperdrivePolicy, optional
-            The configuration for the attached policy.
-        private_key: str, optional
-            The private key of the associated account. Default is auto-generated.
 
         Returns
         -------
-        InteractiveHyperdriveAgent
-            An object that contains the HyperdriveReadWriteInterface, Agents,
-            and provides access to the interactive Hyperdrive API.
+        LocalHyperdriveAgent
+            The agent object for a user to execute trades with.
         """
         # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
@@ -656,8 +603,8 @@ class InteractiveHyperdrive:
             eth = FixedPoint(10)
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.rng
-        out_agent = InteractiveHyperdriveAgent(
+            policy_config.rng = self.config.rng
+        out_agent = ILocalHyperdriveAgent(
             base=base,
             eth=eth,
             name=name,
@@ -1003,7 +950,7 @@ class InteractiveHyperdrive:
 
     ### Private agent methods ###
 
-    def _init_agent(
+    def _init_local_agent(
         self,
         base: FixedPoint,
         eth: FixedPoint,
@@ -1012,6 +959,8 @@ class InteractiveHyperdrive:
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> HyperdriveAgent:
+        # We overwrite the base init agents with different parameters
+        # pylint: disable=arguments-differ
         # pylint: disable=too-many-arguments
         agent_private_key = make_private_key() if private_key is None else private_key
 
@@ -1019,8 +968,8 @@ class InteractiveHyperdrive:
         agent = HyperdriveAgent(
             Account().from_key(agent_private_key),
             initial_budget=FixedPoint(0),
-            policy=InteractiveHyperdrivePolicy(
-                InteractiveHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.rng)
+            policy=IHyperdrivePolicy(
+                IHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng)
             ),
         )
         # Update wallet to agent's previous budget
@@ -1043,43 +992,27 @@ class InteractiveHyperdrive:
             self._add_funds(agent, base, eth)
 
         # Establish max approval for the hyperdrive contract
-        asyncio.run(
-            set_max_approval(
-                [agent],
-                self.interface.web3,
-                self.interface.base_token_contract,
-                str(self.interface.hyperdrive_contract.address),
-            )
-        )
+        self._set_max_approval(agent)
+
         # Register the username if it was provided
         if name is not None:
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _add_funds(self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint) -> None:
+    def _add_funds(
+        self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
+    ) -> None:
         # TODO this can be fixed by getting actual base values from the chain.
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
             raise ValueError("Cannot add funds to an agent after saving a snapshot")
 
-        if eth > FixedPoint(0):
-            # Eth is a set balance call
-            eth_balance, _ = self.interface.get_eth_base_balances(agent)
-            new_eth_balance = eth_balance + eth
-            _ = set_anvil_account_balance(self.interface.web3, agent.address, new_eth_balance.scaled_value)
+        # Adding funds default to the deploy account
+        if signer_account is None:
+            signer_account = self._deployed_hyperdrive.deploy_account
+
+        super()._add_funds(agent, base, eth, signer_account=signer_account)
 
         if base > FixedPoint(0):
-            # We mint base
-            _ = smart_contract_transact(
-                self.interface.web3,
-                self.interface.base_token_contract,
-                self._deployed_hyperdrive.deploy_account,
-                "mint(address,uint256)",
-                agent.checksum_address,
-                base.scaled_value,
-            )
-            # Update the agent's wallet balance
-            agent.wallet.balance.amount += base
-
             # Keep track of how much base has been minted for each agent
             if agent.address in self._initial_funds:
                 self._initial_funds[agent.address] += base
@@ -1089,8 +1022,6 @@ class InteractiveHyperdrive:
         # Adding funds mines a block, so we run data pipeline here
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        # TODO do we want to report a status here?
 
     def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
         # Sanity check, should only be one trade result
@@ -1102,343 +1033,96 @@ class InteractiveHyperdrive:
         else:
             assert False
 
+        # We add specific data to the trade result from interactive hyperdrive
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
             # TODO when we allow for async, we likely would want to ignore slippage checks here
             # We only get anvil state dump here, since it's an on chain call
             # and we don't want to do it when e.g., slippage happens
             trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
-            if self.crash_log_ticker:
+            if self.config.crash_log_ticker:
                 if trade_result.additional_info is None:
                     trade_result.additional_info = {"ticker": self.get_ticker()}
                 else:
                     trade_result.additional_info["ticker"] = self.get_ticker()
 
-            # Defaults to CRITICAL
-            log_hyperdrive_crash_report(
-                trade_result,
-                log_level=self.crash_log_level,
-                crash_report_to_file=True,
-                crash_report_file_prefix="interactive_hyperdrive",
-                log_to_rollbar=self.log_to_rollbar,
-                rollbar_log_prefix=self.rollbar_log_prefix,
-                additional_info=self.crash_report_additional_info,
-            )
-            raise trade_result.exception
-
-        assert trade_result.status == TradeStatus.SUCCESS
-        tx_receipt = trade_result.tx_receipt
-        assert tx_receipt is not None
-        return tx_receipt
+        return super()._handle_trade_result(trade_result)
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._open_long(agent, base)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
+        return out
 
     def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._close_long(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
+        return out
 
     def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.OPEN_SHORT, bonds)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._open_short(agent, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
+        return out
 
     def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.CLOSE_SHORT, bonds, maturity_time=maturity_time)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._close_short(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
+        return out
 
     def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._add_liquidity(agent, base)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
+        return out
 
     def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._remove_liquidity(agent, shares)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
+        return out
 
     def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._redeem_withdraw_share(agent, shares)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        tx_receipt = self._handle_trade_result(trade_results)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
+        return out
 
     def _execute_policy_action(
         self, agent: HyperdriveAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
-        assert isinstance(agent.policy, InteractiveHyperdrivePolicy)
-        # Only allow executing agent policies if a policy was passed in the constructor
-        if agent.policy.sub_policy is None:
-            raise ValueError("Must pass in a policy in the constructor to execute policy action.")
-
-        agent.policy.set_next_action_from_sub_policy()
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, [agent], liquidate=False, interactive_mode=True)
-        )
-
+        out = super()._execute_policy_action(agent)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        out_events = []
-        # The underlying policy can execute multiple actions in one step
-        for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result)
-            assert trade_result.trade_object is not None
-            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
-        # Build event from tx_receipt
-        return out_events
+        return out
 
     def _liquidate(
         self, agent: HyperdriveAgent, randomize: bool
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(
-                self.interface,
-                [agent],
-                liquidate=True,
-                randomize_liquidation=randomize,
-                interactive_mode=True,
-            )
-        )
-
+        out = super()._liquidate(agent, randomize)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
-
-        out_events = []
-
-        # The underlying policy can execute multiple actions in one step
-        for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result)
-            assert trade_result.trade_object is not None
-            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
-        # Build event from tx_receipt
-        return out_events
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
-
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
-        # pylint: disable=too-many-return-statements
-        match trade_type:
-            case HyperdriveActionType.INITIALIZE_MARKET:
-                raise ValueError(f"{trade_type} not supported!")
-
-            case HyperdriveActionType.OPEN_LONG:
-                return OpenLong(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.CLOSE_LONG:
-                return CloseLong(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.OPEN_SHORT:
-                return OpenShort(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                    base_proceeds=tx_receipt.base_proceeds,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.CLOSE_SHORT:
-                return CloseShort(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.ADD_LIQUIDITY:
-                return AddLiquidity(
-                    provider=Web3.to_checksum_address(tx_receipt.provider),
-                    lp_amount=tx_receipt.lp_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                    lp_share_price=tx_receipt.lp_share_price,
-                )
-
-            case HyperdriveActionType.REMOVE_LIQUIDITY:
-                return RemoveLiquidity(
-                    provider=Web3.to_checksum_address(tx_receipt.provider),
-                    lp_amount=tx_receipt.lp_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                    withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-                    lp_share_price=tx_receipt.lp_share_price,
-                )
-
-            case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-                return RedeemWithdrawalShares(
-                    provider=Web3.to_checksum_address(tx_receipt.provider),
-                    withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
-                    as_base=tx_receipt.as_base,
-                )
-
-            case _:
-                assert_never(trade_type)
+        return out
 
     def _reinit_state_after_load_snapshot(self) -> None:
         """After loading a snapshot, we need to re-initialize the state the internal
