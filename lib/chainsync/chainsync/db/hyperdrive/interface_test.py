@@ -9,7 +9,7 @@ from chainsync.db.base import get_latest_block_number_from_table
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 from .interface import (
-    add_checkpoint_infos,
+    add_checkpoint_info,
     add_current_wallet,
     add_pool_config,
     add_pool_infos,
@@ -90,7 +90,7 @@ class TestCheckpointInterface:
     def test_latest_block_number(self, db_session):
         """Testing retrieval of checkpoint via interface"""
         checkpoint_1 = CheckpointInfo(block_number=1, timestamp=datetime.now())
-        add_checkpoint_infos([checkpoint_1], db_session)
+        add_checkpoint_info([checkpoint_1], db_session)
         db_session.commit()
 
         latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
@@ -98,7 +98,7 @@ class TestCheckpointInterface:
 
         checkpoint_2 = CheckpointInfo(block_number=2, timestamp=datetime.now())
         checkpoint_3 = CheckpointInfo(block_number=3, timestamp=datetime.now())
-        add_checkpoint_infos([checkpoint_2, checkpoint_3], db_session)
+        add_checkpoint_info([checkpoint_2, checkpoint_3], db_session)
 
         latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
         assert latest_block_number == 3
@@ -112,7 +112,7 @@ class TestCheckpointInterface:
         checkpoint_1 = CheckpointInfo(block_number=0, timestamp=date_1)
         checkpoint_2 = CheckpointInfo(block_number=1, timestamp=date_2)
         checkpoint_3 = CheckpointInfo(block_number=2, timestamp=date_3)
-        add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
+        add_checkpoint_info([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
 
         checkpoints_df = get_checkpoint_info(db_session)
         np.testing.assert_array_equal(
@@ -125,7 +125,7 @@ class TestCheckpointInterface:
         checkpoint_1 = CheckpointInfo(block_number=0, timestamp=datetime.now(), vault_share_price=Decimal("3.1"))
         checkpoint_2 = CheckpointInfo(block_number=1, timestamp=datetime.now(), vault_share_price=Decimal("3.2"))
         checkpoint_3 = CheckpointInfo(block_number=2, timestamp=datetime.now(), vault_share_price=Decimal("3.3"))
-        add_checkpoint_infos([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
+        add_checkpoint_info([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
 
         checkpoints_df = get_checkpoint_info(db_session, start_block=1)
         np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.2, 3.3])

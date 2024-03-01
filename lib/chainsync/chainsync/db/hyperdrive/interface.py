@@ -126,23 +126,40 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
         raise err
 
 
-def add_checkpoint_infos(checkpoint_infos: list[CheckpointInfo], session: Session) -> None:
-    """Add checkpoint info to the checkpointinfo table.
+def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> None:
+    """Add checkpoint info to the checkpointinfo table if it doesn't exist.
 
     Arguments
     ---------
-    checkpoint_infos: list[CheckpointInfo]
-        A list of CheckpointInfo objects to insert into postgres
+    checkpoint_info: CheckpointInfo
+        A CheckpointInfo object to insert into postgres
     session: Session
         The initialized session object
     """
-    for checkpoint_info in checkpoint_infos:
+    # NOTE the logic below is not thread safe, i.e., a race condition can exists
+    # if multiple threads try to add pool config at the same time
+    # This function is being called by acquire_data.py, which should only have one
+    # instance per db, so no need to worry about it here
+    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
+    existing_checkpoint_info = get_checkpoint_info(session, checkpoint_info.checkpoint_time, coerce_float=False)
+    if len(existing_checkpoint_info) == 0:
         session.add(checkpoint_info)
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        raise err
+        try:
+            session.commit()
+        except exc.DataError as err:
+            session.rollback()
+            logging.error("Error adding checkpoint info: %s", err)
+            raise err
+    elif len(existing_checkpoint_info) == 1:
+        # Verify checkpoint info
+        for key in CheckpointInfo.__annotations__.keys():
+            new_value = getattr(checkpoint_info, key)
+            old_value = existing_checkpoint_info.loc[0, key]
+            if new_value != old_value:
+                raise ValueError(f"Adding checkpoint info field: key {key} doesn't match ({new_value=}, {old_value=})")
+    else:
+        # Should never get here, checkpoint time is primary_key, which is unique
+        raise ValueError
 
 
 def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> None:
@@ -281,24 +298,19 @@ def get_transactions(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_checkpoint_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
-) -> pd.DataFrame:
+def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all info associated with a given checkpoint.
 
     This includes
+    - `checkpoint_time`: The time index of the checkpoint.
     - `vault_share_price`: The share price of the first transaction in the checkpoint.
 
     Arguments
     ---------
     session: Session
         The initialized session object
-    start_block: int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block: int | None, optional
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
+    checkpoint_time: int | None, optional
+        The checkpoint time to filter the query on. Defaults to returning all checkpoint infos.
     coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
 
@@ -309,19 +321,11 @@ def get_checkpoint_info(
     """
     query = session.query(CheckpointInfo)
 
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(CheckpointInfo, session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(CheckpointInfo, session) + end_block + 1
-
-    if start_block is not None:
-        query = query.filter(CheckpointInfo.block_number >= start_block)
-    if end_block is not None:
-        query = query.filter(CheckpointInfo.block_number < end_block)
+    if checkpoint_time is not None:
+        query = query.filter(CheckpointInfo.checkpoint_time == checkpoint_time)
 
     # Always sort by time in order
-    query = query.order_by(CheckpointInfo.timestamp)
+    query = query.order_by(CheckpointInfo.checkpoint_time)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
