@@ -51,12 +51,7 @@ def calc_single_closeout(
     if tokentype in ["LONG", "SHORT"]:
         maturity = int(position["maturity_time"])
         # If mature, set time left to 0
-        time_left_seconds = max(maturity - hyperdrive_state.block_time, 0)
-        # Set normalized time remaining, 0 is at opening and 1 is at maturity
-        normalized_time_remaining = 1 - (FixedPoint(time_left_seconds) / FixedPoint(position_duration))
-        # Sanity check
-        assert normalized_time_remaining >= 0
-        assert normalized_time_remaining <= 1
+        normalized_time_remaining = max(maturity - hyperdrive_state.block_time, 0) / FixedPoint(position_duration)
 
     out_pnl = Decimal("nan")
     if tokentype == "LONG":
