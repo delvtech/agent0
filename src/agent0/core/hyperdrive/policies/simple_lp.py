@@ -145,14 +145,23 @@ class SimpleLP(HyperdriveBasePolicy):
         # make trades based on pnl_target
         twapnl = self.time_weighted_average_pnl()
         action_list = []
+
+        # need to be in the game to play it
         if wallet.lp_tokens == FixedPoint("0"):
             action_list.append(add_liquidity_trade(self.policy_config.delta_liquidity))
+
+        # i'm doing great, keep putting money in
         elif twapnl > self.policy_config.pnl_target:
-            if wallet.balance.amount >= self.policy_config.delta_liquidity:  # only add money if you can afford it!
+            # only add money if you can afford it!
+            if wallet.balance.amount >= self.policy_config.delta_liquidity:
                 action_list.append(add_liquidity_trade(self.policy_config.delta_liquidity))
+
+        # i'm doing bad
         elif twapnl < self.policy_config.pnl_target:
-            remove_amount = FixedPointMath.minimum(self.policy_config.delta_liquidity, wallet.lp_tokens)
-            action_list.append(remove_liquidity_trade(remove_amount))
+            # do bad long enough to get a good measurement
+            if len(self.pnl_history) == self.policy_config.lookback_length:
+                remove_amount = FixedPointMath.minimum(self.policy_config.delta_liquidity, wallet.lp_tokens)
+                action_list.append(remove_liquidity_trade(remove_amount))
 
         return action_list, False
 
