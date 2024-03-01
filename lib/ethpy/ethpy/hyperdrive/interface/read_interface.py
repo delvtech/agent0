@@ -269,17 +269,18 @@ class HyperdriveReadInterface:
         hyperdrive_eth_balance = self.get_hyperdrive_eth_balance()
         gov_fees_accrued = self.get_gov_fees_accrued(block_number)
         return PoolState(
-            block,
-            pool_config,
-            pool_info,
-            checkpoint,
-            exposure,
-            variable_rate,
-            vault_shares,
-            total_supply_withdrawal_shares,
-            hyperdrive_base_balance,
-            hyperdrive_eth_balance,
-            gov_fees_accrued,
+            block=block,
+            pool_config=pool_config,
+            pool_info=pool_info,
+            checkpoint_time=checkpoint_time,
+            checkpoint=checkpoint,
+            exposure=exposure,
+            variable_rate=variable_rate,
+            vault_shares=vault_shares,
+            total_supply_withdrawal_shares=total_supply_withdrawal_shares,
+            hyperdrive_base_balance=hyperdrive_base_balance,
+            hyperdrive_eth_balance=hyperdrive_eth_balance,
+            gov_fees_accrued=gov_fees_accrued,
         )
 
     def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:

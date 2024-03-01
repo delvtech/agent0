@@ -25,6 +25,7 @@ class PoolState:
     block: BlockData
     pool_config: PoolConfigFP
     pool_info: PoolInfoFP
+    checkpoint_time: int
     checkpoint: CheckpointFP
     exposure: FixedPoint
     variable_rate: FixedPoint
