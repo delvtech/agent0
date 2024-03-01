@@ -673,7 +673,7 @@ class ILocalHyperdrive(IHyperdrive):
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of the checkpoint info per block.
+            A pandas dataframe that consists of previous checkpoints made.
         """
         # DB read calls ensures data pipeline is caught up before returning
         if self.chain.experimental_data_threading:

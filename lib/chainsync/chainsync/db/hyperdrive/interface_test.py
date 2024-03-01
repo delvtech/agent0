@@ -87,60 +87,67 @@ class TestCheckpointInterface:
     """Testing postgres interface for checkpoint table"""
 
     @pytest.mark.docker
-    def test_latest_block_number(self, db_session):
-        """Testing retrieval of checkpoint via interface"""
-        checkpoint_1 = CheckpointInfo(block_number=1, timestamp=datetime.now())
-        add_checkpoint_info([checkpoint_1], db_session)
-        db_session.commit()
-
-        latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
-        assert latest_block_number == 1
-
-        checkpoint_2 = CheckpointInfo(block_number=2, timestamp=datetime.now())
-        checkpoint_3 = CheckpointInfo(block_number=3, timestamp=datetime.now())
-        add_checkpoint_info([checkpoint_2, checkpoint_3], db_session)
-
-        latest_block_number = get_latest_block_number_from_table(CheckpointInfo, db_session)
-        assert latest_block_number == 3
-
-    @pytest.mark.docker
     def test_get_checkpoints(self, db_session):
         """Testing retrieval of checkpoints via interface"""
-        date_1 = datetime(1945, 8, 6)
-        date_2 = datetime(1984, 8, 9)
-        date_3 = datetime(2001, 9, 11)
-        checkpoint_1 = CheckpointInfo(block_number=0, timestamp=date_1)
-        checkpoint_2 = CheckpointInfo(block_number=1, timestamp=date_2)
-        checkpoint_3 = CheckpointInfo(block_number=2, timestamp=date_3)
-        add_checkpoint_info([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
+        checkpoint_time_1 = 100
+        checkpoint_time_2 = 1000
+        checkpoint_time_3 = 10000
+        checkpoint_1 = CheckpointInfo(checkpoint_time=checkpoint_time_1)
+        checkpoint_2 = CheckpointInfo(checkpoint_time=checkpoint_time_2)
+        checkpoint_3 = CheckpointInfo(checkpoint_time=checkpoint_time_3)
+        add_checkpoint_info(checkpoint_1, db_session)
+        add_checkpoint_info(checkpoint_2, db_session)
+        add_checkpoint_info(checkpoint_3, db_session)
 
         checkpoints_df = get_checkpoint_info(db_session)
         np.testing.assert_array_equal(
-            np.array(checkpoints_df["timestamp"].values), np.array([date_1, date_2, date_3]).astype("datetime64[ns]")
+            np.array(checkpoints_df["checkpoint_time"].values),
+            np.array([checkpoint_time_1, checkpoint_time_2, checkpoint_time_3]),
         )
 
     @pytest.mark.docker
-    def test_block_query_checkpoints(self, db_session):
+    def test_checkpoint_time_query_checkpoints(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
-        checkpoint_1 = CheckpointInfo(block_number=0, timestamp=datetime.now(), vault_share_price=Decimal("3.1"))
-        checkpoint_2 = CheckpointInfo(block_number=1, timestamp=datetime.now(), vault_share_price=Decimal("3.2"))
-        checkpoint_3 = CheckpointInfo(block_number=2, timestamp=datetime.now(), vault_share_price=Decimal("3.3"))
-        add_checkpoint_info([checkpoint_1, checkpoint_2, checkpoint_3], db_session)
+        checkpoint_1 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.1"))
+        checkpoint_2 = CheckpointInfo(checkpoint_time=1000, vault_share_price=Decimal("3.2"))
+        checkpoint_3 = CheckpointInfo(checkpoint_time=10000, vault_share_price=Decimal("3.3"))
+        add_checkpoint_info(checkpoint_1, db_session)
+        add_checkpoint_info(checkpoint_2, db_session)
+        add_checkpoint_info(checkpoint_3, db_session)
 
-        checkpoints_df = get_checkpoint_info(db_session, start_block=1)
-        np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.2, 3.3])
-
-        checkpoints_df = get_checkpoint_info(db_session, start_block=-1)
-        np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.3])
-
-        checkpoints_df = get_checkpoint_info(db_session, end_block=1)
+        checkpoints_df = get_checkpoint_info(db_session, checkpoint_time=100)
         np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.1])
 
-        checkpoints_df = get_checkpoint_info(db_session, end_block=-1)
-        np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.1, 3.2])
-
-        checkpoints_df = get_checkpoint_info(db_session, start_block=1, end_block=-1)
+        checkpoints_df = get_checkpoint_info(db_session, checkpoint_time=1000)
         np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.2])
+
+        checkpoints_df = get_checkpoint_info(db_session, checkpoint_time=10000)
+        np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [3.3])
+
+        checkpoints_df = get_checkpoint_info(db_session, checkpoint_time=222)
+        np.testing.assert_array_equal(checkpoints_df["vault_share_price"], [])
+
+    @pytest.mark.docker
+    def test_checkpoint_time_verify(self, db_session):
+        """Testing querying by block number of checkpoints via interface"""
+        checkpoint_1 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.1"))
+        add_checkpoint_info(checkpoint_1, db_session)
+        checkpoint_df_1 = get_checkpoint_info(db_session, coerce_float=False)
+        assert len(checkpoint_df_1) == 1
+        assert checkpoint_df_1.loc[0, "vault_share_price"] == Decimal("3.1")
+
+        # Nothing should happen if we give the same checkpoint info
+        checkpoint_2 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.1"))
+        add_checkpoint_info(checkpoint_2, db_session)
+        checkpoint_df_2 = get_checkpoint_info(db_session, coerce_float=False)
+        assert len(checkpoint_df_2) == 1
+        assert checkpoint_df_2.loc[0, "vault_share_price"] == Decimal("3.1")
+
+        # Adding a checkpoint info with the same checkpoint time with a different value
+        # should throw a value error
+        checkpoint_3 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.4"))
+        with pytest.raises(ValueError):
+            add_checkpoint_info(checkpoint_3, db_session)
 
 
 class TestPoolConfigInterface:
