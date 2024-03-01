@@ -238,7 +238,7 @@ class HyperdriveReadInterface:
         """
         return _get_block_time(block)
 
-    def get_hyperdrive_state(self, block: BlockData | None = None):
+    def get_hyperdrive_state(self, block: BlockData | None = None) -> PoolState:
         """Use RPCs and contract calls to get the Hyperdrive pool and block state, given a block identifier.
 
         Arguments

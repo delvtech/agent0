@@ -17,9 +17,9 @@ from chainsync.db.hyperdrive import (
     get_transactions,
     get_wallet_deltas,
 )
+from ethpy.hyperdrive import HyperdriveReadInterface
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
-from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
@@ -153,7 +153,7 @@ def data_to_analysis(
     end_block: int,
     pool_config: pd.Series,
     db_session: Session,
-    hyperdrive_contract: Contract,
+    interface: HyperdriveReadInterface,
     calc_pnl: bool = True,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
@@ -197,7 +197,7 @@ def data_to_analysis(
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
         if calc_pnl:
-            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, pool_info["vault_share_price"].iloc[-1])
+            pnl_df = calc_closeout_pnl(wallet_pnl, interface, pool_info["vault_share_price"].iloc[-1])
         else:
             pnl_df = np.nan
 

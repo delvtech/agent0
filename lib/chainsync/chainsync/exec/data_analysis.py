@@ -82,9 +82,6 @@ def data_analysis(
         db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
-    # Get hyperdrive contract
-    hyperdrive_contract = interface.hyperdrive_contract
-
     ## Get starting point for restarts
     analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
 
@@ -129,9 +126,7 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(
-            analysis_start_block, analysis_end_block, pool_config, db_session, hyperdrive_contract, calc_pnl
-        )
+        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, interface, calc_pnl)
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
