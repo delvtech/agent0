@@ -12,6 +12,7 @@ from chainsync.db.hyperdrive import (
     PoolAnalysis,
     Ticker,
     WalletPNL,
+    get_checkpoint_info,
     get_current_wallet,
     get_pool_info,
     get_transactions,
@@ -197,7 +198,8 @@ def data_to_analysis(
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
         if calc_pnl:
-            pnl_df = calc_closeout_pnl(wallet_pnl, interface, pool_info["vault_share_price"].iloc[-1])
+            checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
+            pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, interface)
         else:
             pnl_df = np.nan
 

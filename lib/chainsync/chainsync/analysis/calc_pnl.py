@@ -6,16 +6,16 @@ import logging
 from decimal import Decimal
 
 import pandas as pd
-from eth_typing import ChecksumAddress, HexAddress, HexStr
-from ethpy.base import smart_contract_preview_transaction
 from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
 from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
-from web3.types import BlockIdentifier
 
 
 def calc_single_closeout(
-    position: pd.Series, interface: HyperdriveReadInterface, hyperdrive_state: PoolState
+    position: pd.Series,
+    interface: HyperdriveReadInterface,
+    hyperdrive_state: PoolState,
+    checkpoint_share_prices: pd.Series,
 ) -> Decimal:
     """Calculate the closeout pnl for a single position.
 
@@ -27,6 +27,8 @@ def calc_single_closeout(
         The hyperdrive read interface
     hyperdrive_state: PoolState
         The hyperdrive pool state
+    checkpoint_share_prices: pd.Series
+        A series with the index as checkpoint time and the value as the share prices
 
     Returns
     -------
@@ -40,10 +42,7 @@ def calc_single_closeout(
     if position["value"] == 0:
         return Decimal(0)
     amount = FixedPoint(f"{position['value']:f}")
-    address = position["wallet_address"]
     tokentype = position["base_token_type"]
-    sender = ChecksumAddress(HexAddress(HexStr(address)))
-    preview_result = None
     maturity = 0
     normalized_time_remaining = FixedPoint(0)
     position_duration = hyperdrive_state.pool_config.position_duration
@@ -63,11 +62,35 @@ def calc_single_closeout(
         out_pnl = Decimal(str(out_pnl))
 
     elif tokentype == "SHORT":
+        # Get the open share price from the checkpoint lookup
+        open_checkpoint_time = maturity - position_duration
+        assert (
+            open_checkpoint_time in checkpoint_share_prices.index
+        ), "Chainsync: open short checkpoint not found for position."
+        open_share_price = FixedPoint(checkpoint_share_prices.loc[open_checkpoint_time])
+
+        # If the position has matured, we use the share price from the checkpoint
+        # Otherwise, we use the current share price
+        # NOTE There exists a case where the position has matured but a checkpoint hasn't
+        # been created yet. In this case, we default to using the current share price
+        # this may create an PNL that might be off.
+        if (hyperdrive_state.block_time >= maturity) and (maturity in checkpoint_share_prices.index):
+            close_share_price = FixedPoint(checkpoint_share_prices.loc[maturity])
+        else:
+            close_share_price = hyperdrive_state.pool_info.vault_share_price
+
         try:
             # TODO, we need the vault share price of the open/close
-            out_pnl = interface.calc_close_short()
+            out_pnl = interface.calc_close_short(
+                amount,
+                open_vault_share_price=open_share_price,
+                close_vault_share_price=close_share_price,
+                normalized_time_remaining=normalized_time_remaining,
+                pool_state=hyperdrive_state,
+            )
         except Exception as exception:  # pylint: disable=broad-except
             logging.warning("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
+        out_pnl = Decimal(str(out_pnl))
 
     # For PNL, we assume all withdrawal shares are redeemable
     # even if there are no withdrawal shares available to withdraw
@@ -82,23 +105,23 @@ def calc_single_closeout(
 
 
 def calc_closeout_pnl(
-    current_wallet: pd.DataFrame, interface: HyperdriveReadInterface, lp_share_price: FixedPoint
-) -> pd.DataFrame:
+    current_wallet: pd.DataFrame, checkpoint_info: pd.DataFrame, interface: HyperdriveReadInterface
+) -> pd.Series:
     """Calculate closeout value of agent positions.
 
     Arguments
     ---------
     current_wallet: pd.DataFrame
         A dataframe resulting from `get_current_wallet` that describes the current wallet position.
-    hyperdrive_contract: Contract
-        The hyperdrive contract object.
-    lp_share_price: FixedPoint
-        The price of an LP share in units of the base token
+    checkpoint_info: pd.DataFrame
+        A dataframe resulting from `get_checkpoint_info` that describes all checkpoints.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface
 
     Returns
     -------
-    Decimal
-        The closeout pnl
+    pd.Series
+        A series matching the current_wallet input that contains the values of each position
     """
 
     # Sanity check, the block number across all current wallets should be identical
@@ -109,9 +132,14 @@ def calc_closeout_pnl(
     block_number = int(current_wallet["block_number"].iloc[0])
     hyperdrive_state = interface.get_hyperdrive_state(interface.get_block(block_number))
 
+    # Prepare the checkpoint info dataframe for lookups based on checkpoint time
+    checkpoint_share_prices = checkpoint_info.set_index("checkpoint_time")["vault_share_price"]
+
+    # Calculate pnl per row of dataframe
     return current_wallet.apply(
         calc_single_closeout,  # type: ignore
         interface=interface,
         hyperdrive_state=hyperdrive_state,
+        checkpoint_share_prices=checkpoint_share_prices,
         axis=1,
     )
