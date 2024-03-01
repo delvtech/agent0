@@ -639,9 +639,11 @@ class HyperdriveReadInterface:
         bond_amount: FixedPoint
             The amount to of bonds provided.
         open_vault_share_price: FixedPoint
-            The share price when the short was opened.
+            The checkpoint share price when the short was opened.
         close_vault_share_price: FixedPoint
             The share price when the short was closed.
+            If the short isn't mature, this is the current share price.
+            If the short is mature, this is the share price of the maturity checkpoint.
         normalized_time_remaining: FixedPoint
             The time remaining before the short reaches maturity,
             normalized such that 1 is at opening and 0 is at maturity.
