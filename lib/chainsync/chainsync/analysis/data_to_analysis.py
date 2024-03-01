@@ -169,8 +169,8 @@ def data_to_analysis(
         The pool config data.
     db_session: Session
         The initialized db session.
-    hyperdrive_contract: Contract
-        The hyperdrive contract.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
     """
