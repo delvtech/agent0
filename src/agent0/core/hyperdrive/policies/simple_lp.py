@@ -105,9 +105,6 @@ class SimpleLP(HyperdriveBasePolicy):
             weight = (i + 1) * delta_time / total_time_spanned
 
             # compute sums
-            # delta_time_in_years = (delta_time / FixedPoint(60 * 60 * 24 * 365))
-            # profit_change_per_year = profit_change * delta_time_in_years
-            # weighted_sum += profit_change_per_year * weight
             weighted_sum += profit_change * weight
             total_weight += weight
 
