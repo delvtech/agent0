@@ -80,7 +80,6 @@ def calc_single_closeout(
             close_share_price = hyperdrive_state.pool_info.vault_share_price
 
         try:
-            # TODO, we need the vault share price of the open/close
             out_pnl = interface.calc_close_short(
                 amount,
                 open_vault_share_price=open_share_price,
