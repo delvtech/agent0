@@ -56,7 +56,8 @@ def calc_single_closeout(
     if tokentype == "LONG":
         try:
             out_pnl = interface.calc_close_long(amount, normalized_time_remaining, hyperdrive_state)
-        except Exception as exception:  # pylint: disable=broad-except
+        # Rust Panic Exceptions are base exceptions, not Exceptions
+        except BaseException as exception:  # pylint: disable=broad-except
             logging.warning("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
         # FixedPoint to Decimal
         out_pnl = Decimal(str(out_pnl))
@@ -87,7 +88,8 @@ def calc_single_closeout(
                 normalized_time_remaining=normalized_time_remaining,
                 pool_state=hyperdrive_state,
             )
-        except Exception as exception:  # pylint: disable=broad-except
+        # Rust Panic Exceptions are base exceptions, not Exceptions
+        except BaseException as exception:  # pylint: disable=broad-except
             logging.warning("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
         out_pnl = Decimal(str(out_pnl))
 
