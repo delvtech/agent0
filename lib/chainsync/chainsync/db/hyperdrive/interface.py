@@ -137,7 +137,7 @@ def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> No
         The initialized session object
     """
     # NOTE the logic below is not thread safe, i.e., a race condition can exists
-    # if multiple threads try to add pool config at the same time
+    # if multiple threads try to add checkpoint info at the same time
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
