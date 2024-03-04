@@ -585,7 +585,7 @@ class HyperdriveReadInterface:
             The amount of bonds to sell.
         normalized_time_remaining: FixedPoint
             The time remaining before the long reaches maturity,
-            normalized such that 0 is at opening and 1 is at maturity.
+            normalized such that 1 is at opening and 0 is at maturity.
         pool_state: PoolState, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
@@ -639,12 +639,14 @@ class HyperdriveReadInterface:
         bond_amount: FixedPoint
             The amount to of bonds provided.
         open_vault_share_price: FixedPoint
-            The share price when the short was opened.
+            The checkpoint share price when the short was opened.
         close_vault_share_price: FixedPoint
             The share price when the short was closed.
+            If the short isn't mature, this is the current share price.
+            If the short is mature, this is the share price of the maturity checkpoint.
         normalized_time_remaining: FixedPoint
             The time remaining before the short reaches maturity,
-            normalized such that 0 is at opening and 1 is at maturity.
+            normalized such that 1 is at opening and 0 is at maturity.
         pool_state: PoolState, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
