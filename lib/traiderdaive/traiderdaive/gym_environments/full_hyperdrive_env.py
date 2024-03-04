@@ -1,4 +1,4 @@
-"""A simple hyperdrive rl gym environment."""
+"""A hyperdrive rl gym environment."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class FullHyperdriveEnv(gym.Env):
 
     @dataclass(kw_only=True)
     class Config:
-        """The configuration for SimpleHyperdriveEnv."""
+        """The configuration for FullHyperdriveEnv."""
 
         # How to render the environment
         # TODO figure out what this does
