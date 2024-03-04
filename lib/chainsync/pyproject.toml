@@ -1,0 +1,51 @@
+[project]
+name = "chainsync"
+version = "0.0.0"
+authors = [
+    { name = "Dylan Paiton", email = "dylan@delv.tech" },
+    { name = "Mihai Cosma", email = "mihai@delv.tech" },
+    { name = "Matthew Brown", email = "matt@delv.tech" },
+    { name = "Sheng Lundquist", email = "sheng@delv.tech" },
+]
+description = "Data management pipeline for on chain data, from chain to postgres to dashboard"
+readme = "README.md"
+requires-python = ">=3.10, <=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+# This flag installs all dependencies and should be ran when installing this subpackage in isolation
+with-dependencies = [
+    "chainsync[base, lateral]"
+]
+base = [
+    "fixedpointmath",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "python-dotenv",
+    "mplfinance",
+    "streamlit",
+    "flask",
+    "flask-expects-json",
+    "psycopg[binary]",
+    "sqlalchemy",
+    "sqlalchemy-utils",
+    "pandas-stubs",
+    "requests",
+]
+lateral = [
+    # Lateral dependencies across subpackages are pointing to github
+    "hyperlogs[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hyperlogs",
+]
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
+
+[project.urls]
+"Homepage" = "https://github.com/delvtech/agent0"
+"Bug Tracker" = "https://github.com/delvtech/agent0/issues"

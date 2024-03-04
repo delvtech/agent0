@@ -7,10 +7,12 @@ import logging
 import pytest
 from fixedpointmath import FixedPoint
 
+from agent0.core.hyperdrive import HyperdriveWallet
 from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
 from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0.ethpy.hyperdrive.state import PoolState
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
@@ -290,7 +292,7 @@ def test_reduce_long(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: I
     # give Andy a long
     event = arbitrage_andy.open_long(base=FixedPoint(10))
 
-    # advance time to maturity
+    # advance halfway time to maturity
     interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS / 2), create_checkpoints=False)
 
     # see if he reduces the long
@@ -303,7 +305,6 @@ def test_reduce_long(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: I
 @pytest.mark.anvil
 def test_reduce_short(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
     """Reduce a short position."""
-
     logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
     # give Andy a short
@@ -311,7 +312,7 @@ def test_reduce_short(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: 
 
     logging.info("fixed rate after open short is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
-    # advance time to maturity
+    # advance time halfway to maturity
     interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS / 2), create_checkpoints=False)
 
     # see if he reduces the short
@@ -363,3 +364,57 @@ def test_safe_short_trading(interactive_hyperdrive: ILocalHyperdrive, manual_age
     assert len(action_result) == 2  # LP & Arb (no closing trades)
     assert isinstance(action_result[0], AddLiquidity)  # LP first
     assert isinstance(action_result[1], OpenShort)  # then arb
+
+@pytest.mark.anvil
+def test_manage_budget(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent, manual_agent: ILocalHyperdriveAgent):
+    """Manage budget between LP and Arb at 50/50."""
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+
+    value_before_trade = _measure_value(
+        wallet=arbitrage_andy.wallet,
+        lp_share_price=interactive_hyperdrive.interface.current_pool_state.lp_share_price,
+        spot_price=interactive_hyperdrive.interface.current_pool_state.spot_price,
+        vault_share_price=interactive_hyperdrive.interface.current_pool_state.vault_share_price,
+        current_time=interactive_hyperdrive.interface.current_time,
+        term_length=interactive_hyperdrive.interface.current_pool_state.term_length,
+    )
+    # open up lp position
+    arbitrage_andy.agent.policy.sub_policy.policy_config.lp_portion = FixedPoint("0.5")
+    # andy sets up his LP
+    arbitrage_andy.execute_policy_action()
+
+    # do some trades
+    manual_agent.open_long(base=FixedPoint(100_000))
+    arbitrage_andy.execute_policy_action()
+
+    # see if he reduces the short
+    event = arbitrage_andy.execute_policy_action()
+    event = event[0] if isinstance(event, list) else event
+    logging.info("event is %s", event)
+    print(f"{event=}")
+    assert isinstance(event, CloseShort)
+
+def _measure_value(wallet: HyperdriveWallet, lp_share_price, spot_price, vault_share_price, current_time, term_length):
+    value = wallet.lp_tokens * lp_share_price  # LP position
+    value += wallet.balance.amount  # base
+    for maturity, long in wallet.longs.items():
+        time_remaining = (maturity - current_time) / term_length
+        curve_price = time_remaining * spot_price
+        flat_price = 1 - time_remaining
+        pull_to_par = curve_price + flat_price
+        long_value = long.balance * pull_to_par
+        value += long_value
+    for maturity, short in wallet.shorts.items():
+        time_remaining = (maturity - current_time) / term_length
+        # Short value = users_shorts * (vault_share_price / open_vault_share_price)
+        #           - users_shorts * time_remaining * spot_price
+        #           - users_shorts * (1 - time_remaining)
+        variable_interest_received = vault_share_price / short.open_vault_share_price
+        curve_price = time_remaining * spot_price
+        flat_price = 1 - time_remaining
+        # Short value = user_shorts * (variable_interest_received - curve_price - flat_price)
+        pull_to_par = curve_price + flat_price
+        # Short value = user_shorts * (variable_interest_received - pull_to_par)
+        short_value = short.balance * (variable_interest_received - pull_to_par)
+        value += short_value
+    return value

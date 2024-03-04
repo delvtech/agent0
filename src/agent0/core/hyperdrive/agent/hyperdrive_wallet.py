@@ -28,7 +28,11 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     shorts: dict[int, Short] = field(default_factory=dict)
     """The short positions held by the trader."""
     withdraw_shares: FixedPoint = FixedPoint(0)
+<<<<<<< HEAD:src/agent0/core/hyperdrive/agent/hyperdrive_wallet.py
     """The withdraw shares held by the trader."""
+=======
+    vault_share_price: FixedPoint = FixedPoint(0)
+>>>>>>> 7140f8f9 (add open_vault_share_price to shorts):lib/agent0/agent0/hyperdrive/agent/hyperdrive_wallet.py
 
     def copy(self) -> HyperdriveWalletDeltas:
         """Returns a new copy of self.
@@ -62,6 +66,8 @@ class Short:
     """The amount of bonds that the position is short."""
     maturity_time: int
     """The maturity time of the short."""
+    open_vault_share_price: FixedPoint = FixedPoint(0)
+    """The vault share price when the short was opened."""
 
 
 @dataclass(kw_only=True)

@@ -362,6 +362,7 @@ async def _async_open_short(
             write_retry_count=interface.write_retry_count,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
+        trade_result.vault_share_price = trade_result.base_amount / trade_result.vault_share_amount
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
