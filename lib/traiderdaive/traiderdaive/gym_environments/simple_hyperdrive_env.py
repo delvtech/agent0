@@ -354,18 +354,18 @@ class SimpleHyperdriveEnv(gym.Env):
             trade = True
 
         terminated = False
+        truncated = False
         if trade:
-            terminated = self.do_trade()
+            truncated = self.do_trade()
 
         observation = self._get_observation()
         info = self._get_info()
         step_reward = self._calculate_reward()
 
         self._step_count += 1
-        truncated = False
 
         if self._step_count > self.gym_config.episode_length:
-            truncated = True
+            terminated = True
 
         # TODO when does the episode stop?
         return observation, step_reward, terminated, truncated, info

@@ -35,6 +35,7 @@ __pypackages__/
 
 # Default traiderdaive model output
 .traider_models
+.saved_models
 
 # build directories
 .build
