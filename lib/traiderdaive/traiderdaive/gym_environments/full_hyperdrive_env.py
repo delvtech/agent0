@@ -49,12 +49,12 @@ class FullHyperdriveEnv(gym.Env):
         window_size: int = 10
         episode_length: int = 200
         # The threshold for the probability of opening and closing orders
-        open_threshold: float = 0.01  # 0.5
+        open_threshold: float = 0.5
         close_threshold: float = 0.5
 
         # Other bots config
-        num_random_bots: int = 3
-        num_random_hold_bots: int = 3
+        num_random_bots: int = 2
+        num_random_hold_bots: int = 2
         random_bot_budget: FixedPoint = FixedPoint(1_000_000)
 
     # Defines allowed render modes and fps
@@ -267,17 +267,23 @@ class FullHyperdriveEnv(gym.Env):
             positions_to_close = trade_positions.iloc[orders_to_close_index]
 
             # Close positions
-            for _, position_to_close in positions_to_close.iterrows():
-                if trade_type == TradeTypes.LONG:
-                    self.rl_bot.close_long(
-                        maturity_time=int(position_to_close["maturity_time"]),
-                        bonds=FixedPoint(position_to_close["position"]),
-                    )
-                elif trade_type == TradeTypes.SHORT:
-                    self.rl_bot.close_short(
-                        maturity_time=int(position_to_close["maturity_time"]),
-                        bonds=FixedPoint(position_to_close["position"]),
-                    )
+            try:
+                for _, position_to_close in positions_to_close.iterrows():
+                    if trade_type == TradeTypes.LONG:
+                        event = self.rl_bot.close_long(
+                            maturity_time=int(position_to_close["maturity_time"]),
+                            bonds=FixedPoint(position_to_close["position"]),
+                        )
+                    elif trade_type == TradeTypes.SHORT:
+                        event = self.rl_bot.close_short(
+                            maturity_time=int(position_to_close["maturity_time"]),
+                            bonds=FixedPoint(position_to_close["position"]),
+                        )
+            except Exception as err:  # pylint: disable=broad-except
+                # TODO use logging here
+                print(f"Warning: Failed to close trade: {err=}")
+                # Terminate if error
+                return True
 
         # Get current wallet positions again after closing trades
         rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
@@ -296,13 +302,25 @@ class FullHyperdriveEnv(gym.Env):
                 )
 
                 # Opening orders
-                if new_order_probability > self.gym_config.open_threshold:
-                    # If the wallet has enough money
-                    if volume_adjusted <= self.rl_bot.wallet.balance.amount:
-                        if trade_type == TradeTypes.LONG:
-                            self.rl_bot.open_long(volume_adjusted)
-                        elif trade_type == TradeTypes.SHORT:
-                            self.rl_bot.open_short(volume_adjusted)
+                try:
+                    if new_order_probability > self.gym_config.open_threshold:
+                        # If the wallet has enough money
+                        if volume_adjusted <= self.rl_bot.wallet.balance.amount:
+                            if trade_type == TradeTypes.LONG:
+                                open_event = self.rl_bot.open_long(base=volume_adjusted)
+                                # print(open_event)
+                            elif trade_type == TradeTypes.SHORT:
+                                max_short = self.interactive_hyperdrive.interface.calc_max_short(
+                                    volume_adjusted,
+                                    self.interactive_hyperdrive.interface.current_pool_state,
+                                )
+                                open_event = self.rl_bot.open_short(bonds=max_short)
+                                # print(open_event)
+                except Exception as err:  # pylint: disable=broad-except
+                    # TODO use logging here
+                    print(f"Warning: Failed to open trade: {err=}")
+                    # Terminate if error
+                    return True
 
         # LP actions
         lp_actions_expit = expit(action[-4:])
@@ -311,15 +329,26 @@ class FullHyperdriveEnv(gym.Env):
         remove_lp_probability = lp_actions_expit[2]
         remove_lp_volume = FixedPoint(lp_actions_expit[3]) * self.gym_config.max_trade_amount
 
-        if add_lp_probability > self.gym_config.open_threshold:
-            self.rl_bot.add_liquidity(add_lp_volume)
-        if remove_lp_probability > self.gym_config.close_threshold and remove_lp_volume <= self.rl_bot.wallet.lp_tokens:
-            self.rl_bot.remove_liquidity(remove_lp_volume)
-
-        # Always try and remove withdrawal shares
-        if self.rl_bot.wallet.withdraw_shares > 0:
-            # TODO error handling or check when withdrawal shares are not withdrawable
-            self.rl_bot.redeem_withdraw_share(self.rl_bot.wallet.withdraw_shares)
+        try:
+            if add_lp_probability > self.gym_config.open_threshold:
+                lp_event = self.rl_bot.add_liquidity(add_lp_volume)
+                # print(lp_event)
+            if (
+                remove_lp_probability > self.gym_config.close_threshold
+                and remove_lp_volume <= self.rl_bot.wallet.lp_tokens
+            ):
+                lp_event = self.rl_bot.remove_liquidity(remove_lp_volume)
+                # print(lp_event)
+            # Always try and remove withdrawal shares
+            if self.rl_bot.wallet.withdraw_shares > 0:
+                # TODO error handling or check when withdrawal shares are not withdrawable
+                redeem_event = self.rl_bot.redeem_withdraw_share(self.rl_bot.wallet.withdraw_shares)
+                # print(redeem_event)
+        except Exception as err:  # pylint: disable=broad-except
+            # TODO use logging here
+            print(f"Warning: Failed to LP: {err=}")
+            # Terminate if error
+            return True
 
         return False
 
