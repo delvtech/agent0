@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
+import re
 import subprocess
 import time
 from dataclasses import asdict, dataclass
@@ -41,6 +43,7 @@ from ethpy.hyperdrive import (
 )
 from fixedpointmath import FixedPoint
 from hypertypes import FactoryConfig, Fees, PoolDeployConfig
+from IPython.display import IFrame
 from web3._utils.threads import Timeout
 from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
@@ -909,6 +912,36 @@ class ILocalHyperdrive(IHyperdrive):
         ]
         return out
 
+    def _get_dashboard_run_command(self, flags: list[str] = []) -> str:
+        """Returns the run command for launching a Streamlit dashboard.
+
+        Arguments
+        ---------
+        flags: list[str]
+            List of streamlit flags to be added to the run command.
+            Commands and arguments should be seperate entries, for example: ["--server.headless", "true"]
+            Defaults to an empty list, which passes no flags.
+
+        Returns
+        -------
+        str
+            The streamlit run command string.
+        """
+        # In order to support this command in both notebooks and scripts, we reference
+        # the path to the virtual environment relative to this file.
+        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
+        venv_dir = pathlib.Path(os.environ["VIRTUAL_ENV"])
+        streamlit_path = str(venv_dir / "bin" / "streamlit")
+        dashboard_path = str(base_dir / "lib" / "chainsync" / "bin" / "streamlit" / "Dashboard.py")
+        dashboard_run_command = (
+            [streamlit_path, "run"]
+            + flags
+            + [
+                dashboard_path,
+            ]
+        )
+        return dashboard_run_command
+
     def run_dashboard(self, blocking: bool = False) -> None:
         """Runs the streamlit dashboard in a subprocess connected to interactive hyperdrive.
 
@@ -926,13 +959,7 @@ class ILocalHyperdrive(IHyperdrive):
             If False, will clean up subprocess in cleanup.
         """
 
-        # TODO streamlit is installed in virtual environment, so we hard code that here
-        # In order to support this command in both notebooks and scripts, we reference
-        # the path to the virtual environment relative to this file.
-        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
-        streamlit_path = str(base_dir / ".venv" / "bin" / "streamlit")
-        dashboard_path = str(base_dir / "lib" / "chainsync" / "bin" / "streamlit" / "Dashboard.py")
-        dashboard_run_command = [streamlit_path, "run", dashboard_path]
+        dashboard_run_command = self._get_dashboard_run_command()
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
 
         assert self.dashboard_subprocess is None
@@ -947,6 +974,59 @@ class ILocalHyperdrive(IHyperdrive):
             input("Press any key to kill dashboard server.")
             self.dashboard_subprocess.kill()
             self.dashboard_subprocess = None
+
+    def get_dashboard_iframe(self, width: int = 1000, height: int = 800) -> IFrame:
+        """Embeds the streamlit dashboard into a Jupyter notebook as an IFrame.
+
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
+            streamlit server. Passing ``blocking=True`` will block execution of the main
+            script in this function until a keypress is registered.
+
+        Arguments
+        ---------
+        width: int
+            Width, in pixels, of the IFrame.
+            Defaults to 1000.
+        height: int
+            Height, in pixels, of the IFrame.
+            Defaults to 800.
+
+        .. todo::
+        The streamlit command posts the server URL to stdout. We try to capture it here, but it is inconsistent.
+        Issue #1338 (https://github.com/delvtech/agent0/issues/1338)
+        """
+        dashboard_run_command = self._get_dashboard_run_command(flags=["--server.headless", "true"])
+        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+        dashboard_subprocess = subprocess.Popen(
+            dashboard_run_command,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+
+        # some times it takes a sec for the stdout to be visible from the buffer
+        max_retries = 5
+        num_retries = 0
+        found_match = False
+        while not found_match:
+            # Define the regex pattern to match the Network URL
+            pattern = r"Network URL: (http[s]?:\/\/\S+)"
+            dashboard_output = str(dashboard_subprocess.stdout.peek())
+            # Search for the pattern in the text
+            match = re.search(pattern, dashboard_output)
+            # Extract the Network URL if a match is found
+            if match:
+                network_url = match.group(1)
+                found_match = True
+            else:
+                time.sleep(5)
+                num_retries += 1
+            if num_retries >= max_retries:
+                raise ValueError("Unable to find network url.")
+
+        return IFrame(src=network_url, width=1000, height=800)
 
     ### Private agent methods ###
 
