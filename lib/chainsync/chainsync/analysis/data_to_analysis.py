@@ -12,14 +12,15 @@ from chainsync.db.hyperdrive import (
     PoolAnalysis,
     Ticker,
     WalletPNL,
+    get_checkpoint_info,
     get_current_wallet,
     get_pool_info,
     get_transactions,
     get_wallet_deltas,
 )
+from ethpy.hyperdrive import HyperdriveReadInterface
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
-from web3.contract.contract import Contract
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
@@ -153,7 +154,7 @@ def data_to_analysis(
     end_block: int,
     pool_config: pd.Series,
     db_session: Session,
-    hyperdrive_contract: Contract,
+    interface: HyperdriveReadInterface,
     calc_pnl: bool = True,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
@@ -169,8 +170,8 @@ def data_to_analysis(
         The pool config data.
     db_session: Session
         The initialized db session.
-    hyperdrive_contract: Contract
-        The hyperdrive contract.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
     """
@@ -197,7 +198,8 @@ def data_to_analysis(
         # since we only get the current wallet for the end_block
         wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
         if calc_pnl:
-            pnl_df = calc_closeout_pnl(wallet_pnl, hyperdrive_contract, pool_info["vault_share_price"].iloc[-1])
+            checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
+            pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, interface)
         else:
             pnl_df = np.nan
 

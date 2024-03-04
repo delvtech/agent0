@@ -9,7 +9,7 @@ from .convert_data import (
 )
 from .import_export_data import export_db_to_file, import_to_db, import_to_pandas
 from .interface import (
-    add_checkpoint_infos,
+    add_checkpoint_info,
     add_pool_config,
     add_pool_infos,
     add_transactions,

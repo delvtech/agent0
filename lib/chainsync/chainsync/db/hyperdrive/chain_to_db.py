@@ -15,7 +15,7 @@ from .convert_data import (
     convert_pool_config,
     convert_pool_info,
 )
-from .interface import add_checkpoint_infos, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
+from .interface import add_checkpoint_info, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
 
 
 def init_data_chain_to_db(
@@ -63,10 +63,12 @@ def data_chain_to_db(interface: HyperdriveReadInterface, block: BlockData, sessi
 
     ## Query and add block_checkpoint_info
     checkpoint_dict = asdict(pool_state.checkpoint)
-    checkpoint_dict["block_number"] = int(pool_state.block_number)
-    checkpoint_dict["timestamp"] = datetime.fromtimestamp(int(pool_state.block_time))
+    checkpoint_dict["checkpoint_time"] = pool_state.checkpoint_time
     block_checkpoint_info = convert_checkpoint_info(checkpoint_dict)
-    add_checkpoint_infos([block_checkpoint_info], session)
+    # When the contract call fails due to missing checkpoint, solidity returns 0
+    # Hence, we detect that here and don't add the checkpoint info if that happens
+    if block_checkpoint_info.vault_share_price != 0:
+        add_checkpoint_info(block_checkpoint_info, session)
 
     ## Query and add block_transactions and wallet deltas
     block_transactions = None

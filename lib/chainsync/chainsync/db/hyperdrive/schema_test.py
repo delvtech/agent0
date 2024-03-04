@@ -59,41 +59,41 @@ class TestCheckpointTable:
     @pytest.mark.docker
     def test_create_checkpoint(self, db_session):
         """Create and entry"""
-        timestamp = datetime.now()
-        checkpoint = CheckpointInfo(block_number=1, timestamp=timestamp)
+        vault_share_price = Decimal("1.1")
+        checkpoint = CheckpointInfo(checkpoint_time=1, vault_share_price=vault_share_price)
         db_session.add(checkpoint)
         db_session.commit()
 
-        retrieved_checkpoint = db_session.query(CheckpointInfo).filter_by(block_number=1).first()
+        retrieved_checkpoint = db_session.query(CheckpointInfo).filter_by(checkpoint_time=1).first()
         assert retrieved_checkpoint is not None
-        assert retrieved_checkpoint.timestamp == timestamp
+        assert retrieved_checkpoint.vault_share_price == vault_share_price
 
     @pytest.mark.docker
     def test_update_checkpoint(self, db_session):
         """Update an entry"""
-        timestamp = datetime.now()
-        checkpoint = CheckpointInfo(block_number=1, timestamp=timestamp)
+        vault_share_price = Decimal("1.1")
+        checkpoint = CheckpointInfo(checkpoint_time=1, vault_share_price=vault_share_price)
         db_session.add(checkpoint)
         db_session.commit()
 
         checkpoint.vault_share_price = Decimal("5.0")
         db_session.commit()
 
-        updated_checkpoint = db_session.query(CheckpointInfo).filter_by(block_number=1).first()
-        assert updated_checkpoint.vault_share_price == 5.0
+        updated_checkpoint = db_session.query(CheckpointInfo).filter_by(checkpoint_time=1).first()
+        assert updated_checkpoint.vault_share_price == Decimal("5.0")
 
     @pytest.mark.docker
     def test_delete_checkpoint(self, db_session):
         """Delete an entry"""
-        timestamp = datetime.now()
-        checkpoint = CheckpointInfo(block_number=1, timestamp=timestamp)
+        vault_share_price = Decimal("1.1")
+        checkpoint = CheckpointInfo(checkpoint_time=1, vault_share_price=vault_share_price)
         db_session.add(checkpoint)
         db_session.commit()
 
         db_session.delete(checkpoint)
         db_session.commit()
 
-        deleted_checkpoint = db_session.query(CheckpointInfo).filter_by(block_number=1).first()
+        deleted_checkpoint = db_session.query(CheckpointInfo).filter_by(checkpoint_time=1).first()
         assert deleted_checkpoint is None
 
 

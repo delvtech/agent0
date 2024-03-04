@@ -51,8 +51,7 @@ class CheckpointInfo(Base):
 
     __tablename__ = "checkpoint_info"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime)
+    checkpoint_time: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # TODO we'd like to add the checkpoint id here as a field as well
 
