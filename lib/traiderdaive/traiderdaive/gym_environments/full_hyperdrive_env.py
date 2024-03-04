@@ -316,7 +316,8 @@ class FullHyperdriveEnv(gym.Env):
                                 )
                                 open_event = self.rl_bot.open_short(bonds=max_short)
                                 # print(open_event)
-                except Exception as err:  # pylint: disable=broad-except
+                # Base exception here to catch rust errors
+                except BaseException as err:  # pylint: disable=broad-except
                     # TODO use logging here
                     print(f"Warning: Failed to open trade: {err=}")
                     # Terminate if error
