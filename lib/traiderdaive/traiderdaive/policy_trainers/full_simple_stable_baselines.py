@@ -91,7 +91,7 @@ def run_train():
     callback = SaveOnBestTrainingRewardCallback(check_freq=10, log_dir=log_dir)
 
     # Training
-    model = A2C("MlpPolicy", env, verbose=1, device="cpu")
+    model = A2C("MultiInputPolicy", env, verbose=1, device="cpu")
     model.learn(total_timesteps=100000, callback=callback)
 
 

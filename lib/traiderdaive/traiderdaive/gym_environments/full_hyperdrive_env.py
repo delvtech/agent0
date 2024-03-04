@@ -9,11 +9,12 @@ from typing import Any
 
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 from fixedpointmath import FixedPoint
 from gymnasium import spaces
 from scipy.special import expit
 
-from agent0.hyperdrive.interactive import InteractiveHyperdrive, LocalChain
+from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.hyperdrive.policies import PolicyZoo
 
 # Global suppression of warnings, TODO fix
@@ -42,14 +43,14 @@ class FullHyperdriveEnv(gym.Env):
         # RL Bot Config
         # The constant trade amounts for longs and shorts
         rl_agent_budget: FixedPoint = FixedPoint(1_000_000)
-        max_trade_amount: FixedPoint = FixedPoint(10_000)
+        max_trade_amount: FixedPoint = FixedPoint(1_000)
         max_positions_per_type: int = 10
         reward_scale: float = 1
         window_size: int = 10
         episode_length: int = 200
-        # The thresholds for opening and closing orders
-        open_threshold: FixedPoint = FixedPoint(0.5)
-        close_threshold: FixedPoint = FixedPoint(0.5)
+        # The threshold for the probability of opening and closing orders
+        open_threshold: float = 0.01  # 0.5
+        close_threshold: float = 0.5
 
         # Other bots config
         num_random_bots: int = 3
@@ -65,10 +66,10 @@ class FullHyperdriveEnv(gym.Env):
     ):
         """Initializes the environment"""
         # TODO parameterize these in the gym config
-        local_chain_config = LocalChain.Config(block_timestamp_interval=3600)
-        self.chain = LocalChain(local_chain_config)
-        initial_pool_config = InteractiveHyperdrive.Config()
-        self.interactive_hyperdrive = InteractiveHyperdrive(self.chain, initial_pool_config)
+        local_chain_config = ILocalChain.Config(block_timestamp_interval=3600)
+        self.chain = ILocalChain(local_chain_config)
+        initial_pool_config = ILocalHyperdrive.Config()
+        self.interactive_hyperdrive = ILocalHyperdrive(self.chain, initial_pool_config)
 
         # Define the rl bot
         self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget, name="rl_bot")
@@ -130,9 +131,9 @@ class FullHyperdriveEnv(gym.Env):
         # The final 4 fields specify LP positions, interpreted as
         # [
         #    probability of adding liquidity,
-        #    volume of add liquidity,
+        #    add liquidity volume,
         #    probability of removing liquidity,
-        #    volume of remove liquidity
+        #    add liquidity volume,
         # ]
 
         # (longs, shorts) -> close_order_i(logit), new_order(logit), volume)
@@ -145,24 +146,26 @@ class FullHyperdriveEnv(gym.Env):
         # TODO add more features
         # Pool Features: spot price, lp share price
         # TODO use pnl instead of value
-        # Long Orders: trade type, order_i -> [entry_spot_price, volume, value, normalized_time_to_maturity]
-        # Short Orders: trade type, order_i -> [entry_spot_price, volume, value, normalized_time_to_maturity]
+        # TODO add bookkeeping for entry spot price
+        # Long Orders: trade type, order_i -> [volume, value, normalized_time_remaining]
+        # Short Orders: trade type, order_i -> [volume, value, normalized_time_remaining]
         # LP: -> [volume, value]
         # Here, orders_i is a direct mapping to agent.wallet
         # Note normalize_time_to_maturity will always be 0 for LP positions
-        self.features_shape = (2,)
+        # Removing timestamp and block number from pool state
+        self.num_pool_features = len(self.interactive_hyperdrive.get_pool_state(coerce_float=True).columns) - 2
         INF = 1e10
         self.observation_space = spaces.Dict(
             {
                 # "balance": spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
                 # "equity": spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
                 # "margin": spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
-                "pool_features": spaces.Box(low=-INF, high=INF, shape=self.features_shape, dtype=np.float64),
+                "pool_features": spaces.Box(low=-INF, high=INF, shape=(self.num_pool_features,), dtype=np.float64),
                 "long_orders": spaces.Box(
-                    low=-INF, high=INF, dtype=np.float64, shape=(gym_config.max_positions_per_type * 4,)
+                    low=-INF, high=INF, dtype=np.float64, shape=(gym_config.max_positions_per_type * 3,)
                 ),
                 "short_orders": spaces.Box(
-                    low=-INF, high=INF, dtype=np.float64, shape=(gym_config.max_positions_per_type * 4,)
+                    low=-INF, high=INF, dtype=np.float64, shape=(gym_config.max_positions_per_type * 3,)
                 ),
                 "lp_orders": spaces.Box(low=-INF, high=INF, dtype=np.float64, shape=(2,)),
                 # Note normalize_time_to_maturity will always be 0 for LP positions
@@ -218,21 +221,32 @@ class FullHyperdriveEnv(gym.Env):
         return observation, info
 
     def _apply_action(self, action: np.ndarray) -> bool:
-        action = action.reshape((len(TradeTypes), self.gym_config.max_positions_per_type + 2))
         long_short_actions = action[:-4]
-        lp_actions = action[-4:]
-        for trade_type in TradeTypes:
-            symbol_action = long_short_actions[trade_type.value, :]
-            close_orders_logit = symbol_action[:-2]
-            hold_logit = symbol_action[-2]
-            volume = symbol_action[-1]
+        long_short_actions = long_short_actions.reshape((len(TradeTypes), self.gym_config.max_positions_per_type + 2))
+        close_long_short_actions = long_short_actions[:, :-2]
+        open_long_short_actions = long_short_actions[:, -2:]
 
-            # We convert logit space to probability space
-            close_orders_probability = expit(close_orders_logit)
-            open_probability = expit(hold_logit)
-            # While volume isn't strictly a probability, we interpret it as a value between 0 and 1
-            # where 0 is no volume and 1 is max trade amount
-            volume_adjusted = expit(volume) * self.gym_config.max_trade_amount
+        # Get current wallet positions
+        # We need exact decimals here to avoid rounding errors
+        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
+
+        # TODO should likely try and handle these trades as fast as possible
+        # Otherwise action could lag behind observation, especially with accelerated time
+        # One option is to don't do accelerated time, but manually advance time per step
+        # after all bot actions
+
+        # The RL bot handles trades in this order:
+        # (1) Close long tokens
+        # (2) Close short tokens
+        # (2) Open long tokens
+        # (4) Open short tokens
+        # (5) Add liqidity
+        # (6) Remove liquidity
+        # (7) Redeem withdrawal shares
+
+        # Closing trades
+        for trade_type in TradeTypes:
+            close_orders_probability = expit(close_long_short_actions[trade_type.value, :])
 
             # Handle closing orders
             # The index of orders here is from oldest to newest
@@ -240,8 +254,73 @@ class FullHyperdriveEnv(gym.Env):
             # the orders input feature, we can shuffle the order of closing orders
             # TODO we threshold probabilities here, another option is to sample from a distribution.
             # However, we may want the actual RL bots to handle that, and keep the environment deterministic.
-            orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)
-            pass
+            orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)[0]
+
+            # TODO Close orders
+            trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
+            # Ensure positions are sorted from oldest to newest
+            trade_positions = trade_positions.sort_values("maturity_time")
+            num_trade_positions = len(trade_positions)
+
+            # Filter orders to close to be only the number of trade positions
+            orders_to_close_index = orders_to_close_index[orders_to_close_index < num_trade_positions]
+            positions_to_close = trade_positions.iloc[orders_to_close_index]
+
+            # Close positions
+            for _, position_to_close in positions_to_close.iterrows():
+                if trade_type == TradeTypes.LONG:
+                    self.rl_bot.close_long(
+                        maturity_time=int(position_to_close["maturity_time"]),
+                        bonds=FixedPoint(position_to_close["position"]),
+                    )
+                elif trade_type == TradeTypes.SHORT:
+                    self.rl_bot.close_short(
+                        maturity_time=int(position_to_close["maturity_time"]),
+                        bonds=FixedPoint(position_to_close["position"]),
+                    )
+
+        # Get current wallet positions again after closing trades
+        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
+
+        # Open trades
+        for trade_type in TradeTypes:
+            # Only open trades if we haven't maxed out positions
+            trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
+            num_trade_positions = len(trade_positions)
+            if num_trade_positions < self.gym_config.max_positions_per_type:
+                new_order_probability = expit(open_long_short_actions[trade_type.value, 0])
+                # While volume isn't strictly a probability, we interpret it as a value between 0 and 1
+                # where 0 is no volume and 1 is max trade amount
+                volume_adjusted = (
+                    FixedPoint(expit(open_long_short_actions[trade_type.value, 1])) * self.gym_config.max_trade_amount
+                )
+
+                # Opening orders
+                if new_order_probability > self.gym_config.open_threshold:
+                    # If the wallet has enough money
+                    if volume_adjusted <= self.rl_bot.wallet.balance.amount:
+                        if trade_type == TradeTypes.LONG:
+                            self.rl_bot.open_long(volume_adjusted)
+                        elif trade_type == TradeTypes.SHORT:
+                            self.rl_bot.open_short(volume_adjusted)
+
+        # LP actions
+        lp_actions_expit = expit(action[-4:])
+        add_lp_probability = lp_actions_expit[0]
+        add_lp_volume = FixedPoint(lp_actions_expit[1]) * self.gym_config.max_trade_amount
+        remove_lp_probability = lp_actions_expit[2]
+        remove_lp_volume = FixedPoint(lp_actions_expit[3]) * self.gym_config.max_trade_amount
+
+        if add_lp_probability > self.gym_config.open_threshold:
+            self.rl_bot.add_liquidity(add_lp_volume)
+        if remove_lp_probability > self.gym_config.close_threshold and remove_lp_volume <= self.rl_bot.wallet.lp_tokens:
+            self.rl_bot.remove_liquidity(remove_lp_volume)
+
+        # Always try and remove withdrawal shares
+        if self.rl_bot.wallet.withdraw_shares > 0:
+            # TODO error handling or check when withdrawal shares are not withdrawable
+            self.rl_bot.redeem_withdraw_share(self.rl_bot.wallet.withdraw_shares)
+
         return False
 
     def step(self, action: np.ndarray) -> tuple[dict[str, np.ndarray], float, bool, bool, dict[str, Any]]:
@@ -300,29 +379,56 @@ class FullHyperdriveEnv(gym.Env):
         # TODO return aux info here
         return {}
 
-    def _get_pool_features(self) -> np.ndarray:
-        # Get the spot price and share price of hyperdrive
-        pool_state_df = self.interactive_hyperdrive.get_pool_state(coerce_float=True)
-
-        _obs_buffer = pool_state_df[["lp_share_price", "spot_price"]].iloc[-self.gym_config.window_size :].to_numpy()
-        # If not enough data points, we left pad with zeros
-        if _obs_buffer.shape[0] < self.gym_config.window_size:
-            pad_size = self.gym_config.window_size - _obs_buffer.shape[0]
-            _obs_buffer = np.pad(_obs_buffer, pad_width=((pad_size, 0), (0, 0)))
-        assert _obs_buffer.shape == (self.gym_config.window_size, 2)
-        return _obs_buffer
-
-    def _get_observation(self) -> dict[str, np.ndarray]:
-        # Get the spot price and share price of hyperdrive
-        pool_state_df = self.interactive_hyperdrive.get_pool_state(coerce_float=True)
-        out_obs = {}
-        out_obs["pool_features"] = self._get_pool_features()
-
-        current_wallet = self.interactive_hyperdrive.get_current_wallet()
+    def _get_rl_wallet_positions(self, coerce_float: bool) -> pd.DataFrame:
+        current_wallet = self.interactive_hyperdrive.get_current_wallet(coerce_float=coerce_float)
         # Filter for rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
-        # Build observation for all positions
-        pass
+        return rl_bot_wallet
+
+    def _get_observation(self) -> dict[str, np.ndarray]:
+        # Get the latest pool state feature from the db
+        pool_state_df = self.interactive_hyperdrive.get_pool_state(coerce_float=True)
+        pool_state_columns = [c for c in pool_state_df.columns if c not in ("timestamp", "block_number")]
+        pool_state_df = pool_state_df[pool_state_columns].iloc[-1].astype(float)
+
+        out_obs = {}
+        out_obs["pool_features"] = pool_state_df.values
+
+        # Observation data uses floats
+        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=True)
+
+        position_duration = self.interactive_hyperdrive.config.position_duration
+        # We convert timestamp to epoch time here
+        # We keep negative values for time past maturity
+        rl_bot_wallet["normalized_time_remaining"] = (
+            rl_bot_wallet["maturity_time"] - (rl_bot_wallet["timestamp"].astype(int) / int(1e9))
+        ) / position_duration
+
+        long_orders = rl_bot_wallet[rl_bot_wallet["base_token_type"] == "LONG"]
+        # Ensure data is the same as the action space
+        long_orders = long_orders.sort_values("maturity_time")
+        long_orders = long_orders[["position", "pnl", "normalized_time_remaining"]].values.flatten()
+
+        short_orders = rl_bot_wallet[rl_bot_wallet["base_token_type"] == "LONG"]
+        # Ensure data is the same as the action space
+        short_orders = short_orders.sort_values("maturity_time")
+        short_orders = short_orders[["position", "pnl", "normalized_time_remaining"]].values.flatten()
+
+        lp_orders = rl_bot_wallet[rl_bot_wallet["base_token_type"] == "LP"]
+        lp_orders = lp_orders[["position", "pnl"]].values.flatten()
+
+        # TODO can also add other features, e.g., opening spot price
+        # Long Orders: trade type, order_i -> [volume, value, normalized_time_remaining]
+        # Short Orders: trade type, order_i -> [volume, value, normalized_time_remaining]
+        out_obs["long_orders"] = np.zeros(self.gym_config.max_positions_per_type * 3)
+        out_obs["short_orders"] = np.zeros(self.gym_config.max_positions_per_type * 3)
+        # LP: -> [volume, value]
+        out_obs["lp_orders"] = np.zeros(2)
+
+        # Add data to static size arrays
+        out_obs["long_orders"][: len(long_orders)] = long_orders
+        out_obs["short_orders"][: len(short_orders)] = short_orders
+        out_obs["lp_orders"][: len(lp_orders)] = lp_orders
 
         # Sanity check
         return out_obs

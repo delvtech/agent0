@@ -14,6 +14,6 @@ register(
 
 register(
     id="traiderdaive/full_hyperdrive_env",
-    entry_point="traiderdaive.gym_environments.simple_hyperdrive_env:FullHyperdriveEnv",
+    entry_point="traiderdaive.gym_environments.full_hyperdrive_env:FullHyperdriveEnv",
     max_episode_steps=1000,
 )
