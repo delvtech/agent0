@@ -22,6 +22,8 @@ warnings.filterwarnings("ignore")
 
 
 class TradeTypes(Enum):
+    """Enum denoting between long and short indices"""
+
     LONG = 0
     SHORT = 1
 
@@ -154,20 +156,20 @@ class FullHyperdriveEnv(gym.Env):
         # Note normalize_time_to_maturity will always be 0 for LP positions
         # Removing timestamp and block number from pool state
         self.num_pool_features = len(self.interactive_hyperdrive.get_pool_state(coerce_float=True).columns) - 2
-        INF = 1e10
+        inf = 1e10
         self.observation_space = spaces.Dict(
             {
                 # "balance": spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
                 # "equity": spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
                 # "margin": spaces.Box(low=-INF, high=INF, shape=(1,), dtype=np.float64),
-                "pool_features": spaces.Box(low=-INF, high=INF, shape=(self.num_pool_features,), dtype=np.float64),
+                "pool_features": spaces.Box(low=-inf, high=inf, shape=(self.num_pool_features,), dtype=np.float64),
                 "long_orders": spaces.Box(
-                    low=-INF, high=INF, dtype=np.float64, shape=(gym_config.max_positions_per_type * 3,)
+                    low=-inf, high=inf, dtype=np.float64, shape=(gym_config.max_positions_per_type * 3,)
                 ),
                 "short_orders": spaces.Box(
-                    low=-INF, high=INF, dtype=np.float64, shape=(gym_config.max_positions_per_type * 3,)
+                    low=-inf, high=inf, dtype=np.float64, shape=(gym_config.max_positions_per_type * 3,)
                 ),
-                "lp_orders": spaces.Box(low=-INF, high=INF, dtype=np.float64, shape=(2,)),
+                "lp_orders": spaces.Box(low=-inf, high=inf, dtype=np.float64, shape=(2,)),
                 # Note normalize_time_to_maturity will always be 0 for LP positions
             }
         )
@@ -221,6 +223,11 @@ class FullHyperdriveEnv(gym.Env):
         return observation, info
 
     def _apply_action(self, action: np.ndarray) -> bool:
+        # TODO
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-nested-blocks
+
         long_short_actions = action[:-4]
         long_short_actions = long_short_actions.reshape((len(TradeTypes), self.gym_config.max_positions_per_type + 2))
         close_long_short_actions = long_short_actions[:, :-2]
@@ -270,12 +277,12 @@ class FullHyperdriveEnv(gym.Env):
             try:
                 for _, position_to_close in positions_to_close.iterrows():
                     if trade_type == TradeTypes.LONG:
-                        event = self.rl_bot.close_long(
+                        self.rl_bot.close_long(
                             maturity_time=int(position_to_close["maturity_time"]),
                             bonds=FixedPoint(position_to_close["position"]),
                         )
                     elif trade_type == TradeTypes.SHORT:
-                        event = self.rl_bot.close_short(
+                        self.rl_bot.close_short(
                             maturity_time=int(position_to_close["maturity_time"]),
                             bonds=FixedPoint(position_to_close["position"]),
                         )
@@ -307,15 +314,13 @@ class FullHyperdriveEnv(gym.Env):
                         # If the wallet has enough money
                         if volume_adjusted <= self.rl_bot.wallet.balance.amount:
                             if trade_type == TradeTypes.LONG:
-                                open_event = self.rl_bot.open_long(base=volume_adjusted)
-                                # print(open_event)
+                                self.rl_bot.open_long(base=volume_adjusted)
                             elif trade_type == TradeTypes.SHORT:
                                 max_short = self.interactive_hyperdrive.interface.calc_max_short(
                                     volume_adjusted,
                                     self.interactive_hyperdrive.interface.current_pool_state,
                                 )
-                                open_event = self.rl_bot.open_short(bonds=max_short)
-                                # print(open_event)
+                                self.rl_bot.open_short(bonds=max_short)
                 # Base exception here to catch rust errors
                 except BaseException as err:  # pylint: disable=broad-except
                     # TODO use logging here
@@ -332,19 +337,16 @@ class FullHyperdriveEnv(gym.Env):
 
         try:
             if add_lp_probability > self.gym_config.open_threshold:
-                lp_event = self.rl_bot.add_liquidity(add_lp_volume)
-                # print(lp_event)
+                self.rl_bot.add_liquidity(add_lp_volume)
             if (
                 remove_lp_probability > self.gym_config.close_threshold
                 and remove_lp_volume <= self.rl_bot.wallet.lp_tokens
             ):
-                lp_event = self.rl_bot.remove_liquidity(remove_lp_volume)
-                # print(lp_event)
+                self.rl_bot.remove_liquidity(remove_lp_volume)
             # Always try and remove withdrawal shares
             if self.rl_bot.wallet.withdraw_shares > 0:
                 # TODO error handling or check when withdrawal shares are not withdrawable
-                redeem_event = self.rl_bot.redeem_withdraw_share(self.rl_bot.wallet.withdraw_shares)
-                # print(redeem_event)
+                self.rl_bot.redeem_withdraw_share(self.rl_bot.wallet.withdraw_shares)
         except Exception as err:  # pylint: disable=broad-except
             # TODO use logging here
             print(f"Warning: Failed to LP: {err=}")
