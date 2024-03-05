@@ -1,5 +1,5 @@
 [project]
-name = "agent0"
+name = "agent0main"
 version = "0.15.0"
 # Authors are the current, primary stuards of the repo
 # contributors can be found on github
@@ -12,6 +12,40 @@ authors = [
     { name = "Alex Towle", email = "alex@delv.tech" },
     { name = "Giovanni Effio", email = "mazygio@delv.tech" },
     { name = "Ryan Goree", email = "ryan@delv.tech" },
+]
+requires-python = ">=3.10, <3.11"
+description = "Agent-based simulation framework for smart contracts."
+readme = "README.md"
+dependencies = [
+    "dill",
+    "flask",
+    "flask-expects-json",
+    "hexbytes",
+    "matplotlib",
+    "mplfinance",
+    "nest_asyncio",
+    "numpy",
+    "psycopg[binary]",
+    "sqlalchemy",
+    "sqlalchemy-utils",
+    "pandas",
+    "pandas-stubs",
+    "pypechain",
+    "python-dotenv",
+    "requests",
+    "rollbar",
+    "web3",
+    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git",
+    "agent0 @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/agent0",
+    "hyperlogs @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hyperlogs",
+    "ethpy @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/ethpy",
+    "chainsync @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/chainsync",
+    "hypertypes @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hypertypes",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache License 2.0",
+    "Operating System :: OS Independent",
 ]
 
 
