@@ -26,11 +26,12 @@ jobs:
         uv pip install --upgrade -r requirements.txt
         uv pip install --upgrade -r requirements-rl.txt
         uv pip install --upgrade -r requirements-dev.txt
-    - name: Upload virtual environment
-      uses: actions/upload-artifact@v3
+    - name: Archive virtual environment
+      run: tar -czf venv.tar.gz .venv
+    - uses: actions/upload-artifact@v3
       with:
-        name: venv
-        path: .venv
+        name: venv-archive
+        path: venv.tar.gz
 
   lint:
     name: Lint
@@ -40,11 +41,16 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: ${{github.token}}
-      - name: Download virtual environment
-        uses: actions/download-artifact@v3
+      - name: set up python
+        uses: actions/setup-python@v4
         with:
-          name: venv
-          path: .venv
+          python-version: "3.10"
+          token: ${{github.token}}
+      - uses: actions/download-artifact@v3
+        with:
+          name: venv-archive
+      - name: Extract virtual environment
+        run: tar -xzf venv.tar.gz
       - name: run black
         run: |
           source .venv/bin/activate
@@ -71,11 +77,16 @@ jobs:
       - uses: actions/checkout@v3
         with:
           token: ${{github.token}}
-      - name: Download virtual environment
-        uses: actions/download-artifact@v3
+      - name: set up python
+        uses: actions/setup-python@v4
         with:
-          name: venv
-          path: .venv
+          python-version: "3.10"
+          token: ${{github.token}}
+      - uses: actions/download-artifact@v3
+        with:
+          name: venv-archive
+      - name: Extract virtual environment
+        run: tar -xzf venv.tar.gz
       - name: Analyse code with pyright
         run: |
           source .venv/bin/activate
@@ -109,13 +120,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-          cache: "pip"
           token: ${{github.token}}
-      - name: Download virtual environment
-        uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v3
         with:
-          name: venv
-          path: .venv
+          name: venv-archive
+      - name: Extract virtual environment
+        run: tar -xzf venv.tar.gz
       - name: run pytest with coverage
         run: |
           source .venv/bin/activate
