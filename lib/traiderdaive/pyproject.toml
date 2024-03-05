@@ -23,7 +23,8 @@ with-dependencies = [
 ]
 base = [
     "gymnasium",
-    "stable-baselines3"
+    "stable-baselines3",
+    "scipy",
 ]
 lateral = [
     # Lateral dependencies across subpackages
