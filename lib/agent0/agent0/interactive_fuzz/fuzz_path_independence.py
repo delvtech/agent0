@@ -41,7 +41,7 @@ from typing import Any, NamedTuple, Sequence
 import pandas as pd
 import rollbar
 from ethpy.base.errors import ContractCallException
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 from hyperlogs import ExtendedJSONEncoder
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
@@ -50,7 +50,6 @@ from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     close_trades,
     execute_random_trades,
-    fp_isclose,
     permute_trade_events,
     setup_fuzz,
 )
@@ -419,7 +418,7 @@ def invariant_check(
     # Effective share reserves
     expected_effective_share_reserves = FixedPoint(check_data["effective_share_reserves"])
     actual_effective_share_reserves = interactive_hyperdrive.interface.calc_effective_share_reserves(pool_state)
-    if not fp_isclose(
+    if not isclose(
         expected_effective_share_reserves,
         actual_effective_share_reserves,
         abs_tol=FixedPoint(str(check_epsilon["effective_share_reserves"])),
@@ -439,7 +438,7 @@ def invariant_check(
     # Present value
     expected_present_value = FixedPoint(check_data["present_value"])
     actual_present_value = interactive_hyperdrive.interface.calc_present_value(pool_state)
-    if not fp_isclose(
+    if not isclose(
         expected_present_value, actual_present_value, abs_tol=FixedPoint(str(check_epsilon["present_value"]))
     ):
         difference_in_wei = abs(expected_present_value.scaled_value - actual_present_value.scaled_value)
@@ -462,7 +461,7 @@ def invariant_check(
         expected_val = FixedPoint(expected_val)
         actual_val = FixedPoint(actual_pool_state[field_name])
         epsilon = FixedPoint(str(check_epsilon[field_name]))
-        if not fp_isclose(expected_val, actual_val, abs_tol=epsilon):
+        if not isclose(expected_val, actual_val, abs_tol=epsilon):
             difference_in_wei = abs(expected_val.scaled_value - actual_val.scaled_value)
             exception_message.append("The pool state has deviated after closing all of the trades.")
             exception_message.append(

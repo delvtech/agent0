@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint, FixedPointMath
+from fixedpointmath import FixedPoint, minimum
 
 from agent0.base import WEI, Trade
 from agent0.hyperdrive import HyperdriveMarketAction
@@ -128,7 +128,7 @@ class SmartLong(HyperdriveBasePolicy):
             # get the maximum amount the agent can long given the market and the agent's wallet
             max_base = interface.calc_max_long(wallet.balance.amount, pool_state)
             # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = FixedPointMath.minimum(max_base, new_base_to_match_variable_apr)
+            trade_amount = minimum(max_base, new_base_to_match_variable_apr)
             if trade_amount > WEI and wallet.balance.amount > WEI:
                 action_list.append(open_long_trade(trade_amount, self.slippage_tolerance))
         return action_list, False

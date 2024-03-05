@@ -25,12 +25,12 @@ from dataclasses import asdict
 from typing import Any, NamedTuple, Sequence
 
 import numpy as np
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 
 from agent0.hyperdrive import HyperdriveActionType
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose, setup_fuzz
+from agent0.interactive_fuzz.helpers import FuzzAssertionException, setup_fuzz
 
 # tests have lots of stuff
 # pylint: disable=too-many-locals
@@ -291,7 +291,7 @@ def invariant_check(
     initial_lp_share_price = FixedPoint(check_data["initial_lp_share_price"])
     current_lp_share_price = pool_state.pool_info.lp_share_price
     test_tolerance = initial_lp_share_price * FixedPoint(str(test_epsilon))
-    if not fp_isclose(initial_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
+    if not isclose(initial_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
         difference_in_wei = abs(initial_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
         exception_message.append("LP share price increased by more than 0.1%.")
         exception_message.append(f"{initial_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}")
@@ -324,7 +324,7 @@ def invariant_check(
         HyperdriveActionType.CLOSE_SHORT,
     ]:
         test_tolerance = initial_present_value * FixedPoint(str(test_epsilon))
-        if not fp_isclose(initial_present_value, current_present_value, abs_tol=test_tolerance):
+        if not isclose(initial_present_value, current_present_value, abs_tol=test_tolerance):
             difference_in_wei = abs(initial_present_value.scaled_value - current_present_value.scaled_value)
             exception_message.append("Opening or closing trades affects the present value more than 0.1%.")
             exception_message.append(f"{initial_present_value=} != {current_present_value=}, {difference_in_wei=}")

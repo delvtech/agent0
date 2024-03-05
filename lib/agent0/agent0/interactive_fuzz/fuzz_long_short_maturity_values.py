@@ -25,7 +25,7 @@ import sys
 from typing import Any, NamedTuple, Sequence
 
 import numpy as np
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 from hypertypes.fixedpoint_types import CheckpointFP
 
 from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
@@ -35,7 +35,6 @@ from agent0.interactive_fuzz.helpers import (
     FuzzAssertionException,
     advance_time_after_checkpoint,
     execute_random_trades,
-    fp_isclose,
     setup_fuzz,
 )
 
@@ -322,7 +321,7 @@ def invariant_check(
         expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
         # assert with close event bond amount
-        if not fp_isclose(
+        if not isclose(
             actual_long_base_amount, expected_long_base_amount, abs_tol=FixedPoint(str(long_maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_long_base_amount.scaled_value - expected_long_base_amount.scaled_value)
@@ -358,7 +357,7 @@ def invariant_check(
         )
 
         actual_short_base_amount = close_trade_event.base_amount
-        if not fp_isclose(
+        if not isclose(
             actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(short_maturity_vals_epsilon))
         ):
             difference_in_wei = abs(actual_short_base_amount.scaled_value - expected_short_base_amount.scaled_value)
