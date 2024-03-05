@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - uv-installable
+      - main
 
 env:
   REGISTRY: ghcr.io

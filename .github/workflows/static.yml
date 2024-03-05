@@ -3,7 +3,7 @@ name: static
 on:
   push:
     branches:
-      - uv-installable
+      - main
   pull_request:
 
 jobs:
