@@ -24,7 +24,7 @@ from eth_typing import BlockNumber
 from ethpy import build_eth_config
 from ethpy.hyperdrive import HyperdriveReadInterface
 from ethpy.hyperdrive.state.pool_state import PoolState
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, FixedPointMath
 from hexbytes import HexBytes
 from hyperlogs import setup_logging
 from hyperlogs.rollbar_utilities import initialize_rollbar
@@ -33,7 +33,7 @@ from web3.types import BlockData
 
 from agent0.base.config import EnvironmentConfig
 from agent0.hyperdrive.crash_report import build_crash_trade_result, get_anvil_state_dump, log_hyperdrive_crash_report
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, fp_isclose
+from agent0.interactive_fuzz.helpers import FuzzAssertionException
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -384,7 +384,7 @@ def _check_lp_share_price(
     current_lp_share_price = pool_state.pool_info.lp_share_price
     test_tolerance = previous_lp_share_price * FixedPoint(str(test_epsilon))
 
-    if not fp_isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
+    if not FixedPointMath.isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
         difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
         exception_message = f"{previous_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}"
         exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
