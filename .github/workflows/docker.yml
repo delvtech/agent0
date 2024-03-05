@@ -1,10 +1,14 @@
-name: Build and push Docker image
+name: "Docker: Build and push agent0 image"
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-  pull_request:
+    branches: ["main"]
+    tags: ["*"]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/agent0
 
 jobs:
   docker:
