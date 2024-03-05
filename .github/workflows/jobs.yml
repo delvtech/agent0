@@ -14,10 +14,10 @@ jobs:
       image: python:3.10-alpine
     steps:
     - uses: actions/checkout@v3
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+    - name: Verify Python installation
+      run: |
+        ls -la /__t/Python/
+        python --version
     - name: install uv
       run: |
         apk add --no-cache curl
