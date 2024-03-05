@@ -3,6 +3,6 @@
 -e lib/chainsync[base]
 -e lib/ethpy[base]
 -e lib/hypertypes[base]
---find-links="packages/hyperdrivepy"
+--find-links=packages/hyperdrivepy
 hyperdrivepy
 rollbar

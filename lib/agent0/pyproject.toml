@@ -15,29 +15,17 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-
-[project.optional-dependencies]
-# This flag installs all dependencies and should be ran when installing this subpackage in isolation
-with-dependencies = ["agent0[base, lateral]"]
-base = [
-    "fixedpointmath",
+dependencies = [
     "numpy",
     "python-dotenv",
-    # will include eth- packages
     "web3",
     "hexbytes",
     "pandas",
     "nest_asyncio",
     "rollbar",
     "dill",
+    "fixedpointmath @ git+https://github.com/delvtech/fixedpointmath.git",
 ]
-lateral = [
-    # Lateral dependencies across subpackages are pointing to github
-    "hyperlogs[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hyperlogs",
-    "ethpy[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/ethpy",
-    "chainsync[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/chainsync",
-]
-
 
 [build-system]
 requires = ["flit_core>=3.2"]

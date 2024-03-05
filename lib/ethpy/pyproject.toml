@@ -15,21 +15,11 @@ classifiers = [
     "License :: OSI Approved :: Apache License 2.0",
     "Operating System :: OS Independent",
 ]
-
-[project.optional-dependencies]
-# This flag installs all dependencies and should be run when installing this subpackage in isolation
-with-dependencies = [
-    "ethpy[base, lateral]"
-]
-base = [
+dependencies = [
     "fixedpointmath",
     "numpy",
     "python-dotenv",
     "web3",
-]
-lateral = [
-    # Lateral dependencies across subpackages are pointing to github
-    "hypertypes[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hypertypes",
 ]
 
 [project.urls]

@@ -3,8 +3,8 @@ name: "Docker: Build and push agent0 image"
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
-    tags: ["*"]
+    branches:
+      - uv-installable
 
 env:
   REGISTRY: ghcr.io
