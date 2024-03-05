@@ -86,6 +86,8 @@ class ILocalHyperdrive(IHyperdrive):
         ----------
         data_pipeline_timeout: int
             The timeout for the data pipeline. Defaults to 60 seconds.
+        dashboard_port: int
+            The URL port for the deployed dashboard.
         crash_log_ticker: bool | None, optional
             Whether to log the trade ticker in crash reports. Defaults to False.
         calc_pnl: bool
@@ -154,6 +156,7 @@ class ILocalHyperdrive(IHyperdrive):
         # Environment variables
         data_pipeline_timeout: int = 60
         crash_log_ticker: bool = False
+        dashboard_port: int = 7777
 
         # Data pipeline parameters
         calc_pnl: bool = True
@@ -959,7 +962,14 @@ class ILocalHyperdrive(IHyperdrive):
             If False, will clean up subprocess in cleanup.
         """
 
-        dashboard_run_command = self._get_dashboard_run_command()
+        dashboard_run_command = self._get_dashboard_run_command(
+            flags=[
+                "--server.port",
+                str(self.config.dashboard_port),
+                "--server.address",
+                "localhost",
+            ]
+        )
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
 
         assert self.dashboard_subprocess is None
@@ -992,41 +1002,29 @@ class ILocalHyperdrive(IHyperdrive):
         height: int
             Height, in pixels, of the IFrame.
             Defaults to 800.
-
-        .. todo::
-        The streamlit command posts the server URL to stdout. We try to capture it here, but it is inconsistent.
-        Issue #1338 (https://github.com/delvtech/agent0/issues/1338)
         """
-        dashboard_run_command = self._get_dashboard_run_command(flags=["--server.headless", "true"])
+        dashboard_run_command = self._get_dashboard_run_command(
+            flags=[
+                "--server.headless",
+                "true",
+                "--server.port",
+                str(self.config.dashboard_port),
+                "--server.address",
+                "localhost",
+            ]
+        )
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
-        dashboard_subprocess = subprocess.Popen(
+        self.dashboard_subprocess = subprocess.Popen(
             dashboard_run_command,
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            # stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
+        network_url = f"http://localhost:{self.config.dashboard_port}"
 
-        # some times it takes a sec for the stdout to be visible from the buffer
-        max_retries = 5
-        num_retries = 0
-        found_match = False
-        while not found_match:
-            # Define the regex pattern to match the Network URL
-            pattern = r"Network URL: (http[s]?:\/\/\S+)"
-            dashboard_output = str(dashboard_subprocess.stdout.peek())
-            # Search for the pattern in the text
-            match = re.search(pattern, dashboard_output)
-            # Extract the Network URL if a match is found
-            if match:
-                network_url = match.group(1)
-                found_match = True
-            else:
-                time.sleep(5)
-                num_retries += 1
-            if num_retries >= max_retries:
-                raise ValueError("Unable to find network url.")
-
-        return IFrame(src=network_url, width=1000, height=800)
+        dashboard_iframe = IFrame(src=network_url, width=1000, height=800)
+        time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
+        return dashboard_iframe
 
     ### Private agent methods ###
 
