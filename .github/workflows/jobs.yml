@@ -86,7 +86,6 @@ jobs:
   docker:
     name: Docker image
     runs-on: ubuntu-latest
-    needs: setup-and-upload
     permissions:
       contents: read
       packages: write
