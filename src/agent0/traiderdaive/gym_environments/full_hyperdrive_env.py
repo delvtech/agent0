@@ -59,6 +59,9 @@ class FullHyperdriveEnv(gym.Env):
         num_random_hold_bots: int = 2
         random_bot_budget: FixedPoint = FixedPoint(1_000_000)
 
+        # Sets alternate ports for eval to avoid connecting to a training chain
+        eval_mode: bool = False
+
     # Defines allowed render modes and fps
     metadata = {"render_modes": ["human"], "render_fps": 4}
 
@@ -68,10 +71,17 @@ class FullHyperdriveEnv(gym.Env):
     ):
         """Initializes the environment"""
         # TODO parameterize these in the gym config
-        local_chain_config = ILocalChain.Config(block_timestamp_interval=3600)
-        self.chain = ILocalChain(local_chain_config)
+        self.eval_mode = gym_config.eval_mode
+        if self.eval_mode:
+            local_chain_config = ILocalChain.Config(block_timestamp_interval=3600, db_port=5434, chain_port=10001)
+        else:
+            local_chain_config = ILocalChain.Config(block_timestamp_interval=3600)
         initial_pool_config = ILocalHyperdrive.Config()
+        self.chain = ILocalChain(local_chain_config)
         self.interactive_hyperdrive = ILocalHyperdrive(self.chain, initial_pool_config)
+
+        # TODO set seed
+        self.rng = np.random.default_rng()
 
         # Define the rl bot
         self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget, name="rl_bot")
@@ -259,9 +269,13 @@ class FullHyperdriveEnv(gym.Env):
             # The index of orders here is from oldest to newest
             # TODO if we want the rl bot to explicitly learn how to close orders based on
             # the orders input feature, we can shuffle the order of closing orders
-            # TODO we threshold probabilities here, another option is to sample from a distribution.
-            # However, we may want the actual RL bots to handle that, and keep the environment deterministic.
-            orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)[0]
+            if self.eval_mode:
+                # In eval mode, we threshold
+                orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)[0]
+            else:
+                # In train mode, we sample from uniform based on action probability
+                random_roll = self.rng.uniform(0, 1, len(close_orders_probability))
+                orders_to_close_index = np.nonzero(random_roll <= close_orders_probability)[0]
 
             # TODO Close orders
             trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
@@ -309,10 +323,15 @@ class FullHyperdriveEnv(gym.Env):
                 )
 
                 # Opening orders
-                try:
-                    if new_order_probability > self.gym_config.open_threshold:
-                        # If the wallet has enough money
-                        if volume_adjusted <= self.rl_bot.wallet.balance.amount:
+                if self.eval_mode:
+                    open_order = new_order_probability > self.gym_config.open_threshold
+                else:
+                    open_order = self.rng.uniform(0, 1) <= new_order_probability
+
+                if open_order:
+                    # If the wallet has enough money
+                    if volume_adjusted <= self.rl_bot.wallet.balance.amount:
+                        try:
                             if trade_type == TradeTypes.LONG:
                                 self.rl_bot.open_long(base=volume_adjusted)
                             elif trade_type == TradeTypes.SHORT:
@@ -321,12 +340,12 @@ class FullHyperdriveEnv(gym.Env):
                                     self.interactive_hyperdrive.interface.current_pool_state,
                                 )
                                 self.rl_bot.open_short(bonds=max_short)
-                # Base exception here to catch rust errors
-                except BaseException as err:  # pylint: disable=broad-except
-                    # TODO use logging here
-                    print(f"Warning: Failed to open trade: {err=}")
-                    # Terminate if error
-                    return True
+                        # Base exception here to catch rust errors
+                        except BaseException as err:  # pylint: disable=broad-except
+                            # TODO use logging here
+                            print(f"Warning: Failed to open trade: {err=}")
+                            # Terminate if error
+                            return True
 
         # LP actions
         lp_actions_expit = expit(action[-4:])
@@ -335,13 +354,18 @@ class FullHyperdriveEnv(gym.Env):
         remove_lp_probability = lp_actions_expit[2]
         remove_lp_volume = FixedPoint(lp_actions_expit[3]) * self.gym_config.max_trade_amount
 
+        if self.eval_mode:
+            add_lp = add_lp_probability > self.gym_config.open_threshold
+            remove_lp = remove_lp_probability > self.gym_config.close_threshold
+        else:
+            random_roll = self.rng.uniform(0, 1, 2)
+            add_lp = random_roll[0] <= add_lp_probability
+            remove_lp = random_roll[1] <= remove_lp_probability
+
         try:
-            if add_lp_probability > self.gym_config.open_threshold:
+            if add_lp:
                 self.rl_bot.add_liquidity(add_lp_volume)
-            if (
-                remove_lp_probability > self.gym_config.close_threshold
-                and remove_lp_volume <= self.rl_bot.wallet.lp_tokens
-            ):
+            if remove_lp and remove_lp_volume <= self.rl_bot.wallet.lp_tokens:
                 self.rl_bot.remove_liquidity(remove_lp_volume)
             # Always try and remove withdrawal shares
             if self.rl_bot.wallet.withdraw_shares > 0:
