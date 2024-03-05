@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from fixedpointmath import FixedPoint
-
 
 class FuzzAssertionException(Exception):
     """Custom exception to throw when fuzz testing assertion fails, adds additional data to the exception."""
