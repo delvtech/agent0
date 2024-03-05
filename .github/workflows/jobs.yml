@@ -21,7 +21,9 @@ jobs:
     - name: install uv
       run: curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: install venv
-      run: uv venv .venv -p 3.10
+      run: |
+        apk add --no-cache curl
+        uv venv .venv -p 3.10
     - name: install requirements
       run: |
         source .venv/bin/activate
