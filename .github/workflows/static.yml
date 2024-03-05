@@ -34,4 +34,6 @@ jobs:
           uv pip install --upgrade -r requirements-dev.txt
 
       - name: analysing code with pyright
-        run: python -m pyright $(git ls-files '*.py' '*.pyi')
+        run: |
+          source .venv/bin/activate
+          python -m pyright $(git ls-files '*.py' '*.pyi')

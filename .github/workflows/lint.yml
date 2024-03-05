@@ -34,7 +34,9 @@ jobs:
           uv pip install --upgrade -r requirements-dev.txt
 
       - name: run black
-        run: python -m black --config pyproject.toml --check --diff .
+        run: |
+          source .venv/bin/activate
+          python -m black --config pyproject.toml --check --diff .
 
       - name: get all Python files
         id: list_files
@@ -43,6 +45,7 @@ jobs:
 
       - name: run Pylint on files
         run: |
+          source .venv/bin/activate
           files="${{ steps.list_files.outputs.files }}"
           if [ -n "$files" ]; then
             pylint --rcfile=.pylintrc $files
