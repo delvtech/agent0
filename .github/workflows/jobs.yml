@@ -7,9 +7,9 @@ on:
   pull_request:
 
 jobs:
-  setup-and-upload:
-    name: Set up virtual environment
-    runs-on: ubuntu-latest
+  test-code:
+    name: Lint and test
+    runs-on: python-3.10-alpine
     steps:
     - uses: actions/checkout@v3
     - name: Setup Python
@@ -26,123 +26,60 @@ jobs:
         uv pip install --upgrade -r requirements.txt
         uv pip install --upgrade -r requirements-rl.txt
         uv pip install --upgrade -r requirements-dev.txt
-    - name: Archive virtual environment
-      run: tar -czf venv.tar.gz .venv
-    - uses: actions/upload-artifact@v3
+    - name: run black
+      run: |
+        source .venv/bin/activate
+        python -m black --config pyproject.toml --check --diff .
+    - name: get all Python files
+      id: list_files
+      run: |
+        echo "files=$(git ls-files '*.py' '*.pyi' | xargs)" >> $GITHUB_OUTPUT
+    - name: run Pylint on files
+      run: |
+        source .venv/bin/activate
+        files="${{ steps.list_files.outputs.files }}"
+        if [ -n "$files" ]; then
+          pylint --rcfile=.pylintrc $files
+        else
+          echo "No Python files found."
+        fi
+    - name: Analyse code with pyright
+      run: |
+        source .venv/bin/activate
+        python -m pyright $(git ls-files '*.py' '*.pyi')
+    - name: install node
+      uses: actions/setup-node@v3
       with:
-        name: venv-archive
-        path: venv.tar.gz
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    needs: setup-and-upload
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{github.token}}
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          token: ${{github.token}}
-      - uses: actions/download-artifact@v3
-        with:
-          name: venv-archive
-      - name: Extract virtual environment
-        run: tar -xzf venv.tar.gz
-      - name: run black
-        run: |
-          source .venv/bin/activate
-          python -m black --config pyproject.toml --check --diff .
-      - name: get all Python files
-        id: list_files
-        run: |
-          echo "files=$(git ls-files '*.py' '*.pyi' | xargs)" >> $GITHUB_OUTPUT
-      - name: run Pylint on files
-        run: |
-          source .venv/bin/activate
-          files="${{ steps.list_files.outputs.files }}"
-          if [ -n "$files" ]; then
-            pylint --rcfile=.pylintrc $files
-          else
-            echo "No Python files found."
-          fi
-
-  static:
-    name: Static
-    runs-on: ubuntu-latest
-    needs: setup-and-upload
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{github.token}}
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          token: ${{github.token}}
-      - uses: actions/download-artifact@v3
-        with:
-          name: venv-archive
-      - name: Extract virtual environment
-        run: tar -xzf venv.tar.gz
-      - name: Analyse code with pyright
-        run: |
-          source .venv/bin/activate
-          python -m pyright $(git ls-files '*.py' '*.pyi')
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: setup-and-upload
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{github.token}}
-      - name: install node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-      - name: install packages
-        uses: borales/actions-yarn@v4
-        with:
-          cmd: install # will run `yarn install` command
-        env:
-          # A warning is thrown here unnecessarily.  tracking issue here:
-          # https://github.com/github/vscode-github-actions/issues/222
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # if needed
-      - name: install foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          token: ${{github.token}}
-      - uses: actions/download-artifact@v3
-        with:
-          name: venv-archive
-      - name: Extract virtual environment
-        run: tar -xzf venv.tar.gz
-      - name: run pytest with coverage
-        run: |
-          source .venv/bin/activate
-          IN_CI=true coverage run -m pytest
-      - name: generate coverage report
-        run: |
-          source .venv/bin/activate
-          coverage xml -i
-          coverage html -i
-      - name: upload coverage report to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          flags: unittests
-          fail_ci_if_error: true
-          # A warning is thrown here unnecessarily.  tracking issue here:
-          # https://github.com/github/vscode-github-actions/issues/222
-          token: ${{ secrets.CODECOV_TOKEN }}
+        node-version: 16.x
+    - name: install packages
+      uses: borales/actions-yarn@v4
+      with:
+        cmd: install # will run `yarn install` command
+      env:
+        # A warning is thrown here unnecessarily.  tracking issue here:
+        # https://github.com/github/vscode-github-actions/issues/222
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # if needed
+    - name: install foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: nightly
+    - name: run pytest with coverage
+      run: |
+        source .venv/bin/activate
+        IN_CI=true coverage run -m pytest
+    - name: generate coverage report
+      run: |
+        source .venv/bin/activate
+        coverage xml -i
+        coverage html -i
+    - name: upload coverage report to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        flags: unittests
+        fail_ci_if_error: true
+        # A warning is thrown here unnecessarily.  tracking issue here:
+        # https://github.com/github/vscode-github-actions/issues/222
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   docker:
     name: Docker image
