@@ -19,10 +19,11 @@ jobs:
       with:
         python-version: '3.10'
     - name: install uv
-      run: curl -LsSf https://astral.sh/uv/install.sh | sh
-    - name: install venv
       run: |
         apk add --no-cache curl
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: install venv
+      run: |
         uv venv .venv -p 3.10
     - name: install requirements
       run: |
