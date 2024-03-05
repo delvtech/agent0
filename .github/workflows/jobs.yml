@@ -10,20 +10,13 @@ jobs:
   test-code:
     name: Lint and test
     runs-on: ubuntu-latest
-    container: 
-      image: python:3.10-alpine
     steps:
     - uses: actions/checkout@v3
-    - name: Verify Python installation
-      run: |
-        ls -la /__t/Python/
-        python --version
-    - name: install curl and git
-      run: |
-        apk add --no-cache curl git
-    - name: install build-base package
-      run: |
-        apk add --no-cache build-base
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+        token: ${{github.token}}
     - name: install uv
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
