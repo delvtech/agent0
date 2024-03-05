@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import pathlib
-import re
 import subprocess
 import time
 from dataclasses import asdict, dataclass
@@ -915,12 +914,12 @@ class ILocalHyperdrive(IHyperdrive):
         ]
         return out
 
-    def _get_dashboard_run_command(self, flags: list[str] = []) -> str:
+    def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
         """Returns the run command for launching a Streamlit dashboard.
 
         Arguments
         ---------
-        flags: list[str]
+        flags: list[str] | None, optional
             List of streamlit flags to be added to the run command.
             Commands and arguments should be seperate entries, for example: ["--server.headless", "true"]
             Defaults to an empty list, which passes no flags.
@@ -930,6 +929,8 @@ class ILocalHyperdrive(IHyperdrive):
         str
             The streamlit run command string.
         """
+        if flags is None:
+            flags = []
         # In order to support this command in both notebooks and scripts, we reference
         # the path to the virtual environment relative to this file.
         base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
@@ -1002,6 +1003,11 @@ class ILocalHyperdrive(IHyperdrive):
         height: int
             Height, in pixels, of the IFrame.
             Defaults to 800.
+
+        Returns
+        -------
+        IFrame
+            An dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
         """
         dashboard_run_command = self._get_dashboard_run_command(
             flags=[
@@ -1014,7 +1020,7 @@ class ILocalHyperdrive(IHyperdrive):
             ]
         )
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
-        self.dashboard_subprocess = subprocess.Popen(
+        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
             dashboard_run_command,
             env=env,
             # stdout=subprocess.PIPE,
@@ -1022,7 +1028,7 @@ class ILocalHyperdrive(IHyperdrive):
         )
         network_url = f"http://localhost:{self.config.dashboard_port}"
 
-        dashboard_iframe = IFrame(src=network_url, width=1000, height=800)
+        dashboard_iframe = IFrame(src=network_url, width=width, height=height)
         time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
         return dashboard_iframe
 
