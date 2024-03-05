@@ -9,7 +9,9 @@ on:
 jobs:
   test-code:
     name: Lint and test
-    runs-on: python-3.10-alpine
+    runs-on: ubuntu-latest
+    container: 
+      image: python:3.10-alpine
     steps:
     - uses: actions/checkout@v3
     - name: Setup Python
