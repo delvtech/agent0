@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from fixedpointmath import FixedPoint, FixedPointMath
+from fixedpointmath import FixedPoint, clip
 from numpy.random._generator import Generator
 
 
@@ -39,7 +39,7 @@ class Budget:
             A sample from a clipped random normal distribution according to the parameters defined at construction
         """
         return FixedPoint(
-            scaled_value=FixedPointMath.clip(
+            scaled_value=clip(
                 int(np.round(rng.normal(loc=self.mean_wei, scale=self.std_wei))),
                 self.min_wei,
                 self.max_wei,
