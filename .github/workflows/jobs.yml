@@ -18,9 +18,11 @@ jobs:
       run: |
         ls -la /__t/Python/
         python --version
+    - name: install curl and git
+      run: |
+        apk add --no-cache curl git
     - name: install uv
       run: |
-        apk add --no-cache curl
         curl -LsSf https://astral.sh/uv/install.sh | sh
     - name: install venv
       run: |
