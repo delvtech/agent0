@@ -9,25 +9,13 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import datetime
 import os
-import re
 import sys
 
-import requests
 import tomli
-
-# list all packages
-packages = ["agent0", "chainsync", "ethpy", "hypertypes", "hyperlogs"]
 
 # indicate where the Python packages lives
 package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 sys.path.insert(0, os.path.abspath("."))
-for package in packages:
-    package_path = os.path.join(
-        package_root,
-        "lib",
-        package,
-    )
-    sys.path.insert(0, package_path)
 
 
 # -- Project information -----------------------------------------------------
@@ -89,8 +77,8 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for API document generation -------------------------------------------------
-lib_dir = os.path.join("..", "..", "lib")
-autoapi_dirs = [os.path.join(lib_dir, package) for package in packages]
+lib_dir = os.path.join("..", "..", "src")
+autoapi_dirs = [lib_dir]
 autoapi_type = "python"
 autoapi_template_dir = os.path.join("_templates", "autoapi")
 autoapi_options = [
