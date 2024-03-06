@@ -310,6 +310,7 @@ class FullHyperdriveEnv(gym.Env):
         rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
 
         # Open trades
+        min_tx_amount = self.interactive_hyperdrive.config.minimum_transaction_amount
         for trade_type in TradeTypes:
             # Only open trades if we haven't maxed out positions
             trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
@@ -319,7 +320,8 @@ class FullHyperdriveEnv(gym.Env):
                 # While volume isn't strictly a probability, we interpret it as a value between 0 and 1
                 # where 0 is no volume and 1 is max trade amount
                 volume_adjusted = (
-                    FixedPoint(expit(open_long_short_actions[trade_type.value, 1])) * self.gym_config.max_trade_amount
+                    min_tx_amount
+                    + FixedPoint(expit(open_long_short_actions[trade_type.value, 1])) * self.gym_config.max_trade_amount
                 )
 
                 # Opening orders
@@ -348,11 +350,12 @@ class FullHyperdriveEnv(gym.Env):
                             return True
 
         # LP actions
+
         lp_actions_expit = expit(action[-4:])
         add_lp_probability = lp_actions_expit[0]
-        add_lp_volume = FixedPoint(lp_actions_expit[1]) * self.gym_config.max_trade_amount
+        add_lp_volume = min_tx_amount + FixedPoint(lp_actions_expit[1]) * self.gym_config.max_trade_amount
         remove_lp_probability = lp_actions_expit[2]
-        remove_lp_volume = FixedPoint(lp_actions_expit[3]) * self.gym_config.max_trade_amount
+        remove_lp_volume = min_tx_amount + FixedPoint(lp_actions_expit[3]) * self.gym_config.max_trade_amount
 
         if self.eval_mode:
             add_lp = add_lp_probability > self.gym_config.open_threshold
