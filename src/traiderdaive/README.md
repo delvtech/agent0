@@ -1,3 +1,0 @@
-# TraiderDaive
-
-Reinforcement learning agents
