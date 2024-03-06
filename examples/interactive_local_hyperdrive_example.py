@@ -8,7 +8,7 @@ import datetime
 
 from fixedpointmath import FixedPoint
 
-from agent0.core import ILocalChain, ILocalHyperdrive
+from agent0 import ILocalChain, ILocalHyperdrive
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor

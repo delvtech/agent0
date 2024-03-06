@@ -941,7 +941,7 @@ class ILocalHyperdrive(IHyperdrive):
         base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
         venv_dir = pathlib.Path(os.environ["VIRTUAL_ENV"])
         streamlit_path = str(venv_dir / "bin" / "streamlit")
-        dashboard_path = str(base_dir / "lib" / "chainsync" / "bin" / "streamlit" / "Dashboard.py")
+        dashboard_path = str(base_dir / "src" / "agent0" / "chainsync" / "streamlit" / "Dashboard.py")
         dashboard_run_command = (
             [streamlit_path, "run"]
             + flags

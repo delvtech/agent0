@@ -9,9 +9,8 @@
 
 from fixedpointmath import FixedPoint
 
+from agent0 import IChain, IHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive.interactive import IChain, IHyperdrive
-from agent0.core.hyperdrive.policies import PolicyZoo
 
 # %%
 chain = IChain("http://localhost:8545")

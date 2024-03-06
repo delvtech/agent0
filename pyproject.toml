@@ -72,6 +72,7 @@ dev = [
     # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
     "urllib3<2.0",
     "pytest-postgresql",
+    "ipykernel",
 ]
 
 ai = [
