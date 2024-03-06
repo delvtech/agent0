@@ -116,7 +116,7 @@ line-length = 120
 extend-exclude = "\\.ipynb"
 
 [tool.pylint]
-exclude = [".venv", ".vscode", "docs", "lib/hypertypes/hypertypes/types/"
+exclude = [".venv", ".vscode", "docs", "src/agent0/hypertypes/types/"
 ]
 
 [tool.pylance]

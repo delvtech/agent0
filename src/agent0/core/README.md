@@ -29,7 +29,7 @@ Run the agent0 tests to verify that everything installed correctly by executingÂ
 
 Interactive Hyperdrive also requires the user to install [Foundry](https://book.getfoundry.sh/getting-started/installation), which we use to run the Anvil local testnet node, as well as [docker](https://docs.docker.com/engine/install/) for hosting the node and a database.
 
-With these tools installed, you can run Interactive Hyperdrive directly. See our [example script](https://github.com/delvtech/agent0/blob/main/lib/agent0/examples/interactive_hyperdrive_example.py) to get started.
+With these tools installed, you can run Interactive Hyperdrive directly. See our [example script](https://github.com/delvtech/agent0/blob/main/examples/tutorial.ipynb) to get started.
 
 If you wish to deploy autonomous bots (for example, to execute trading policies in a continuous loop), then follow the remaining steps:
 

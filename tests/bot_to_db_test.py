@@ -188,7 +188,7 @@ class TestBotToDb:
         # We don't coerce to float because we want exact values in decimal
         db_pool_config_df: pd.DataFrame = get_pool_config(db_session, coerce_float=False)
 
-        # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
+        # TODO these expected values are defined in src/agent0/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
         initial_fixed_rate = FixedPoint("0.05")
         # This expected time stretch is only true for 1 year position duration

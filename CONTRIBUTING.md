@@ -33,7 +33,7 @@ Please provide a brief description of the PR in the summary, as opposed to a lis
 
 ## Contributing a new bot policy
 
-We welcome contributions of new bot policies, alongside those in `lib/agent0/agent0/hyperdrive/policies`.
+We welcome contributions of new bot policies, alongside those in `src/agent0/hyperdrive/policies`.
 
 Submit a pull request that meets the following criteria:
 

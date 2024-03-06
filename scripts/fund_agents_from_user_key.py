@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="fund_agents_from_user_key",
         description="Script for funding agents from a user key, given a written env file.",
-        epilog=("See https://github.com/delvtech/agent0/lib/agent0/README.md for more details."),
+        epilog=("See https://github.com/delvtech/agent0/src/agent0/core/README.md for more details."),
     )
     parser.add_argument(
         "-u",

@@ -53,7 +53,7 @@ Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Modifying configuration for agent deployment
 
-Follow [`lib/agent0/README.md`](lib/agent0/README.md) for agent deployment.
+Follow [`examples/tutorial.ipynb`](examples/tutorial.ipynb) for agent deployment.
 
 ## Number format
 
