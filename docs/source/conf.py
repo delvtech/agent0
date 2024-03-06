@@ -77,8 +77,8 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for API document generation -------------------------------------------------
-lib_dir = os.path.join("..", "..", "src")
-autoapi_dirs = [lib_dir]
+src_dir = os.path.join("..", "..", "src", "agent0")
+autoapi_dirs = [src_dir]
 autoapi_type = "python"
 autoapi_template_dir = os.path.join("_templates", "autoapi")
 autoapi_options = [
