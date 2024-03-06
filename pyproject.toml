@@ -126,7 +126,6 @@ exclude = [".venv", ".vscode", "docs"]
 exclude = [".venv", ".vscode", "docs"]
 
 [tool.isort]
-known_first_party = ["agent0"]
 line_length = 120
 
 [tool.ruff]
@@ -141,9 +140,6 @@ exclude = [
     "docs",
     "lib"
 ]
-
-[tool.ruff.lint.isort]
-known-first-party = ["agent0"]
 
 [tool.ruff.lint]
 # Allow unused variables when underscore-prefixed.
