@@ -1,69 +1,44 @@
 # Install -- overview
 
-All `agent0` packages should be accessed from Python 3.10.
-The following outlines our recommended install workflow, although alternatives are listed below.
+`agent0` requires Python 3.10.
 
-## 1. Clone the `agent0` monorepo
+## 1. Clone the `agent0` repo
 
-Clone the repo into a <repo_location> of your choice.
+Clone the repo into a <repo_location> of your choice, then enter that directory.
 
 ```bash
 git clone https://github.com/delvtech/agent0.git <repo_location>
+cd <repo_location>
 ```
 
-## 2. Install Pyenv
+## 2. Install uv
 
-Follow [Pyenv install instructions](https://github.com/pyenv/pyenv#installation).
-
-## 3. Set up a virtual environment
-
-You can use any environment; we use [venv](https://docs.python.org/3/library/venv.html):
+We use [uv](https://github.com/astral-sh/uv) for package management and virtual environments.
 
 ```bash
-cd <repo_location>
-pyenv install 3.10
-pyenv local 3.10
-python -m venv .venv
-source .venv/bin/activate
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ## 4. Install `agent0` packages and requirements
 
-All of the agent0 packages can be installed from `requirements.txt`:
 
 ```bash
-python -m pip install --upgrade pip
-python -m pip install --upgrade -r requirements.txt
+uv venv .venv -p 3.10
+source .venv/bin/activate
+uv pip install --upgrade agent0 @ .
+# For an editable install, we can point it to the current directory
+# uv pip install -e .
+uv pip install -r requirements-hyperdrivepy.txt
 ```
 
-If you want to use the CI tools, such as run tests, check linting or types, build containers or documentation, then you must also [install Foundry](https://book.getfoundry.sh/getting-started/installation) and the dev packages:
+If you want to use the CI tools, such as run tests, check linting or types, build containers or documentation, then you must also [install Foundry](https://book.getfoundry.sh/getting-started/installation). Additionally, you must replace the agent0 install above with the optional `[dev]` dependency.
 
 ```bash
-python -m pip install --upgrade -r requirements-dev.txt
+uv pip install --upgrade agent0[dev]
+# uv pip install -e .[dev]
 ```
 
 Finally, you can test that everything is working by calling: `python -m pytest .`
-
-# Alternate install paths
-
-The default installation directions above should automatically install all local sub-packages, and should be sufficient for development.
-We also support these installation options:
-
-## Installing each subpackage independently
-
-After you have cloned the repository you can install each package independently.
-For example:
-
-```bash
-python -m pip install --upgrade lib/agent0[with-dependencies]
-```
-
-Internally, the above installation calls
-
-```bash
-pip install agent0[base] # Install with base packages only (this is what's called in requirements.txt)
-pip install agent0[lateral] # Installs dependent sub-packages from git (e.g., ethpy)
-```
 
 # Working with smart contracts
 
