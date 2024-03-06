@@ -3,6 +3,7 @@ name = "agent0"
 version = "0.15.0"
 # Authors are the current, primary stuards of the repo
 # contributors can be found on github
+
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
     { name = "Mihai Cosma", email = "mihai@delv.tech" },
@@ -13,6 +14,87 @@ authors = [
     { name = "Giovanni Effio", email = "mazygio@delv.tech" },
     { name = "Ryan Goree", email = "ryan@delv.tech" },
 ]
+description = "Agent interface for on-chain protocols."
+readme = "README.md"
+requires-python = ">=3.10, <=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "fixedpointmath",
+    "numpy",
+    "python-dotenv",
+    # will include eth- packages
+    "web3",
+    "hexbytes",
+    "pandas",
+    "nest_asyncio",
+    "rollbar",
+    "dill",
+    "matplotlib",
+    "mplfinance",
+    "streamlit",
+    "flask",
+    "flask-expects-json",
+    "psycopg[binary]",
+    "sqlalchemy",
+    "sqlalchemy-utils",
+    "pandas-stubs",
+    "requests",
+    "docker",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pypechain",
+    "autodocsumm>=0.2.11",
+    "black==24.*",
+    "coverage",
+    "ipython",
+    "jupytext",
+    "myst-parser>=2.0.0",
+    "nbconvert",
+    "nbsphinx>=0.8.12",
+    "numpydoc>=1.5.0",
+    "pylint",
+    "pyright",
+    "pytest",
+    "sphinx>=6",
+    "sphinx-autoapi>=2.0.1",
+    "sphinx_autodoc_typehints>=1.21.8",
+    "sphinx-rtd-theme>=1.2.2",
+    "sphinxcontrib-napoleon>=0.7",
+    "tomli>=2.0.1",
+    # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
+    "urllib3<2.0",
+    "pytest-postgresql",
+]
+
+ai = [
+    "gymnasium",
+    "stable-baselines3",
+    "scipy",
+]
+
+rollbar = [
+    "rollbar",
+]
+
+all = [
+    "agent0[dev,ai,rollbar]",
+]
+
+[build-system]
+requires = ["flit_core>=3.2"]
+build-backend = "flit_core.buildapi"
+
+[project.urls]
+"Homepage" = "https://github.com/delvtech/agent0"
+"Bug Tracker" = "https://github.com/delvtech/agent0/issues"
 
 
 [tool.pytest.ini_options]
