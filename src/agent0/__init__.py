@@ -1,4 +1,5 @@
-# Expose api
+"""Agent0 repo. This file expose specific functions and classes."""
+
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
