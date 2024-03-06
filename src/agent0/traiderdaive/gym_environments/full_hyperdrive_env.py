@@ -500,7 +500,8 @@ class FullHyperdriveEnv(gym.Env):
         # TODO one option here is to only look at base positions instead of sum across all positions.
         # TODO handle the case where pnl calculation doesn't return a number
         # when you can't close the position
-        total_pnl = float(rl_bot_wallet["pnl"].sum())
+        total_pnl = float(rl_bot_wallet[rl_bot_wallet["token_type"] == "WETH"]["pnl"].sum())
+        # total_pnl = float(rl_bot_wallet["pnl"].sum())
 
         # reward is in units of base
         # We use the change in pnl as the reward
