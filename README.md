@@ -65,11 +65,6 @@ coverage html
 
 then just open `htmlcov/index.html` to view the report!
 
-## Examples
-
-Python files in the `examples/` folder should be executable from the repository root.
-The Jupyter notebook `examples/tutorial.ipynb` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
-
 ## Contributions
 
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).

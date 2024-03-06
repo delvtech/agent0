@@ -2,7 +2,13 @@
 
 `agent0` requires Python 3.10.
 
-## 1. Clone the `agent0` repo
+## 1. Install auxillary dependencies for Interactive Hyperdrive
+While not strictly required when connecting to a remote chain, we recommend that you install these tools to use the full suite of Agent0 simulation tools.
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) for running a local Anvil testnnet node.
+- [Docker](https://docs.docker.com/engine/install/) for hosting the underlying data tools.
+
+## 2. Clone the `agent0` repo
 
 Clone the repo into a <repo_location> of your choice, then enter that directory.
 
@@ -11,7 +17,7 @@ git clone https://github.com/delvtech/agent0.git <repo_location>
 cd <repo_location>
 ```
 
-## 2. Install uv
+## 3. Install uv
 
 We use [uv](https://github.com/astral-sh/uv) for package management and virtual environments.
 
@@ -19,7 +25,7 @@ We use [uv](https://github.com/astral-sh/uv) for package management and virtual 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## 3. Install `agent0` packages and requirements
+## 4. Install `agent0` packages and requirements
 
 
 ```bash
@@ -37,9 +43,5 @@ If you want to use the CI tools, such as run tests, check linting or types, buil
 uv pip install --upgrade agent0[dev]@.
 # uv pip install -e .[dev]
 ```
-
-## 4. Install auxillary dependencies for Interactive Hyperdrive
-
-Agent0 provides a fully managed simulator via Interactive Hyperdrive that requires several auxillary dependencies to be installed. Specifically, we require [Foundry](https://book.getfoundry.sh/getting-started/installation), which we use to run the Anvil local testnet node, as well as [docker](https://docs.docker.com/engine/install/) for hosting the node and a database.
 
 Finally, you can test that everything is working by calling: `python -m pytest .`
