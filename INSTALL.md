@@ -25,7 +25,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 uv venv .venv -p 3.10
 source .venv/bin/activate
-uv pip install --upgrade agent0 @ .
+uv pip install --upgrade agent0@.
 # For an editable install, we can point it to the current directory
 # uv pip install -e .
 uv pip install -r requirements-hyperdrivepy.txt
