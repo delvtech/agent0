@@ -1267,9 +1267,12 @@ class ILocalHyperdrive(IHyperdrive):
             policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
             with open(policy_file, "rb") as file:
                 # If we don't load rng, we get the current RNG state and set it after loading
+                rng = None
                 if not self.config.load_rng_on_snapshot:
                     rng = agent.agent.policy.rng
                 # We use dill, as pickle can't store local objects
                 agent.agent.policy = dill.load(file)
                 if not self.config.load_rng_on_snapshot:
+                    # For type checking
+                    assert rng is not None
                     agent.agent.policy.rng = rng
