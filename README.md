@@ -9,7 +9,7 @@
   <img alt="Agent 0" src="icons/agent0-light.svg">
 </picture>
 
-# [DELV](https://delv.tech) monorepo for market simulation and analysis
+# [DELV](https://delv.tech) repo for market simulation and analysis
 
 This project is a work-in-progress. All code is provided as is and without guarantee.
 The language used in this code and documentation is not intended to, and does not, have any particular financial, legal, or regulatory significance.

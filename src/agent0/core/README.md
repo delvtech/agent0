@@ -8,7 +8,7 @@ Each will be discussed below.
 ## Step 1: Install agent0
 
 1.1.
-The agent0 monorepo that contains the agent0 library, as well as several support libraries.
+The agent0 repo contains the agent0 library.
 Install agent0 libraries by following the installation instructions found [on the agent0 github](https://github.com/delvtech/agent0/blob/main/INSTALL.md).
 
 > **💡NOTE:**

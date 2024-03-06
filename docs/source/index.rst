@@ -1,6 +1,6 @@
 .. agent0 documentation master file
 
-Welcome to the documentation for the agent0 monorepo!
+Welcome to the documentation for agent0!
 =====================================================
 
 .. include:: ../../README.md

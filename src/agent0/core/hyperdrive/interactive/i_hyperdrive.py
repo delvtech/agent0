@@ -131,10 +131,7 @@ class IHyperdrive:
             self.config = config
 
         # Define agent0 configs with this setup
-        # TODO currently getting the path based on this file's path
-        # This requires the entire monorepo to be check out, and will likely not work when
-        # installing agent0 by itself.
-        # This should get fixed when abis are exported in hypertypes.
+        # TODO use hypertypes abis here
         # https://github.com/delvtech/agent0/issues/1125
         full_path = os.path.realpath(__file__)
         current_file_dir, _ = os.path.split(full_path)
