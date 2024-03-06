@@ -40,6 +40,12 @@ uv pip install --upgrade agent0[dev]@.
 
 Finally, you can test that everything is working by calling: `python -m pytest .`
 
+# Interactive hyperdrive
+
+Agent0 provides a fully managed simulator via Interactive Hyperdrive, which also requires the user to install [Foundry](https://book.getfoundry.sh/getting-started/installation), which we use to run the Anvil local testnet node, as well as [docker](https://docs.docker.com/engine/install/) for hosting the node and a database.
+
+See our [example script](https://github.com/delvtech/agent0/blob/main/examples/tutorial.ipynb) to get started.
+
 # Working with smart contracts
 
 We run tests and offer utilities that depend on executing bytecode compiled from Hyperdrive solidity contracts.
