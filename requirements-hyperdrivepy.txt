@@ -1,2 +1,2 @@
---find-links="packages/hyperdrivepy"
+--find-links=packages/hyperdrivepy
 hyperdrivepy
