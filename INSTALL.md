@@ -34,7 +34,7 @@ uv pip install -r requirements-hyperdrivepy.txt
 If you want to use the CI tools, such as run tests, check linting or types, build containers or documentation, then you must also [install Foundry](https://book.getfoundry.sh/getting-started/installation). Additionally, you must replace the agent0 install above with the optional `[dev]` dependency.
 
 ```bash
-uv pip install --upgrade agent0[dev]
+uv pip install --upgrade agent0[dev]@.
 # uv pip install -e .[dev]
 ```
 
