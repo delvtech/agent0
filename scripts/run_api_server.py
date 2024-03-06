@@ -2,7 +2,7 @@
 
 import argparse
 
-from chainsync.db.api import launch_flask
+from agent0.chainsync.db.api import launch_flask
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

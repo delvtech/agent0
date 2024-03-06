@@ -9,15 +9,15 @@ import random
 import time
 from typing import TYPE_CHECKING
 
-from chainsync.db.api import balance_of, register_username
 from eth_typing import BlockNumber
-from ethpy import build_eth_config
-from ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
 from fixedpointmath import FixedPoint
 
-from agent0.base import Quantity, TokenType
-from agent0.base.config import DEFAULT_USERNAME
-from agent0.hyperdrive.agent import build_wallet_positions_from_chain, build_wallet_positions_from_db
+from agent0.chainsync.db.api import balance_of, register_username
+from agent0.core.base import Quantity, TokenType
+from agent0.core.base.config import DEFAULT_USERNAME
+from agent0.core.hyperdrive.agent import build_wallet_positions_from_chain, build_wallet_positions_from_db
+from agent0.ethpy import build_eth_config
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
 
 from .create_and_fund_user_account import create_and_fund_user_account
 from .fund_agents import async_fund_agents
@@ -25,12 +25,11 @@ from .setup_experiment import setup_experiment
 from .trade_loop import trade_if_new_block
 
 if TYPE_CHECKING:
-    from ethpy import EthConfig
-    from ethpy.hyperdrive import HyperdriveAddresses
-
-    from agent0 import AccountKeyConfig
-    from agent0.base.config import AgentConfig, EnvironmentConfig
-    from agent0.hyperdrive import HyperdriveAgent
+    from agent0.core import AccountKeyConfig
+    from agent0.core.base.config import AgentConfig, EnvironmentConfig
+    from agent0.core.hyperdrive import HyperdriveAgent
+    from agent0.ethpy import EthConfig
+    from agent0.ethpy.hyperdrive import HyperdriveAddresses
 
 START_LATENCY = 1
 BACKOFF = 2

@@ -6,11 +6,12 @@ from typing import TYPE_CHECKING, cast
 
 import hyperdrivepy
 from fixedpointmath import FixedPoint
-from hypertypes.utilities.conversions import fixedpoint_to_pool_config, fixedpoint_to_pool_info
 from web3.types import Timestamp
 
+from agent0.hypertypes.utilities.conversions import fixedpoint_to_pool_config, fixedpoint_to_pool_info
+
 if TYPE_CHECKING:
-    from ethpy.hyperdrive.state import PoolState
+    from agent0.ethpy.hyperdrive.state import PoolState
 
 # We only worry about protected access for users outside of this folder
 # pylint: disable=protected-access

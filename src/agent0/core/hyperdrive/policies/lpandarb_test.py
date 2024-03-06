@@ -7,10 +7,10 @@ import logging
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.hyperdrive.interactive.event_types import CloseLong, CloseShort
-from agent0.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
-from agent0.hyperdrive.policies import PolicyZoo
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive.event_types import CloseLong, CloseShort
+from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
+from agent0.core.hyperdrive.policies import PolicyZoo
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name

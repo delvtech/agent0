@@ -6,8 +6,8 @@ e.g., new wallets being added.
 
 import logging
 
-from chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session
-from hyperlogs import setup_logging
+from agent0.chainsync.db.base import add_addr_to_username, add_username_to_user, initialize_session
+from agent0.hyperlogs import setup_logging
 
 # Force row updates if key conflicts
 FORCE_UPDATE = False

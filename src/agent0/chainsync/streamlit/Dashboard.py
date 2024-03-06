@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
 import streamlit as st
-from chainsync.dashboard import (
+
+from agent0.chainsync.dashboard import (
     build_fixed_rate,
     build_leaderboard,
     build_ohlcv,
@@ -25,8 +26,8 @@ from chainsync.dashboard import (
     plot_outstanding_positions,
     plot_rates,
 )
-from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_info, get_ticker, get_wallet_pnl
+from agent0.chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
+from agent0.chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_info, get_ticker, get_wallet_pnl
 
 # pylint: disable=invalid-name
 

@@ -13,20 +13,19 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
-from hyperlogs import ExtendedJSONEncoder, logs
-from hyperlogs.rollbar_utilities import log_rollbar_exception
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
+from agent0.ethpy.base.errors import ContractCallException
+from agent0.hyperlogs import ExtendedJSONEncoder, logs
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveReadInterface
-
-    from agent0.base import Trade
-    from agent0.hyperdrive import HyperdriveAgent, HyperdriveMarketAction
+    from agent0.core.base import Trade
+    from agent0.core.hyperdrive import HyperdriveAgent, HyperdriveMarketAction
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:

@@ -2,7 +2,7 @@
 
 from numpy.random._generator import Generator
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 
 
 def advance_time_before_checkpoint(

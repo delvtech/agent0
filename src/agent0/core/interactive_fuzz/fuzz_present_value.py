@@ -27,10 +27,10 @@ from typing import Any, NamedTuple, Sequence
 import numpy as np
 from fixedpointmath import FixedPoint, isclose
 
-from agent0.hyperdrive import HyperdriveActionType
-from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.interactive_fuzz.helpers import FuzzAssertionException, setup_fuzz
+from agent0.core.hyperdrive import HyperdriveActionType
+from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.interactive_fuzz.helpers import FuzzAssertionException, setup_fuzz
 
 # tests have lots of stuff
 # pylint: disable=too-many-locals

@@ -8,15 +8,14 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import MarketType, Trade
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
+from agent0.core.base import MarketType, Trade
+from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveReadInterface
-
-    from agent0.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
 class Deterministic(HyperdriveBasePolicy):

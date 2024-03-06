@@ -3,7 +3,7 @@
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 
 YEAR_IN_SECONDS = 31_536_000
 

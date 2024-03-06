@@ -6,10 +6,11 @@ from typing import Iterator, cast
 
 import pytest
 from eth_typing import URI
-from ethpy.eth_config import EthConfig
-from ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses
-from ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from web3 import HTTPProvider
+
+from agent0.ethpy.eth_config import EthConfig
+from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses
+from agent0.ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
 # pylint: disable=redefined-outer-name

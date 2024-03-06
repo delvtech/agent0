@@ -7,20 +7,26 @@ import os
 from typing import TYPE_CHECKING, cast
 
 from eth_account import Account
-from ethpy import build_eth_config
-from ethpy.base import initialize_web3_with_http_provider
-from ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
-from ethpy.hyperdrive.deploy import DeployedHyperdrivePool
-from ethpy.hyperdrive.state import PoolState
-from ethpy.hyperdrive.transactions import (
+from fixedpointmath import FixedPoint
+from web3.types import BlockData, BlockIdentifier, Timestamp
+
+from agent0.ethpy import build_eth_config
+from agent0.ethpy.base import initialize_web3_with_http_provider
+from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
+from agent0.ethpy.hyperdrive.state import PoolState
+from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_checkpoint,
     get_hyperdrive_checkpoint_exposure,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
-from fixedpointmath import FixedPoint
-from hypertypes import ERC20MintableContract, HyperdriveFactoryContract, IERC4626HyperdriveContract, MockERC4626Contract
-from web3.types import BlockData, BlockIdentifier, Timestamp
+from agent0.hypertypes import (
+    ERC20MintableContract,
+    HyperdriveFactoryContract,
+    IERC4626HyperdriveContract,
+    MockERC4626Contract,
+)
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
@@ -67,8 +73,9 @@ from ._mock_contract import (
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
-    from ethpy import EthConfig
     from web3 import Web3
+
+    from agent0.ethpy import EthConfig
 
 
 class HyperdriveReadInterface:

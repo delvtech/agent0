@@ -8,19 +8,19 @@ from typing import TYPE_CHECKING, Type, cast
 
 import pytest
 from eth_typing import URI
-from ethpy import EthConfig
-from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.test_utils import CycleTradesPolicy
+from agent0.core import build_account_key_config_from_agent_config
+from agent0.core.base.config import AgentConfig, EnvironmentConfig
+from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.core.test_utils import CycleTradesPolicy
+from agent0.ethpy import EthConfig
+from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.test_fixtures import DeployedHyperdrivePool
+    from agent0.ethpy.hyperdrive import HyperdriveAddresses
+    from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 class TestSlippageWarning:

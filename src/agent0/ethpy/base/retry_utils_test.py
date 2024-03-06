@@ -4,9 +4,10 @@ from typing import cast
 
 import pytest
 from eth_typing import URI
-from ethpy.base import initialize_web3_with_http_provider, retry_call
-from ethpy.test_fixtures import DeployedHyperdrivePool
 from web3 import HTTPProvider
+
+from agent0.ethpy.base import initialize_web3_with_http_provider, retry_call
+from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 @pytest.mark.anvil

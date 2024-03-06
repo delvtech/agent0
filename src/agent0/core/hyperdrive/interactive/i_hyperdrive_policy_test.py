@@ -1,12 +1,12 @@
 """Tests various interactive hyperdrive policies."""
 
 import pytest
-from ethpy.hyperdrive import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
-from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
+from agent0.core.base import Trade
+from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .i_hyperdrive_policy import IHyperdrivePolicy
 from .i_local_chain import ILocalChain

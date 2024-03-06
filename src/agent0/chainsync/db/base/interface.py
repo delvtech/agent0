@@ -8,13 +8,14 @@ from typing import Type, cast
 
 import pandas as pd
 import sqlalchemy
-from chainsync import PostgresConfig, build_postgres_config
 from sqlalchemy import URL, Column, Engine, MetaData, String, Table, create_engine, exc, func, inspect
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
 from sqlalchemy_utils import create_database, database_exists
+
+from agent0.chainsync import PostgresConfig, build_postgres_config
 
 from .schema import AddrToUsername, Base, UsernameToUser
 

@@ -7,7 +7,7 @@ import unittest
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-from agent0.base import Quantity, TokenType
+from agent0.core.base import Quantity, TokenType
 
 from .hyperdrive_wallet import HyperdriveWallet, HyperdriveWalletDeltas, Long
 

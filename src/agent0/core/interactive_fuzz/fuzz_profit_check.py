@@ -32,9 +32,9 @@ from typing import Any, NamedTuple, Sequence
 import numpy as np
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import ILocalChain
-from agent0.interactive_fuzz.helpers import (
+from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.core.hyperdrive.interactive import ILocalChain
+from agent0.core.interactive_fuzz.helpers import (
     FuzzAssertionException,
     advance_time_after_checkpoint,
     advance_time_before_checkpoint,

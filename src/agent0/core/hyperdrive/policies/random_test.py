@@ -8,25 +8,25 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 from eth_typing import URI
-from ethpy import EthConfig
-from ethpy.hyperdrive import HyperdriveReadWriteInterface
 from fixedpointmath import FixedPoint
 from web3 import HTTPProvider
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveActionType, TradeStatus
-from agent0.hyperdrive.exec import (
+from agent0.core import build_account_key_config_from_agent_config
+from agent0.core.base.config import AgentConfig, EnvironmentConfig
+from agent0.core.hyperdrive import HyperdriveActionType, TradeStatus
+from agent0.core.hyperdrive.exec import (
     async_execute_agent_trades,
     async_fund_agents,
     create_and_fund_user_account,
     setup_experiment,
 )
-from agent0.hyperdrive.policies import PolicyZoo
+from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0.ethpy import EthConfig
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses
-    from ethpy.test_fixtures import DeployedHyperdrivePool
+    from agent0.ethpy.hyperdrive import HyperdriveAddresses
+    from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 # pylint: disable=too-many-locals
 

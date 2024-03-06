@@ -6,12 +6,11 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from ethpy.base.errors import ContractCallException, ContractCallType
 from fixedpointmath import FixedPoint
 
-from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
-from agent0.hyperdrive.agent import (
+from agent0.core.base import Trade
+from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
+from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
@@ -20,15 +19,15 @@ from agent0.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
-from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.ethpy.base.errors import ContractCallException, ContractCallType
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveReadInterface
-    from ethpy.hyperdrive.state import PoolState
-
-    from agent0.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+    from agent0.ethpy.hyperdrive.state import PoolState
 
 # We can allow unused arguments here because this is a template and extendable class.
 # pylint: disable=unused-argument

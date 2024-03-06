@@ -12,8 +12,8 @@ import numpy as np
 from fixedpointmath import FixedPoint
 from gymnasium import spaces
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.hyperdrive.policies import PolicyZoo
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.policies import PolicyZoo
 
 # Global suppression of warnings, TODO fix
 warnings.filterwarnings("ignore")

@@ -8,7 +8,8 @@ from dataclasses import dataclass
 
 import requests
 from eth_typing import Address, ChecksumAddress
-from hypertypes.utilities.conversions import camel_to_snake
+
+from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 
 @dataclass(kw_only=True)

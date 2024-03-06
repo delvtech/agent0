@@ -2,7 +2,7 @@
 
 import contextlib
 
-from ethpy.base import initialize_web3_with_http_provider
+from agent0.ethpy.base import initialize_web3_with_http_provider
 
 
 class IChain:

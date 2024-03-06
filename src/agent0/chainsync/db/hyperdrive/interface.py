@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
-from chainsync.db.base import get_latest_block_number_from_table
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
+
+from agent0.chainsync.db.base import get_latest_block_number_from_table
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 from .schema import (
     CheckpointInfo,

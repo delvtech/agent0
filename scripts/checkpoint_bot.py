@@ -11,15 +11,15 @@ import time
 from typing import NamedTuple, Sequence
 
 from eth_account.account import Account
-from ethpy import EthConfig, build_eth_config
-from ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from fixedpointmath import FixedPoint
-from hyperlogs import setup_logging
-from hypertypes import IERC4626HyperdriveContract
 
-from agent0.base import EthAgent
-from agent0.base.config import EnvironmentConfig
+from agent0.core.base import EthAgent
+from agent0.core.base.config import EnvironmentConfig
+from agent0.ethpy import EthConfig, build_eth_config
+from agent0.ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
+from agent0.ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
+from agent0.hyperlogs import setup_logging
+from agent0.hypertypes import IERC4626HyperdriveContract
 
 # Checkpoint bot has a lot going on
 # pylint: disable=too-many-locals

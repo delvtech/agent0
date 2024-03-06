@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from chainsync.exec import acquire_data
-from hyperlogs import setup_logging
+from agent0.chainsync.exec import acquire_data
+from agent0.hyperlogs import setup_logging
 
 if __name__ == "__main__":
     setup_logging(".logging/acquire_data.log", log_stdout=True)

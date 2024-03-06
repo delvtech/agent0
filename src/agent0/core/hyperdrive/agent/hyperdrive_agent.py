@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, TypeVar
 
-from ethpy.hyperdrive.interface import HyperdriveReadInterface
 from fixedpointmath import FixedPoint
 
-from agent0.base import EthAgent, MarketType
-from agent0.base.policies import BasePolicy
+from agent0.core.base import EthAgent, MarketType
+from agent0.core.base.policies import BasePolicy
+from agent0.ethpy.hyperdrive.interface import HyperdriveReadInterface
 
 from .hyperdrive_actions import (
     HyperdriveMarketAction,
@@ -23,7 +23,7 @@ from .hyperdrive_wallet import HyperdriveWallet
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
 
-    from agent0.base import Trade
+    from agent0.core.base import Trade
 
 
 Policy = TypeVar("Policy", bound=BasePolicy)

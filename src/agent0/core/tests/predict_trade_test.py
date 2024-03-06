@@ -26,9 +26,9 @@ import pytest
 from fixedpointmath import FixedPoint
 from tabulate import tabulate
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
-from agent0.utilities.predict import TradeDeltas, predict_long, predict_short
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
+from agent0.core.utilities.predict import TradeDeltas, predict_long, predict_short
 
 # it's just a test
 # pylint: disable=logging-fstring-interpolation

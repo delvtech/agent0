@@ -5,7 +5,8 @@ import os
 import gymnasium as gym
 from stable_baselines3 import A2C
 from stable_baselines3.common.monitor import Monitor
-from traiderdaive import SimpleHyperdriveEnv
+
+from agent0.traiderdaive import SimpleHyperdriveEnv
 
 
 def run_eval():

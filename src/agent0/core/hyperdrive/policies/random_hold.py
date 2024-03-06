@@ -7,17 +7,16 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from agent0.base.types import Trade
-from agent0.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, TradeResult, TradeStatus
-from agent0.hyperdrive.agent import close_long_trade, close_short_trade
+from agent0.core.base.types import Trade
+from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, TradeResult, TradeStatus
+from agent0.core.hyperdrive.agent import close_long_trade, close_short_trade
 
 from .random import Random
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveReadInterface
-    from ethpy.hyperdrive.state import PoolState
-
-    from agent0.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+    from agent0.ethpy.hyperdrive.state import PoolState
 
 
 class RandomHold(Random):

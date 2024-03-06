@@ -9,26 +9,25 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import TYPE_CHECKING
 
-from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
 
-from agent0.base import Trade
-from agent0.hyperdrive import HyperdriveMarketAction
-from agent0.hyperdrive.agent import (
+from agent0.core.base import Trade
+from agent0.core.hyperdrive import HyperdriveMarketAction
+from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
     open_long_trade,
     open_short_trade,
 )
-from agent0.utilities.predict import predict_long, predict_short
+from agent0.core.utilities.predict import predict_long, predict_short
+from agent0.ethpy.hyperdrive.state import PoolState
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveReadInterface
-
-    from agent0.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 # pylint: disable=too-many-arguments, too-many-locals
 

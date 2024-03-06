@@ -11,7 +11,7 @@ from .i_hyperdrive_agent import IHyperdriveAgent
 if TYPE_CHECKING:
     from typing import Type
 
-    from agent0.hyperdrive.policies import HyperdriveBasePolicy
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
     from .i_local_hyperdrive import ILocalHyperdrive
 

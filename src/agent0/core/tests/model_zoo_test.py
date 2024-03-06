@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from agent0.hyperdrive.policies import PolicyZoo
+from agent0.core.hyperdrive.policies import PolicyZoo
 
 
 class TestModelZoo:

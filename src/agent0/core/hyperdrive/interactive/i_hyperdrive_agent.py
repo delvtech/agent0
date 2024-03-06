@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
     from eth_typing import ChecksumAddress
 
-    from agent0.hyperdrive import HyperdriveWallet
-    from agent0.hyperdrive.policies import HyperdriveBasePolicy
+    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
     from .event_types import (
         AddLiquidity,

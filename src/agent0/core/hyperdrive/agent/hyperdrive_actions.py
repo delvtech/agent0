@@ -7,7 +7,7 @@ from enum import Enum
 
 from fixedpointmath import FixedPoint
 
-from agent0.base import BaseMarketAction, MarketType, Trade
+from agent0.core.base import BaseMarketAction, MarketType, Trade
 
 
 class HyperdriveActionType(Enum):

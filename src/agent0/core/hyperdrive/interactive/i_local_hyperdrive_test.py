@@ -5,11 +5,11 @@ import logging
 from decimal import Decimal
 
 import pytest
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, AssetIdPrefix, encode_asset_id
 from fixedpointmath import FixedPoint
 from pandas import Series
 
-from agent0.hyperdrive import HyperdriveWallet
+from agent0.core.hyperdrive import HyperdriveWallet
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, AssetIdPrefix, encode_asset_id
 
 from .i_local_chain import ILocalChain
 from .i_local_hyperdrive import ILocalHyperdrive

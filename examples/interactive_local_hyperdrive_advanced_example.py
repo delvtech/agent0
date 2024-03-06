@@ -6,8 +6,8 @@
 
 from fixedpointmath import FixedPoint
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.hyperdrive.policies import PolicyZoo
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.policies import PolicyZoo
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor

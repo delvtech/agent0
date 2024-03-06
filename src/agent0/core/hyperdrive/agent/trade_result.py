@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from ethpy.hyperdrive import ReceiptBreakdown
+from agent0.ethpy.hyperdrive import ReceiptBreakdown
 
 if TYPE_CHECKING:
-    from agent0.base import Trade
+    from agent0.core.base import Trade
 
     from .hyperdrive_actions import HyperdriveMarketAction
     from .hyperdrive_agent import HyperdriveAgent

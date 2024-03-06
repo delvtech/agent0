@@ -6,10 +6,10 @@ import logging
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from hyperlogs import setup_logging
 from numpy.random._generator import Generator
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.hyperlogs import setup_logging
 
 
 def setup_fuzz(

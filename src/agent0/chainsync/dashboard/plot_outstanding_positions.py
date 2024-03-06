@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import pandas as pd
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from matplotlib.axes import Axes
+
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 
 def plot_outstanding_positions(data: pd.DataFrame, axes: Axes):

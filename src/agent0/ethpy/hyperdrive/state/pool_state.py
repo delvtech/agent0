@@ -6,14 +6,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
-from hypertypes.utilities.conversions import (
+from web3.types import BlockData
+
+from agent0.hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
+from agent0.hypertypes.utilities.conversions import (
     dataclass_to_dict,
     fixedpoint_to_checkpoint,
     fixedpoint_to_pool_config,
     fixedpoint_to_pool_info,
 )
-from web3.types import BlockData
 
 # pylint: disable=too-many-instance-attributes
 

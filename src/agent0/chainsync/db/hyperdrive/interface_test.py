@@ -5,8 +5,9 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from chainsync.db.base import get_latest_block_number_from_table
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
+
+from agent0.chainsync.db.base import get_latest_block_number_from_table
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 from .interface import (
     add_checkpoint_info,

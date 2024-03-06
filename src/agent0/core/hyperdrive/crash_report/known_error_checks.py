@@ -1,10 +1,10 @@
 """Helper functions for checking for known errors in contract calls."""
 
-from ethpy.base.errors import ContractCallException
 from web3.exceptions import ContractCustomError, ContractLogicError
 
-from agent0.hyperdrive import HyperdriveActionType, TradeResult
-from agent0.test_utils import assert_never
+from agent0.core.hyperdrive import HyperdriveActionType, TradeResult
+from agent0.core.test_utils import assert_never
+from agent0.ethpy.base.errors import ContractCallException
 
 
 def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:

@@ -9,16 +9,17 @@ import gc
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import streamlit as st
-from chainsync.dashboard import build_ticker, build_user_mapping, map_addresses, reduce_plot_data
-from chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
-from chainsync.db.hyperdrive import (
+
+from agent0.chainsync.dashboard import build_ticker, build_user_mapping, map_addresses, reduce_plot_data
+from agent0.chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
+from agent0.chainsync.db.hyperdrive import (
     get_all_traders,
     get_ticker,
     get_total_wallet_pnl_over_time,
     get_wallet_pnl,
     get_wallet_positions_over_time,
 )
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 plt.close("all")
 gc.collect()

@@ -26,9 +26,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import NamedTuple
 
-from ethpy.hyperdrive.interface.read_interface import HyperdriveReadInterface
-from ethpy.hyperdrive.state import PoolState
 from fixedpointmath import FixedPoint
+
+from agent0.ethpy.hyperdrive.interface.read_interface import HyperdriveReadInterface
+from agent0.ethpy.hyperdrive.state import PoolState
 
 # need to cover a wide variety of cases
 # pylint: disable=too-many-arguments

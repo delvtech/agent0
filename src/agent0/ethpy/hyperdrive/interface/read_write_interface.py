@@ -26,12 +26,13 @@ from .read_interface import HyperdriveReadInterface
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
-    from ethpy import EthConfig
-    from ethpy.hyperdrive.addresses import HyperdriveAddresses
-    from ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
     from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.types import Nonce
+
+    from agent0.ethpy import EthConfig
+    from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
+    from agent0.ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
 
 
 class HyperdriveReadWriteInterface(HyperdriveReadInterface):

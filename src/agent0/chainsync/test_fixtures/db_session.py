@@ -10,13 +10,14 @@ from typing import Iterator
 
 import docker
 import pytest
-from chainsync import PostgresConfig
-from chainsync.db.base import Base, initialize_engine
 from docker.errors import APIError, DockerException, NotFound
 from docker.models.containers import Container
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from agent0.chainsync import PostgresConfig
+from agent0.chainsync.db.base import Base, initialize_engine
 
 TEST_POSTGRES_NAME = "postgres_test"
 

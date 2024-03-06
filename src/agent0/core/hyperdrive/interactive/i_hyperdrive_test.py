@@ -1,11 +1,11 @@
 """Tests interactive hyperdrive end to end."""
 
 import pytest
-from ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 from fixedpointmath import FixedPoint
 
-from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveWallet
+from agent0.core.base.make_key import make_private_key
+from agent0.core.hyperdrive import HyperdriveWallet
+from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 
 from .i_chain import IChain
 from .i_hyperdrive import IHyperdrive

@@ -9,8 +9,9 @@ from eth_account import Account
 from eth_utils.conversions import to_bytes
 from eth_utils.crypto import keccak
 from eth_utils.curried import text_if_str
-from ethpy.base import set_anvil_account_balance
 from fixedpointmath import FixedPoint
+
+from agent0.ethpy.base import set_anvil_account_balance
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount

@@ -40,19 +40,19 @@ from typing import Any, NamedTuple, Sequence
 
 import pandas as pd
 import rollbar
-from ethpy.base.errors import ContractCallException
 from fixedpointmath import FixedPoint, isclose
-from hyperlogs import ExtendedJSONEncoder
 
-from agent0.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.interactive_fuzz.helpers import (
+from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.interactive_fuzz.helpers import (
     FuzzAssertionException,
     close_trades,
     execute_random_trades,
     permute_trade_events,
     setup_fuzz,
 )
+from agent0.ethpy.base.errors import ContractCallException
+from agent0.hyperlogs import ExtendedJSONEncoder
 
 
 # pylint: disable=too-many-locals

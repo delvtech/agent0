@@ -7,16 +7,16 @@ import logging
 
 import eth_utils
 from eth_account.account import Account
-from ethpy.base import async_smart_contract_transact, get_account_balance
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import TxReceipt
 
-from agent0 import AccountKeyConfig
-from agent0.base.config import AgentConfig
-from agent0.hyperdrive import HyperdriveAgent
+from agent0.core import AccountKeyConfig
+from agent0.core.base.config import AgentConfig
+from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.ethpy.base import async_smart_contract_transact, get_account_balance
 
 RETRY_COUNT = 5
 

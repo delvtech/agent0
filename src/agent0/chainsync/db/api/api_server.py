@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import logging
 
-from chainsync.db.base import add_addr_to_username, close_session, initialize_session
-from chainsync.db.hyperdrive import get_current_wallet
 from flask import Flask, Response, jsonify, request
 from flask_expects_json import expects_json
+
+from agent0.chainsync.db.base import add_addr_to_username, close_session, initialize_session
+from agent0.chainsync.db.hyperdrive import get_current_wallet
 
 app = Flask(__name__)
 

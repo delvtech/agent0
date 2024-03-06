@@ -8,7 +8,8 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor, load_results
 from stable_baselines3.common.results_plotter import ts2xy
-from traiderdaive import FullHyperdriveEnv
+
+from agent0.traiderdaive import FullHyperdriveEnv
 
 # Stable baselines repo: https://github.com/DLR-RM/stable-baselines3
 # The limiting factors of what algorithms you can use depend on the action space

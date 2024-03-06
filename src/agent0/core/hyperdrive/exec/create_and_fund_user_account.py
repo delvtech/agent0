@@ -5,17 +5,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from eth_account.account import Account
-from ethpy.base import set_anvil_account_balance, smart_contract_transact
-from ethpy.hyperdrive import HyperdriveReadInterface
 
-from agent0 import AccountKeyConfig
-from agent0.base.make_key import make_private_key
-from agent0.hyperdrive import HyperdriveAgent
+from agent0.core import AccountKeyConfig
+from agent0.core.base.make_key import make_private_key
+from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 if TYPE_CHECKING:
-    from hypertypes import ERC20MintableContract
     from web3 import Web3
     from web3.types import RPCResponse, TxReceipt
+
+    from agent0.hypertypes import ERC20MintableContract
 
 
 def create_user_account() -> HyperdriveAgent:

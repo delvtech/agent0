@@ -8,10 +8,10 @@ import numpy as np
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0.hyperdrive import HyperdriveActionType
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.hyperdrive.interactive.event_types import OpenLong, OpenShort
-from agent0.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
+from agent0.core.hyperdrive import HyperdriveActionType
+from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
+from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
 
 
 def execute_random_trades(

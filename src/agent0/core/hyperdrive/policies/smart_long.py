@@ -7,16 +7,15 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint, minimum
 
-from agent0.base import WEI, Trade
-from agent0.hyperdrive import HyperdriveMarketAction
-from agent0.hyperdrive.agent import close_long_trade, open_long_trade
+from agent0.core.base import WEI, Trade
+from agent0.core.hyperdrive import HyperdriveMarketAction
+from agent0.core.hyperdrive.agent import close_long_trade, open_long_trade
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveReadInterface
-
-    from agent0.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 # pylint: disable=too-few-public-methods
 

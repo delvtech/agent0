@@ -7,8 +7,9 @@ from dataclasses import asdict
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from hypertypes import Checkpoint, Fees, PoolConfig, PoolInfo
-from hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
+
+from agent0.hypertypes import Checkpoint, Fees, PoolConfig, PoolInfo
+from agent0.hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
 
 
 def camel_to_snake(camel_string: str) -> str:

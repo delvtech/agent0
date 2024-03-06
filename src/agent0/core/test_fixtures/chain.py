@@ -9,7 +9,7 @@ import docker
 import pytest
 from docker.errors import DockerException
 
-from agent0.hyperdrive.interactive import ILocalChain
+from agent0.core.hyperdrive.interactive import ILocalChain
 
 
 @pytest.fixture

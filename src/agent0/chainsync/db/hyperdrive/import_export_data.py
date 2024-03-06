@@ -7,7 +7,10 @@ import os
 from typing import Type
 
 import pandas as pd
-from chainsync.db.base import (
+from sqlalchemy import exc
+from sqlalchemy.orm import Session
+
+from agent0.chainsync.db.base import (
     AddrToUsername,
     Base,
     UsernameToUser,
@@ -15,8 +18,6 @@ from chainsync.db.base import (
     get_username_to_user,
     initialize_session,
 )
-from sqlalchemy import exc
-from sqlalchemy.orm import Session
 
 from .interface import (
     get_checkpoint_info,

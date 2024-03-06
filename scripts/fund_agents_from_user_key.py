@@ -6,12 +6,12 @@ import logging
 import os
 
 from eth_account.account import Account
-from ethpy import build_eth_config
-from ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 
-from agent0 import build_account_config_from_env
-from agent0.hyperdrive import HyperdriveAgent
-from agent0.hyperdrive.exec import async_fund_agents
+from agent0.core import build_account_config_from_env
+from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.core.hyperdrive.exec import async_fund_agents
+from agent0.ethpy import build_eth_config
+from agent0.ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
