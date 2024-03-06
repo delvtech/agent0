@@ -16,6 +16,29 @@ The language used in this code and documentation is not intended to, and does no
 
 This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https://agent0.readthedocs.io/en/latest/).
 
+```python
+import datetime
+from fixedpointmath import FixedPoint
+from agent0 import ILocalHyperdrive, ILocalChain
+
+# Initialize
+chain = ILocalChain()
+interactive_hyperdrive = ILocalHyperdrive(chain)
+hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000))
+
+# Run trades
+chain.advance_time(datetime.timedelta(weeks=1))
+open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100))
+chain.advance_time(datetime.timedelta(weeks=5))
+close_event = hyperdrive_agent0
+
+# Analyze
+pool_state = interactive_hyperdrive.get_pool_state(coerce_float=True)
+pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
+```
+
+See our [tutorial notebook](examples/tutorial.ipynb) for more information.
+
 ## Install
 
 Please refer to [INSTALL.md](INSTALL.md).
@@ -50,10 +73,6 @@ The Jupyter notebook `examples/tutorial.ipynb` should be run locally using [Jupy
 ## Contributions
 
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Modifying configuration for agent deployment
-
-Follow [`examples/tutorial.ipynb`](examples/tutorial.ipynb) for agent deployment.
 
 ## Number format
 
