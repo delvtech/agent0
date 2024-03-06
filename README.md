@@ -16,19 +16,6 @@ The language used in this code and documentation is not intended to, and does no
 
 This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https://agent0.readthedocs.io/en/latest/).
 
-## Packages
-
-This monorepo houses internal packages that are still under development. They are:
-
-- agent0 ([README](lib/agent0/README.md))
-- chainsync ([README](lib/chainsync/README.md))
-- ethpy ([README](lib/ethpy/README.md))
-
-We also utilize internal packages that are "in production," which is to say they live in their own repo:
-
-- pypechain ([README](https://github.com/delvtech/pypechain/tree/main#readme), [pypi](https://pypi.org/project/pypechain/))
-- fixedpointmath ([README](https://github.com/delvtech/fixedpointmath#readme), [pypi](https://pypi.org/project/fixedpointmath/))
-
 ## Install
 
 Please refer to [INSTALL.md](INSTALL.md).
@@ -58,8 +45,7 @@ then just open `htmlcov/index.html` to view the report!
 ## Examples
 
 Python files in the `examples/` folder should be executable from the repository root.
-Run them with the -h flag to see argument options.
-The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
+The Jupyter notebook `examples/tutorial.ipynb` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
 
 ## Contributions
 
@@ -68,24 +54,6 @@ Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
 ## Modifying configuration for agent deployment
 
 Follow [`lib/agent0/README.md`](lib/agent0/README.md) for agent deployment.
-
-## Data pipeline
-
-The data pipeline queries the running chain and exports data to a postgres database. The `infra` repository spins up a local postgres instance via Docker, and the data pipeline will point to this by default. Optionally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):
-
-```bash
-POSTGRES_USER="admin"
-POSTGRES_PASSWORD="password"
-POSTGRES_DB="postgres_db"
-POSTGRES_HOST="localhost"
-POSTGRES_PORT=5432
-```
-
-The data script can be then ran using the following command:
-
-```bash
-python lib/chainsync/chainsync/exec/acquire_data.py
-```
 
 ## Number format
 

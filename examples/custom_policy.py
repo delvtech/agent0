@@ -1,19 +1,14 @@
-"""Script to showcase setting up and running custom agents"""
+"""Custom policy example"""
 
-# %%
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from agent0.core import initialize_accounts
-from agent0.core.base import Trade
-from agent0.core.base.config import AgentConfig, EnvironmentConfig
-from agent0.core.hyperdrive import HyperdriveMarketAction
-from agent0.core.hyperdrive.agent import (
+from agent0 import (
+    HyperdriveBasePolicy,
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
@@ -22,33 +17,15 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
-from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.core.base import Trade
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
-# %%
-# Define the unique agent env filename to use for this script
-ENV_FILE = "custom_agent.account.env"
-# Username binding for bots
-USERNAME = "changeme"
-# The amount of base token each bot receives
-BASE_BUDGET_PER_BOT = FixedPoint(50).scaled_value  # 50 base in wei
-ETH_BUDGET_PER_BOT = FixedPoint(1).scaled_value  # 1 eth in wei
-# The slippage tolerance for trades
-SLIPPAGE_TOLERANCE = FixedPoint("0.0001")  # 0.1% slippage
-# Run this file with this flag set to true to close out all open positions
-LIQUIDATE = False
 
-
-# %%
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
-# TODO this bot is almost identical to the one defined in test_fixtures for system tests
-# On one hand, this bot is nice for an example since it shows all trades
-# On the other, duplicated code between the two bots
 class CustomCycleTradesPolicy(HyperdriveBasePolicy):
     """An agent that simply cycles through all trades"""
 
@@ -126,41 +103,3 @@ class CustomCycleTradesPolicy(HyperdriveBasePolicy):
 
         self.counter += 1
         return action_list, False
-
-
-# %%
-# Build environment config
-env_config = EnvironmentConfig(
-    delete_previous_logs=False,
-    halt_on_errors=False,
-    log_filename=".logging/agent0_logs.logs",
-    log_level=logging.CRITICAL,
-    log_stdout=True,
-    global_random_seed=1234,
-    username=USERNAME,
-)
-
-# Build agent config
-agent_config: list[AgentConfig] = [
-    AgentConfig(
-        policy=CustomCycleTradesPolicy,
-        number_of_agents=1,
-        base_budget_wei=BASE_BUDGET_PER_BOT,
-        eth_budget_wei=ETH_BUDGET_PER_BOT,
-        policy_config=CustomCycleTradesPolicy.Config(
-            slippage_tolerance=SLIPPAGE_TOLERANCE,
-            static_trade_amount_wei=FixedPoint(100).scaled_value,  # 100 base static trades
-        ),
-    ),
-]
-# %%
-
-# Build accounts env var
-# This function writes a user defined env file location.
-# If it doesn't exist, create it based on agent_config
-# (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
-# If it does exist, read it in and use it
-account_key_config = initialize_accounts(agent_config, ENV_FILE, random_seed=env_config.global_random_seed)
-
-# Run agents
-setup_and_run_agent_loop(env_config, agent_config, account_key_config, liquidate=LIQUIDATE)

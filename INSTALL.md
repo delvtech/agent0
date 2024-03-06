@@ -19,7 +19,7 @@ We use [uv](https://github.com/astral-sh/uv) for package management and virtual 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## 4. Install `agent0` packages and requirements
+## 3. Install `agent0` packages and requirements
 
 
 ```bash
