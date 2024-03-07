@@ -15,28 +15,20 @@ from agent0.core.base import EthWallet, EthWalletDeltas, freezable
 @freezable()
 @dataclass()
 class HyperdriveWalletDeltas(EthWalletDeltas):
-    r"""Stores changes for an agent's wallet
-
-    Arguments
-    ---------
-    lp_tokens: FixedPoint
-        The LP tokens held by the trader.
-    longs: Dict[int, Long]
-        The long positions held by the trader.
-    shorts: Dict[int, Short]
-        The short positions held by the trader.
-    withdraw_shares: FixedPoint
-        The withdraw shares held by the trader.
-    """
+    r"""Stores changes for an agent's wallet"""
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
     lp_tokens: FixedPoint = FixedPoint(0)
+    """The LP tokens held by the trader."""
     # non-fungible (identified by key=maturity_time, stored as dict)
     longs: dict[int, Long] = field(default_factory=dict)
+    """The long positions held by the trader."""
     shorts: dict[int, Short] = field(default_factory=dict)
+    """The short positions held by the trader."""
     withdraw_shares: FixedPoint = FixedPoint(0)
+    """The withdraw shares held by the trader."""
 
     def copy(self) -> HyperdriveWalletDeltas:
         """Returns a new copy of self.
@@ -53,60 +45,45 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
 class Long:
     r"""An open long position.
 
-    Arguments
-    ---------
-    balance: FixedPoint
-        The amount of bonds that the position is long.
-
     .. todo:: make balance a Quantity to enforce units
     """
 
     balance: FixedPoint  # bonds
+    """The amount of bonds that the position is long."""
     maturity_time: int
+    """The maturity time of the long."""
 
 
 @dataclass
 class Short:
-    r"""An open short position.
-
-    Arguments
-    ---------
-    balance: FixedPoint
-        The amount of bonds that the position is short.
-    """
+    r"""An open short position."""
 
     balance: FixedPoint
+    """The amount of bonds that the position is short."""
     maturity_time: int
+    """The maturity time of the short."""
 
 
 @dataclass(kw_only=True)
 class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
-    r"""Stateful variable for storing what is in the agent's wallet.
-
-    Arguments
-    ---------
-    address: HexBytes
-        The associated agent's eth address
-    balance: Quantity
-        The base assets that held by the trader.
-    lp_tokens: FixedPoint
-        The LP tokens held by the trader.
-    withdraw_shares: FixedPoint
-        The amount of unclaimed withdraw shares held by the agent.
-    longs: Dict[int, Long]
-        The long positions held by the trader.
-        The dictionary is keyed by the maturity time in seconds.
-    shorts: Dict[int, Short]
-        The short positions held by the trader.
-        The dictionary is keyed by the maturity time in seconds.
-    """
+    r"""Stateful variable for storing what is in the agent's wallet."""
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     lp_tokens: FixedPoint = FixedPoint(0)
+    """The LP tokens held by the trader."""
     withdraw_shares: FixedPoint = FixedPoint(0)
+    """The amount of unclaimed withdraw shares held by the agent."""
     longs: dict[int, Long] = field(default_factory=dict)
+    """
+    The long positions held by the trader.
+    The dictionary is keyed by the maturity time in seconds.
+    """
     shorts: dict[int, Short] = field(default_factory=dict)
+    """
+    The short positions held by the trader.
+    The dictionary is keyed by the maturity time in seconds.
+    """
 
     def _update_longs(self, longs: Iterable[tuple[int, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet.

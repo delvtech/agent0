@@ -17,27 +17,19 @@ from .base.make_key import make_private_key
 
 @dataclass
 class AccountKeyConfig:
-    """The account config dataclass
-
-    Attributes
-    ----------
-    USER_KEY: str | None
-        The user's private key
-    AGENT_KEYS: list[str]
-        A list of agent private keys
-    AGENT_ETH_BUDGETS: list[int]
-        A list of agent eth budgets
-    AGENT_BASE_BUDGETS: list[int]
-        A list of agent base budgets
-    """
+    """The account config dataclass."""
 
     # default values for local contracts
     # Matching environment variables to search for
     # pylint: disable=invalid-name
     USER_KEY: str | None
+    """The user's private key."""
     AGENT_KEYS: list[str]
+    """A list of agent private keys."""
     AGENT_ETH_BUDGETS: list[int]
+    """A list of agent eth budgets."""
     AGENT_BASE_BUDGETS: list[int]
+    """A list of agent base budgets."""
 
     def to_env_str(self) -> str:
         """Convert the configuration dataclass to a string, ready to be written as an env file

@@ -214,28 +214,19 @@ class LPandArb(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy.
-
-        Attributes
-        ----------
-        high_fixed_rate_thresh: FixedPoint
-            Amount over variable rate to arbitrage.
-        low_fixed_rate_thresh: FixedPoint
-            Amount below variable rate to arbitrage. Defaults to 0.
-        lp_portion: FixedPoint
-            The portion of capital assigned to LP. Defaults to 0.
-        done_on_empty: bool
-            Whether to exit the bot if there are no trades.
-        minimum_trade_amount: FixedPoint
-            The minimum trade amount below which the agent won't submit a trade.
-        """
+        """Custom config arguments for this policy."""
 
         lp_portion: FixedPoint = FixedPoint("0.5")
+        """The portion of capital assigned to LP. Defaults to 0."""
         high_fixed_rate_thresh: FixedPoint = FixedPoint(0)
+        """Amount over variable rate to arbitrage."""
         low_fixed_rate_thresh: FixedPoint = FixedPoint(0)
+        """Amount below variable rate to arbitrage. Defaults to 0."""
         rate_slippage: FixedPoint = FixedPoint("0.01")
         done_on_empty: bool = False
+        """Whether to exit the bot if there are no trades."""
         minimum_trade_amount: FixedPoint = FixedPoint(10)
+        """The minimum trade amount below which the agent won't submit a trade."""
 
         @property
         def arb_portion(self) -> FixedPoint:

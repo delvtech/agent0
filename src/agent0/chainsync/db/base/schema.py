@@ -26,7 +26,9 @@ class AddrToUsername(Base):
     __tablename__ = "addr_to_username"
 
     address: Mapped[str] = mapped_column(String, primary_key=True)
+    """The wallet address"""
     username: Mapped[str] = mapped_column(String, index=True)
+    """The logical username"""
 
 
 class UsernameToUser(Base):
@@ -38,4 +40,6 @@ class UsernameToUser(Base):
     __tablename__ = "username_to_user"
 
     username: Mapped[str] = mapped_column(String, primary_key=True)
+    """The logical username."""
     user: Mapped[str] = mapped_column(String, index=True)
+    """The user."""

@@ -40,19 +40,14 @@ class Deterministic(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy.
-
-        Attributes
-        ----------
-        high_fixed_rate_thresh: FixedPoint
-            Amount over variable rate to arbitrage.
-        low_fixed_rate_thresh: FixedPoint
-            Amount below variable rate to arbitrage
-        lp_portion: FixedPoint
-            The portion of capital assigned to LP
-        """
+        """Custom config arguments for this policy."""
 
         trade_list: list[tuple[str, int]]
+        """
+        A list of tuples formatted as follows:
+            - (<trade_type>, <amount>)
+        Allowed trade types are "open_long", "close_long", "open_short", "close_short".
+        """
 
     def __init__(self, policy_config: Config):
         """Initialize the bot.

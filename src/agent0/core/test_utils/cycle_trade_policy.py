@@ -26,19 +26,14 @@ from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
 class CycleTradesPolicy(HyperdriveBasePolicy):
-    """A agent that simply cycles through all trades"""
+    """A agent that simply cycles through all trades."""
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy
-
-        Attributes
-        ----------
-        max_trades: int
-            The maximum amount of trades to make before this policy is done trading
-        """
+        """Custom config arguments for this policy."""
 
         max_trades: int | None = None
+        """The maximum amount of trades to make before this policy is done trading."""
 
     # Using default parameters
     def __init__(

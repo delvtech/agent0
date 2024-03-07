@@ -46,16 +46,13 @@ class WalletTestPolicy(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy.
-
-        Attributes
-        ----------
-        rerun: bool
-            Determines if this policy is being reran
-            The second run should be doing assertions for this test
-        """
+        """Custom config arguments for this policy."""
 
         rerun: bool = False
+        """
+        Determines if this policy is being reran
+        The second run should be doing assertions for this test
+        """
 
     # Using default parameters
     def __init__(

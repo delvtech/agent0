@@ -56,19 +56,12 @@ class Random(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy
-
-        Attributes
-        ----------
-        trade_chance: FixedPoint
-            The probability of this bot to make a trade on an action call
-        allowable_actions: list[HyperdriveActionType]
-            A list of Hyperdrive actions that are allowed.
-            Defaults to all possible actions.
-        """
+        """Custom config arguments for this policy."""
 
         trade_chance: FixedPoint = FixedPoint("1.0")
+        """The probability of this bot to make a trade on an action call."""
         randomly_ignore_slippage_tolerance: bool = False
+        """If we randomly ignore slippage tolerance."""
         allowable_actions: list[HyperdriveActionType] = field(
             default_factory=lambda: [
                 HyperdriveActionType.OPEN_LONG,
@@ -80,6 +73,10 @@ class Random(HyperdriveBasePolicy):
                 HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
             ]
         )
+        """
+        A list of Hyperdrive actions that are allowed.
+        Defaults to all possible actions.
+        """
 
     def __init__(self, policy_config: Config) -> None:
         """Initializes the bot

@@ -44,16 +44,11 @@ def check_non_zero(data: Any) -> None:
 @freezable()
 @dataclass()
 class EthWalletDeltas:
-    r"""Stores changes for an agent's wallet
-
-    Arguments
-    ---------
-    balance: Quantity
-        The base assets that held by the trader.
-    """
+    r"""Stores changes for an agent's wallet."""
 
     # fungible
     balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
+    """The base assets that held by the trader."""
 
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
@@ -73,22 +68,16 @@ T = TypeVar("T", bound=EthWalletDeltas)
 
 @dataclass(kw_only=True)
 class EthWallet(Generic[T]):
-    r"""Stateful variable for storing what is in the agent's wallet
-
-    Arguments
-    ---------
-    address: HexBytes
-        The associated agent's eth address
-    balance: Quantity
-        The base assets that held by the trader.
-    """
+    r"""Stateful variable for storing what is in the agent's wallet."""
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     address: HexBytes
+    """The associated agent's eth address."""
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     balance: Quantity = field(default_factory=lambda: Quantity(amount=FixedPoint(0), unit=TokenType.BASE))
+    """The base assets that held by the trader."""
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

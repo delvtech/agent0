@@ -19,43 +19,52 @@ class EnvironmentConfig(FrozenClass):
     # lots of configs!
     # pylint: disable=too-many-instance-attributes
 
-    # Logical username for who is running agents
     username: str = DEFAULT_USERNAME
-    # if true, stop executing when trade errors occur
+    """Logical username for who is running agents."""
     halt_on_errors: bool = False
-    # if halt_on_errors is True, halt_on_slippage controls if we halt when slippage happens
+    """If true, stop executing when trade errors occur."""
     halt_on_slippage: bool = False
-    # if true, will write crash report under .crash_report directory
-    # including the anvil crash state.
-    # Since crash reports are timestamped, we set this default to false
-    # to avoid using lots of disk space
+    """If halt_on_errors is True, halt_on_slippage controls if we halt when slippage happens"""
     crash_report_to_file: bool = False
-    # The string prefix to prepend to crash reports
+    """
+    If true, will write crash report under .crash_report directory
+    including the anvil crash state.
+    Since crash reports are timestamped, we set this default to false
+    to avoid using lots of disk space
+    """
     crash_report_file_prefix: str = ""
-    # optional output filename for logging
+    """The string prefix to prepend to crash reports."""
     log_filename: str = ".logging/agent0_logs.log"
-    # log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]
+    """Optional output filename for logging."""
     log_level: int = DEFAULT_LOG_LEVEL  # INFO
-    # delete_previous_logs; if True, delete existing logs at the start of the run
+    """log level; should be in [logging.DEBUG, logging.INFO, logging.WARNING]."""
     delete_previous_logs: bool = False
-    # log log_file_and_stdout; if True, save to file and write to stdout, else just save to file
+    """Delete_previous_logs; if True, delete existing logs at the start of the run."""
     log_stdout: bool = False
-    # if True, enables rollbar logging
+    """Log log_file_and_stdout; if True, save to file and write to stdout, else just save to file."""
     log_to_rollbar: bool = False
-    # log_formatter; specifies the format in which the logger saves the logs
-    # see https://docs.python.org/3/library/logging.html#logrecord-attributes for which attributes can be used
+    """If True, enables rollbar logging."""
     log_formatter: str = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"
-    # maximum log file output size, in bytes
+    """
+    log_formatter; specifies the format in which the logger saves the logs
+    see https://docs.python.org/3/library/logging.html#logrecord-attributes for which attributes can be used
+    """
     max_bytes: int = DEFAULT_LOG_MAXBYTES  # int(2e6) or 2MB
-    # int to be used for the random seed
+    """maximum log file output size, in bytes."""
     global_random_seed: int | None = None
-    # retry arguments for read/write smart contract calls
-    # Defaults to what's being used in ethpy, which is
-    # 5 read retries, 1 write retry
+    """int to be used for the random seed."""
     read_retry_count: int | None = None
+    """
+    Number of times to retry for read smart contract calls.
+    Defaults to what's being used in ethpy, which is 5.
+    """
     write_retry_count: int | None = None
-    # if true, will randomize liquidation trades when liquidating.
+    """
+    Number of times to retry for write smart contract calls.
+    Defaults to what's being used in ethpy, which is 1.
+    """
     randomize_liquidation: bool = False
+    """If true, will randomize liquidation trades when liquidating."""
 
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)

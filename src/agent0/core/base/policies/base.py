@@ -26,19 +26,14 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
     # kw_only so that we can mix and match defaults and non-defaults
     @dataclass(kw_only=True)
     class Config:
-        """Config data class for policy specific configuration
-
-        Attributes
-        ----------
-        rng_seed: int | None, optional
-            The seed for the random number generator. Defaults to None
-        rng: Generator | None, optional
-            The experiment's stateful random number generator. Defaults to a spawn of the global rng.
-        """
+        """Config data class for policy specific configuration."""
 
         rng_seed: int | None = None
+        """The seed for the random number generator. Defaults to None."""
         rng: Generator | None = None
+        """The experiment's stateful random number generator. Defaults to a spawn of the global rng."""
         slippage_tolerance: FixedPoint | None = None
+        """The slippage tolerance for trades. Defaults to None."""
 
     def __init__(self, policy_config: Config):
         """Initialize the policy.
