@@ -4,7 +4,7 @@ Welcome to the documentation for agent0!
 =====================================================
 
 .. include:: ../../README.md
-   :parser: myst_parser.sphinx
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :titlesonly:
