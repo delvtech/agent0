@@ -3,18 +3,18 @@
 Welcome to the documentation for agent0!
 =====================================================
 
-.. include:: ../../README.md
-   :parser: myst_parser.sphinx_
+.. mdinclude:: ../../README.md
 
 .. toctree::
    :titlesonly:
    :caption: API
 
    /autoapi/agent0/index
-   /autoapi/chainsync/index
-   /autoapi/ethpy/index
-   /autoapi/hyperlogs/index
-   /autoapi/hypertypes/index
+   /autoapi/agent0/chainsync/index
+   /autoapi/agent0/ethpy/index
+   /autoapi/agent0/hyperlogs/index
+   /autoapi/agent0/hypertypes/index
+   /autoapi/agent0/traiderdaive/index
 
 
 Indices and tables
