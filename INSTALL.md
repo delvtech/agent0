@@ -26,15 +26,11 @@ source .venv/bin/activate
 ## 4. Install `agent0`
 ```bash
 uv pip install -e .
-# For non-editable install
-# uv pip install agent0@.
-
+# uv pip install agent0@. # For non-editable install
 # uv pip install -e .[dev] # For CI tools
-
 # uv pip install -e .[all] # Install everything
-
-# TODO: remove once hyperdrive-sdk is public
+# TODO: remove once hyperdrivepy is public
 uv pip install -r requirements-hyperdrivepy.txt 
 ```
 
-You can test that everything is working by calling: `python -m pytest .`
+You can test that everything is working by calling `python -m pytest .`
