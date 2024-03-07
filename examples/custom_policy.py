@@ -31,17 +31,12 @@ class CustomCycleTradesPolicy(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy
-
-        Attributes
-        ----------
-        static_trade_amount_wei: int
-            The probability of this bot to make a trade on an action call
-        """
+        """Custom config arguments for this policy."""
 
         # Add additional parameters for custom policy here
         # Setting defaults for this parameter here
         static_trade_amount_wei: int = FixedPoint(100).scaled_value  # 100 base
+        """The probability of this bot to make a trade on an action call."""
 
     # Using default parameters
     def __init__(self, policy_config: Config):

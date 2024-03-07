@@ -38,40 +38,29 @@ class ILocalChain(IChain):
 
     @dataclass
     class Config:
-        """The configuration for launching a local anvil node in a subprocess.
-
-        Attributes
-        ----------
-        block_time: int
-            If None, mines per transaction. Otherwise mines every `block_time` seconds.
-        block_timestamp_interval: int
-            Number of seconds to advance time for every mined block. Uses real time if None.
-        chain_port: int
-            The port to bind for the anvil chain. Will fail if this port is being used.
-        transaction_block_keeper: int
-            The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here.
-        db_port: int
-            The port to bind for the postgres container. Will fail if this port is being used.
-            Defaults to 5433.
-        remove_existing_db_container: bool
-            Whether to remove the existing container if it exists on container launch. Defaults to True
-        snapshot_dir: str
-            The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`.
-        saved_state_dir: str
-            The directory where the saved state will be stored. Defaults to `.interactive_state/`.
-        experimental_data_threading: bool
-            Flag for running the data pipeline in a separate thread. Defaults to False.
-        """
+        """The configuration for the local chain object."""
 
         block_time: int | None = None
+        """If None, mines per transaction. Otherwise mines every `block_time` seconds."""
         block_timestamp_interval: int | None = 12
+        """Number of seconds to advance time for every mined block. Uses real time if None."""
         chain_port: int = 10_000
+        """The port to bind for the anvil chain. Will fail if this port is being used."""
         transaction_block_keeper: int = 10_000
+        """The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here."""
         db_port: int = 5433
+        """
+        The port to bind for the postgres container. Will fail if this port is being used.
+        Defaults to 5433.
+        """
         remove_existing_db_container: bool = True
+        """Whether to remove the existing container if it exists on container launch. Defaults to True."""
         snapshot_dir: str = ".interactive_state/snapshot/"
+        """The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`."""
         saved_state_dir: str = ".interactive_state/"
+        """The directory where the saved state will be stored. Defaults to `.interactive_state/`."""
         experimental_data_threading: bool = False
+        """Flag for running the data pipeline in a separate thread. Defaults to False."""
 
     def __init__(self, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.

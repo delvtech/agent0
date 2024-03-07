@@ -11,27 +11,18 @@ from eth_typing import URI
 
 @dataclass
 class EthConfig:
-    """The configuration dataclass for postgres connections.
-
-    Attributes
-    ----------
-    artifacts_uri: URI | str
-        The uri of the artifacts server from which we get addresses.
-    rpc_uri: URI | str
-        The uri to the ethereum node.
-    database_api_uri: URI | str | None
-        The uri to the database server. If set to None, we don't use the database
-    abi_dir: str
-        The path to the abi directory.
-    preview_before_trade: bool, optional
-        Whether to preview the trade before submitting it. Defaults to False.
-    """
+    """The configuration dataclass for postgres connections."""
 
     artifacts_uri: URI | str = URI("http://localhost:8080")
+    """The uri of the artifacts server from which we get addresses."""
     rpc_uri: URI | str = URI("http://localhost:8545")
+    """The uri to the ethereum node."""
     database_api_uri: URI | str | None = URI("http://localhost:5002")
+    """The uri to the database server. If set to None, we don't use the database."""
     abi_dir: str = "./packages/hyperdrive/src/abis"
+    """The path to the abi directory."""
     preview_before_trade: bool = False
+    """Whether to preview the trade before submitting it. Defaults to False."""
 
     def __post_init__(self):
         if isinstance(self.artifacts_uri, str):

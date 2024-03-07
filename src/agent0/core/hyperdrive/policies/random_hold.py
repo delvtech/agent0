@@ -38,23 +38,16 @@ class RandomHold(Random):
 
     @dataclass(kw_only=True)
     class Config(Random.Config):
-        """Custom config arguments for this policy
-
-        Attributes
-        ----------
-        max_open_positions: int
-            The maximum number of open positions
-        min_hold_time: int
-            The minimum hold time in seconds. Defaults to 0
-        max_hold_time: int
-            The minimum hold time in seconds. Defaults to 2 * position_duration.
-        """
+        """Custom config arguments for this policy."""
 
         max_open_positions: int = 100
+        """The maximum number of open positions."""
         min_hold_time: int = 0
+        """The minimum hold time in seconds. Defaults to 0."""
         # Can't default here, as we don't know the position duration at the time of constructing the config
         # Hence, we set the default when we use it
         max_hold_time: int | None = None
+        """The minimum hold time in seconds. Defaults to 2 * position_duration."""
 
     @dataclass
     class _Position:

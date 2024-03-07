@@ -44,18 +44,12 @@ class SmartLong(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy
-
-        Attributes
-        ----------
-        trade_chance: FixedPoint
-            The percent chance to open a trade.
-        risk_threshold: FixedPoint
-            The upper threshold of the fixed rate minus the variable rate to open a long.
-        """
+        """Custom config arguments for this policy."""
 
         trade_chance: FixedPoint = FixedPoint("0.5")
+        """The percent chance to open a trade."""
         risk_threshold: FixedPoint = FixedPoint("0.0001")
+        """The upper threshold of the fixed rate minus the variable rate to open a long."""
 
     # pylint: disable=too-many-arguments
 

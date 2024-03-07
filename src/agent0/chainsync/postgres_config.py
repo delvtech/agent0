@@ -13,30 +13,23 @@ class PostgresConfig:
     """The configuration dataclass for postgres connections.
 
     Replace the user, password, and db_name with the credentials of your setup.
-
-    Attributes
-    ----------
-    POSTGRES_USER: str
-        The username to authenticate with
-    POSTGRES_PASSWORD: str
-        The password to authenticate with
-    POSTGRES_DB: str
-        The name of the database
-    POSTGRES_HOST: str
-        The hostname to connect to
-    POSTGRES_PORT: int
-        The port to connect to
     """
 
     # default values for local postgres
     # Matching environment variables to search for
     # pylint: disable=invalid-name
     POSTGRES_USER: str = "admin"
+    """The username to authenticate with."""
     POSTGRES_PASSWORD: str = "password"
+    """The password to authenticate with."""
     POSTGRES_DB: str = "postgres_db"
+    """The name of the database."""
     POSTGRES_HOST: str = "localhost"
+    """The hostname to connect to."""
     POSTGRES_PORT: int = 5432
+    """The port to connect to."""
     POSTGRES_VERSION: str | None = None
+    """The postgres version."""
 
 
 def build_postgres_config() -> PostgresConfig:

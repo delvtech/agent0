@@ -84,129 +84,94 @@ class ILocalHyperdrive(IHyperdrive):
     # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
     class Config(IHyperdrive.Config):
-        """The configuration for the initial pool configuration.
-
-        Attributes
-        ----------
-        data_pipeline_timeout: int
-            The timeout for the data pipeline. Defaults to 60 seconds.
-        dashboard_port: int
-            The URL port for the deployed dashboard.
-        crash_log_ticker: bool | None, optional
-            Whether to log the trade ticker in crash reports. Defaults to False.
-        load_rng_on_snapshot: bool
-            If True, loading a snapshot also loads the RNG state of the underlying policy.
-            This results in the same RNG state as when the snapshot was taken.
-            If False, will use the existing RNG state before load.
-            Defaults to False.
-        calc_pnl: bool
-            Whether to calculate pnl. Defaults to True.
-        initial_liquidity: FixedPoint
-            The amount of money to be provided by the `deploy_account` for initial pool liquidity.
-        initial_variable_rate: FixedPoint
-            The starting variable rate for an underlying yield source.
-        initial_fixed_apr: FixedPoint
-            The fixed rate of the pool on initialization.
-        initial_time_stretch_apr: FixedPoint
-            The rate to target for the time stretch.
-        factory_checkpoint_duration_resolution: int
-            The resolution for checkpoint durations
-        factory_min_checkpoint_duration: int
-            The factory's minimum checkpoint duration
-        factory_max_checkpoint_duration: int
-            The factory's maximum checkpoint duration
-        factory_min_position_duration: int
-            The factory's minimum position duration
-        factory_max_position_duration: int
-            The factory's maximum position duration
-        factory_min_fixed_apr: FixedPoint
-            The factory's minimum fixed rate
-        factory_max_fixed_apr: FixedPoint
-            The factory's maximum fixed rate
-        factory_min_time_stretch_apr: FixedPoint
-            The factory's minimum time stretch rate
-        factory_max_time_stretch_apr: FixedPoint
-            The factory's maximum time stretch rate
-        factory_min_curve_fee: FixedPoint
-            The lower bound on the curve fee that governance can set.
-        factory_min_flat_fee: FixedPoint
-            The lower bound on the flat fee that governance can set.
-        factory_min_governance_lp_fee: FixedPoint
-            The lower bound on the governance lp fee that governance can set.
-        factory_min_governance_zombie_fee: FixedPoint
-            The lower bound on the governance zombie fee that governance can set.
-        factory_max_curve_fee: FixedPoint
-            The upper bound on the curve fee that governance can set.
-        factory_max_flat_fee: FixedPoint
-            The upper bound on the flat fee that governance can set.
-        factory_max_governance_lp_fee: FixedPoint
-            The upper bound on the governance lp fee that governance can set.
-        factory_max_governance_zombie_fee: FixedPoint
-            The upper bound on the governance zombie fee that governance can set.
-        minimum_share_reserves: FixedPoint
-            The minimum share reserves.
-        minimum_transaction_amount: FixedPoint
-            The minimum amount of tokens that a position can be opened or closed with.
-        position_duration: int
-            The duration of a position prior to maturity (in seconds).
-        checkpoint_duration: int
-            The duration of a checkpoint (in seconds).
-        curve_fee: FixedPoint
-            The LP fee applied to the curve portion of a trade.
-        flat_fee: FixedPoint
-            The LP fee applied to the flat portion of a trade.
-        governance_lp_fee: FixedPoint
-            The portion of the LP fee that goes to governance.
-        governance_zombie_fee: FixedPoint
-            The portion of the zombie interest that is given to governance as a fee.
-            The portion of the zombie interest that will go to LPs is 1 - governance_zombie_fee.
-        """
+        """The configuration for the local hyperdrive pool."""
 
         # Environment variables
         data_pipeline_timeout: int = 60
+        """The timeout for the data pipeline. Defaults to 60 seconds."""
         crash_log_ticker: bool = False
+        """Whether to log the trade ticker in crash reports. Defaults to False."""
         dashboard_port: int = 7777
+        """The URL port for the deployed dashboard."""
         load_rng_on_snapshot: bool = True
-
+        """
+        If True, loading a snapshot also loads the RNG state of the underlying policy.
+        This results in the same RNG state as when the snapshot was taken.
+        If False, will use the existing RNG state before load.
+        Defaults to False.
+        """
         # Data pipeline parameters
         calc_pnl: bool = True
+        """Whether to calculate pnl. Defaults to True."""
 
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
+        """The amount of money to be provided by the `deploy_account` for initial pool liquidity."""
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
+        """The starting variable rate for an underlying yield source."""
         initial_fixed_apr: FixedPoint = FixedPoint("0.05")
+        """The fixed rate of the pool on initialization."""
         initial_time_stretch_apr: FixedPoint = FixedPoint("0.05")
+        """The rate to target for the time stretch."""
 
         # Factory Deploy Config variables
-        factory_checkpoint_duration_resolution: int = 60 * 60  # 1 hour
-        factory_min_checkpoint_duration: int = 60 * 60  # 1 hour
-        factory_max_checkpoint_duration: int = 60 * 60 * 24  # 1 day
-        factory_min_position_duration: int = 60 * 60 * 24  # 1 day
-        factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
         # We match defaults here from the deploy script in hyperdrive
+        # except for fees, where we span the full range to allow for testing
+        factory_checkpoint_duration_resolution: int = 60 * 60  # 1 hour
+        """The resolution for checkpoint durations."""
+        factory_min_checkpoint_duration: int = 60 * 60  # 1 hour
+        """The factory's minimum checkpoint duration."""
+        factory_max_checkpoint_duration: int = 60 * 60 * 24  # 1 day
+        """The factory's maximum checkpoint duration."""
+        factory_min_position_duration: int = 60 * 60 * 24  # 1 day
+        """The factory's minimum position duration."""
+        factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
+        """The factory's maximum position duration."""
         factory_min_fixed_apr: FixedPoint = FixedPoint("0.01")  # 1%
+        """The factory's minimum fixed APR."""
         factory_max_fixed_apr: FixedPoint = FixedPoint("0.5")  # 50%
+        """The factory's maximum fixed APR."""
         factory_min_time_stretch_apr: FixedPoint = FixedPoint("0.01")  # 1%
+        """The factory's minimum time stretch rate."""
         factory_max_time_stretch_apr: FixedPoint = FixedPoint("0.5")  # 50%
-        # Factory min/max of fees span the full range for testing
+        """The factory's maximum time stretch rate."""
         factory_min_curve_fee: FixedPoint = FixedPoint("0")
+        """The lower bound on the curve fee that governance can set."""
         factory_min_flat_fee: FixedPoint = FixedPoint("0")
+        """The lower bound on the flat fee that governance can set."""
         factory_min_governance_lp_fee: FixedPoint = FixedPoint("0")
+        """The lower bound on the governance lp fee that governance can set."""
         factory_min_governance_zombie_fee: FixedPoint = FixedPoint("0")
+        """The lower bound on the governance zombie fee that governance can set."""
         factory_max_curve_fee: FixedPoint = FixedPoint("1")
+        """The upper bound on the curve fee that governance can set."""
         factory_max_flat_fee: FixedPoint = FixedPoint("1")
+        """The upper bound on the flat fee that governance can set."""
         factory_max_governance_lp_fee: FixedPoint = FixedPoint("1")
+        """The upper bound on the governance lp fee that governance can set."""
         factory_max_governance_zombie_fee: FixedPoint = FixedPoint("1")
+        """The upper bound on the governance zombie fee that governance can set."""
 
         # Pool Deploy Config variables
         minimum_share_reserves: FixedPoint = FixedPoint(10)
+        """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
+        """The minimum amount of tokens that a position can be opened or closed with."""
         position_duration: int = 604_800  # 1 week
+        """The duration of a position prior to maturity (in seconds)."""
         checkpoint_duration: int = 3_600  # 1 hour
+        """The duration of a checkpoint (in seconds)."""
         curve_fee: FixedPoint = FixedPoint("0.01")  # 1%
+        """The LP fee applied to the curve portion of a trade."""
         flat_fee: FixedPoint = FixedPoint("0.0005")  # 0.05%
+        """The LP fee applied to the flat portion of a trade."""
         governance_lp_fee: FixedPoint = FixedPoint("0.15")  # 15%
+        """The portion of the LP fee that goes to governance."""
         governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
+        """
+        The portion of the zombie interest that is given to governance as a fee.
+        The portion of the zombie interest that will go to LPs is 1 - governance_zombie_fee.
+        """
 
         def __post_init__(self):
             if self.checkpoint_duration > self.position_duration:

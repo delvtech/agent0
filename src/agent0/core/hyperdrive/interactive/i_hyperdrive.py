@@ -57,34 +57,25 @@ class IHyperdrive:
 
     @dataclass(kw_only=True)
     class Config:
-        """The configuration for the interactive hyperdrive class.
-
-        Attributes
-        ----------
-        preview_before_trade: bool, optional
-            Whether to preview the position before executing a trade. Defaults to False.
-        rng_seed: int | None, optional
-            The seed for the random number generator. Defaults to None.
-        rng: Generator | None, optional
-            The experiment's stateful random number generator. Defaults to creating a generator from
-            the provided random seed if not set.
-        crash_log_level: int, optional
-            The log level to log crashes at. Defaults to critical.
-        log_to_rollbar: bool, optional
-            Whether to log crash reports to rollbar. Defaults to False.
-        rollbar_log_prefix: str | None, optional
-            The prefix to prepend to rollbar exception messages.
-        crash_report_additional_info: dict[str, Any] | None, optional
-            Additional information to include in the crash report.
-        """
+        """The configuration for the interactive hyperdrive class."""
 
         preview_before_trade: bool = False
+        """Whether to preview the position before executing a trade. Defaults to False."""
         rng_seed: int | None = None
+        """The seed for the random number generator. Defaults to None."""
         rng: Generator | None = None
+        """
+        The experiment's stateful random number generator. Defaults to creating a generator from
+        the provided random seed if not set.
+        """
         log_to_rollbar: bool = False
+        """Whether to log crash reports to rollbar. Defaults to False."""
         rollbar_log_prefix: str | None = None
+        """Whether to log crash reports to rollbar. Defaults to False."""
         crash_log_level: int = logging.CRITICAL
+        """The log level to log crashes at. Defaults to critical."""
         crash_report_additional_info: dict[str, Any] | None = None
+        """Additional information to include in the crash report."""
 
         def __post_init__(self):
             if self.rng is None:

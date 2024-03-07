@@ -25,18 +25,12 @@ class IHyperdrivePolicy(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Configuration for the interactive hyperdrive policy.
-
-        Attributes
-        ----------
-        sub_policy: HyperdrivePolicy
-            The sub-policy to apply to the actions.
-        sub_policy_config: HyperdrivePolicy.Config
-            The configuration for the sub-policy.
-        """
+        """Configuration for the interactive hyperdrive policy."""
 
         sub_policy: Type[HyperdriveBasePolicy] | None = None
+        """The sub-policy to apply to the actions."""
         sub_policy_config: HyperdriveBasePolicy.Config | None = None
+        """The configuration for the sub-policy."""
 
     def __init__(self, policy_config: Config):
         """Initialize the bot.
