@@ -61,33 +61,6 @@ structs = {
 }
 
 
-class IERC4626HyperdriveDOMAIN_SEPARATORContractFunction(ContractFunction):
-    """ContractFunction for the DOMAIN_SEPARATOR method."""
-
-    def __call__(self) -> IERC4626HyperdriveDOMAIN_SEPARATORContractFunction:  # type: ignore
-        clone = super().__call__()
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> bytes:
-        """returns bytes."""
-        # Define the expected return types from the smart contract call
-
-        return_types = bytes
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
-
-
 class IERC4626HyperdrivePERMIT_TYPEHASHContractFunction(ContractFunction):
     """ContractFunction for the PERMIT_TYPEHASH method."""
 
@@ -364,6 +337,33 @@ class IERC4626HyperdriveDecimalsContractFunction(ContractFunction):
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class IERC4626HyperdriveDomainSeparatorContractFunction(ContractFunction):
+    """ContractFunction for the domainSeparator method."""
+
+    def __call__(self) -> IERC4626HyperdriveDomainSeparatorContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> bytes:
+        """returns bytes."""
+        # Define the expected return types from the smart contract call
+
+        return_types = bytes
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
 
 
 class IERC4626HyperdriveGetCheckpointContractFunction(ContractFunction):
@@ -666,8 +666,8 @@ class IERC4626HyperdriveLoadContractFunction(ContractFunction):
 class IERC4626HyperdriveNameContractFunction(ContractFunction):
     """ContractFunction for the name method."""
 
-    def __call__(self, _id: int) -> IERC4626HyperdriveNameContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(_id))
+    def __call__(self, tokenId: int) -> IERC4626HyperdriveNameContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(tokenId))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -723,8 +723,8 @@ class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for OpenLong."""
 
-        maturityTime: int
-        bondProceeds: int
+        arg1: int
+        arg2: int
 
     def __call__(self, amount: int, minOutput: int, minVaultSharePrice: int, options: Options) -> IERC4626HyperdriveOpenLongContractFunction:  # type: ignore
         clone = super().__call__(
@@ -761,8 +761,8 @@ class IERC4626HyperdriveOpenShortContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for OpenShort."""
 
-        maturityTime: int
-        traderDeposit: int
+        arg1: int
+        arg2: int
 
     def __call__(self, bondAmount: int, maxDeposit: int, minVaultSharePrice: int, options: Options) -> IERC4626HyperdriveOpenShortContractFunction:  # type: ignore
         clone = super().__call__(
@@ -878,8 +878,8 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction)
     class ReturnValues(NamedTuple):
         """The return named tuple for RedeemWithdrawalShares."""
 
-        proceeds: int
-        withdrawalSharesRedeemed: int
+        arg1: int
+        arg2: int
 
     def __call__(self, withdrawalShares: int, minOutputPerShare: int, options: Options) -> IERC4626HyperdriveRedeemWithdrawalSharesContractFunction:  # type: ignore
         clone = super().__call__(
@@ -913,8 +913,8 @@ class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for RemoveLiquidity."""
 
-        proceeds: int
-        withdrawalShares: int
+        arg1: int
+        arg2: int
 
     def __call__(self, lpShares: int, minOutputPerShare: int, options: Options) -> IERC4626HyperdriveRemoveLiquidityContractFunction:  # type: ignore
         clone = super().__call__(
@@ -1082,8 +1082,8 @@ class IERC4626HyperdriveSweepContractFunction(ContractFunction):
 class IERC4626HyperdriveSymbolContractFunction(ContractFunction):
     """ContractFunction for the symbol method."""
 
-    def __call__(self, _id: int) -> IERC4626HyperdriveSymbolContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(_id))
+    def __call__(self, tokenId: int) -> IERC4626HyperdriveSymbolContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(tokenId))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1244,8 +1244,8 @@ class IERC4626HyperdriveTarget4ContractFunction(ContractFunction):
 class IERC4626HyperdriveTotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
-    def __call__(self, _id: int) -> IERC4626HyperdriveTotalSupplyContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(_id))
+    def __call__(self, tokenId: int) -> IERC4626HyperdriveTotalSupplyContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(tokenId))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1350,8 +1350,6 @@ class IERC4626HyperdriveVaultContractFunction(ContractFunction):
 class IERC4626HyperdriveContractFunctions(ContractFunctions):
     """ContractFunctions for the IERC4626Hyperdrive contract."""
 
-    DOMAIN_SEPARATOR: IERC4626HyperdriveDOMAIN_SEPARATORContractFunction
-
     PERMIT_TYPEHASH: IERC4626HyperdrivePERMIT_TYPEHASHContractFunction
 
     addLiquidity: IERC4626HyperdriveAddLiquidityContractFunction
@@ -1371,6 +1369,8 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
     collectGovernanceFee: IERC4626HyperdriveCollectGovernanceFeeContractFunction
 
     decimals: IERC4626HyperdriveDecimalsContractFunction
+
+    domainSeparator: IERC4626HyperdriveDomainSeparatorContractFunction
 
     getCheckpoint: IERC4626HyperdriveGetCheckpointContractFunction
 
@@ -1452,14 +1452,6 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
         decode_tuples: bool | None = False,
     ) -> None:
         super().__init__(abi, w3, address, decode_tuples)
-        self.DOMAIN_SEPARATOR = IERC4626HyperdriveDOMAIN_SEPARATORContractFunction.factory(
-            "DOMAIN_SEPARATOR",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="DOMAIN_SEPARATOR",
-        )
         self.PERMIT_TYPEHASH = IERC4626HyperdrivePERMIT_TYPEHASHContractFunction.factory(
             "PERMIT_TYPEHASH",
             w3=w3,
@@ -1539,6 +1531,14 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="decimals",
+        )
+        self.domainSeparator = IERC4626HyperdriveDomainSeparatorContractFunction.factory(
+            "domainSeparator",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="domainSeparator",
         )
         self.getCheckpoint = IERC4626HyperdriveGetCheckpointContractFunction.factory(
             "getCheckpoint",
@@ -3357,6 +3357,63 @@ class IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError:
         return decoded
 
 
+class IERC4626HyperdriveDistributeExcessIdleFailedContractError:
+    """ContractError for DistributeExcessIdleFailed."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveDistributeExcessIdleFailedContractError",
+    ) -> None:
+        self.selector = "0x8bdf918d"
+        self.signature = "DistributeExcessIdleFailed()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveDistributeExcessIdleFailedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "DistributeExcessIdleFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveDistributeExcessIdleFailedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "DistributeExcessIdleFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class IERC4626HyperdriveExpInvalidExponentContractError:
     """ContractError for ExpInvalidExponent."""
 
@@ -3927,6 +3984,120 @@ class IERC4626HyperdriveInvalidInitialVaultSharePriceContractError:
         return decoded
 
 
+class IERC4626HyperdriveInvalidLPSharePriceContractError:
+    """ContractError for InvalidLPSharePrice."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidLPSharePriceContractError",
+    ) -> None:
+        self.selector = "0xabeba7ee"
+        self.signature = "InvalidLPSharePrice()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidLPSharePriceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidLPSharePrice" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidLPSharePriceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidLPSharePrice" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IERC4626HyperdriveInvalidPresentValueContractError:
+    """ContractError for InvalidPresentValue."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveInvalidPresentValueContractError",
+    ) -> None:
+        self.selector = "0xaa2c6516"
+        self.signature = "InvalidPresentValue()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveInvalidPresentValueContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidPresentValue" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveInvalidPresentValueContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "InvalidPresentValue" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class IERC4626HyperdriveInvalidShareReservesContractError:
     """ContractError for InvalidShareReserves."""
 
@@ -4261,63 +4432,6 @@ class IERC4626HyperdriveMinimumTransactionAmountContractError:
                 item
                 for item in ierc4626hyperdrive_abi
                 if item.get("name") == "MinimumTransactionAmount" and item.get("type") == "error"
-            ][0],
-        )
-        types = get_abi_input_types(error_abi)
-        abi_codec = ABICodec(default_registry)
-        decoded = abi_codec.decode(types, data)
-        return decoded
-
-
-class IERC4626HyperdriveNegativePresentValueContractError:
-    """ContractError for NegativePresentValue."""
-
-    # @combomethod destroys return types, so we are redefining functions as both class and instance
-    # pylint: disable=function-redefined
-
-    # 4 byte error selector
-    selector: str
-    # error signature, i.e. CustomError(uint256,bool)
-    signature: str
-
-    # pylint: disable=useless-parent-delegation
-    def __init__(
-        self: "IERC4626HyperdriveNegativePresentValueContractError",
-    ) -> None:
-        self.selector = "0xaeeb825d"
-        self.signature = "NegativePresentValue()"
-
-    def decode_error_data(  # type: ignore
-        self: "IERC4626HyperdriveNegativePresentValueContractError",
-        data: HexBytes,
-        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
-    ) -> tuple[Any, ...]:
-        """Decodes error data returns from a smart contract."""
-        error_abi = cast(
-            ABIFunction,
-            [
-                item
-                for item in ierc4626hyperdrive_abi
-                if item.get("name") == "NegativePresentValue" and item.get("type") == "error"
-            ][0],
-        )
-        types = get_abi_input_types(error_abi)
-        abi_codec = ABICodec(default_registry)
-        decoded = abi_codec.decode(types, data)
-        return decoded
-
-    @classmethod
-    def decode_error_data(  # type: ignore
-        cls: Type["IERC4626HyperdriveNegativePresentValueContractError"],
-        data: HexBytes,
-    ) -> tuple[Any, ...]:
-        """Decodes error data returns from a smart contract."""
-        error_abi = cast(
-            ABIFunction,
-            [
-                item
-                for item in ierc4626hyperdrive_abi
-                if item.get("name") == "NegativePresentValue" and item.get("type") == "error"
             ][0],
         )
         types = get_abi_input_types(error_abi)
@@ -4953,6 +5067,63 @@ class IERC4626HyperdriveUnsafeCastToInt128ContractError:
         return decoded
 
 
+class IERC4626HyperdriveUnsafeCastToInt256ContractError:
+    """ContractError for UnsafeCastToInt256."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUnsafeCastToInt256ContractError",
+    ) -> None:
+        self.selector = "0x72dd4e02"
+        self.signature = "UnsafeCastToInt256()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUnsafeCastToInt256ContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToInt256" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUnsafeCastToInt256ContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UnsafeCastToInt256" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class IERC4626HyperdriveUnsafeCastToUint112ContractError:
     """ContractError for UnsafeCastToUint112."""
 
@@ -5133,6 +5304,8 @@ class IERC4626HyperdriveContractErrors:
 
     DecreasedPresentValueWhenAddingLiquidity: IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError
 
+    DistributeExcessIdleFailed: IERC4626HyperdriveDistributeExcessIdleFailedContractError
+
     ExpInvalidExponent: IERC4626HyperdriveExpInvalidExponentContractError
 
     ExpiredDeadline: IERC4626HyperdriveExpiredDeadlineContractError
@@ -5153,6 +5326,10 @@ class IERC4626HyperdriveContractErrors:
 
     InvalidInitialVaultSharePrice: IERC4626HyperdriveInvalidInitialVaultSharePriceContractError
 
+    InvalidLPSharePrice: IERC4626HyperdriveInvalidLPSharePriceContractError
+
+    InvalidPresentValue: IERC4626HyperdriveInvalidPresentValueContractError
+
     InvalidShareReserves: IERC4626HyperdriveInvalidShareReservesContractError
 
     InvalidSignature: IERC4626HyperdriveInvalidSignatureContractError
@@ -5164,8 +5341,6 @@ class IERC4626HyperdriveContractErrors:
     MinimumSharePrice: IERC4626HyperdriveMinimumSharePriceContractError
 
     MinimumTransactionAmount: IERC4626HyperdriveMinimumTransactionAmountContractError
-
-    NegativePresentValue: IERC4626HyperdriveNegativePresentValueContractError
 
     NotPayable: IERC4626HyperdriveNotPayableContractError
 
@@ -5189,6 +5364,8 @@ class IERC4626HyperdriveContractErrors:
 
     UnsafeCastToInt128: IERC4626HyperdriveUnsafeCastToInt128ContractError
 
+    UnsafeCastToInt256: IERC4626HyperdriveUnsafeCastToInt256ContractError
+
     UnsafeCastToUint112: IERC4626HyperdriveUnsafeCastToUint112ContractError
 
     UnsafeCastToUint128: IERC4626HyperdriveUnsafeCastToUint128ContractError
@@ -5203,6 +5380,7 @@ class IERC4626HyperdriveContractErrors:
         self.DecreasedPresentValueWhenAddingLiquidity = (
             IERC4626HyperdriveDecreasedPresentValueWhenAddingLiquidityContractError()
         )
+        self.DistributeExcessIdleFailed = IERC4626HyperdriveDistributeExcessIdleFailedContractError()
         self.ExpInvalidExponent = IERC4626HyperdriveExpInvalidExponentContractError()
         self.ExpiredDeadline = IERC4626HyperdriveExpiredDeadlineContractError()
         self.InsufficientBalance = IERC4626HyperdriveInsufficientBalanceContractError()
@@ -5213,13 +5391,14 @@ class IERC4626HyperdriveContractErrors:
         self.InvalidERC20Bridge = IERC4626HyperdriveInvalidERC20BridgeContractError()
         self.InvalidFeeDestination = IERC4626HyperdriveInvalidFeeDestinationContractError()
         self.InvalidInitialVaultSharePrice = IERC4626HyperdriveInvalidInitialVaultSharePriceContractError()
+        self.InvalidLPSharePrice = IERC4626HyperdriveInvalidLPSharePriceContractError()
+        self.InvalidPresentValue = IERC4626HyperdriveInvalidPresentValueContractError()
         self.InvalidShareReserves = IERC4626HyperdriveInvalidShareReservesContractError()
         self.InvalidSignature = IERC4626HyperdriveInvalidSignatureContractError()
         self.InvalidTimestamp = IERC4626HyperdriveInvalidTimestampContractError()
         self.LnInvalidInput = IERC4626HyperdriveLnInvalidInputContractError()
         self.MinimumSharePrice = IERC4626HyperdriveMinimumSharePriceContractError()
         self.MinimumTransactionAmount = IERC4626HyperdriveMinimumTransactionAmountContractError()
-        self.NegativePresentValue = IERC4626HyperdriveNegativePresentValueContractError()
         self.NotPayable = IERC4626HyperdriveNotPayableContractError()
         self.OutputLimit = IERC4626HyperdriveOutputLimitContractError()
         self.PoolAlreadyInitialized = IERC4626HyperdrivePoolAlreadyInitializedContractError()
@@ -5231,6 +5410,7 @@ class IERC4626HyperdriveContractErrors:
         self.Unauthorized = IERC4626HyperdriveUnauthorizedContractError()
         self.UnexpectedSuccess = IERC4626HyperdriveUnexpectedSuccessContractError()
         self.UnsafeCastToInt128 = IERC4626HyperdriveUnsafeCastToInt128ContractError()
+        self.UnsafeCastToInt256 = IERC4626HyperdriveUnsafeCastToInt256ContractError()
         self.UnsafeCastToUint112 = IERC4626HyperdriveUnsafeCastToUint112ContractError()
         self.UnsafeCastToUint128 = IERC4626HyperdriveUnsafeCastToUint128ContractError()
         self.UnsupportedToken = IERC4626HyperdriveUnsupportedTokenContractError()
@@ -5239,6 +5419,7 @@ class IERC4626HyperdriveContractErrors:
             self.BatchInputLengthMismatch,
             self.BelowMinimumContribution,
             self.DecreasedPresentValueWhenAddingLiquidity,
+            self.DistributeExcessIdleFailed,
             self.ExpInvalidExponent,
             self.ExpiredDeadline,
             self.InsufficientBalance,
@@ -5249,13 +5430,14 @@ class IERC4626HyperdriveContractErrors:
             self.InvalidERC20Bridge,
             self.InvalidFeeDestination,
             self.InvalidInitialVaultSharePrice,
+            self.InvalidLPSharePrice,
+            self.InvalidPresentValue,
             self.InvalidShareReserves,
             self.InvalidSignature,
             self.InvalidTimestamp,
             self.LnInvalidInput,
             self.MinimumSharePrice,
             self.MinimumTransactionAmount,
-            self.NegativePresentValue,
             self.NotPayable,
             self.OutputLimit,
             self.PoolAlreadyInitialized,
@@ -5267,6 +5449,7 @@ class IERC4626HyperdriveContractErrors:
             self.Unauthorized,
             self.UnexpectedSuccess,
             self.UnsafeCastToInt128,
+            self.UnsafeCastToInt256,
             self.UnsafeCastToUint112,
             self.UnsafeCastToUint128,
             self.UnsupportedToken,
@@ -5285,13 +5468,6 @@ class IERC4626HyperdriveContractErrors:
 ierc4626hyperdrive_abi: ABI = cast(
     ABI,
     [
-        {
-            "type": "function",
-            "name": "DOMAIN_SEPARATOR",
-            "inputs": [],
-            "outputs": [{"name": "", "type": "bytes32", "internalType": "bytes32"}],
-            "stateMutability": "view",
-        },
         {
             "type": "function",
             "name": "PERMIT_TYPEHASH",
@@ -5318,7 +5494,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                     ],
                 },
             ],
-            "outputs": [{"name": "lpShares", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "payable",
         },
         {
@@ -5422,6 +5598,13 @@ ierc4626hyperdrive_abi: ABI = cast(
             "name": "decimals",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint8", "internalType": "uint8"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "domainSeparator",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "bytes32", "internalType": "bytes32"}],
             "stateMutability": "view",
         },
         {
@@ -5580,7 +5763,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                     ],
                 },
             ],
-            "outputs": [{"name": "lpShares", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "payable",
         },
         {
@@ -5610,7 +5793,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {
             "type": "function",
             "name": "name",
-            "inputs": [{"name": "id", "type": "uint256", "internalType": "uint256"}],
+            "inputs": [{"name": "tokenId", "type": "uint256", "internalType": "uint256"}],
             "outputs": [{"name": "", "type": "string", "internalType": "string"}],
             "stateMutability": "view",
         },
@@ -5640,8 +5823,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "maturityTime", "type": "uint256", "internalType": "uint256"},
-                {"name": "bondProceeds", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "payable",
         },
@@ -5664,8 +5847,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "maturityTime", "type": "uint256", "internalType": "uint256"},
-                {"name": "traderDeposit", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "payable",
         },
@@ -5720,8 +5903,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "proceeds", "type": "uint256", "internalType": "uint256"},
-                {"name": "withdrawalSharesRedeemed", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "nonpayable",
         },
@@ -5743,8 +5926,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "proceeds", "type": "uint256", "internalType": "uint256"},
-                {"name": "withdrawalShares", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "nonpayable",
         },
@@ -5808,7 +5991,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {
             "type": "function",
             "name": "symbol",
-            "inputs": [{"name": "id", "type": "uint256", "internalType": "uint256"}],
+            "inputs": [{"name": "tokenId", "type": "uint256", "internalType": "uint256"}],
             "outputs": [{"name": "", "type": "string", "internalType": "string"}],
             "stateMutability": "view",
         },
@@ -5850,7 +6033,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {
             "type": "function",
             "name": "totalSupply",
-            "inputs": [{"name": "id", "type": "uint256", "internalType": "uint256"}],
+            "inputs": [{"name": "tokenId", "type": "uint256", "internalType": "uint256"}],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
         },
@@ -6025,7 +6208,10 @@ ierc4626hyperdrive_abi: ABI = cast(
         {
             "type": "event",
             "name": "PauserUpdated",
-            "inputs": [{"name": "newPauser", "type": "address", "indexed": True, "internalType": "address"}],
+            "inputs": [
+                {"name": "newPauser", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "status", "type": "bool", "indexed": False, "internalType": "bool"},
+            ],
             "anonymous": False,
         },
         {
@@ -6069,6 +6255,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"type": "error", "name": "BatchInputLengthMismatch", "inputs": []},
         {"type": "error", "name": "BelowMinimumContribution", "inputs": []},
         {"type": "error", "name": "DecreasedPresentValueWhenAddingLiquidity", "inputs": []},
+        {"type": "error", "name": "DistributeExcessIdleFailed", "inputs": []},
         {"type": "error", "name": "ExpInvalidExponent", "inputs": []},
         {"type": "error", "name": "ExpiredDeadline", "inputs": []},
         {"type": "error", "name": "InsufficientBalance", "inputs": []},
@@ -6085,13 +6272,14 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"type": "error", "name": "InvalidERC20Bridge", "inputs": []},
         {"type": "error", "name": "InvalidFeeDestination", "inputs": []},
         {"type": "error", "name": "InvalidInitialVaultSharePrice", "inputs": []},
+        {"type": "error", "name": "InvalidLPSharePrice", "inputs": []},
+        {"type": "error", "name": "InvalidPresentValue", "inputs": []},
         {"type": "error", "name": "InvalidShareReserves", "inputs": []},
         {"type": "error", "name": "InvalidSignature", "inputs": []},
         {"type": "error", "name": "InvalidTimestamp", "inputs": []},
         {"type": "error", "name": "LnInvalidInput", "inputs": []},
         {"type": "error", "name": "MinimumSharePrice", "inputs": []},
         {"type": "error", "name": "MinimumTransactionAmount", "inputs": []},
-        {"type": "error", "name": "NegativePresentValue", "inputs": []},
         {"type": "error", "name": "NotPayable", "inputs": []},
         {"type": "error", "name": "OutputLimit", "inputs": []},
         {"type": "error", "name": "PoolAlreadyInitialized", "inputs": []},
@@ -6103,6 +6291,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"type": "error", "name": "Unauthorized", "inputs": []},
         {"type": "error", "name": "UnexpectedSuccess", "inputs": []},
         {"type": "error", "name": "UnsafeCastToInt128", "inputs": []},
+        {"type": "error", "name": "UnsafeCastToInt256", "inputs": []},
         {"type": "error", "name": "UnsafeCastToUint112", "inputs": []},
         {"type": "error", "name": "UnsafeCastToUint128", "inputs": []},
         {"type": "error", "name": "UnsupportedToken", "inputs": []},

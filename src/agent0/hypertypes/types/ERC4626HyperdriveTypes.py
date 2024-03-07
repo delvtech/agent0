@@ -178,6 +178,7 @@ PauserUpdated = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="newPauser", type="address"),
+        ABIEventParams(indexed=False, name="status", type="bool"),
     ],
     name="PauserUpdated",
     type="event",
