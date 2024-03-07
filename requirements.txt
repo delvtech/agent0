@@ -1,8 +1,0 @@
--e lib/hyperlogs[base]
--e lib/agent0[base]
--e lib/chainsync[base]
--e lib/ethpy[base]
--e lib/hypertypes[base]
---find-links="packages/hyperdrivepy"
-hyperdrivepy
-rollbar

@@ -8,25 +8,25 @@ from typing import TYPE_CHECKING, cast
 
 import pandas as pd
 import pytest
-from chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
-from chainsync.exec import acquire_data, data_analysis
 from eth_typing import URI
-from ethpy import EthConfig
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base import Trade
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
-from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
+from agent0.chainsync.exec import acquire_data, data_analysis
+from agent0.core import build_account_key_config_from_agent_config
+from agent0.core.base import Trade
+from agent0.core.base.config import AgentConfig, EnvironmentConfig
+from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+from agent0.core.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
+from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.ethpy import EthConfig
 
 if TYPE_CHECKING:
-    from ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
-    from ethpy.test_fixtures import DeployedHyperdrivePool
+    from agent0.ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
+    from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 class MultiTradePolicy(HyperdriveBasePolicy):

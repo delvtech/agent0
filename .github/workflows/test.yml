@@ -41,21 +41,24 @@ jobs:
           cache: "pip"
           token: ${{github.token}}
 
-      - name: upgrade pip
-        run: python -m pip install --upgrade pip
+      - name: install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: install requirements
         run: |
-          python -m pip install --upgrade -r requirements.txt
-          python -m pip install --upgrade -r requirements-rl.txt
-          python -m pip install --upgrade -r requirements-dev.txt
+          uv venv .venv -p 3.10
+          source .venv/bin/activate
+          uv pip install --upgrade -e .[all]
+          uv pip install --upgrade -r requirements-hyperdrivepy.txt 
 
       - name: run pytest with coverage
         run: |
+          source .venv/bin/activate
           IN_CI=true coverage run -m pytest
 
       - name: generate coverage report
         run: |
+          source .venv/bin/activate
           coverage xml -i
           coverage html -i
 

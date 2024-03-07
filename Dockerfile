@@ -15,8 +15,8 @@ COPY . ./
 RUN apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \
   python -m pip install --no-cache-dir --upgrade pip && \
-  python -m pip install --no-cache-dir -r requirements.txt && \
-  python -m pip install --no-cache-dir -r requirements-dev.txt && \
+  python -m pip install --no-cache-dir . && \
+  python -m pip install --no-cache-dir -r requirements-hyperdrivepy.txt && \
   apt-get remove -y gcc python3-dev libssl-dev && \
   apt-get autoremove -y && \
   pip uninstall pipenv -y

@@ -9,25 +9,35 @@
   <img alt="Agent 0" src="icons/agent0-light.svg">
 </picture>
 
-# [DELV](https://delv.tech) monorepo for market simulation and analysis
+# [DELV](https://delv.tech) repo for market simulation and analysis
 
 This project is a work-in-progress. All code is provided as is and without guarantee.
 The language used in this code and documentation is not intended to, and does not, have any particular financial, legal, or regulatory significance.
 
 This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https://agent0.readthedocs.io/en/latest/).
 
-## Packages
+```python
+import datetime
+from fixedpointmath import FixedPoint
+from agent0 import ILocalHyperdrive, ILocalChain
 
-This monorepo houses internal packages that are still under development. They are:
+# Initialize
+chain = ILocalChain()
+interactive_hyperdrive = ILocalHyperdrive(chain)
+hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000))
 
-- agent0 ([README](lib/agent0/README.md))
-- chainsync ([README](lib/chainsync/README.md))
-- ethpy ([README](lib/ethpy/README.md))
+# Run trades
+chain.advance_time(datetime.timedelta(weeks=1))
+open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100))
+chain.advance_time(datetime.timedelta(weeks=5))
+close_event = hyperdrive_agent0
 
-We also utilize internal packages that are "in production," which is to say they live in their own repo:
+# Analyze
+pool_state = interactive_hyperdrive.get_pool_state(coerce_float=True)
+pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
+```
 
-- pypechain ([README](https://github.com/delvtech/pypechain/tree/main#readme), [pypi](https://pypi.org/project/pypechain/))
-- fixedpointmath ([README](https://github.com/delvtech/fixedpointmath#readme), [pypi](https://pypi.org/project/fixedpointmath/))
+See our [tutorial notebook](examples/tutorial.ipynb) for more information.
 
 ## Install
 
@@ -55,37 +65,9 @@ coverage html
 
 then just open `htmlcov/index.html` to view the report!
 
-## Examples
-
-Python files in the `examples/` folder should be executable from the repository root.
-Run them with the -h flag to see argument options.
-The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
-
 ## Contributions
 
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Modifying configuration for agent deployment
-
-Follow [`lib/agent0/README.md`](lib/agent0/README.md) for agent deployment.
-
-## Data pipeline
-
-The data pipeline queries the running chain and exports data to a postgres database. The `infra` repository spins up a local postgres instance via Docker, and the data pipeline will point to this by default. Optionally, you can also configure the backend database by specifying the following environmental variables (for example, in a `.env` file in the base of the repo):
-
-```bash
-POSTGRES_USER="admin"
-POSTGRES_PASSWORD="password"
-POSTGRES_DB="postgres_db"
-POSTGRES_HOST="localhost"
-POSTGRES_PORT=5432
-```
-
-The data script can be then ran using the following command:
-
-```bash
-python lib/chainsync/chainsync/exec/acquire_data.py
-```
 
 ## Number format
 

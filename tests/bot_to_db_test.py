@@ -10,7 +10,13 @@ from typing import Type, cast
 import numpy as np
 import pandas as pd
 import pytest
-from chainsync.db.hyperdrive.interface import (
+from eth_account.signers.local import LocalAccount
+from eth_typing import URI
+from fixedpointmath import FixedPoint
+from sqlalchemy.orm import Session
+from web3 import HTTPProvider
+
+from agent0.chainsync.db.hyperdrive.interface import (
     get_current_wallet,
     get_pool_analysis,
     get_pool_config,
@@ -18,21 +24,15 @@ from chainsync.db.hyperdrive.interface import (
     get_transactions,
     get_wallet_deltas,
 )
-from chainsync.exec import acquire_data, data_analysis
-from eth_account.signers.local import LocalAccount
-from eth_typing import URI
-from ethpy import EthConfig
-from ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
-from ethpy.hyperdrive.addresses import HyperdriveAddresses
-from ethpy.test_fixtures import DeployedHyperdrivePool
-from fixedpointmath import FixedPoint
-from sqlalchemy.orm import Session
-from web3 import HTTPProvider
-
-from agent0 import build_account_key_config_from_agent_config
-from agent0.base.config import AgentConfig, EnvironmentConfig
-from agent0.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.test_utils import CycleTradesPolicy
+from agent0.chainsync.exec import acquire_data, data_analysis
+from agent0.core import build_account_key_config_from_agent_config
+from agent0.core.base.config import AgentConfig, EnvironmentConfig
+from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.core.test_utils import CycleTradesPolicy
+from agent0.ethpy import EthConfig
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
+from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
+from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -188,7 +188,7 @@ class TestBotToDb:
         # We don't coerce to float because we want exact values in decimal
         db_pool_config_df: pd.DataFrame = get_pool_config(db_session, coerce_float=False)
 
-        # TODO these expected values are defined in lib/ethpy/ethpy/test_fixtures/deploy_hyperdrive.py
+        # TODO these expected values are defined in src/agent0/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
         initial_fixed_rate = FixedPoint("0.05")
         # This expected time stretch is only true for 1 year position duration

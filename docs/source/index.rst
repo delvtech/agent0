@@ -1,6 +1,6 @@
 .. agent0 documentation master file
 
-Welcome to the documentation for the agent0 monorepo!
+Welcome to the documentation for agent0!
 =====================================================
 
 .. include:: ../../README.md
@@ -11,10 +11,11 @@ Welcome to the documentation for the agent0 monorepo!
    :caption: API
 
    /autoapi/agent0/index
-   /autoapi/chainsync/index
-   /autoapi/ethpy/index
-   /autoapi/hyperlogs/index
-   /autoapi/hypertypes/index
+   /autoapi/agent0/chainsync/index
+   /autoapi/agent0/ethpy/index
+   /autoapi/agent0/hyperlogs/index
+   /autoapi/agent0/hypertypes/index
+   /autoapi/agent0/traiderdaive/index
 
 
 Indices and tables
