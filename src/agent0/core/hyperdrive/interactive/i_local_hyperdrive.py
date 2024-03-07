@@ -94,6 +94,11 @@ class ILocalHyperdrive(IHyperdrive):
             The URL port for the deployed dashboard.
         crash_log_ticker: bool | None, optional
             Whether to log the trade ticker in crash reports. Defaults to False.
+        load_rng_on_snapshot: bool
+            If True, loading a snapshot also loads the RNG state of the underlying policy.
+            This results in the same RNG state as when the snapshot was taken.
+            If False, will use the existing RNG state before load.
+            Defaults to False.
         calc_pnl: bool
             Whether to calculate pnl. Defaults to True.
         initial_liquidity: FixedPoint
@@ -161,6 +166,7 @@ class ILocalHyperdrive(IHyperdrive):
         data_pipeline_timeout: int = 60
         crash_log_ticker: bool = False
         dashboard_port: int = 7777
+        load_rng_on_snapshot: bool = True
 
         # Data pipeline parameters
         calc_pnl: bool = True
@@ -1260,5 +1266,13 @@ class ILocalHyperdrive(IHyperdrive):
         for agent in self._pool_agents:
             policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
             with open(policy_file, "rb") as file:
+                # If we don't load rng, we get the current RNG state and set it after loading
+                rng = None
+                if not self.config.load_rng_on_snapshot:
+                    rng = agent.agent.policy.rng
                 # We use dill, as pickle can't store local objects
                 agent.agent.policy = dill.load(file)
+                if not self.config.load_rng_on_snapshot:
+                    # For type checking
+                    assert rng is not None
+                    agent.agent.policy.rng = rng

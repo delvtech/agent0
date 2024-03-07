@@ -1,5 +1,6 @@
 """Tests various interactive hyperdrive policies."""
 
+import numpy as np
 import pytest
 from fixedpointmath import FixedPoint
 
@@ -103,3 +104,41 @@ def test_snapshot_policy_state(chain: ILocalChain):
     assert agent.agent.policy.sub_policy.outer_list == [2]
     assert agent.agent.policy.sub_policy.inner_state.inner_var == 1
     assert agent.agent.policy.sub_policy.inner_state.inner_list == [1]
+
+
+@pytest.mark.anvil
+def test_load_rng_on_snapshot(chain: ILocalChain):
+    """The policy config has rng set to None."""
+    load_rng_hyperdrive = ILocalHyperdrive(chain, ILocalHyperdrive.Config(load_rng_on_snapshot=True))
+    non_load_rng_hyperdrive = ILocalHyperdrive(chain, ILocalHyperdrive.Config(load_rng_on_snapshot=False))
+
+    agent_policy = PolicyZoo.random.Config()
+    agent_policy.rng = None
+
+    alice = load_rng_hyperdrive.init_agent(
+        base=FixedPoint(10_000),
+        name="alice",
+        policy=PolicyZoo.random,
+        policy_config=agent_policy,
+    )
+    bob = non_load_rng_hyperdrive.init_agent(
+        base=FixedPoint(10_000),
+        name="bob",
+        policy=PolicyZoo.random,
+        policy_config=agent_policy,
+    )
+
+    chain.save_snapshot()
+
+    assert alice.agent.policy.rng is not None
+    assert bob.agent.policy.rng is not None
+    alice_random_before_snap = alice.agent.policy.rng.standard_normal(10)
+    bob_random_before_snap = bob.agent.policy.rng.standard_normal(10)
+
+    chain.load_snapshot()
+
+    alice_random_after_snap = alice.agent.policy.rng.standard_normal(10)
+    bob_random_after_snap = bob.agent.policy.rng.standard_normal(10)
+
+    assert np.array_equal(alice_random_before_snap, alice_random_after_snap)
+    assert not np.array_equal(bob_random_before_snap, bob_random_after_snap)
