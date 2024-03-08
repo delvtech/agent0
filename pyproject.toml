@@ -45,6 +45,8 @@ dependencies = [
     "pandas-stubs",
     "requests",
     "docker",
+    "pytest",
+    "ipython",
 ]
 
 
@@ -54,7 +56,6 @@ dev = [
     "autodocsumm>=0.2.11",
     "black==24.*",
     "coverage",
-    "ipython",
     "jupytext",
     "myst-parser>=2.0.0",
     "nbconvert",
@@ -62,7 +63,6 @@ dev = [
     "numpydoc>=1.5.0",
     "pylint",
     "pyright",
-    "pytest",
     "sphinx>=6",
     "sphinx-autoapi>=2.0.1",
     "sphinx_autodoc_typehints>=1.21.8",
