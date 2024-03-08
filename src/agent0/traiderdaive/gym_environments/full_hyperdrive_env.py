@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -54,6 +55,8 @@ class FullHyperdriveEnv(gym.Env):
         # The threshold for the probability of opening and closing orders
         open_threshold: float = 0.5
         close_threshold: float = 0.5
+        # How much to advance time per step
+        step_advance_time = 3600
 
         # Other bots config
         num_random_bots: int = 2
@@ -74,9 +77,9 @@ class FullHyperdriveEnv(gym.Env):
         # TODO parameterize these in the gym config
         self.eval_mode = gym_config.eval_mode
         if self.eval_mode:
-            local_chain_config = ILocalChain.Config(block_timestamp_interval=3600, db_port=5434, chain_port=10001)
+            local_chain_config = ILocalChain.Config(block_timestamp_interval=12, db_port=5434, chain_port=10001)
         else:
-            local_chain_config = ILocalChain.Config(block_timestamp_interval=3600)
+            local_chain_config = ILocalChain.Config(block_timestamp_interval=12)
         initial_pool_config = ILocalHyperdrive.Config()
         self.chain = ILocalChain(local_chain_config)
         self.interactive_hyperdrive = ILocalHyperdrive(self.chain, initial_pool_config)
@@ -190,6 +193,8 @@ class FullHyperdriveEnv(gym.Env):
         self._prev_pnl: float = 0.0
         self._step_count = 0
 
+        self.logger = logging.getLogger()
+
     def reset(
         self,
         *,
@@ -243,6 +248,7 @@ class FullHyperdriveEnv(gym.Env):
         long_short_actions = long_short_actions.reshape((len(TradeTypes), self.gym_config.max_positions_per_type + 2))
         close_long_short_actions = long_short_actions[:, :-2]
         open_long_short_actions = long_short_actions[:, -2:]
+        lp_actions = action[-4:]
 
         # Get current wallet positions
         # We need exact decimals here to avoid rounding errors
@@ -311,7 +317,7 @@ class FullHyperdriveEnv(gym.Env):
         rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
 
         # Open trades
-        min_tx_amount = self.interactive_hyperdrive.config.minimum_transaction_amount
+        min_tx_amount = self.interactive_hyperdrive.config.minimum_transaction_amount * 2
         for trade_type in TradeTypes:
             # Only open trades if we haven't maxed out positions
             trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
@@ -338,11 +344,12 @@ class FullHyperdriveEnv(gym.Env):
                             if trade_type == TradeTypes.LONG:
                                 self.rl_bot.open_long(base=volume_adjusted)
                             elif trade_type == TradeTypes.SHORT:
-                                max_short = self.interactive_hyperdrive.interface.calc_max_short(
-                                    volume_adjusted,
-                                    self.interactive_hyperdrive.interface.current_pool_state,
-                                )
-                                self.rl_bot.open_short(bonds=max_short)
+                                # max_short = self.interactive_hyperdrive.interface.calc_max_short(
+                                #    volume_adjusted,
+                                #    self.interactive_hyperdrive.interface.current_pool_state,
+                                # )
+                                # self.rl_bot.open_short(bonds=max_short)
+                                self.rl_bot.open_short(bonds=self.gym_config.max_trade_amount)
                         # Base exception here to catch rust errors
                         except BaseException as err:  # pylint: disable=broad-except
                             # TODO use logging here
@@ -352,7 +359,7 @@ class FullHyperdriveEnv(gym.Env):
 
         # LP actions
 
-        lp_actions_expit = expit(action[-4:])
+        lp_actions_expit = expit(lp_actions)
         add_lp_probability = lp_actions_expit[0]
         add_lp_volume = min_tx_amount + FixedPoint(lp_actions_expit[1]) * self.gym_config.max_trade_amount
         remove_lp_probability = lp_actions_expit[2]
@@ -414,13 +421,19 @@ class FullHyperdriveEnv(gym.Env):
         truncated = self._apply_action(action)
 
         # Run other bots
+        # Suppress logging here
+
         for random_bot in self.random_bots:
             try:
                 random_bot.execute_policy_action()
-            except Exception as err:  # pylint: disable=broad-except
+            except BaseException as err:  # pylint: disable=broad-except
                 print(f"Warning: Failed to execute random bot: {err=}")
                 # We ignore errors in random bots
                 continue
+
+        # We minimize time between bot making an action, so we advance time after actions have been made
+        # but before the observation
+        self.chain.advance_time(self.gym_config.step_advance_time, create_checkpoints=True)
 
         observation = self._get_observation()
         info = self._get_info()
