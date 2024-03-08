@@ -162,6 +162,9 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     for value in fixedpoint_values:
         if value in log_args and hasattr(trade_result, camel_to_snake(value)):
             setattr(trade_result, camel_to_snake(value), FixedPoint(scaled_value=log_args[value]))
+    
+    # special handling for vault_share_price since it's not emitted, but calculated as base_amount / vault_share_amount
+    setattr(trade_result,"vault_share_price", FixedPoint(scaled_value=log_args["baseAmount"]) / FixedPoint(scaled_value=log_args["vaultShareAmount"]))
 
     return trade_result
 

@@ -30,7 +30,6 @@ class ReceiptBreakdown:
     checkpoint_time: int = 0
     matured_shorts: FixedPoint = FixedPoint(0)
     matured_longs: FixedPoint = FixedPoint(0)
-    vault_share_price: FixedPoint = FixedPoint(0)
 
     def __post_init__(self):
         # lots of attributes to check

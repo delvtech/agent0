@@ -40,6 +40,7 @@ base = [
 lateral = [
     # Lateral dependencies across subpackages are pointing to github
     "hyperlogs[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/hyperlogs",
+    "ethpy[with-dependencies] @ git+https://github.com/delvtech/agent0.git/#subdirectory=lib/ethpy",
 ]
 
 [build-system]

@@ -370,45 +370,58 @@ def test_manage_budget(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy:
     """Manage budget between LP and Arb at 50/50."""
     logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
 
-    value_before_trade = _measure_value(
-        wallet=arbitrage_andy.wallet,
-        lp_share_price=interactive_hyperdrive.interface.current_pool_state.lp_share_price,
-        spot_price=interactive_hyperdrive.interface.current_pool_state.spot_price,
-        vault_share_price=interactive_hyperdrive.interface.current_pool_state.vault_share_price,
-        current_time=interactive_hyperdrive.interface.current_time,
-        term_length=interactive_hyperdrive.interface.current_pool_state.term_length,
-    )
-    # open up lp position
+    value_before_trade = _measure_value(arbitrage_andy.wallet,interactive_hyperdrive)
+    # define LP portion of budget
     arbitrage_andy.agent.policy.sub_policy.policy_config.lp_portion = FixedPoint("0.5")
     # andy sets up his LP
     arbitrage_andy.execute_policy_action()
+    value_after_trade = _measure_value(arbitrage_andy.wallet,interactive_hyperdrive)
+    lp_value = arbitrage_andy.wallet.lp_tokens * interactive_hyperdrive.interface.current_pool_state.pool_info.lp_share_price
+    lp_portion = lp_value/value_after_trade
+    arb_portion = (value_after_trade - lp_value)/value_after_trade
+    logging.info("value before opening long is %s", value_before_trade)
+    logging.info("value after opening long is %s", value_after_trade)
+    logging.info("change is %s", value_after_trade - value_before_trade)
+    logging.info("budget breakdown is: %.5f LP, %.5f Arb", lp_portion, arb_portion)
+    assert value_after_trade < value_before_trade
 
-    # do some trades
-    manual_agent.open_long(base=FixedPoint(100_000))
+    # manually open a short
+    manual_agent.open_short(bonds=FixedPoint(100_000_000))
+    # andy should open a long
+    value_before_trade = _measure_value(arbitrage_andy.wallet,interactive_hyperdrive)
     arbitrage_andy.execute_policy_action()
+    value_after_trade = _measure_value(arbitrage_andy.wallet,interactive_hyperdrive)
+    lp_value = arbitrage_andy.wallet.lp_tokens * interactive_hyperdrive.interface.current_pool_state.pool_info.lp_share_price
+    lp_portion = lp_value/value_after_trade
+    arb_portion = (value_after_trade - lp_value)/value_after_trade
+    logging.info("value before opening long is %s", value_before_trade)
+    logging.info("value after opening long is %s", value_after_trade)
+    logging.info("change is %s", value_after_trade - value_before_trade)
+    logging.info("budget breakdown is: %.5f LP, %.5f Arb", lp_portion, arb_portion)
 
-    # see if he reduces the short
-    event = arbitrage_andy.execute_policy_action()
-    event = event[0] if isinstance(event, list) else event
-    logging.info("event is %s", event)
-    print(f"{event=}")
-    assert isinstance(event, CloseShort)
-
-def _measure_value(wallet: HyperdriveWallet, lp_share_price, spot_price, vault_share_price, current_time, term_length):
+def _measure_value(wallet: HyperdriveWallet, interactive_hyperdrive: ILocalHyperdrive):
+    current_pool_state=interactive_hyperdrive.interface.current_pool_state
+    lp_share_price=current_pool_state.pool_info.lp_share_price
+    spot_price=interactive_hyperdrive.interface.calc_spot_price(current_pool_state)
+    vault_share_price=current_pool_state.pool_info.vault_share_price
+    block_data = interactive_hyperdrive.interface.get_current_block()
+    current_time=interactive_hyperdrive.interface.get_block_timestamp(block_data)
+    term_length=current_pool_state.pool_config.position_duration
     value = wallet.lp_tokens * lp_share_price  # LP position
     value += wallet.balance.amount  # base
     for maturity, long in wallet.longs.items():
-        time_remaining = (maturity - current_time) / term_length
+        time_remaining = FixedPoint((maturity - current_time) / term_length)
         curve_price = time_remaining * spot_price
         flat_price = 1 - time_remaining
         pull_to_par = curve_price + flat_price
         long_value = long.balance * pull_to_par
         value += long_value
     for maturity, short in wallet.shorts.items():
-        time_remaining = (maturity - current_time) / term_length
+        time_remaining = FixedPoint((maturity - current_time) / term_length)
         # Short value = users_shorts * (vault_share_price / open_vault_share_price)
         #           - users_shorts * time_remaining * spot_price
         #           - users_shorts * (1 - time_remaining)
+        print(f"{short.open_vault_share_price=}")
         variable_interest_received = vault_share_price / short.open_vault_share_price
         curve_price = time_remaining * spot_price
         flat_price = 1 - time_remaining
