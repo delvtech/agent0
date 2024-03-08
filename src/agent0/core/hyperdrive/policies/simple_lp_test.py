@@ -2,55 +2,98 @@
 
 from __future__ import annotations
 
-import pytest
-from fixedpointmath import FixedPoint
+import datetime
 
-from agent0.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.hyperdrive.interactive.event_types import AddLiquidity
-from agent0.hyperdrive.policies import PolicyZoo
+import pytest
+from fixedpointmath import FixedPoint, isclose
+
+from agent0 import ILocalChain, ILocalHyperdrive, PolicyZoo
+from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, RemoveLiquidity
 
 # pylint: disable=too-many-locals
 
 
 @pytest.mark.anvil
 def test_simple_lp_policy(chain: ILocalChain):
+    # Deploy hyperdrive
+    chain = ILocalChain()
+
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = ILocalHyperdrive.Config(
-        initial_liquidity=FixedPoint(10_000),
+        initial_liquidity=FixedPoint("100"),
+        initial_variable_rate=FixedPoint("0.01"),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 30,  # 1 month
         checkpoint_duration=60 * 60 * 24,  # 1 day
+        curve_fee=FixedPoint("0.01"),
+        flat_fee=FixedPoint("0.0005"),
+        governance_lp_fee=FixedPoint("0.15"),
+        governance_zombie_fee=FixedPoint("0.03"),
     )
     interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
-    pnl_target = FixedPoint("1.0")
+
+    # Deploy LP agent & add base liquidity
+    pnl_target = FixedPoint("8.0")
+    delta_liquidity = FixedPoint("100")
+    minimum_liquidity_tokens = FixedPoint("100")
     lp_agent = interactive_hyperdrive.init_agent(
-        base=FixedPoint(1_111_111),
-        eth=FixedPoint(111),
+        base=FixedPoint("1_000_000"),
+        eth=FixedPoint("1_000"),
         name="Lisa",
         policy=PolicyZoo.simple_lp,
         policy_config=PolicyZoo.simple_lp.Config(
-            lookback_length=FixedPoint("5"),
             pnl_target=pnl_target,
-            delta_liquidity=FixedPoint("1_000"),
+            delta_liquidity=delta_liquidity,
+            minimum_liquidity_tokens=minimum_liquidity_tokens,
         ),
     )
+    _ = lp_agent.add_liquidity(base=FixedPoint("10_000"))
 
-    # no other trades, so agent PNL should stay 0
-    trade_event_list = lp_agent.execute_policy_action()
-    assert len(trade_event_list) == 0  # only one trade per action execution
-    assert isinstance(trade_event_list[0], AddLiquidity)  # always should be add liquidity
-    assert trade_event_list[0].lp_amount == FixedPoint("1_000")  # always should be 1_000
-    assert lp_agent.agent.policy.sub_policy.pnl_history[0][1] == FixedPoint("0")
+    # Do dumb trades until the LP makes a move; that move should be adding liquidity
+    hyperdrive_agent0 = interactive_hyperdrive.init_agent(
+        base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), name="Bob"
+    )
+    trade_event_list = []
+    while len(trade_event_list) == 0:
+        trade_amount = FixedPoint("1_000")
+        hyperdrive_agent0.add_funds(base=trade_amount)
+        open_event = hyperdrive_agent0.open_short(trade_amount)
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+        hyperdrive_agent0.close_short(open_event.maturity_time, open_event.bond_amount)
+        trade_event_list = lp_agent.execute_policy_action()
 
-    hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="Bob")
-    hyperdrive_agent0.open_short(FixedPoint("100"))
-    chain.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
-    hyperdrive_agent0.close_short(FixedPoint("100"))
+    # only one trade per action execution
+    assert len(trade_event_list) == 1
+    # always should be add liquidity
+    assert isinstance(trade_event_list[0], AddLiquidity)
+    # always should be close to delta_liquidity
+    assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("1.0"))
 
-    # big loss from agent0, so LP should get profit and add liquidity again
-    trade_event_list = lp_agent.execute_policy_action()
-    assert len(trade_event_list) == 0  # only one trade per action execution
-    assert isinstance(trade_event_list[0], AddLiquidity)  # always should be add liquidity
-    assert trade_event_list[0].lp_amount == FixedPoint("1_000")  # always should be 1_000
-    assert lp_agent.agent.policy.sub_policy.pnl_history[0][1] == FixedPoint("0")
+    # Do smart trades until the LP makes a move; that move should be removing liquidity
+    hyperdrive_agent1 = interactive_hyperdrive.init_agent(
+        base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), name="Bob"
+    )
+    trade_event_list = []
+    removed_liquidity = False
+    while not removed_liquidity:
+        trade_amount = FixedPoint("1_000")
+        hyperdrive_agent1.add_funds(base=trade_amount)
+        interactive_hyperdrive.set_variable_rate(FixedPoint("0.8"))
+        open_event = hyperdrive_agent1.open_long(trade_amount)
+        chain.advance_time(datetime.timedelta(seconds=100), create_checkpoints=False)
+        interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+        hyperdrive_agent1.close_long(open_event.maturity_time, open_event.bond_amount)
+
+        trade_event_list = lp_agent.execute_policy_action()
+        if len(trade_event_list) > 0:
+            if isinstance(trade_event_list[0], RemoveLiquidity):
+                removed_liquidity = True
+
+    # only one trade per action execution
+    assert len(trade_event_list) == 1
+    # always should be remove liquidity
+    assert isinstance(trade_event_list[0], RemoveLiquidity)
+    # always should be close to delta_liquidity
+    assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("0.1"))
