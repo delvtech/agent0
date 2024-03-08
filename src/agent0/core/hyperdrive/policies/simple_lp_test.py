@@ -15,9 +15,6 @@ from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, RemoveL
 
 @pytest.mark.anvil
 def test_simple_lp_policy(chain: ILocalChain):
-    # Deploy hyperdrive
-    chain = ILocalChain()
-
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = ILocalHyperdrive.Config(
