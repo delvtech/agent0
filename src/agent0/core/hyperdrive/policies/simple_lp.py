@@ -17,6 +17,9 @@ if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdriveWallet
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
+# policy definitions can be more verbose, allowing for more local variables
+# pylint: disable=too-many-locals
+
 
 class SimpleLP(HyperdriveBasePolicy):
     """LP to maintain profitability."""
@@ -31,9 +34,9 @@ class SimpleLP(HyperdriveBasePolicy):
             The description of the policy, as described above.
         """
         raw_description = """
-        This LP bot adds and removes liquidity to maximize profitability.
-        The bot has a target PNL that it is aiming for, and stores its PNL each time the `action` function is called.
-        The bot's strategy is as follows:
+        This LP bot adds or removes liquidity according to its recent profitability.
+        It has a target PNL that it is aiming for, and takes actions based on how its PNL has changed over time.
+        The bot follows this strategy:
             - If the PNL is above threshold, and is improving over time, then the bot adds liquidity.
             - If the PNL is above threshold, and is not improving over time, then the bot takes no action.
             - If the PNL is below threshold, and is improving over time, then the bot takes no action.
@@ -43,25 +46,17 @@ class SimpleLP(HyperdriveBasePolicy):
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
-        """Custom config arguments for this policy.
+        """Custom config arguments for this policy."""
 
-        Attributes
-        ----------
-        pnl_target: FixedPoint
-            The target PNL for the bot, in base.
-        delta_liquidity: FixedPoint
-            How much liquidity to add or remove, depending on policy outcome, in base.
-        minimum_liquidity: FixedPoint
-            Minimum liquidity the bot will provide.
-            It will keep this much liquidity in the pool, even if it is losing money.
-        lookback_length: int
-            How many steps back to look when computing past PNL.
-            Each time `action` is called is a step.
-        """
-
+        # The target PNL for the bot, in base.
         pnl_target: FixedPoint = FixedPoint("100")
+        # How much liquidity to add or remove, depending on policy outcome, in base.
         delta_liquidity: FixedPoint = FixedPoint("100")
+        # Minimum liquidity the bot will provide.
+        # It will keep this much liquidity in the pool, even if it is losing money.
         minimum_liquidity_tokens: FixedPoint = FixedPoint("100")
+        # How many steps back to look when computing PNL progress over time.
+        # Each time `action` is called is a step.
         lookback_length: int = 10
 
     def __init__(
@@ -79,7 +74,7 @@ class SimpleLP(HyperdriveBasePolicy):
         assert policy_config.pnl_target > FixedPoint(0), "PNL target must be greater than zero."
         self.policy_config = policy_config
         self.pnl_history: list[tuple[FixedPoint, FixedPoint]] = []
-        self.total_base_spent: FixedPoint = 0
+        self.total_base_spent: FixedPoint = FixedPoint(0)
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -99,23 +94,25 @@ class SimpleLP(HyperdriveBasePolicy):
             A tuple where the first element is a list of actions,
             and the second element defines if the agent is done trading.
         """
-        # get the current state of the pool
+        # Get the current state of the pool & the bot's position
         current_block = interface.get_current_block()
         pool_state = interface.get_hyperdrive_state(current_block)
         current_holding = wallet.lp_tokens * pool_state.pool_info.lp_share_price
 
-        # need to be in the game to play it
+        # Need to be in the game to play it
         if self.policy_config.minimum_liquidity_tokens > current_holding:
             trade_amount = self.policy_config.minimum_liquidity_tokens - current_holding
             return [add_liquidity_trade(trade_amount)], False
 
-        # get current PNL
+        # Get current PNL
         pnl = current_holding - self.total_base_spent
         self.pnl_history.append((FixedPoint(interface.get_block_timestamp(current_block)), pnl))
-        # prune history
+        # Prune history
         if FixedPoint(len(self.pnl_history)) > self.policy_config.lookback_length:
             self.pnl_history = self.pnl_history[-self.policy_config.lookback_length :]
-        # get pnl slope is dy/dx, where y is PNL and x is time
+        # PNL slope is dy/dx, where y is PNL and x is time.
+        # We compute an average of splines instead of a global average
+        # to reduce emphasis on the first and last time-points.
         avg_pnl_slope = 0
         if len(self.pnl_history) > 2:
             for i in range(len(self.pnl_history) - 1):
@@ -123,15 +120,16 @@ class SimpleLP(HyperdriveBasePolicy):
                 dy = self.pnl_history[i + 1][1] - self.pnl_history[i][1]
                 avg_pnl_slope += dy / dx
             avg_pnl_slope /= len(self.pnl_history) - 1
-        print(f"\t{pnl=}\n\t{avg_pnl_slope=}")
 
-        # make trades based on pnl_target
+        # Make trades based on pnl_target and avg_pnl_slope
         action_list = []
+
         # I'm doing great, keep putting money in
         if pnl > self.policy_config.pnl_target and avg_pnl_slope > 0:
             # only add money if you can afford it!
             if wallet.balance.amount >= self.policy_config.delta_liquidity:
                 action_list.append(add_liquidity_trade(self.policy_config.delta_liquidity))
+
         # I'm doing bad, time to pull some money out
         elif pnl < self.policy_config.pnl_target and avg_pnl_slope < 0:
             # delta_liquidity is in base; convert it to tokens
@@ -140,13 +138,13 @@ class SimpleLP(HyperdriveBasePolicy):
             max_delta = maximum(FixedPoint(0), wallet.lp_tokens - self.policy_config.minimum_liquidity_tokens)
             remove_amount = minimum(delta_tokens, max_delta)
             action_list.append(remove_liquidity_trade(remove_amount))
-        # else my PNL is within tolerance of the target, so do nothing
+
+        # else things are uncertain, so do nothing
 
         return action_list, False
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
+        """Keep track of money spent.
 
         Arguments
         ---------
@@ -159,7 +157,11 @@ class SimpleLP(HyperdriveBasePolicy):
             as well as any errors that the trade resulted in.
         """
         if len(trade_results) > 0:
-            if trade_results[-1].status.name == "SUCCESS":
+            if (
+                trade_results[-1].status.name == "SUCCESS"
+                and trade_results[-1].trade_object is not None
+                and trade_results[-1].tx_receipt is not None
+            ):
                 if trade_results[-1].trade_object.market_action.action_type.name == "ADD_LIQUIDITY":
                     self.total_base_spent += trade_results[-1].tx_receipt.base_amount
                 elif trade_results[-1].trade_object.market_action.action_type.name == "REMOVE_LIQUIDITY":

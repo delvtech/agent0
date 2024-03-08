@@ -70,7 +70,9 @@ def test_simple_lp_policy(chain: ILocalChain):
     # always should be close to delta_liquidity
     assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("1.0"))
 
-    # Do smart trades until the LP makes a move; that move should be removing liquidity
+    # Do smart trades until the LP removes liquidity
+    # It's possible the LP could add liquidity in the first couple of trades,
+    # depending on how much they influence the average PNL.
     hyperdrive_agent1 = interactive_hyperdrive.init_agent(
         base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), name="Bob"
     )
