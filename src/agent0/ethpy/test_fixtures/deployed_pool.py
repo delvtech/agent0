@@ -6,7 +6,6 @@ from typing import Callable, Iterator
 
 import pytest
 from fixedpointmath import FixedPoint
-from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
 
 from agent0.ethpy.base import initialize_web3_with_http_provider
