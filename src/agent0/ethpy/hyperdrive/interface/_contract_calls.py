@@ -581,7 +581,10 @@ async def _async_redeem_withdraw_shares(
     # Here, a preview call of redeem withdrawal shares will still be successful without logs if
     # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
     # here with a useful error message, so we check that explicitly here
-    if preview_result["withdrawalSharesRedeemed"] == 0 and trade_amount > 0:
+
+    # withdrawalSharesRedeemed is the second return value of the call
+    # The abi doesn't contain the name of the returned variable
+    if preview_result["value1"] == 0 and trade_amount > 0:
         raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
     try:
