@@ -47,7 +47,8 @@ class FullHyperdriveEnv(gym.Env):
         rl_agent_budget: FixedPoint = FixedPoint(1_000_000)
         max_trade_amount: FixedPoint = FixedPoint(1_000)
         max_positions_per_type: int = 10
-        reward_scale: float = 1
+        base_reward_scale: float = 1
+        position_reward_scale: float = 0.5
         window_size: int = 10
         episode_length: int = 200
         # The threshold for the probability of opening and closing orders
@@ -503,15 +504,18 @@ class FullHyperdriveEnv(gym.Env):
         # TODO one option here is to only look at base positions instead of sum across all positions.
         # TODO handle the case where pnl calculation doesn't return a number
         # when you can't close the position
-        total_pnl = float(rl_bot_wallet[rl_bot_wallet["token_type"] == "WETH"]["pnl"].sum())
-        # total_pnl = float(rl_bot_wallet["pnl"].sum())
+        base_pnl = float(rl_bot_wallet[rl_bot_wallet["token_type"] == "WETH"]["pnl"].sum())
+        total_pnl = float(rl_bot_wallet["pnl"].sum())
 
         # reward is in units of base
         # We use the change in pnl as the reward
-        reward = total_pnl - self._prev_pnl
-        self._prev_pnl = total_pnl
+        current_reward = (
+            base_pnl * self.gym_config.base_reward_scale + total_pnl * self.gym_config.position_reward_scale
+        )
+        reward = current_reward - self._prev_pnl
+        self._prev_pnl = current_reward
 
-        return reward * self.gym_config.reward_scale
+        return reward
 
     def render(self) -> None:
         """Renders the environment. No rendering available for hyperdrive env."""
