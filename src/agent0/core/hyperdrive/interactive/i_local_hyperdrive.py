@@ -19,7 +19,6 @@ from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
 from web3._utils.threads import Timeout
-from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
 from agent0.chainsync import PostgresConfig
