@@ -398,6 +398,7 @@ def test_manage_budget(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy:
     logging.info("value after opening long is %s", value_after_trade)
     logging.info("change is %s", value_after_trade - value_before_trade)
     logging.info("budget breakdown is: %.5f LP, %.5f Arb", lp_portion, arb_portion)
+    assert arb_portion < FixedPoint(0.5)
 
 def _measure_value(wallet: HyperdriveWallet, interactive_hyperdrive: ILocalHyperdrive):
     current_pool_state=interactive_hyperdrive.interface.current_pool_state
