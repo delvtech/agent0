@@ -48,16 +48,20 @@ class SimpleLP(HyperdriveBasePolicy):
     class Config(HyperdriveBasePolicy.Config):
         """Custom config arguments for this policy."""
 
-        # The target PNL for the bot, in base.
         pnl_target: FixedPoint = FixedPoint("100")
-        # How much liquidity to add or remove, depending on policy outcome, in base.
+        """The target PNL for the bot, in base."""
         delta_liquidity: FixedPoint = FixedPoint("100")
-        # Minimum liquidity the bot will provide.
-        # It will keep this much liquidity in the pool, even if it is losing money.
+        """How much liquidity to add or remove, depending on policy outcome, in base."""
         minimum_liquidity_tokens: FixedPoint = FixedPoint("100")
-        # How many steps back to look when computing PNL progress over time.
-        # Each time `action` is called is a step.
+        """
+        Minimum liquidity the bot will provide.
+        It will keep this much liquidity in the pool, even if it is losing money.
+        """
         lookback_length: int = 10
+        """
+        How many steps back to look when computing PNL progress over time.
+        Each time `action` is called is a step.
+        """
 
     def __init__(
         self,
