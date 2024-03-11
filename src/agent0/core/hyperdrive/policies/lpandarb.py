@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import TYPE_CHECKING
 
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, maximum, minimum
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction
@@ -338,13 +338,14 @@ class LPandArb(HyperdriveBasePolicy):
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                     current_block_time = current_pool_state.block_time
+                    # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
                     next_block_time = current_block_time + 12
-                    curve_portion = FixedPoint(
-                        max(0, (maturity_time - next_block_time) / interface.pool_config.position_duration)
+                    curve_portion = maximum(
+                        FixedPoint(0), (maturity_time - next_block_time) / interface.pool_config.position_duration
                     )
                     logging.info("curve portion is %s", curve_portion)
                     logging.info("bonds needed is %s", bonds_needed)
-                    reduce_short_amount = min(short.balance, bonds_needed / curve_portion, max_long_bonds)
+                    reduce_short_amount = minimum(minimum(short.balance, bonds_needed / curve_portion), max_long_bonds)
                     if reduce_short_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_short_amount * curve_portion
                         logging.info("reducing short by %s", reduce_short_amount)
@@ -357,7 +358,7 @@ class LPandArb(HyperdriveBasePolicy):
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-                amount_base = min(shares_needed, max_long_shares) * current_pool_state.pool_info.vault_share_price
+                amount_base = minimum(shares_needed, max_long_shares) * current_pool_state.pool_info.vault_share_price
                 action_list.append(open_long_trade(amount_base, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
@@ -366,13 +367,14 @@ class LPandArb(HyperdriveBasePolicy):
                 for maturity_time, long in wallet.longs.items():
                     max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                     current_block_time = current_pool_state.block_time
+                    # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
                     next_block_time = current_block_time + 12
-                    curve_portion = FixedPoint(
-                        max(0, (maturity_time - next_block_time) / interface.pool_config.position_duration)
+                    curve_portion = maximum(
+                        FixedPoint(0), (maturity_time - next_block_time) / interface.pool_config.position_duration
                     )
                     logging.info("curve portion is %s", curve_portion)
                     logging.info("bonds needed is %s", bonds_needed)
-                    reduce_long_amount = min(long.balance, bonds_needed / curve_portion, max_short_bonds)
+                    reduce_long_amount = minimum(minimum(long.balance, bonds_needed / curve_portion), max_short_bonds)
                     if reduce_long_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_long_amount * curve_portion
                         logging.debug("reducing long by %s", reduce_long_amount)
@@ -380,7 +382,7 @@ class LPandArb(HyperdriveBasePolicy):
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
-                amount_bonds = min(bonds_needed, max_short_bonds)
+                amount_bonds = minimum(bonds_needed, max_short_bonds)
                 action_list.append(open_short_trade(amount_bonds, self.slippage_tolerance))
 
         if self.policy_config.done_on_empty and len(action_list) == 0:
