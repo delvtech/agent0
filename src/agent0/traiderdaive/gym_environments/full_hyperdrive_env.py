@@ -97,7 +97,9 @@ class FullHyperdriveEnv(gym.Env):
                 base=gym_config.random_bot_budget,
                 policy=PolicyZoo.random,
                 # TODO set the seed per random bot here for reproducibility
-                policy_config=PolicyZoo.random.Config(),
+                # TODO omitting rng_seed results in the same random generators
+                # for all bots, fix
+                policy_config=PolicyZoo.random.Config(rng_seed=i),
                 name="random_bot_" + str(i),
             )
             for i in range(gym_config.num_random_bots)
@@ -112,6 +114,9 @@ class FullHyperdriveEnv(gym.Env):
                     policy_config=PolicyZoo.random_hold.Config(
                         trade_chance=FixedPoint("0.8"),
                         max_open_positions=1000,
+                        # TODO omitting rng_seed results in the same random generators
+                        # for all bots, fix
+                        rng_seed=gym_config.num_random_bots + i,
                     ),
                     name="random_hold_bot_" + str(i),
                 )
