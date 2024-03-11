@@ -13,8 +13,13 @@ from fixedpointmath import FixedPoint, maximum, minimum
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction
-from agent0.core.hyperdrive.agent import (add_liquidity_trade, close_long_trade, close_short_trade, open_long_trade,
-                                          open_short_trade)
+from agent0.core.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+)
 from agent0.core.utilities.predict import predict_long, predict_short
 from agent0.ethpy.hyperdrive.state import PoolState
 
@@ -249,8 +254,8 @@ def apply_step_to_pool_state(
     new_share_reserves, new_bond_reserves = apply_step_to_reserves(
         pool_state.pool_info.share_reserves, delta_shares, pool_state.pool_info.bond_reserves, delta_bonds
     )
-    pool_state.pool_info.share_reserves = new_share_reserves
-    pool_state.pool_info.bond_reserves = new_bond_reserves
+    setattr(pool_state.pool_info, "share_reserves", new_share_reserves)
+    setattr(pool_state.pool_info, "bond_reserves", new_bond_reserves)
     return pool_state
 
 
