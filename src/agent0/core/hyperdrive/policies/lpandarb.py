@@ -119,6 +119,8 @@ def calc_delta_reserves_for_target_rate(
     return delta_bonds, delta_shares
 
 
+# TODO: Remove extra variables used for verbose logging
+# pylint: disable=too-many-locals
 def calc_reserves_to_hit_target_rate(
     interface: HyperdriveReadInterface, pool_state: PoolState, target_rate: FixedPoint, minimum_trade_amount: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
@@ -165,7 +167,7 @@ def calc_reserves_to_hit_target_rate(
         # get the fixed rate for an updated pool state, without storing the state variable
         # TODO: This deepcopy is slow. https://github.com/delvtech/agent0/issues/1355
         predicted_rate = interface.calc_fixed_rate(
-            apply_step_to_pool_state(deepcopy(pool_state), bonds_needed, shares_needed)
+            apply_step_to_pool_state(deepcopy(temp_pool_state), bonds_needed, shares_needed)
         )
         # adjust guess up or down based on how much the first guess overshot or undershot
         overshoot_or_undershoot = FixedPoint(0)
