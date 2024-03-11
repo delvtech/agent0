@@ -113,7 +113,7 @@ class FullHyperdriveEnv(gym.Env):
                         trade_chance=FixedPoint("0.8"),
                         max_open_positions=1000,
                     ),
-                    name="random_bot_" + str(i),
+                    name="random_hold_bot_" + str(i),
                 )
                 for i in range(gym_config.num_random_hold_bots)
             ]
