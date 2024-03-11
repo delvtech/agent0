@@ -64,6 +64,7 @@ class FullHyperdriveEnv(gym.Env):
         random_bot_budget: FixedPoint = FixedPoint(1_000_000)
 
         # Sets alternate ports for eval to avoid connecting to a training chain
+        sample_actions: bool = False
         eval_mode: bool = False
 
     # Defines allowed render modes and fps
@@ -76,10 +77,11 @@ class FullHyperdriveEnv(gym.Env):
         """Initializes the environment"""
         # TODO parameterize these in the gym config
         self.eval_mode = gym_config.eval_mode
+        self.sample_actions = gym_config.sample_actions
         if self.eval_mode:
             local_chain_config = ILocalChain.Config(block_timestamp_interval=12, db_port=5434, chain_port=10001)
         else:
-            local_chain_config = ILocalChain.Config(block_timestamp_interval=12)
+            local_chain_config = ILocalChain.Config(block_timestamp_interval=12, db_port=5435, chain_port=10002)
         initial_pool_config = ILocalHyperdrive.Config()
         self.chain = ILocalChain(local_chain_config)
         self.interactive_hyperdrive = ILocalHyperdrive(self.chain, initial_pool_config)
@@ -276,13 +278,11 @@ class FullHyperdriveEnv(gym.Env):
             # The index of orders here is from oldest to newest
             # TODO if we want the rl bot to explicitly learn how to close orders based on
             # the orders input feature, we can shuffle the order of closing orders
-            if self.eval_mode:
-                # In eval mode, we threshold
-                orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)[0]
-            else:
-                # In train mode, we sample from uniform based on action probability
+            if self.sample_actions:
                 random_roll = self.rng.uniform(0, 1, len(close_orders_probability))
                 orders_to_close_index = np.nonzero(random_roll <= close_orders_probability)[0]
+            else:
+                orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)[0]
 
             # TODO Close orders
             trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
@@ -332,10 +332,10 @@ class FullHyperdriveEnv(gym.Env):
                 )
 
                 # Opening orders
-                if self.eval_mode:
-                    open_order = new_order_probability > self.gym_config.open_threshold
-                else:
+                if self.sample_actions:
                     open_order = self.rng.uniform(0, 1) <= new_order_probability
+                else:
+                    open_order = new_order_probability > self.gym_config.open_threshold
 
                 if open_order:
                     # If the wallet has enough money
@@ -365,13 +365,13 @@ class FullHyperdriveEnv(gym.Env):
         remove_lp_probability = lp_actions_expit[2]
         remove_lp_volume = min_tx_amount + FixedPoint(lp_actions_expit[3]) * self.gym_config.max_trade_amount
 
-        if self.eval_mode:
-            add_lp = add_lp_probability > self.gym_config.open_threshold
-            remove_lp = remove_lp_probability > self.gym_config.close_threshold
-        else:
+        if self.sample_actions:
             random_roll = self.rng.uniform(0, 1, 2)
             add_lp = random_roll[0] <= add_lp_probability
             remove_lp = random_roll[1] <= remove_lp_probability
+        else:
+            add_lp = add_lp_probability > self.gym_config.open_threshold
+            remove_lp = remove_lp_probability > self.gym_config.close_threshold
 
         try:
             if add_lp:
