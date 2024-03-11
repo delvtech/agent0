@@ -71,7 +71,7 @@ def calc_shares_needed_for_bonds(
 
 
 def calc_reserves_to_hit_target_rate(
-    target_rate: FixedPoint, interface: HyperdriveReadInterface, minimum_trade_amount: FixedPoint
+    target_rate: FixedPoint, pool_state: PoolState, interface: HyperdriveReadInterface, minimum_trade_amount: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
@@ -97,19 +97,19 @@ def calc_reserves_to_hit_target_rate(
             The amount of time it took to converge, in seconds.
     """
     predicted_rate = FixedPoint(0)
-    pool_state = deepcopy(interface.current_pool_state)
+    local_pool_state = deepcopy(pool_state)
 
     iteration = 0
     start_time = time.time()
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
     # pylint: disable=logging-fstring-interpolation
-    logging.info(f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate()):.2%}")
+    logging.info(f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate(pool_state)):.2%}")
     while float(abs(predicted_rate - target_rate)) > TOLERANCE and iteration < MAX_ITER:
         iteration += 1
-        latest_fixed_rate = interface.calc_fixed_rate(pool_state)
+        latest_fixed_rate = interface.calc_fixed_rate(local_pool_state)
         target_bonds = interface.calc_bonds_given_shares_and_rate(
-            target_rate, pool_state.pool_info.share_reserves, pool_state
+            target_rate, local_pool_state.pool_info.share_reserves, local_pool_state
         )
         # bonds_needed tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.
         # however trades modify both bonds and shares in amounts of equal value.
@@ -123,10 +123,12 @@ def calc_reserves_to_hit_target_rate(
         # We want to take as large of a step as possible while avoiding negative share reserves.
         # So we loop through, increasing the divisor until the share reserves are no longer negative.
         while avoid_negative_share_reserves is False:
-            bonds_needed = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
-            shares_to_pool = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface, minimum_trade_amount)
+            bonds_needed = (target_bonds - local_pool_state.pool_info.bond_reserves) / divisor
+            shares_to_pool = calc_shares_needed_for_bonds(
+                bonds_needed, local_pool_state, interface, minimum_trade_amount
+            )
             # save bad first guess to a temporary variable
-            temp_pool_state = apply_step(deepcopy(pool_state), bonds_needed, shares_to_pool)
+            temp_pool_state = apply_step(deepcopy(local_pool_state), bonds_needed, shares_to_pool)
             predicted_rate = interface.calc_fixed_rate(temp_pool_state)
             avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
             divisor *= FixedPoint(2)
@@ -136,15 +138,13 @@ def calc_reserves_to_hit_target_rate(
             overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
-        shares_to_pool = calc_shares_needed_for_bonds(bonds_needed, pool_state, interface, minimum_trade_amount)
+        shares_to_pool = calc_shares_needed_for_bonds(bonds_needed, local_pool_state, interface, minimum_trade_amount)
         # update pool state with second guess and continue from there
-        pool_state = apply_step(pool_state, bonds_needed, shares_to_pool)
-        predicted_rate = interface.calc_fixed_rate(pool_state)
+        local_pool_state = apply_step(local_pool_state, bonds_needed, shares_to_pool)
+        predicted_rate = interface.calc_fixed_rate(local_pool_state)
         # update running totals
-        total_shares_needed = (
-            pool_state.pool_info.share_reserves - interface.current_pool_state.pool_info.share_reserves
-        )
-        total_bonds_needed = pool_state.pool_info.bond_reserves - interface.current_pool_state.pool_info.bond_reserves
+        total_shares_needed = local_pool_state.pool_info.share_reserves - pool_state.pool_info.share_reserves
+        total_bonds_needed = local_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
         # log info about the completed step
         formatted_str = (
             f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
@@ -186,6 +186,19 @@ def apply_step(
     return pool_state
 
 
+def calc_deadzone_threshold(interface: HyperdriveReadInterface, pool_state: PoolState, target_rate: FixedPoint):
+    """Calculate the high and low thresholds for maximally profitable trading.
+
+    1. Do the trade without fees.
+      - calculate effective price
+    2. Do the trade with fees.
+      - calculate effective price
+    3. Find the trade amount that matches the no-fee price?
+    """
+    annualized_position_duration = interface.calc_position_duration_in_years(pool_state)
+    spot_price_at_rate = FixedPoint(1) / (target_rate * annualized_position_duration + FixedPoint(1))
+
+
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
 class LPandArb(HyperdriveBasePolicy):
     """LP and Arbitrage in a fixed proportion."""
@@ -222,6 +235,8 @@ class LPandArb(HyperdriveBasePolicy):
         """Amount over variable rate to arbitrage."""
         low_fixed_rate_thresh: FixedPoint = FixedPoint(0)
         """Amount below variable rate to arbitrage. Defaults to 0."""
+        auto_fixed_rate_thresh: bool = False
+        """If set, override the high and low rate thresholds to compute profitable amounts based on fees."""
         rate_slippage: FixedPoint = FixedPoint("0.01")
         done_on_empty: bool = False
         """Whether to exit the bot if there are no trades."""
@@ -271,46 +286,39 @@ class LPandArb(HyperdriveBasePolicy):
             and the second element defines if the agent is done trading.
         """
         action_list = []
+        current_pool_state = interface.current_pool_state  # compute this once to avoid race conditions
+        current_fixed_rate = interface.calc_fixed_rate(current_pool_state)
 
-        # Initial conditions, open LP position
+        # close matured positions
+        self.close_matured_positions(wallet, current_pool_state, self.minimum_trade_amount)
+
+        # open LP position
         lp_amount = self.policy_config.lp_portion * wallet.balance.amount
         if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
             action_list.append(
                 add_liquidity_trade(
                     trade_amount=lp_amount,
-                    min_apr=interface.calc_fixed_rate() - self.policy_config.rate_slippage,
-                    max_apr=interface.calc_fixed_rate() + self.policy_config.rate_slippage,
+                    min_apr=current_fixed_rate - self.policy_config.rate_slippage,
+                    max_apr=current_fixed_rate + self.policy_config.rate_slippage,
                 )
             )
 
         # arbitrage from here on out
         high_fixed_rate_detected = (
-            interface.calc_fixed_rate()
-            >= interface.current_pool_state.variable_rate + self.policy_config.high_fixed_rate_thresh
+            current_fixed_rate >= current_pool_state.variable_rate + self.policy_config.high_fixed_rate_thresh
         )
         low_fixed_rate_detected = (
-            interface.calc_fixed_rate()
-            <= interface.current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh
+            current_fixed_rate <= current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh
         )
         we_have_money = wallet.balance.amount >= self.minimum_trade_amount
-
-        # Close longs if matured
-        for maturity_time, long in wallet.longs.items():
-            # If matured
-            if maturity_time < interface.current_pool_state.block_time and long.balance > self.minimum_trade_amount:
-                action_list.append(close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
-        # Close shorts if matured
-        for maturity_time, short in wallet.shorts.items():
-            # If matured
-            if maturity_time < interface.current_pool_state.block_time and short.balance > self.minimum_trade_amount:
-                action_list.append(close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
 
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
             _, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
-                target_rate=interface.current_pool_state.variable_rate,
+                target_rate=current_pool_state.variable_rate,
+                pool_state=current_pool_state,
                 interface=interface,
                 minimum_trade_amount=self.minimum_trade_amount,
             )
@@ -329,7 +337,7 @@ class LPandArb(HyperdriveBasePolicy):
             if len(wallet.shorts) > 0:
                 for maturity_time, short in wallet.shorts.items():
                     max_long_bonds = interface.calc_max_long(wallet.balance.amount)
-                    current_block_time = interface.current_pool_state.block_time
+                    current_block_time = current_pool_state.block_time
                     next_block_time = current_block_time + 12
                     curve_portion = FixedPoint(
                         max(0, (maturity_time - next_block_time) / interface.pool_config.position_duration)
@@ -349,9 +357,7 @@ class LPandArb(HyperdriveBasePolicy):
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-                amount_base = (
-                    min(shares_needed, max_long_shares) * interface.current_pool_state.pool_info.vault_share_price
-                )
+                amount_base = min(shares_needed, max_long_shares) * current_pool_state.pool_info.vault_share_price
                 action_list.append(open_long_trade(amount_base, self.slippage_tolerance))
 
         if low_fixed_rate_detected:
@@ -359,7 +365,7 @@ class LPandArb(HyperdriveBasePolicy):
             if len(wallet.longs) > 0:
                 for maturity_time, long in wallet.longs.items():
                     max_short_bonds = interface.calc_max_short(wallet.balance.amount)
-                    current_block_time = interface.current_pool_state.block_time
+                    current_block_time = current_pool_state.block_time
                     next_block_time = current_block_time + 12
                     curve_portion = FixedPoint(
                         max(0, (maturity_time - next_block_time) / interface.pool_config.position_duration)
