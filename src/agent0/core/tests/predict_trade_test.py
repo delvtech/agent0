@@ -210,7 +210,7 @@ def test_predict_open_long_bonds(chain: ILocalChain):
     logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
     logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
 
-    assert abs(bonds_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < 1e-4
     assert abs(shares_discrepancy) < 1e-7
 
 

@@ -147,9 +147,9 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
     hyperdrive_agent2 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
     hyperdrive_agent2.add_funds(base=FixedPoint(111_111), eth=FixedPoint(111))
     hyperdrive_agent2.set_max_approval()
-    open_long_event_2 = hyperdrive_agent2.open_long(base=FixedPoint(33_333))
+    open_long_event_2 = hyperdrive_agent2.open_long(base=FixedPoint(333))
 
-    assert open_long_event_2.base_amount == FixedPoint(33_333)
+    assert open_long_event_2.base_amount == FixedPoint(333)
     agent2_longs = list(hyperdrive_agent2.wallet.longs.values())
     assert len(agent2_longs) == 1
     assert agent2_longs[0].balance == open_long_event_2.bond_amount

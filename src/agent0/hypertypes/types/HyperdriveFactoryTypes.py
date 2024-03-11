@@ -297,18 +297,18 @@ EndIndexTooLargeError = ErrorInfo(
     signature="EndIndexTooLarge()",
 )
 
-ExpInvalidExponentError = ErrorInfo(
-    inputs=[],
-    name="ExpInvalidExponent",
-    selector="0x73a2d6b1",
-    signature="ExpInvalidExponent()",
-)
-
 FailedInnerCallError = ErrorInfo(
     inputs=[],
     name="FailedInnerCall",
     selector="0x1425ea42",
     signature="FailedInnerCall()",
+)
+
+InsufficientValueError = ErrorInfo(
+    inputs=[],
+    name="InsufficientValue",
+    selector="0x11011294",
+    signature="InsufficientValue()",
 )
 
 InvalidCheckpointDurationError = ErrorInfo(
@@ -472,4 +472,11 @@ UnauthorizedError = ErrorInfo(
     name="Unauthorized",
     selector="0x82b42900",
     signature="Unauthorized()",
+)
+
+UnsafeCastToInt256Error = ErrorInfo(
+    inputs=[],
+    name="UnsafeCastToInt256",
+    selector="0x72dd4e02",
+    signature="UnsafeCastToInt256()",
 )

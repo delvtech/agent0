@@ -1,7 +1,3 @@
-### Migrations Image ###
-# pinned to a specific image chosen from https://github.com/delvtech/hyperdrive/pkgs/container/hyperdrive%2Fdevnet
-FROM ghcr.io/delvtech/hyperdrive/devnet:0.0.8 as migrations
-
 # ### Python Image ###
 FROM python:3.10-slim
 

@@ -241,12 +241,12 @@ def smart_contract_preview_transaction(
                     f"\n{return_names_and_types=}\n{return_values=}"
                 )
             function_return_dict = {}
-            for var_name_and_type, var_value in zip(return_names_and_types, return_values):
+            for i, (var_name_and_type, var_value) in enumerate(zip(return_names_and_types, return_values)):
                 var_name = var_name_and_type[0]
                 if var_name:
                     function_return_dict[var_name] = var_value
                 else:
-                    function_return_dict["value"] = var_value
+                    function_return_dict[f"value{i}"] = var_value
             return function_return_dict
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 

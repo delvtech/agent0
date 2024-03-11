@@ -178,6 +178,7 @@ PauserUpdated = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="newPauser", type="address"),
+        ABIEventParams(indexed=False, name="status", type="bool"),
     ],
     name="PauserUpdated",
     type="event",
@@ -265,6 +266,13 @@ DecreasedPresentValueWhenAddingLiquidityError = ErrorInfo(
     signature="DecreasedPresentValueWhenAddingLiquidity()",
 )
 
+DistributeExcessIdleFailedError = ErrorInfo(
+    inputs=[],
+    name="DistributeExcessIdleFailed",
+    selector="0x8bdf918d",
+    signature="DistributeExcessIdleFailed()",
+)
+
 ExpInvalidExponentError = ErrorInfo(
     inputs=[],
     name="ExpInvalidExponent",
@@ -337,6 +345,20 @@ InvalidInitialVaultSharePriceError = ErrorInfo(
     signature="InvalidInitialVaultSharePrice()",
 )
 
+InvalidLPSharePriceError = ErrorInfo(
+    inputs=[],
+    name="InvalidLPSharePrice",
+    selector="0xabeba7ee",
+    signature="InvalidLPSharePrice()",
+)
+
+InvalidPresentValueError = ErrorInfo(
+    inputs=[],
+    name="InvalidPresentValue",
+    selector="0xaa2c6516",
+    signature="InvalidPresentValue()",
+)
+
 InvalidShareReservesError = ErrorInfo(
     inputs=[],
     name="InvalidShareReserves",
@@ -377,13 +399,6 @@ MinimumTransactionAmountError = ErrorInfo(
     name="MinimumTransactionAmount",
     selector="0x423bbb46",
     signature="MinimumTransactionAmount()",
-)
-
-NegativePresentValueError = ErrorInfo(
-    inputs=[],
-    name="NegativePresentValue",
-    selector="0xaeeb825d",
-    signature="NegativePresentValue()",
 )
 
 NotPayableError = ErrorInfo(
@@ -463,6 +478,13 @@ UnsafeCastToInt128Error = ErrorInfo(
     name="UnsafeCastToInt128",
     selector="0xa5353be5",
     signature="UnsafeCastToInt128()",
+)
+
+UnsafeCastToInt256Error = ErrorInfo(
+    inputs=[],
+    name="UnsafeCastToInt256",
+    selector="0x72dd4e02",
+    signature="UnsafeCastToInt256()",
 )
 
 UnsafeCastToUint112Error = ErrorInfo(

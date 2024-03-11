@@ -118,7 +118,7 @@ def deploy_hyperdrive_from_factory(
     factory_deploy_config.feeCollector = deploy_account_addr
 
     # Deploy the factory and base token contracts
-    factory_contract, deployer_contract = _deploy_hyperdrive_factory(
+    factory_contract, deployer_contract, factory_deploy_config = _deploy_hyperdrive_factory(
         web3,
         deploy_account,
         factory_deploy_config,
@@ -126,7 +126,12 @@ def deploy_hyperdrive_from_factory(
 
     base_token_contract, vault_contract = _deploy_base_and_vault(web3, deploy_account, initial_variable_rate)
 
+    # Update pool deploy config with factory settings
     pool_deploy_config.baseToken = base_token_contract.address
+    pool_deploy_config.governance = deploy_account_addr
+    pool_deploy_config.feeCollector = deploy_account_addr
+    pool_deploy_config.linkerFactory = factory_deploy_config.linkerFactory
+    pool_deploy_config.linkerCodeHash = factory_deploy_config.linkerCodeHash
 
     # Mint base and approve the initial liquidity amount for the hyperdrive factory
     _mint_and_approve(
@@ -199,7 +204,7 @@ def _deploy_hyperdrive_factory(
     web3: Web3,
     deploy_account: LocalAccount,
     factory_deploy_config: FactoryConfig,
-) -> tuple[HyperdriveFactoryContract, ERC4626HyperdriveDeployerCoordinatorContract]:
+) -> tuple[HyperdriveFactoryContract, ERC4626HyperdriveDeployerCoordinatorContract, FactoryConfig]:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
@@ -217,8 +222,10 @@ def _deploy_hyperdrive_factory(
     tuple[
         HyperdriveFactoryContract,
         ERC4626HyperdriveDeployerCoordinatorContract,
+        FactoryConfig,
     ]
-        Containing the deployed factory and the deploy coordinator contracts.
+        Containing the deployed factory, the deploy coordinator contracts, and the updated
+        factory config
     """
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
     # Deploy forwarder factory
@@ -261,7 +268,7 @@ def _deploy_hyperdrive_factory(
         *function_args,
     )
     assert receipt["status"] == 1, f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}"
-    return factory_contract, deployer_contract
+    return factory_contract, deployer_contract, factory_deploy_config
 
 
 def _deploy_base_and_vault(

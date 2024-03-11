@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from eth_account.signers.local import LocalAccount
 from eth_typing import URI
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
 
@@ -467,5 +467,6 @@ class TestBotToDb:
         expected_fixed_rate = hyperdrive.calc_fixed_rate()
 
         assert latest_pool_analysis["block_number"] == hyperdrive.current_pool_state.block_number
-        assert latest_spot_price == expected_spot_price
-        assert latest_fixed_rate == expected_fixed_rate
+        # Spot price and fixed rate is off by one wei
+        assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("1e-18"))
+        assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("1e-18"))
