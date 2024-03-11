@@ -13,13 +13,8 @@ from fixedpointmath import FixedPoint, maximum, minimum
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction
-from agent0.core.hyperdrive.agent import (
-    add_liquidity_trade,
-    close_long_trade,
-    close_short_trade,
-    open_long_trade,
-    open_short_trade,
-)
+from agent0.core.hyperdrive.agent import (add_liquidity_trade, close_long_trade, close_short_trade, open_long_trade,
+                                          open_short_trade)
 from agent0.core.utilities.predict import predict_long, predict_short
 from agent0.ethpy.hyperdrive.state import PoolState
 
@@ -409,7 +404,7 @@ class LPandArb(HyperdriveBasePolicy):
                         / FixedPoint(interface.pool_config.position_duration),
                     )
                     logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
-                    reduce_short_amount = minimum(minimum(short.balance, bonds_needed / curve_portion), max_long_bonds)
+                    reduce_short_amount = minimum(short.balance, bonds_needed / curve_portion, max_long_bonds)
                     if reduce_short_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_short_amount * curve_portion
                         logging.info(
@@ -443,7 +438,7 @@ class LPandArb(HyperdriveBasePolicy):
                     )
                     logging.info("curve portion is %s", curve_portion)
                     logging.info("bonds needed is %s", bonds_needed)
-                    reduce_long_amount = minimum(minimum(long.balance, bonds_needed / curve_portion), max_short_bonds)
+                    reduce_long_amount = minimum(long.balance, bonds_needed / curve_portion, max_short_bonds)
                     if reduce_long_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_long_amount * curve_portion
                         logging.debug("reducing long by %s", reduce_long_amount)
