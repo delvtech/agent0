@@ -53,7 +53,6 @@ def calc_shares_needed_for_bonds(
     minimum_trade_amount: FixedPoint
         The minimum amount of bonds needed to open a trade.
 
-
     Returns
     -------
     FixedPoint
@@ -68,7 +67,7 @@ def calc_shares_needed_for_bonds(
     return abs(delta.pool.shares)
 
 
-def calc_bonds_needed_for_target_rate(
+def calc_delta_reserves_for_target_rate(
     interface: HyperdriveReadInterface,
     pool_state: PoolState,
     target_rate: FixedPoint,
@@ -97,9 +96,7 @@ def calc_bonds_needed_for_target_rate(
     Returns
     -------
     tuple[FixedPoint, FixedPoint]
-        A tuple containing:
-            The the number of bonds to hit the desired reserves ratio.
-            The predicted fixed rate after the delta bonds have been applied.
+        The delta (bonds, shares) needed to hit the desired fixed rate.
     """
     divisor = FixedPoint(2)
     delta_bonds = FixedPoint(0)
@@ -117,12 +114,9 @@ def calc_bonds_needed_for_target_rate(
         new_share_reserves, _ = apply_step_to_reserves(
             pool_state.pool_info.share_reserves, delta_shares, pool_state.pool_info.bond_reserves, delta_bonds
         )
-        # temp_pool_state = apply_step_to_pool_state(deepcopy(pool_state), delta_bonds, shares_to_pool)
         avoid_negative_share_reserves = new_share_reserves >= 0
         divisor *= FixedPoint(2)
-    temp_pool_state = apply_step_to_pool_state(deepcopy(pool_state), delta_bonds, delta_shares)
-    predicted_rate = interface.calc_fixed_rate(temp_pool_state)
-    return delta_bonds, predicted_rate
+    return delta_bonds, delta_shares
 
 
 def calc_reserves_to_hit_target_rate(
@@ -154,7 +148,7 @@ def calc_reserves_to_hit_target_rate(
             The amount of time it took to converge, in seconds.
     """
     predicted_rate = FixedPoint(0)
-    local_pool_state = deepcopy(pool_state)
+    temp_pool_state = deepcopy(pool_state)
 
     iteration = 0
     start_time = time.time()
@@ -163,10 +157,15 @@ def calc_reserves_to_hit_target_rate(
     logging.info("Targeting %.2f from %.2f", float(target_rate), float(interface.calc_fixed_rate(pool_state)))
     while float(abs(predicted_rate - target_rate)) > TOLERANCE and iteration < MAX_ITER:
         iteration += 1
-        latest_fixed_rate = interface.calc_fixed_rate(local_pool_state)
-        # get the predicted
-        bonds_needed, predicted_rate = calc_bonds_needed_for_target_rate(
-            interface, local_pool_state, target_rate, minimum_trade_amount
+        latest_fixed_rate = interface.calc_fixed_rate(temp_pool_state)
+        # get the predicted reserve levels
+        bonds_needed, shares_needed = calc_delta_reserves_for_target_rate(
+            interface, temp_pool_state, target_rate, minimum_trade_amount
+        )
+        # get the fixed rate for an updated pool state, without storing the state variable
+        # TODO: This deepcopy is slow. https://github.com/delvtech/agent0/issues/1355
+        predicted_rate = interface.calc_fixed_rate(
+            apply_step_to_pool_state(deepcopy(pool_state), bonds_needed, shares_needed)
         )
         # adjust guess up or down based on how much the first guess overshot or undershot
         overshoot_or_undershoot = FixedPoint(0)
@@ -174,13 +173,13 @@ def calc_reserves_to_hit_target_rate(
             overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
-        shares_to_pool = calc_shares_needed_for_bonds(interface, local_pool_state, bonds_needed, minimum_trade_amount)
+        shares_to_pool = calc_shares_needed_for_bonds(interface, temp_pool_state, bonds_needed, minimum_trade_amount)
         # update pool state with second guess and continue from there
-        local_pool_state = apply_step_to_pool_state(local_pool_state, bonds_needed, shares_to_pool)
-        predicted_rate = interface.calc_fixed_rate(local_pool_state)
+        temp_pool_state = apply_step_to_pool_state(temp_pool_state, bonds_needed, shares_to_pool)
+        predicted_rate = interface.calc_fixed_rate(temp_pool_state)
         # update running totals
-        total_shares_needed = local_pool_state.pool_info.share_reserves - pool_state.pool_info.share_reserves
-        total_bonds_needed = local_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
+        total_shares_needed = temp_pool_state.pool_info.share_reserves - pool_state.pool_info.share_reserves
+        total_bonds_needed = temp_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
         # log info about the completed step
         logging.info(
             "iteration %3d: %22,.18f%% d_bonds=%27,.18f d_shares=%27,.18f",
@@ -231,6 +230,12 @@ def apply_step_to_pool_state(
     delta_shares: FixedPoint,
 ) -> PoolState:
     """Save a single convergence step into the pool info.
+
+    .. todo::
+        This function updates the pool_state argument _and_ returns it.
+        This is a bad pattern because it obscures that the input argument is modified in-place.
+        We should either always return a new instance (either via deepcopy or constructing from scratch)
+        or always modify the provided variable in-place.
 
     Arguments
     ---------
@@ -321,7 +326,7 @@ class LPandArb(HyperdriveBasePolicy):
 
         super().__init__(policy_config)
 
-    # TODO: Fix these up
+    # TODO: Fix this function up
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
