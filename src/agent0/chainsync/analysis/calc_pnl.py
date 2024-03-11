@@ -99,7 +99,7 @@ def calc_single_closeout(
     # Hence, we don't use preview transaction here
     elif tokentype in ["LP", "WITHDRAWAL_SHARE"]:
         out_pnl = amount * hyperdrive_state.pool_info.lp_share_price
-        out_pnl = Decimal(str(out_pnl)) / Decimal(1e18)
+        out_pnl = Decimal(str(out_pnl))
     else:
         # Should never get here
         raise ValueError(f"Unexpected token type: {tokentype}")
