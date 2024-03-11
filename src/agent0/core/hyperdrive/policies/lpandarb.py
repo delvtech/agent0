@@ -29,29 +29,27 @@ if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdriveWallet
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
-# pylint: disable=too-many-arguments, too-many-locals
-
 # constants
 TOLERANCE = 1e-18
 MAX_ITER = 50
 
 
 def calc_shares_needed_for_bonds(
-    bonds_needed: FixedPoint,
-    pool_state: PoolState,
     interface: HyperdriveReadInterface,
+    pool_state: PoolState,
+    bonds_needed: FixedPoint,
     minimum_trade_amount: FixedPoint,
 ) -> FixedPoint:
     """Calculate the shares needed to trade a certain amount of bonds, and the associate governance fee.
 
     Arguments
     ---------
-    bonds_needed: FixedPoint
-        The given amount of bonds that is going to be traded.
-    pool_state: PoolState
-        The hyperdrive pool state.
     interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
+    pool_state: PoolState
+        The hyperdrive pool state.
+    bonds_needed: FixedPoint
+        The given amount of bonds that is going to be traded.
     minimum_trade_amount: FixedPoint
         The minimum amount of bonds needed to open a trade.
 
@@ -70,23 +68,82 @@ def calc_shares_needed_for_bonds(
     return abs(delta.pool.shares)
 
 
+def calc_bonds_needed_for_target_rate(
+    interface: HyperdriveReadInterface,
+    pool_state: PoolState,
+    target_rate: FixedPoint,
+    minimum_trade_amount: FixedPoint,
+) -> tuple[FixedPoint, FixedPoint]:
+    """Calculate the bonds needed to hit the desired reserves ratio, keeping shares constant.
+
+    delta_bonds tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.
+    However trades modify both bonds and shares in amounts of equal value.
+    We modify bonds by only half of delta_bonds, knowing that an amount of equal
+    value will move shares in the other direction, toward our desired ratio.
+    This guess is very bad when slippage is high, so we check how bad, then scale accordingly.
+    To avoid negative share reserves, we increase the divisor until they are no longer negative.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadInterface
+        Interface for the market on which this agent will be executing trades (MarketActions).
+    pool_state: PoolState
+        The current pool state.
+    target_rate: FixedPoint
+        The target rate the pool will have after the calculated change in bonds and shares.
+    minimum_trade_amount: FixedPoint
+        The minimum trade amount below which the agent won't submit a trade.
+
+    Returns
+    -------
+    tuple[FixedPoint, FixedPoint]
+        A tuple containing:
+            The the number of bonds to hit the desired reserves ratio.
+            The predicted fixed rate after the delta bonds have been applied.
+    """
+    divisor = FixedPoint(2)
+    delta_bonds = FixedPoint(0)
+    target_bonds = interface.calc_bonds_given_shares_and_rate(
+        target_rate=target_rate, target_shares=pool_state.pool_info.share_reserves, pool_state=pool_state
+    )
+    avoid_negative_share_reserves = False
+    # We want to take as large of a step as possible while avoiding negative share reserves.
+    # So we loop through, increasing the divisor until the share reserves are no longer negative.
+    delta_shares = FixedPoint(0)
+    while avoid_negative_share_reserves is False:
+        delta_bonds = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
+        delta_shares = calc_shares_needed_for_bonds(interface, pool_state, delta_bonds, minimum_trade_amount)
+        # simulate pool state update without a deep copy to save time
+        new_share_reserves, _ = apply_step_to_reserves(
+            pool_state.pool_info.share_reserves, delta_shares, pool_state.pool_info.bond_reserves, delta_bonds
+        )
+        # temp_pool_state = apply_step_to_pool_state(deepcopy(pool_state), delta_bonds, shares_to_pool)
+        avoid_negative_share_reserves = new_share_reserves >= 0
+        divisor *= FixedPoint(2)
+    temp_pool_state = apply_step_to_pool_state(deepcopy(pool_state), delta_bonds, delta_shares)
+    predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+    return delta_bonds, predicted_rate
+
+
 def calc_reserves_to_hit_target_rate(
-    target_rate: FixedPoint, pool_state: PoolState, interface: HyperdriveReadInterface, minimum_trade_amount: FixedPoint
+    interface: HyperdriveReadInterface, pool_state: PoolState, target_rate: FixedPoint, minimum_trade_amount: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint, int, float]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
     Arguments
     ---------
-    target_rate: FixedPoint
-        The target rate the pool will have after the calculated change in bonds and shares.
     interface: HyperdriveReadInterface
         The Hyperdrive API interface object.
+    pool_state: PoolState
+        The current pool state.
+    target_rate: FixedPoint
+        The target rate the pool will have after the calculated change in bonds and shares.
     minimum_trade_amount: FixedPoint
         The minimum amount of bonds needed to open a trade.
 
     Returns
     -------
-    tuple[FixedPoint, FixedPoint]
+    tuple[FixedPoint, FixedPoint, int, float]
         total_shares_needed: FixedPoint
             Total amount of shares needed to be added into the pool to hit the target rate.
         total_bonds_needed: FixedPoint
@@ -103,64 +160,75 @@ def calc_reserves_to_hit_target_rate(
     start_time = time.time()
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
-    # pylint: disable=logging-fstring-interpolation
-    logging.info(f"Targeting {float(target_rate):.2%} from {float(interface.calc_fixed_rate(pool_state)):.2%}")
+    logging.info("Targeting %.2f from %.2f", float(target_rate), float(interface.calc_fixed_rate(pool_state)))
     while float(abs(predicted_rate - target_rate)) > TOLERANCE and iteration < MAX_ITER:
         iteration += 1
         latest_fixed_rate = interface.calc_fixed_rate(local_pool_state)
-        target_bonds = interface.calc_bonds_given_shares_and_rate(
-            target_rate, local_pool_state.pool_info.share_reserves, local_pool_state
+        # get the predicted
+        bonds_needed, predicted_rate = calc_bonds_needed_for_target_rate(
+            interface, local_pool_state, target_rate, minimum_trade_amount
         )
-        # bonds_needed tells us the number of bonds to hit the desired reserves ratio, keeping shares constant.
-        # however trades modify both bonds and shares in amounts of equal value.
-        # we modify bonds by only half of bonds_needed, knowing that an amount of equal
-        # value will move shares in the other direction, toward our desired ratio.
-        # this guess is very bad when slippage is high, so we check how bad, then scale accordingly.
-        # to avoid negative share reserves, we increase the divisor until they are no longer negative.
-        divisor = FixedPoint(2)
-        bonds_needed = FixedPoint(0)
-        avoid_negative_share_reserves = False
-        # We want to take as large of a step as possible while avoiding negative share reserves.
-        # So we loop through, increasing the divisor until the share reserves are no longer negative.
-        while avoid_negative_share_reserves is False:
-            bonds_needed = (target_bonds - local_pool_state.pool_info.bond_reserves) / divisor
-            shares_to_pool = calc_shares_needed_for_bonds(
-                bonds_needed, local_pool_state, interface, minimum_trade_amount
-            )
-            # save bad first guess to a temporary variable
-            temp_pool_state = apply_step(deepcopy(local_pool_state), bonds_needed, shares_to_pool)
-            predicted_rate = interface.calc_fixed_rate(temp_pool_state)
-            avoid_negative_share_reserves = temp_pool_state.pool_info.share_reserves >= 0
-            divisor *= FixedPoint(2)
         # adjust guess up or down based on how much the first guess overshot or undershot
         overshoot_or_undershoot = FixedPoint(0)
         if (target_rate - latest_fixed_rate) != FixedPoint(0):
             overshoot_or_undershoot = (predicted_rate - latest_fixed_rate) / (target_rate - latest_fixed_rate)
         if overshoot_or_undershoot != FixedPoint(0):
             bonds_needed = bonds_needed / overshoot_or_undershoot
-        shares_to_pool = calc_shares_needed_for_bonds(bonds_needed, local_pool_state, interface, minimum_trade_amount)
+        shares_to_pool = calc_shares_needed_for_bonds(interface, local_pool_state, bonds_needed, minimum_trade_amount)
         # update pool state with second guess and continue from there
-        local_pool_state = apply_step(local_pool_state, bonds_needed, shares_to_pool)
+        local_pool_state = apply_step_to_pool_state(local_pool_state, bonds_needed, shares_to_pool)
         predicted_rate = interface.calc_fixed_rate(local_pool_state)
         # update running totals
         total_shares_needed = local_pool_state.pool_info.share_reserves - pool_state.pool_info.share_reserves
         total_bonds_needed = local_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
         # log info about the completed step
-        formatted_str = (
-            f"iteration {iteration:3}: {float(predicted_rate):22.18%}"
-            + f" d_bonds={float(total_bonds_needed):27,.18f} d_shares={float(total_shares_needed):27,.18f}"
+        logging.info(
+            "iteration %3d: %22,.18f%% d_bonds=%27,.18f d_shares=%27,.18f",
+            iteration,
+            float(predicted_rate),
+            float(total_bonds_needed),
+            float(total_shares_needed),
         )
-        logging.info(formatted_str)
     convergence_speed = time.time() - start_time
-    formatted_str = f"predicted precision: {float(abs(predicted_rate-target_rate))}, time taken: {convergence_speed}s"
-    logging.info(formatted_str)
+    logging.info(
+        "predicted precision: %s, time taken: %s s", float(abs(predicted_rate - target_rate)), convergence_speed
+    )
     return total_shares_needed, total_bonds_needed, iteration, convergence_speed
 
 
-def apply_step(
+def apply_step_to_reserves(
+    share_reserves: FixedPoint, delta_shares: FixedPoint, bond_reserves: FixedPoint, delta_bonds: FixedPoint
+) -> tuple[FixedPoint, FixedPoint]:
+    """Apply a single convergence step to pool share and bond reserve levels.
+
+    Arguments
+    ---------
+    share_reserves: FixedPoint
+        The current Hyperdrive pool's share reserves.
+    delta_shares: FixedPoint
+        The amount of shares to add or remove from the reserves, depending on the delta bonds sign.
+    bond_reserves: FixedPoint
+        The current Hyperdrive pool's bond reserves.
+    delta_bonds: FixedPoint
+        The amount of bonds to add or remove from the reserves.
+
+    Returns
+    -------
+    tuple[FixedPoint, FixedPoint]
+        The resulting share reserves and bond reserves after the delta updates are applied.
+    """
+    if delta_bonds > 0:  # short case
+        share_reserves -= delta_shares  # take shares out of pool
+    else:  # long case
+        share_reserves += delta_shares  # put shares in pool
+    bond_reserves += delta_bonds
+    return (share_reserves, bond_reserves)
+
+
+def apply_step_to_pool_state(
     pool_state: PoolState,
-    bonds_needed: FixedPoint,
-    shares_to_pool: FixedPoint,
+    delta_bonds: FixedPoint,
+    delta_shares: FixedPoint,
 ) -> PoolState:
     """Save a single convergence step into the pool info.
 
@@ -168,9 +236,9 @@ def apply_step(
     ---------
     pool_state: PoolState
         The current pool state.
-    bonds_needed: FixedPoint
+    delta_bonds: FixedPoint
         The amount of bonds that is going to be traded.
-    shares_to_pool: FixedPoint
+    delta_shares: FixedPoint
         The amount of shares that is going to be traded.
 
     Returns
@@ -178,25 +246,12 @@ def apply_step(
     PoolState
         The updated pool state.
     """
-    if bonds_needed > 0:  # short case
-        pool_state.pool_info.share_reserves += -shares_to_pool  # take shares out of pool
-    else:  # long case
-        pool_state.pool_info.share_reserves += shares_to_pool  # put shares in pool
-    pool_state.pool_info.bond_reserves += bonds_needed
+    new_share_reserves, new_bond_reserves = apply_step_to_reserves(
+        pool_state.pool_info.share_reserves, delta_shares, pool_state.pool_info.bond_reserves, delta_bonds
+    )
+    pool_state.pool_info.share_reserves = new_share_reserves
+    pool_state.pool_info.bond_reserves = new_bond_reserves
     return pool_state
-
-
-def calc_deadzone_threshold(interface: HyperdriveReadInterface, pool_state: PoolState, target_rate: FixedPoint):
-    """Calculate the high and low thresholds for maximally profitable trading.
-
-    1. Do the trade without fees.
-      - calculate effective price
-    2. Do the trade with fees.
-      - calculate effective price
-    3. Find the trade amount that matches the no-fee price?
-    """
-    annualized_position_duration = interface.calc_position_duration_in_years(pool_state)
-    spot_price_at_rate = FixedPoint(1) / (target_rate * annualized_position_duration + FixedPoint(1))
 
 
 # TODO this should maybe subclass from arbitrage policy, but perhaps making it swappable
@@ -266,7 +321,10 @@ class LPandArb(HyperdriveBasePolicy):
 
         super().__init__(policy_config)
 
-    # pylint: disable=too-many-branches, too-many-statements
+    # TODO: Fix these up
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
@@ -317,9 +375,9 @@ class LPandArb(HyperdriveBasePolicy):
         bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
             _, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
-                target_rate=current_pool_state.variable_rate,
-                pool_state=current_pool_state,
                 interface=interface,
+                pool_state=current_pool_state,
+                target_rate=current_pool_state.variable_rate,
                 minimum_trade_amount=self.minimum_trade_amount,
             )
             self.convergence_iters.append(iters)
@@ -341,15 +399,19 @@ class LPandArb(HyperdriveBasePolicy):
                     # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
                     next_block_time = current_block_time + 12
                     curve_portion = maximum(
-                        FixedPoint(0), (maturity_time - next_block_time) / interface.pool_config.position_duration
+                        FixedPoint(0),
+                        FixedPoint((maturity_time - next_block_time))
+                        / FixedPoint(interface.pool_config.position_duration),
                     )
-                    logging.info("curve portion is %s", curve_portion)
-                    logging.info("bonds needed is %s", bonds_needed)
+                    logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
                     reduce_short_amount = minimum(minimum(short.balance, bonds_needed / curve_portion), max_long_bonds)
                     if reduce_short_amount > self.minimum_trade_amount:
                         bonds_needed -= reduce_short_amount * curve_portion
-                        logging.info("reducing short by %s", reduce_short_amount)
-                        logging.info("reduce_short_amount*curve_portion = %s", reduce_short_amount * curve_portion)
+                        logging.info(
+                            "reducing short by %s\nreduce_short_amount*curve_portion = %s",
+                            reduce_short_amount,
+                            reduce_short_amount * curve_portion,
+                        )
                         action_list.append(
                             close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
                         )
@@ -370,7 +432,9 @@ class LPandArb(HyperdriveBasePolicy):
                     # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
                     next_block_time = current_block_time + 12
                     curve_portion = maximum(
-                        FixedPoint(0), (maturity_time - next_block_time) / interface.pool_config.position_duration
+                        FixedPoint(0),
+                        FixedPoint(maturity_time - next_block_time)
+                        / FixedPoint(interface.pool_config.position_duration),
                     )
                     logging.info("curve portion is %s", curve_portion)
                     logging.info("bonds needed is %s", bonds_needed)
