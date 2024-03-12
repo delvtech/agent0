@@ -42,7 +42,7 @@ def test_simple_lp_policy(chain: ILocalChain):
         policy_config=PolicyZoo.simple_lp.Config(
             pnl_target=pnl_target,
             delta_liquidity=delta_liquidity,
-            minimum_liquidity_tokens=minimum_liquidity_tokens,
+            minimum_liquidity_value=minimum_liquidity_tokens,
         ),
     )
     _ = lp_agent.add_liquidity(base=FixedPoint("10_000"))

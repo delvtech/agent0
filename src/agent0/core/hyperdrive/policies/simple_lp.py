@@ -52,9 +52,9 @@ class SimpleLP(HyperdriveBasePolicy):
         """The target PNL for the bot, in base."""
         delta_liquidity: FixedPoint = FixedPoint("100")
         """How much liquidity to add or remove, depending on policy outcome, in base."""
-        minimum_liquidity_tokens: FixedPoint = FixedPoint("100")
+        minimum_liquidity_value: FixedPoint = FixedPoint("100")
         """
-        Minimum liquidity the bot will provide.
+        Minimum liquidity the bot will provide, in base.
         It will keep this much liquidity in the pool, even if it is losing money.
         """
         lookback_length: int = 10
@@ -101,15 +101,15 @@ class SimpleLP(HyperdriveBasePolicy):
         # Get the current state of the pool & the bot's position
         current_block = interface.get_current_block()
         pool_state = interface.get_hyperdrive_state(current_block)
-        current_holding = wallet.lp_tokens * pool_state.pool_info.lp_share_price
+        lp_base_holding = wallet.lp_tokens * pool_state.pool_info.lp_share_price
 
         # Need to be in the game to play it
-        if self.policy_config.minimum_liquidity_tokens > current_holding:
-            trade_amount = self.policy_config.minimum_liquidity_tokens - current_holding
+        if self.policy_config.minimum_liquidity_value > lp_base_holding:
+            trade_amount = self.policy_config.minimum_liquidity_value - lp_base_holding
             return [add_liquidity_trade(trade_amount)], False
 
         # Get current PNL
-        pnl = current_holding - self.total_base_spent
+        pnl = lp_base_holding - self.total_base_spent
         self.pnl_history.append((FixedPoint(interface.get_block_timestamp(current_block)), pnl))
         # Prune history
         if FixedPoint(len(self.pnl_history)) > self.policy_config.lookback_length:
@@ -139,7 +139,7 @@ class SimpleLP(HyperdriveBasePolicy):
             # delta_liquidity is in base; convert it to tokens
             delta_tokens = self.policy_config.delta_liquidity / pool_state.pool_info.lp_share_price
             # we do not want to pull out so many tokens that we are below the minimum
-            max_delta = maximum(FixedPoint(0), wallet.lp_tokens - self.policy_config.minimum_liquidity_tokens)
+            max_delta = maximum(FixedPoint(0), wallet.lp_tokens - self.policy_config.minimum_liquidity_value)
             remove_amount = minimum(delta_tokens, max_delta)
             action_list.append(remove_liquidity_trade(remove_amount))
 
