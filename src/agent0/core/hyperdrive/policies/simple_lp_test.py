@@ -78,10 +78,8 @@ def test_simple_lp_policy(chain: ILocalChain):
     while not removed_liquidity:
         trade_amount = FixedPoint("1_000")
         hyperdrive_agent1.add_funds(base=trade_amount)
-        interactive_hyperdrive.set_variable_rate(FixedPoint("0.8"))
+        interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))  # LP gets no extra earnings from variable
         open_event = hyperdrive_agent1.open_long(trade_amount)
-        chain.advance_time(datetime.timedelta(seconds=100), create_checkpoints=False)
-        interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))
         chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         hyperdrive_agent1.close_long(open_event.maturity_time, open_event.bond_amount)
 
