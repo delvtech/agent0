@@ -48,8 +48,8 @@ class FullHyperdriveEnv(gym.Env):
         rl_agent_budget: FixedPoint = FixedPoint(1_000_000)
         max_trade_amount: FixedPoint = FixedPoint(1_000)
         max_positions_per_type: int = 10
-        base_reward_scale: float = 1
-        position_reward_scale: float = 0.5
+        base_reward_scale: float = 0.0
+        position_reward_scale: float = 1
         window_size: int = 10
         episode_length: int = 200
         # The threshold for the probability of opening and closing orders
@@ -354,7 +354,7 @@ class FullHyperdriveEnv(gym.Env):
                                 #    self.interactive_hyperdrive.interface.current_pool_state,
                                 # )
                                 # self.rl_bot.open_short(bonds=max_short)
-                                self.rl_bot.open_short(bonds=self.gym_config.max_trade_amount)
+                                self.rl_bot.open_short(bonds=volume_adjusted)
                         # Base exception here to catch rust errors
                         except BaseException as err:  # pylint: disable=broad-except
                             # TODO use logging here
