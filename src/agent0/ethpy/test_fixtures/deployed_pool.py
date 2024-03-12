@@ -6,7 +6,6 @@ from typing import Callable, Iterator
 
 import pytest
 from fixedpointmath import FixedPoint
-from web3.constants import ADDRESS_ZERO
 from web3.types import RPCEndpoint
 
 from agent0.ethpy.base import initialize_web3_with_http_provider
@@ -171,15 +170,15 @@ def launch_local_hyperdrive_pool(
 
     pool_deploy_config = PoolDeployConfig(
         baseToken="",  # will be determined in the deploy function
-        linkerFactory=ADDRESS_ZERO,  # address(0), this address needs to be in a valid address format
-        linkerCodeHash=bytes(32),  # bytes32(0)
+        linkerFactory="",  # will be determined in the deploy function
+        linkerCodeHash=bytes(),  # will be determined in the deploy function
         minimumShareReserves=minimum_share_reserves.scaled_value,
         minimumTransactionAmount=minimum_transaction_amount.scaled_value,
         positionDuration=position_duration,
         checkpointDuration=checkpoint_duration,
         timeStretch=0,
-        governance=ADDRESS_ZERO,  # address(0)
-        feeCollector=ADDRESS_ZERO,  # address(0)
+        governance="",  # will be determined in the deploy function
+        feeCollector="",  # will be determined in the deploy function
         fees=fees,
     )
     return deploy_hyperdrive_from_factory(

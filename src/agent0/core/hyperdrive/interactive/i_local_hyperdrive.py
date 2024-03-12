@@ -19,7 +19,6 @@ from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
 from web3._utils.threads import Timeout
-from web3.constants import ADDRESS_ZERO
 from web3.exceptions import TimeExhausted
 
 from agent0.chainsync import PostgresConfig
@@ -470,15 +469,15 @@ class ILocalHyperdrive(IHyperdrive):
 
         pool_deploy_config = PoolDeployConfig(
             baseToken="",  # will be determined in the deploy function
-            linkerFactory=ADDRESS_ZERO,  # address(0)
-            linkerCodeHash=bytes(32),  # bytes32(0)
+            linkerFactory="",  # will be determined in the deploy function
+            linkerCodeHash=bytes(),  # will be determined in the deploy function
             minimumShareReserves=config.minimum_share_reserves.scaled_value,
             minimumTransactionAmount=config.minimum_transaction_amount.scaled_value,
             positionDuration=config.position_duration,
             checkpointDuration=config.checkpoint_duration,
             timeStretch=0,
-            governance=ADDRESS_ZERO,  # address(0)
-            feeCollector=ADDRESS_ZERO,  # address(0)
+            governance="",  # will be determined in the deploy function
+            feeCollector="",  # will be determined in the deploy function
             fees=config._fees,  # pylint: disable=protected-access
         )
 
