@@ -682,16 +682,20 @@ def get_wallet_pnl(
     else:
         query = session.query(WalletPNL)
 
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(WalletPNL, session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(WalletPNL, session) + end_block + 1
+    latest_block = get_latest_block_number_from_table(WalletDelta, session)
+    if start_block is None:
+        start_block = 0
+    if end_block is None:
+        end_block = latest_block + 1
 
-    if start_block is not None:
-        query = query.filter(WalletPNL.block_number >= start_block)
-    if end_block is not None:
-        query = query.filter(WalletPNL.block_number < end_block)
+    # Support for negative indices
+    if start_block < 0:
+        start_block = latest_block + start_block + 1
+    if end_block < 0:
+        end_block = latest_block + end_block + 1
+
+    query = query.filter(WalletPNL.block_number >= start_block)
+    query = query.filter(WalletPNL.block_number < end_block)
     if wallet_address is not None:
         query = query.filter(WalletPNL.wallet_address.in_(wallet_address))
 
