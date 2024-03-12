@@ -367,7 +367,6 @@ class LPandArb(HyperdriveBasePolicy):
         low_fixed_rate_detected = (
             current_fixed_rate <= current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh
         )
-        we_have_money = wallet.balance.amount >= self.minimum_trade_amount
 
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed = FixedPoint(0)
@@ -403,7 +402,7 @@ class LPandArb(HyperdriveBasePolicy):
                     )
                     action_list.append(close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance))
             # Open a new long, if there's still a need, and we have money
-            if we_have_money and bonds_needed > self.minimum_trade_amount:
+            if wallet.balance.amount >= self.minimum_trade_amount and bonds_needed > self.minimum_trade_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
                 max_long_shares = interface.calc_shares_in_given_bonds_out_down(max_long_bonds)
                 shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
@@ -425,7 +424,7 @@ class LPandArb(HyperdriveBasePolicy):
                     logging.debug("reducing long by %s", reduce_long_amount)
                     action_list.append(close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance))
             # Open a new short, if there's still a need, and we have money
-            if we_have_money and bonds_needed > self.minimum_trade_amount:
+            if wallet.balance.amount >= self.minimum_trade_amount and bonds_needed > self.minimum_trade_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
                 amount_bonds = minimum(bonds_needed, max_short_bonds)
                 action_list.append(open_short_trade(amount_bonds, self.slippage_tolerance))
