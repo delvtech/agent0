@@ -184,11 +184,11 @@ def calc_reserves_to_hit_target_rate(
         total_bonds_needed = temp_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
         # log info about the completed step
         logging.info(
-            "iteration %3d: %22,.18f%% d_bonds=%27,.18f d_shares=%27,.18f",
+            "iteration %3d: %s%% d_bonds=%s d_shares=%s",
             iteration,
-            float(predicted_rate),
-            float(total_bonds_needed),
-            float(total_shares_needed),
+            format(float(predicted_rate), "22,.18f"),
+            format(float(total_bonds_needed), "27,.18f"),
+            format(float(total_shares_needed), "27,.18f"),
         )
     convergence_speed = time.time() - start_time
     logging.info(
