@@ -119,11 +119,9 @@ def calc_delta_reserves_for_target_rate(
     return delta_bonds, delta_shares
 
 
-# TODO: Remove extra variables used for verbose logging
-# pylint: disable=too-many-locals
 def calc_reserves_to_hit_target_rate(
     interface: HyperdriveReadInterface, pool_state: PoolState, target_rate: FixedPoint, minimum_trade_amount: FixedPoint
-) -> tuple[FixedPoint, FixedPoint, int, float]:
+) -> tuple[FixedPoint, FixedPoint]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
     Arguments
@@ -139,21 +137,15 @@ def calc_reserves_to_hit_target_rate(
 
     Returns
     -------
-    tuple[FixedPoint, FixedPoint, int, float]
+    tuple[FixedPoint, FixedPoint, int]
         total_shares_needed: FixedPoint
             Total amount of shares needed to be added into the pool to hit the target rate.
         total_bonds_needed: FixedPoint
             Total amount of bonds needed to be added into the pool to hit the target rate.
-        convergence_iterations: int
-            The number of iterations it took to converge.
-        convergence_speed: float
-            The amount of time it took to converge, in seconds.
     """
     predicted_rate = FixedPoint(0)
     temp_pool_state = deepcopy(pool_state)
-
     iteration = 0
-    start_time = time.time()
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
     logging.info("Targeting %.2f from %.2f", float(target_rate), float(interface.calc_fixed_rate(pool_state)))
@@ -179,22 +171,19 @@ def calc_reserves_to_hit_target_rate(
         # update pool state with second guess and continue from there
         temp_pool_state = apply_step_to_pool_state(temp_pool_state, bonds_needed, shares_to_pool)
         predicted_rate = interface.calc_fixed_rate(temp_pool_state)
-        # update running totals
-        total_shares_needed = temp_pool_state.pool_info.share_reserves - pool_state.pool_info.share_reserves
-        total_bonds_needed = temp_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
         # log info about the completed step
         logging.info(
-            "iteration %3d: %s%% d_bonds=%s d_shares=%s",
+            "iteration %3d: %s%% d_bonds=%s d_shares=%s predicted_precision=%s",
             iteration,
             format(float(predicted_rate), "22,.18f"),
             format(float(total_bonds_needed), "27,.18f"),
             format(float(total_shares_needed), "27,.18f"),
+            format(float(abs(predicted_rate - target_rate)), ".18f"),
         )
-    convergence_speed = time.time() - start_time
-    logging.info(
-        "predicted precision: %s, time taken: %s s", float(abs(predicted_rate - target_rate)), convergence_speed
-    )
-    return total_shares_needed, total_bonds_needed, iteration, convergence_speed
+    # update running totals
+    total_shares_needed = temp_pool_state.pool_info.share_reserves - pool_state.pool_info.share_reserves
+    total_bonds_needed = temp_pool_state.pool_info.bond_reserves - pool_state.pool_info.bond_reserves
+    return total_shares_needed, total_bonds_needed
 
 
 def apply_step_to_reserves(
@@ -381,20 +370,16 @@ class LPandArb(HyperdriveBasePolicy):
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
-            _, bonds_needed, iters, speed = calc_reserves_to_hit_target_rate(
+            start_time = time.time()
+            _, bonds_needed = calc_reserves_to_hit_target_rate(
                 interface=interface,
                 pool_state=current_pool_state,
                 target_rate=current_pool_state.variable_rate,
                 minimum_trade_amount=self.minimum_trade_amount,
             )
-            self.convergence_iters.append(iters)
+            speed = time.time() - start_time
             self.convergence_speed.append(speed)
-            logging.debug(
-                "  ==> iters: %s, speed: %s, n: %s",
-                mean(self.convergence_iters),
-                mean(self.convergence_speed),
-                len(self.convergence_iters),
-            )
+            logging.debug("  ==> speed: %s", mean(self.convergence_speed))
 
         if high_fixed_rate_detected:
             bonds_needed = -bonds_needed  # we trade positive numbers around here
