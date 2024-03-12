@@ -342,6 +342,8 @@ class LPandArb(HyperdriveBasePolicy):
         action_list = []
         current_pool_state = interface.current_pool_state  # compute this once to avoid race conditions
         current_fixed_rate = interface.calc_fixed_rate(current_pool_state)
+        # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
+        next_block_time = current_pool_state.block_time + 12
 
         # close matured positions
         self.close_matured_positions(wallet, current_pool_state, self.minimum_trade_amount)
@@ -384,29 +386,22 @@ class LPandArb(HyperdriveBasePolicy):
         if high_fixed_rate_detected:
             bonds_needed = -bonds_needed  # we trade positive numbers around here
             # Reduce shorts first, if we have them
-            if len(wallet.shorts) > 0:
-                for maturity_time, short in wallet.shorts.items():
-                    max_long_bonds = interface.calc_max_long(wallet.balance.amount)
-                    current_block_time = current_pool_state.block_time
-                    # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
-                    next_block_time = current_block_time + 12
-                    curve_portion = maximum(
-                        FixedPoint(0),
-                        FixedPoint((maturity_time - next_block_time))
-                        / FixedPoint(interface.pool_config.position_duration),
+            for maturity_time, short in wallet.shorts.items():
+                max_long_bonds = interface.calc_max_long(wallet.balance.amount)
+                curve_portion = maximum(
+                    FixedPoint(0),
+                    FixedPoint((maturity_time - next_block_time)) / FixedPoint(interface.pool_config.position_duration),
+                )
+                logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
+                reduce_short_amount = minimum(short.balance, bonds_needed / curve_portion, max_long_bonds)
+                if reduce_short_amount > self.minimum_trade_amount:
+                    bonds_needed -= reduce_short_amount * curve_portion
+                    logging.debug(
+                        "reducing short by %s\nreduce_short_amount*curve_portion = %s",
+                        reduce_short_amount,
+                        reduce_short_amount * curve_portion,
                     )
-                    logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
-                    reduce_short_amount = minimum(short.balance, bonds_needed / curve_portion, max_long_bonds)
-                    if reduce_short_amount > self.minimum_trade_amount:
-                        bonds_needed -= reduce_short_amount * curve_portion
-                        logging.info(
-                            "reducing short by %s\nreduce_short_amount*curve_portion = %s",
-                            reduce_short_amount,
-                            reduce_short_amount * curve_portion,
-                        )
-                        action_list.append(
-                            close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance)
-                        )
+                    action_list.append(close_short_trade(reduce_short_amount, maturity_time, self.slippage_tolerance))
             # Open a new long, if there's still a need, and we have money
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_long_bonds = interface.calc_max_long(wallet.balance.amount)
@@ -417,24 +412,18 @@ class LPandArb(HyperdriveBasePolicy):
 
         if low_fixed_rate_detected:
             # Reduce longs first, if we have them
-            if len(wallet.longs) > 0:
-                for maturity_time, long in wallet.longs.items():
-                    max_short_bonds = interface.calc_max_short(wallet.balance.amount)
-                    current_block_time = current_pool_state.block_time
-                    # TODO: Get time-between-blocks from the interface instead of hard-coding to 12
-                    next_block_time = current_block_time + 12
-                    curve_portion = maximum(
-                        FixedPoint(0),
-                        FixedPoint(maturity_time - next_block_time)
-                        / FixedPoint(interface.pool_config.position_duration),
-                    )
-                    logging.info("curve portion is %s", curve_portion)
-                    logging.info("bonds needed is %s", bonds_needed)
-                    reduce_long_amount = minimum(long.balance, bonds_needed / curve_portion, max_short_bonds)
-                    if reduce_long_amount > self.minimum_trade_amount:
-                        bonds_needed -= reduce_long_amount * curve_portion
-                        logging.debug("reducing long by %s", reduce_long_amount)
-                        action_list.append(close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance))
+            for maturity_time, long in wallet.longs.items():
+                max_short_bonds = interface.calc_max_short(wallet.balance.amount)
+                curve_portion = maximum(
+                    FixedPoint(0),
+                    FixedPoint(maturity_time - next_block_time) / FixedPoint(interface.pool_config.position_duration),
+                )
+                logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
+                reduce_long_amount = minimum(long.balance, bonds_needed / curve_portion, max_short_bonds)
+                if reduce_long_amount > self.minimum_trade_amount:
+                    bonds_needed -= reduce_long_amount * curve_portion
+                    logging.debug("reducing long by %s", reduce_long_amount)
+                    action_list.append(close_long_trade(reduce_long_amount, maturity_time, self.slippage_tolerance))
             # Open a new short, if there's still a need, and we have money
             if we_have_money and bonds_needed > self.minimum_trade_amount:
                 max_short_bonds = interface.calc_max_short(wallet.balance.amount)
