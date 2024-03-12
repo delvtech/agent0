@@ -36,6 +36,7 @@ def arb_fixed_rate_down(
     interface: HyperdriveReadInterface,
     pool_state: PoolState,
     wallet: HyperdriveWallet,
+    maximum_trade_amount: FixedPoint,
     minimum_trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
@@ -49,6 +50,8 @@ def arb_fixed_rate_down(
         The hyperdrive pool state.
     wallet: HyperdriveWallet
         The agent's wallet.
+    maximum_trade_amount: FixedPoint
+        The maximum amount of base allowed to trade.
     minimum_trade_amount: FixedPoint
         The minimum amount of bonds needed to open a trade.
     slippage_tolerance: FixedPoint | None, optional
@@ -78,7 +81,7 @@ def arb_fixed_rate_down(
         )
         logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
         reduce_short_amount = minimum(
-            short.balance, bonds_needed / curve_portion, interface.calc_max_long(wallet.balance.amount)
+            short.balance, bonds_needed / curve_portion, interface.calc_max_long(wallet.balance.amount, pool_state)
         )
         if reduce_short_amount > minimum_trade_amount:
             bonds_needed -= reduce_short_amount * curve_portion
@@ -90,9 +93,15 @@ def arb_fixed_rate_down(
             action_list.append(close_short_trade(reduce_short_amount, maturity_time, slippage_tolerance))
     # Open a new long, if there's still a need, and we have money
     if wallet.balance.amount >= minimum_trade_amount and bonds_needed > minimum_trade_amount:
-        max_long_shares = interface.calc_shares_in_given_bonds_out_down(interface.calc_max_long(wallet.balance.amount))
-        shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed)
-        amount_base = minimum(shares_needed, max_long_shares) * pool_state.pool_info.vault_share_price
+        max_long_shares = interface.calc_shares_in_given_bonds_out_down(
+            interface.calc_max_long(wallet.balance.amount, pool_state), pool_state
+        )
+        shares_needed = interface.calc_shares_in_given_bonds_out_down(bonds_needed, pool_state)
+        amount_base = minimum(
+            shares_needed * pool_state.pool_info.vault_share_price,
+            max_long_shares * pool_state.pool_info.vault_share_price,
+            maximum_trade_amount,
+        )
         action_list.append(open_long_trade(amount_base, slippage_tolerance))
     return action_list
 
@@ -101,6 +110,7 @@ def arb_fixed_rate_up(
     interface: HyperdriveReadInterface,
     pool_state: PoolState,
     wallet: HyperdriveWallet,
+    maximum_trade_amount: FixedPoint,
     minimum_trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
@@ -114,6 +124,8 @@ def arb_fixed_rate_up(
         The hyperdrive pool state.
     wallet: HyperdriveWallet
         The agent's wallet.
+    maximum_trade_amount: FixedPoint
+        The maximum amount of base allowed to trade.
     minimum_trade_amount: FixedPoint
         The minimum amount of bonds needed to open a trade.
     slippage_tolerance: FixedPoint | None, optional
@@ -142,7 +154,7 @@ def arb_fixed_rate_up(
         )
         logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
         reduce_long_amount = minimum(
-            long.balance, bonds_needed / curve_portion, interface.calc_max_short(wallet.balance.amount)
+            long.balance, bonds_needed / curve_portion, interface.calc_max_short(wallet.balance.amount, pool_state)
         )
         if reduce_long_amount > minimum_trade_amount:
             bonds_needed -= reduce_long_amount * curve_portion
@@ -150,7 +162,7 @@ def arb_fixed_rate_up(
             action_list.append(close_long_trade(reduce_long_amount, maturity_time, slippage_tolerance))
     # Open a new short, if there's still a need, and we have money
     if wallet.balance.amount >= minimum_trade_amount and bonds_needed > minimum_trade_amount:
-        amount_bonds = minimum(bonds_needed, interface.calc_max_short(wallet.balance.amount))
+        amount_bonds = minimum(bonds_needed, interface.calc_max_short(maximum_trade_amount, pool_state))
         action_list.append(open_short_trade(amount_bonds, slippage_tolerance))
     return action_list
 
@@ -220,24 +232,27 @@ def calc_delta_reserves_for_target_rate(
         The delta (bonds, shares) needed to hit the desired fixed rate.
     """
     divisor = FixedPoint(2)
-    delta_bonds = FixedPoint(0)
+    trade_delta_bonds = FixedPoint(0)
     target_bonds = interface.calc_bonds_given_shares_and_rate(
         target_rate=target_rate, target_shares=pool_state.pool_info.share_reserves, pool_state=pool_state
     )
     avoid_negative_share_reserves = False
     # We want to take as large of a step as possible while avoiding negative share reserves.
     # So we loop through, increasing the divisor until the share reserves are no longer negative.
-    delta_shares = FixedPoint(0)
+    pool_delta_shares = FixedPoint(0)
     while avoid_negative_share_reserves is False:
-        delta_bonds = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
-        delta_shares = calc_shares_needed_for_bonds(interface, pool_state, delta_bonds, minimum_trade_amount)
+        trade_delta_bonds = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
+        pool_delta_shares = calc_shares_needed_for_bonds(interface, pool_state, trade_delta_bonds, minimum_trade_amount)
         # simulate pool state update without a deep copy to save time
         new_share_reserves, _ = apply_step_to_reserves(
-            pool_state.pool_info.share_reserves, delta_shares, pool_state.pool_info.bond_reserves, delta_bonds
+            pool_state.pool_info.share_reserves,
+            pool_delta_shares,
+            pool_state.pool_info.bond_reserves,
+            trade_delta_bonds,
         )
         avoid_negative_share_reserves = new_share_reserves >= 0
         divisor *= FixedPoint(2)
-    return delta_bonds, delta_shares
+    return trade_delta_bonds, pool_delta_shares
 
 
 def calc_reserves_to_hit_target_rate(
@@ -413,7 +428,7 @@ class LPandArb(HyperdriveBasePolicy):
         done_on_empty: bool = False
         """Whether to exit the bot if there are no trades."""
         minimum_trade_amount: FixedPoint = FixedPoint(10)
-        """The minimum trade amount below which the agent won't submit a trade."""
+        """The minimum bond trade amount below which the agent won't submit a trade."""
 
         @property
         def arb_portion(self) -> FixedPoint:
@@ -464,6 +479,7 @@ class LPandArb(HyperdriveBasePolicy):
         self.close_matured_positions(wallet, current_pool_state, self.minimum_trade_amount)
 
         # open LP position
+        maximum_trade_amount = wallet.balance.amount
         lp_amount = self.policy_config.lp_portion * wallet.balance.amount
         if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
             # Add liquidity
@@ -474,13 +490,19 @@ class LPandArb(HyperdriveBasePolicy):
                     max_apr=current_fixed_rate + self.policy_config.rate_slippage,
                 )
             )
+            maximum_trade_amount -= lp_amount
 
         # arbitrage from here on out
         # check for a high fixed rate
         if current_fixed_rate >= current_pool_state.variable_rate + self.policy_config.high_fixed_rate_thresh:
             action_list.extend(
                 arb_fixed_rate_down(
-                    interface, current_pool_state, wallet, self.minimum_trade_amount, self.slippage_tolerance
+                    interface,
+                    current_pool_state,
+                    wallet,
+                    maximum_trade_amount,
+                    self.minimum_trade_amount,
+                    self.slippage_tolerance,
                 )
             )
 
@@ -488,7 +510,12 @@ class LPandArb(HyperdriveBasePolicy):
         if current_fixed_rate <= current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh:
             action_list.extend(
                 arb_fixed_rate_up(
-                    interface, current_pool_state, wallet, self.minimum_trade_amount, self.slippage_tolerance
+                    interface,
+                    current_pool_state,
+                    wallet,
+                    maximum_trade_amount,
+                    self.minimum_trade_amount,
+                    self.slippage_tolerance,
                 )
             )
 
