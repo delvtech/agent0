@@ -318,3 +318,19 @@ def test_reduce_short(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: 
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
+
+
+@pytest.mark.anvil
+def test_safe_trading(interactive_hyperdrive: ILocalHyperdrive, manual_agent: ILocalHyperdriveAgent):
+    """Test that the agent doesn't overextend itself."""
+    larry_base = FixedPoint(1e4)
+    larry_config = PolicyZoo.lp_and_arb.Config(
+        lp_portion=FixedPoint("0.99"),
+        minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+    )
+    larry = interactive_hyperdrive.init_agent(
+        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+    )
+    # change the fixed rate
+    manual_agent.open_short(bonds=FixedPoint(1000))
+    larry.execute_policy_action()  # should not be able to arb the full amount after LPing
