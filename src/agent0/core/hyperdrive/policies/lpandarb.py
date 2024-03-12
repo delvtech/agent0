@@ -312,15 +312,10 @@ class LPandArb(HyperdriveBasePolicy):
         """
         self.policy_config = policy_config
         self.minimum_trade_amount = policy_config.minimum_trade_amount
-        self.convergence_iters = []
-        self.convergence_speed = []
 
         super().__init__(policy_config)
 
-    # TODO: Fix this function up
     # pylint: disable=too-many-locals
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
@@ -371,16 +366,12 @@ class LPandArb(HyperdriveBasePolicy):
         # calculate bonds and shares needed if we're arbitraging in either direction
         bonds_needed = FixedPoint(0)
         if high_fixed_rate_detected or low_fixed_rate_detected:
-            start_time = time.time()
             _, bonds_needed = calc_reserves_to_hit_target_rate(
                 interface=interface,
                 pool_state=current_pool_state,
                 target_rate=current_pool_state.variable_rate,
                 minimum_trade_amount=self.minimum_trade_amount,
             )
-            speed = time.time() - start_time
-            self.convergence_speed.append(speed)
-            logging.debug("  ==> speed: %s", mean(self.convergence_speed))
 
         if high_fixed_rate_detected:
             bonds_needed = -bonds_needed  # we trade positive numbers around here
