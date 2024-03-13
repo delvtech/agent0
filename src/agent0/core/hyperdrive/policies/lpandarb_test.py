@@ -76,7 +76,7 @@ def create_arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
     andy_base = FixedPoint(1e9)
     andy_config = PolicyZoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
-        minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+        min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     return interactive_hyperdrive.init_agent(
         base=andy_base, name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
@@ -328,7 +328,7 @@ def test_safe_long_trading(interactive_hyperdrive: ILocalHyperdrive, manual_agen
     larry_base = FixedPoint(1e4)
     larry_config = PolicyZoo.lp_and_arb.Config(
         lp_portion=FixedPoint("0.99"),
-        minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+        min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     larry = interactive_hyperdrive.init_agent(
         base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
@@ -350,7 +350,7 @@ def test_safe_short_trading(interactive_hyperdrive: ILocalHyperdrive, manual_age
     larry_base = FixedPoint(1e4)
     larry_config = PolicyZoo.lp_and_arb.Config(
         lp_portion=FixedPoint("0.9"),
-        minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+        min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     larry = interactive_hyperdrive.init_agent(
         base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
