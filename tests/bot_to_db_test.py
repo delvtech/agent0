@@ -27,7 +27,7 @@ from agent0.chainsync.db.hyperdrive.interface import (
 from agent0.chainsync.exec import acquire_data, data_analysis
 from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base.config import AgentConfig, EnvironmentConfig
-from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
+from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.core.test_utils import CycleTradesPolicy
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface

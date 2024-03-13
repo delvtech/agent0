@@ -19,7 +19,6 @@ from web3 import Web3
 from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_chain
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
-from agent0.core.hyperdrive.exec import async_execute_agent_trades, set_max_approval
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy import EthConfig
@@ -40,6 +39,7 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
+from .exec import async_execute_agent_trades, set_max_approval
 from .i_chain import IChain
 from .i_hyperdrive_agent import IHyperdriveAgent
 from .i_hyperdrive_policy import IHyperdrivePolicy

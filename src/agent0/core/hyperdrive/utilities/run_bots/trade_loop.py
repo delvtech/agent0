@@ -16,8 +16,6 @@ from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWrite
 
 from .execute_agent_trades import async_execute_multi_agent_trades
 
-# TODO: Suppress logging from agent0.ethpy here as agent0 handles logging
-
 
 # TODO cleanup this function
 # pylint: disable=too-many-arguments

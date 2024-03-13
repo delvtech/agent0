@@ -21,8 +21,9 @@ from agent0.core.hyperdrive.agent import (
     open_short_trade,
     remove_liquidity_trade,
 )
-from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
+from agent0.core.test_utils import CycleTradesPolicy
 from agent0.ethpy import EthConfig
 from agent0.ethpy.base.errors import ContractCallException
 

@@ -80,7 +80,7 @@ def setup_and_run_agent_loop(
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)
     # Setup and fund agents, create the interface, handle optional values
-    interface, agent_accounts, eth_config, contract_addresses = setup_agents(
+    interface, agent_accounts, eth_config, contract_addresses = _setup_agents(
         environment_config,
         agent_config,
         account_key_config,
@@ -90,7 +90,7 @@ def setup_and_run_agent_loop(
         liquidate,
     )
     # Run the agent trades in a while True loop
-    run_agents(
+    _run_agents(
         environment_config,
         eth_config,
         account_key_config,
@@ -102,7 +102,7 @@ def setup_and_run_agent_loop(
     )
 
 
-def setup_agents(
+def _setup_agents(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
@@ -211,7 +211,7 @@ def setup_agents(
     return interface, agent_accounts, eth_config, contract_addresses
 
 
-def run_agents(
+def _run_agents(
     environment_config: EnvironmentConfig,
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,

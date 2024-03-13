@@ -13,13 +13,13 @@ from web3 import HTTPProvider
 
 from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base.config import AgentConfig, EnvironmentConfig
-from agent0.core.hyperdrive.exec import (
+from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0.core.hyperdrive.utilities.run_bots import (
     async_execute_multi_agent_trades,
     async_fund_agents,
     create_and_fund_user_account,
     setup_experiment,
 )
-from agent0.core.hyperdrive.policies import PolicyZoo
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 
