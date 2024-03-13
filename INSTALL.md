@@ -31,4 +31,6 @@ uv pip install -e .
 # uv pip install -e .[all] # Install everything
 ```
 
+## 5. Verify
+
 You can test that everything is working by calling `python -m pytest .`
