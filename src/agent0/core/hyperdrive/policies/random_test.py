@@ -15,7 +15,7 @@ from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base.config import AgentConfig, EnvironmentConfig
 from agent0.core.hyperdrive import HyperdriveActionType, TradeStatus
 from agent0.core.hyperdrive.exec import (
-    async_execute_agent_trades,
+    async_execute_multi_agent_trades,
     async_fund_agents,
     create_and_fund_user_account,
     setup_experiment,
@@ -100,7 +100,7 @@ class TestRandomPolicy:
 
         # Do a handful of trades
         for _ in range(10):
-            _ = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate=False))
+            _ = asyncio.run(async_execute_multi_agent_trades(interface, agent_accounts, liquidate=False))
 
     @pytest.mark.anvil
     def test_random_policy_trades(
@@ -193,6 +193,8 @@ class TestRandomPolicy:
         for trade_sequence in hyperdrive_trade_actions:
             for trade in trade_sequence:
                 agent_accounts[0].allowable_actions = [trade]  # type: ignore
-                trade_results = asyncio.run(async_execute_agent_trades(interface, agent_accounts, liquidate=False))
+                trade_results = asyncio.run(
+                    async_execute_multi_agent_trades(interface, agent_accounts, liquidate=False)
+                )
                 for trade_result in trade_results:
                     assert trade_result.status == TradeStatus.SUCCESS, "Trade failed"

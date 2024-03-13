@@ -34,7 +34,61 @@ if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdriveAgent
 
 
-async def async_execute_single_agent_trade(
+async def async_execute_multi_agent_trades(
+    interface: HyperdriveReadWriteInterface,
+    agents: list[HyperdriveAgent],
+    liquidate: bool,
+    randomize_liquidation: bool = False,
+    interactive_mode: bool = False,
+) -> list[TradeResult]:
+    """Execute all trades from all agents and check for common errors on failure.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadWriteInterface
+        The Hyperdrive API interface object.
+    agents: list[HyperdriveAgent]
+        A list of HyperdriveAgent that are conducting the trades.
+    liquidate: bool
+        If set, will ignore all policy settings and liquidate all open positions.
+    randomize_liquidation: bool
+        If set, will randomize the order of liquidation trades.
+    interactive_mode: bool
+        Defines if this function is being called in interactive mode.
+
+    Returns
+    -------
+    list[TradeResult]
+        Returns a list of TradeResult objects, one for each trade made by each agent.
+        TradeResult contains information about the trade as well as any errors produced by the trade.
+    """
+    # Make calls per agent to execute_single_agent_trade
+    # Await all trades to finish before continuing
+    gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
+        *[
+            _async_execute_single_agent_trade(agent, interface, liquidate, randomize_liquidation, interactive_mode)
+            for agent in agents
+            if not agent.done_trading
+        ]
+    )
+    # Flatten list of lists, since agent information is already in TradeResult
+    trade_results = [item for sublist in gathered_trade_results for item in sublist]
+
+    # Iterate through trade results, checking for known errors
+    out_trade_results = []
+    for trade_result in trade_results:
+        if trade_result.status == TradeStatus.FAIL:
+            # Here, we check for common errors and allow for custom handling of various errors
+            # These functions adjust the trade_result.exception object to add
+            # additional arguments describing these detected errors for crash reporting
+            trade_result = check_for_invalid_balance(trade_result)
+            trade_result = check_for_slippage(trade_result)
+            trade_result = check_for_min_txn_amount(trade_result)
+        out_trade_results.append(trade_result)
+    return out_trade_results
+
+
+async def _async_execute_single_agent_trade(
     agent: HyperdriveAgent,
     interface: HyperdriveReadWriteInterface,
     liquidate: bool,
@@ -83,11 +137,11 @@ async def async_execute_single_agent_trade(
     # but the underlying exception should be subclassed from Exception.
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
-    # However, should probably test what the limit number of trades an agent can make in one block
+    # However, should probably test the limit number of trades an agent can make in one block
     wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException] = (
         await asyncio.gather(
             *[
-                async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
+                _async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
                 for i, trade_object in enumerate(trades)
             ],
             # Instead of throwing exception, return the exception to the caller here
@@ -114,11 +168,11 @@ async def async_execute_single_agent_trade(
         if isinstance(result, Exception):
             trade_result = build_crash_trade_result(result, interface, agent, trade_object)
         else:
-            assert isinstance(result, tuple)
-            assert len(result) == 2
+            if not isinstance(result, tuple) and not len(result) == 2:
+                raise AssertionError("The trade result is improperly formatted.")
             wallet_delta, tx_receipt = result
-            assert isinstance(wallet_delta, HyperdriveWalletDeltas)
-            assert isinstance(tx_receipt, ReceiptBreakdown)
+            if not isinstance(wallet_delta, HyperdriveWalletDeltas) or not isinstance(tx_receipt, ReceiptBreakdown):
+                raise TypeError("The wallet deltas or the transaction receipt is not the correct type.")
             agent.wallet.update(wallet_delta)
             trade_result = TradeResult(
                 status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
@@ -129,75 +183,19 @@ async def async_execute_single_agent_trade(
     # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
     # way down
     if isinstance(agent.policy, HyperdriveBasePolicy):
-        # Calls the agent with the trade results in case the policy needs to do bookkeeping
-        # We copy a subset of fields from the trade results to avoid changing the original
-        # trade result for crash reporting
-        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent
-        # If this is the case, we can selectively create a new TradeResult object with a subset
-        # of data
-        trade_result_copy = deepcopy(trade_results)
+        # Calls the agent with the trade results in case the policy needs to do bookkeeping.
+        # We copy a trade results to avoid changing the original trade result for crash reporting.
+
+        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent.
+        # If this is the case, we can selectively create a new TradeResult object with a subset of data.
+        #
         # TODO can't put post_action in agent due to circular import, so we call the policy post_action here
-        agent.policy.post_action(interface, trade_result_copy)
+        agent.policy.post_action(interface, deepcopy(trade_results))
 
     return trade_results
 
 
-async def async_execute_agent_trades(
-    interface: HyperdriveReadWriteInterface,
-    agents: list[HyperdriveAgent],
-    liquidate: bool,
-    randomize_liquidation: bool = False,
-    interactive_mode: bool = False,
-) -> list[TradeResult]:
-    """Hyperdrive forever into the sunset.
-
-    Arguments
-    ---------
-    interface: HyperdriveReadWriteInterface
-        The Hyperdrive API interface object
-    agents: list[HyperdriveAgent]
-        A list of HyperdriveAgent that are conducting the trades
-    liquidate: bool
-        If set, will ignore all policy settings and liquidate all open positions
-    randomize_liquidation: bool
-        If set, will randomize the order of liquidation trades
-    interactive_mode: bool
-        Defines if this function is being called in interactive mode
-
-    Returns
-    -------
-    list[TradeResult]
-        Returns a list of TradeResult objects, one for each trade made by the agent
-        TradeResult handles any information about the trade, as well as any errors that the trade resulted in
-    """
-    # Make calls per agent to execute_single_agent_trade
-    # Await all trades to finish before continuing
-    gathered_trade_results: list[list[TradeResult]] = await asyncio.gather(
-        *[
-            async_execute_single_agent_trade(agent, interface, liquidate, randomize_liquidation, interactive_mode)
-            for agent in agents
-            if not agent.done_trading
-        ]
-    )
-    # Flatten list of lists, since agent information is already in TradeResult
-    trade_results = [item for sublist in gathered_trade_results for item in sublist]
-
-    # Iterate through trade results, checking for known errors
-    out_trade_results = []
-    for trade_result in trade_results:
-        if trade_result.status == TradeStatus.FAIL:
-            # Here, we check for common errors and allow for custom handling of various errors
-
-            # These functions adjust the trade_result.exception object to add
-            # additional arguments describing these detected errors for crash reporting
-            trade_result = check_for_invalid_balance(trade_result)
-            trade_result = check_for_slippage(trade_result)
-            trade_result = check_for_min_txn_amount(trade_result)
-        out_trade_results.append(trade_result)
-    return out_trade_results
-
-
-async def async_match_contract_call_to_trade(
+async def _async_match_contract_call_to_trade(
     agent: HyperdriveAgent,
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
@@ -221,7 +219,6 @@ async def async_match_contract_call_to_trade(
     HyperdriveWalletDeltas
         Deltas to be applied to the agent's wallet.
     """
-    # TODO: figure out fees paid
     trade = trade_envelope.market_action
     match trade.action_type:
         case HyperdriveActionType.INITIALIZE_MARKET:
@@ -296,13 +293,12 @@ async def async_match_contract_call_to_trade(
             )
 
         case HyperdriveActionType.ADD_LIQUIDITY:
-            min_apr = trade.min_apr
-            assert min_apr, "min_apr is required for ADD_LIQUIDITY"
-            max_apr = trade.max_apr
-            assert max_apr, "max_apr is required for ADD_LIQUIDITY"
-            # TODO implement slippage tolerance for add liquidity
+            if not trade.min_apr:
+                raise AssertionError("min_apr is required for ADD_LIQUIDITY")
+            if not trade.max_apr:
+                raise AssertionError("max_apr is required for ADD_LIQUIDITY")
             trade_result = await interface.async_add_liquidity(
-                agent, trade.trade_amount, min_apr, max_apr, slippage_tolerance=None, nonce=nonce
+                agent, trade.trade_amount, trade.min_apr, trade.max_apr, slippage_tolerance=None, nonce=nonce
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(

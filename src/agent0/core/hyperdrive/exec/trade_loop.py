@@ -14,7 +14,7 @@ from agent0.core.hyperdrive.crash_report import get_anvil_state_dump, log_hyperd
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
-from .execute_agent_trades import async_execute_agent_trades
+from .execute_agent_trades import async_execute_multi_agent_trades
 
 # TODO: Suppress logging from agent0.ethpy here as agent0 handles logging
 
@@ -83,7 +83,7 @@ def trade_if_new_block(
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
+            async_execute_multi_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
         )
         last_executed_block = latest_block_number
 
