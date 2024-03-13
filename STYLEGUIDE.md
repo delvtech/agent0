@@ -7,3 +7,4 @@
 - Write docstrings in [Numpy format](https://numpydoc.readthedocs.io/en/latest/format.html), with a few tweaks:
   - Use "Arguments" instead of "Parameters".
   - Don't use space before `:` in the type specification. Sphinx and VSCode render it the same, and it's closer to the signature.
+- When in doubt, lean in the direction of verbosity and readability.
