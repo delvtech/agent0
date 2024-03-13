@@ -6,6 +6,7 @@ import asyncio
 import logging
 
 from eth_account.account import Account
+from web3 import Web3
 from web3.types import Nonce, TxReceipt
 
 from agent0.core import AccountKeyConfig
@@ -26,8 +27,6 @@ FUND_RETRY_COUNT = 5
 DEFAULT_READ_RETRY_COUNT = 5
 
 
-# TODO break up this function
-# pylint: disable=too-many-locals
 async def async_fund_agents(
     user_account: HyperdriveAgent,
     eth_config: EthConfig,
@@ -51,43 +50,21 @@ async def async_fund_agents(
     # Funding contains its own logging as this is typically run from a script or in debug mode
     setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
 
-    agent_accounts = [
-        HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS
-    ]
-
     web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
     base_token_contract = ERC20MintableContract.factory(web3)(web3.to_checksum_address(contract_addresses.base_token))
 
-    # Check for balances
-    total_agent_eth_budget = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS))
-    total_agent_base_budget = sum((int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS))
-
-    user_eth_balance = get_account_balance(web3, user_account.checksum_address)
-    if user_eth_balance is None:
-        raise AssertionError("User has no Ethereum balance")
-    if user_eth_balance < total_agent_eth_budget:
-        raise AssertionError(
-            f"User account {user_account.checksum_address=} has {user_eth_balance=}, "
-            f"which must be >= {total_agent_eth_budget=}"
-        )
-
-    user_base_balance = base_token_contract.functions.balanceOf(user_account.checksum_address).call()
-    if user_base_balance < total_agent_base_budget:
-        raise AssertionError(
-            f"User account {user_account.checksum_address=} has {user_base_balance=}, "
-            f"which must be >= {total_agent_base_budget=}"
-        )
+    # Check that the user has enough money to fund the agents
+    _check_user_balances(user_account, account_key_config, web3, base_token_contract)
 
     # Launch all funding processes in async mode
-
-    # Sanity check for zip function
-    assert len(agent_accounts) == len(account_key_config.AGENT_ETH_BUDGETS)
-    assert len(agent_accounts) == len(account_key_config.AGENT_BASE_BUDGETS)
-
     # We launch funding in batches, so we do an outer retry loop here
     # Fund eth
-    logging.info("Funding Eth")
+    logging.info("Funding Eth.")
     # Prepare accounts and eth budgets
+    # Sanity check for zip function
+    agent_accounts = [
+        HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS
+    ]
     accounts_left = list(zip(agent_accounts, account_key_config.AGENT_ETH_BUDGETS))
     for attempt in range(FUND_RETRY_COUNT):
         # Fund agents async from a single account.
@@ -128,7 +105,7 @@ async def async_fund_agents(
 
     # We launch funding in batches, so we do an outer retry loop here
     # Fund base
-    logging.info("Funding Base")
+    logging.info("Funding Base.")
     # Prepare accounts and eth budgets
     accounts_left = list(zip(agent_accounts, account_key_config.AGENT_BASE_BUDGETS))
     for attempt in range(FUND_RETRY_COUNT):
@@ -174,4 +151,51 @@ async def async_fund_agents(
         if len(accounts_left) == 0:
             break
 
-    logging.info("Accounts funded")
+
+def _check_user_balances(
+    user_account: HyperdriveAgent,
+    account_key_config: AccountKeyConfig,
+    web3: Web3,
+    base_token_contract: ERC20MintableContract,
+) -> None:
+    """Check the user eth and base balances to ensure there is enough for funding agents.
+
+    Arguments
+    ---------
+    user_account: HyperdriveAgent
+        The HyperdriveAgent corresponding to the user account to fund the agents.
+    account_key_config: AccountKeyConfig
+        Configuration linking to the env file for storing private keys and initial budgets.
+        Defines the agents to be funded.
+    web3: Web3
+        The connected Web3 instance.
+    base_token_contract: ERC20MintableContract
+        The deployed ERC20MintableContract for base tokens in Hyperdrive.
+    """
+    # Eth balance check
+    user_eth_balance = get_account_balance(web3, user_account.checksum_address)
+    total_agent_eth_budget = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS))
+    if user_eth_balance is None:
+        raise AssertionError("User has no Ethereum balance")
+    if user_eth_balance < total_agent_eth_budget:
+        raise AssertionError(
+            f"User account {user_account.checksum_address=} has {user_eth_balance=}, "
+            f"which must be >= {total_agent_eth_budget=}"
+        )
+
+    # Base balance check
+    user_base_balance = base_token_contract.functions.balanceOf(user_account.checksum_address).call()
+    total_agent_base_budget = sum((int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS))
+    if user_base_balance < total_agent_base_budget:
+        raise AssertionError(
+            f"User account {user_account.checksum_address=} has {user_base_balance=}, "
+            f"which must be >= {total_agent_base_budget=}"
+        )
+
+    # Ensure there are an equal number of keys and budgets
+    if (len(account_key_config.AGENT_KEYS) != len(account_key_config.AGENT_ETH_BUDGETS)) or (
+        len(account_key_config.AGENT_KEYS) != len(account_key_config.AGENT_BASE_BUDGETS)
+    ):
+        raise AssertionError(
+            "Environment configs for AGENT_ETH_BUDGETS and AGENT_BASE_BUDGETS must be the same length as AGENT_KEYS."
+        )
