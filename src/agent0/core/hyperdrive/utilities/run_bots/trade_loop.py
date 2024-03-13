@@ -14,7 +14,7 @@ from agent0.core.hyperdrive.crash_report import get_anvil_state_dump, log_hyperd
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
-from .execute_agent_trades import async_execute_multi_agent_trades
+from .execute_multi_agent_trades import async_execute_multi_agent_trades
 
 
 # TODO cleanup this function
