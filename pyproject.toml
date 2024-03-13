@@ -24,45 +24,46 @@ classifiers = [
 ]
 
 dependencies = [
-    "fixedpointmath",
-    "numpy",
-    "python-dotenv",
-    # will include eth- packages
-    "web3",
-    "hexbytes",
-    "pandas",
-    "nest_asyncio",
-    "rollbar",
     "dill",
-    "matplotlib",
-    "mplfinance",
-    "streamlit",
+    "docker",
+    "fixedpointmath",
     "flask",
     "flask-expects-json",
+    "hexbytes",
+    "hyperdrivepy",
+    "ipython",
+    "matplotlib",
+    "mplfinance",
+    "nest_asyncio",
+    "numpy",
+    "pandas",
+    "pandas-stubs",
     "psycopg[binary]",
+    "pytest",
+    "python-dotenv",
+    "requests",
+    "rollbar",
+    "streamlit",
     "sqlalchemy",
     "sqlalchemy-utils",
-    "pandas-stubs",
-    "requests",
-    "docker",
-    "pytest",
-    "ipython",
-    "hyperdrivepy",
+    "web3",
 ]
 
 
 [project.optional-dependencies]
 dev = [
-    "pypechain",
     "autodocsumm>=0.2.11",
     "black==24.*",
     "coverage",
+    "ipykernel",
     "jupytext",
     "myst-parser>=2.0.0",
     "nbconvert",
     "nbsphinx>=0.8.12",
     "numpydoc>=1.5.0",
     "pylint",
+    "pypechain",
+    "pytest-postgresql",
     "pyright",
     "sphinx>=6",
     "sphinx-autoapi>=2.0.1",
@@ -70,16 +71,13 @@ dev = [
     "sphinx-rtd-theme>=1.2.2",
     "sphinxcontrib-napoleon>=0.7",
     "tomli>=2.0.1",
-    # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
-    "urllib3<2.0",
-    "pytest-postgresql",
-    "ipykernel",
+    "urllib3",
 ]
 
 ai = [
     "gymnasium",
-    "stable-baselines3",
     "scipy",
+    "stable-baselines3",
 ]
 
 rollbar = [
@@ -117,8 +115,7 @@ line-length = 120
 extend-exclude = "\\.ipynb"
 
 [tool.pylint]
-exclude = [".venv", ".vscode", "docs", "src/agent0/hypertypes/types/"
-]
+exclude = [".venv", ".vscode", "docs", "src/agent0/hypertypes/types/"]
 
 [tool.pylance]
 exclude = [".venv", ".vscode", "docs"]
