@@ -39,9 +39,11 @@ class Budget:
             A sample from a clipped random normal distribution according to the parameters defined at construction
         """
         return FixedPoint(
-            scaled_value=clip(
-                int(np.round(rng.normal(loc=self.mean_wei, scale=self.std_wei))),
-                self.min_wei,
-                self.max_wei,
+            scaled_value=int(
+                clip(
+                    int(np.round(rng.normal(loc=self.mean_wei, scale=self.std_wei))),
+                    self.min_wei,
+                    self.max_wei,
+                )
             )
         )
