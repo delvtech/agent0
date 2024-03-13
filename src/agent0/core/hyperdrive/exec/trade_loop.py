@@ -69,7 +69,7 @@ def trade_if_new_block(
     latest_block_timestamp = latest_block.get("timestamp", None)
     if latest_block_number is None or latest_block_timestamp is None:
         raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
-    wait_for_new_block = get_wait_for_new_block(interface.web3)
+    wait_for_new_block = _get_wait_for_new_block(interface.web3)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
     if not wait_for_new_block or latest_block_number > last_executed_block:
         # log and show block info
@@ -87,7 +87,7 @@ def trade_if_new_block(
         )
         last_executed_block = latest_block_number
 
-        check_result(
+        _check_result(
             trade_results,
             interface,
             halt_on_errors,
@@ -99,7 +99,7 @@ def trade_if_new_block(
     return last_executed_block
 
 
-def check_result(
+def _check_result(
     trade_results: list[TradeResult],
     interface: HyperdriveReadInterface,
     halt_on_errors: bool,
@@ -176,7 +176,7 @@ def check_result(
                 assert_never(trade_result.status)
 
 
-def get_wait_for_new_block(web3: Web3) -> bool:
+def _get_wait_for_new_block(web3: Web3) -> bool:
     """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
        if auto-mining is enabled then every transaction sent to the block is automatically mined so
        we don't need to wait for a new block before submitting trades again.

@@ -205,13 +205,12 @@ class IHyperdrive:
 
     def _set_max_approval(self, agent: HyperdriveAgent):
         # Establish max approval for the hyperdrive contract
-        asyncio.run(
-            set_max_approval(
-                [agent],
-                self.interface.web3,
-                self.interface.base_token_contract,
-                str(self.interface.hyperdrive_contract.address),
-            )
+        set_max_approval(
+            agent,
+            self.interface.web3,
+            self.interface.base_token_contract,
+            str(self.interface.hyperdrive_contract.address),
+            retry_count=5,
         )
 
     def _add_funds(

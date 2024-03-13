@@ -163,7 +163,7 @@ def setup_agents(
 
     # Setup env automatically & fund the agents
     if develop:
-        _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+        _ = _async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
 
     # Get hyperdrive interface object and agents
     agent_accounts = setup_experiment(
@@ -270,7 +270,7 @@ def run_agents(
                 sum(agent.wallet.balance.amount for agent in agent_accounts) / FixedPoint(len(agent_accounts))
                 < minimum_avg_agent_base
             ):
-                _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+                _ = _async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
                 # Update agent accounts with new wallet balances
                 for agent in agent_accounts:
                     # Contract call to get base balance
@@ -287,7 +287,7 @@ def run_agents(
             poll_latency = START_LATENCY + random.uniform(0, 1)
 
 
-def async_fund_agents_with_fake_user(
+def _async_fund_agents_with_fake_user(
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
