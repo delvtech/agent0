@@ -122,7 +122,9 @@ async def async_execute_agent_trades(
             trade_result = check_for_slippage(trade_result)
             trade_result = check_for_min_txn_amount(trade_result)
         else:
-            if not isinstance(result, tuple) and not len(result) == 2:
+            if not isinstance(result, tuple):
+                raise TypeError("The trade result is not the correct type.")
+            if not len(result) == 2:
                 raise AssertionError("The trade result is improperly formatted.")
             wallet_delta, tx_receipt = result
             if not isinstance(wallet_delta, HyperdriveWalletDeltas) or not isinstance(tx_receipt, ReceiptBreakdown):

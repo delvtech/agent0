@@ -44,7 +44,7 @@ def set_max_approval(
                 eth_utils.conversions.to_int(eth_utils.currency.MAX_WEI),
             )
             success = True
-        except Exception as err:
+        except Exception as err:  # pylint: disable=broad-exception-caught
             logging.warning(
                 "Retry attempt %s out of %s: Base approval failed with exception %s",
                 attempt,
@@ -58,5 +58,5 @@ def set_max_approval(
         if success:
             break
 
-    if not success:
+    if not success and exception:
         raise exception

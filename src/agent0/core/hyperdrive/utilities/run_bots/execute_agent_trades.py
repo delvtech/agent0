@@ -168,7 +168,9 @@ async def _async_execute_single_agent_trade(
         if isinstance(result, Exception):
             trade_result = build_crash_trade_result(result, interface, agent, trade_object)
         else:
-            if not isinstance(result, tuple) and not len(result) == 2:
+            if not isinstance(result, tuple):
+                raise TypeError("The trade result is not the correct type.")
+            if not len(result) == 2:
                 raise AssertionError("The trade result is improperly formatted.")
             wallet_delta, tx_receipt = result
             if not isinstance(wallet_delta, HyperdriveWalletDeltas) or not isinstance(tx_receipt, ReceiptBreakdown):
