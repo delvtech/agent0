@@ -8,13 +8,9 @@ from typing import TYPE_CHECKING, cast
 
 from fixedpointmath import FixedPoint
 
-from agent0.hypertypes import Checkpoint, PoolConfig
+from agent0.hypertypes import PoolConfig
 from agent0.hypertypes.fixedpoint_types import FeesFP
-from agent0.hypertypes.utilities.conversions import (
-    checkpoint_to_fixedpoint,
-    pool_config_to_fixedpoint,
-    pool_info_to_fixedpoint,
-)
+from agent0.hypertypes.utilities.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
 
 if TYPE_CHECKING:
     from .read_interface import HyperdriveReadInterface
