@@ -46,10 +46,8 @@ class TestHyperdriveReadInterface:
         checkpoint_id = hyperdrive_read_interface.calc_checkpoint_id(
             block_timestamp=hyperdrive_read_interface.current_pool_state.block_time
         )
-        checkpoint = cast(
-            Checkpoint, hyperdrive_read_interface.hyperdrive_contract.functions.getCheckpoint(checkpoint_id).call()
-        )
-        assert checkpoint_to_fixedpoint(checkpoint) == hyperdrive_read_interface.current_pool_state.checkpoint
+        checkpoint = hyperdrive_read_interface.get_checkpoint(checkpoint_id)
+        assert checkpoint == hyperdrive_read_interface.current_pool_state.checkpoint
 
     def test_spot_price_and_fixed_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand."""
