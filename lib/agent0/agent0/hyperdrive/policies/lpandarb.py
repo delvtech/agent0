@@ -203,10 +203,12 @@ def _measure_value(
         pool_state = interface.current_pool_state
         spot_price = interface.calc_spot_price(pool_state)
         block_time = interface.get_block_timestamp(interface.get_current_block())
-    # measure value
     assert isinstance(pool_state, PoolState), "pool_state must be a PoolState"
     assert isinstance(spot_price, FixedPoint), "spot_price must be a FixedPoint"
     assert isinstance(block_time, int), "block_time must be an int"
+
+    # === MANUAL CALCULATION ===
+    start_time = time.time()
     lp_share_price = pool_state.pool_info.lp_share_price
     vault_share_price = pool_state.pool_info.vault_share_price
     term_length = pool_state.pool_config.position_duration
@@ -238,6 +240,31 @@ def _measure_value(
         # Short value = user_shorts * (variable_interest_received - pull_to_par)
         short_value = short.balance * (variable_interest_received - pull_to_par)
         value += short_value
+    logging.info("calculated pnl=%s manually in %s seconds", value, time.time() - start_time)
+
+    # === RUST FUNCTIONS ===
+    start_time = time.time()
+    position_duration = pool_state.pool_config.position_duration
+    rust_pnl = 0
+    for maturity, long in wallet.longs.items():
+        normalized_time_remaining = max(maturity - block_time, 0) / FixedPoint(position_duration)
+        rust_pnl += interface.calc_close_long(long.balance, normalized_time_remaining, pool_state)
+    for maturity, short in wallet.shorts.items():
+        normalized_time_remaining = max(maturity - block_time, 0) / FixedPoint(position_duration)
+        open_checkpoint_time = maturity - position_duration
+        open_share_price = interface.get_checkpoint(open_checkpoint_time)
+        if block_time >= maturity:
+            close_share_price = interface.get_checkpoint(maturity).vault_share_price
+        else:
+            close_share_price = pool_state.pool_info.vault_share_price
+        rust_pnl += interface.calc_close_short(
+            short.balance,
+            open_vault_share_price=open_share_price,
+            close_vault_share_price=close_share_price,
+            normalized_time_remaining=normalized_time_remaining,
+            pool_state=pool_state,
+        )
+    logging.info("calculated pnl=%s with rust functions in %s", rust_pnl, time.time() - start_time)
     return value
 
 
