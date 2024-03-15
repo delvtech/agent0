@@ -29,8 +29,6 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     """The short positions held by the trader."""
     withdraw_shares: FixedPoint = FixedPoint(0)
     """The withdraw shares held by the trader."""
-    vault_share_price: FixedPoint = FixedPoint(0)
-    """The vault share price."""
 
     def copy(self) -> HyperdriveWalletDeltas:
         """Returns a new copy of self.

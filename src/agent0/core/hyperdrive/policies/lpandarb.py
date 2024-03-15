@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -18,6 +19,7 @@ from agent0.core.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
 )
+from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long
 from agent0.core.utilities.predict import predict_long, predict_short
 from agent0.ethpy.hyperdrive.state import PoolState
 
@@ -37,12 +39,89 @@ MAX_ITER = 50
 # pylint: disable=too-many-arguments
 
 
+def _measure_value(
+    wallet: HyperdriveWallet,
+    interface: HyperdriveReadInterface,
+    pool_state: PoolState | None = None,
+    spot_price: FixedPoint | None = None,
+    block_time: int | None = None,
+) -> FixedPoint:
+    # either provide interface or all of the other arguments
+    pool_state = interface.current_pool_state if pool_state is None else pool_state
+    spot_price = interface.calc_spot_price(pool_state) if spot_price is None else spot_price
+    block_time = interface.get_block_timestamp(interface.get_current_block()) if block_time is None else block_time
+    assert isinstance(pool_state, PoolState), "pool_state must be a PoolState"
+    assert isinstance(spot_price, FixedPoint), "spot_price must be a FixedPoint"
+    assert isinstance(block_time, int), "block_time must be an int"
+
+    # === MANUAL CALCULATION ===
+    start_time = time.time()
+    lp_share_price = pool_state.pool_info.lp_share_price
+    vault_share_price = pool_state.pool_info.vault_share_price
+    term_length = pool_state.pool_config.position_duration
+    value = wallet.lp_tokens * lp_share_price  # LP position
+    value += wallet.balance.amount  # base
+    for maturity, long in wallet.longs.items():
+        time_remaining = FixedPoint((maturity - block_time) / term_length)
+        logging.info("time remaining is %s", time_remaining)
+        curve_price = time_remaining * spot_price
+        logging.info("curve price is %s", curve_price)
+        flat_price = 1 - time_remaining
+        logging.info("flat price is %s", flat_price)
+        pull_to_par = curve_price + flat_price
+        logging.info("pull to par is %s", pull_to_par)
+        long_value = long.balance * pull_to_par
+        logging.info("long value is %s", long_value)
+        value += long_value
+    for maturity, short in wallet.shorts.items():
+        time_remaining = FixedPoint((maturity - block_time) / term_length)
+        # Short value = users_shorts * (vault_share_price / open_vault_share_price)
+        #           - users_shorts * time_remaining * spot_price
+        #           - users_shorts * (1 - time_remaining)
+        print(f"{short.open_vault_share_price=}")
+        variable_interest_received = vault_share_price / short.open_vault_share_price
+        curve_price = time_remaining * spot_price
+        flat_price = 1 - time_remaining
+        # Short value = user_shorts * (variable_interest_received - curve_price - flat_price)
+        pull_to_par = curve_price + flat_price
+        # Short value = user_shorts * (variable_interest_received - pull_to_par)
+        short_value = short.balance * (variable_interest_received - pull_to_par)
+        value += short_value
+    logging.info("calculated pnl=%s manually in %s seconds", value, time.time() - start_time)
+
+    # === RUST FUNCTIONS ===
+    start_time = time.time()
+    position_duration = pool_state.pool_config.position_duration
+    rust_pnl = 0
+    for maturity, long in wallet.longs.items():
+        normalized_time_remaining = max(maturity - block_time, 0) / FixedPoint(position_duration)
+        rust_pnl += interface.calc_close_long(long.balance, normalized_time_remaining, pool_state)
+    for maturity, short in wallet.shorts.items():
+        normalized_time_remaining = max(maturity - block_time, 0) / FixedPoint(position_duration)
+        open_checkpoint_time = maturity - position_duration
+        open_share_price = interface.get_checkpoint(open_checkpoint_time)
+        if block_time >= maturity:
+            close_share_price = interface.get_checkpoint(maturity).vault_share_price
+        else:
+            close_share_price = pool_state.pool_info.vault_share_price
+        rust_pnl += interface.calc_close_short(
+            short.balance,
+            open_vault_share_price=open_share_price,
+            close_vault_share_price=close_share_price,
+            normalized_time_remaining=normalized_time_remaining,
+            pool_state=pool_state,
+        )
+    logging.info("calculated pnl=%s with rust functions in %s", rust_pnl, time.time() - start_time)
+    return value
+
+
 def arb_fixed_rate_down(
     interface: HyperdriveReadInterface,
     pool_state: PoolState,
     wallet: HyperdriveWallet,
     max_trade_amount_base: FixedPoint,
     min_trade_amount_bonds: FixedPoint,
+    arb_portion: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
     """Returns an action list for arbitraging the fixed rate down to the variable rate.
@@ -59,6 +138,8 @@ def arb_fixed_rate_down(
         The maximum amount of base allowed to trade.
     min_trade_amount_bonds: FixedPoint
         The minimum amount of bonds needed to open a trade.
+    arb_portion: FixedPoint
+        The portion of the pool to arbitrage.
     slippage_tolerance: FixedPoint | None, optional
         The slippage tolerance for trades. Defaults to None.
 
@@ -107,6 +188,97 @@ def arb_fixed_rate_down(
             max_long_shares * pool_state.pool_info.vault_share_price,
             max_trade_amount_base,
         )
+
+        original_total_value = _measure_value(wallet, interface)
+        orignal_lp_value = wallet.lp_tokens * interface.current_pool_state.pool_info.lp_share_price
+        original_arb_value = original_total_value - orignal_lp_value
+        original_arb_portion = original_arb_value / original_total_value
+        new_arb_portion = FixedPoint(1)
+        iteration = 0
+        while new_arb_portion > arb_portion:
+            iteration += 1
+            logging.info("=== iteration %s ===", iteration)
+            new_block_time = interface.current_pool_state.block_time + 12
+            new_maturity_time = new_block_time + interface.pool_config.position_duration
+            predicted_pool_state = deepcopy(interface.current_pool_state)
+            trade_outcome = predict_long(
+                hyperdrive_interface=interface,
+                pool_state=predicted_pool_state,
+                base=amount_base,
+            )
+            predicted_wallet = deepcopy(wallet)
+            predicted_long = Long(maturity_time=new_maturity_time, balance=trade_outcome.user.bonds)
+            predicted_wallet.longs.update({new_maturity_time: predicted_long})
+            predicted_pool_state.pool_info.bond_reserves += trade_outcome.pool.bonds
+            # predicted_pool_state.pool_info.bond_reserves = FixedPoint(1797791407.896132777930667096)
+            logging.info("trade_outcome.pool.bonds is %s", trade_outcome.pool.bonds)
+            predicted_pool_state.pool_info.share_reserves += trade_outcome.pool.shares
+            # predicted_pool_state.pool_info.share_reserves = FixedPoint(599964099.646531164548583477)
+            # predicted_pool_state.pool_info.lp_share_price = FixedPoint(1.000145669748435808)
+            # predicted_pool_state.pool_info.vault_share_price = FixedPoint(1.000000133181130312)
+            # predicted_pool_state.pool_info.longs_outstanding = FixedPoint(99870661.132665495726221672)
+            # predicted_pool_state.pool_info.long_average_maturity_time = FixedPoint(1742054400.0)
+            logging.info("trade_outcome.pool.shares is %s", trade_outcome.pool.shares)
+            logging.info("predicted_pool_state.pool_info is %s", predicted_pool_state.pool_info)
+            old_spot_price = interface.calc_spot_price()
+            logging.info("old_spot_price is %s", old_spot_price)
+            new_spot_price = interface.calc_spot_price(pool_state=predicted_pool_state)
+            logging.info("new_spot_price is %s", new_spot_price)
+            delta_spot_price = new_spot_price - old_spot_price
+            logging.info("delta_spot_price is %s (%.2f%%)", delta_spot_price, delta_spot_price / old_spot_price * 100)
+            new_lp_share_price = predicted_pool_state.pool_info.lp_share_price
+            new_total_value = _measure_value(
+                interface=interface,
+                wallet=predicted_wallet,
+                pool_state=predicted_pool_state,
+                spot_price=new_spot_price,
+                block_time=new_block_time,
+            )
+            logging.info("new_total_value is %s", new_total_value)
+            new_lp_value = predicted_wallet.lp_tokens * new_lp_share_price
+            logging.info("new_lp_value is %s", new_lp_value)
+            new_arb_value = new_total_value - new_lp_value
+            logging.info("new_arb_value is %s", new_arb_value)
+            new_arb_portion = new_arb_value / new_total_value
+            logging.info("new_arb_portion is %s", new_arb_portion)
+            overshoot_or_undershoot = (new_arb_portion - original_arb_portion) / (arb_portion - original_arb_portion)
+            logging.info("overshoot_or_undershoot is %s", overshoot_or_undershoot)
+
+            # update trade size
+            logging.info("amount_base is %s", old_amount_base := amount_base)
+            amount_base /= overshoot_or_undershoot
+            logging.info("amount_base is %s (%.2f%%)", amount_base, (amount_base / old_amount_base - 1) * 100)
+
+            # update prediction
+            predicted_pool_state = deepcopy(interface.current_pool_state)
+            trade_outcome = predict_long(
+                hyperdrive_interface=interface,
+                pool_state=predicted_pool_state,
+                base=amount_base,
+            )
+            predicted_wallet = deepcopy(wallet)
+            predicted_long = Long(maturity_time=new_maturity_time, balance=trade_outcome.user.bonds)
+            predicted_wallet.longs.update({new_maturity_time: predicted_long})
+            predicted_pool_state.pool_info.bond_reserves += trade_outcome.pool.bonds
+            logging.info("trade_outcome.pool.bonds is %s", trade_outcome.pool.bonds)
+            predicted_pool_state.pool_info.share_reserves += trade_outcome.pool.shares
+
+            # update new_arb_portion
+            new_spot_price = interface.calc_spot_price(pool_state=predicted_pool_state)
+            new_lp_share_price = predicted_pool_state.pool_info.lp_share_price
+            new_total_value = _measure_value(
+                interface=interface,
+                wallet=predicted_wallet,
+                pool_state=predicted_pool_state,
+                spot_price=new_spot_price,
+                block_time=new_block_time,
+            )
+            new_lp_value = predicted_wallet.lp_tokens * new_lp_share_price
+            new_arb_value = new_total_value - new_lp_value
+            new_arb_portion = new_arb_value / new_total_value
+            logging.info("new_arb_portion is %s", new_arb_portion)
+            time.sleep(0.5)
+
         action_list.append(open_long_trade(amount_base, slippage_tolerance))
     return action_list
 
@@ -512,6 +684,7 @@ class LPandArb(HyperdriveBasePolicy):
                     wallet,
                     max_trade_amount_base,
                     self.min_trade_amount_bonds,
+                    self.policy_config.arb_portion,
                     self.slippage_tolerance,
                 )
             )
