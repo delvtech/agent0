@@ -30,7 +30,6 @@ jobs:
           uv venv .venv -p 3.10
           source .venv/bin/activate
           uv pip install --upgrade -e .[all]
-          uv pip install --upgrade -r requirements-hyperdrivepy.txt 
 
       - name: run black
         run: |
