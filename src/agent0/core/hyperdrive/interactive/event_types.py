@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 
+# Lots of attributes for dataclass
+# pylint: disable=too-many-instance-attributes
+
 
 @dataclass
 class OpenLong:
@@ -32,6 +35,8 @@ class CloseLong:
 
     trader: ChecksumAddress
     """The address of the trader."""
+    destination: ChecksumAddress
+    """The address that receives the proceeds of the trade."""
     asset_id: int
     """The encoded asset id for this long."""
     maturity_time: int
@@ -74,6 +79,8 @@ class CloseShort:
 
     trader: ChecksumAddress
     """The address of the trader."""
+    destination: ChecksumAddress
+    """The address that receives the proceeds of the trade."""
     asset_id: int
     """The encoded asset id for this short."""
     maturity_time: int
@@ -84,6 +91,8 @@ class CloseShort:
     """The amount retrieved from closing the short, in units of shares."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
+    base_payment: FixedPoint
+    """The amount of base in the underlying short when shorting bonds."""
     bond_amount: FixedPoint
     """The amount of shorts closed in units of bonds."""
 
@@ -112,6 +121,8 @@ class RemoveLiquidity:
 
     provider: ChecksumAddress
     """The address of the lp provider."""
+    destination: ChecksumAddress
+    """The address that receives the proceeds of the trade."""
     lp_amount: FixedPoint
     """The amount of liquidity removed in units of lp."""
     base_amount: FixedPoint
@@ -132,6 +143,8 @@ class RedeemWithdrawalShares:
 
     provider: ChecksumAddress
     """The address of the lp provider."""
+    destination: ChecksumAddress
+    """The address that receives the proceeds of the trade."""
     withdrawal_share_amount: FixedPoint
     """The amount of withdrawal shares redeemed, in units of withdrawal shares."""
     base_amount: FixedPoint
