@@ -3,7 +3,6 @@ name = "agent0"
 version = "0.16.0"
 # Authors are the current, primary stuards of the repo
 # contributors can be found on github
-
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
     { name = "Mihai Cosma", email = "mihai@delv.tech" },
@@ -21,6 +20,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
 ]
 
 dependencies = [
@@ -88,14 +89,13 @@ all = [
     "agent0[dev,ai,rollbar]",
 ]
 
+[project.urls]
+"Homepage" = "https://agent0.readthedocs.io/en/latest/"
+"Bug Tracker" = "https://github.com/delvtech/agent0/issues"
+
 [build-system]
 requires = ["flit_core>=3.2"]
 build-backend = "flit_core.buildapi"
-
-[project.urls]
-"Homepage" = "https://github.com/delvtech/agent0"
-"Bug Tracker" = "https://github.com/delvtech/agent0/issues"
-
 
 [tool.pytest.ini_options]
 minversion = "6.0"
