@@ -460,7 +460,6 @@ def _deploy_and_initialize_hyperdrive_pool(
         contribution=initial_liquidity.scaled_value,
         fixedAPR=initial_fixed_apr.scaled_value,
         timeStretchAPR=initial_time_stretch_apr.scaled_value,
-        # initializeExtraData=bytes(0),
         options=Options(
             asBase=True,
             destination=Web3.to_checksum_address(deploy_account.address),
