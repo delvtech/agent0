@@ -121,7 +121,7 @@ def launch_local_hyperdrive_pool(
     factory_max_time_stretch_apr: FixedPoint = FixedPoint("0.5")  # 50%
 
     factory_min_fees = Fees(
-        curve=FixedPoint("0.001").scaled_value,  # .1%
+        curve=FixedPoint("0.0001").scaled_value,  # .01%
         flat=FixedPoint("0.0001").scaled_value,  # .01%
         governanceLP=FixedPoint("0.15").scaled_value,  # 15%
         governanceZombie=FixedPoint("0.03").scaled_value,  # 3%
@@ -143,7 +143,7 @@ def launch_local_hyperdrive_pool(
     checkpoint_duration = 3600  # 1 hour
     fees = Fees(
         curve=FixedPoint("0.01").scaled_value,  # 1%
-        flat=int(FixedPoint("0.0005").scaled_value / 52),  # 0.05% APR
+        flat=int(FixedPoint("0.0005").scaled_value),  # 0.05% APR
         governanceLP=FixedPoint("0.15").scaled_value,  # 15%
         governanceZombie=FixedPoint("0.03").scaled_value,  # 3%
     )
