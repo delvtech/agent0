@@ -11,7 +11,12 @@ COPY . ./
 RUN apt-get update && \
   apt-get install -y --no-install-recommends gcc python3-dev libssl-dev git && \
   python -m pip install --no-cache-dir --upgrade pip && \
+<<<<<<< HEAD
   python -m pip install --no-cache-dir . && \
+=======
+  python -m pip install --no-cache-dir uv && \
+  python -m uv pip install --no-cache-dir agent0@.[all] && \
+>>>>>>> e030f8e9 (remove hyperdrivepy txt install)
   apt-get remove -y gcc python3-dev libssl-dev && \
   apt-get autoremove -y && \
   pip uninstall pipenv -y
