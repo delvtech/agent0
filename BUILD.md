@@ -1,5 +1,11 @@
 # Build
 
+## Python
+
+Run `./scripts/build_wheels.sh` to build the python wheels, which are stored in the `wheelhouse` folder.
+
+## Docker
+
 We use Docker to manage our build environment.
 
 To build a local image, make sure you have Docker installed and running, then use:
