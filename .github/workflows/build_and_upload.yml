@@ -9,7 +9,7 @@ jobs:
   detect-version-changes:
     uses: ./.github/workflows/check_version.yml
     with:
-      file_path: crates/hyperdrivepy/pyproject.toml
+      file_path: pyproject.toml
 
   build-wheels:
     needs: detect-version-changes
@@ -32,7 +32,7 @@ jobs:
       - name: set up pip
         run: python -m pip install --upgrade pip
 
-      - name: build hyperdrivepy
+      - name: build agent0
         shell: bash
         run: source scripts/build_wheels.sh
 
