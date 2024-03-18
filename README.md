@@ -8,10 +8,7 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="icons/agent0-dark.svg">
-  <img alt="Agent 0" src="icons/agent0-light.svg">
-</picture>
+<img src="icons/agent0-dark.svg" width="800" alt="agent0"><br>
 
 # [DELV](https://delv.tech) repo for market simulation and analysis
 
@@ -21,7 +18,13 @@ This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https
 
 This repo contains general purpose code for interacting with Ethereum smart contracts.
 However, it was bulit for the primary use case of trading on [Hyperdrive](https://hyperdrive.delv.tech) markets.
-Below is an example for executing Hyperdrive trades in a simulated blockchain environment:
+Using a Python 3.10 environment, you can install agent0 via pip:
+
+```sh
+pip install --upgrade agent0
+```
+
+Next you can execute Hyperdrive trades in a simulated blockchain environment:
 
 ```python
 import datetime
@@ -49,8 +52,6 @@ pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
 See our [tutorial notebook](examples/tutorial.ipynb) for more information, including details on executing trades on remote chains.
 
 ## Install
-
-Install via pip: `pip install agent0`
 
 Please refer to [INSTALL.md](INSTALL.md) for more advanced install options.
 
