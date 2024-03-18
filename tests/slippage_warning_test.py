@@ -39,11 +39,28 @@ INVALID_SLIPPAGE = FixedPoint("-0.01")
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
 # with a flag controlling slippage per trade
 class InvalidOpenLongSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for open longs."""
+
     counter = 0
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid open long slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -58,11 +75,28 @@ class InvalidOpenLongSlippage(HyperdriveBasePolicy):
 
 
 class InvalidOpenShortSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for open shorts."""
+
     counter = 0
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid open long short slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -77,11 +111,31 @@ class InvalidOpenShortSlippage(HyperdriveBasePolicy):
 
 
 class InvalidRemoveLiquiditySlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for remove liquidity.
+    NOTE: This policy isn't used in this test due to slippage not being implemented for remove liquidity.
+    Keeping this policy here for when it does.
+    """
+
     counter = 0
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid remove liquidity slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -95,11 +149,28 @@ class InvalidRemoveLiquiditySlippage(HyperdriveBasePolicy):
 
 
 class InvalidCloseLongSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for close longs."""
+
     counter = 0
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid close long slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
@@ -120,11 +191,28 @@ class InvalidCloseLongSlippage(HyperdriveBasePolicy):
 
 
 class InvalidCloseShortSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for close shorts."""
+
     counter = 0
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid close short slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
         # pylint: disable=unused-argument
         action_list = []
         done_trading = False
