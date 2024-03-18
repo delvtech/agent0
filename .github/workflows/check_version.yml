@@ -1,0 +1,65 @@
+name: Check Version
+
+on:
+  workflow_call:
+    inputs:
+      file_path:
+        description: File path to check for version change
+        required: true
+        type: string
+    outputs:
+      version_changed:
+        description: true if the version line in the file has changed
+        value: ${{ jobs.check.outputs.version_changed }}
+      only_patch_version_changed:
+        description: true if only the patch version has changed
+        value: ${{ jobs.check.outputs.only_patch_version_changed }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.version_changed }}
+      only_patch_version_changed: ${{ steps.check.outputs.only_patch_version_changed }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for version changes
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # For PRs, compare PR head against base branch
+            OLD_VERSION=$(git show ${{ github.event.pull_request.base.sha }}:${{ inputs.file_path }} | grep '^version = ' | cut -d '"' -f 2)
+          else
+            # For direct pushes, compare the last two commits
+            OLD_VERSION=$(git show HEAD~1:${{ inputs.file_path }} | grep '^version = ' | cut -d '"' -f 2)
+          fi
+
+          # `cut` grabs everything inside the ", i.e. the version number x.y.z
+          NEW_VERSION=$(grep '^version = ' ${{ inputs.file_path }} | cut -d '"' -f 2)
+
+          echo "OLD_VERSION=$OLD_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION"
+
+          if [ "$OLD_VERSION" != "$NEW_VERSION" ]; then
+            echo "Version has changed."
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            IFS='.' read -ra OLD_PARTS <<< "$OLD_VERSION"
+            IFS='.' read -ra NEW_PARTS <<< "$NEW_VERSION"
+
+            if [ "${OLD_PARTS[0]}" == "${NEW_PARTS[0]}" ] && [ "${OLD_PARTS[1]}" == "${NEW_PARTS[1]}" ]; then
+              echo "Only the patch version has changed."
+              echo "only_patch_version_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "Major or minor version has changed."
+              echo "only_patch_version_changed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No version change detected."
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+            echo "only_patch_version_changed=false" >> $GITHUB_OUTPUT
+          fi
