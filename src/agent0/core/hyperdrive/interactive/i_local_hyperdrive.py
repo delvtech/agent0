@@ -162,8 +162,8 @@ class ILocalHyperdrive(IHyperdrive):
         """The duration of a checkpoint (in seconds)."""
         curve_fee: FixedPoint = FixedPoint("0.01")  # 1%
         """The LP fee applied to the curve portion of a trade."""
-        flat_fee: FixedPoint = FixedPoint("0.0005")  # 0.05%
-        """The LP fee applied to the flat portion of a trade."""
+        flat_fee: FixedPoint = FixedPoint("0.0005") / FixedPoint(scaled_value=52)  # 0.05% APR
+        """The LP fee applied to the flat portion of a trade in annualized rates."""
         governance_lp_fee: FixedPoint = FixedPoint("0.15")  # 15%
         """The portion of the LP fee that goes to governance."""
         governance_zombie_fee: FixedPoint = FixedPoint("0.03")  # 3%
