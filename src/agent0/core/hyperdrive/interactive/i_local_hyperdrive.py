@@ -452,6 +452,7 @@ class ILocalHyperdrive(IHyperdrive):
             hyperdriveGovernance="",  # will be determined in the deploy function
             defaultPausers=[],  # We don't support pausers when we deploy
             feeCollector="",  # will be determined in the deploy function
+            sweepCollector="",  # will be determined in the deploy function
             checkpointDurationResolution=config.factory_checkpoint_duration_resolution,
             minCheckpointDuration=config.factory_min_checkpoint_duration,
             maxCheckpointDuration=config.factory_max_checkpoint_duration,
@@ -478,6 +479,7 @@ class ILocalHyperdrive(IHyperdrive):
             timeStretch=0,
             governance="",  # will be determined in the deploy function
             feeCollector="",  # will be determined in the deploy function
+            sweepCollector="",  # will be determined in the deploy function
             fees=config._fees,  # pylint: disable=protected-access
         )
 

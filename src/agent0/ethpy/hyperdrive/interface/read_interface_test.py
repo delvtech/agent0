@@ -124,6 +124,7 @@ class TestHyperdriveReadInterface:
             "time_stretch": expected_timestretch_fp,
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
+            "sweep_collector": deploy_account.address,
         }
         expected_pool_config["fees"] = FeesFP(
             curve=FixedPoint("0.01"),  # 1%,

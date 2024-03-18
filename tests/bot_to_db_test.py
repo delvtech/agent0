@@ -210,6 +210,7 @@ class TestBotToDb:
             "time_stretch": expected_timestretch,
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
+            "sweep_collector": deploy_account.address,
             "curve_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
             "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05%
             "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%

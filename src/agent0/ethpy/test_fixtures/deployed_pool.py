@@ -153,6 +153,7 @@ def launch_local_hyperdrive_pool(
         hyperdriveGovernance="",  # will be determined in the deploy function
         defaultPausers=[],  # We don't support pausers when we deploy
         feeCollector="",  # will be determined in the deploy function
+        sweepCollector="",  # will be determined in the deploy function
         checkpointDurationResolution=factory_checkpoint_duration_resolution,
         minCheckpointDuration=factory_min_checkpoint_duration,
         maxCheckpointDuration=factory_max_checkpoint_duration,
@@ -179,6 +180,7 @@ def launch_local_hyperdrive_pool(
         timeStretch=0,
         governance="",  # will be determined in the deploy function
         feeCollector="",  # will be determined in the deploy function
+        sweepCollector="",  # will be determined in the deploy function
         fees=fees,
     )
     return deploy_hyperdrive_from_factory(
