@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  # FIXME remove after testing in CI
+  pull_request:
+
 
 jobs:
   detect-version-changes:
