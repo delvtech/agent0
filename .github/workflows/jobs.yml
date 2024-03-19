@@ -1,0 +1,85 @@
+name: lint and test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-code:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        token: ${{github.token}}
+    - name: install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    - name: install venv
+      run: |
+        source $HOME/.cargo/env
+        uv venv .venv -p 3.10
+    - name: install requirements
+      run: |
+        source $HOME/.cargo/env
+        source .venv/bin/activate
+        uv pip install -e '.[all]'
+    - name: run black
+      run: |
+        source .venv/bin/activate
+        python -m black --config pyproject.toml --check --diff .
+    - name: get all Python files
+      id: list_files
+      run: |
+        echo "files=$(git ls-files '*.py' '*.pyi' | xargs)" >> $GITHUB_OUTPUT
+    - name: run Pylint on files
+      run: |
+        source .venv/bin/activate
+        files="${{ steps.list_files.outputs.files }}"
+        if [ -n "$files" ]; then
+          pylint --rcfile=.pylintrc $files
+        else
+          echo "No Python files found."
+        fi
+    - name: Analyse code with pyright
+      run: |
+        source .venv/bin/activate
+        python -m pyright $(git ls-files '*.py' '*.pyi')
+    - name: install node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16.x
+    - name: install packages
+      uses: borales/actions-yarn@v4
+      with:
+        cmd: install # will run `yarn install` command
+      env:
+        # A warning is thrown here unnecessarily.  tracking issue here:
+        # https://github.com/github/vscode-github-actions/issues/222
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # if needed
+    - name: install foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: nightly
+    - name: run pytest with coverage
+      run: |
+        source .venv/bin/activate
+        IN_CI=true coverage run -m pytest
+    - name: generate coverage report
+      run: |
+        source .venv/bin/activate
+        coverage xml -i
+        coverage html -i
+    - name: upload coverage report to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        flags: unittests
+        fail_ci_if_error: true
+        # A warning is thrown here unnecessarily.  tracking issue here:
+        # https://github.com/github/vscode-github-actions/issues/222
+        token: ${{ secrets.CODECOV_TOKEN }}
