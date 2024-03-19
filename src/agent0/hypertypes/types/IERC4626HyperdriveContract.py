@@ -723,8 +723,8 @@ class IERC4626HyperdriveOpenLongContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for OpenLong."""
 
-        arg1: int
-        arg2: int
+        maturityTime: int
+        bondProceeds: int
 
     def __call__(self, amount: int, minOutput: int, minVaultSharePrice: int, options: Options) -> IERC4626HyperdriveOpenLongContractFunction:  # type: ignore
         clone = super().__call__(
@@ -761,8 +761,8 @@ class IERC4626HyperdriveOpenShortContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for OpenShort."""
 
-        arg1: int
-        arg2: int
+        maturityTime: int
+        deposit: int
 
     def __call__(self, bondAmount: int, maxDeposit: int, minVaultSharePrice: int, options: Options) -> IERC4626HyperdriveOpenShortContractFunction:  # type: ignore
         clone = super().__call__(
@@ -878,8 +878,8 @@ class IERC4626HyperdriveRedeemWithdrawalSharesContractFunction(ContractFunction)
     class ReturnValues(NamedTuple):
         """The return named tuple for RedeemWithdrawalShares."""
 
-        arg1: int
-        arg2: int
+        proceeds: int
+        withdrawalSharesRedeemed: int
 
     def __call__(self, withdrawalShares: int, minOutputPerShare: int, options: Options) -> IERC4626HyperdriveRedeemWithdrawalSharesContractFunction:  # type: ignore
         clone = super().__call__(
@@ -913,8 +913,8 @@ class IERC4626HyperdriveRemoveLiquidityContractFunction(ContractFunction):
     class ReturnValues(NamedTuple):
         """The return named tuple for RemoveLiquidity."""
 
-        arg1: int
-        arg2: int
+        proceeds: int
+        withdrawalShares: int
 
     def __call__(self, lpShares: int, minOutputPerShare: int, options: Options) -> IERC4626HyperdriveRemoveLiquidityContractFunction:  # type: ignore
         clone = super().__call__(
@@ -1013,6 +1013,28 @@ class IERC4626HyperdriveSetApprovalForAllContractFunction(ContractFunction):
         # Call the function
 
 
+class IERC4626HyperdriveSetFeeCollectorContractFunction(ContractFunction):
+    """ContractFunction for the setFeeCollector method."""
+
+    def __call__(self, who: str) -> IERC4626HyperdriveSetFeeCollectorContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(who))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
 class IERC4626HyperdriveSetGovernanceContractFunction(ContractFunction):
     """ContractFunction for the setGovernance method."""
 
@@ -1040,6 +1062,28 @@ class IERC4626HyperdriveSetPauserContractFunction(ContractFunction):
 
     def __call__(self, who: str, status: bool) -> IERC4626HyperdriveSetPauserContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(who), dataclass_to_tuple(status))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class IERC4626HyperdriveSetSweepCollectorContractFunction(ContractFunction):
+    """ContractFunction for the setSweepCollector method."""
+
+    def __call__(self, who: str) -> IERC4626HyperdriveSetSweepCollectorContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(who))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1418,9 +1462,13 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
 
     setApprovalForAll: IERC4626HyperdriveSetApprovalForAllContractFunction
 
+    setFeeCollector: IERC4626HyperdriveSetFeeCollectorContractFunction
+
     setGovernance: IERC4626HyperdriveSetGovernanceContractFunction
 
     setPauser: IERC4626HyperdriveSetPauserContractFunction
+
+    setSweepCollector: IERC4626HyperdriveSetSweepCollectorContractFunction
 
     sweep: IERC4626HyperdriveSweepContractFunction
 
@@ -1724,6 +1772,14 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="setApprovalForAll",
         )
+        self.setFeeCollector = IERC4626HyperdriveSetFeeCollectorContractFunction.factory(
+            "setFeeCollector",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setFeeCollector",
+        )
         self.setGovernance = IERC4626HyperdriveSetGovernanceContractFunction.factory(
             "setGovernance",
             w3=w3,
@@ -1739,6 +1795,14 @@ class IERC4626HyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="setPauser",
+        )
+        self.setSweepCollector = IERC4626HyperdriveSetSweepCollectorContractFunction.factory(
+            "setSweepCollector",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setSweepCollector",
         )
         self.sweep = IERC4626HyperdriveSweepContractFunction.factory(
             "sweep",
@@ -2362,6 +2426,82 @@ class IERC4626HyperdriveCreateCheckpointContractEvent(ContractEvent):
         )
 
 
+class IERC4626HyperdriveFeeCollectorUpdatedContractEvent(ContractEvent):
+    """ContractEvent for FeeCollectorUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveFeeCollectorUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveFeeCollectorUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveFeeCollectorUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveFeeCollectorUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class IERC4626HyperdriveGovernanceUpdatedContractEvent(ContractEvent):
     """ContractEvent for GovernanceUpdated."""
 
@@ -2970,6 +3110,158 @@ class IERC4626HyperdriveRemoveLiquidityContractEvent(ContractEvent):
         )
 
 
+class IERC4626HyperdriveSweepContractEvent(ContractEvent):
+    """ContractEvent for Sweep."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveSweepContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveSweepContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveSweepContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveSweepContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class IERC4626HyperdriveSweepCollectorUpdatedContractEvent(ContractEvent):
+    """ContractEvent for SweepCollectorUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "IERC4626HyperdriveSweepCollectorUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IERC4626HyperdriveSweepCollectorUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IERC4626HyperdriveSweepCollectorUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IERC4626HyperdriveSweepCollectorUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class IERC4626HyperdriveTransferSingleContractEvent(ContractEvent):
     """ContractEvent for TransferSingle."""
 
@@ -3063,6 +3355,8 @@ class IERC4626HyperdriveContractEvents(ContractEvents):
 
     CreateCheckpoint: IERC4626HyperdriveCreateCheckpointContractEvent
 
+    FeeCollectorUpdated: IERC4626HyperdriveFeeCollectorUpdatedContractEvent
+
     GovernanceUpdated: IERC4626HyperdriveGovernanceUpdatedContractEvent
 
     Initialize: IERC4626HyperdriveInitializeContractEvent
@@ -3078,6 +3372,10 @@ class IERC4626HyperdriveContractEvents(ContractEvents):
     RedeemWithdrawalShares: IERC4626HyperdriveRedeemWithdrawalSharesContractEvent
 
     RemoveLiquidity: IERC4626HyperdriveRemoveLiquidityContractEvent
+
+    Sweep: IERC4626HyperdriveSweepContractEvent
+
+    SweepCollectorUpdated: IERC4626HyperdriveSweepCollectorUpdatedContractEvent
 
     TransferSingle: IERC4626HyperdriveTransferSingleContractEvent
 
@@ -3130,6 +3428,12 @@ class IERC4626HyperdriveContractEvents(ContractEvents):
                 "CreateCheckpoint", w3=w3, contract_abi=abi, address=address, event_name="CreateCheckpoint"
             ),
         )
+        self.FeeCollectorUpdated = cast(
+            IERC4626HyperdriveFeeCollectorUpdatedContractEvent,
+            IERC4626HyperdriveFeeCollectorUpdatedContractEvent.factory(
+                "FeeCollectorUpdated", w3=w3, contract_abi=abi, address=address, event_name="FeeCollectorUpdated"
+            ),
+        )
         self.GovernanceUpdated = cast(
             IERC4626HyperdriveGovernanceUpdatedContractEvent,
             IERC4626HyperdriveGovernanceUpdatedContractEvent.factory(
@@ -3176,6 +3480,18 @@ class IERC4626HyperdriveContractEvents(ContractEvents):
             IERC4626HyperdriveRemoveLiquidityContractEvent,
             IERC4626HyperdriveRemoveLiquidityContractEvent.factory(
                 "RemoveLiquidity", w3=w3, contract_abi=abi, address=address, event_name="RemoveLiquidity"
+            ),
+        )
+        self.Sweep = cast(
+            IERC4626HyperdriveSweepContractEvent,
+            IERC4626HyperdriveSweepContractEvent.factory(
+                "Sweep", w3=w3, contract_abi=abi, address=address, event_name="Sweep"
+            ),
+        )
+        self.SweepCollectorUpdated = cast(
+            IERC4626HyperdriveSweepCollectorUpdatedContractEvent,
+            IERC4626HyperdriveSweepCollectorUpdatedContractEvent.factory(
+                "SweepCollectorUpdated", w3=w3, contract_abi=abi, address=address, event_name="SweepCollectorUpdated"
             ),
         )
         self.TransferSingle = cast(
@@ -4090,63 +4406,6 @@ class IERC4626HyperdriveInvalidPresentValueContractError:
                 item
                 for item in ierc4626hyperdrive_abi
                 if item.get("name") == "InvalidPresentValue" and item.get("type") == "error"
-            ][0],
-        )
-        types = get_abi_input_types(error_abi)
-        abi_codec = ABICodec(default_registry)
-        decoded = abi_codec.decode(types, data)
-        return decoded
-
-
-class IERC4626HyperdriveInvalidShareReservesContractError:
-    """ContractError for InvalidShareReserves."""
-
-    # @combomethod destroys return types, so we are redefining functions as both class and instance
-    # pylint: disable=function-redefined
-
-    # 4 byte error selector
-    selector: str
-    # error signature, i.e. CustomError(uint256,bool)
-    signature: str
-
-    # pylint: disable=useless-parent-delegation
-    def __init__(
-        self: "IERC4626HyperdriveInvalidShareReservesContractError",
-    ) -> None:
-        self.selector = "0xb0bfcdbe"
-        self.signature = "InvalidShareReserves()"
-
-    def decode_error_data(  # type: ignore
-        self: "IERC4626HyperdriveInvalidShareReservesContractError",
-        data: HexBytes,
-        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
-    ) -> tuple[Any, ...]:
-        """Decodes error data returns from a smart contract."""
-        error_abi = cast(
-            ABIFunction,
-            [
-                item
-                for item in ierc4626hyperdrive_abi
-                if item.get("name") == "InvalidShareReserves" and item.get("type") == "error"
-            ][0],
-        )
-        types = get_abi_input_types(error_abi)
-        abi_codec = ABICodec(default_registry)
-        decoded = abi_codec.decode(types, data)
-        return decoded
-
-    @classmethod
-    def decode_error_data(  # type: ignore
-        cls: Type["IERC4626HyperdriveInvalidShareReservesContractError"],
-        data: HexBytes,
-    ) -> tuple[Any, ...]:
-        """Decodes error data returns from a smart contract."""
-        error_abi = cast(
-            ABIFunction,
-            [
-                item
-                for item in ierc4626hyperdrive_abi
-                if item.get("name") == "InvalidShareReserves" and item.get("type") == "error"
             ][0],
         )
         types = get_abi_input_types(error_abi)
@@ -5295,6 +5554,63 @@ class IERC4626HyperdriveUnsupportedTokenContractError:
         return decoded
 
 
+class IERC4626HyperdriveUpdateLiquidityFailedContractError:
+    """ContractError for UpdateLiquidityFailed."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IERC4626HyperdriveUpdateLiquidityFailedContractError",
+    ) -> None:
+        self.selector = "0x5044b7f5"
+        self.signature = "UpdateLiquidityFailed()"
+
+    def decode_error_data(  # type: ignore
+        self: "IERC4626HyperdriveUpdateLiquidityFailedContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UpdateLiquidityFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IERC4626HyperdriveUpdateLiquidityFailedContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ierc4626hyperdrive_abi
+                if item.get("name") == "UpdateLiquidityFailed" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class IERC4626HyperdriveContractErrors:
     """ContractErrors for the IERC4626Hyperdrive contract."""
 
@@ -5329,8 +5645,6 @@ class IERC4626HyperdriveContractErrors:
     InvalidLPSharePrice: IERC4626HyperdriveInvalidLPSharePriceContractError
 
     InvalidPresentValue: IERC4626HyperdriveInvalidPresentValueContractError
-
-    InvalidShareReserves: IERC4626HyperdriveInvalidShareReservesContractError
 
     InvalidSignature: IERC4626HyperdriveInvalidSignatureContractError
 
@@ -5372,6 +5686,8 @@ class IERC4626HyperdriveContractErrors:
 
     UnsupportedToken: IERC4626HyperdriveUnsupportedTokenContractError
 
+    UpdateLiquidityFailed: IERC4626HyperdriveUpdateLiquidityFailedContractError
+
     def __init__(
         self,
     ) -> None:
@@ -5393,7 +5709,6 @@ class IERC4626HyperdriveContractErrors:
         self.InvalidInitialVaultSharePrice = IERC4626HyperdriveInvalidInitialVaultSharePriceContractError()
         self.InvalidLPSharePrice = IERC4626HyperdriveInvalidLPSharePriceContractError()
         self.InvalidPresentValue = IERC4626HyperdriveInvalidPresentValueContractError()
-        self.InvalidShareReserves = IERC4626HyperdriveInvalidShareReservesContractError()
         self.InvalidSignature = IERC4626HyperdriveInvalidSignatureContractError()
         self.InvalidTimestamp = IERC4626HyperdriveInvalidTimestampContractError()
         self.LnInvalidInput = IERC4626HyperdriveLnInvalidInputContractError()
@@ -5414,6 +5729,7 @@ class IERC4626HyperdriveContractErrors:
         self.UnsafeCastToUint112 = IERC4626HyperdriveUnsafeCastToUint112ContractError()
         self.UnsafeCastToUint128 = IERC4626HyperdriveUnsafeCastToUint128ContractError()
         self.UnsupportedToken = IERC4626HyperdriveUnsupportedTokenContractError()
+        self.UpdateLiquidityFailed = IERC4626HyperdriveUpdateLiquidityFailedContractError()
 
         self._all = [
             self.BatchInputLengthMismatch,
@@ -5432,7 +5748,6 @@ class IERC4626HyperdriveContractErrors:
             self.InvalidInitialVaultSharePrice,
             self.InvalidLPSharePrice,
             self.InvalidPresentValue,
-            self.InvalidShareReserves,
             self.InvalidSignature,
             self.InvalidTimestamp,
             self.LnInvalidInput,
@@ -5453,6 +5768,7 @@ class IERC4626HyperdriveContractErrors:
             self.UnsafeCastToUint112,
             self.UnsafeCastToUint128,
             self.UnsupportedToken,
+            self.UpdateLiquidityFailed,
         ]
 
     def decode_custom_error(self, data: str) -> tuple[Any, ...]:
@@ -5494,7 +5810,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                     ],
                 },
             ],
-            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "lpShares", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "payable",
         },
         {
@@ -5551,7 +5867,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                     ],
                 },
             ],
-            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "proceeds", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "nonpayable",
         },
         {
@@ -5572,7 +5888,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                     ],
                 },
             ],
-            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "proceeds", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "nonpayable",
         },
         {
@@ -5676,6 +5992,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                         {"name": "timeStretch", "type": "uint256", "internalType": "uint256"},
                         {"name": "governance", "type": "address", "internalType": "address"},
                         {"name": "feeCollector", "type": "address", "internalType": "address"},
+                        {"name": "sweepCollector", "type": "address", "internalType": "address"},
                         {
                             "name": "fees",
                             "type": "tuple",
@@ -5763,7 +6080,7 @@ ierc4626hyperdrive_abi: ABI = cast(
                     ],
                 },
             ],
-            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "lpShares", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "payable",
         },
         {
@@ -5823,8 +6140,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "", "type": "uint256", "internalType": "uint256"},
-                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "maturityTime", "type": "uint256", "internalType": "uint256"},
+                {"name": "bondProceeds", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "payable",
         },
@@ -5847,8 +6164,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "", "type": "uint256", "internalType": "uint256"},
-                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "maturityTime", "type": "uint256", "internalType": "uint256"},
+                {"name": "deposit", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "payable",
         },
@@ -5903,8 +6220,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "", "type": "uint256", "internalType": "uint256"},
-                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "proceeds", "type": "uint256", "internalType": "uint256"},
+                {"name": "withdrawalSharesRedeemed", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "nonpayable",
         },
@@ -5926,8 +6243,8 @@ ierc4626hyperdrive_abi: ABI = cast(
                 },
             ],
             "outputs": [
-                {"name": "", "type": "uint256", "internalType": "uint256"},
-                {"name": "", "type": "uint256", "internalType": "uint256"},
+                {"name": "proceeds", "type": "uint256", "internalType": "uint256"},
+                {"name": "withdrawalShares", "type": "uint256", "internalType": "uint256"},
             ],
             "stateMutability": "nonpayable",
         },
@@ -5966,6 +6283,13 @@ ierc4626hyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "setFeeCollector",
+            "inputs": [{"name": "_who", "type": "address", "internalType": "address"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
             "name": "setGovernance",
             "inputs": [{"name": "_who", "type": "address", "internalType": "address"}],
             "outputs": [],
@@ -5978,6 +6302,13 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "who", "type": "address", "internalType": "address"},
                 {"name": "status", "type": "bool", "internalType": "bool"},
             ],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "setSweepCollector",
+            "inputs": [{"name": "_who", "type": "address", "internalType": "address"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -6107,6 +6438,7 @@ ierc4626hyperdrive_abi: ABI = cast(
             "name": "CloseLong",
             "inputs": [
                 {"name": "trader", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "destination", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "assetId", "type": "uint256", "indexed": True, "internalType": "uint256"},
                 {"name": "maturityTime", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
@@ -6121,11 +6453,13 @@ ierc4626hyperdrive_abi: ABI = cast(
             "name": "CloseShort",
             "inputs": [
                 {"name": "trader", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "destination", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "assetId", "type": "uint256", "indexed": True, "internalType": "uint256"},
                 {"name": "maturityTime", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "asBase", "type": "bool", "indexed": False, "internalType": "bool"},
+                {"name": "basePayment", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "bondAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
@@ -6149,6 +6483,12 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "maturedLongs", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "lpSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "FeeCollectorUpdated",
+            "inputs": [{"name": "newFeeCollector", "type": "address", "indexed": True, "internalType": "address"}],
             "anonymous": False,
         },
         {
@@ -6219,6 +6559,7 @@ ierc4626hyperdrive_abi: ABI = cast(
             "name": "RedeemWithdrawalShares",
             "inputs": [
                 {"name": "provider", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "destination", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "withdrawalShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
@@ -6231,6 +6572,7 @@ ierc4626hyperdrive_abi: ABI = cast(
             "name": "RemoveLiquidity",
             "inputs": [
                 {"name": "provider", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "destination", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "lpAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "baseAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "vaultShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
@@ -6238,6 +6580,21 @@ ierc4626hyperdrive_abi: ABI = cast(
                 {"name": "withdrawalShareAmount", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "lpSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "Sweep",
+            "inputs": [
+                {"name": "collector", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "target", "type": "address", "indexed": True, "internalType": "address"},
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "SweepCollectorUpdated",
+            "inputs": [{"name": "newSweepCollector", "type": "address", "indexed": True, "internalType": "address"}],
             "anonymous": False,
         },
         {
@@ -6274,7 +6631,6 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"type": "error", "name": "InvalidInitialVaultSharePrice", "inputs": []},
         {"type": "error", "name": "InvalidLPSharePrice", "inputs": []},
         {"type": "error", "name": "InvalidPresentValue", "inputs": []},
-        {"type": "error", "name": "InvalidShareReserves", "inputs": []},
         {"type": "error", "name": "InvalidSignature", "inputs": []},
         {"type": "error", "name": "InvalidTimestamp", "inputs": []},
         {"type": "error", "name": "LnInvalidInput", "inputs": []},
@@ -6295,6 +6651,7 @@ ierc4626hyperdrive_abi: ABI = cast(
         {"type": "error", "name": "UnsafeCastToUint112", "inputs": []},
         {"type": "error", "name": "UnsafeCastToUint128", "inputs": []},
         {"type": "error", "name": "UnsupportedToken", "inputs": []},
+        {"type": "error", "name": "UpdateLiquidityFailed", "inputs": []},
     ],
 )
 # pylint: disable=line-too-long

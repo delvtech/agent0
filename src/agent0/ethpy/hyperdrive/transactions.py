@@ -138,7 +138,7 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     log_args = hyperdrive_event_logs[0]["args"]
 
     trade_result = ReceiptBreakdown()
-    values = ["trader", "provider", "assetId", "checkpointTime", "asBase"]
+    values = ["trader", "destination", "provider", "assetId", "checkpointTime", "asBase"]
     fixedpoint_values = [
         "baseAmount",
         "bondAmount",
@@ -147,6 +147,7 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         "vaultSharePrice",
         "vaultShareAmount",
         "baseProceeds",
+        "basePayment",
         "lpSharePrice",
         "maturedShorts",
         "maturedLongs",

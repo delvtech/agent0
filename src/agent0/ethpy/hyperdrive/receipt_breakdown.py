@@ -14,6 +14,7 @@ class ReceiptBreakdown:
     r"""A granular breakdown of important values in a trade receipt."""
 
     trader: str = ""
+    destination: str = ""
     provider: str = ""
     asset_id: int = 0
     maturity_time_seconds: int = 0
@@ -24,6 +25,7 @@ class ReceiptBreakdown:
     vault_share_price: FixedPoint = FixedPoint(0)
     vault_share_amount: FixedPoint = FixedPoint(0)
     base_proceeds: FixedPoint = FixedPoint(0)
+    base_payment: FixedPoint = FixedPoint(0)
     as_base: bool = False
     lp_share_price: FixedPoint = FixedPoint(0)
     # checkpoint event params

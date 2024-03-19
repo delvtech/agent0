@@ -192,9 +192,8 @@ async def _async_open_long(
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
-        # ABI doesn't have output names. Return result is [maturityTime, bondProceeds]
         min_output = (
-            FixedPoint(scaled_value=preview_result["value1"]) * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             trade_amount.scaled_value,
@@ -264,7 +263,7 @@ async def _async_close_long(
         )
     if slippage_tolerance is not None:
         min_output = (
-            FixedPoint(scaled_value=preview_result["value0"]) * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["proceeds"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             maturity_time,
@@ -336,9 +335,8 @@ async def _async_open_short(
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
-        # ABI doesn't have output names. Return result is [maturityTime, traderDeposit]
         max_deposit = (
-            FixedPoint(scaled_value=preview_result["value1"]) * (FixedPoint(1) + slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["deposit"]) * (FixedPoint(1) + slippage_tolerance)
         ).scaled_value
         fn_args = (
             trade_amount.scaled_value,
@@ -407,7 +405,7 @@ async def _async_close_short(
         )
     if slippage_tolerance is not None:
         min_output = (
-            FixedPoint(scaled_value=preview_result["value0"]) * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result["proceeds"]) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             maturity_time,
@@ -584,9 +582,7 @@ async def _async_redeem_withdraw_shares(
     # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
     # here with a useful error message, so we check that explicitly here
 
-    # withdrawalSharesRedeemed is the second return value of the call
-    # The abi doesn't contain the name of the returned variable
-    if preview_result["value1"] == 0 and trade_amount > 0:
+    if preview_result["withdrawalSharesRedeemed"] == 0 and trade_amount > 0:
         raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
     try:

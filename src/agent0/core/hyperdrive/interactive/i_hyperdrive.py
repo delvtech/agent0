@@ -459,6 +459,7 @@ class IHyperdrive:
             case HyperdriveActionType.CLOSE_LONG:
                 return CloseLong(
                     trader=Web3.to_checksum_address(tx_receipt.trader),
+                    destination=Web3.to_checksum_address(tx_receipt.destination),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
@@ -482,11 +483,13 @@ class IHyperdrive:
             case HyperdriveActionType.CLOSE_SHORT:
                 return CloseShort(
                     trader=Web3.to_checksum_address(tx_receipt.trader),
+                    destination=Web3.to_checksum_address(tx_receipt.destination),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
                     base_amount=tx_receipt.base_amount,
                     vault_share_amount=tx_receipt.vault_share_amount,
                     as_base=tx_receipt.as_base,
+                    base_payment=tx_receipt.base_payment,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
@@ -503,6 +506,7 @@ class IHyperdrive:
             case HyperdriveActionType.REMOVE_LIQUIDITY:
                 return RemoveLiquidity(
                     provider=Web3.to_checksum_address(tx_receipt.provider),
+                    destination=Web3.to_checksum_address(tx_receipt.destination),
                     lp_amount=tx_receipt.lp_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_amount=tx_receipt.vault_share_amount,
@@ -514,6 +518,7 @@ class IHyperdrive:
             case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
                 return RedeemWithdrawalShares(
                     provider=Web3.to_checksum_address(tx_receipt.provider),
+                    destination=Web3.to_checksum_address(tx_receipt.destination),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     base_amount=tx_receipt.base_amount,
                     vault_share_amount=tx_receipt.vault_share_amount,

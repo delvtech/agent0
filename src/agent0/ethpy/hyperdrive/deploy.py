@@ -31,6 +31,7 @@ from agent0.hypertypes import (
     HyperdriveFactoryContract,
     IERC4626HyperdriveContract,
     MockERC4626Contract,
+    Options,
     PoolDeployConfig,
 )
 
@@ -116,6 +117,7 @@ def deploy_hyperdrive_from_factory(
     factory_deploy_config.governance = deploy_account_addr
     factory_deploy_config.hyperdriveGovernance = deploy_account_addr
     factory_deploy_config.feeCollector = deploy_account_addr
+    factory_deploy_config.sweepCollector = deploy_account_addr
 
     # Deploy the factory and base token contracts
     factory_contract, deployer_contract, factory_deploy_config = _deploy_hyperdrive_factory(
@@ -130,6 +132,7 @@ def deploy_hyperdrive_from_factory(
     pool_deploy_config.baseToken = base_token_contract.address
     pool_deploy_config.governance = deploy_account_addr
     pool_deploy_config.feeCollector = deploy_account_addr
+    pool_deploy_config.sweepCollector = deploy_account_addr
     pool_deploy_config.linkerFactory = factory_deploy_config.linkerFactory
     pool_deploy_config.linkerCodeHash = factory_deploy_config.linkerCodeHash
 
@@ -138,7 +141,7 @@ def deploy_hyperdrive_from_factory(
         web3=web3,
         funding_account=deploy_account,
         funding_contract=base_token_contract,
-        contract_to_approve=factory_contract,
+        contract_to_approve=deployer_contract,
         mint_amount=initial_liquidity,
     )
 
@@ -322,7 +325,7 @@ def _mint_and_approve(
     web3,
     funding_account: LocalAccount,
     funding_contract: ERC20MintableContract,
-    contract_to_approve: HyperdriveFactoryContract,
+    contract_to_approve: ERC4626HyperdriveDeployerCoordinatorContract,
     mint_amount: FixedPoint,
 ) -> tuple[TxReceipt, TxReceipt]:
     """Mint tokens from the funding_contract and approve spending with the contract_to_approve
@@ -457,7 +460,11 @@ def _deploy_and_initialize_hyperdrive_pool(
         contribution=initial_liquidity.scaled_value,
         fixedAPR=initial_fixed_apr.scaled_value,
         timeStretchAPR=initial_time_stretch_apr.scaled_value,
-        initializeExtraData=bytes(0),
+        options=Options(
+            asBase=True,
+            destination=Web3.to_checksum_address(deploy_account.address),
+            extraData=bytes(0),
+        ),
         salt=salt,
     )
 

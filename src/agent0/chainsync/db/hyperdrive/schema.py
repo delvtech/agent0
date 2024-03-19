@@ -40,6 +40,7 @@ class PoolConfig(Base):
     time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governance: Mapped[Union[str, None]] = mapped_column(String, default=None)
     fee_collector: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    sweep_collector: Mapped[Union[str, None]] = mapped_column(String, default=None)
     curve_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     flat_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     governance_lp_fee: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

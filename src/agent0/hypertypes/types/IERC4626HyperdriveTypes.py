@@ -62,6 +62,7 @@ CloseLong = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="trader", type="address"),
+        ABIEventParams(indexed=True, name="destination", type="address"),
         ABIEventParams(indexed=True, name="assetId", type="uint256"),
         ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
@@ -77,11 +78,13 @@ CloseShort = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="trader", type="address"),
+        ABIEventParams(indexed=True, name="destination", type="address"),
         ABIEventParams(indexed=True, name="assetId", type="uint256"),
         ABIEventParams(indexed=False, name="maturityTime", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="vaultShareAmount", type="uint256"),
         ABIEventParams(indexed=False, name="asBase", type="bool"),
+        ABIEventParams(indexed=False, name="basePayment", type="uint256"),
         ABIEventParams(indexed=False, name="bondAmount", type="uint256"),
     ],
     name="CloseShort",
@@ -108,6 +111,15 @@ CreateCheckpoint = ABIEvent(
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
     name="CreateCheckpoint",
+    type="event",
+)
+
+FeeCollectorUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newFeeCollector", type="address"),
+    ],
+    name="FeeCollectorUpdated",
     type="event",
 )
 
@@ -188,6 +200,7 @@ RedeemWithdrawalShares = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="provider", type="address"),
+        ABIEventParams(indexed=True, name="destination", type="address"),
         ABIEventParams(indexed=False, name="withdrawalShareAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="vaultShareAmount", type="uint256"),
@@ -201,6 +214,7 @@ RemoveLiquidity = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="provider", type="address"),
+        ABIEventParams(indexed=True, name="destination", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
         ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
         ABIEventParams(indexed=False, name="vaultShareAmount", type="uint256"),
@@ -209,6 +223,25 @@ RemoveLiquidity = ABIEvent(
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
     name="RemoveLiquidity",
+    type="event",
+)
+
+Sweep = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="collector", type="address"),
+        ABIEventParams(indexed=True, name="target", type="address"),
+    ],
+    name="Sweep",
+    type="event",
+)
+
+SweepCollectorUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newSweepCollector", type="address"),
+    ],
+    name="SweepCollectorUpdated",
     type="event",
 )
 
@@ -359,13 +392,6 @@ InvalidPresentValueError = ErrorInfo(
     signature="InvalidPresentValue()",
 )
 
-InvalidShareReservesError = ErrorInfo(
-    inputs=[],
-    name="InvalidShareReserves",
-    selector="0xb0bfcdbe",
-    signature="InvalidShareReserves()",
-)
-
 InvalidSignatureError = ErrorInfo(
     inputs=[],
     name="InvalidSignature",
@@ -506,4 +532,11 @@ UnsupportedTokenError = ErrorInfo(
     name="UnsupportedToken",
     selector="0x6a172882",
     signature="UnsupportedToken()",
+)
+
+UpdateLiquidityFailedError = ErrorInfo(
+    inputs=[],
+    name="UpdateLiquidityFailed",
+    selector="0x5044b7f5",
+    signature="UpdateLiquidityFailed()",
 )

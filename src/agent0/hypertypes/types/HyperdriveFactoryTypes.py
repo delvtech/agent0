@@ -33,6 +33,7 @@ class FactoryConfig:
     hyperdriveGovernance: str
     defaultPausers: list[str]
     feeCollector: str
+    sweepCollector: str
     checkpointDurationResolution: int
     minCheckpointDuration: int
     maxCheckpointDuration: int
@@ -231,6 +232,15 @@ MinTimeStretchAPRUpdated = ABIEvent(
     type="event",
 )
 
+SweepCollectorUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newSweepCollector", type="address"),
+    ],
+    name="SweepCollectorUpdated",
+    type="event",
+)
+
 
 @dataclass
 class ErrorInfo:
@@ -250,24 +260,6 @@ class ErrorParams:
     solidity_type: str
     python_type: str
 
-
-AddressEmptyCodeError = ErrorInfo(
-    inputs=[
-        ErrorParams(name="target", python_type="str", solidity_type="address"),
-    ],
-    name="AddressEmptyCode",
-    selector="0x9996b315",
-    signature="AddressEmptyCode(address)",
-)
-
-AddressInsufficientBalanceError = ErrorInfo(
-    inputs=[
-        ErrorParams(name="account", python_type="str", solidity_type="address"),
-    ],
-    name="AddressInsufficientBalance",
-    selector="0xcd786059",
-    signature="AddressInsufficientBalance(address)",
-)
 
 DeployerCoordinatorAlreadyAddedError = ErrorInfo(
     inputs=[],
@@ -295,20 +287,6 @@ EndIndexTooLargeError = ErrorInfo(
     name="EndIndexTooLarge",
     selector="0xe0f7becb",
     signature="EndIndexTooLarge()",
-)
-
-FailedInnerCallError = ErrorInfo(
-    inputs=[],
-    name="FailedInnerCall",
-    selector="0x1425ea42",
-    signature="FailedInnerCall()",
-)
-
-InsufficientValueError = ErrorInfo(
-    inputs=[],
-    name="InsufficientValue",
-    selector="0x11011294",
-    signature="InsufficientValue()",
 )
 
 InvalidCheckpointDurationError = ErrorInfo(
@@ -451,13 +429,11 @@ LnInvalidInputError = ErrorInfo(
     signature="LnInvalidInput()",
 )
 
-SafeERC20FailedOperationError = ErrorInfo(
-    inputs=[
-        ErrorParams(name="token", python_type="str", solidity_type="address"),
-    ],
-    name="SafeERC20FailedOperation",
-    selector="0x5274afe7",
-    signature="SafeERC20FailedOperation(address)",
+ReceiveLockedError = ErrorInfo(
+    inputs=[],
+    name="ReceiveLocked",
+    selector="0x5563ada8",
+    signature="ReceiveLocked()",
 )
 
 TransferFailedError = ErrorInfo(

@@ -23,11 +23,7 @@ Complete the steps in Hyperdrive's [Pre-requisites](https://github.com/delvtech/
 
 Copy the contract `sol` folders from the generated `out` directory in the `hyperdrive` repository root.
 These folder should contain the ABI JSON and bytecode files for each contract.
-Paste the folders into `agnet0/packages/hyperdrive/src/abis/`.
-
-```bash
-cp -R ../hyperdrive/out/*.sol packages/hyperdrive/src/abis/
-```
+Paste the folders into `agent0/packages/hyperdrive/src/abis/`.
 
 Our codebase uses the following contracts:
 

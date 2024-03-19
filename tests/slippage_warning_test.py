@@ -13,86 +13,269 @@ from web3 import HTTPProvider
 
 from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base.config import AgentConfig, EnvironmentConfig
+from agent0.core.hyperdrive.agent import (
+    add_liquidity_trade,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    remove_liquidity_trade,
+)
 from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
-from agent0.core.test_utils import CycleTradesPolicy
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy import EthConfig
 from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
-    from agent0.ethpy.hyperdrive import HyperdriveAddresses
+    from agent0.core.base import Trade
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+    from agent0.ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
     from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
+
+INVALID_SLIPPAGE = FixedPoint("-0.01")
+
+
+# Build testing policy for slippage
+# Simple agent, opens a set of all trades for a fixed amount and closes them after
+# with a flag controlling slippage per trade
+class InvalidOpenLongSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for open longs."""
+
+    counter = 0
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid open long slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        done_trading = False
+        if self.counter == 0:
+            # Add liquidity, as we need liquidity in the pool for the other trades
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
+        elif self.counter == 1:
+            action_list.append(open_long_trade(FixedPoint(22_222), INVALID_SLIPPAGE))
+            done_trading = True
+        self.counter += 1
+        return action_list, done_trading
+
+
+class InvalidOpenShortSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for open shorts."""
+
+    counter = 0
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid open long short slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        done_trading = False
+        if self.counter == 0:
+            # Add liquidity, as we need liquidity in the pool for the other trades
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
+        elif self.counter == 1:
+            action_list.append(open_short_trade(FixedPoint(333), INVALID_SLIPPAGE))
+            done_trading = True
+        self.counter += 1
+        return action_list, done_trading
+
+
+class InvalidRemoveLiquiditySlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for remove liquidity.
+    NOTE: This policy isn't used in this test due to slippage not being implemented for remove liquidity.
+    Keeping this policy here for when it does.
+    """
+
+    counter = 0
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid remove liquidity slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        done_trading = False
+        if self.counter == 0:
+            action_list.append(add_liquidity_trade(FixedPoint(10_000)))
+        elif self.counter == 1:
+            action_list.append(remove_liquidity_trade(wallet.lp_tokens, INVALID_SLIPPAGE))
+            done_trading = True
+        self.counter += 1
+        return action_list, done_trading
+
+
+class InvalidCloseLongSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for close longs."""
+
+    counter = 0
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid close long slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        done_trading = False
+        if self.counter == 0:
+            # Add liquidity, as we need liquidity in the pool for the other trades
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
+        elif self.counter == 1:
+            # Open Long
+            action_list.append(open_long_trade(FixedPoint(10_000), None))
+        elif self.counter == 2:
+            # Closing existent long for more than I have
+            assert len(wallet.longs) == 1
+            for long in wallet.longs.values():
+                action_list.append(close_long_trade(long.balance, long.maturity_time, INVALID_SLIPPAGE))
+            done_trading = True
+        self.counter += 1
+        return action_list, done_trading
+
+
+class InvalidCloseShortSlippage(HyperdriveBasePolicy):
+    """Policy testing invalid slippage warnings for close shorts."""
+
+    counter = 0
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Invalid close short slippage.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        done_trading = False
+        if self.counter == 0:
+            # Add liquidity, as we need liquidity in the pool for the other trades
+            action_list.append(add_liquidity_trade(FixedPoint(100_000)))
+        if self.counter == 1:
+            # Open Short
+            action_list.append(open_short_trade(FixedPoint(10_000), None))
+        elif self.counter == 2:
+            # Closing existent short for more than I have
+            assert len(wallet.shorts) == 1
+            for short in wallet.shorts.values():
+                action_list.append(close_short_trade(short.balance, short.maturity_time, INVALID_SLIPPAGE))
+            done_trading = True
+        self.counter += 1
+        return action_list, done_trading
 
 
 class TestSlippageWarning:
     """Test pipeline from bots making trades to viewing the trades in the db."""
 
-    # TODO split this up into different functions that work with tests
-    # pylint: disable=too-many-locals, too-many-statements
-    @pytest.mark.docker
-    def test_slippage_warning(
-        self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
-        cycle_trade_policy: Type[CycleTradesPolicy],
-        db_api: str,
+    def _build_and_run(
+        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy], halt_on_slippage=True
     ):
-        """Runs the entire pipeline and checks the database at the end. All arguments are fixtures.
-
-        Arguments
-        ---------
-        local_hyperdrive_pool: DeployedHyperdrivePool
-            The addresses of the deployed hyperdrive pool in the test fixture.
-        cycle_trade_policy: Type[CycleTradesPolicy]
-            The policy defined in the test fixture that cycles through trades.
-        db_api: str
-            The db_api uri deployed in the test fixture.
-        """
         # Run this test with develop mode on
         os.environ["DEVELOP"] = "true"
 
-        # Get hyperdrive chain info
-        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-        rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
-
-        # Build environment config
         env_config = EnvironmentConfig(
-            delete_previous_logs=False,
+            delete_previous_logs=True,
             halt_on_errors=True,
-            halt_on_slippage=False,
-            log_filename="system_test",
+            halt_on_slippage=halt_on_slippage,
+            # We don't want tests to write lots of files
+            crash_report_to_file=False,
+            log_filename=".logging/invalid_test.log",
             log_level=logging.INFO,
             log_stdout=True,
             global_random_seed=1234,
             username="test",
         )
 
+        # Get hyperdrive chain info
+        rpc_uri: URI | None = cast(HTTPProvider, in_hyperdrive_pool.web3.provider).endpoint_uri
+        assert rpc_uri is not None
+        hyperdrive_contract_addresses: HyperdriveAddresses = in_hyperdrive_pool.hyperdrive_contract_addresses
+
         # Build agent config
         agent_config: list[AgentConfig] = [
             AgentConfig(
-                policy=cycle_trade_policy,
+                policy=in_policy,
                 number_of_agents=1,
                 base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
                 eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(
-                    slippage_tolerance=FixedPoint("-0.01"),  # Negative slippage, slippage check should always catch
-                    max_trades=4,
-                ),
+                policy_config=in_policy.Config(),
             ),
         ]
-
-        # No need for random seed, this bot is deterministic
         account_key_config = build_account_key_config_from_agent_config(agent_config)
-
         # Build custom eth config pointing to local test chain
         eth_config = EthConfig(
             # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
             artifacts_uri="not_used",
             rpc_uri=rpc_uri,
-            database_api_uri=db_api,
-            # Using default abi dir
         )
-
-        # Running agents with halt on slippage off should be fine
         setup_and_run_agent_loop(
             env_config,
             agent_config,
@@ -101,29 +284,71 @@ class TestSlippageWarning:
             contract_addresses=hyperdrive_contract_addresses,
             load_wallet_state=False,
         )
+        if halt_on_slippage:
+            # If this reaches this point, the agent was successful, which means this test should fail
+            assert False, "Agent was successful with known invalid trade"
+        # If halt_on_slippage is False, we expect the agent to succeed.
 
-        # Build environment config
-        env_config = EnvironmentConfig(
-            delete_previous_logs=False,
-            halt_on_errors=True,
-            halt_on_slippage=True,  # Should now halt on slippage
-            log_filename="system_test",
-            log_level=logging.INFO,
-            log_stdout=True,
-            global_random_seed=1234,
-            username="test",
-        )
+    @pytest.mark.docker
+    def test_no_halt_on_slippage(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
+        # All of these calls should pass if we're not halting on slippage
+        self._build_and_run(local_hyperdrive_pool, InvalidOpenLongSlippage, halt_on_slippage=False)
+        self._build_and_run(local_hyperdrive_pool, InvalidOpenShortSlippage, halt_on_slippage=False)
+        self._build_and_run(local_hyperdrive_pool, InvalidCloseLongSlippage, halt_on_slippage=False)
+        self._build_and_run(local_hyperdrive_pool, InvalidCloseShortSlippage, halt_on_slippage=False)
 
-        # Running agents with halt on slippage should throw exception
+    @pytest.mark.docker
+    def test_invalid_slippage_open_long(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
         try:
-            setup_and_run_agent_loop(
-                env_config,
-                agent_config,
-                account_key_config,
-                eth_config=eth_config,
-                contract_addresses=hyperdrive_contract_addresses,
-                load_wallet_state=False,
-            )
+            self._build_and_run(local_hyperdrive_pool, InvalidOpenLongSlippage)
         except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
+
+    @pytest.mark.docker
+    def test_invalid_slippage_open_short(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
+        try:
+            self._build_and_run(local_hyperdrive_pool, InvalidOpenShortSlippage)
+        except ContractCallException as exc:
+            assert "Slippage detected" in exc.args[0]
+
+    # TODO slippage isn't implemented in the python side for add/remove liquidity and
+    # withdrawal shares. Remove liquidity has bindings for slippage, but is ignored.
+
+    # @pytest.mark.docker
+    # def test_invalid_slippage_remove_liquidity(
+    #    self,
+    #    local_hyperdrive_pool: DeployedHyperdrivePool,
+    # ):
+    #    try:
+    #        self._build_and_run(local_hyperdrive_pool, InvalidRemoveLiquiditySlippage)
+    #    except ContractCallException as exc:
+    #        assert "Slippage detected" in exc.args[0]
+
+    @pytest.mark.docker
+    def test_invalid_slippage_close_long(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
+        try:
+            self._build_and_run(local_hyperdrive_pool, InvalidCloseLongSlippage)
+        except ContractCallException as exc:
+            assert "Slippage detected" in exc.args[0]
+
+    @pytest.mark.docker
+    def test_invalid_slippage_close_short(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
+        try:
+            self._build_and_run(local_hyperdrive_pool, InvalidCloseShortSlippage)
+        except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
