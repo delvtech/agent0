@@ -44,9 +44,10 @@ dependencies = [
     "python-dotenv",
     "requests",
     "rollbar",
-    "streamlit",
+    "setuptools",
     "sqlalchemy",
     "sqlalchemy-utils",
+    "streamlit",
     "web3",
 ]
 
