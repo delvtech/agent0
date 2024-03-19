@@ -469,7 +469,8 @@ def test_access_deployer_account(chain: ILocalChain):
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     pubkey = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
     larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
-    assert larry.wallet.address.hex().startswith(pubkey.lower())  # deployer public key
+    larry_pubkey = larry.wallet.address.hex().strip("0x").lower()
+    assert larry_pubkey == pubkey.lower().strip("0x")  # deployer public key
 
 
 @pytest.mark.anvil
