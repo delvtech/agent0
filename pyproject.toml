@@ -31,7 +31,7 @@ dependencies = [
     "flask",
     "flask-expects-json",
     "hexbytes",
-    "hyperdrivepy",
+    "hyperdrivepy==0.10.1",
     "ipython",
     "matplotlib",
     "mplfinance",

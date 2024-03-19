@@ -7,7 +7,6 @@ from dataclasses import fields
 from typing import TYPE_CHECKING, cast
 
 from fixedpointmath import FixedPoint
-from web3.constants import ADDRESS_ZERO
 
 from agent0.hypertypes import PoolConfig
 from agent0.hypertypes.fixedpoint_types import FeesFP
@@ -125,10 +124,7 @@ class TestHyperdriveReadInterface:
             "time_stretch": expected_timestretch_fp,
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
-            # TODO current bug in solidity that returns zero address for sweep_collector
-            # Fix to look for deploy_account.address once this is fixed
-            # "sweep_collector": deploy_account.address,
-            "sweep_collector": ADDRESS_ZERO,
+            "sweep_collector": deploy_account.address,
         }
         expected_pool_config["fees"] = FeesFP(
             curve=FixedPoint("0.01"),  # 1%,
