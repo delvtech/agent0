@@ -12,4 +12,5 @@ echo "build the wheel for the current platform"
 python -m build
 
 # Move remaining wheels into wheelhouse folder
+mkdir -p wheelhouse/
 mv dist/* wheelhouse/
