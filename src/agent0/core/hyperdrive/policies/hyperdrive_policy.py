@@ -1,13 +1,48 @@
 """Base class for hyperdrive policies"""
 
+from fixedpointmath import FixedPoint
+
 from agent0.core.base import Trade
 from agent0.core.base.policies import BasePolicy
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
+from agent0.core.hyperdrive.agent import close_long_trade, close_short_trade
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+from agent0.ethpy.hyperdrive.state import PoolState
 
 
 class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]):
     """Hyperdrive policy."""
+
+    def close_matured_positions(
+        self, wallet: HyperdriveWallet, pool_state: PoolState, minimum_trade_amount: FixedPoint = FixedPoint(0)
+    ) -> list[Trade[HyperdriveMarketAction]]:
+        """Generate actions to close longs and shorts that have matured.
+
+        Arguments
+        ---------
+        wallet: HyperdriveWallet
+            The agent's wallet.
+        pool_state: PoolState
+            The current state of the Hyperdrive pool.
+        minimum_trade_amount: FixedPoint, optional
+            A mimimum amount to trade; if the matured position is smaller than this amount then it will not be closed.
+            Defaults to 0.
+
+        Returns
+        -------
+        list[MarketAction]
+            Is a list of Hyperdrive trade actions for closing matured longs and shorts.
+        """
+        action_list = []
+        # Close longs if matured
+        for maturity_time, long in wallet.longs.items():
+            if maturity_time < pool_state.block_time and long.balance > minimum_trade_amount:
+                action_list.append(close_long_trade(long.balance, maturity_time, self.slippage_tolerance))
+        # Close shorts if matured
+        for maturity_time, short in wallet.shorts.items():
+            if maturity_time < pool_state.block_time and short.balance > minimum_trade_amount:
+                action_list.append(close_short_trade(short.balance, maturity_time, self.slippage_tolerance))
+        return action_list
 
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet

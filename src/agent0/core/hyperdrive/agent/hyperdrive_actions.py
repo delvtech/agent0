@@ -219,6 +219,9 @@ def remove_liquidity_trade(
     -------
     Trade[HyperdriveMarketAction]
         The trade object for removing liquidity from a Hyperdrive pool.
+
+    .. warning::
+        Slippage tolerance is not implemented for remove liquidity trades, field will be ignored.
     """
     return Trade(
         market_type=MarketType.HYPERDRIVE,

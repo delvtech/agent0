@@ -1,6 +1,6 @@
 [project]
 name = "agent0"
-version = "0.15.0"
+version = "0.16.0"
 # Authors are the current, primary stuards of the repo
 # contributors can be found on github
 
@@ -47,6 +47,7 @@ dependencies = [
     "docker",
     "pytest",
     "ipython",
+    "hyperdrivepy",
 ]
 
 

@@ -8,7 +8,7 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.core.hyperdrive.interactive.event_types import CloseLong, CloseShort
+from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
 from agent0.core.hyperdrive.policies import PolicyZoo
 
@@ -40,6 +40,7 @@ def interactive_hyperdrive(chain: ILocalChain) -> ILocalHyperdrive:
         Interactive hyperdrive."""
     interactive_config = ILocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
+        initial_fixed_apr=FixedPoint("0.05"),
     )
     return ILocalHyperdrive(chain, interactive_config)
 
@@ -75,7 +76,7 @@ def create_arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
     andy_base = FixedPoint(1e9)
     andy_config = PolicyZoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
-        minimum_trade_amount=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+        min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     return interactive_hyperdrive.init_agent(
         base=andy_base, name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
@@ -318,3 +319,47 @@ def test_reduce_short(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: 
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
     assert isinstance(event, CloseShort)
+
+
+@pytest.mark.anvil
+def test_safe_long_trading(interactive_hyperdrive: ILocalHyperdrive, manual_agent: ILocalHyperdriveAgent):
+    """Test that the agent doesn't overextend itself."""
+    # setup
+    larry_base = FixedPoint(1e4)
+    larry_config = PolicyZoo.lp_and_arb.Config(
+        lp_portion=FixedPoint("0.99"),
+        min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+    )
+    larry = interactive_hyperdrive.init_agent(
+        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+    )
+    # change the fixed rate
+    manual_agent.open_short(bonds=FixedPoint(100_000))
+    # lp & arb
+    action_result = larry.execute_policy_action()  # should not be able to arb the full amount after LPing
+    # checks
+    assert len(action_result) == 2  # LP & Arb (no closing trades)
+    assert isinstance(action_result[0], AddLiquidity)  # LP first
+    assert isinstance(action_result[1], OpenLong)  # then arb
+
+
+@pytest.mark.anvil
+def test_safe_short_trading(interactive_hyperdrive: ILocalHyperdrive, manual_agent: ILocalHyperdriveAgent):
+    """Test that the agent doesn't overextend itself."""
+    # setup
+    larry_base = FixedPoint(1e4)
+    larry_config = PolicyZoo.lp_and_arb.Config(
+        lp_portion=FixedPoint("0.9"),
+        min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
+    )
+    larry = interactive_hyperdrive.init_agent(
+        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+    )
+    # change the fixed rate
+    manual_agent.open_long(base=FixedPoint(100_000))
+    # lp & arb
+    action_result = larry.execute_policy_action()  # should not be able to arb the full amount after LPing
+    # checks
+    assert len(action_result) == 2  # LP & Arb (no closing trades)
+    assert isinstance(action_result[0], AddLiquidity)  # LP first
+    assert isinstance(action_result[1], OpenShort)  # then arb

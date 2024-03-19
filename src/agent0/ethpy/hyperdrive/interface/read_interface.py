@@ -22,6 +22,7 @@ from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_info,
 )
 from agent0.hypertypes import (
+    CheckpointFP,
     ERC20MintableContract,
     HyperdriveFactoryContract,
     IERC4626HyperdriveContract,
@@ -289,6 +290,21 @@ class HyperdriveReadInterface:
             hyperdrive_eth_balance=hyperdrive_eth_balance,
             gov_fees_accrued=gov_fees_accrued,
         )
+
+    def get_checkpoint(self, checkpoint_time: Timestamp) -> CheckpointFP:
+        """Use an RPC to get the checkpoint info for the Hyperdrive contract for a given checkpoint_time index.
+
+        Arguments
+        ---------
+        checkpoint_time: Timestamp
+            The block timestamp that indexes the checkpoint to get.
+
+        Returns
+        -------
+        CheckpointFP
+            The dataclass containing the checkpoint info in fixed point
+        """
+        return get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time)
 
     def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:
         """Use an RPC to get the total supply of withdrawal shares in the pool at the given block.

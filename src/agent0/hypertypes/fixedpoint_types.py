@@ -64,6 +64,7 @@ class PoolConfigFP:
     time_stretch: FixedPoint
     governance: str
     fee_collector: str
+    sweep_collector: str
     # TODO: Pyright:
     # Declaration "fees" is obscured by a declaration of the same name here but not elsewhere
     fees: FeesFP | Sequence  # type: ignore
