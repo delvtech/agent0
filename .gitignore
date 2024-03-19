@@ -40,6 +40,8 @@ __pypackages__/
 # build directories
 .build
 *.egg-info
+dist/
+wheelhouse/
 
 # output directory for saved notebook figures
 figs
