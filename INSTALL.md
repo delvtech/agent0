@@ -27,8 +27,8 @@ source .venv/bin/activate
 ```bash
 uv pip install -e .
 # uv pip install agent0@. # For non-editable install
-# uv pip install -e .[dev] # For dev and testing tools
-# uv pip install -e .[all] # Install everything
+# uv pip install -e '.[dev]' # For dev and testing tools
+# uv pip install -e '.[all]' # Install everything
 ```
 
 ## 5. Verify
