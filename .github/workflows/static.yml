@@ -29,7 +29,7 @@ jobs:
         run: |
           uv venv .venv -p 3.10
           source .venv/bin/activate
-          uv pip install --upgrade -e .[all]
+          uv pip install -e .[all]
 
       - name: analysing code with pyright
         run: |
