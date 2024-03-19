@@ -15,7 +15,6 @@ from eth_typing import URI
 from fixedpointmath import FixedPoint, isclose
 from sqlalchemy.orm import Session
 from web3 import HTTPProvider
-from web3.constants import ADDRESS_ZERO
 
 from agent0.chainsync.db.hyperdrive.interface import (
     get_current_wallet,
@@ -211,10 +210,7 @@ class TestBotToDb:
             "time_stretch": expected_timestretch,
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
-            # TODO current bug in solidity that returns zero address for sweep_collector
-            # Fix to look for deploy_account.address once this is fixed
-            # "sweep_collector": deploy_account.address,
-            "sweep_collector": ADDRESS_ZERO,
+            "sweep_collector": deploy_account.address,
             "curve_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
             "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05% APR
             "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
