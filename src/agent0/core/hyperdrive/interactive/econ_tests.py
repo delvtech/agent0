@@ -15,6 +15,7 @@ YEAR_IN_SECONDS = 31_536_000
 # I want to be able to use fancy f-string formatting
 # pylint: disable=logging-fstring-interpolation
 
+
 @pytest.mark.anvil
 def test_symmetry(chain: LocalChain):
     """Check wether in equals out.
@@ -36,14 +37,16 @@ def test_symmetry(chain: LocalChain):
     print(shares_in)
     assert shares_out != shares_in
 
+
 @pytest.mark.anvil
 def test_discoverability(chain: LocalChain):
     """Test discoverability of rates across by time stretch."""
     liquidity = FixedPoint(10_000_000)
-    time_stretch_apr_list = [0.03]
+    time_stretch_apr_list = [0.03, 0.05, 0.1]
     with open("discoverability.csv", "w", encoding="UTF-8") as file:
-        file.write("rate,time_stretch_apr\n")
+        file.write("trade_size,rate,time_stretch_apr\n")
         for time_stretch_apr in time_stretch_apr_list:
+            logging.info(f"Time stretch APR: {time_stretch_apr}")
             interactive_config = LocalHyperdrive.Config(
                 position_duration=YEAR_IN_SECONDS,  # 1 year term
                 governance_lp_fee=FixedPoint(0.1),
@@ -79,19 +82,12 @@ def test_discoverability(chain: LocalChain):
                     short_price = interface.calc_spot_price(pool_state)
                     short_rate = interface.calc_fixed_rate(pool_state)
                 records.append((trade_size, long_price, short_price, long_rate, short_rate))
-            results_df = pd.DataFrame.from_records(records, columns=["trade_size", "long_price", "short_price", "long_rate", "short_rate"])
+            results_df = pd.DataFrame.from_records(
+                records, columns=["trade_size", "long_price", "short_price", "long_rate", "short_rate"]
+            )
             logging.info(f"Prices:\n{results_df[['trade_size', 'long_price', 'short_price']]}")
             logging.info(f"Rates:\n{results_df[['trade_size', 'long_rate', 'short_rate']]}")
 
-            # put all rates together in a discoverability vector
-            rate_list = results_df["long_rate"].to_list() + results_df["short_rate"].to_list()
-            discoverability = [float(num) if num is not None else None for num in rate_list]
-            # remove None
-            discoverability = [rate for rate in discoverability if rate is not None]
-            # sort
-            discoverability = sorted(discoverability)
-            disc_df = pd.DataFrame(data=discoverability, columns=["discoverability"])
-            disc_df["time_stretch_apr"] = time_stretch_apr
-            disc_df.to_csv(file, mode="a", header=False, index=False)
-            discoverability_text = '\n'.join([str(num) for num in discoverability])
-            logging.info(f"Discoverability:{discoverability_text}")
+            for row in results_df.itertuples():
+                file.write(f"{row.trade_size},{row.long_rate},{time_stretch_apr}\n")
+                file.write(f"{-row.trade_size},{row.short_rate},{time_stretch_apr}\n")
