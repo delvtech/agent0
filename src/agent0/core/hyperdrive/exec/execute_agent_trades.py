@@ -272,7 +272,9 @@ async def async_match_contract_call_to_trade(
                 ),
                 shorts={
                     trade_result.maturity_time_seconds: Short(
-                        balance=trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                        open_vault_share_price=trade_result.vault_share_price,
+                        balance=trade_result.bond_amount,
+                        maturity_time=trade_result.maturity_time_seconds,
                     )
                 },
             )
@@ -290,7 +292,8 @@ async def async_match_contract_call_to_trade(
                 ),
                 shorts={
                     trade.maturity_time: Short(
-                        balance=-trade_result.bond_amount, maturity_time=trade_result.maturity_time_seconds
+                        balance=-trade_result.bond_amount,
+                        maturity_time=trade_result.maturity_time_seconds,
                     )
                 },
             )
