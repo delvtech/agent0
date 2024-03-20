@@ -79,7 +79,6 @@ dev = [
 ai = [
     "gymnasium",
     "scipy",
-    "stable-baselines3",
 ]
 
 rollbar = [
