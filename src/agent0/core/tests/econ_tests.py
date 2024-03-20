@@ -27,3 +27,19 @@ def test_symmetry(chain: ILocalChain):
     print(shares_out)
     print(shares_in)
     assert shares_out != shares_in
+
+time_stretch_apr_list = [0.01, 0.02, 0.03, 0.04, 0.05]
+
+@pytest.mark.anvil
+@pytest.mark.parametrize("time_stretch_apr", time_stretch_apr_list)
+def test_deploy_time_stretch(chain: ILocalChain, time_stretch_apr: float):
+    """Test deploying hyperdrive pools across different time stretch parameters."""
+    interactive_config = ILocalHyperdrive.Config(
+        position_duration=YEAR_IN_SECONDS,  # 1 year term
+        governance_lp_fee=FixedPoint(0.1),
+        curve_fee=FixedPoint(0.01),
+        flat_fee=FixedPoint(0),
+        initial_liquidity=FixedPoint(10_000_000),
+        initial_time_stretch_apr=FixedPoint(str(time_stretch_apr)),
+    )
+    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
