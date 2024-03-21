@@ -250,6 +250,7 @@ class FullHyperdriveEnv(gym.Env):
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-nested-blocks
+        # pylint: disable=too-many-statements
 
         long_short_actions = action[:-4]
         long_short_actions = long_short_actions.reshape((len(TradeTypes), self.gym_config.max_positions_per_type + 2))
@@ -261,17 +262,17 @@ class FullHyperdriveEnv(gym.Env):
         # We need exact decimals here to avoid rounding errors
         rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
 
-        # TODO should likely try and handle these trades as fast as possible
-        # Otherwise action could lag behind observation, especially with accelerated time
-        # One option is to don't do accelerated time, but manually advance time per step
-        # after all bot actions
+        # TODO should likely try and handle these trades as fast as possible, or eventually
+        # allow for reordering.
+        # Current solution is to minimize the amount of time between trades within a step
+        # and accelerate time in a single step at the end of a step.
 
         # The RL bot handles trades in this order:
         # (1) Close long tokens
         # (2) Close short tokens
         # (2) Open long tokens
         # (4) Open short tokens
-        # (5) Add liqidity
+        # (5) Add liquidity
         # (6) Remove liquidity
         # (7) Redeem withdrawal shares
 
@@ -282,7 +283,7 @@ class FullHyperdriveEnv(gym.Env):
             # Handle closing orders
             # The index of orders here is from oldest to newest
             # TODO if we want the rl bot to explicitly learn how to close orders based on
-            # the orders input feature, we can shuffle the order of closing orders
+            # the orders input feature, we can shuffle the order of closing orders and match them here
             if self.sample_actions:
                 random_roll = self.rng.uniform(0, 1, len(close_orders_probability))
                 orders_to_close_index = np.nonzero(random_roll <= close_orders_probability)[0]
