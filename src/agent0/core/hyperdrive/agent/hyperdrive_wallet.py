@@ -62,6 +62,8 @@ class Short:
     """The amount of bonds that the position is short."""
     maturity_time: int
     """The maturity time of the short."""
+    open_vault_share_price: FixedPoint = FixedPoint(0)
+    """The vault share price when the short was opened."""
 
 
 @dataclass(kw_only=True)
