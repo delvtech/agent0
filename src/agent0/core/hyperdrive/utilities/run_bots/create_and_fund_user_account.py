@@ -25,6 +25,9 @@ def create_and_fund_user_account(
 ) -> HyperdriveAgent:
     """Helper function for funding a fake user account.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     account_key_config: AccountKeyConfig
@@ -47,6 +50,9 @@ def create_and_fund_user_account(
 def _create_user_account() -> HyperdriveAgent:
     """Create a fake HyperdriveAgent.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Returns
     -------
     HyperdriveAgent
@@ -64,6 +70,9 @@ def _fund_user_account(
     base_token_contract: ERC20MintableContract,
 ) -> tuple[RPCResponse, TxReceipt]:
     """Fund a user account.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

@@ -52,6 +52,9 @@ def setup_and_run_agent_loop(
 ) -> None:
     """Entrypoint to run agent trades in a loop.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     environment_config: EnvironmentConfig
@@ -112,6 +115,9 @@ def _setup_agents(
     liquidate: bool = False,
 ) -> tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, HyperdriveAddresses]:
     """Entrypoint to setup agents for automated trading.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -223,6 +229,9 @@ def _run_agents(
 ):
     """Run agent trades in a forever (while True) loop.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     environment_config: EnvironmentConfig
@@ -294,6 +303,9 @@ def _async_fund_agents_with_fake_user(
     interface: HyperdriveReadWriteInterface,
 ) -> HyperdriveAgent:
     """Create a fake account, fund it with eth, and then use that to fund the agent wallets.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

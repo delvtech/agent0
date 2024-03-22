@@ -43,6 +43,9 @@ async def async_execute_multi_agent_trades(
 ) -> list[TradeResult]:
     """Execute all trades from all agents and check for common errors on failure.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     interface: HyperdriveReadWriteInterface
@@ -97,6 +100,9 @@ async def _async_execute_single_agent_trade(
 ) -> list[TradeResult]:
     """Executes a single agent's trade. This function is async as
     `match_contract_call_to_trade` waits for a transaction receipt.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -204,6 +210,9 @@ async def _async_match_contract_call_to_trade(
     nonce: Nonce,
 ) -> tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
     """Match statement that executes the smart contract trade based on the provided type.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

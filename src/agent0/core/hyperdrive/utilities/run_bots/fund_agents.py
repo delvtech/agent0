@@ -35,6 +35,9 @@ async def async_fund_agents(
 ) -> None:
     """Fund agents using passed in configs.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     user_account: HyperdriveAgent
@@ -159,6 +162,9 @@ def _check_user_balances(
     base_token_contract: ERC20MintableContract,
 ) -> None:
     """Check the user eth and base balances to ensure there is enough for funding agents.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

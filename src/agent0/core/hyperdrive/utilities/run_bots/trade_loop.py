@@ -33,6 +33,9 @@ def trade_if_new_block(
 ) -> int:
     """Execute trades if there is a new block.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     interface: HyperdriveReadWriteInterface
@@ -108,6 +111,9 @@ def _check_result(
 ) -> None:
     """Check and handle SUCCESS or FAILURE status from each trade_result.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     trade_results: list[TradeResult]
@@ -178,6 +184,9 @@ def _get_wait_for_new_block(web3: Web3) -> bool:
     """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
        if auto-mining is enabled then every transaction sent to the block is automatically mined so
        we don't need to wait for a new block before submitting trades again.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

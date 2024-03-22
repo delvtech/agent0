@@ -35,6 +35,9 @@ def setup_experiment(
 ) -> list[HyperdriveAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     environment_config: EnvironmentConfig
@@ -87,6 +90,9 @@ def _get_agent_accounts(
     global_rng: Generator,
 ) -> list[HyperdriveAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -154,6 +160,9 @@ async def _set_max_approval(
     agents: list[HyperdriveAgent], web3: Web3, base_token_contract: Contract, hyperdrive_address: str
 ) -> None:
     """Establish max approval for the hyperdrive contract for all agents async
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
