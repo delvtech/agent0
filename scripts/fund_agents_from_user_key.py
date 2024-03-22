@@ -9,7 +9,7 @@ from eth_account.account import Account
 
 from agent0.core import build_account_config_from_env
 from agent0.core.hyperdrive import HyperdriveAgent
-from agent0.core.hyperdrive.exec import async_fund_agents
+from agent0.core.hyperdrive.utilities.run_bots import async_fund_agents
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
 

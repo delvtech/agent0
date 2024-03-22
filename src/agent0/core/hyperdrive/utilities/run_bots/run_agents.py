@@ -52,6 +52,9 @@ def setup_and_run_agent_loop(
 ) -> None:
     """Entrypoint to run agent trades in a loop.
 
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
     Arguments
     ---------
     environment_config: EnvironmentConfig
@@ -80,7 +83,7 @@ def setup_and_run_agent_loop(
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("web3").setLevel(logging.WARNING)
     # Setup and fund agents, create the interface, handle optional values
-    interface, agent_accounts, eth_config, contract_addresses = setup_agents(
+    interface, agent_accounts, eth_config, contract_addresses = _setup_agents(
         environment_config,
         agent_config,
         account_key_config,
@@ -90,7 +93,7 @@ def setup_and_run_agent_loop(
         liquidate,
     )
     # Run the agent trades in a while True loop
-    run_agents(
+    _run_agents(
         environment_config,
         eth_config,
         account_key_config,
@@ -102,7 +105,7 @@ def setup_and_run_agent_loop(
     )
 
 
-def setup_agents(
+def _setup_agents(
     environment_config: EnvironmentConfig,
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
@@ -112,6 +115,9 @@ def setup_agents(
     liquidate: bool = False,
 ) -> tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, HyperdriveAddresses]:
     """Entrypoint to setup agents for automated trading.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -163,7 +169,7 @@ def setup_agents(
 
     # Setup env automatically & fund the agents
     if develop:
-        _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+        _ = _async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
 
     # Get hyperdrive interface object and agents
     agent_accounts = setup_experiment(
@@ -211,7 +217,7 @@ def setup_agents(
     return interface, agent_accounts, eth_config, contract_addresses
 
 
-def run_agents(
+def _run_agents(
     environment_config: EnvironmentConfig,
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
@@ -222,6 +228,9 @@ def run_agents(
     minimum_avg_agent_base: FixedPoint | None = None,
 ):
     """Run agent trades in a forever (while True) loop.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -270,7 +279,7 @@ def run_agents(
                 sum(agent.wallet.balance.amount for agent in agent_accounts) / FixedPoint(len(agent_accounts))
                 < minimum_avg_agent_base
             ):
-                _ = async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+                _ = _async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
                 # Update agent accounts with new wallet balances
                 for agent in agent_accounts:
                     # Contract call to get base balance
@@ -287,13 +296,16 @@ def run_agents(
             poll_latency = START_LATENCY + random.uniform(0, 1)
 
 
-def async_fund_agents_with_fake_user(
+def _async_fund_agents_with_fake_user(
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
     interface: HyperdriveReadWriteInterface,
 ) -> HyperdriveAgent:
     """Create a fake account, fund it with eth, and then use that to fund the agent wallets.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

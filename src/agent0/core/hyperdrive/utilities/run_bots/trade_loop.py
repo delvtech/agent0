@@ -14,9 +14,7 @@ from agent0.core.hyperdrive.crash_report import get_anvil_state_dump, log_hyperd
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
-from .execute_agent_trades import async_execute_agent_trades
-
-# TODO: Suppress logging from agent0.ethpy here as agent0 handles logging
+from .execute_multi_agent_trades import async_execute_multi_agent_trades
 
 
 # TODO cleanup this function
@@ -34,6 +32,9 @@ def trade_if_new_block(
     randomize_liquidation: bool,
 ) -> int:
     """Execute trades if there is a new block.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -69,7 +70,7 @@ def trade_if_new_block(
     latest_block_timestamp = latest_block.get("timestamp", None)
     if latest_block_number is None or latest_block_timestamp is None:
         raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
-    wait_for_new_block = get_wait_for_new_block(interface.web3)
+    wait_for_new_block = _get_wait_for_new_block(interface.web3)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
     if not wait_for_new_block or latest_block_number > last_executed_block:
         # log and show block info
@@ -83,11 +84,11 @@ def trade_if_new_block(
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
+            async_execute_multi_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
         )
         last_executed_block = latest_block_number
 
-        check_result(
+        _check_result(
             trade_results,
             interface,
             halt_on_errors,
@@ -99,7 +100,7 @@ def trade_if_new_block(
     return last_executed_block
 
 
-def check_result(
+def _check_result(
     trade_results: list[TradeResult],
     interface: HyperdriveReadInterface,
     halt_on_errors: bool,
@@ -109,6 +110,9 @@ def check_result(
     log_to_rollbar: bool,
 ) -> None:
     """Check and handle SUCCESS or FAILURE status from each trade_result.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -176,10 +180,13 @@ def check_result(
                 assert_never(trade_result.status)
 
 
-def get_wait_for_new_block(web3: Web3) -> bool:
+def _get_wait_for_new_block(web3: Web3) -> bool:
     """Returns if we should wait for a new block before attempting trades again.  For anvil nodes,
        if auto-mining is enabled then every transaction sent to the block is automatically mined so
        we don't need to wait for a new block before submitting trades again.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------

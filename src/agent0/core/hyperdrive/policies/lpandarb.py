@@ -18,7 +18,7 @@ from agent0.core.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
 )
-from agent0.core.utilities.predict import predict_long, predict_short
+from agent0.core.hyperdrive.utilities.predict import predict_long, predict_short
 from agent0.ethpy.hyperdrive.state import PoolState
 
 from .hyperdrive_policy import HyperdriveBasePolicy

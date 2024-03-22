@@ -20,8 +20,8 @@ from agent0.core.base import Trade
 from agent0.core.base.config import AgentConfig, EnvironmentConfig
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
-from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.ethpy import EthConfig
 
 if TYPE_CHECKING:

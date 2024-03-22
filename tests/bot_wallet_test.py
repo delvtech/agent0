@@ -24,8 +24,8 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
-from agent0.core.hyperdrive.exec import setup_and_run_agent_loop
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses

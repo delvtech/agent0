@@ -19,8 +19,39 @@ if TYPE_CHECKING:
     from agent0.hypertypes import ERC20MintableContract
 
 
-def create_user_account() -> HyperdriveAgent:
+def create_and_fund_user_account(
+    account_key_config: AccountKeyConfig,
+    interface: HyperdriveReadInterface,
+) -> HyperdriveAgent:
+    """Helper function for funding a fake user account.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
+
+    Arguments
+    ---------
+    account_key_config: AccountKeyConfig
+        Configuration linking to the env file for storing private keys and initial budgets.
+        Defines the agents to be funded.
+    interface: HyperdriveReadInterface
+        The market on which this agent will be executing trades (MarketActions)
+
+    Returns
+    -------
+    HyperdriveAgent
+        An agent that corresponds to the fake "user"
+    """
+    # generate fake user account
+    user_account = _create_user_account()
+    _ = _fund_user_account(interface.web3, account_key_config, user_account, interface.base_token_contract)
+    return user_account
+
+
+def _create_user_account() -> HyperdriveAgent:
     """Create a fake HyperdriveAgent.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Returns
     -------
@@ -32,13 +63,16 @@ def create_user_account() -> HyperdriveAgent:
     return user_account
 
 
-def fund_user_account(
+def _fund_user_account(
     web3: Web3,
     account_key_config: AccountKeyConfig,
     user_account: HyperdriveAgent,
     base_token_contract: ERC20MintableContract,
 ) -> tuple[RPCResponse, TxReceipt]:
     """Fund a user account.
+
+    .. note::
+    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -71,28 +105,3 @@ def fund_user_account(
         base_balance,
     )
     return rpc_response, tx_receipt
-
-
-def create_and_fund_user_account(
-    account_key_config: AccountKeyConfig,
-    interface: HyperdriveReadInterface,
-) -> HyperdriveAgent:
-    """Helper function for funding a fake user account.
-
-    Arguments
-    ---------
-    account_key_config: AccountKeyConfig
-        Configuration linking to the env file for storing private keys and initial budgets.
-        Defines the agents to be funded.
-    interface: HyperdriveReadInterface
-        The market on which this agent will be executing trades (MarketActions)
-
-    Returns
-    -------
-    HyperdriveAgent
-        An agent that corresponds to the fake "user"
-    """
-    # generate fake user account
-    user_account = create_user_account()
-    _ = fund_user_account(interface.web3, account_key_config, user_account, interface.base_token_contract)
-    return user_account
