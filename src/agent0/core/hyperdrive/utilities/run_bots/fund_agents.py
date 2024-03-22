@@ -19,7 +19,7 @@ from agent0.ethpy.base import (
     initialize_web3_with_http_provider,
     retry_call,
 )
-from agent0.ethpy.hyperdrive import HyperdriveAddresses
+from agent0.ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadWriteInterface
 from agent0.hyperlogs import setup_logging
 from agent0.hypertypes import ERC20MintableContract
 
@@ -32,11 +32,9 @@ async def async_fund_agents(
     eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
     contract_addresses: HyperdriveAddresses,
+    interface: HyperdriveReadWriteInterface | None = None,
 ) -> None:
     """Fund agents using passed in configs.
-
-    .. note::
-    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
@@ -49,6 +47,9 @@ async def async_fund_agents(
         Defines the agents to be funded.
     contract_addresses: HyperdriveAddresses
         Configuration for defining various contract addresses.
+    interface: HyperdriveReadWriteInterface | None, optional
+        An Hyperdrive interface object for accessing the base token contract.
+        If not provided, the default behavior is to construct a new contract.
     """
     # Funding contains its own logging as this is typically run from a script or in debug mode
     setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
@@ -162,9 +163,6 @@ def _check_user_balances(
     base_token_contract: ERC20MintableContract,
 ) -> None:
     """Check the user eth and base balances to ensure there is enough for funding agents.
-
-    .. note::
-    This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Arguments
     ---------
