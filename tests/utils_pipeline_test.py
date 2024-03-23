@@ -89,7 +89,7 @@ class TestUtilsPipeline:
         # Instantiate and fund agent
         account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed=123)
         user_account = create_and_fund_user_account(account_key_config, interface)
-        asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, hyperdrive_contract_addresses))
+        asyncio.run(async_fund_agents(interface, user_account, account_key_config))
         agent_accounts = setup_experiment(
             env_config,
             agent_config,

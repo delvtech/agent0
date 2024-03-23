@@ -6,59 +6,77 @@ import asyncio
 import logging
 
 from eth_account.account import Account
-from web3 import Web3
 from web3.types import Nonce, TxReceipt
 
 from agent0.core import AccountKeyConfig
+from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveAgent
-from agent0.ethpy import EthConfig
 from agent0.ethpy.base import (
     async_eth_transfer,
     async_smart_contract_transact,
     get_account_balance,
-    initialize_web3_with_http_provider,
     retry_call,
+    set_anvil_account_balance,
+    smart_contract_transact,
 )
-from agent0.ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadWriteInterface
-from agent0.hyperlogs import setup_logging
-from agent0.hypertypes import ERC20MintableContract
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 FUND_RETRY_COUNT = 5
 DEFAULT_READ_RETRY_COUNT = 5
 
 
-async def async_fund_agents(
-    user_account: HyperdriveAgent,
-    eth_config: EthConfig,
+def async_fund_agents_with_fake_user(
+    interface: HyperdriveReadInterface,
     account_key_config: AccountKeyConfig,
-    contract_addresses: HyperdriveAddresses,
-    interface: HyperdriveReadWriteInterface | None = None,
+) -> None:
+    """Create a fake user account with money and fund agents.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadInterface
+        An Hyperdrive interface object for accessing the base token contract.
+    account_key_config: AccountKeyConfig
+        Configuration linking to the env file for storing private keys and initial budgets.
+        Defines the agents to be funded.
+    """
+    # Generate fake user account
+    user_private_key = make_private_key(extra_entropy="FAKE USER")  # argument value can be any str
+    user_account = HyperdriveAgent(Account().from_key(user_private_key))
+    # Fund the user with Eth
+    eth_balance = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS)) * 2  # double for good measure
+    _ = set_anvil_account_balance(interface.web3, user_account.address, eth_balance)
+    # Fund the user with Base
+    base_balance = sum((int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS)) * 2  # double for good measure
+    _ = smart_contract_transact(
+        interface.web3,
+        interface.base_token_contract,
+        user_account,
+        "mint(address,uint256)",
+        user_account.checksum_address,
+        base_balance,
+    )
+    asyncio.run(async_fund_agents(interface, user_account, account_key_config))
+
+
+async def async_fund_agents(
+    interface: HyperdriveReadInterface,
+    user_account: HyperdriveAgent,
+    account_key_config: AccountKeyConfig,
 ) -> None:
     """Fund agents using passed in configs.
 
     Arguments
     ---------
+    interface: HyperdriveReadInterface
+        An Hyperdrive interface object for accessing the base token contract.
     user_account: HyperdriveAgent
         The HyperdriveAgent corresponding to the user account to fund the agents.
-    eth_config: EthConfig
-        Configuration for URIs to the rpc and artifacts.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
-    contract_addresses: HyperdriveAddresses
-        Configuration for defining various contract addresses.
-    interface: HyperdriveReadWriteInterface | None, optional
-        An Hyperdrive interface object for accessing the base token contract.
-        If not provided, the default behavior is to construct a new contract.
     """
-    # Funding contains its own logging as this is typically run from a script or in debug mode
-    setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
-
-    web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
-    base_token_contract = ERC20MintableContract.factory(web3)(web3.to_checksum_address(contract_addresses.base_token))
-
     # Check that the user has enough money to fund the agents
-    _check_user_balances(user_account, account_key_config, web3, base_token_contract)
+    _check_user_balances(interface, user_account, account_key_config)
 
     # Launch all funding processes in async mode
     # We launch funding in batches, so we do an outer retry loop here
@@ -76,7 +94,7 @@ async def async_fund_agents(
         # and pass in an incrementing nonce per call
         # TODO figure out which exception here to retry on
         base_nonce = retry_call(
-            DEFAULT_READ_RETRY_COUNT, None, web3.eth.get_transaction_count, user_account.checksum_address
+            DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, user_account.checksum_address
         )
 
         # Gather all async function calls in a list
@@ -84,7 +102,11 @@ async def async_fund_agents(
         # Explicitly setting a nonce here due to nonce issues with launching a batch of transactions
         eth_funding_calls = [
             async_eth_transfer(
-                web3, user_account, agent_account.checksum_address, agent_eth_budget, nonce=Nonce(base_nonce + i)
+                interface.web3,
+                user_account,
+                agent_account.checksum_address,
+                agent_eth_budget,
+                nonce=Nonce(base_nonce + i),
             )
             for i, (agent_account, agent_eth_budget) in enumerate(accounts_left)
         ]
@@ -118,7 +140,7 @@ async def async_fund_agents(
         # and pass in an incrementing nonce per call
         # TODO figure out which exception here to retry on
         base_nonce = retry_call(
-            DEFAULT_READ_RETRY_COUNT, None, web3.eth.get_transaction_count, user_account.checksum_address
+            DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, user_account.checksum_address
         )
 
         # Gather all async function calls in a list
@@ -126,8 +148,8 @@ async def async_fund_agents(
         # Explicitly setting a nonce here due to nonce issues with launching a batch of transactions
         base_funding_calls = [
             async_smart_contract_transact(
-                web3,
-                base_token_contract,
+                interface.web3,
+                interface.base_token_contract,
                 user_account,
                 "transfer",
                 agent_account.checksum_address,
@@ -157,27 +179,24 @@ async def async_fund_agents(
 
 
 def _check_user_balances(
+    interface: HyperdriveReadInterface,
     user_account: HyperdriveAgent,
     account_key_config: AccountKeyConfig,
-    web3: Web3,
-    base_token_contract: ERC20MintableContract,
 ) -> None:
     """Check the user eth and base balances to ensure there is enough for funding agents.
 
     Arguments
     ---------
+    interface: HyperdriveReadInterface
+        An Hyperdrive interface object for accessing the base token contract.
     user_account: HyperdriveAgent
         The HyperdriveAgent corresponding to the user account to fund the agents.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
-    web3: Web3
-        The connected Web3 instance.
-    base_token_contract: ERC20MintableContract
-        The deployed ERC20MintableContract for base tokens in Hyperdrive.
     """
     # Eth balance check
-    user_eth_balance = get_account_balance(web3, user_account.checksum_address)
+    user_eth_balance = get_account_balance(interface.web3, user_account.checksum_address)
     total_agent_eth_budget = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS))
     if user_eth_balance is None:
         raise AssertionError("User has no Ethereum balance")
@@ -188,7 +207,7 @@ def _check_user_balances(
         )
 
     # Base balance check
-    user_base_balance = base_token_contract.functions.balanceOf(user_account.checksum_address).call()
+    user_base_balance = interface.base_token_contract.functions.balanceOf(user_account.checksum_address).call()
     total_agent_base_budget = sum((int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS))
     if user_base_balance < total_agent_base_budget:
         raise AssertionError(

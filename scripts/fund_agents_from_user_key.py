@@ -11,7 +11,8 @@ from agent0.core import build_account_config_from_env
 from agent0.core.hyperdrive import HyperdriveAgent
 from agent0.core.hyperdrive.utilities.run_bots import async_fund_agents
 from agent0.ethpy import build_eth_config
-from agent0.ethpy.hyperdrive import fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface, fetch_hyperdrive_address_from_uri
+from agent0.hyperlogs import setup_logging
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -39,6 +40,9 @@ if __name__ == "__main__":
     if user_key is None:
         logging.warning("User key not provided, looking in environment file")
 
+    # Funding contains its own logging as this is typically run from a script or in debug mode
+    setup_logging(".logging/fund_accounts.log", log_stdout=True, delete_previous_logs=True)
+
     # This script only loads configs from env
     # Load config from env
     account_key_config = build_account_config_from_env(env_file, user_key)
@@ -51,7 +55,9 @@ if __name__ == "__main__":
     contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
-    asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, contract_addresses))
+    interface = HyperdriveReadInterface(eth_config, contract_addresses, read_retry_count=5)
+
+    asyncio.run(async_fund_agents(interface, user_account, account_key_config))
 
     # User key could have been passed in here, rewrite the accounts env file
     if user_key is not None:
