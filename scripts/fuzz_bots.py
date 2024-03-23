@@ -121,9 +121,7 @@ agent_config: list[AgentConfig] = [
 # If it doesn't exist, create it based on agent_config
 # (If os.environ["DEVELOP"] is False, will clean exit and print instructions on how to fund agent)
 # If it does exist, read it in and use it
-account_key_config = initialize_accounts(
-    agent_config, env_file=ACCOUNT_ENV_FILE, random_seed=env_config.global_random_seed
-)
+account_key_config = initialize_accounts(agent_config, env_file=ACCOUNT_ENV_FILE, rng=global_rng)
 
 
 # Get config and addresses
