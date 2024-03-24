@@ -6,4 +6,4 @@ from .fund_agents import async_fund_agents, async_fund_agents_with_fake_user
 from .get_agent_accounts import get_agent_accounts
 from .run_agents import setup_and_run_agent_loop
 from .setup_experiment import setup_experiment
-from .trade_loop import _get_wait_for_new_block, trade_if_new_block
+from .trade_loop import check_for_new_block, trade_if_new_block

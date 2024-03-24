@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 
 from web3 import Web3
-from web3.types import RPCEndpoint
+from web3.types import BlockData, RPCEndpoint
 
 from agent0.core.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
@@ -15,6 +15,32 @@ from agent0.core.test_utils import assert_never
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
 from .execute_multi_agent_trades import async_execute_multi_agent_trades
+
+
+def check_for_new_block(interface: HyperdriveReadInterface, last_block: BlockData) -> tuple[bool, BlockData]:
+    """Returns True if the chain has ticked to a block that is newer than the input block.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadInterface
+        The Hyperdrive API interface object.
+    last_block: BlockData
+        The last block to check against.
+
+    Returns
+    -------
+    tuple[bool, BlockData]
+        Tuple with a boolean indicating if the latest block is newer than the last_block input,
+        as well as the latest block data.
+    """
+    latest_block = interface.web3.eth.get_block("latest")
+    latest_block_number = latest_block.get("number", None)
+    latest_block_timestamp = latest_block.get("timestamp", None)
+    if latest_block_number is None or latest_block_timestamp is None:
+        raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
+    wait_for_new_block = _get_wait_for_new_block(interface.web3)
+    new_block = not wait_for_new_block or latest_block_number > last_block
+    return new_block, latest_block
 
 
 # TODO cleanup this function
@@ -27,7 +53,7 @@ def trade_if_new_block(
     crash_report_to_file: bool,
     crash_report_file_prefix: str,
     log_to_rollbar: bool,
-    last_executed_block: int,
+    last_executed_block_number: int,
     liquidate: bool,
     randomize_liquidation: bool,
 ) -> int:
@@ -53,7 +79,7 @@ def trade_if_new_block(
         The string prefix to prepend to crash reports
     log_to_rollbar: bool
         Whether or not to log to rollbar.
-    last_executed_block: int
+    last_executed_block_number: int
         The block number when a trade last happened.
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions.
@@ -65,19 +91,14 @@ def trade_if_new_block(
     int
         The block number when a trade last happened
     """
-    latest_block = interface.web3.eth.get_block("latest")
-    latest_block_number = latest_block.get("number", None)
-    latest_block_timestamp = latest_block.get("timestamp", None)
-    if latest_block_number is None or latest_block_timestamp is None:
-        raise AssertionError("latest_block_number and latest_block_timestamp can not be None")
-    wait_for_new_block = _get_wait_for_new_block(interface.web3)
+    latest_block, new_block = check_for_new_block(interface, last_executed_block_number)
     # do trades if we don't need to wait for new block.  otherwise, wait and check for a new block
-    if not wait_for_new_block or latest_block_number > last_executed_block:
+    if new_block:
         # log and show block info
         logging.info(
             "Block number: %d, Block time: %s, Price: %s, Rate: %s",
-            latest_block_number,
-            str(datetime.fromtimestamp(float(latest_block_timestamp))),
+            interface.get_block_number(latest_block),
+            str(datetime.fromtimestamp(float(interface.get_block_timestamp(latest_block)))),
             interface.calc_spot_price(),
             interface.calc_fixed_rate(),
         )
@@ -86,7 +107,7 @@ def trade_if_new_block(
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_multi_agent_trades(interface, agent_accounts, liquidate, randomize_liquidation)
         )
-        last_executed_block = latest_block_number
+        last_executed_block_number = interface.get_block_number(latest_block)
 
         _check_result(
             trade_results,
@@ -97,7 +118,7 @@ def trade_if_new_block(
             crash_report_file_prefix,
             log_to_rollbar,
         )
-    return last_executed_block
+    return last_executed_block_number
 
 
 def _check_result(
