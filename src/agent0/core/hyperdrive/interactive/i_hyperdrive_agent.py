@@ -74,6 +74,10 @@ class IHyperdriveAgent:
         """
         return self.agent.wallet
 
+    @wallet.setter
+    def wallet(self, wallet: HyperdriveWallet):
+        self.agent.wallet = wallet
+
     @property
     def checksum_address(self) -> ChecksumAddress:
         """Return the checksum address of the account."""
