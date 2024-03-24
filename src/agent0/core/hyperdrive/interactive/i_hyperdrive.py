@@ -148,7 +148,7 @@ class IHyperdrive:
         private_key: str,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
-    ):
+    ) -> IHyperdriveAgent:
         """Initializes an agent object given a private key.
 
         .. note::
@@ -165,7 +165,7 @@ class IHyperdrive:
 
         Returns
         -------
-        HyperdriveAgent
+        IHyperdriveAgent
             The agent object for a user to execute trades with.
         """
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
@@ -184,7 +184,7 @@ class IHyperdrive:
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
-    ):
+    ) -> HyperdriveAgent[IHyperdrivePolicy]:
         # Setting the budget to 0 here, we'll update the wallet from the chain
         agent = HyperdriveAgent(
             Account().from_key(private_key),
