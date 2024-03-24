@@ -9,6 +9,7 @@ from fixedpointmath import FixedPoint
 if TYPE_CHECKING:
     from typing import Type
 
+    from eth_account.signers.local import LocalAccount
     from eth_typing import ChecksumAddress
 
     from agent0.core.hyperdrive import HyperdriveWallet
@@ -216,7 +217,9 @@ class IHyperdriveAgent:
         """
         return self._pool._liquidate(self.agent, randomize)
 
-    def add_funds(self, base: FixedPoint | None = None, eth: FixedPoint | None = None) -> None:
+    def add_funds(
+        self, base: FixedPoint | None = None, eth: FixedPoint | None = None, signer_account: LocalAccount | None = None
+    ) -> None:
         """Adds additional funds to the agent.
 
         .. note:: This method calls `set_anvil_account_balance` and `mint` under the hood.
@@ -225,16 +228,18 @@ class IHyperdriveAgent:
 
         Arguments
         ---------
-        base: FixedPoint
+        base: FixedPoint | None, optional
             The amount of base to fund the agent with. Defaults to 0.
-        eth: FixedPoint
+        eth: FixedPoint | None, optional
             The amount of ETH to fund the agent with. Defaults to 0.
+        signer_account: LocalAccount | None, optional
+            Account for the fund provider. Defaults to the agent.
         """
         if base is None:
             base = FixedPoint(0)
         if eth is None:
             eth = FixedPoint(0)
-        self._pool._add_funds(self.agent, base, eth)
+        self._pool._add_funds(self.agent, base, eth, signer_account)
 
     def set_max_approval(self) -> None:
         """Sets the max approval to the hyperdrive contract.
