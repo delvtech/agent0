@@ -79,6 +79,11 @@ class IHyperdriveAgent:
         """Return the checksum address of the account."""
         return self.agent.checksum_address
 
+    @property
+    def done_trading(self) -> bool:
+        """Boolean is True if the agent will execute no more trades."""
+        return self.agent.done_trading
+
     def open_long(self, base: FixedPoint) -> OpenLong:
         """Opens a long for this agent.
 
