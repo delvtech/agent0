@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from eth_typing import BlockNumber
 from web3 import Web3
-from web3.types import BlockData, BlockNumber, RPCEndpoint
+from web3.types import BlockData, RPCEndpoint
 
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
