@@ -81,18 +81,10 @@ for _ in range(NUM_RANDOM_HOLD_AGENTS):
 
 # Make trades until the user or agents stop us
 while True:
-    # Check if all agents done trading
-    # If so, exit cleanly
-    # The done trading state variable gets set internally
-    # TODO: Right now IHyperdrive always sets done_trading to False
-    # but there are situations where we want it to be true
-    if all(agent.done_trading for agent in agents):
-        break
     # Execute the agent policies
     for agent in agents:
         try:
-            if not agent.done_trading:
-                trade_events = agent.execute_policy_action()
+            trade_events = agent.execute_policy_action()
             # Update agent funds
             if minimum_avg_agent_base is not None:
                 if (
