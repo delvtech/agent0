@@ -84,7 +84,7 @@ while True:
     # Execute the agent policies
     for agent in agents:
         try:
-            trade_events = agent.execute_policy_action()
+            _ = agent.execute_policy_action()
             # Update agent funds
             if minimum_avg_agent_base is not None:
                 if (
