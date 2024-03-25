@@ -105,6 +105,7 @@ def setup_fuzz(
         crash_log_ticker=True,
         # Put this into crash report for all tests
         crash_report_additional_info=crash_report_additional_info,
+        calc_pnl=False,
     )
 
     if curve_fee is not None:
