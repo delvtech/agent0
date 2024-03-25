@@ -13,6 +13,7 @@ from agent0 import IChain, IHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.i_hyperdrive_agent import IHyperdriveAgent
 from agent0.ethpy import build_eth_config
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 # Crash behavior
 STOP_CHAIN_ON_CRASH = False
@@ -24,6 +25,8 @@ BASE_BUDGET_PER_BOT = FixedPoint("10_000_000")
 ETH_BUDGET_PER_BOT = FixedPoint("1_000")
 # The slippage tolerance for trades
 SLIPPAGE_TOLERANCE = FixedPoint("0.01")  # 1% slippage
+
+log_to_rollbar = initialize_rollbar("localfuzzbots")
 
 # Make sure the bots have at least 10% of their budget after each trade
 minimum_avg_agent_base = BASE_BUDGET_PER_BOT / FixedPoint(10)
@@ -39,7 +42,7 @@ hyperdrive_addresses = IHyperdrive.Addresses.from_artifacts_uri(eth_config.artif
 hyperdrive_config = IHyperdrive.Config(
     preview_before_trade=True,
     rng_seed=rng_seed,
-    log_to_rollbar=True,
+    log_to_rollbar=log_to_rollbar,
     rollbar_log_prefix="fuzzbots",
     crash_log_level=logging.CRITICAL,
     crash_report_additional_info={"rng_seed": rng_seed},
