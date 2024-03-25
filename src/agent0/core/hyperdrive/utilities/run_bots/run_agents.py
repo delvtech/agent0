@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 import random
@@ -19,8 +18,7 @@ from agent0.core.hyperdrive.agent import build_wallet_positions_from_chain, buil
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
 
-from .create_and_fund_user_account import create_and_fund_user_account
-from .fund_agents import async_fund_agents
+from .fund_agents import async_fund_agents_with_fake_user
 from .setup_experiment import setup_experiment
 from .trade_loop import trade_if_new_block
 
@@ -95,9 +93,7 @@ def setup_and_run_agent_loop(
     # Run the agent trades in a while True loop
     _run_agents(
         environment_config,
-        eth_config,
         account_key_config,
-        contract_addresses,
         interface,
         agent_accounts,
         liquidate,
@@ -169,7 +165,7 @@ def _setup_agents(
 
     # Setup env automatically & fund the agents
     if develop:
-        _ = _async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+        async_fund_agents_with_fake_user(interface, account_key_config)
 
     # Get hyperdrive interface object and agents
     agent_accounts = setup_experiment(
@@ -219,9 +215,7 @@ def _setup_agents(
 
 def _run_agents(
     environment_config: EnvironmentConfig,
-    eth_config: EthConfig,
     account_key_config: AccountKeyConfig,
-    contract_addresses: HyperdriveAddresses,
     interface: HyperdriveReadWriteInterface,
     agent_accounts: list[HyperdriveAgent],
     liquidate: bool = False,
@@ -236,13 +230,8 @@ def _run_agents(
     ---------
     environment_config: EnvironmentConfig
         The agent's environment configuration.
-    eth_config: EthConfig
-        Configuration for URIs to the rpc and artifacts.
     account_key_config: AccountKeyConfig
         Dataclass containing configuration options for the agent account, including keys and budgets.
-    contract_addresses: HyperdriveAddresses | None, optional
-        Configuration for the URIs to the Hyperdrive contract addresses.
-        If not set, will look for the addresses in eth_config.
     interface: HyperdriveReadWriteInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
     agent_accounts: list[HyperdriveAgent]
@@ -254,12 +243,12 @@ def _run_agents(
         If set, then the script will fund the agents with their original budgets
         whenever the average balance across wallets is less than this amount.
     """
-    # Check if all agents done trading
-    # If so, exit cleanly
-    # The done trading state variable gets set internally
     last_executed_block = BlockNumber(0)
     poll_latency = START_LATENCY + random.uniform(0, 1)
     while True:
+        # Check if all agents done trading
+        # If so, exit cleanly
+        # The done trading state variable gets set internally
         if all(agent.done_trading for agent in agent_accounts):
             break
         new_executed_block = trade_if_new_block(
@@ -279,7 +268,7 @@ def _run_agents(
                 sum(agent.wallet.balance.amount for agent in agent_accounts) / FixedPoint(len(agent_accounts))
                 < minimum_avg_agent_base
             ):
-                _ = _async_fund_agents_with_fake_user(eth_config, account_key_config, contract_addresses, interface)
+                async_fund_agents_with_fake_user(interface, account_key_config)
                 # Update agent accounts with new wallet balances
                 for agent in agent_accounts:
                     # Contract call to get base balance
@@ -294,37 +283,3 @@ def _run_agents(
         else:
             # Reset backoff
             poll_latency = START_LATENCY + random.uniform(0, 1)
-
-
-def _async_fund_agents_with_fake_user(
-    eth_config: EthConfig,
-    account_key_config: AccountKeyConfig,
-    contract_addresses: HyperdriveAddresses,
-    interface: HyperdriveReadWriteInterface,
-) -> HyperdriveAgent:
-    """Create a fake account, fund it with eth, and then use that to fund the agent wallets.
-
-    .. note::
-    This function will soon be deprecated in favor of the IHyperdrive workflow
-
-    Arguments
-    ---------
-    eth_config: EthConfig | None, optional
-        Configuration for URIs to the rpc and artifacts.
-        If not set, will look for the config in eth.env.
-    account_key_config: AccountKeyConfig
-        Dataclass containing configuration options for the agent account, including keys and budgets.
-    contract_addresses: HyperdriveAddresses | None, optional
-        Configuration for the URIs to the Hyperdrive contract addresses.
-        If not set, will look for the addresses in eth_config.
-    interface: HyperdriveReadWriteInterface
-        An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-
-    Returns
-    -------
-    HyperdriveAgent
-        The fake user account created to fund the agents.
-    """
-    user_account = create_and_fund_user_account(account_key_config, interface)
-    asyncio.run(async_fund_agents(user_account, eth_config, account_key_config, contract_addresses))
-    return user_account

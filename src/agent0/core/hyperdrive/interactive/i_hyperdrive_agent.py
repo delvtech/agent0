@@ -225,9 +225,9 @@ class IHyperdriveAgent:
 
         Arguments
         ---------
-        base: FixedPoint
+        base: FixedPoint | None, optional
             The amount of base to fund the agent with. Defaults to 0.
-        eth: FixedPoint
+        eth: FixedPoint | None, optional
             The amount of ETH to fund the agent with. Defaults to 0.
         """
         if base is None:

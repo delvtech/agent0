@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from dotenv import load_dotenv
+from numpy.random._generator import Generator
 
 from .base.config import AgentConfig, Budget
 from .base.make_key import make_private_key
@@ -53,7 +54,7 @@ class AccountKeyConfig:
 def initialize_accounts(
     agent_config: list[AgentConfig],
     env_file: str | None = None,
-    random_seed: int | None = None,
+    rng: Generator | None = None,
 ) -> AccountKeyConfig:
     """Build or load an accounts environment file.
     If it doesn't exist, create it based on agent_config.
@@ -66,14 +67,19 @@ def initialize_accounts(
         The list of agent configs that define policies and arguments.
     env_file: str | None
         The path to the env file to write/load from. Defaults to `accounts.env`.
-    random_seed: int | None, optional
-        Random seed to use for initializing budgets.
+    rng: Generator | None, optional
+        The random number generator to pass for each bot.
+        If not provided, then one will be constructed from the system seed.
 
     Returns
     -------
     AccountKeyConfig
         The account config object linked to the env file.
     """
+    # Create rng if it is not provided
+    if rng is None:
+        rng = np.random.default_rng()
+
     # See if develop flag is set
     develop_env = os.environ.get("DEVELOP")
     develop = (develop_env is not None) and (develop_env.lower() == "true")
@@ -84,13 +90,13 @@ def initialize_accounts(
 
     # If we're in develop mode, we don't use the env file at all
     if develop:
-        account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed)
+        account_key_config = build_account_key_config_from_agent_config(agent_config, rng)
     # If we're not in develop mode and the env file doesn't exist
     # we create the env file keeping track of keys and budgets
     elif not os.path.exists(env_file):
         logging.info("Creating %s", env_file)
         # Create AccountKeyConfig from agent config
-        account_key_config = build_account_key_config_from_agent_config(agent_config, random_seed)
+        account_key_config = build_account_key_config_from_agent_config(agent_config, rng)
         # Create file
         with open(env_file, "w", encoding="UTF-8") as file:
             file.write(account_key_config.to_env_str())
@@ -119,7 +125,7 @@ def initialize_accounts(
 
 
 def build_account_key_config_from_agent_config(
-    agent_configs: list[AgentConfig], random_seed: int | None = None, user_key: str | None = None
+    agent_configs: list[AgentConfig], rng: Generator | None = None, user_key: str | None = None
 ) -> AccountKeyConfig:
     """Build an Account Config from a provided agent config.
 
@@ -127,8 +133,9 @@ def build_account_key_config_from_agent_config(
     ---------
     agent_configs: list[AgentConfig]
         The list of agent configs that define policies and arguments.
-    random_seed: int | None, optional
-        The seed to initialize the random generator to pass for each bot
+    rng: Generator | None, optional
+        The random number generator to pass for each bot.
+        If not provided, then one will be constructed from the system seed.
     user_key: str
         The provided user key to use
 
@@ -137,7 +144,9 @@ def build_account_key_config_from_agent_config(
     AccountKeyConfig
         The account config object linked to the env file.
     """
-    rng = np.random.default_rng(random_seed)
+    # Create rng if it is not provided
+    if rng is None:
+        rng = np.random.default_rng()
     agent_private_keys = []
     agent_base_budgets = []
     agent_eth_budgets = []
