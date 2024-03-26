@@ -356,6 +356,8 @@ class IHyperdrive:
                 rollbar_log_prefix=self.config.rollbar_log_prefix,
                 additional_info=self.config.crash_report_additional_info,
             )
+            # TODO likely want to expose a "crash if slippage" flag and only
+            # raise if we want to check slippage.
             raise trade_result.exception
 
         assert trade_result.status == TradeStatus.SUCCESS

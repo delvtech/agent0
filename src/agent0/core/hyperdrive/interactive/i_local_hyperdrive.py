@@ -1088,22 +1088,13 @@ class ILocalHyperdrive(IHyperdrive):
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
-    def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
-        # Sanity check, should only be one trade result
-        if isinstance(trade_results, list):
-            assert len(trade_results) == 1
-            trade_result = trade_results[0]
-        elif isinstance(trade_results, TradeResult):
-            trade_result = trade_results
-        else:
-            assert False
-
+    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
         # We add specific data to the trade result from interactive hyperdrive
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
-            # TODO when we allow for async, we likely would want to ignore slippage checks here
-            # We only get anvil state dump here, since it's an on chain call
-            # and we don't want to do it when e.g., slippage happens
+            # TODO we likely want to explicitly check for slippage here and not
+            # get anvil state dump if it's a slippage error and the user wants to
+            # ignore slippage errors
             trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
             if self.config.crash_log_ticker:
                 if trade_result.additional_info is None:
