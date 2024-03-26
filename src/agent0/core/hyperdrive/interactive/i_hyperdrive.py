@@ -17,7 +17,16 @@ from numpy.random._generator import Generator
 from web3 import Web3
 
 from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
-from agent0.core.hyperdrive.agent import build_wallet_positions_from_chain
+from agent0.core.hyperdrive.agent import (
+    add_liquidity_trade,
+    build_wallet_positions_from_chain,
+    close_long_trade,
+    close_short_trade,
+    open_long_trade,
+    open_short_trade,
+    redeem_withdraw_shares_trade,
+    remove_liquidity_trade,
+)
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
@@ -39,7 +48,7 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .exec import async_execute_agent_trades, set_max_approval
+from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 from .i_chain import IChain
 from .i_hyperdrive_agent import IHyperdriveAgent
 from .i_hyperdrive_policy import IHyperdrivePolicy
@@ -238,80 +247,93 @@ class IHyperdrive:
             # Update the agent's wallet balance
             agent.wallet.balance.amount += base
 
-    def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.OPEN_LONG, base)
+    def _open_long(
+        self,
+        agent: HyperdriveAgent,
+        base: FixedPoint,
+        slippage_tolerance: FixedPoint | None,
+    ) -> OpenLong:
+        # Build trade object
+        trade_object = open_long_trade(base, slippage_tolerance)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
-        tx_receipt = self._handle_trade_result(trade_results)
+        trade_result: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
+        tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
-    def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.CLOSE_LONG, bonds, maturity_time)
+    def _close_long(
+        self,
+        agent: HyperdriveAgent,
+        maturity_time: int,
+        bonds: FixedPoint,
+        slippage_tolerance: FixedPoint | None,
+    ) -> CloseLong:
+        # Build trade object
+        trade_object = close_long_trade(bonds, maturity_time, slippage_tolerance)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
-        tx_receipt = self._handle_trade_result(trade_results)
+        trade_result: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
+        tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
-    def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.OPEN_SHORT, bonds)
+    def _open_short(
+        self,
+        agent: HyperdriveAgent,
+        bonds: FixedPoint,
+        slippage_tolerance: FixedPoint | None,
+    ) -> OpenShort:
+        trade_object = open_short_trade(bonds, slippage_tolerance)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
-        tx_receipt = self._handle_trade_result(trade_results)
+        trade_result: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
+        tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
-    def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.CLOSE_SHORT, bonds, maturity_time=maturity_time)
+    def _close_short(
+        self,
+        agent: HyperdriveAgent,
+        maturity_time: int,
+        bonds: FixedPoint,
+        slippage_tolerance: FixedPoint | None,
+    ) -> CloseShort:
+        trade_object = close_short_trade(bonds, maturity_time, slippage_tolerance)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
-        tx_receipt = self._handle_trade_result(trade_results)
+        trade_result: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
+        tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
-    def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.ADD_LIQUIDITY, base)
+    def _add_liquidity(
+        self,
+        agent: HyperdriveAgent,
+        base: FixedPoint,
+        min_apr: FixedPoint | None,
+        max_apr: FixedPoint | None,
+    ) -> AddLiquidity:
+        # Use the underlying defaults defined in add_liquidity_trade here
+        # TODO implement and expose slippage tolerance here
+        trade_object = add_liquidity_trade(base, min_apr, max_apr)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
-        tx_receipt = self._handle_trade_result(trade_results)
+        trade_result: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
+        tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
-    def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.REMOVE_LIQUIDITY, shares)
+    def _remove_liquidity(
+        self,
+        agent: HyperdriveAgent,
+        shares: FixedPoint,
+    ) -> RemoveLiquidity:
+        # TODO implement and expose slippage tolerance here
+        trade_object = remove_liquidity_trade(shares)
         # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
-        tx_receipt = self._handle_trade_result(trade_results)
+        trade_result: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
+        tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
-    def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
-        # Set the next action to open a long
-        assert isinstance(agent.policy, IHyperdrivePolicy)
-        agent.policy.set_next_action(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, shares)
-        # TODO expose async here to the caller eventually
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
-        )
+    def _redeem_withdraw_share(
+        self,
+        agent: HyperdriveAgent,
+        shares: FixedPoint,
+    ) -> RedeemWithdrawalShares:
+        # TODO implement and expose slippage tolerance here
+        trade_object = redeem_withdraw_shares_trade(shares)
+        trade_results: TradeResult = asyncio.run(async_execute_single_trade(self.interface, agent, trade_object))
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
@@ -360,16 +382,7 @@ class IHyperdrive:
         # Build event from tx_receipt
         return out_events
 
-    def _handle_trade_result(self, trade_results: list[TradeResult] | TradeResult) -> ReceiptBreakdown:
-        # Sanity check, should only be one trade result
-        if isinstance(trade_results, list):
-            assert len(trade_results) == 1
-            trade_result = trade_results[0]
-        elif isinstance(trade_results, TradeResult):
-            trade_result = trade_results
-        else:
-            assert False
-
+    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
         if trade_result.status == TradeStatus.FAIL:
             # Defaults to CRITICAL
             assert trade_result.exception is not None

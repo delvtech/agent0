@@ -167,8 +167,8 @@ def close_short_trade(
 
 def add_liquidity_trade(
     trade_amount: FixedPoint,
-    min_apr: FixedPoint = FixedPoint(scaled_value=1),
-    max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1),
+    min_apr: FixedPoint | None = None,
+    max_apr: FixedPoint | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for adding liquidity.
 
@@ -190,6 +190,11 @@ def add_liquidity_trade(
     Trade[HyperdriveMarketAction]
         The trade object for adding liquidity to a Hyperdrive pool.
     """
+    if min_apr is None:
+        min_apr = FixedPoint(scaled_value=1)
+    if max_apr is None:
+        max_apr = FixedPoint(scaled_value=2**256 - 1)
+
     return Trade(
         market_type=MarketType.HYPERDRIVE,
         market_action=HyperdriveMarketAction(
@@ -246,6 +251,7 @@ def redeem_withdraw_shares_trade(trade_amount: FixedPoint) -> Trade[HyperdriveMa
     Trade[HyperdriveMarketAction]
         The trade object for redeeming withdraw shares from a Hyperdrive pool.
     """
+    # TODO implement slippage tolerance for withdrawal
     return Trade(
         market_type=MarketType.HYPERDRIVE,
         market_action=HyperdriveMarketAction(
