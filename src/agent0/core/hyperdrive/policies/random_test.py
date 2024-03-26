@@ -91,7 +91,7 @@ def test_random_policy_trades(chain: ILocalChain):
     ]
     for trade_sequence in hyperdrive_trade_actions:
         for trade in trade_sequence:
-            random_agent.agent.policy.sub_policy.allowable_actions = [trade]  # type: ignore
+            random_agent.agent.policy.allowable_actions = [trade]  # type: ignore
             trade_events = random_agent.execute_policy_action()
             for event in trade_events:
                 match event:
