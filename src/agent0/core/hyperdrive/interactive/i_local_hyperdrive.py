@@ -1029,14 +1029,18 @@ class ILocalHyperdrive(IHyperdrive):
         # pylint: disable=too-many-arguments
         agent_private_key = make_private_key() if private_key is None else private_key
 
+        # Setting the budget to 0 here, we'll update the wallet from the chain
+        if policy is None:
+            if policy_config is None:
+                policy_config = HyperdriveBasePolicy.Config(rng=self.config.rng)
+            policy_obj = HyperdriveBasePolicy(policy_config)
+        else:
+            if policy_config is None:
+                policy_config = policy.Config(rng=self.config.rng)
+            policy_obj = policy(policy_config)
+
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
-        agent = HyperdriveAgent(
-            Account().from_key(agent_private_key),
-            initial_budget=FixedPoint(0),
-            policy=IHyperdrivePolicy(
-                IHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng)
-            ),
-        )
+        agent = HyperdriveAgent(Account().from_key(agent_private_key), initial_budget=FixedPoint(0), policy=policy_obj)
         # Update wallet to agent's previous budget
         if private_key is not None:  # address already existed
             agent.wallet.balance.amount = self.interface.get_eth_base_balances(agent)[1]

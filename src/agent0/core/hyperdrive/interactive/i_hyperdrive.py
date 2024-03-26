@@ -51,7 +51,6 @@ from .event_types import (
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 from .i_chain import IChain
 from .i_hyperdrive_agent import IHyperdriveAgent
-from .i_hyperdrive_policy import IHyperdrivePolicy
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -193,15 +192,18 @@ class IHyperdrive:
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
-    ) -> HyperdriveAgent[IHyperdrivePolicy]:
+    ) -> HyperdriveAgent[HyperdriveBasePolicy]:
         # Setting the budget to 0 here, we'll update the wallet from the chain
-        agent = HyperdriveAgent(
-            Account().from_key(private_key),
-            initial_budget=FixedPoint(0),
-            policy=IHyperdrivePolicy(
-                IHyperdrivePolicy.Config(sub_policy=policy, sub_policy_config=policy_config, rng=self.config.rng)
-            ),
-        )
+        if policy is None:
+            if policy_config is None:
+                policy_config = HyperdriveBasePolicy.Config(rng=self.config.rng)
+            policy_obj = HyperdriveBasePolicy(policy_config)
+        else:
+            if policy_config is None:
+                policy_config = policy.Config(rng=self.config.rng)
+            policy_obj = policy(policy_config)
+
+        agent = HyperdriveAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
 
         # Add the public address to the chain object to avoid multiple objects
         # with the same underlying account
@@ -301,12 +303,12 @@ class IHyperdrive:
     def _execute_policy_action(
         self, agent: HyperdriveAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
-        assert isinstance(agent.policy, IHyperdrivePolicy)
         # Only allow executing agent policies if a policy was passed in the constructor
-        if agent.policy.sub_policy is None:
+        # we check type instead of isinstance to explicitly check for the hyperdrive base class
+        # pylint: disable=unidiomatic-typecheck
+        if type(agent.policy) == HyperdriveBasePolicy:
             raise ValueError("Must pass in a policy in the constructor to execute policy action.")
 
-        agent.policy.set_next_action_from_sub_policy()
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
         )
