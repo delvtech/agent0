@@ -50,7 +50,6 @@ hyperdrive_config = IHyperdrive.Config(
 hyperdrive_pool = IHyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
 
 # Run agents
-# if bots crash, we us an RPC to stop mining anvil
 # Initialize & fund agents
 agents: list[IHyperdriveAgent] = []
 wallet_addrs: list[str] = []
@@ -102,6 +101,7 @@ while True:
         # Don't stop chain if the user interrupts
         except KeyboardInterrupt:
             sys.exit()
+        # if bots crash, we us an RPC to stop mining anvil
         except Exception as exc:  # pylint: disable=broad-exception-caught
             if STOP_CHAIN_ON_CRASH:
                 hyperdrive_pool.interface.web3.provider.make_request(
