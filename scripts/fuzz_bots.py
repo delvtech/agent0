@@ -50,7 +50,6 @@ hyperdrive_config = IHyperdrive.Config(
 hyperdrive_pool = IHyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
 
 # Run agents
-# if bots crash, we us an RPC to stop mining anvil
 # Initialize & fund agents
 agents: list[IHyperdriveAgent] = []
 wallet_addrs: list[str] = []
@@ -58,19 +57,21 @@ for _ in range(NUM_RANDOM_AGENTS):
     # Initialize & fund agent using a random private key
     agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
         private_key=make_private_key(),
+        policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
             randomly_ignore_slippage_tolerance=True,
         ),
     )
-    agent.set_max_approval()
     agent.add_funds(base=BASE_BUDGET_PER_BOT, eth=ETH_BUDGET_PER_BOT)
+    agent.set_max_approval()
     agents.append(agent)
 
 for _ in range(NUM_RANDOM_HOLD_AGENTS):
     agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
         private_key=make_private_key(),
+        policy=PolicyZoo.random_hold,
         policy_config=PolicyZoo.random_hold.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
@@ -78,8 +79,8 @@ for _ in range(NUM_RANDOM_HOLD_AGENTS):
             max_open_positions=2_000,
         ),
     )
-    agent.set_max_approval()
     agent.add_funds(base=BASE_BUDGET_PER_BOT, eth=ETH_BUDGET_PER_BOT)
+    agent.set_max_approval()
     agents.append(agent)
 
 # Make trades until the user or agents stop us
@@ -100,6 +101,7 @@ while True:
         # Don't stop chain if the user interrupts
         except KeyboardInterrupt:
             sys.exit()
+        # if bots crash, we us an RPC to stop mining anvil
         except Exception as exc:  # pylint: disable=broad-exception-caught
             if STOP_CHAIN_ON_CRASH:
                 hyperdrive_pool.interface.web3.provider.make_request(
