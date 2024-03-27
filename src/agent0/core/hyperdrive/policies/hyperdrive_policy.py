@@ -65,8 +65,8 @@ class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]
         raise NotImplementedError
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after actions have been executed. This allows the policy
-        to e.g., do additional bookkeeping based on the results of the executed actions.
+        """Function that gets called after the actions specified by the `action` function have been executed.
+        This allows the policy to e.g., do additional bookkeeping based on the results of the executed actions.
 
         Arguments
         ---------

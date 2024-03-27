@@ -243,3 +243,24 @@ def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool)
     # Initializing an agent with an existing key on a separate pool should fail
     with pytest.raises(ValueError):
         _ = interactive_remote_hyperdrive_1.init_agent(private_key=private_key)
+
+
+@pytest.mark.anvil
+@pytest.mark.parametrize("check_remote_chain", [True, False])
+def test_no_policy_call(chain: ILocalChain, check_remote_chain: bool):
+    """Deploy a local chain and point the remote interface to the local chain."""
+    initial_pool_config = ILocalHyperdrive.Config()
+    interactive_local_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_addresses()
+    # Connect to the local chain using the remote hyperdrive interface
+    if check_remote_chain:
+        remote_chain = IChain(chain.rpc_uri)
+        interactive_remote_hyperdrive = IHyperdrive(remote_chain, hyperdrive_addresses)
+    else:
+        interactive_remote_hyperdrive = IHyperdrive(chain, hyperdrive_addresses)
+
+    # Create agent without policy passed in
+    hyperdrive_agent = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    # Attempt to execute agent policy, should throw value error
+    with pytest.raises(ValueError):
+        hyperdrive_agent.execute_policy_action()

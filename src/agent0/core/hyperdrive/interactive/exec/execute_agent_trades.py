@@ -28,7 +28,7 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.base import retry_call
 from agent0.ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
-from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface, ReceiptBreakdown
 
 if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdriveAgent
@@ -41,8 +41,13 @@ async def async_execute_agent_trades(
     randomize_liquidation: bool = False,
     interactive_mode: bool = False,
 ) -> list[TradeResult]:
-    """Executes a single agent's trade.
+    """Executes a single agent's trade based on its policy.
     This function is async as `_match_contract_call_to_trade` waits for a transaction receipt.
+
+    .. note :: This function is not thread safe, as
+    (1) the agent's policies `action` and `post_action` may not be thread safe, and
+    (2) the agent's wallet update is not thread safe.
+    (3) acquiring the base nonce for this set of trades is not thread safe.
 
     Arguments
     ---------
@@ -65,6 +70,7 @@ async def async_execute_agent_trades(
         Returns a list of TradeResult objects, one for each trade made by the agent.
         TradeResult handles any information about the trade, as well as any trade errors.
     """
+
     if liquidate:
         # TODO: test this option
         trades: list[Trade[HyperdriveMarketAction]] = agent.get_liquidation_trades(
@@ -101,6 +107,123 @@ async def async_execute_agent_trades(
     # because of async. Ideally, we should return results based on the order of trades. Can we use nonce here
     # to see order?
 
+    trade_results, wallet_updates = _handle_contract_call_to_trade(wallet_deltas_or_exception, trades, interface, agent)
+
+    # The wallet update after should be fine, since we can see what trades went through
+    # and only apply those wallet deltas. Wallet deltas are also invariant to order
+    # as long as the transaction went through.
+    for wallet_delta in wallet_updates:
+        agent.wallet.update(wallet_delta)
+
+    # TODO to avoid adding a post action in base policy, we only call post action
+    # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
+    # way down
+    if isinstance(agent.policy, HyperdriveBasePolicy):
+        # Calls the agent with the trade results in case the policy needs to do bookkeeping.
+        # We copy a trade results to avoid changing the original trade result for crash reporting.
+
+        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent.
+        # If this is the case, we can selectively create a new TradeResult object with a subset of data.
+        #
+        # TODO can't put post_action in agent due to circular import, so we call the policy post_action here
+        agent.policy.post_action(interface, deepcopy(trade_results))
+
+    return trade_results
+
+
+async def async_execute_single_trade(
+    interface: HyperdriveReadWriteInterface,
+    agent: HyperdriveAgent,
+    trade_object: Trade[HyperdriveMarketAction],
+    execute_policy_post_action: bool,
+) -> TradeResult:
+    """Executes a single trade made by the agent.
+
+    .. note :: This function is not thread safe, as
+    (1) the agent's wallet update is not thread safe
+    (2) acquiring the nonce for this trade is not thread safe
+
+    Arguments
+    ---------
+    interface: HyperdriveReadWriteInterface
+        The Hyperdrive API interface object.
+    agent: HyperdriveAgent
+        The HyperdriveAgent that is conducting the trade.
+    trade_object: Trade[HyperdriveMarketAction]
+        The trade to execute.
+    execute_policy_post_action: bool
+        Whether or not to execute the post_action of the policy after the trade.
+
+    Returns
+    -------
+    TradeResult
+        The result of the trade.
+    """
+
+    # TODO we likely need to bookkeep nonces here to avoid a race condition when this function
+    # is being called asynchronously
+    nonce = retry_call(DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, agent.checksum_address)
+
+    try:
+        wallet_delta_or_exception = await _async_match_contract_call_to_trade(agent, interface, trade_object, nonce)
+    except Exception as e:  # pylint: disable=broad-except
+        wallet_delta_or_exception = e
+
+    trade_results, wallet_updates = _handle_contract_call_to_trade(
+        [wallet_delta_or_exception], [trade_object], interface, agent
+    )
+
+    assert len(trade_results) == 1
+    # Wallet updates will be 0 if the trade failed
+    assert len(wallet_updates) <= 1
+
+    for wallet_delta in wallet_updates:
+        agent.wallet.update(wallet_delta)
+
+    # Some policies still need to bookkeep if single trades are being made. We call that here.
+    # TODO to avoid adding a post action in base policy, we only call post action
+    # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
+    # way down
+    if execute_policy_post_action and isinstance(agent.policy, HyperdriveBasePolicy):
+        # Calls the agent with the trade results in case the policy needs to do bookkeeping.
+        # We copy a trade results to avoid changing the original trade result for crash reporting.
+
+        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent.
+        # If this is the case, we can selectively create a new TradeResult object with a subset of data.
+        #
+        # TODO can't put post_action in agent due to circular import, so we call the policy post_action here
+        agent.policy.post_action(interface, deepcopy(trade_results))
+
+    return trade_results[0]
+
+
+def _handle_contract_call_to_trade(
+    wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException],
+    trades: list[Trade[HyperdriveMarketAction]],
+    interface: HyperdriveReadInterface,
+    agent: HyperdriveAgent,
+):
+    """A function to handle the results of executing trades.
+
+    Arguments
+    ---------
+    wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException]
+        The results of executing trades. This argument is either the output of
+        _async_match_contract_call_to_trade or an exception to crash report.
+    trades: list[HyperdriveMarketAction]
+        The list of trades that were executed
+    interface: HyperdriveReadInterface
+        The read interface for the market
+    agent: HyperdriveAgent
+        The agent that executed the trades
+
+    Returns
+    -------
+    Tuple[list[TradeResult], list[HyperdriveWalletDeltas]]
+        Returns the list of trade results, as well as any wallet deltas that need to be
+        applied to the agent
+    """
+
     # Sanity check
     if len(wallet_deltas_or_exception) != len(trades):
         raise AssertionError(
@@ -108,10 +231,8 @@ async def async_execute_agent_trades(
             f"\n{wallet_deltas_or_exception=}\n{trades=}"
         )
 
-    # The wallet update after should be fine, since we can see what trades went through
-    # and only apply those wallet deltas. Wallet deltas are also invariant to order
-    # as long as the transaction went through.
-    trade_results = []
+    trade_results: list[TradeResult] = []
+    wallet_deltas: list[HyperdriveWalletDeltas] = []
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
         if isinstance(result, Exception):
             trade_result = build_crash_trade_result(result, interface, agent, trade_object)
@@ -129,26 +250,13 @@ async def async_execute_agent_trades(
             wallet_delta, tx_receipt = result
             if not isinstance(wallet_delta, HyperdriveWalletDeltas) or not isinstance(tx_receipt, ReceiptBreakdown):
                 raise TypeError("The wallet deltas or the transaction receipt is not the correct type.")
-            agent.wallet.update(wallet_delta)
+            wallet_deltas.append(wallet_delta)
             trade_result = TradeResult(
                 status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
             )
         trade_results.append(trade_result)
 
-    # TODO to avoid adding a post action in base policy, we only call post action
-    # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
-    # way down
-    if isinstance(agent.policy, HyperdriveBasePolicy):
-        # Calls the agent with the trade results in case the policy needs to do bookkeeping.
-        # We copy a trade results to avoid changing the original trade result for crash reporting.
-
-        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent.
-        # If this is the case, we can selectively create a new TradeResult object with a subset of data.
-        #
-        # TODO can't put post_action in agent due to circular import, so we call the policy post_action here
-        agent.policy.post_action(interface, deepcopy(trade_results))
-
-    return trade_results
+    return trade_results, wallet_deltas
 
 
 async def _async_match_contract_call_to_trade(
@@ -167,7 +275,7 @@ async def _async_match_contract_call_to_trade(
         The Hyperdrive API interface object.
     trade_envelope: Trade[HyperdriveMarketAction]
         A specific Hyperdrive trade requested by the given agent.
-    nonce: Nonce
+    nonce: Nonce, optional
         Override the transaction number assigned to the transaction call from the agent wallet.
 
     Returns
