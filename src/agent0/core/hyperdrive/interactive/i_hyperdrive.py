@@ -86,8 +86,13 @@ class IHyperdrive:
         """The log level to log crashes at. Defaults to critical."""
         crash_report_additional_info: dict[str, Any] | None = None
         """Additional information to include in the crash report."""
-        execute_policy_post_trade: bool = False
-        """Whether to execute the policy post trade stage after non-policy trades. Defaults to False."""
+        always_execute_policy_post_action: bool = False
+        """
+        Whether to execute the policy `post_action` function after non-policy trades. 
+        If True, the policy `post_action` function always be called after any agent trade.
+        If False, the policy `post_action` function will only be called after `execute_policy_action`.
+        Defaults to False.
+        """
 
         def __post_init__(self):
             if self.rng is None:
@@ -258,7 +263,9 @@ class IHyperdrive:
         trade_object = open_long_trade(base)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
@@ -268,7 +275,9 @@ class IHyperdrive:
         trade_object = close_long_trade(bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
@@ -277,7 +286,9 @@ class IHyperdrive:
         trade_object = open_short_trade(bonds)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
@@ -286,7 +297,9 @@ class IHyperdrive:
         trade_object = close_short_trade(bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
@@ -295,7 +308,9 @@ class IHyperdrive:
         trade_object = add_liquidity_trade(base)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
@@ -304,7 +319,9 @@ class IHyperdrive:
         trade_object = remove_liquidity_trade(shares)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
@@ -313,7 +330,9 @@ class IHyperdrive:
         trade_object = redeem_withdraw_shares_trade(shares)
         # TODO expose async here to the caller eventually
         trade_results: TradeResult = asyncio.run(
-            async_execute_single_trade(self.interface, agent, trade_object, self.config.execute_policy_post_trade)
+            async_execute_single_trade(
+                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+            )
         )
         tx_receipt = self._handle_trade_result(trade_results)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
