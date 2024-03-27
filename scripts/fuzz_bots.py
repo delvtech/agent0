@@ -64,8 +64,8 @@ for _ in range(NUM_RANDOM_AGENTS):
             randomly_ignore_slippage_tolerance=True,
         ),
     )
-    agent.set_max_approval()
     agent.add_funds(base=BASE_BUDGET_PER_BOT, eth=ETH_BUDGET_PER_BOT)
+    agent.set_max_approval()
     agents.append(agent)
 
 for _ in range(NUM_RANDOM_HOLD_AGENTS):
@@ -78,8 +78,8 @@ for _ in range(NUM_RANDOM_HOLD_AGENTS):
             max_open_positions=2_000,
         ),
     )
-    agent.set_max_approval()
     agent.add_funds(base=BASE_BUDGET_PER_BOT, eth=ETH_BUDGET_PER_BOT)
+    agent.set_max_approval()
     agents.append(agent)
 
 # Make trades until the user or agents stop us
