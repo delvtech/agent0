@@ -58,6 +58,7 @@ for _ in range(NUM_RANDOM_AGENTS):
     # Initialize & fund agent using a random private key
     agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
         private_key=make_private_key(),
+        policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
@@ -71,6 +72,7 @@ for _ in range(NUM_RANDOM_AGENTS):
 for _ in range(NUM_RANDOM_HOLD_AGENTS):
     agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
         private_key=make_private_key(),
+        policy=PolicyZoo.random_hold,
         policy_config=PolicyZoo.random_hold.Config(
             slippage_tolerance=SLIPPAGE_TOLERANCE,
             trade_chance=FixedPoint("0.8"),
