@@ -63,6 +63,8 @@ nest_asyncio.apply()
 class IHyperdrive:
     """Interactive Hyperdrive class that supports connecting to an existing hyperdrive deployment."""
 
+    # Lots of config
+    # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
     class Config:
         """The configuration for the interactive hyperdrive class."""
