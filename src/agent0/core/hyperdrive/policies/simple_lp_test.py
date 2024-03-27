@@ -27,6 +27,8 @@ def test_simple_lp_policy(chain: ILocalChain):
         flat_fee=FixedPoint("0.0005"),
         governance_lp_fee=FixedPoint("0.15"),
         governance_zombie_fee=FixedPoint("0.03"),
+        # This test requires the non-policy actions to be passed into the policy's post trade stage.
+        execute_policy_post_trade=True,
     )
     interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
 

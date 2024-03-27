@@ -135,6 +135,7 @@ async def async_execute_single_trade(
     interface: HyperdriveReadWriteInterface,
     agent: HyperdriveAgent,
     trade_object: Trade[HyperdriveMarketAction],
+    execute_policy_post_action: bool,
 ) -> TradeResult:
     """Executes a single trade made by the agent.
 
@@ -150,6 +151,8 @@ async def async_execute_single_trade(
         The HyperdriveAgent that is conducting the trade.
     trade_object: Trade[HyperdriveMarketAction]
         The trade to execute.
+    execute_policy_post_action: bool
+        Whether or not to execute the post_action of the policy after the trade.
 
     Returns
     -------
@@ -176,6 +179,20 @@ async def async_execute_single_trade(
 
     for wallet_delta in wallet_updates:
         agent.wallet.update(wallet_delta)
+
+    # Some policies still need to bookkeep if single trades are being made. We call that here.
+    # TODO to avoid adding a post action in base policy, we only call post action
+    # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
+    # way down
+    if execute_policy_post_action and isinstance(agent.policy, HyperdriveBasePolicy):
+        # Calls the agent with the trade results in case the policy needs to do bookkeeping.
+        # We copy a trade results to avoid changing the original trade result for crash reporting.
+
+        # TODO deepcopy may be inefficient here when copying, e.g., trade_result.agent.
+        # If this is the case, we can selectively create a new TradeResult object with a subset of data.
+        #
+        # TODO can't put post_action in agent due to circular import, so we call the policy post_action here
+        agent.policy.post_action(interface, deepcopy(trade_results))
 
     return trade_results[0]
 
