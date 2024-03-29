@@ -82,8 +82,7 @@ async def _async_runner(
 def run_fuzz_bots():
     """Runs fuzz bots"""
 
-    # log_to_rollbar = initialize_rollbar("localfuzzbots")
-    log_to_rollbar = False
+    log_to_rollbar = initialize_rollbar("localfuzzbots")
 
     # Make sure the bots have at least 10% of their budget after each trade
     minimum_avg_agent_base = BASE_BUDGET_PER_BOT / FixedPoint(10)
