@@ -52,10 +52,12 @@ if __name__ == "__main__":
     # Load eth config from env vars
     eth_config = build_eth_config()
 
-    contract_addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
+    hyperdrive_address = fetch_hyperdrive_address_from_uri(
+        os.path.join(eth_config.artifacts_uri, "addresses.json")
+    ).erc4626_hyperdrive
     user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
 
-    interface = HyperdriveReadInterface(eth_config, contract_addresses, read_retry_count=5)
+    interface = HyperdriveReadInterface(eth_config, hyperdrive_address, read_retry_count=5)
 
     asyncio.run(async_fund_agents(interface, user_account, account_key_config))
 

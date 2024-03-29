@@ -94,7 +94,7 @@ def run_fuzz_bots():
     # Connect to the chain
     chain = IChain(eth_config.rpc_uri)
 
-    hyperdrive_addresses = IHyperdrive.Addresses.from_artifacts_uri(eth_config.artifacts_uri)
+    hyperdrive_address = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)["erc4626_hyperdrive"]
     hyperdrive_config = IHyperdrive.Config(
         preview_before_trade=True,
         rng_seed=rng_seed,
@@ -103,7 +103,7 @@ def run_fuzz_bots():
         crash_log_level=logging.CRITICAL,
         crash_report_additional_info={"rng_seed": rng_seed},
     )
-    hyperdrive_pool = IHyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
+    hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
     # Initialize agents
     agents: list[IHyperdriveAgent] = []

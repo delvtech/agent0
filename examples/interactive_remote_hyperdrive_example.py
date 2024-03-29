@@ -16,15 +16,10 @@ from agent0.core.base.make_key import make_private_key
 chain = IChain("http://localhost:8545")
 
 
-# hyperdrive_addresses = IHyperdrive.Addresses(
-#    base_token="0x0000000000000000000000000000000000000000",
-#    erc4626_hyperdrive="0x0000000000000000000000000000000000000000",
-#    factory="0x0000000000000000000000000000000000000000",
-#    steth_hyperdrive="0x0000000000000000000000000000000000000000",
-# )
-hyperdrive_addresses = IHyperdrive.Addresses.from_artifacts_uri("http://localhost:8080/")
+# hyperdrive_address = "0x0000000000000000000000000000000000000000"
+hyperdrive_address = IHyperdrive.get_deployed_hyperdrive_addresses("http://localhost:8080/")["erc4626_hyperdrive"]
 hyperdrive_config = IHyperdrive.Config()
-hyperdrive_pool = IHyperdrive(chain, hyperdrive_addresses, hyperdrive_config)
+hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
 # %%
 

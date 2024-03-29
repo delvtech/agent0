@@ -283,7 +283,7 @@ class ILocalHyperdrive(IHyperdrive):
             The hyperdrive addresses for this pool
         """
         # pylint: disable=protected-access
-        return self._deployed_hyperdrive.hyperdrive_contract_addresses.erc4626_hyperdrive
+        return self._deployed_hyperdrive.hyperdrive_contract.address
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -315,7 +315,7 @@ class ILocalHyperdrive(IHyperdrive):
                 "lookback_block_limit": 10000,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
-                "contract_addresses": self.interface.addresses,
+                "hyperdrive_address": self.interface.hyperdrive_address,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -327,7 +327,7 @@ class ILocalHyperdrive(IHyperdrive):
                 "start_block": start_block,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
-                "contract_addresses": self.interface.addresses,
+                "hyperdrive_address": self.interface.hyperdrive_address,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,

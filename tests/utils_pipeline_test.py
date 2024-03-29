@@ -46,7 +46,7 @@ class TestUtilsPipeline:
         # Get hyperdrive chain info
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
 
         # Build environment config
         env_config = EnvironmentConfig(
@@ -82,7 +82,7 @@ class TestUtilsPipeline:
         # Create Hyperdrive interface object
         interface = HyperdriveReadWriteInterface(
             eth_config,
-            hyperdrive_contract_addresses,
+            hyperdrive_contract_address,
             read_retry_count=env_config.read_retry_count,
             write_retry_count=env_config.write_retry_count,
         )
