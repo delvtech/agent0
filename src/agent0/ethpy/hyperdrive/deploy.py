@@ -34,8 +34,6 @@ from agent0.hypertypes import (
     PoolDeployConfig,
 )
 
-from .addresses import HyperdriveAddresses
-
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
 # pylint: disable=too-many-arguments
