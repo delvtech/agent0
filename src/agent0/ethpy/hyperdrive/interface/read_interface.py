@@ -139,8 +139,8 @@ class HyperdriveReadInterface:
         # Ideally we'd get it once and set it in get_hyperdrive_state.
         # TODO `get_hyperdrive_state` always gets pool config when updating
         # state, we should only get it once and use that variable for the state variable.
-        pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        self.yield_address = pool_config.vault_shares_token
+        self.pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        self.yield_address = self.pool_config.vault_shares_token
         # TODO this should be best effort to casting to a MockERC4626Contract
         # Otherwise, we cast as an ERC20 token for `balance_of` calls, and we
         # get variable rate from checkpoint events.
@@ -151,7 +151,6 @@ class HyperdriveReadInterface:
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
-        self.pool_config = self._current_pool_state.pool_config
 
         # Set the retry count for contract calls using the interface when previewing/transacting
         # TODO these parameters are currently only used for trades against hyperdrive
@@ -282,9 +281,8 @@ class HyperdriveReadInterface:
             block_identifier = cast(BlockIdentifier, "latest")
             block = self.get_block(block_identifier)
         block_number = self.get_block_number(block)
-        pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
-        checkpoint_time = self.calc_checkpoint_id(pool_config.checkpoint_duration, self.get_block_timestamp(block))
+        checkpoint_time = self.calc_checkpoint_id(self.pool_config.checkpoint_duration, self.get_block_timestamp(block))
         checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time)
         exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time)
         variable_rate = self.get_variable_rate(block_number)
@@ -295,7 +293,7 @@ class HyperdriveReadInterface:
         gov_fees_accrued = self.get_gov_fees_accrued(block_number)
         return PoolState(
             block=block,
-            pool_config=pool_config,
+            pool_config=self.pool_config,
             pool_info=pool_info,
             checkpoint_time=checkpoint_time,
             checkpoint=checkpoint,
