@@ -170,7 +170,9 @@ def run_fuzz_bots():
                 hyperdrive_pool.interface.web3.provider.make_request(
                     method=RPCEndpoint("evm_setIntervalMining"), params=[0]
                 )
-            raise exc
+                raise exc
+            # Ignore crashes, we want the bot to keep trading
+            # These errors will get logged regardless
 
         # Check agent funds and refund if necessary
         for agent in agents:
