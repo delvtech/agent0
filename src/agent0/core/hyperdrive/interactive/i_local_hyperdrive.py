@@ -15,7 +15,7 @@ import dill
 import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber, ChecksumAddress
+from eth_typing import Address, BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
 from web3._utils.threads import Timeout
@@ -229,11 +229,10 @@ class ILocalHyperdrive(IHyperdrive):
 
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
-        hyperdrive_contract_addresses = self._deployed_hyperdrive.hyperdrive_contract_addresses
 
         super().__init__(
             chain,
-            IHyperdrive.Addresses._from_ethpy_addresses(hyperdrive_contract_addresses),
+            self.get_hyperdrive_address(),
             config,
         )
 
@@ -275,7 +274,7 @@ class ILocalHyperdrive(IHyperdrive):
         self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[ILocalHyperdriveAgent] = []
 
-    def get_hyperdrive_addresses(self) -> IHyperdrive.Addresses:
+    def get_hyperdrive_address(self) -> Address | ChecksumAddress:
         """Returns the hyperdrive addresses for this pool.
 
         Returns
@@ -284,7 +283,7 @@ class ILocalHyperdrive(IHyperdrive):
             The hyperdrive addresses for this pool
         """
         # pylint: disable=protected-access
-        return IHyperdrive.Addresses._from_ethpy_addresses(self._deployed_hyperdrive.hyperdrive_contract_addresses)
+        return self._deployed_hyperdrive.hyperdrive_contract_addresses.erc4626_hyperdrive
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.

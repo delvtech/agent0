@@ -30,7 +30,6 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
-from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
 from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
@@ -151,7 +150,7 @@ class TestBotLoadState:
         # Get hyperdrive chain info
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
 
         # Build environment config
         env_config = EnvironmentConfig(
@@ -201,7 +200,7 @@ class TestBotLoadState:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             load_wallet_state=False,
         )
 
@@ -210,7 +209,7 @@ class TestBotLoadState:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
+            contract_addresses=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -220,7 +219,7 @@ class TestBotLoadState:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
+            contract_addresses=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -246,5 +245,5 @@ class TestBotLoadState:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
         )

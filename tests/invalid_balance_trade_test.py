@@ -31,7 +31,7 @@ from agent0.ethpy import EthConfig
 from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
-    from agent0.ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
     from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 # ruff: noqa: PLR2004 (magic values used for counter)
@@ -402,7 +402,7 @@ class TestInvalidTrades:
         # Get hyperdrive chain info
         rpc_uri: URI | None = cast(HTTPProvider, in_hyperdrive_pool.web3.provider).endpoint_uri
         assert rpc_uri is not None
-        hyperdrive_contract_addresses: HyperdriveAddresses = in_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive_contract_address = in_hyperdrive_pool.hyperdrive_contract.address
 
         # Build agent config
         agent_config: list[AgentConfig] = [
@@ -426,7 +426,7 @@ class TestInvalidTrades:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             load_wallet_state=False,
         )
         # If this reaches this point, the agent was successful, which means this test should fail
@@ -453,7 +453,7 @@ class TestInvalidTrades:
         # Get hyperdrive chain info
         rpc_uri: URI | None = cast(HTTPProvider, in_hyperdrive_pool.web3.provider).endpoint_uri
         assert rpc_uri is not None
-        hyperdrive_contract_addresses: HyperdriveAddresses = in_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive_contract_address = in_hyperdrive_pool.hyperdrive_contract.address
 
         # Build agent config
         agent_config: list[AgentConfig] = [
@@ -477,7 +477,7 @@ class TestInvalidTrades:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             load_wallet_state=False,
         )
         # If this reaches this point, the agent was successful, which means this test should fail

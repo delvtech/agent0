@@ -47,9 +47,7 @@ class DeployedHyperdrivePool(NamedTuple):
 
     web3: Web3
     deploy_account: LocalAccount
-    hyperdrive_contract_addresses: HyperdriveAddresses
     hyperdrive_contract: Contract
-    hyperdrive_factory_contract: Contract
     base_token_contract: Contract
     vault_shares_token_contract: Contract
     deploy_block_number: int
@@ -96,12 +94,8 @@ def deploy_hyperdrive_from_factory(
                 Web3 provider object.
             deploy_account: LocalAccount
                 The local account that deploys and initializes hyperdrive.
-            hyperdrive_contract_addresses: HyperdriveAddresses
-                The hyperdrive contract addresses.
             hyperdrive_contract: Contract
                 Web3 contract instance for the hyperdrive contract.
-            hyperdrive_factory_contract: Contract
-                Web3 contract instance for the hyperdrive factory contract.
             base_token_contract: Contract
                 Web3 contract instance for the base token contract.
             deploy_block_number: int
@@ -163,15 +157,7 @@ def deploy_hyperdrive_from_factory(
     return DeployedHyperdrivePool(
         web3,
         deploy_account=deploy_account,
-        hyperdrive_contract_addresses=HyperdriveAddresses(
-            base_token=Web3.to_checksum_address(base_token_contract.address),
-            factory=Web3.to_checksum_address(factory_contract.address),
-            erc4626_hyperdrive=hyperdrive_checksum_address,
-            # We don't deploy a steth hyperdrive here, so we don't set this address
-            steth_hyperdrive=Web3.to_checksum_address(ADDRESS_ZERO),
-        ),
         hyperdrive_contract=IHyperdriveContract.factory(web3)(hyperdrive_checksum_address),
-        hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
         vault_shares_token_contract=vault_contract,
         deploy_block_number=web3.eth.block_number,
