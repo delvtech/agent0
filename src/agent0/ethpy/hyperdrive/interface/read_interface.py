@@ -133,12 +133,6 @@ class HyperdriveReadInterface:
         )
 
         # We get the yield address and contract from the pool config
-        # TODO we get the pool config here because we need the yield contract
-        # to fill hyperdrive state (due to the yield contract). Therefore,
-        # we're getting it twice, once here, and once in `get_hyperdrive_state`.
-        # Ideally we'd get it once and set it in get_hyperdrive_state.
-        # TODO `get_hyperdrive_state` always gets pool config when updating
-        # state, we should only get it once and use that variable for the state variable.
         self.pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         self.yield_address = self.pool_config.vault_shares_token
         # TODO this should be best effort to casting to a MockERC4626Contract
