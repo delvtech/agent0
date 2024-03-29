@@ -87,8 +87,12 @@ async def async_execute_agent_trades(
         DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, agent.checksum_address
     )
 
+    # Here, gather returns results based on original order of trades due to nonce getting explicitly set based
+    # on iterating through the list
+
     # We expect the type here to be BaseException (due to the return type of asyncio.gather),
     # but the underlying exception should be subclassed from Exception.
+
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test the limit number of trades an agent can make in one block
@@ -102,10 +106,6 @@ async def async_execute_agent_trades(
             return_exceptions=True,
         )
     )
-
-    # TODO Here, gather returns results based on original order of trades, but this order isn't guaranteed
-    # because of async. Ideally, we should return results based on the order of trades. Can we use nonce here
-    # to see order?
 
     trade_results, wallet_updates = _handle_contract_call_to_trade(wallet_deltas_or_exception, trades, interface, agent)
 
