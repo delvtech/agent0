@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from eth_abi.abi import encode
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -156,7 +155,6 @@ def deploy_hyperdrive_from_factory(
             initial_liquidity,
             initial_fixed_apr,
             initial_time_stretch_apr,
-            vault_contract.address,
             pool_deploy_config,
             factory_contract,
         )
@@ -379,7 +377,6 @@ def _deploy_and_initialize_hyperdrive_pool(
     initial_liquidity: FixedPoint,
     initial_fixed_apr: FixedPoint,
     initial_time_stretch_apr: FixedPoint,
-    vault_contract_addr: ChecksumAddress,
     pool_deploy_config: PoolDeployConfig,
     factory_contract: HyperdriveFactoryContract,
 ) -> str:
@@ -399,8 +396,6 @@ def _deploy_and_initialize_hyperdrive_pool(
         The fixed rate of the pool on initialization.
     initial_time_stretch_apr: FixedPoint
         The apr to target for the time stretch.
-    vault_contract_addr: ChecksumAddress
-        The address of the vault contract.
     pool_deploy_config: PoolDeployConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
