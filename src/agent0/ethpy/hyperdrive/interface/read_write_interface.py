@@ -25,7 +25,7 @@ from .read_interface import HyperdriveReadInterface
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import Address, BlockNumber, ChecksumAddress
+    from eth_typing import BlockNumber, ChecksumAddress
     from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.types import Nonce

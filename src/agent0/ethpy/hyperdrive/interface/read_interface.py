@@ -67,7 +67,7 @@ from ._mock_contract import (
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import Address, BlockNumber, ChecksumAddress
+    from eth_typing import BlockNumber, ChecksumAddress
     from web3 import Web3
 
     from agent0.ethpy import EthConfig
