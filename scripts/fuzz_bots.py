@@ -134,7 +134,7 @@ def run_fuzz_bots():
         agents.append(agent)
 
     # Add funds asynchronously
-    print("Funding bots...")
+    logging.info("Funding bots...")
     asyncio.run(
         _async_runner(
             [agent.add_funds for agent in agents],
@@ -143,7 +143,7 @@ def run_fuzz_bots():
         )
     )
 
-    print("Setting max approval...")
+    logging.info("Setting max approval...")
     # Set max approval asynchronously
     asyncio.run(
         _async_runner(
@@ -152,7 +152,7 @@ def run_fuzz_bots():
     )
 
     # Make trades until the user or agents stop us
-    print("Trading...")
+    logging.info("Trading...")
     while True:
         # Execute the agent policies asynchronously
         try:
