@@ -12,7 +12,7 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive.addresses import fetch_hyperdrive_address_from_uri
 from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -21,13 +21,7 @@ from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
-from agent0.hypertypes import (
-    CheckpointFP,
-    ERC20MintableContract,
-    HyperdriveFactoryContract,
-    IHyperdriveContract,
-    MockERC4626Contract,
-)
+from agent0.hypertypes import CheckpointFP, ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
