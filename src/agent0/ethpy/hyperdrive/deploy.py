@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-from eth_abi.abi import encode
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -29,7 +28,7 @@ from agent0.hypertypes import (
     ERC4626Target4DeployerContract,
     FactoryConfig,
     HyperdriveFactoryContract,
-    IERC4626HyperdriveContract,
+    IHyperdriveContract,
     MockERC4626Contract,
     Options,
     PoolDeployConfig,
@@ -52,6 +51,7 @@ class DeployedHyperdrivePool(NamedTuple):
     hyperdrive_contract: Contract
     hyperdrive_factory_contract: Contract
     base_token_contract: Contract
+    vault_shares_token_contract: Contract
     deploy_block_number: int
 
 
@@ -130,6 +130,7 @@ def deploy_hyperdrive_from_factory(
 
     # Update pool deploy config with factory settings
     pool_deploy_config.baseToken = base_token_contract.address
+    pool_deploy_config.vaultSharesToken = vault_contract.address
     pool_deploy_config.governance = deploy_account_addr
     pool_deploy_config.feeCollector = deploy_account_addr
     pool_deploy_config.sweepCollector = deploy_account_addr
@@ -154,7 +155,6 @@ def deploy_hyperdrive_from_factory(
             initial_liquidity,
             initial_fixed_apr,
             initial_time_stretch_apr,
-            vault_contract.address,
             pool_deploy_config,
             factory_contract,
         )
@@ -170,9 +170,10 @@ def deploy_hyperdrive_from_factory(
             # We don't deploy a steth hyperdrive here, so we don't set this address
             steth_hyperdrive=Web3.to_checksum_address(ADDRESS_ZERO),
         ),
-        hyperdrive_contract=IERC4626HyperdriveContract.factory(web3)(hyperdrive_checksum_address),
+        hyperdrive_contract=IHyperdriveContract.factory(web3)(hyperdrive_checksum_address),
         hyperdrive_factory_contract=factory_contract,
         base_token_contract=base_token_contract,
+        vault_shares_token_contract=vault_contract,
         deploy_block_number=web3.eth.block_number,
     )
 
@@ -376,7 +377,6 @@ def _deploy_and_initialize_hyperdrive_pool(
     initial_liquidity: FixedPoint,
     initial_fixed_apr: FixedPoint,
     initial_time_stretch_apr: FixedPoint,
-    vault_contract_addr: ChecksumAddress,
     pool_deploy_config: PoolDeployConfig,
     factory_contract: HyperdriveFactoryContract,
 ) -> str:
@@ -396,8 +396,6 @@ def _deploy_and_initialize_hyperdrive_pool(
         The fixed rate of the pool on initialization.
     initial_time_stretch_apr: FixedPoint
         The apr to target for the time stretch.
-    vault_contract_addr: ChecksumAddress
-        The address of the vault contract.
     pool_deploy_config: PoolDeployConfig
         The configuration for initializing hyperdrive.
         The type is generated from the Hyperdrive ABI using Pypechain.
@@ -435,7 +433,7 @@ def _deploy_and_initialize_hyperdrive_pool(
             deploymentId=deployment_id,
             deployerCoordinator=deployer_coordinator_address,
             config=pool_deploy_config,
-            extraData=encode(("address",), (vault_contract_addr,)),
+            extraData=bytes(0),  # Vec::new().info()
             fixedAPR=initial_fixed_apr.scaled_value,
             timeStretchAPR=initial_time_stretch_apr.scaled_value,
             targetIndex=target_index,
@@ -456,7 +454,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         deploymentId=deployment_id,
         deployerCoordinator=deployer_coordinator_address,
         config=pool_deploy_config,
-        extraData=encode(("address",), (vault_contract_addr,)),
+        extraData=bytes(0),
         contribution=initial_liquidity.scaled_value,
         fixedAPR=initial_fixed_apr.scaled_value,
         timeStretchAPR=initial_time_stretch_apr.scaled_value,

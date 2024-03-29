@@ -54,6 +54,7 @@ class PoolConfigFP:
     """PoolConfig struct."""
 
     base_token: str
+    vault_shares_token: str
     linker_factory: str
     linker_code_hash: bytes
     initial_vault_share_price: FixedPoint

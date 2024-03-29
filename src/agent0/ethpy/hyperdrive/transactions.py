@@ -10,7 +10,7 @@ from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
 from agent0.ethpy.base import UnknownBlockError, get_transaction_logs
-from agent0.hypertypes import IERC4626HyperdriveContract
+from agent0.hypertypes import IHyperdriveContract
 from agent0.hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from agent0.hypertypes.utilities.conversions import (
     camel_to_snake,
@@ -22,7 +22,7 @@ from agent0.hypertypes.utilities.conversions import (
 from .receipt_breakdown import ReceiptBreakdown
 
 
-def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) -> PoolConfigFP:
+def get_hyperdrive_pool_config(hyperdrive_contract: IHyperdriveContract) -> PoolConfigFP:
     """Get the hyperdrive config from a deployed hyperdrive contract.
 
     Arguments
@@ -39,7 +39,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IERC4626HyperdriveContract) 
     return pool_config_to_fixedpoint(cast(Any, pool_config))
 
 
-def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber) -> PoolInfoFP:
+def get_hyperdrive_pool_info(hyperdrive_contract: IHyperdriveContract, block_number: BlockNumber) -> PoolInfoFP:
     """Get the block pool info from the Hyperdrive contract.
 
     Arguments
@@ -58,14 +58,12 @@ def get_hyperdrive_pool_info(hyperdrive_contract: IERC4626HyperdriveContract, bl
     return pool_info_to_fixedpoint(pool_info)
 
 
-def get_hyperdrive_checkpoint(
-    hyperdrive_contract: IERC4626HyperdriveContract, checkpoint_time: Timestamp
-) -> CheckpointFP:
+def get_hyperdrive_checkpoint(hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp) -> CheckpointFP:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
     ---------
-    hyperdrive_contract: IERC4626HyperdriveContract
+    hyperdrive_contract: IHyperdriveContract
         The contract to query the pool info from.
     checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.
@@ -80,13 +78,13 @@ def get_hyperdrive_checkpoint(
 
 
 def get_hyperdrive_checkpoint_exposure(
-    hyperdrive_contract: IERC4626HyperdriveContract, checkpoint_time: Timestamp
+    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp
 ) -> FixedPoint:
     """Get the checkpoint exposure for the Hyperdrive contract at a given block.
 
     Arguments
     ---------
-    hyperdrive_contract: IERC4626HyperdriveContract
+    hyperdrive_contract: IHyperdriveContract
         The contract to query the pool info from.
     checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.

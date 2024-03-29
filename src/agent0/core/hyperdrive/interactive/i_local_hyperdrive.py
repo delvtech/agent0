@@ -473,6 +473,7 @@ class ILocalHyperdrive(IHyperdrive):
 
         pool_deploy_config = PoolDeployConfig(
             baseToken="",  # will be determined in the deploy function
+            vaultSharesToken="",  # will be determined in the deploy function
             linkerFactory="",  # will be determined in the deploy function
             linkerCodeHash=bytes(),  # will be determined in the deploy function
             minimumShareReserves=config.minimum_share_reserves.scaled_value,

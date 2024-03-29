@@ -30,7 +30,6 @@ Our codebase uses the following contracts:
 ```bash
 ERC20ForwarderFactory.sol
 ERC20Mintable.sol
-ERC4626Hyperdrive.sol
 ERC4626HyperdriveCoreDeployer.sol
 ERC4626HyperdriveDeployerCoordinator.sol
 ERC4626Target0Deployer.sol
@@ -39,7 +38,7 @@ ERC4626Target2Deployer.sol
 ERC4626Target3Deployer.sol
 ERC4626Target4Deployer.sol
 HyperdriveFactory.sol
-IERC4626Hyperdrive.sol
+IHyperdrive.sol
 MockERC4626.sol
 ```
 

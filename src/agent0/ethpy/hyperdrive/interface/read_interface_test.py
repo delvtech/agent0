@@ -113,9 +113,11 @@ class TestHyperdriveReadInterface:
             FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
         )
         deploy_account = local_hyperdrive_pool.deploy_account
-        hyperdrive_contract_addresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        base_token_address = local_hyperdrive_pool.base_token_contract.address
+        vault_shares_token_address = local_hyperdrive_pool.vault_shares_token_contract.address
         expected_pool_config = {
-            "base_token": hyperdrive_contract_addresses.base_token,
+            "base_token": base_token_address,
+            "vault_shares_token": vault_shares_token_address,
             "initial_vault_share_price": FixedPoint("1"),
             "minimum_share_reserves": FixedPoint("10"),
             "minimum_transaction_amount": FixedPoint("0.001"),

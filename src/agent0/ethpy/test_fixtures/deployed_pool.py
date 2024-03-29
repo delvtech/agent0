@@ -171,6 +171,7 @@ def launch_local_hyperdrive_pool(
 
     pool_deploy_config = PoolDeployConfig(
         baseToken="",  # will be determined in the deploy function
+        vaultSharesToken="",  # will be determined in the deploy function
         linkerFactory="",  # will be determined in the deploy function
         linkerCodeHash=bytes(),  # will be determined in the deploy function
         minimumShareReserves=minimum_share_reserves.scaled_value,

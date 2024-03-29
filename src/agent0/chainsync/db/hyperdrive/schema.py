@@ -30,6 +30,7 @@ class PoolConfig(Base):
 
     contract_address: Mapped[str] = mapped_column(String, primary_key=True)
     base_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    vault_shares_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
     linker_factory: Mapped[Union[str, None]] = mapped_column(String, default=None)
     # Ignoring linker_code_hash field
     initial_vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

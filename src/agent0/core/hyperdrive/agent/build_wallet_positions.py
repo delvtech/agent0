@@ -6,13 +6,13 @@ from hexbytes import HexBytes
 
 from agent0.core.base import Quantity, TokenType
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
-from agent0.hypertypes import ERC20MintableContract, IERC4626HyperdriveContract
+from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract
 
 from .hyperdrive_wallet import HyperdriveWallet, Long, Short
 
 
 def build_wallet_positions_from_chain(
-    wallet_addr: str, hyperdrive_contract: IERC4626HyperdriveContract, base_contract: ERC20MintableContract
+    wallet_addr: str, hyperdrive_contract: IHyperdriveContract, base_contract: ERC20MintableContract
 ) -> HyperdriveWallet:
     """Builds a wallet position based on gathered data.
 

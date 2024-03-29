@@ -16,7 +16,7 @@ from agent0.ethpy.base import (
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from agent0.ethpy.hyperdrive.transactions import parse_logs
-from agent0.hypertypes import ERC20MintableContract, IERC4626HyperdriveContract, MockERC4626Contract
+from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 def _get_total_supply_withdrawal_shares(
-    hyperdrive_contract: IERC4626HyperdriveContract, block_number: BlockNumber | None = None
+    hyperdrive_contract: IHyperdriveContract, block_number: BlockNumber | None = None
 ) -> FixedPoint:
     """See API for documentation."""
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
@@ -51,7 +51,7 @@ def _get_variable_rate(yield_contract: MockERC4626Contract, block_number: BlockN
 
 def _get_vault_shares(
     yield_contract: MockERC4626Contract,
-    hyperdrive_contract: IERC4626HyperdriveContract,
+    hyperdrive_contract: IHyperdriveContract,
     block_number: BlockNumber | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
@@ -74,7 +74,7 @@ def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccou
 
 def _get_hyperdrive_base_balance(
     base_contract: ERC20MintableContract,
-    hyperdrive_contract: IERC4626HyperdriveContract,
+    hyperdrive_contract: IHyperdriveContract,
     block_number: BlockNumber | None,
 ) -> FixedPoint:
     """See API for documentation."""
@@ -92,7 +92,7 @@ def _get_hyperdrive_eth_balance(web3, hyperdrive_address) -> FixedPoint:
 
 
 def _get_gov_fees_accrued(
-    hyperdrive_contract: IERC4626HyperdriveContract,
+    hyperdrive_contract: IHyperdriveContract,
     block_number: BlockNumber | None,
 ) -> FixedPoint:
     """See API for documentation."""
