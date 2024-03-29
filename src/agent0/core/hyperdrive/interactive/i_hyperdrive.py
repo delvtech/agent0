@@ -5,13 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any, Literal, Type, overload
 
 import nest_asyncio
 import numpy as np
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
+from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 from web3 import Web3
@@ -32,12 +33,7 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy import EthConfig
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import (
-    HyperdriveAddresses,
-    HyperdriveReadWriteInterface,
-    ReceiptBreakdown,
-    fetch_hyperdrive_address_from_uri,
-)
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown, fetch_hyperdrive_addresses_from_uri
 
 from .event_types import (
     AddLiquidity,
@@ -98,39 +94,30 @@ class IHyperdrive:
             if self.rng is None:
                 self.rng = np.random.default_rng(self.rng_seed)
 
-    class Addresses(HyperdriveAddresses):
-        """The addresses class that defines various addresses for Hyperdrive."""
+    @classmethod
+    def get_deployed_hyperdrive_addresses(
+        cls,
+        artifacts_uri: str,
+    ) -> dict[str, ChecksumAddress]:
+        """Helper function to gather deployed Hyperdrive pool addresses.
 
-        # Subclass from the underlying addresses dataclass
-        # We simply define a class method to initialize the address from
-        # artifacts uri
+        Arguments
+        ---------
+        artifacts_uri: str
+            The uri of the artifacts server from which we get addresses.
+            E.g., `http://localhost:8080`.
 
-        @classmethod
-        def from_artifacts_uri(cls, artifacts_uri: str) -> IHyperdrive.Addresses:
-            """Builds hyperdrive addresses from artifacts uri.
-
-            Arguments
-            ---------
-            artifacts_uri: str
-                The uri of the artifacts server from which we get addresses.
-                E.g., `http://localhost:8080`.
-
-            Returns
-            -------
-            IHyperdrive.Addresses
-                The hyperdrive addresses object
-            """
-            out = fetch_hyperdrive_address_from_uri(artifacts_uri)
-            return cls._from_ethpy_addresses(out)
-
-        @classmethod
-        def _from_ethpy_addresses(cls, addresses: HyperdriveAddresses) -> IHyperdrive.Addresses:
-            return IHyperdrive.Addresses(**asdict(addresses))
+        Returns
+        -------
+        dict[str, ChecksumAddress]
+            A dictionary keyed by the pool's name, valued by the pool's address
+        """
+        return fetch_hyperdrive_addresses_from_uri(artifacts_uri)
 
     def __init__(
         self,
         chain: IChain,
-        hyperdrive_addresses: Addresses,
+        hyperdrive_address: ChecksumAddress,
         config: Config | None = None,
     ):
         if config is None:
@@ -154,7 +141,7 @@ class IHyperdrive:
 
         self.interface = HyperdriveReadWriteInterface(
             self.eth_config,
-            hyperdrive_addresses,
+            hyperdrive_address,
             web3=chain._web3,
         )
 

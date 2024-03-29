@@ -141,7 +141,7 @@ def _set_variable_rate(
     """See API for documentation."""
     _ = smart_contract_transact(
         interface.web3,
-        interface.yield_contract,
+        interface.vault_shares_token_contract,
         sender,
         "setRate",
         new_rate.scaled_value,

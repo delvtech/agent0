@@ -4,27 +4,15 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
 
 import requests
-from eth_typing import Address, ChecksumAddress
+from eth_typing import ChecksumAddress
+from web3 import Web3
 
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 
-@dataclass(kw_only=True)
-class HyperdriveAddresses:
-    """Addresses for deployed Hyperdrive contracts."""
-
-    # pylint: disable=too-few-public-methods
-
-    base_token: Address | ChecksumAddress
-    erc4626_hyperdrive: Address | ChecksumAddress
-    factory: Address | ChecksumAddress
-    steth_hyperdrive: Address | ChecksumAddress
-
-
-def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses:
+def fetch_hyperdrive_addresses_from_uri(contracts_uri: str) -> dict[str, ChecksumAddress]:
     """Fetch addresses for deployed contracts in the Hyperdrive system.
 
     Arguments
@@ -58,5 +46,13 @@ def fetch_hyperdrive_address_from_uri(contracts_uri: str) -> HyperdriveAddresses
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
 
-    addresses = HyperdriveAddresses(**{camel_to_snake(key): value for key, value in addresses_json.items()})
-    return addresses
+    # We use a dictionary here to allow for dynamically generating deployed pools
+    # without having to change the code here
+    hyperdrive_addresses: dict[str, ChecksumAddress] = {}
+    for key, value in addresses_json.items():
+        # We don't add the base token or factory in the resulting addresses
+        if key not in ("baseToken", "factory"):
+            # We ensure checksum addresses here
+            hyperdrive_addresses[camel_to_snake(key)] = Web3.to_checksum_address(value)
+
+    return hyperdrive_addresses

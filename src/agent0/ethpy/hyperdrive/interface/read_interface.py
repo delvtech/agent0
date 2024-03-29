@@ -12,7 +12,7 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses, fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive.addresses import fetch_hyperdrive_addresses_from_uri
 from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -21,13 +21,7 @@ from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
-from agent0.hypertypes import (
-    CheckpointFP,
-    ERC20MintableContract,
-    HyperdriveFactoryContract,
-    IHyperdriveContract,
-    MockERC4626Contract,
-)
+from agent0.hypertypes import CheckpointFP, ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
@@ -73,7 +67,7 @@ from ._mock_contract import (
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber
+    from eth_typing import BlockNumber, ChecksumAddress
     from web3 import Web3
 
     from agent0.ethpy import EthConfig
@@ -87,7 +81,7 @@ class HyperdriveReadInterface:
     def __init__(
         self,
         eth_config: EthConfig | None = None,
-        addresses: HyperdriveAddresses | None = None,
+        hyperdrive_address: ChecksumAddress | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
     ) -> None:
@@ -99,10 +93,10 @@ class HyperdriveReadInterface:
         eth_config: EthConfig, optional
             Configuration dataclass for the ethereum environment.
             If given, then it is constructed from environment variables.
-        addresses: HyperdriveAddresses, optional
-            This is a dataclass containing addresses for deployed hyperdrive and base token contracts.
-            If given, then the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
-            If not given, then addresses is constructed from the `addresses.json` file at `eth_config.artifacts_uri`.
+        hyperdrive_address: ChecksumAddress | None, optional
+            This is a contract address for a deployed hyperdrive.
+            If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
+            If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
         web3: Web3, optional
             web3 provider object, optional
             If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
@@ -111,35 +105,37 @@ class HyperdriveReadInterface:
         """
         # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
-        if addresses is None:
-            addresses = fetch_hyperdrive_address_from_uri(os.path.join(self.eth_config.artifacts_uri, "addresses.json"))
-        self.addresses: HyperdriveAddresses = addresses
+        if hyperdrive_address is None:
+            hyperdrive_address = fetch_hyperdrive_addresses_from_uri(
+                os.path.join(self.eth_config.artifacts_uri, "addresses.json")
+            )["erc4626_hyperdrive"]
+
+        self.hyperdrive_address = hyperdrive_address
         # Setup provider for communicating with the chain.
         if web3 is None:
             web3 = initialize_web3_with_http_provider(self.eth_config.rpc_uri, reset_provider=False)
         self.web3 = web3
-        # Setup the ERC20 contract for minting base tokens.
-        # TODO get this contract address from pool config, not passed in through addresses
-        self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
-            web3.to_checksum_address(self.addresses.base_token)
-        )
-        # Setup Hyperdrive, Yield (variable rate), and Hyperdrive Factory contracts.
-        self.hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=self.web3)(
-            web3.to_checksum_address(self.addresses.erc4626_hyperdrive)
-        )
 
-        self.hyperdrive_factory_contract: HyperdriveFactoryContract = HyperdriveFactoryContract.factory(w3=self.web3)(
-            web3.to_checksum_address(self.addresses.factory)
+        # Setup Hyperdrive contract
+        self.hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=self.web3)(
+            web3.to_checksum_address(self.hyperdrive_address)
         )
 
         # We get the yield address and contract from the pool config
         self.pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        self.yield_address = self.pool_config.vault_shares_token
+        self.base_token_contract_address = self.pool_config.base_token
+        self.vault_shares_token_address = self.pool_config.vault_shares_token
+
+        # Setup the ERC20 contract for minting base tokens.
+        self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
+            web3.to_checksum_address(self.base_token_contract_address)
+        )
+
         # TODO this should be best effort to casting to a MockERC4626Contract
         # Otherwise, we cast as an ERC20 token for `balance_of` calls, and we
         # get variable rate from checkpoint events.
-        self.yield_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
-            address=web3.to_checksum_address(self.yield_address)
+        self.vault_shares_token_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
+            address=web3.to_checksum_address(self.vault_shares_token_address)
         )
 
         # Fill in the initial state cache.
@@ -156,11 +152,9 @@ class HyperdriveReadInterface:
         return DeployedHyperdrivePool(
             web3=self.web3,
             deploy_account=Account().from_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
-            hyperdrive_contract_addresses=self.addresses,
             hyperdrive_contract=self.hyperdrive_contract,
-            hyperdrive_factory_contract=self.hyperdrive_factory_contract,
             base_token_contract=self.base_token_contract,
-            vault_shares_token_contract=self.yield_contract,
+            vault_shares_token_contract=self.vault_shares_token_contract,
             deploy_block_number=0,  # don't have access to this here, use at your own risk
         )
 
@@ -349,7 +343,7 @@ class HyperdriveReadInterface:
         """
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
-        return _get_vault_shares(self.yield_contract, self.hyperdrive_contract, block_number)
+        return _get_vault_shares(self.vault_shares_token_contract, self.hyperdrive_contract, block_number)
 
     def get_idle_shares(self, block_number: BlockNumber | None) -> FixedPoint:
         """Get the balance of idle shares that the Hyperdrive pool has.
@@ -390,7 +384,7 @@ class HyperdriveReadInterface:
         """
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
-        return _get_variable_rate(self.yield_contract, block_number)
+        return _get_variable_rate(self.vault_shares_token_contract, block_number)
 
     def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Use an RPC to get the agent's balance on the Base & Hyperdrive contracts.

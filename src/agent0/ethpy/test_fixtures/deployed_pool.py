@@ -78,20 +78,17 @@ def launch_local_hyperdrive_pool(
     Returns
     -------
     LocalHyperdriveChain
-        A tuple with the following key - value fields:
-
-        web3: Web3
-            web3 provider object
-        deploy_account: LocalAccount
-            The local account that deploys and initializes hyperdrive
-        hyperdrive_contract_addresses: HyperdriveAddresses
-            The hyperdrive contract addresses
-        hyperdrive_contract: Contract
-            web3.py contract instance for the hyperdrive contract
-        hyperdrive_factory_contract: Contract
-            web3.py contract instance for the hyperdrive factory contract
-        base_token_contract: Contract
-            web3.py contract instance for the base token contract
+        A named tuple with the following fields:
+            web3: Web3
+                Web3 provider object.
+            deploy_account: LocalAccount
+                The local account that deploys and initializes hyperdrive.
+            hyperdrive_contract: Contract
+                Web3 contract instance for the hyperdrive contract.
+            base_token_contract: Contract
+                Web3 contract instance for the base token contract.
+            deploy_block_number: int
+                The block number hyperdrive was deployed at.
     """
     # Lots of local  variables for the tests
     # pylint: disable=too-many-locals

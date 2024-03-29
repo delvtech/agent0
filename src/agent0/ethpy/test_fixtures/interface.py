@@ -9,7 +9,7 @@ from eth_typing import URI
 from web3 import HTTPProvider
 
 from agent0.ethpy.eth_config import EthConfig
-from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, HyperdriveAddresses
+from agent0.ethpy.hyperdrive import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 
 # we need to use the outer name for fixtures
@@ -27,9 +27,9 @@ def create_hyperdrive_read_interface(_local_hyperdrive_pool: DeployedHyperdriveP
             The interface to access the deployed hyperdrive pool.
     """
     rpc_uri = cast(HTTPProvider, _local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
-    hyperdrive_contract_addresses: HyperdriveAddresses = _local_hyperdrive_pool.hyperdrive_contract_addresses
+    hyperdrive_contract_address = _local_hyperdrive_pool.hyperdrive_contract.address
     eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis")
-    return HyperdriveReadInterface(eth_config, addresses=hyperdrive_contract_addresses)
+    return HyperdriveReadInterface(eth_config, hyperdrive_address=hyperdrive_contract_address)
 
 
 @pytest.fixture(scope="function")
@@ -62,9 +62,9 @@ def create_hyperdrive_read_write_interface(
             The interface to access and write to the deployed hyperdrive pool.
     """
     rpc_uri = cast(HTTPProvider, _local_hyperdrive_pool.web3.provider).endpoint_uri or URI("http://localhost:8545")
-    hyperdrive_contract_addresses: HyperdriveAddresses = _local_hyperdrive_pool.hyperdrive_contract_addresses
+    hyperdrive_contract_address = _local_hyperdrive_pool.hyperdrive_contract.address
     eth_config = EthConfig(artifacts_uri="not used", rpc_uri=rpc_uri, abi_dir="./packages/hyperdrive/src/abis")
-    return HyperdriveReadWriteInterface(eth_config, addresses=hyperdrive_contract_addresses)
+    return HyperdriveReadWriteInterface(eth_config, hyperdrive_address=hyperdrive_contract_address)
 
 
 @pytest.fixture(scope="function")

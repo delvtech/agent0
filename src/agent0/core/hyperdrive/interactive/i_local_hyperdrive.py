@@ -229,11 +229,10 @@ class ILocalHyperdrive(IHyperdrive):
 
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
-        hyperdrive_contract_addresses = self._deployed_hyperdrive.hyperdrive_contract_addresses
 
         super().__init__(
             chain,
-            IHyperdrive.Addresses._from_ethpy_addresses(hyperdrive_contract_addresses),
+            self.get_hyperdrive_address(),
             config,
         )
 
@@ -275,7 +274,7 @@ class ILocalHyperdrive(IHyperdrive):
         self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[ILocalHyperdriveAgent] = []
 
-    def get_hyperdrive_addresses(self) -> IHyperdrive.Addresses:
+    def get_hyperdrive_address(self) -> ChecksumAddress:
         """Returns the hyperdrive addresses for this pool.
 
         Returns
@@ -284,7 +283,7 @@ class ILocalHyperdrive(IHyperdrive):
             The hyperdrive addresses for this pool
         """
         # pylint: disable=protected-access
-        return IHyperdrive.Addresses._from_ethpy_addresses(self._deployed_hyperdrive.hyperdrive_contract_addresses)
+        return self._deployed_hyperdrive.hyperdrive_contract.address
 
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
@@ -316,7 +315,7 @@ class ILocalHyperdrive(IHyperdrive):
                 "lookback_block_limit": 10000,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
-                "contract_addresses": self.interface.addresses,
+                "hyperdrive_address": self.interface.hyperdrive_address,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -328,7 +327,7 @@ class ILocalHyperdrive(IHyperdrive):
                 "start_block": start_block,
                 "eth_config": self.eth_config,
                 "postgres_config": self.postgres_config,
-                "contract_addresses": self.interface.addresses,
+                "hyperdrive_address": self.interface.hyperdrive_address,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,

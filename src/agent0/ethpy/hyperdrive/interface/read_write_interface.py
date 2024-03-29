@@ -25,13 +25,12 @@ from .read_interface import HyperdriveReadInterface
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber
+    from eth_typing import BlockNumber, ChecksumAddress
     from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.types import Nonce
 
     from agent0.ethpy import EthConfig
-    from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
     from agent0.ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
 
 
@@ -41,7 +40,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     def __init__(
         self,
         eth_config: EthConfig | None = None,
-        addresses: HyperdriveAddresses | None = None,
+        hyperdrive_address: ChecksumAddress | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
@@ -54,10 +53,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         eth_config: EthConfig, optional
             Configuration dataclass for the ethereum environment.
             If given, then it is constructed from environment variables.
-        addresses: HyperdriveAddresses, optional
-            This is a dataclass containing addresses for deployed hyperdrive and base token contracts.
-            If given, then the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
-            If not given, then addresses is constructed from the `addresses.json` file at `eth_config.artifacts_uri`.
+        hyperdrive_address: ChecksumAddress | None, optional
+            This is a contract address for a deployed hyperdrive.
+            If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
+            If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
         web3: Web3, optional
             web3 provider object, optional
             If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
@@ -66,7 +65,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         write_retry_count: int | None, optional
             The number of times to retry the transact call if it fails. Defaults to no retries.
         """
-        super().__init__(eth_config, addresses, web3, read_retry_count)
+        super().__init__(eth_config, hyperdrive_address, web3, read_retry_count)
         self.write_retry_count = write_retry_count
 
     def get_read_interface(self) -> HyperdriveReadInterface:
@@ -77,7 +76,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         HyperdriveReadInterface
             This instantiated object, but as a ReadInterface.
         """
-        return HyperdriveReadInterface(self.eth_config, self.addresses, self.web3, self.read_retry_count)
+        return HyperdriveReadInterface(self.eth_config, self.hyperdrive_address, self.web3, self.read_retry_count)
 
     def create_checkpoint(
         self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None

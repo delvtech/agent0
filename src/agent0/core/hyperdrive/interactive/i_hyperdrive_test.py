@@ -84,7 +84,7 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
     interactive_local_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
-    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_addresses()
+    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
 
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
@@ -220,8 +220,8 @@ def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool)
     interactive_local_hyperdrive_1 = ILocalHyperdrive(chain, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
-    hyperdrive_addresses_0 = interactive_local_hyperdrive_0.get_hyperdrive_addresses()
-    hyperdrive_addresses_1 = interactive_local_hyperdrive_1.get_hyperdrive_addresses()
+    hyperdrive_addresses_0 = interactive_local_hyperdrive_0.get_hyperdrive_address()
+    hyperdrive_addresses_1 = interactive_local_hyperdrive_1.get_hyperdrive_address()
 
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
@@ -251,7 +251,7 @@ def test_no_policy_call(chain: ILocalChain, check_remote_chain: bool):
     """Deploy a local chain and point the remote interface to the local chain."""
     initial_pool_config = ILocalHyperdrive.Config()
     interactive_local_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
-    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_addresses()
+    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
         remote_chain = IChain(chain.rpc_uri)

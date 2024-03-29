@@ -31,7 +31,6 @@ from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.core.test_utils import CycleTradesPolicy
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
-from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
 from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
@@ -60,7 +59,7 @@ class TestBotToDb:
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
         deploy_account: LocalAccount = local_hyperdrive_pool.deploy_account
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
         base_contract_address = local_hyperdrive_pool.base_token_contract.address
         vault_shares_contract_address = local_hyperdrive_pool.vault_shares_token_contract.address
 
@@ -106,7 +105,7 @@ class TestBotToDb:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
         )
 
         # Run acquire data to get data from chain to db
@@ -114,7 +113,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -124,7 +123,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -150,7 +149,7 @@ class TestBotToDb:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
         )
 
         # Run acquire data to get data from chain to db
@@ -158,7 +157,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -168,7 +167,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -202,7 +201,7 @@ class TestBotToDb:
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
         expected_pool_config = {
-            "contract_address": hyperdrive_contract_addresses.erc4626_hyperdrive,
+            "contract_address": hyperdrive_contract_address,
             "base_token": base_contract_address,
             "vault_shares_token": vault_shares_contract_address,
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
@@ -460,7 +459,7 @@ class TestBotToDb:
         # Compare last value to what hyperdrive interface is reporting
         hyperdrive = HyperdriveReadInterface(
             eth_config=eth_config,
-            addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
         )
         latest_pool_analysis = db_pool_analysis.iloc[-1]
 

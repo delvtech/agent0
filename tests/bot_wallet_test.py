@@ -28,7 +28,6 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
-from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
 from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
@@ -169,7 +168,7 @@ class TestWalletAgainstChain:
         # Get hyperdrive chain info
         uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
         rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
 
         # Build environment config
         env_config = EnvironmentConfig(
@@ -212,6 +211,6 @@ class TestWalletAgainstChain:
             agent_config,
             account_key_config,
             eth_config=eth_config,
-            contract_addresses=hyperdrive_contract_addresses,
+            hyperdrive_address=hyperdrive_contract_address,
             load_wallet_state=False,
         )
