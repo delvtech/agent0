@@ -13,7 +13,7 @@ from web3.contract.contract import Contract
 from web3.types import TxData
 
 from agent0.ethpy.base import get_transaction_logs
-from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveAddresses, decode_asset_id
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
@@ -130,9 +130,6 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
             value = pool_config_dict[key]
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
-            # Pool config contains many addresses, the DB only needs the mock hyperdrive address
-            if isinstance(value, HyperdriveAddresses):
-                value = value.erc4626_hyperdrive
         args_dict[camel_to_snake(key)] = value
     pool_config = PoolConfig(**args_dict)
     return pool_config

@@ -137,7 +137,7 @@ def _setup_agents(
 
     Returns
     -------
-    tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, HyperdriveAddresses]
+    tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, Address | ChecksumAddress]
         A tuple containing:
             - The Hyperdrive interface API object
             - A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades

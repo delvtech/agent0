@@ -25,7 +25,6 @@ from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 
 if TYPE_CHECKING:
-    from agent0.ethpy.hyperdrive import HyperdriveAddresses
     from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 # pylint: disable=too-many-locals

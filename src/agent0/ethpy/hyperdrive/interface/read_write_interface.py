@@ -53,10 +53,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         eth_config: EthConfig, optional
             Configuration dataclass for the ethereum environment.
             If given, then it is constructed from environment variables.
-        addresses: HyperdriveAddresses, optional
-            This is a dataclass containing addresses for deployed hyperdrive and base token contracts.
-            If given, then the `eth_config.artifacts_uri` variable is not used, and these Addresses are used instead.
-            If not given, then addresses is constructed from the `addresses.json` file at `eth_config.artifacts_uri`.
+        hyperdrive_address: Address | ChecksumAddress | None, optional
+            This is a contract address for a deployed hyperdrive.
+            If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
+            If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
         web3: Web3, optional
             web3 provider object, optional
             If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
@@ -77,7 +77,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             This instantiated object, but as a ReadInterface.
         """
         # TODO this likely can just be a `super()` call to reuse cache
-        return HyperdriveReadInterface(self.eth_config, self.hyperdrive_address, self.web3, self.read_retry_count)
+        return super()
 
     def create_checkpoint(
         self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
