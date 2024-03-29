@@ -76,8 +76,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         HyperdriveReadInterface
             This instantiated object, but as a ReadInterface.
         """
-        # TODO this likely can just be a `super()` call to reuse cache
-        return super()
+        return HyperdriveReadInterface(self.eth_config, self.hyperdrive_address, self.web3, self.read_retry_count)
 
     def create_checkpoint(
         self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
