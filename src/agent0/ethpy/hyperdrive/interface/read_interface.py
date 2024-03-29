@@ -131,19 +131,27 @@ class HyperdriveReadInterface:
         self.hyperdrive_factory_contract: HyperdriveFactoryContract = HyperdriveFactoryContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.addresses.factory)
         )
-        # Fill in the initial state cache.
-        self._current_pool_state = self.get_hyperdrive_state()
-        self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
-        self.pool_config = self._current_pool_state.pool_config
 
         # We get the yield address and contract from the pool config
-        self.yield_address = self.pool_config.vault_shares_token
+        # TODO we get the pool config here because we need the yield contract
+        # to fill hyperdrive state (due to the yield contract). Therefore,
+        # we're getting it twice, once here, and once in `get_hyperdrive_state`.
+        # Ideally we'd get it once and set it in get_hyperdrive_state.
+        # TODO `get_hyperdrive_state` always gets pool config when updating
+        # state, we should only get it once and use that variable for the state variable.
+        pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
+        self.yield_address = pool_config.vault_shares_token
         # TODO this should be best effort to casting to a MockERC4626Contract
         # Otherwise, we cast as an ERC20 token for `balance_of` calls, and we
         # get variable rate from checkpoint events.
         self.yield_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(self.yield_address)
         )
+
+        # Fill in the initial state cache.
+        self._current_pool_state = self.get_hyperdrive_state()
+        self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+        self.pool_config = self._current_pool_state.pool_config
 
         # Set the retry count for contract calls using the interface when previewing/transacting
         # TODO these parameters are currently only used for trades against hyperdrive
@@ -159,6 +167,7 @@ class HyperdriveReadInterface:
             hyperdrive_contract=self.hyperdrive_contract,
             hyperdrive_factory_contract=self.hyperdrive_factory_contract,
             base_token_contract=self.base_token_contract,
+            vault_shares_token_contract=self.yield_contract,
             deploy_block_number=0,  # don't have access to this here, use at your own risk
         )
 

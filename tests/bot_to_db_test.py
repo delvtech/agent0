@@ -61,6 +61,8 @@ class TestBotToDb:
         rpc_uri = uri if uri else URI("http://localhost:8545")
         deploy_account: LocalAccount = local_hyperdrive_pool.deploy_account
         hyperdrive_contract_addresses: HyperdriveAddresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        base_contract_address = local_hyperdrive_pool.base_token_contract.address
+        vault_shares_contract_address = local_hyperdrive_pool.vault_shares_token_contract.address
 
         # Build environment config
         env_config = EnvironmentConfig(
@@ -199,12 +201,10 @@ class TestBotToDb:
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
-        # TODO we either need to expose the vault shares token in deployment, or we
-        # don't check token addresses here
         expected_pool_config = {
             "contract_address": hyperdrive_contract_addresses.erc4626_hyperdrive,
-            "base_token": hyperdrive_contract_addresses.base_token,
-            "vault_shares_token": hyperdrive_contract_addresses.vault_shares_token,
+            "base_token": base_contract_address,
+            "vault_shares_token": vault_shares_contract_address,
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
