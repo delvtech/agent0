@@ -209,7 +209,7 @@ class TestBotLoadState:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_address,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -219,7 +219,7 @@ class TestBotLoadState:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_address,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )

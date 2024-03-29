@@ -31,7 +31,6 @@ from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
 from agent0.core.test_utils import CycleTradesPolicy
 from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
-from agent0.ethpy.hyperdrive.addresses import HyperdriveAddresses
 from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
@@ -114,7 +113,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_address,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -124,7 +123,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_address,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -158,7 +157,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_address,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )
@@ -168,7 +167,7 @@ class TestBotToDb:
             start_block=local_hyperdrive_pool.deploy_block_number,
             eth_config=eth_config,
             db_session=db_session,
-            contract_addresses=hyperdrive_contract_address,
+            hyperdrive_address=hyperdrive_contract_address,
             # Exit the script after catching up to the chain
             exit_on_catch_up=True,
         )

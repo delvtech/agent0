@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Callable
 
-from eth_typing import BlockNumber
+from eth_typing import Address, BlockNumber, ChecksumAddress
 from sqlalchemy.orm import Session
 
 from agent0.chainsync import PostgresConfig
@@ -17,7 +17,7 @@ from agent0.chainsync.db.hyperdrive import (
     init_data_chain_to_db,
 )
 from agent0.ethpy import EthConfig
-from agent0.ethpy.hyperdrive import HyperdriveAddresses, HyperdriveReadInterface
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 _SLEEP_AMOUNT = 1
 
@@ -32,7 +32,7 @@ def acquire_data(
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
-    contract_addresses: HyperdriveAddresses | None = None,
+    hyperdrive_address: Address | ChecksumAddress | None = None,
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
     suppress_logs: bool = False,
@@ -47,7 +47,7 @@ def acquire_data(
         The maximum number of blocks to look back when filling in missing data
     interface: HyperdriveReadInterface | None, optional
         An initialized HyperdriveReadInterface object. If not set, will initialize one based on
-        eth_config and contract_addresses.
+        eth_config and hyperdrive_address.
     eth_config: EthConfig | None
         Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
         in eth.env.
@@ -56,9 +56,9 @@ def acquire_data(
         postgres_config.
     postgres_config: PostgresConfig | None = None,
         PostgresConfig for connecting to db. If none, will set from postgres.env.
-    contract_addresses: HyperdriveAddresses | None
-        If set, will use these addresses instead of querying the artifact URI
-        defined in eth_config.
+    hyperdrive_address: Address | ChecksumAddress | None, optional
+        The address of the hyperdrive contract.
+        If not set, will use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
     exit_on_catch_up: bool, optional
         If True, will exit after catching up to current block. Defaults to False.
     exit_callback_fn: Callable[[], bool] | None, optional
@@ -72,7 +72,7 @@ def acquire_data(
 
     ## Initialization
     if interface is None:
-        interface = HyperdriveReadInterface(eth_config, contract_addresses)
+        interface = HyperdriveReadInterface(eth_config, hyperdrive_address)
 
     # postgres session
     db_session_init = False
