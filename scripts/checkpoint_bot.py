@@ -19,7 +19,7 @@ from agent0.ethpy import EthConfig, build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import fetch_hyperdrive_address_from_uri, get_hyperdrive_pool_config
 from agent0.hyperlogs import setup_logging
-from agent0.hypertypes import IERC4626HyperdriveContract
+from agent0.hypertypes import IHyperdriveContract
 
 # Checkpoint bot has a lot going on
 # pylint: disable=too-many-locals
@@ -30,12 +30,12 @@ from agent0.hypertypes import IERC4626HyperdriveContract
 CHECKPOINT_WAITING_PERIOD = 0.5
 
 
-def does_checkpoint_exist(hyperdrive_contract: IERC4626HyperdriveContract, checkpoint_time: int) -> bool:
+def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists.
 
     Arguments
     ---------
-    hyperdrive_contract: IERC4626HyperdriveContract
+    hyperdrive_contract: IHyperdriveContract
         The hyperdrive contract.
     checkpoint_time: int
         The checkpoint time in epoch seconds.
@@ -120,9 +120,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # TODO replace this with the hyperdrive interface
     addresses = fetch_hyperdrive_address_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
     hyperdrive_contract_address = web3.to_checksum_address(addresses.erc4626_hyperdrive)
-    hyperdrive_contract: IERC4626HyperdriveContract = IERC4626HyperdriveContract.factory(w3=web3)(
-        hyperdrive_contract_address
-    )
+    hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(hyperdrive_contract_address)
 
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
