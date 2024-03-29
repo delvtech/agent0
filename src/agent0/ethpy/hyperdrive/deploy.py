@@ -130,6 +130,7 @@ def deploy_hyperdrive_from_factory(
 
     # Update pool deploy config with factory settings
     pool_deploy_config.baseToken = base_token_contract.address
+    pool_deploy_config.vaultSharesToken = vault_contract.address
     pool_deploy_config.governance = deploy_account_addr
     pool_deploy_config.feeCollector = deploy_account_addr
     pool_deploy_config.sweepCollector = deploy_account_addr

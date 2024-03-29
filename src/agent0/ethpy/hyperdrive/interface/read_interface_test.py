@@ -114,8 +114,11 @@ class TestHyperdriveReadInterface:
         )
         deploy_account = local_hyperdrive_pool.deploy_account
         hyperdrive_contract_addresses = local_hyperdrive_pool.hyperdrive_contract_addresses
+        # TODO we either need to expose the vault shares token in deployment, or we
+        # don't check token addresses here
         expected_pool_config = {
             "base_token": hyperdrive_contract_addresses.base_token,
+            "vault_shares_token": hyperdrive_contract_addresses.vault_shares_token,
             "initial_vault_share_price": FixedPoint("1"),
             "minimum_share_reserves": FixedPoint("10"),
             "minimum_transaction_amount": FixedPoint("0.001"),

@@ -198,6 +198,7 @@ def fixedpoint_to_pool_config(
             )
     return PoolConfig(
         baseToken=dict_pool_config["baseToken"],
+        vaultSharesToken=dict_pool_config["vaultSharesToken"],
         linkerFactory=dict_pool_config["linkerFactory"],
         linkerCodeHash=dict_pool_config["linkerCodeHash"],
         initialVaultSharePrice=dict_pool_config["initialVaultSharePrice"],
