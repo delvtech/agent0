@@ -8,7 +8,7 @@ import random
 import time
 from typing import TYPE_CHECKING
 
-from eth_typing import Address, BlockNumber, ChecksumAddress
+from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 
 from agent0.chainsync.db.api import balance_of, register_username
@@ -16,7 +16,7 @@ from agent0.core.base import Quantity, TokenType
 from agent0.core.base.config import DEFAULT_USERNAME
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_chain, build_wallet_positions_from_db
 from agent0.ethpy import build_eth_config
-from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_addresses_from_uri
 
 from .fund_agents import async_fund_agents_with_fake_user
 from .setup_experiment import setup_experiment
@@ -42,7 +42,7 @@ def setup_and_run_agent_loop(
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
     eth_config: EthConfig | None = None,
-    hyperdrive_address: Address | ChecksumAddress | None = None,
+    hyperdrive_address: ChecksumAddress | None = None,
     load_wallet_state: bool = True,
     liquidate: bool = False,
     minimum_avg_agent_base: FixedPoint | None = None,
@@ -63,7 +63,7 @@ def setup_and_run_agent_loop(
     eth_config: EthConfig | None, optional
         Configuration for URIs to the rpc and artifacts.
         If not set, will look for the config in eth.env.
-    hyperdrive_address: Address | ChecksumAddress | None, optional
+    hyperdrive_address: ChecksumAddress | None, optional
         The hyperdrive contract address.
         If not set, will use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
     load_wallet_state: bool, optional
@@ -105,10 +105,10 @@ def _setup_agents(
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
     eth_config: EthConfig | None = None,
-    hyperdrive_address: Address | ChecksumAddress | None = None,
+    hyperdrive_address: ChecksumAddress | None = None,
     load_wallet_state: bool = True,
     liquidate: bool = False,
-) -> tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, Address | ChecksumAddress]:
+) -> tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, ChecksumAddress]:
     """Entrypoint to setup agents for automated trading.
 
     .. note::
@@ -125,7 +125,7 @@ def _setup_agents(
     eth_config: EthConfig | None, optional
         Configuration for URIs to the rpc and artifacts.
         If not set, will look for the config in eth.env.
-    hyperdrive_address: Address | ChecksumAddress | None, optional
+    hyperdrive_address: ChecksumAddress | None, optional
         The hyperdrive contract address.
         If not set, will use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
     load_wallet_state: bool, optional
@@ -137,7 +137,7 @@ def _setup_agents(
 
     Returns
     -------
-    tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, Address | ChecksumAddress]
+    tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, ChecksumAddress]
         A tuple containing:
             - The Hyperdrive interface API object
             - A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
@@ -152,9 +152,9 @@ def _setup_agents(
     if eth_config is None:
         eth_config = build_eth_config()
     if hyperdrive_address is None:
-        hyperdrive_address = fetch_hyperdrive_address_from_uri(
+        hyperdrive_address = fetch_hyperdrive_addresses_from_uri(
             os.path.join(eth_config.artifacts_uri, "addresses.json")
-        ).erc4626_hyperdrive
+        )["erc4626_hyperdrive"]
 
     # create hyperdrive interface object
     interface = HyperdriveReadWriteInterface(

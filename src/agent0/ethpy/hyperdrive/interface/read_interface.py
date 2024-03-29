@@ -12,7 +12,7 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive.addresses import fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive.addresses import fetch_hyperdrive_addresses_from_uri
 from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -81,7 +81,7 @@ class HyperdriveReadInterface:
     def __init__(
         self,
         eth_config: EthConfig | None = None,
-        hyperdrive_address: Address | ChecksumAddress | None = None,
+        hyperdrive_address: ChecksumAddress | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
     ) -> None:
@@ -93,7 +93,7 @@ class HyperdriveReadInterface:
         eth_config: EthConfig, optional
             Configuration dataclass for the ethereum environment.
             If given, then it is constructed from environment variables.
-        hyperdrive_address: Address | ChecksumAddress | None, optional
+        hyperdrive_address: ChecksumAddress | None, optional
             This is a contract address for a deployed hyperdrive.
             If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
             If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
@@ -106,9 +106,9 @@ class HyperdriveReadInterface:
         # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
         if hyperdrive_address is None:
-            hyperdrive_address = fetch_hyperdrive_address_from_uri(
+            hyperdrive_address = fetch_hyperdrive_addresses_from_uri(
                 os.path.join(self.eth_config.artifacts_uri, "addresses.json")
-            ).erc4626_hyperdrive
+            )["erc4626_hyperdrive"]
 
         self.hyperdrive_address = hyperdrive_address
         # Setup provider for communicating with the chain.

@@ -15,7 +15,7 @@ import dill
 import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import Address, BlockNumber, ChecksumAddress
+from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
 from web3._utils.threads import Timeout
@@ -274,7 +274,7 @@ class ILocalHyperdrive(IHyperdrive):
         self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[ILocalHyperdriveAgent] = []
 
-    def get_hyperdrive_address(self) -> Address | ChecksumAddress:
+    def get_hyperdrive_address(self) -> ChecksumAddress:
         """Returns the hyperdrive addresses for this pool.
 
         Returns

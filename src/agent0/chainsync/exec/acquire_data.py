@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Callable
 
-from eth_typing import Address, BlockNumber, ChecksumAddress
+from eth_typing import BlockNumber, ChecksumAddress
 from sqlalchemy.orm import Session
 
 from agent0.chainsync import PostgresConfig
@@ -32,7 +32,7 @@ def acquire_data(
     eth_config: EthConfig | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
-    hyperdrive_address: Address | ChecksumAddress | None = None,
+    hyperdrive_address: ChecksumAddress | None = None,
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
     suppress_logs: bool = False,
@@ -56,7 +56,7 @@ def acquire_data(
         postgres_config.
     postgres_config: PostgresConfig | None = None,
         PostgresConfig for connecting to db. If none, will set from postgres.env.
-    hyperdrive_address: Address | ChecksumAddress | None, optional
+    hyperdrive_address: ChecksumAddress | None, optional
         The address of the hyperdrive contract.
         If not set, will use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
     exit_on_catch_up: bool, optional

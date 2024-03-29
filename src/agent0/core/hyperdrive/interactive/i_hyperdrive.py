@@ -12,7 +12,7 @@ import nest_asyncio
 import numpy as np
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import Address, ChecksumAddress
+from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 from web3 import Web3
@@ -33,7 +33,7 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy import EthConfig
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown, fetch_hyperdrive_address_from_uri
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown, fetch_hyperdrive_addresses_from_uri
 
 from .event_types import (
     AddLiquidity,
@@ -98,7 +98,7 @@ class IHyperdrive:
     def get_deployed_hyperdrive_addresses(
         cls,
         artifacts_uri: str,
-    ) -> dict[str, Address | ChecksumAddress]:
+    ) -> dict[str, ChecksumAddress]:
         """Helper function to gather deployed Hyperdrive pool addresses.
 
         Arguments
@@ -109,19 +109,15 @@ class IHyperdrive:
 
         Returns
         -------
-        dict[str, Address | ChecksumAddress]
+        dict[str, ChecksumAddress]
             A dictionary keyed by the pool's name, valued by the pool's address
         """
-        addresses = fetch_hyperdrive_address_from_uri(artifacts_uri)
-        return {
-            "erc4626_hyperdrive": addresses.erc4626_hyperdrive,
-            "steth_hyperdrive": addresses.steth_hyperdrive,
-        }
+        return fetch_hyperdrive_addresses_from_uri(artifacts_uri)
 
     def __init__(
         self,
         chain: IChain,
-        hyperdrive_address: Address | ChecksumAddress,
+        hyperdrive_address: ChecksumAddress,
         config: Config | None = None,
     ):
         if config is None:

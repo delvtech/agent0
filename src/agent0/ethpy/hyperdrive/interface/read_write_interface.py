@@ -40,7 +40,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     def __init__(
         self,
         eth_config: EthConfig | None = None,
-        hyperdrive_address: Address | ChecksumAddress | None = None,
+        hyperdrive_address: ChecksumAddress | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
@@ -53,7 +53,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         eth_config: EthConfig, optional
             Configuration dataclass for the ethereum environment.
             If given, then it is constructed from environment variables.
-        hyperdrive_address: Address | ChecksumAddress | None, optional
+        hyperdrive_address: ChecksumAddress | None, optional
             This is a contract address for a deployed hyperdrive.
             If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
             If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
