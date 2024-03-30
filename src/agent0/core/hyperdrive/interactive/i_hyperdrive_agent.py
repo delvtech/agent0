@@ -244,3 +244,10 @@ class IHyperdriveAgent:
 
         """
         self._pool._set_max_approval(self.agent)
+
+    def sync_wallet_from_chain(self) -> None:
+        """Explicitly syncs the wallet to the current state of the chain.
+
+        Uses on chain events to generate current wallet positions.
+        """
+        self._pool._sync_wallet_from_chain(self.agent)
