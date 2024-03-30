@@ -131,9 +131,10 @@ class HyperdriveReadInterface:
             web3.to_checksum_address(self.base_token_contract_address)
         )
 
-        # TODO this should be best effort to casting to a MockERC4626Contract
-        # Otherwise, we cast as an ERC20 token for `balance_of` calls, and we
-        # get variable rate from checkpoint events.
+        # TODO Although the underlying function might not be a MockERC4626Contract,
+        # the pypechain contract factory happily accepts any address and exposes
+        # all functions from that contract. The code will only break if we try to
+        # call a non-existant function on the underlying contract address.
         self.vault_shares_token_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(self.vault_shares_token_address)
         )

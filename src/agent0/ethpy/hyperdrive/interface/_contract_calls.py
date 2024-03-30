@@ -45,6 +45,10 @@ def _get_total_supply_withdrawal_shares(
 
 def _get_variable_rate(yield_contract: MockERC4626Contract, block_number: BlockNumber | None = None) -> FixedPoint:
     """See API for documentation."""
+    # TODO add error handling here in case the vault shares token contract
+    # doesn't have a `getRate` function.
+    # Need to add an alternative method to get the variable rate via checkpoint
+    # share price here.
     rate = yield_contract.functions.getRate().call(block_identifier=block_number or "latest")
     return FixedPoint(scaled_value=rate)
 
@@ -139,6 +143,8 @@ def _set_variable_rate(
     new_rate: FixedPoint,
 ) -> None:
     """See API for documentation."""
+    # TODO add error handling here in case the vault shares token contract
+    # doesn't have a `setRate` function
     _ = smart_contract_transact(
         interface.web3,
         interface.vault_shares_token_contract,
