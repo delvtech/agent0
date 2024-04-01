@@ -52,6 +52,7 @@ class SmartLong(HyperdriveBasePolicy):
         """The upper threshold of the fixed rate minus the variable rate to open a long."""
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
 
     def __init__(
         self,

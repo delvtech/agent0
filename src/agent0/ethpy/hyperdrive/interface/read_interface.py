@@ -279,7 +279,8 @@ class HyperdriveReadInterface:
 
         try:
             variable_rate = self.get_variable_rate(block_number)
-        except BadFunctionCallOutput as e:
+        except BadFunctionCallOutput:
+            # TODO do we want to throw a warning here?
             logging.warning("Underlying yield contract has no `getRate` function, setting variable rate as `None`.")
             variable_rate = None
 
@@ -430,7 +431,8 @@ class HyperdriveReadInterface:
         # We can also get the current vault share price instead of getting it from the latest checkpoint
         current_checkpoint_id = self.calc_checkpoint_id(block_timestamp=current_block_time)
         current_vault_share_price = self.get_checkpoint(current_checkpoint_id).vault_share_price
-        # If the current checkpoint doesn't exist (due to checkpoint not being made yet), we use the current vault share price
+        # If the current checkpoint doesn't exist (due to checkpoint not being made yet),
+        # we use the current vault share price
         if current_vault_share_price == FixedPoint(0):
             current_vault_share_price = self.current_pool_state.pool_info.vault_share_price
 

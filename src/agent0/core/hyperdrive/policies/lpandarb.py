@@ -35,6 +35,7 @@ MAX_ITER = 50
 # or we can make them static utils and pass the agent object itself. Either way,
 # this will simplify the argument space down to a much smaller set.
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 
 
 def arb_fixed_rate_down(
