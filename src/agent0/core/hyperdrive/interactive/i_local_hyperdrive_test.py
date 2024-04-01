@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import numpy as np
 import pytest
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 from pandas import Series
 
 from agent0.core.base import Trade
@@ -775,3 +775,27 @@ def test_load_rng_on_snapshot(chain: ILocalChain):
 
     assert np.array_equal(alice_random_before_snap, alice_random_after_snap)
     assert not np.array_equal(bob_random_before_snap, bob_random_after_snap)
+
+
+def test_hyperdrive_read_interface_standardized_variable_rate(chain: ILocalChain):
+    # TODO this is testing the underlying standardized_variable_rate call in
+    # the hyperdrive interface. Ideally, this would live in `read_interface_test.py`,
+    # but we need a local chain for advancing time for testing. Move this test
+    # to `read_interface_test` once we start using interactive hyperdrive for all tests.
+
+    hyperdrive_config = ILocalHyperdrive.Config(checkpoint_duration=86400)  # checkpoint duration of 1 day
+    interactive_hyperdrive = ILocalHyperdrive(chain, hyperdrive_config)
+    hyperdrive_interface = interactive_hyperdrive.interface
+
+    mock_variable_rate = hyperdrive_interface.get_variable_rate()
+
+    # This should fail since pool was just deloyed
+    with pytest.raises(ValueError):
+        hyperdrive_interface.get_standardized_variable_rate(time_range=604800)  # Get var rate for 1 week
+
+    # Advance time by 8 days, past time_range
+    chain.advance_time(datetime.timedelta(days=8), create_checkpoints=True)
+
+    standardized_variable_rate = hyperdrive_interface.get_standardized_variable_rate(time_range=604800)
+
+    assert isclose(mock_variable_rate, standardized_variable_rate, abs_tol=FixedPoint("1e-5"))

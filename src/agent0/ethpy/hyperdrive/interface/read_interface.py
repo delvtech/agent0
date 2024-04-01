@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import copy
+import logging
 import os
 from typing import TYPE_CHECKING, cast
 
 from eth_account import Account
 from fixedpointmath import FixedPoint
+from web3.exceptions import BadFunctionCallOutput
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy import build_eth_config
@@ -274,7 +276,13 @@ class HyperdriveReadInterface:
         checkpoint_time = self.calc_checkpoint_id(self.pool_config.checkpoint_duration, self.get_block_timestamp(block))
         checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time)
         exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time)
-        variable_rate = self.get_variable_rate(block_number)
+
+        try:
+            variable_rate = self.get_variable_rate(block_number)
+        except BadFunctionCallOutput as e:
+            logging.warning("Underlying yield contract has no `getRate` function, setting variable rate as `None`.")
+            variable_rate = None
+
         vault_shares = self.get_vault_shares(block_number)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
         hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_number)
@@ -389,6 +397,47 @@ class HyperdriveReadInterface:
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
         return _get_variable_rate(self.vault_shares_token_contract, block_number)
+
+    def get_standardized_variable_rate(self, time_range: int = 604800) -> FixedPoint:
+        """Computes a standardized variable rate using vault share prices from checkpoints
+        in the last `time_period` seconds.
+
+        .. note:: This function will throw an error if the pool was deployed within the last
+        `time_period` seconds.
+
+        Arguments
+        ---------
+        time_range: int
+            The time range (in seconds) to use to calculate the variable rate
+            to look for checkpoints.
+
+        Returns
+        -------
+        FixedPoint
+            The standardized variable rate.
+        """
+
+        # Get the vault share price of the checkpoint in the past `time_range`
+        current_block_time = self.get_block_timestamp(self.current_pool_state.block)
+        start_checkpoint_id = self.calc_checkpoint_id(block_timestamp=Timestamp(current_block_time - time_range))
+        start_vault_share_price = self.get_checkpoint(start_checkpoint_id).vault_share_price
+
+        # Vault share price is 0 if checkpoint doesn't exist
+        # This happens if the pool was deployed within the past `time_range`
+        if start_vault_share_price == FixedPoint(0):
+            raise ValueError("Checkpoint doesn't exist for the given time range.")
+
+        # We can also get the current vault share price instead of getting it from the latest checkpoint
+        current_checkpoint_id = self.calc_checkpoint_id(block_timestamp=current_block_time)
+        current_vault_share_price = self.get_checkpoint(current_checkpoint_id).vault_share_price
+        # If the current checkpoint doesn't exist (due to checkpoint not being made yet), we use the current vault share price
+        if current_vault_share_price == FixedPoint(0):
+            current_vault_share_price = self.current_pool_state.pool_info.vault_share_price
+
+        rate_of_return = (current_vault_share_price - start_vault_share_price) / start_vault_share_price
+        # Annualized the rate of return
+        annualized_rate_of_return = rate_of_return * FixedPoint(60 * 60 * 24 * 365) / FixedPoint(time_range)
+        return annualized_rate_of_return
 
     def get_eth_base_balances(self, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
         """Use an RPC to get the agent's balance on the Base & Hyperdrive contracts.

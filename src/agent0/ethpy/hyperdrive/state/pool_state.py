@@ -29,7 +29,9 @@ class PoolState:
     checkpoint_time: int
     checkpoint: CheckpointFP
     exposure: FixedPoint
-    variable_rate: FixedPoint
+    # TODO we may want to remove this from pool state and have users explicitly
+    # retrieve variable rate via a function
+    variable_rate: FixedPoint | None
     vault_shares: FixedPoint
     total_supply_withdrawal_shares: FixedPoint
     hyperdrive_base_balance: FixedPoint
