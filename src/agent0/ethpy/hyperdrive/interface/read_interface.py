@@ -372,6 +372,9 @@ class HyperdriveReadInterface:
     def get_variable_rate(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Use an RPC to get the yield source variable rate.
 
+        .. note:: This function assumes there exists an underlying `getRate` function in the contract.
+        This call will fail if the deployed yield contract doesn't have a `getRate` function.
+
         Arguments
         ---------
         block_number: BlockNumber, optional

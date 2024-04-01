@@ -103,6 +103,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     def set_variable_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
         """Set the variable rate for the yield source.
 
+        .. note:: This function assumes there's an underlying `setRate` function in the contract.
+        This call will fail if the deployed yield contract doesn't have a `setRate` function.
+
         Arguments
         ---------
         sender: LocalAccount
