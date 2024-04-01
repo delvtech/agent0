@@ -52,6 +52,7 @@ class SmartLong(HyperdriveBasePolicy):
         """The upper threshold of the fixed rate minus the variable rate to open a long."""
 
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
 
     def __init__(
         self,
@@ -102,12 +103,16 @@ class SmartLong(HyperdriveBasePolicy):
                 action_list.append(close_long_trade(trade_amount, long_time, self.slippage_tolerance))
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
+
+        variable_rate = pool_state.variable_rate
+        # Variable rate can be None if underlying yield doesn't have a `getRate` function
+        if variable_rate is None:
+            variable_rate = interface.get_standardized_variable_rate()
+
         # only open a long if the fixed rate is higher than variable rate
-        if (interface.calc_fixed_rate() - pool_state.variable_rate) > self.risk_threshold and not has_opened_long:
+        if (interface.calc_fixed_rate() - variable_rate) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
-            total_bonds_to_match_variable_apr = interface.calc_bonds_given_shares_and_rate(
-                target_rate=pool_state.variable_rate
-            )
+            total_bonds_to_match_variable_apr = interface.calc_bonds_given_shares_and_rate(target_rate=variable_rate)
             # get the delta bond amount & convert units
             bond_reserves: FixedPoint = pool_state.pool_info.bond_reserves
             # calculate how many bonds we take out of the pool

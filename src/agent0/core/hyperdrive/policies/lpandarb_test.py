@@ -120,6 +120,7 @@ def test_open_long(
     # report results
     fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
+    assert variable_rate is not None
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
@@ -148,6 +149,7 @@ def test_open_short(
     # report results
     fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
+    assert variable_rate is not None
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     abs_diff = abs(fixed_rate - variable_rate)
@@ -248,6 +250,7 @@ def test_close_long(
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
+    assert variable_rate is not None
     abs_diff = abs(fixed_rate - variable_rate)
     logging.info("difference is %s", abs_diff)
     assert abs_diff < PRECISION
@@ -275,6 +278,7 @@ def test_already_at_target(interactive_hyperdrive: ILocalHyperdrive, arbitrage_a
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
+    assert variable_rate is not None
     abs_diff = abs(fixed_rate - variable_rate)
     logging.info("difference is %s", abs_diff)
     assert abs_diff < PRECISION

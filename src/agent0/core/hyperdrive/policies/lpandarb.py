@@ -35,6 +35,7 @@ MAX_ITER = 50
 # or we can make them static utils and pass the agent object itself. Either way,
 # this will simplify the argument space down to a much smaller set.
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 
 
 def arb_fixed_rate_down(
@@ -68,11 +69,17 @@ def arb_fixed_rate_down(
         A list of actions for arbitration trades.
     """
     action_list = []
+
+    variable_rate = pool_state.variable_rate
+    # Variable rate can be None if underlying yield doesn't have a `getRate` function
+    if variable_rate is None:
+        variable_rate = interface.get_standardized_variable_rate()
+
     # calculate bonds needed using iterative refinement
     _, bonds_needed = calc_reserves_to_hit_target_rate(
         interface=interface,
         pool_state=pool_state,
-        target_rate=pool_state.variable_rate,
+        target_rate=variable_rate,
         min_trade_amount_bonds=min_trade_amount_bonds,
     )
     bonds_needed = -bonds_needed  # we trade positive numbers around here
@@ -142,11 +149,17 @@ def arb_fixed_rate_up(
         A list of actions for arbitration trades.
     """
     action_list = []
+
+    variable_rate = pool_state.variable_rate
+    # Variable rate can be None if underlying yield doesn't have a `getRate` function
+    if variable_rate is None:
+        variable_rate = interface.get_standardized_variable_rate()
+
     # calculate bonds needed using iterative refinement
     _, bonds_needed = calc_reserves_to_hit_target_rate(
         interface=interface,
         pool_state=pool_state,
-        target_rate=pool_state.variable_rate,
+        target_rate=variable_rate,
         min_trade_amount_bonds=min_trade_amount_bonds,
     )
     # Reduce longs first, if we have them
@@ -502,9 +515,14 @@ class LPandArb(HyperdriveBasePolicy):
             )
             max_trade_amount_base -= lp_amount
 
+        variable_rate = current_pool_state.variable_rate
+        # Variable rate can be None if underlying yield doesn't have a `getRate` function
+        if variable_rate is None:
+            variable_rate = interface.get_standardized_variable_rate()
+
         # arbitrage from here on out
         # check for a high fixed rate
-        if current_fixed_rate >= current_pool_state.variable_rate + self.policy_config.high_fixed_rate_thresh:
+        if current_fixed_rate >= variable_rate + self.policy_config.high_fixed_rate_thresh:
             action_list.extend(
                 arb_fixed_rate_down(
                     interface,
@@ -517,7 +535,7 @@ class LPandArb(HyperdriveBasePolicy):
             )
 
         # check for a low fixed rate
-        if current_fixed_rate <= current_pool_state.variable_rate - self.policy_config.low_fixed_rate_thresh:
+        if current_fixed_rate <= variable_rate - self.policy_config.low_fixed_rate_thresh:
             action_list.extend(
                 arb_fixed_rate_up(
                     interface,
