@@ -250,4 +250,4 @@ class IHyperdriveAgent:
 
         Uses on chain events to generate current wallet positions.
         """
-        self._pool._sync_wallet_from_chain(self.agent)
+        self._pool._sync_wallet(self.agent)
