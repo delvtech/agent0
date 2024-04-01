@@ -280,7 +280,6 @@ class HyperdriveReadInterface:
         try:
             variable_rate = self.get_variable_rate(block_number)
         except BadFunctionCallOutput:
-            # TODO do we want to throw a warning here?
             logging.warning(
                 "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
             )
