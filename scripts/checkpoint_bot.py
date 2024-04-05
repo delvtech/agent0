@@ -13,6 +13,7 @@ from typing import NamedTuple, Sequence
 from eth_account.account import Account
 from fixedpointmath import FixedPoint
 
+from agent0 import IHyperdrive
 from agent0.core.base import EthAgent
 from agent0.core.base.config import EnvironmentConfig
 from agent0.ethpy import EthConfig, build_eth_config
@@ -117,9 +118,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     logging.info("Successfully funded the sender=%s.", sender.address)
 
     # Get the Hyperdrive contract.
-    # TODO replace this with the hyperdrive interface
-    addresses = fetch_hyperdrive_addresses_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-    hyperdrive_contract_address = web3.to_checksum_address(addresses["erc4626_hyperdrive"])
+    hyperdrive_contract_address = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)[
+        "erc4626_hyperdrive"
+    ]
     hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(hyperdrive_contract_address)
 
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
