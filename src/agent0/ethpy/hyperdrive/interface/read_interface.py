@@ -125,28 +125,34 @@ class HyperdriveReadInterface:
 
         # We get the yield address and contract from the pool config
         self.pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
-        self.base_token_contract_address = self.pool_config.base_token
-        self.vault_shares_token_address = self.pool_config.vault_shares_token
-
-        # Setup the ERC20 contract for minting base tokens.
-        self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
-            web3.to_checksum_address(self.base_token_contract_address)
-        )
+        base_token_contract_address = self.pool_config.base_token
+        vault_shares_token_address = self.pool_config.vault_shares_token
 
         # TODO Although the underlying function might not be a MockERC4626Contract,
         # the pypechain contract factory happily accepts any address and exposes
         # all functions from that contract. The code will only break if we try to
         # call a non-existant function on the underlying contract address.
         self.vault_shares_token_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
-            address=web3.to_checksum_address(self.vault_shares_token_address)
+            address=web3.to_checksum_address(vault_shares_token_address)
         )
 
         # Check symbol to see if the underlying vault is steth market
         vault_shares_token_symbol = self.vault_shares_token_contract.functions.symbol().call()
         if "stETH" in vault_shares_token_symbol:
             self.is_steth = True
+            # If we're using steth, we use the yield token as the base token (i.e., steth)
+            # and pass in "as_base=False" to the contract calls.
+            # This simplifies accounting to have only one base token for steth.
+            # (the alternative of having eth as base token requires keeping track of both
+            # tokens in order to support `removeLiquidity`, as we can't remove liquidity into
+            # eth.
+            base_token_contract_address = vault_shares_token_address
         else:
             self.is_steth = False
+
+        self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
+            web3.to_checksum_address(base_token_contract_address)
+        )
 
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()

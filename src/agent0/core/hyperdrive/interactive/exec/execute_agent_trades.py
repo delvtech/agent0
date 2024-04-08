@@ -115,13 +115,6 @@ async def async_execute_agent_trades(
     for wallet_delta in wallet_updates:
         agent.wallet.update(wallet_delta)
 
-    # To handle the case here where the base balance gets out of date in the steth market
-    # due to the base token being eth (and hence used to pay gas), we explicitly query eth balance
-    # for wallet update
-    if interface.is_steth:
-        (base_balance, _) = interface.get_eth_base_balances(agent)
-        agent.wallet.balance.amount = base_balance
-
     # TODO to avoid adding a post action in base policy, we only call post action
     # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
     # way down
