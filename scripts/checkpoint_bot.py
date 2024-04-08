@@ -119,7 +119,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Get the Hyperdrive contract.
     # TODO replace this with the hyperdrive interface
     addresses = fetch_hyperdrive_addresses_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-    hyperdrive_contract_address = web3.to_checksum_address(addresses["erc4626_hyperdrive"])
+    if parsed_args.pool not in addresses:
+        raise ValueError(f"Pool {parsed_args.pool} not recognized. Available options are {list(addresses.keys())}")
+    hyperdrive_contract_address = web3.to_checksum_address(addresses[parsed_args.pool])
+
     hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(hyperdrive_contract_address)
 
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
@@ -212,6 +215,7 @@ class Args(NamedTuple):
     """Command line arguments for the checkpoint bot."""
 
     fuzz: bool
+    pool: str
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -227,7 +231,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Args
         Formatted arguments
     """
-    return Args(fuzz=namespace.fuzz)
+    return Args(fuzz=namespace.fuzz, pool=namespace.pool)
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
@@ -249,6 +253,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=bool,
         default=False,
         help="If true, then add an assertion step to verify that the checkpoint was successful.",
+    )
+    # TODO read this from the register or pass in pool address
+    parser.add_argument(
+        "--pool",
+        type=str,
+        default="erc4626_hyperdrive",
+        help='The logical name of the pool to connect to. Options are "erc4626_hyperdrive" and "stethhyperdrive".',
     )
     # Use system arguments if none were passed
     if argv is None:
