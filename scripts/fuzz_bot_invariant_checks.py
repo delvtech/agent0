@@ -26,6 +26,7 @@ from hexbytes import HexBytes
 from web3.exceptions import BlockNotFound
 from web3.types import BlockData
 
+from agent0 import IHyperdrive
 from agent0.core.base.config import EnvironmentConfig
 from agent0.core.hyperdrive.crash_report import (
     build_crash_trade_result,
@@ -49,10 +50,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         A sequnce containing the uri to the database server and the test epsilon.
     """
 
-    log_to_rollbar = initialize_rollbar("fuzzbots_invariantcheck")
-
     # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
+
+    log_to_rollbar = initialize_rollbar("fuzzbots_invariantcheck_" + parsed_args.pool)
+
     # Run the loop forever
     last_executed_block_number = 0  # no matter what we will run the check the first time
     while True:
@@ -115,8 +117,16 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterfac
         log_stdout=env_config.log_stdout,
         log_format_string=env_config.log_formatter,
     )
+
     # Setup hyperdrive interface
-    interface = HyperdriveReadInterface(eth_config)
+    hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
+    if parsed_args.pool not in hyperdrive_addresses:
+        raise ValueError(
+            f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"
+        )
+    hyperdrive_address = hyperdrive_addresses[parsed_args.pool]
+
+    interface = HyperdriveReadInterface(eth_config, hyperdrive_address=hyperdrive_address)
     return parsed_args, interface
 
 
@@ -405,6 +415,7 @@ class Args(NamedTuple):
     test_epsilon: float
     eth_config_env_file: str
     sleep_time: int
+    pool: str
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -424,6 +435,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         test_epsilon=namespace.test_epsilon,
         eth_config_env_file=namespace.eth_config_env_file,
         sleep_time=namespace.sleep_time,
+        pool=namespace.pool,
     )
 
 
@@ -458,6 +470,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=5,
         help="Sleep time between checks, in seconds.",
+    )
+    # TODO read this from the register or pass in pool address
+    parser.add_argument(
+        "--pool",
+        type=str,
+        default="erc4626_hyperdrive",
+        help='The logical name of the pool to connect to. Options are "erc4626_hyperdrive" and "stethhyperdrive".',
     )
 
     # Use system arguments if none were passed

@@ -141,6 +141,13 @@ class HyperdriveReadInterface:
             address=web3.to_checksum_address(self.vault_shares_token_address)
         )
 
+        # Check symbol to see if the underlying vault is steth market
+        vault_shares_token_symbol = self.vault_shares_token_contract.functions.symbol().call()
+        if "stETH" in vault_shares_token_symbol:
+            self.is_steth = True
+        else:
+            self.is_steth = False
+
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
@@ -479,9 +486,11 @@ class HyperdriveReadInterface:
         Returns
         -------
         FixedPoint
-            The result of base_token_contract.balanceOf(hypedrive_address).
+            The result of base_token_contract.balanceOf(hyperdrive_address).
         """
-        return _get_hyperdrive_base_balance(self.base_token_contract, self.hyperdrive_contract, block_number)
+        return _get_hyperdrive_base_balance(
+            self.base_token_contract, self.hyperdrive_contract, block_number, self.is_steth, self.web3
+        )
 
     def get_gov_fees_accrued(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the current amount of Uncollected Governance Fees in the Hyperdrive contract.

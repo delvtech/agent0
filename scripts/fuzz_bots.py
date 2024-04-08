@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import random
 import sys
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable, NamedTuple, ParamSpec, Sequence, TypeVar
 
 from fixedpointmath import FixedPoint
 from web3.types import RPCEndpoint
@@ -79,22 +80,35 @@ async def _async_runner(
     return out_result
 
 
-def run_fuzz_bots():
-    """Runs fuzz bots"""
+def run_fuzz_bots(argv: Sequence[str] | None = None) -> None:
+    """Runs fuzz bots
 
-    log_to_rollbar = initialize_rollbar("localfuzzbots")
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+    """
+    parsed_args = parse_arguments(argv)
+
+    # Get config and addresses
+    eth_config = build_eth_config(dotenv_file="eth.env")
+    hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
+    if parsed_args.pool not in hyperdrive_addresses:
+        raise ValueError(
+            f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"
+        )
+    hyperdrive_address = hyperdrive_addresses[parsed_args.pool]
+
+    log_to_rollbar = initialize_rollbar("localfuzzbots_" + parsed_args.pool)
 
     # Make sure the bots have at least 10% of their budget after each trade
     minimum_avg_agent_base = BASE_BUDGET_PER_BOT / FixedPoint(10)
 
-    # Get config and addresses
-    eth_config = build_eth_config(dotenv_file="eth.env")
     rng_seed = random.randint(0, 10000000)
 
     # Connect to the chain
     chain = IChain(eth_config.rpc_uri)
 
-    hyperdrive_address = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)["erc4626_hyperdrive"]
     hyperdrive_config = IHyperdrive.Config(
         preview_before_trade=True,
         rng_seed=rng_seed,
@@ -189,6 +203,55 @@ def run_fuzz_bots():
                             eth=ETH_BUDGET_PER_BOT,
                         )
                     )
+
+
+class Args(NamedTuple):
+    """Command line arguments for the checkpoint bot."""
+
+    pool: str
+
+
+def namespace_to_args(namespace: argparse.Namespace) -> Args:
+    """Converts argprase.Namespace to Args.
+
+    Arguments
+    ---------
+    namespace: argparse.Namespace
+        Object for storing arg attributes.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    return Args(pool=namespace.pool)
+
+
+def parse_arguments(argv: Sequence[str] | None = None) -> Args:
+    """Parses input arguments.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        The argv values returned from argparser.
+
+    Returns
+    -------
+    Args
+        Formatted arguments
+    """
+    parser = argparse.ArgumentParser(description="Runs random bots.")
+    # TODO read this from the register or pass in pool address
+    parser.add_argument(
+        "--pool",
+        type=str,
+        default="erc4626_hyperdrive",
+        help='The logical name of the pool to connect to. Options are "erc4626_hyperdrive" and "stethhyperdrive".',
+    )
+    # Use system arguments if none were passed
+    if argv is None:
+        argv = sys.argv
+    return namespace_to_args(parser.parse_args())
 
 
 if __name__ == "__main__":
