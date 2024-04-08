@@ -202,8 +202,8 @@ class IHyperdriveBatchTransferFromContractFunction(ContractFunction):
 class IHyperdriveCheckpointContractFunction(ContractFunction):
     """ContractFunction for the checkpoint method."""
 
-    def __call__(self, checkpointTime: int) -> IHyperdriveCheckpointContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(checkpointTime))
+    def __call__(self, checkpointTime: int, maxIterations: int) -> IHyperdriveCheckpointContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(checkpointTime), dataclass_to_tuple(maxIterations))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -3912,8 +3912,8 @@ class IHyperdriveInsufficientLiquidityContractError:
     def __init__(
         self: "IHyperdriveInsufficientLiquidityContractError",
     ) -> None:
-        self.selector = "0x780daf16"
-        self.signature = "InsufficientLiquidity(uint8)"
+        self.selector = "0xbb55fd27"
+        self.signature = "InsufficientLiquidity()"
 
     def decode_error_data(  # type: ignore
         self: "IHyperdriveInsufficientLiquidityContractError",
@@ -5716,7 +5716,10 @@ ihyperdrive_abi: ABI = cast(
         {
             "type": "function",
             "name": "checkpoint",
-            "inputs": [{"name": "_checkpointTime", "type": "uint256", "internalType": "uint256"}],
+            "inputs": [
+                {"name": "_checkpointTime", "type": "uint256", "internalType": "uint256"},
+                {"name": "_maxIterations", "type": "uint256", "internalType": "uint256"},
+            ],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -6350,6 +6353,7 @@ ihyperdrive_abi: ABI = cast(
             "name": "CreateCheckpoint",
             "inputs": [
                 {"name": "checkpointTime", "type": "uint256", "indexed": True, "internalType": "uint256"},
+                {"name": "checkpointVaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "vaultSharePrice", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "maturedShorts", "type": "uint256", "indexed": False, "internalType": "uint256"},
                 {"name": "maturedLongs", "type": "uint256", "indexed": False, "internalType": "uint256"},
@@ -6488,13 +6492,7 @@ ihyperdrive_abi: ABI = cast(
         {"type": "error", "name": "ExpInvalidExponent", "inputs": []},
         {"type": "error", "name": "ExpiredDeadline", "inputs": []},
         {"type": "error", "name": "InsufficientBalance", "inputs": []},
-        {
-            "type": "error",
-            "name": "InsufficientLiquidity",
-            "inputs": [
-                {"name": "reason", "type": "uint8", "internalType": "enum IHyperdrive.InsufficientLiquidityReason"}
-            ],
-        },
+        {"type": "error", "name": "InsufficientLiquidity", "inputs": []},
         {"type": "error", "name": "InvalidApr", "inputs": []},
         {"type": "error", "name": "InvalidCheckpointTime", "inputs": []},
         {"type": "error", "name": "InvalidERC20Bridge", "inputs": []},
