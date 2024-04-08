@@ -23,6 +23,7 @@ class ReceiptBreakdown:
     lp_amount: FixedPoint = FixedPoint(0)
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
     vault_share_price: FixedPoint = FixedPoint(0)
+    checkpoint_vault_share_price: FixedPoint = FixedPoint(0)
     vault_share_amount: FixedPoint = FixedPoint(0)
     base_proceeds: FixedPoint = FixedPoint(0)
     base_payment: FixedPoint = FixedPoint(0)
@@ -43,6 +44,7 @@ class ReceiptBreakdown:
             or self.lp_amount < 0
             or self.withdrawal_share_amount < 0
             or self.vault_share_price < 0
+            or self.checkpoint_vault_share_price < 0
             or self.vault_share_amount < 0
             or self.base_proceeds < 0
             or self.lp_share_price < 0
