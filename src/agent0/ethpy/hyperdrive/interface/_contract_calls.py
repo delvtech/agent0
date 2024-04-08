@@ -121,12 +121,15 @@ def _create_checkpoint(
             block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
         checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
 
+    # 0 is the max iterations for distribute excess idle, where it will default to
+    # the default max iterations
+    fn_args = (checkpoint_time, 0)
     tx_receipt = smart_contract_transact(
         interface.web3,
         interface.hyperdrive_contract,
         sender,
         "checkpoint",
-        checkpoint_time,
+        *fn_args,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
     )
