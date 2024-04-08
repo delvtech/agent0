@@ -159,7 +159,7 @@ def smart_contract_preview_transaction(
     read_retry_count: int | None
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
-        The value field to set for transaction options
+        The value field to set for transaction options.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -387,7 +387,7 @@ def build_transaction(
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
-        The value field to set for transaction options
+        The value field to set for transaction options.
 
     Returns
     -------
@@ -504,7 +504,7 @@ async def async_smart_contract_transact(
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
-        The value field to set for transaction options
+        The value field to set for transaction options.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -680,7 +680,7 @@ def smart_contract_transact(
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
-        The value field to set for transaction options
+        The value field to set for transaction options.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 

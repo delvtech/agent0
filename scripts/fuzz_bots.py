@@ -81,7 +81,7 @@ async def _async_runner(
 
 
 def run_fuzz_bots(argv: Sequence[str] | None = None) -> None:
-    """Runs fuzz bots
+    """Runs fuzz bots.
 
     Arguments
     ---------
