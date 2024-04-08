@@ -80,6 +80,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         The argv values returned from argparser.
     """
+    # pylint: disable=too-many-branches
+
     parsed_args = parse_arguments(argv)
     eth_config, env_config = get_config()
 

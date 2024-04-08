@@ -22,6 +22,8 @@ from .retry_utils import retry_call
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
 
+# pylint: disable=too-many-lines
+
 
 # We define the function to check the exception to retry on
 # for preview calls.

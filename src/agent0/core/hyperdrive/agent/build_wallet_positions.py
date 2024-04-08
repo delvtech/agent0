@@ -27,11 +27,11 @@ def build_wallet_positions_from_chain(agent: LocalAccount, interface: Hyperdrive
     HyperdriveWallet
         The wallet object build from the provided data
     """
-    hyperdrive_contract = interface.hyperdrive_contract
-    wallet_addr = agent.address
-
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
+
+    hyperdrive_contract = interface.hyperdrive_contract
+    wallet_addr = agent.address
 
     # Contract call to get base balance
     (_, base_amount) = interface.get_eth_base_balances(agent)
