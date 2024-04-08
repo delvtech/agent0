@@ -168,13 +168,20 @@ def main(argv: Sequence[str] | None = None) -> None:
             # with testnets and mainnet. When we get closer to production, we
             # will need to make this more robust so that we retry this
             # transaction if the transaction gets stuck.
-            receipt = smart_contract_transact(
-                web3,
-                hyperdrive_contract,
-                sender,
-                "checkpoint",
-                (checkpoint_time),
-            )
+            try:
+                receipt = smart_contract_transact(
+                    web3,
+                    hyperdrive_contract,
+                    sender,
+                    "checkpoint",
+                    (checkpoint_time),
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                logging.warning("Checkpoint transaction failed with exception=%s, retrying", e)
+                # Catch all errors here and retry next iteration
+                # TODO adjust wait period
+                time.sleep(1)
+                continue
             logging.info(
                 "Checkpoint successfully mined with receipt=%s",
                 receipt["transactionHash"].hex(),
