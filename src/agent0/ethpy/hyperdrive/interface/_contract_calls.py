@@ -169,21 +169,24 @@ async def _async_open_long(
     min_vault_share_price = 0  # TODO: give the user access to this parameter
     min_output = 0  # TODO: give the user access to this parameter
 
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output,
         min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
 
     # Need to set transaction options value field if we're using eth as base
-    txn_options_value = None
-    if interface.is_steth:
-        txn_options_value = trade_amount.scaled_value
 
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -198,7 +201,6 @@ async def _async_open_long(
             *fn_args,
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
-            txn_options_value=txn_options_value,
         )
     if slippage_tolerance is not None:
         min_output = (
@@ -210,7 +212,7 @@ async def _async_open_long(
             min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -224,7 +226,6 @@ async def _async_open_long(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
-            txn_options_value=txn_options_value,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
     except Exception as exc:
@@ -247,13 +248,20 @@ async def _async_close_long(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         maturity_time,
         trade_amount.scaled_value,
         min_output,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
@@ -282,7 +290,7 @@ async def _async_close_long(
             min_output,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -317,6 +325,13 @@ async def _async_open_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     # min_vault_share_price: int
     #   Minium share price at which to open the short.
     #   This allows traders to protect themselves from opening a long in
@@ -328,15 +343,10 @@ async def _async_open_short(
         min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
-
-    # Need to set transaction options value field if we're using eth as base
-    txn_options_value = None
-    if interface.is_steth:
-        txn_options_value = trade_amount.scaled_value
 
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -351,7 +361,6 @@ async def _async_open_short(
             *fn_args,
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
-            txn_options_value=txn_options_value,
         )
     if slippage_tolerance is not None:
         max_deposit = (
@@ -363,7 +372,7 @@ async def _async_open_short(
             min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -377,7 +386,6 @@ async def _async_open_short(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
-            txn_options_value=txn_options_value,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
     except Exception as exc:
@@ -399,13 +407,20 @@ async def _async_close_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         maturity_time,
         trade_amount.scaled_value,
         min_output,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
@@ -434,7 +449,7 @@ async def _async_close_short(
             min_output,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -474,6 +489,13 @@ async def _async_add_liquidity(
 
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_lp_share_price = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_lp_share_price,
@@ -481,15 +503,10 @@ async def _async_add_liquidity(
         max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
-
-    # Need to set transaction options value field if we're using eth as base
-    txn_options_value = None
-    if interface.is_steth:
-        txn_options_value = trade_amount.scaled_value
 
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
@@ -503,7 +520,6 @@ async def _async_add_liquidity(
             *fn_args,
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
-            txn_options_value=txn_options_value,
         )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -515,7 +531,6 @@ async def _async_add_liquidity(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
-            txn_options_value=txn_options_value,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
     except Exception as exc:
@@ -535,12 +550,19 @@ async def _async_remove_liquidity(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
@@ -586,12 +608,19 @@ async def _async_redeem_withdraw_shares(
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = FixedPoint(scaled_value=1)
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output.scaled_value,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
