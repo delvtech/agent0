@@ -157,13 +157,15 @@ def run_fuzz_bots(argv: Sequence[str] | None = None) -> None:
         )
     )
 
-    logging.info("Setting max approval...")
-    # Set max approval asynchronously
-    asyncio.run(
-        _async_runner(
-            [agent.set_max_approval for agent in agents],
+    # Only need approval for non-steth accounts
+    if not hyperdrive_pool.interface.is_steth:
+        logging.info("Setting max approval...")
+        # Set max approval asynchronously
+        asyncio.run(
+            _async_runner(
+                [agent.set_max_approval for agent in agents],
+            )
         )
-    )
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
