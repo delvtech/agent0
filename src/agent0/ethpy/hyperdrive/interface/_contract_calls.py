@@ -158,6 +158,7 @@ def _set_variable_rate(
     )
 
 
+# pylint: disable=too-many-locals
 async def _async_open_long(
     interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
@@ -311,6 +312,7 @@ async def _async_close_long(
     return trade_result
 
 
+# pylint: disable=too-many-locals
 async def _async_open_short(
     interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
