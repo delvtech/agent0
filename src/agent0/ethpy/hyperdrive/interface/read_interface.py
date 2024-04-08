@@ -143,7 +143,7 @@ class HyperdriveReadInterface:
             # If we're using steth, we use the yield token as the base token (i.e., steth)
             # and pass in "as_base=False" to the contract calls.
             # This simplifies accounting to have only one base token for steth.
-            # (the alternative of having eth as base token requires keeping track of both
+            # The alternative of having eth as base token requires keeping track of both
             # tokens in order to support `removeLiquidity`, as we can't remove liquidity into
             # eth.
             base_token_contract_address = vault_shares_token_address
