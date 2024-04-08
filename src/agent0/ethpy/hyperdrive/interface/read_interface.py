@@ -131,7 +131,7 @@ class HyperdriveReadInterface:
         # TODO Although the underlying function might not be a MockERC4626Contract,
         # the pypechain contract factory happily accepts any address and exposes
         # all functions from that contract. The code will only break if we try to
-        # call a non-existant function on the underlying contract address.
+        # call a non-existent function on the underlying contract address.
         self.vault_shares_token_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
             address=web3.to_checksum_address(vault_shares_token_address)
         )
@@ -494,9 +494,7 @@ class HyperdriveReadInterface:
         FixedPoint
             The result of base_token_contract.balanceOf(hyperdrive_address).
         """
-        return _get_hyperdrive_base_balance(
-            self.base_token_contract, self.hyperdrive_contract, block_number, self.is_steth, self.web3
-        )
+        return _get_hyperdrive_base_balance(self.base_token_contract, self.hyperdrive_contract, block_number)
 
     def get_gov_fees_accrued(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the current amount of Uncollected Governance Fees in the Hyperdrive contract.

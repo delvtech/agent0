@@ -65,10 +65,7 @@ def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccou
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address)
-    if interface.is_steth:
-        agent_base_balance = agent_eth_balance
-    else:
-        agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
+    agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
 
     return (
         FixedPoint(scaled_value=agent_eth_balance),
@@ -80,12 +77,8 @@ def _get_hyperdrive_base_balance(
     base_contract: ERC20MintableContract,
     hyperdrive_contract: IHyperdriveContract,
     block_number: BlockNumber | None,
-    is_steth: bool,
-    web3: Web3,
 ) -> FixedPoint:
     """See API for documentation."""
-    if is_steth:
-        return _get_hyperdrive_eth_balance(web3, hyperdrive_contract.address)
     base_balance = base_contract.functions.balanceOf(hyperdrive_contract.address).call(
         block_identifier=block_number or "latest"
     )
