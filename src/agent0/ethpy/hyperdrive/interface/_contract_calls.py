@@ -8,8 +8,12 @@ from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
 from web3 import Web3
 
-from agent0.ethpy.base import (async_smart_contract_transact, get_account_balance, smart_contract_preview_transaction,
-                               smart_contract_transact)
+from agent0.ethpy.base import (
+    async_smart_contract_transact,
+    get_account_balance,
+    smart_contract_preview_transaction,
+    smart_contract_transact,
+)
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from agent0.ethpy.hyperdrive.transactions import parse_logs
 from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
@@ -181,6 +185,12 @@ async def _async_open_long(
             bytes(0),  # extraData
         ),
     )
+
+    # Need to set transaction options value field if we're using eth as base
+    txn_options_value = None
+    if interface.is_steth:
+        txn_options_value = trade_amount.scaled_value
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -194,6 +204,7 @@ async def _async_open_long(
             *fn_args,
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
+            txn_options_value=txn_options_value,
         )
     if slippage_tolerance is not None:
         min_output = (
@@ -219,6 +230,7 @@ async def _async_open_long(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_value=txn_options_value,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
     except Exception as exc:
@@ -251,6 +263,7 @@ async def _async_close_long(
             bytes(0),  # extraData
         ),
     )
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -324,6 +337,12 @@ async def _async_open_short(
             bytes(0),  # extraData
         ),
     )
+
+    # Need to set transaction options value field if we're using eth as base
+    txn_options_value = None
+    if interface.is_steth:
+        txn_options_value = trade_amount.scaled_value
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -337,6 +356,7 @@ async def _async_open_short(
             *fn_args,
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
+            txn_options_value=txn_options_value,
         )
     if slippage_tolerance is not None:
         max_deposit = (
@@ -362,6 +382,7 @@ async def _async_open_short(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_value=txn_options_value,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
     except Exception as exc:
@@ -393,6 +414,7 @@ async def _async_close_short(
             bytes(0),  # extraData
         ),
     )
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -468,6 +490,12 @@ async def _async_add_liquidity(
             bytes(0),  # extraData
         ),
     )
+
+    # Need to set transaction options value field if we're using eth as base
+    txn_options_value = None
+    if interface.is_steth:
+        txn_options_value = trade_amount.scaled_value
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -480,6 +508,7 @@ async def _async_add_liquidity(
             *fn_args,
             block_number=current_block,
             read_retry_count=interface.read_retry_count,
+            txn_options_value=txn_options_value,
         )
     try:
         tx_receipt = await async_smart_contract_transact(
@@ -491,6 +520,7 @@ async def _async_add_liquidity(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_value=txn_options_value,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
     except Exception as exc:
