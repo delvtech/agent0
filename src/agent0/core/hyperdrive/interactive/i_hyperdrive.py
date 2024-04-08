@@ -224,24 +224,35 @@ class IHyperdrive:
         # The signer of the mint transaction defaults to the agent itself, unless specified.
         if signer_account is None:
             signer_account = agent
-        if eth > FixedPoint(0):
-            # Eth is a set balance call
-            eth_balance, _ = self.interface.get_eth_base_balances(agent)
-            new_eth_balance = eth_balance + eth
-            _ = set_anvil_account_balance(self.interface.web3, agent.address, new_eth_balance.scaled_value)
 
-        if base > FixedPoint(0):
-            # We mint base
-            _ = smart_contract_transact(
-                self.interface.web3,
-                self.interface.base_token_contract,
-                signer_account,
-                "mint(address,uint256)",
-                agent.checksum_address,
-                base.scaled_value,
-            )
-            # Update the agent's wallet balance
-            agent.wallet.balance.amount += base
+        # We ignore the eth parameter if underlying market is steth
+        if self.interface.is_steth:
+            if base > FixedPoint(0):
+                # Eth is a set balance call
+                eth_balance, _ = self.interface.get_eth_base_balances(agent)
+                new_eth_balance = eth_balance + base
+                _ = set_anvil_account_balance(self.interface.web3, agent.address, new_eth_balance.scaled_value)
+                agent.wallet.balance.amount += base
+
+        else:
+            if eth > FixedPoint(0):
+                # Eth is a set balance call
+                eth_balance, _ = self.interface.get_eth_base_balances(agent)
+                new_eth_balance = eth_balance + eth
+                _ = set_anvil_account_balance(self.interface.web3, agent.address, new_eth_balance.scaled_value)
+
+            if base > FixedPoint(0):
+                # We mint base
+                _ = smart_contract_transact(
+                    self.interface.web3,
+                    self.interface.base_token_contract,
+                    signer_account,
+                    "mint(address,uint256)",
+                    agent.checksum_address,
+                    base.scaled_value,
+                )
+                # Update the agent's wallet balance
+                agent.wallet.balance.amount += base
 
     def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
         # Build trade object

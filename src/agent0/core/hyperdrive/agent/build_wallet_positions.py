@@ -19,10 +19,8 @@ def build_wallet_positions_from_chain(agent: LocalAccount, interface: Hyperdrive
     ---------
     agent: LocalAccount
         The account wallet
-    hyperdrive_contract: Contract
-        The Hyperdrive contract to query the data from
-    base_contract: Contract
-        The base contract to query the base amount from
+    interface: HyperdriveReadInterface
+        The interface connected to the hyperdrive pool
 
     Returns
     -------
