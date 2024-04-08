@@ -204,7 +204,7 @@ def _setup_agents(
         else:
             for agent in agent_accounts:
                 agent.wallet = build_wallet_positions_from_chain(
-                    agent.checksum_address, interface.hyperdrive_contract, interface.base_token_contract
+                    agent, interface.hyperdrive_contract, interface.base_token_contract
                 )
 
     # If we're in liquidation mode, we explicitly set halt on errors to false

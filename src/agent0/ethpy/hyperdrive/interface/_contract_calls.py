@@ -8,12 +8,8 @@ from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
 from web3 import Web3
 
-from agent0.ethpy.base import (
-    async_smart_contract_transact,
-    get_account_balance,
-    smart_contract_preview_transaction,
-    smart_contract_transact,
-)
+from agent0.ethpy.base import (async_smart_contract_transact, get_account_balance, smart_contract_preview_transaction,
+                               smart_contract_transact)
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from agent0.ethpy.hyperdrive.transactions import parse_logs
 from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
@@ -65,7 +61,11 @@ def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccou
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address)
-    agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
+    if interface.is_steth:
+        agent_base_balance = agent_eth_balance
+    else:
+        agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
+
     return (
         FixedPoint(scaled_value=agent_eth_balance),
         FixedPoint(scaled_value=agent_base_balance),

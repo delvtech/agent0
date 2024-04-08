@@ -205,9 +205,7 @@ class IHyperdrive:
         # with the same underlying account
         self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
 
-        agent.wallet = build_wallet_positions_from_chain(
-            agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
-        )
+        agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
         return agent
 
     def _set_max_approval(self, agent: HyperdriveAgent):

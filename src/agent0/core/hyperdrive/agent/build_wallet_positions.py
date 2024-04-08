@@ -1,25 +1,24 @@
 """Functions to help build agent wallets from various sources."""
 
 import pandas as pd
+from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
 from agent0.core.base import Quantity, TokenType
-from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id, encode_asset_id
-from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract
+from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, decode_asset_id, encode_asset_id
+from agent0.hypertypes import ERC20MintableContract
 
 from .hyperdrive_wallet import HyperdriveWallet, Long, Short
 
 
-def build_wallet_positions_from_chain(
-    wallet_addr: str, hyperdrive_contract: IHyperdriveContract, base_contract: ERC20MintableContract
-) -> HyperdriveWallet:
+def build_wallet_positions_from_chain(agent: LocalAccount, interface: HyperdriveReadInterface) -> HyperdriveWallet:
     """Builds a wallet position based on gathered data.
 
     Arguments
     ---------
-    wallet_addr: str
-        The checksum wallet address
+    agent: LocalAccount
+        The account wallet
     hyperdrive_contract: Contract
         The Hyperdrive contract to query the data from
     base_contract: Contract
@@ -30,13 +29,17 @@ def build_wallet_positions_from_chain(
     HyperdriveWallet
         The wallet object build from the provided data
     """
+    hyperdrive_contract = interface.hyperdrive_contract
+    wallet_addr = agent.address
+
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
 
     # Contract call to get base balance
-    base_amount: int = base_contract.functions.balanceOf(wallet_addr).call()
+    (_, base_amount) = interface.get_eth_base_balances(agent)
+
     # TODO do we need to do error checking here?
-    base_obj = Quantity(amount=FixedPoint(scaled_value=base_amount), unit=TokenType.BASE)
+    base_obj = Quantity(amount=base_amount, unit=TokenType.BASE)
 
     # Contract call to get lp balance
     asset_id = encode_asset_id(AssetIdPrefix.LP, 0)
