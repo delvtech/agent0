@@ -66,6 +66,7 @@ def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccou
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address)
     agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
+
     return (
         FixedPoint(scaled_value=agent_eth_balance),
         FixedPoint(scaled_value=agent_base_balance),
@@ -150,6 +151,7 @@ def _set_variable_rate(
     )
 
 
+# pylint: disable=too-many-locals
 async def _async_open_long(
     interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
@@ -167,16 +169,25 @@ async def _async_open_long(
     min_vault_share_price = 0  # TODO: give the user access to this parameter
     min_output = 0  # TODO: give the user access to this parameter
 
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output,
         min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
+
+    # Need to set transaction options value field if we're using eth as base
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -201,7 +212,7 @@ async def _async_open_long(
             min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -237,16 +248,24 @@ async def _async_close_long(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         maturity_time,
         trade_amount.scaled_value,
         min_output,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -271,7 +290,7 @@ async def _async_close_long(
             min_output,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -294,6 +313,7 @@ async def _async_close_long(
     return trade_result
 
 
+# pylint: disable=too-many-locals
 async def _async_open_short(
     interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
@@ -305,6 +325,13 @@ async def _async_open_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     # min_vault_share_price: int
     #   Minium share price at which to open the short.
     #   This allows traders to protect themselves from opening a long in
@@ -316,10 +343,11 @@ async def _async_open_short(
         min_vault_share_price,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -344,7 +372,7 @@ async def _async_open_short(
             min_vault_share_price,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -379,16 +407,24 @@ async def _async_close_short(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         maturity_time,
         trade_amount.scaled_value,
         min_output,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -413,7 +449,7 @@ async def _async_close_short(
             min_output,
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
-                True,  # asBase
+                as_base_option,  # asBase
                 bytes(0),  # extraData
             ),
         )
@@ -453,6 +489,13 @@ async def _async_add_liquidity(
 
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_lp_share_price = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_lp_share_price,
@@ -460,10 +503,11 @@ async def _async_add_liquidity(
         max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
+
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
@@ -506,12 +550,19 @@ async def _async_remove_liquidity(
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )
@@ -557,12 +608,19 @@ async def _async_redeem_withdraw_shares(
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = FixedPoint(scaled_value=1)
+
+    # We use the yield as the base token in steth pools
+    if interface.is_steth:
+        as_base_option = False
+    else:
+        as_base_option = True
+
     fn_args = (
         trade_amount.scaled_value,
         min_output.scaled_value,
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
-            True,  # asBase
+            as_base_option,  # asBase
             bytes(0),  # extraData
         ),
     )

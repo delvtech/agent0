@@ -22,6 +22,8 @@ from .retry_utils import retry_call
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
 
+# pylint: disable=too-many-lines
+
 
 # We define the function to check the exception to retry on
 # for preview calls.
@@ -129,6 +131,7 @@ def smart_contract_read(
 # TODO cleanup
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
+# pylint: disable=too-many-arguments
 def smart_contract_preview_transaction(
     contract: Contract,
     signer_address: ChecksumAddress,
@@ -136,6 +139,7 @@ def smart_contract_preview_transaction(
     *fn_args,
     block_number: BlockNumber | None = None,
     read_retry_count: int | None = None,
+    txn_options_value: int | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Returns the values from a transaction without actually submitting the transaction.
@@ -154,6 +158,8 @@ def smart_contract_preview_transaction(
         If set, will query the chain on the specified block
     read_retry_count: int | None
         The number of times to retry the read call if it fails. Defaults to 5.
+    txn_options_value: int | None
+        The value field to set for transaction options.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -179,7 +185,10 @@ def smart_contract_preview_transaction(
 
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
-    transaction_kwargs = {"from": signer_address}
+    if txn_options_value is not None:
+        transaction_kwargs = TxParams({"from": signer_address, "value": Wei(txn_options_value)})
+    else:
+        transaction_kwargs = TxParams({"from": signer_address})
 
     raw_txn = {}
     # We build the raw transaction here in case of error, where we want to attach the raw txn to the crash report.
@@ -190,7 +199,7 @@ def smart_contract_preview_transaction(
     # so there's a race condition if a new trade comes in and this preview call is no longer valid
     # Hence, we wrap this in a try/catch, and ignore if it fails
     try:
-        raw_txn = function.build_transaction({"from": signer_address})
+        raw_txn = function.build_transaction(transaction_kwargs)
     except Exception:  # pylint: disable=broad-except
         pass
 
@@ -361,6 +370,7 @@ def build_transaction(
     web3: Web3,
     nonce: Nonce | None = None,
     read_retry_count: int | None = None,
+    txn_options_value: int | None = None,
 ) -> TxParams:
     """Builds a transaction for the given function.
 
@@ -376,6 +386,8 @@ def build_transaction(
         The nonce to use for this transaction. Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
+    txn_options_value: int | None
+        The value field to set for transaction options.
 
     Returns
     -------
@@ -396,14 +408,26 @@ def build_transaction(
 
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
-    transaction_kwargs = TxParams(
-        {
-            "from": signer_checksum_address,
-            "nonce": nonce,
-        }
-    )
+    if txn_options_value is not None:
+        transaction_kwargs = TxParams(
+            {
+                "from": signer_checksum_address,
+                "nonce": nonce,
+                "value": Wei(txn_options_value),
+            }
+        )
+    else:
+        transaction_kwargs = TxParams(
+            {
+                "from": signer_checksum_address,
+                "nonce": nonce,
+            }
+        )
+
     # Building transactions can also fail, so we add retry here
-    unsent_txn = retry_call(read_retry_count, _retry_preview_check, func_handle.build_transaction, transaction_kwargs)
+    unsent_txn = retry_call(
+        read_retry_count, _retry_preview_check, func_handle.build_transaction, TxParams(transaction_kwargs)
+    )
     return unsent_txn
 
 
@@ -455,6 +479,7 @@ async def async_smart_contract_transact(
     nonce: Nonce | None = None,
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
+    txn_options_value: int | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
@@ -478,6 +503,8 @@ async def async_smart_contract_transact(
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
+    txn_options_value: int | None
+        The value field to set for transaction options.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -500,7 +527,14 @@ async def async_smart_contract_transact(
     try:
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
-        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce, read_retry_count=read_retry_count)
+        unsent_txn = build_transaction(
+            func_handle,
+            signer,
+            web3,
+            nonce=nonce,
+            read_retry_count=read_retry_count,
+            txn_options_value=txn_options_value,
+        )
         return await retry_call(
             write_retry_count, _retry_txn_check, _async_send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
         )
@@ -622,6 +656,7 @@ def smart_contract_transact(
     nonce: Nonce | None = None,
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
+    txn_options_value: int | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas
@@ -644,6 +679,8 @@ def smart_contract_transact(
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
+    txn_options_value: int | None
+        The value field to set for transaction options.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -666,7 +703,14 @@ def smart_contract_transact(
     try:
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
-        unsent_txn = build_transaction(func_handle, signer, web3, nonce=nonce, read_retry_count=read_retry_count)
+        unsent_txn = build_transaction(
+            func_handle,
+            signer,
+            web3,
+            nonce=nonce,
+            read_retry_count=read_retry_count,
+            txn_options_value=txn_options_value,
+        )
         return retry_call(
             write_retry_count, _retry_txn_check, send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
         )

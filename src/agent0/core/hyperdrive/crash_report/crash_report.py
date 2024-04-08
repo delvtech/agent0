@@ -115,65 +115,74 @@ def build_crash_trade_result(
         }
 
     ## Get the pool state at the desired block number
-    pool_state = interface.get_hyperdrive_state(interface.get_block(trade_result.block_number))
+    pool_state = None
+    try:
+        pool_state = interface.get_hyperdrive_state(interface.get_block(trade_result.block_number))
+    except Exception:  # pylint: disable=broad-except
+        pass
 
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
-    trade_result.raw_pool_config = pool_state.pool_config_to_dict
-    # We call the conversion functions to convert them to human readable versions as well
-    trade_result.pool_config = asdict(pool_state.pool_config)
-    trade_result.pool_config["contract_address"] = interface.hyperdrive_contract.address
-    trade_result.pool_config["inv_time_stretch"] = FixedPoint(1) / trade_result.pool_config["time_stretch"]
+    if pool_state is not None:
+        trade_result.raw_pool_config = pool_state.pool_config_to_dict
+        # We call the conversion functions to convert them to human readable versions as well
+        trade_result.pool_config = asdict(pool_state.pool_config)
+        trade_result.pool_config["contract_address"] = interface.hyperdrive_contract.address
+        trade_result.pool_config["inv_time_stretch"] = FixedPoint(1) / trade_result.pool_config["time_stretch"]
 
-    ## Get pool info
-    # We wrap contract calls in a try catch to avoid crashing during crash report
-    try:
-        trade_result.raw_pool_info = pool_state.pool_info_to_dict
-    except Exception as exc:  # pylint: disable=broad-except
-        logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
-        trade_result.raw_pool_info = None
-    trade_result.block_timestamp = pool_state.block.get("timestamp", None)
-    if trade_result.raw_pool_info is not None and trade_result.block_timestamp is not None:
-        trade_result.pool_info = asdict(pool_state.pool_info)
-        trade_result.pool_info["timestamp"] = datetime.utcfromtimestamp(trade_result.block_timestamp)
-        trade_result.pool_info["block_number"] = trade_result.block_number
-        trade_result.pool_info["total_supply_withdrawal_shares"] = pool_state.total_supply_withdrawal_shares
-    else:
-        trade_result.pool_info = None
-
-    ## Get pool checkpoint
-    try:
-        if trade_result.block_timestamp is not None:
-            trade_result.raw_checkpoint = pool_state.checkpoint_to_dict
+        ## Get pool info
+        # We wrap contract calls in a try catch to avoid crashing during crash report
+        try:
+            trade_result.raw_pool_info = pool_state.pool_info_to_dict
+        except Exception as exc:  # pylint: disable=broad-except
+            logging.warning("Failed to get hyperdrive pool info in crash reporting: %s", repr(exc))
+            trade_result.raw_pool_info = None
+        trade_result.block_timestamp = pool_state.block.get("timestamp", None)
+        if trade_result.raw_pool_info is not None and trade_result.block_timestamp is not None:
+            trade_result.pool_info = asdict(pool_state.pool_info)
+            trade_result.pool_info["timestamp"] = datetime.utcfromtimestamp(trade_result.block_timestamp)
+            trade_result.pool_info["block_number"] = trade_result.block_number
+            trade_result.pool_info["total_supply_withdrawal_shares"] = pool_state.total_supply_withdrawal_shares
         else:
-            logging.warning("Failed to get block_timestamp in crash_reporting")
+            trade_result.pool_info = None
+
+        ## Get pool checkpoint
+        try:
+            if trade_result.block_timestamp is not None:
+                trade_result.raw_checkpoint = pool_state.checkpoint_to_dict
+            else:
+                logging.warning("Failed to get block_timestamp in crash_reporting")
+                trade_result.raw_checkpoint = None
+        except Exception as exc:  # pylint: disable=broad-except
+            logging.warning("Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc))
             trade_result.raw_checkpoint = None
-    except Exception as exc:  # pylint: disable=broad-except
-        logging.warning("Failed to get hyperdrive checkpoint in crash reporting: %s", repr(exc))
-        trade_result.raw_checkpoint = None
-    if trade_result.raw_checkpoint is not None and trade_result.block_timestamp is not None:
-        trade_result.checkpoint_info = asdict(pool_state.checkpoint)
-        trade_result.checkpoint_info["checkpoint_id"] = interface.calc_checkpoint_id(
-            block_timestamp=pool_state.block.get("timestamp")
-        )
-    else:
-        trade_result.checkpoint_info = None
+        if trade_result.raw_checkpoint is not None and trade_result.block_timestamp is not None:
+            trade_result.checkpoint_info = asdict(pool_state.checkpoint)
+            trade_result.checkpoint_info["checkpoint_id"] = interface.calc_checkpoint_id(
+                block_timestamp=pool_state.block.get("timestamp")
+            )
+        else:
+            trade_result.checkpoint_info = None
+
+        # add additional information to the exception
+        trade_result.additional_info = {
+            "spot_price": interface.calc_spot_price(pool_state),
+            "fixed_rate": interface.calc_fixed_rate(pool_state),
+            "variable_rate": pool_state.variable_rate,
+            "vault_shares": pool_state.vault_shares,
+        }
 
     ## Add extra info
     trade_result.contract_addresses = {
         "hyperdrive_address": interface.hyperdrive_contract.address,
         "base_token_address": interface.base_token_contract.address,
     }
-    # add additional information to the exception
-    trade_result.additional_info = {
-        "spot_price": interface.calc_spot_price(pool_state),
-        "fixed_rate": interface.calc_fixed_rate(pool_state),
-        "variable_rate": pool_state.variable_rate,
-        "vault_shares": pool_state.vault_shares,
-    }
 
     if additional_info is not None:
-        trade_result.additional_info.update(additional_info)
+        if trade_result.additional_info is None:
+            trade_result.additional_info = additional_info
+        else:
+            trade_result.additional_info.update(additional_info)
 
     return trade_result
 

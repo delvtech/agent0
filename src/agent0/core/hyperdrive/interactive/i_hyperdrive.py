@@ -205,9 +205,7 @@ class IHyperdrive:
         # with the same underlying account
         self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
 
-        agent.wallet = build_wallet_positions_from_chain(
-            agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
-        )
+        agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
         return agent
 
     def _set_max_approval(self, agent: HyperdriveAgent):
@@ -226,6 +224,7 @@ class IHyperdrive:
         # The signer of the mint transaction defaults to the agent itself, unless specified.
         if signer_account is None:
             signer_account = agent
+
         if eth > FixedPoint(0):
             # Eth is a set balance call
             eth_balance, _ = self.interface.get_eth_base_balances(agent)
