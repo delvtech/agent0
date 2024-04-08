@@ -232,7 +232,7 @@ def test_close_long(
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
     d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
     d_time = block_time_after - block_time_before
-    logging.info("Andy closed long. amount determined by policy.")
+    logging.info("Andy closed long; amount determined by policy.")
     logging.info("Δtime=%s", d_time)
     logging.info(
         " pool  Δbonds= %s%s, Δbase= %s%s", "+" if d_bonds > 0 else "", d_bonds, "+" if d_shares > 0 else "", d_shares
