@@ -102,10 +102,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         block_timestamp_interval = int(block_timestamp_interval)
 
-    if parsed_args.rpc_url == "":
+    if parsed_args.rpc_uri == "":
         web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
     else:
-        web3 = initialize_web3_with_http_provider(parsed_args.rpc_url, reset_provider=False)
+        web3 = initialize_web3_with_http_provider(parsed_args.rpc_uri, reset_provider=False)
 
     # Setup logging
     setup_logging(
@@ -241,7 +241,7 @@ class Args(NamedTuple):
     fuzz: bool
     pool: str
     pool_addr: str
-    rpc_url: str
+    rpc_uri: str
     fund: bool
 
 
@@ -262,7 +262,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         fuzz=namespace.fuzz,
         pool=namespace.pool,
         pool_addr=namespace.pool_addr,
-        rpc_url=namespace.rpc_url,
+        rpc_uri=namespace.rpc_uri,
         fund=namespace.fund,
     )
 
@@ -303,10 +303,10 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     )
 
     parser.add_argument(
-        "--rpc-url",
+        "--rpc-uri",
         type=str,
         default="",
-        help="The RPC URL of the chain.",
+        help="The RPC URI of the chain.",
     )
 
     parser.add_argument(
