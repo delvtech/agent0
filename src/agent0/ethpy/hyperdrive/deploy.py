@@ -39,6 +39,8 @@ from agent0.hypertypes import (
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
+UINT256_MAX = int(2**256 - 1)
+
 
 class DeployedHyperdrivePool(NamedTuple):
     """Collection of attributes associated with a locally deployed chain with a Hyperdrive pool."""
@@ -288,7 +290,12 @@ def _deploy_base_and_vault(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=ERC20MintableContract.ConstructorArgs(
-            name="Base", symbol="BASE", decimals=18, admin=ADDRESS_ZERO, isCompetitionMode_=False
+            name="Base",
+            symbol="BASE",
+            decimals=18,
+            admin=ADDRESS_ZERO,
+            isCompetitionMode_=False,
+            maxMintAmount_=UINT256_MAX,
         ),
     )
     # Deploy the vault contract
@@ -302,6 +309,7 @@ def _deploy_base_and_vault(
             initialRate=initial_variable_rate.scaled_value,
             admin=ADDRESS_ZERO,
             isCompetitionMode=False,
+            maxMintAmount=UINT256_MAX,
         ),
     )
     return base_token_contract, vault_contract
