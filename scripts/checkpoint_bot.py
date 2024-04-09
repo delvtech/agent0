@@ -88,6 +88,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Get environment variables for block time and block timestamp interval
     # TODO can't seem to get block time or block timestamp interval from anvil, so we get env vars passed in here
     # Real time, passed in anvil as `--block-time`
+    # Default values, while not necessarily correct, is fine because we're looking at the ratio
+    # between block time and block timestamp interval
     block_time = os.environ.get("BLOCK_TIME")
     if block_time is None:
         block_time = 1
@@ -100,7 +102,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         block_timestamp_interval = int(block_timestamp_interval)
 
-    web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
+    if parsed_args.rpc_url == "":
+        web3 = initialize_web3_with_http_provider(eth_config.rpc_uri, reset_provider=False)
+    else:
+        web3 = initialize_web3_with_http_provider(parsed_args.rpc_url, reset_provider=False)
 
     # Setup logging
     setup_logging(
@@ -113,17 +118,24 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     # Fund the checkpoint sender with some ETH.
-    balance = FixedPoint(100).scaled_value
-    sender = EthAgent(Account().create("CHECKPOINT_BOT"))
-    set_anvil_account_balance(web3, sender.address, balance)
-    logging.info("Successfully funded the sender=%s.", sender.address)
+    if parsed_args.fund:
+        balance = FixedPoint(100).scaled_value
+        sender = EthAgent(Account().create("CHECKPOINT_BOT"))
+        set_anvil_account_balance(web3, sender.address, balance)
+        logging.info("Successfully funded the sender=%s.", sender.address)
+    else:
+        private_key = os.getenv("CHECKPOINT_BOT_KEY")
+        sender = EthAgent(Account().from_key(private_key))
 
     # Get the Hyperdrive contract.
     # TODO replace this with the hyperdrive interface
-    addresses = fetch_hyperdrive_addresses_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
-    if parsed_args.pool not in addresses:
-        raise ValueError(f"Pool {parsed_args.pool} not recognized. Available options are {list(addresses.keys())}")
-    hyperdrive_contract_address = web3.to_checksum_address(addresses[parsed_args.pool])
+    if parsed_args.pool_addr == "":
+        addresses = fetch_hyperdrive_addresses_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
+        if parsed_args.pool not in addresses:
+            raise ValueError(f"Pool {parsed_args.pool} not recognized. Available options are {list(addresses.keys())}")
+        hyperdrive_contract_address = web3.to_checksum_address(addresses[parsed_args.pool])
+    else:
+        hyperdrive_contract_address = web3.to_checksum_address(parsed_args.pool_addr)
 
     hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(hyperdrive_contract_address)
 
@@ -228,6 +240,9 @@ class Args(NamedTuple):
 
     fuzz: bool
     pool: str
+    pool_addr: str
+    rpc_url: str
+    fund: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -243,7 +258,13 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     Args
         Formatted arguments
     """
-    return Args(fuzz=namespace.fuzz, pool=namespace.pool)
+    return Args(
+        fuzz=namespace.fuzz,
+        pool=namespace.pool,
+        pool_addr=namespace.pool_addr,
+        rpc_url=namespace.rpc_url,
+        fund=namespace.fund,
+    )
 
 
 def parse_arguments(argv: Sequence[str] | None = None) -> Args:
@@ -266,13 +287,35 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=False,
         help="If true, then add an assertion step to verify that the checkpoint was successful.",
     )
-    # TODO read this from the register or pass in pool address
+
     parser.add_argument(
         "--pool",
         type=str,
         default="erc4626_hyperdrive",
         help='The logical name of the pool to connect to. Options are "erc4626_hyperdrive" and "stethhyperdrive".',
     )
+
+    parser.add_argument(
+        "--pool-addr",
+        type=str,
+        default="",
+        help="The address of the hyperdrive pool to connect to. Uses `--pool` if not provided.",
+    )
+
+    parser.add_argument(
+        "--rpc-url",
+        type=str,
+        default="",
+        help="The RPC URL of the chain.",
+    )
+
+    parser.add_argument(
+        "--fund",
+        type=bool,
+        default=True,
+        help="If true, then fund the bot with some ETH. Otherwise, will look for env variable `CHECKPOINT_BOT_KEY`.",
+    )
+
     # Use system arguments if none were passed
     if argv is None:
         argv = sys.argv
