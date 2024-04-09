@@ -283,9 +283,8 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     parser = argparse.ArgumentParser(description="Runs a bot that creates checkpoints each checkpoint_duration.")
     parser.add_argument(
         "--fuzz",
-        type=bool,
-        default=False,
-        help="If true, then add an assertion step to verify that the checkpoint was successful.",
+        action="store_true",
+        help="If set, then add an assertion step to verify that the checkpoint was successful.",
     )
 
     parser.add_argument(
@@ -311,9 +310,8 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
     parser.add_argument(
         "--fund",
-        type=bool,
-        default=True,
-        help="If true, then fund the bot with some ETH. Otherwise, will look for env variable `CHECKPOINT_BOT_KEY`.",
+        action="store_true",
+        help="If set, then fund the bot with some ETH. Otherwise, will look for env variable `CHECKPOINT_BOT_KEY`.",
     )
 
     # Use system arguments if none were passed
