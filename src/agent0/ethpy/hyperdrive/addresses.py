@@ -51,7 +51,7 @@ def fetch_hyperdrive_addresses_from_uri(contracts_uri: str) -> dict[str, Checksu
     hyperdrive_addresses: dict[str, ChecksumAddress] = {}
     for key, value in addresses_json.items():
         # We don't add the base token or factory in the resulting addresses
-        if key not in ("baseToken", "factory"):
+        if key not in ("baseToken", "factory", "hyperdriveRegistry"):
             # We ensure checksum addresses here
             hyperdrive_addresses[camel_to_snake(key)] = Web3.to_checksum_address(value)
 
