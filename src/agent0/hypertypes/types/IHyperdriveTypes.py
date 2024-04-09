@@ -218,6 +218,7 @@ CreateCheckpoint = ABIEvent(
     anonymous=False,
     inputs=[
         ABIEventParams(indexed=True, name="checkpointTime", type="uint256"),
+        ABIEventParams(indexed=False, name="checkpointVaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="maturedShorts", type="uint256"),
         ABIEventParams(indexed=False, name="maturedLongs", type="uint256"),
@@ -441,12 +442,10 @@ InsufficientBalanceError = ErrorInfo(
 )
 
 InsufficientLiquidityError = ErrorInfo(
-    inputs=[
-        ErrorParams(name="reason", python_type="int", solidity_type="uint8"),
-    ],
+    inputs=[],
     name="InsufficientLiquidity",
-    selector="0x780daf16",
-    signature="InsufficientLiquidity(uint8)",
+    selector="0xbb55fd27",
+    signature="InsufficientLiquidity()",
 )
 
 InvalidAprError = ErrorInfo(

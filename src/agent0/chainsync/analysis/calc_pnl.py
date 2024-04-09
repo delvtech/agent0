@@ -45,18 +45,15 @@ def calc_single_closeout(
     amount = FixedPoint(f"{position['value']:f}")
     tokentype = position["base_token_type"]
     maturity = 0
-    normalized_time_remaining = FixedPoint(0)
     position_duration = hyperdrive_state.pool_config.position_duration
 
     if tokentype in ["LONG", "SHORT"]:
         maturity = int(position["maturity_time"])
-        # If mature, set time left to 0
-        normalized_time_remaining = max(maturity - hyperdrive_state.block_time, 0) / FixedPoint(position_duration)
 
     out_pnl = Decimal("nan")
     if tokentype == "LONG":
         try:
-            out_pnl = interface.calc_close_long(amount, normalized_time_remaining, hyperdrive_state)
+            out_pnl = interface.calc_close_long(amount, maturity, hyperdrive_state)
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.warning("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
@@ -86,7 +83,7 @@ def calc_single_closeout(
                 amount,
                 open_vault_share_price=open_share_price,
                 close_vault_share_price=close_share_price,
-                normalized_time_remaining=normalized_time_remaining,
+                maturity_time=maturity,
                 pool_state=hyperdrive_state,
             )
         # Rust Panic Exceptions are base exceptions, not Exceptions

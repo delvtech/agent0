@@ -162,6 +162,8 @@ class CreateCheckpoint:
     checkpoint_time: int
     """The seconds epoch time for this checkpoint."""
     vault_share_price: FixedPoint
+    """The current vault share price."""
+    checkpoint_vault_share_price: FixedPoint
     """The share price at the checkpoint."""
     matured_shorts: FixedPoint
     """The amount of shorts that matured within this checkpoint."""

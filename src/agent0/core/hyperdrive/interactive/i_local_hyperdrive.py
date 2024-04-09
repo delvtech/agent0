@@ -541,6 +541,7 @@ class ILocalHyperdrive(IHyperdrive):
         return CreateCheckpoint(
             checkpoint_time=tx_receipt.checkpoint_time,
             vault_share_price=tx_receipt.vault_share_price,
+            checkpoint_vault_share_price=tx_receipt.checkpoint_vault_share_price,
             matured_shorts=tx_receipt.matured_shorts,
             matured_longs=tx_receipt.matured_longs,
             lp_share_price=tx_receipt.lp_share_price,

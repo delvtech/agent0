@@ -671,7 +671,7 @@ class HyperdriveReadInterface:
         return _calc_open_long(pool_state, base_amount)
 
     def calc_close_long(
-        self, bond_amount: FixedPoint, normalized_time_remaining: FixedPoint, pool_state: PoolState | None = None
+        self, bond_amount: FixedPoint, maturity_time: int, pool_state: PoolState | None = None
     ) -> FixedPoint:
         """Calculates the amount of shares that will be returned after fees for closing a long.
 
@@ -679,9 +679,8 @@ class HyperdriveReadInterface:
         ---------
         bond_amount: FixedPoint
             The amount of bonds to sell.
-        normalized_time_remaining: FixedPoint
-            The time remaining before the long reaches maturity,
-            normalized such that 1 is at opening and 0 is at maturity.
+        maturity_time: int
+            The maturity time of the bond.
         pool_state: PoolState, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
@@ -693,7 +692,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_close_long(pool_state, bond_amount, normalized_time_remaining)
+        return _calc_close_long(pool_state, bond_amount, maturity_time)
 
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.
@@ -725,7 +724,7 @@ class HyperdriveReadInterface:
         bond_amount: FixedPoint,
         open_vault_share_price: FixedPoint,
         close_vault_share_price: FixedPoint,
-        normalized_time_remaining: FixedPoint,
+        maturity_time: int,
         pool_state: PoolState | None = None,
     ) -> FixedPoint:
         """Gets the amount of shares the trader will receive from closing a short.
@@ -740,9 +739,8 @@ class HyperdriveReadInterface:
             The share price when the short was closed.
             If the short isn't mature, this is the current share price.
             If the short is mature, this is the share price of the maturity checkpoint.
-        normalized_time_remaining: FixedPoint
-            The time remaining before the short reaches maturity,
-            normalized such that 1 is at opening and 0 is at maturity.
+        maturity_time: int
+            The maturity time of the short.
         pool_state: PoolState, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
@@ -755,7 +753,7 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_close_short(
-            pool_state, bond_amount, open_vault_share_price, close_vault_share_price, normalized_time_remaining
+            pool_state, bond_amount, open_vault_share_price, close_vault_share_price, maturity_time
         )
 
     def calc_bonds_out_given_shares_in_down(

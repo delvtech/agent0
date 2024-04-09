@@ -171,12 +171,15 @@ def main(argv: Sequence[str] | None = None) -> None:
             # will need to make this more robust so that we retry this
             # transaction if the transaction gets stuck.
             try:
+                # 0 is the max iterations for distribute excess idle, where it will default to
+                # the default max iterations
+                fn_args = (checkpoint_time, 0)
                 receipt = smart_contract_transact(
                     web3,
                     hyperdrive_contract,
                     sender,
                     "checkpoint",
-                    (checkpoint_time),
+                    *fn_args,
                 )
             except Exception as e:  # pylint: disable=broad-except
                 logging.warning("Checkpoint transaction failed with exception=%s, retrying", e)

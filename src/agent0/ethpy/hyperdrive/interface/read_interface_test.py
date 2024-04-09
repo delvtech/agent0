@@ -67,14 +67,18 @@ class TestHyperdriveReadInterface:
 
     def test_misc(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Miscellaneous tests only verify that the attributes exist and functions can be called."""
+        current_time = hyperdrive_read_interface.current_pool_state.block_time
         _ = hyperdrive_read_interface.current_pool_state
         _ = hyperdrive_read_interface.current_pool_state.variable_rate
         _ = hyperdrive_read_interface.current_pool_state.vault_shares
         _ = hyperdrive_read_interface.calc_open_long(FixedPoint(100))
-        _ = hyperdrive_read_interface.calc_close_long(FixedPoint(100), FixedPoint(1.0))
+        _ = hyperdrive_read_interface.calc_close_long(FixedPoint(100), maturity_time=current_time + 100)
         _ = hyperdrive_read_interface.calc_open_short(FixedPoint(100))
         _ = hyperdrive_read_interface.calc_close_short(
-            FixedPoint(100), FixedPoint(scaled_value=int(9e17)), FixedPoint(scaled_value=int(9.9e17)), FixedPoint(0.9)
+            FixedPoint(100),
+            FixedPoint(scaled_value=int(9e17)),
+            FixedPoint(scaled_value=int(9.9e17)),
+            maturity_time=current_time + 100,
         )
         _ = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
         _ = hyperdrive_read_interface.calc_max_long(FixedPoint(1000))

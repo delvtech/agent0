@@ -65,28 +65,6 @@ def decode_error_selector_for_contract(error_selector: str, contract: Contract) 
        The name of the error. If the error is not found, returns UnknownError.
     """
 
-    # If the input is an enum, the error code that is raised is appended with a 64 characters
-    # that specifies the underlying enum value.
-    # TODO we hardcode the enum lookup for now, expecting a fix within hypertypes for this
-    if len(error_selector) > 10:
-        enum_selector = error_selector[10:]
-        assert len(enum_selector) == 64
-        enum_selector_int = int(enum_selector)
-        assert enum_selector_int >= 0
-        assert enum_selector_int < 4
-        error_selector = error_selector[:10]
-        # Asserting error is InsufficientLiquidity
-        assert error_selector == "0x780daf16"
-        insufficient_liquidity_reason = [
-            "ArithmeticUnderflow",
-            "InvalidEffectiveShareReserves",
-            "NegativeInterest",
-            "SolvencyViolated",
-        ]
-        error_name = "InsufficientLiquidity: "
-        error_name += insufficient_liquidity_reason[enum_selector_int]
-        return error_name
-
     abi = contract.abi
     if not abi:
         raise ValueError("Contract does not have an abi, cannot decode the error selector.")

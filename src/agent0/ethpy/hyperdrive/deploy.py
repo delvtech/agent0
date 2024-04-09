@@ -237,6 +237,7 @@ def _deploy_hyperdrive_factory(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
+            factory=factory_contract.address,
             coreDeployer=core_deployer_contract.address,
             target0Deployer=target0_contract.address,
             target1Deployer=target1_contract.address,
