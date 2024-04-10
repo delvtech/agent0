@@ -1,4 +1,4 @@
-"""Web3 powered functions for interfacing with smart contracts"""
+"""Web3 powered functions for interfacing with smart contracts."""
 
 from __future__ import annotations
 
@@ -23,13 +23,18 @@ DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
 
 # pylint: disable=too-many-lines
+# smart_contract_transact has lots of parameters
+# pylint: disable=too-many-parameters
+# ruff: noqa: PLR0913
+# too many branches in smart_contract_preview_transaction
+# ruff: noqa: PLR0912
 
 
 # We define the function to check the exception to retry on
 # for preview calls.
 # This is the error we get when preview fails due to anvil
 def _retry_preview_check(exc: Exception) -> bool:
-    """The exception to retry on for preview calls"""
+    """Check the exception to retry on for preview calls."""
     return (
         isinstance(exc, ContractPanicError)
         and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
@@ -37,7 +42,7 @@ def _retry_preview_check(exc: Exception) -> bool:
 
 
 def _retry_txn_check(exc: Exception) -> bool:
-    """The exception to retry on for transaction calls"""
+    """Check the exception to retry on for transaction calls."""
     return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
 
 
@@ -49,7 +54,7 @@ def smart_contract_read(
     read_retry_count: int | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
-    """Return from a smart contract read call
+    """Return from a smart contract read call.
 
     Arguments
     ---------
@@ -142,7 +147,7 @@ def smart_contract_preview_transaction(
     txn_options_value: int | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
-    """Returns the values from a transaction without actually submitting the transaction.
+    """Return the values from a transaction without actually submitting the transaction.
 
     Arguments
     ---------
@@ -267,7 +272,7 @@ def wait_for_transaction_receipt(
     start_latency: float = 0.01,
     backoff_multiplier: float = 2,
 ) -> TxReceipt:
-    """Retrieves the transaction receipt, retrying with exponential backoff.
+    """Retrieve the transaction receipt, retrying with exponential backoff.
 
     This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exponential backoff.
 
@@ -319,7 +324,7 @@ async def async_wait_for_transaction_receipt(
     start_latency: float = 0.01,
     backoff_multiplier: float = 2,
 ) -> TxReceipt:
-    """Retrieves the transaction receipt asynchronously, retrying with exponential backoff.
+    """Retrieve the transaction receipt asynchronously, retrying with exponential backoff.
 
     This function is copied from `web3.eth.wait_for_transaction_receipt`, but using exponential backoff and async await.
 
@@ -372,7 +377,7 @@ def build_transaction(
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
 ) -> TxParams:
-    """Builds a transaction for the given function.
+    """Build a transaction for the given function.
 
     Arguments
     ---------
@@ -434,7 +439,7 @@ def build_transaction(
 async def _async_send_transaction_and_wait_for_receipt(
     unsent_txn: TxParams, signer: LocalAccount, web3: Web3
 ) -> TxReceipt:
-    """Sends a transaction and waits for the receipt asynchronously.
+    """Send a transaction and waits for the receipt asynchronously.
 
     Arguments
     ---------
@@ -480,9 +485,11 @@ async def async_smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    timeout: int = 30,
     **fn_kwargs,
 ) -> TxReceipt:
-    """Execute a named function on a contract that requires a signature & gas
+    """Execute a named function on a contract that requires a signature & gas.
+
     Copy of `smart_contract_transact`, but using async wait for `wait_for_transaction_receipt`
 
     Arguments
@@ -505,6 +512,8 @@ async def async_smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
+    timeout: int
+        The number of seconds to wait for the transaction to be mined.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -536,7 +545,13 @@ async def async_smart_contract_transact(
             txn_options_value=txn_options_value,
         )
         return await retry_call(
-            write_retry_count, _retry_txn_check, _async_send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
+            write_retry_count,
+            _retry_txn_check,
+            _async_send_transaction_and_wait_for_receipt,
+            unsent_txn,
+            signer,
+            web3,
+            timeout=timeout,
         )
 
     # Wraps the exception with a contract call exception, adding additional information
@@ -612,8 +627,10 @@ async def async_smart_contract_transact(
         ) from err
 
 
-def send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAccount, web3: Web3) -> TxReceipt:
-    """Sends a transaction and waits for the receipt.
+def send_transaction_and_wait_for_receipt(
+    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: int = 30
+) -> TxReceipt:
+    """Send a transaction and waits for the receipt.
 
     Arguments
     ---------
@@ -621,6 +638,8 @@ def send_transaction_and_wait_for_receipt(unsent_txn: TxParams, signer: LocalAcc
         The built transaction ready to be sent
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
+    timeout: int
+        The number of seconds to wait for the transaction to be mined.
     web3: Web3
         web3 provider object
 
@@ -657,9 +676,10 @@ def smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    timeout: int = 30,
     **fn_kwargs,
 ) -> TxReceipt:
-    """Execute a named function on a contract that requires a signature & gas
+    """Execute a named function on a contract that requires a signature & gas.
 
     Arguments
     ---------
@@ -681,6 +701,8 @@ def smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
+    timeout: int
+        The number of seconds to wait for the transaction to be mined.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -712,7 +734,13 @@ def smart_contract_transact(
             txn_options_value=txn_options_value,
         )
         return retry_call(
-            write_retry_count, _retry_txn_check, send_transaction_and_wait_for_receipt, unsent_txn, signer, web3
+            write_retry_count,
+            _retry_txn_check,
+            send_transaction_and_wait_for_receipt,
+            unsent_txn,
+            signer,
+            web3,
+            timeout=timeout,
         )
 
     # Wraps the exception with a contract call exception, adding additional information
@@ -956,7 +984,7 @@ def fetch_contract_transactions_for_block(
 
 
 def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
-    """Retrieve and narrow the types for abi outputs"""
+    """Retrieve and narrow the types for abi outputs."""
     return_value_name: str | None = abi_outputs.get("name")
     if return_value_name is None:
         return_value_name = "none"
@@ -970,7 +998,7 @@ def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunction
 def _contract_function_abi_outputs(contract_abi: ABI, function_name: str) -> list[tuple[str, str]] | None:
     # TODO clean this function up
     # pylint: disable=too-many-return-statements
-    """Parse the function abi to get the name and type for each output"""
+    """Parse the function abi to get the name and type for each output."""
     function_abi = None
     # find the first function matching the function_name
     for abi in contract_abi:  # loop over each entry in the abi list
