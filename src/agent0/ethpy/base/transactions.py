@@ -297,7 +297,7 @@ def wait_for_transaction_receipt(
         The transaction receipt
     """
     if timeout is None:
-        timeout = 30.0
+        timeout = 120.0
     try:
         with Timeout(timeout) as _timeout:
             poll_latency = start_latency
@@ -351,7 +351,7 @@ async def async_wait_for_transaction_receipt(
         The transaction receipt
     """
     if timeout is None:
-        timeout = 30.0
+        timeout = 120.0
     try:
         with Timeout(timeout) as _timeout:
             poll_latency = start_latency
