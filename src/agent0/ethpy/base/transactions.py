@@ -494,7 +494,7 @@ async def async_smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
-    timeout: int = 30,
+    timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas.
@@ -521,8 +521,9 @@ async def async_smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
-    timeout: int
+    timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
+        Default is defined in `_async_send_transaction_and_wait_for_receipt`.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -686,7 +687,7 @@ def smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
-    timeout: int = 30,
+    timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
     """Execute a named function on a contract that requires a signature & gas.
@@ -711,8 +712,9 @@ def smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
-    timeout: int
+    timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
+        Default is defined in `send_transaction_and_wait_for_receipt`.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
