@@ -1068,16 +1068,6 @@ class ILocalHyperdrive(IHyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _sync_wallet(self, agent: HyperdriveAgent, from_db: bool = True) -> None:
-        if from_db:
-            # TODO get wallet position from db
-            pass
-        else:
-            agent.wallet = build_wallet_positions_from_chain(
-                agent.checksum_address, self.interface.hyperdrive_contract, self.interface.base_token_contract
-            )
-            # Update db to sync db
-
     def _add_funds(
         self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
     ) -> None:
