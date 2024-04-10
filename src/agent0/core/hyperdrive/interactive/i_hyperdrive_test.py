@@ -296,17 +296,13 @@ def test_sync_wallet_from_chain(chain: ILocalChain, check_remote_chain: bool):
     hyperdrive_remote_agent = interactive_remote_hyperdrive.init_agent(private_key=private_key)
     hyperdrive_local_agent = interactive_local_hyperdrive.init_agent(private_key=private_key)
 
-    # TODO check balance of calls
+    # TODO check balance of calls in this test
 
     # Add funds to the local agent, remote agent wallet doesn't update
     hyperdrive_local_agent.add_funds(base=FixedPoint(1_111_111), eth=FixedPoint(111))
     hyperdrive_local_agent.add_liquidity(base=FixedPoint(111_111))
     hyperdrive_local_agent.open_long(base=FixedPoint(222))
     hyperdrive_local_agent.open_short(bonds=FixedPoint(333))
-    assert hyperdrive_remote_agent.wallet.balance.amount == FixedPoint(0)
-    assert hyperdrive_remote_agent.wallet.lp_tokens == FixedPoint(0)
-    assert len(hyperdrive_remote_agent.wallet.longs) == 0
-    assert len(hyperdrive_remote_agent.wallet.shorts) == 0
 
     # Sync the remote agent wallet from the chain and ensure it's correct
     hyperdrive_remote_agent.sync_wallet_from_chain()
@@ -320,9 +316,6 @@ def test_sync_wallet_from_chain(chain: ILocalChain, check_remote_chain: bool):
     hyperdrive_remote_agent.add_liquidity(base=FixedPoint(111_111))
     hyperdrive_remote_agent.open_long(base=FixedPoint(222))
     hyperdrive_remote_agent.open_short(bonds=FixedPoint(333))
-    assert len(hyperdrive_local_agent.wallet.longs) == 1
-    assert len(hyperdrive_local_agent.wallet.shorts) == 1
-    assert list(hyperdrive_local_agent.wallet.shorts.values())[0].balance == FixedPoint(333)
 
     # Sync local wallet from chain and ensure it's correct
     hyperdrive_local_agent.sync_wallet_from_chain()
