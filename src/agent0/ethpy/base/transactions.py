@@ -454,7 +454,8 @@ async def _async_send_transaction_and_wait_for_receipt(
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction.
     timeout: float | None, optional
-        The number of seconds to wait for the transaction to be mined. Default is defined in `async_wait_for_transaction_receipt`.
+        The number of seconds to wait for the transaction to be mined.
+        Default is defined in `async_wait_for_transaction_receipt`.
     web3: Web3
         web3 provider object.
 
@@ -647,7 +648,8 @@ def send_transaction_and_wait_for_receipt(
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction.
     timeout: float | None, optional
-        The number of seconds to wait for the transaction to be mined. Default is defined in `wait_for_transaction_receipt`.
+        The number of seconds to wait for the transaction to be mined.
+        Default is defined in `wait_for_transaction_receipt`.
     web3: Web3
         web3 provider object.
 
