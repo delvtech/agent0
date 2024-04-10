@@ -23,9 +23,13 @@ DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
 
 # pylint: disable=too-many-lines
-# ruff: noqa: PLR0913
+# we have lots of parameters in smart_contract_transact and async_smart_contract_transact
 # too many branches in smart_contract_preview_transaction
 # ruff: noqa: PLR0912
+# too many arguments in function async_smart_contract_transact
+# ruff: noqa: PLR0913
+# too many return statements in _contract_function_abi_outputs
+# ruff: noqa: PLR0911
 
 
 # We define the function to check the exception to retry on
@@ -266,7 +270,7 @@ def smart_contract_preview_transaction(
 def wait_for_transaction_receipt(
     web3: Web3,
     transaction_hash: HexBytes,
-    timeout: float = 30,
+    timeout: float | None = None,
     start_latency: float = 0.01,
     backoff_multiplier: float = 2,
 ) -> TxReceipt:
@@ -277,21 +281,23 @@ def wait_for_transaction_receipt(
     Arguments
     ---------
     web3: Web3
-        web3 provider object
+        web3 provider object.
     transaction_hash: HexBytes
-        The hash of the transaction
-    timeout: float
-        The amount of time in seconds to time out the connection
+        The hash of the transaction.
+    timeout: float | None, optional
+        The amount of time in seconds to time out the connection. Default is 30.
     start_latency: float
-        The starting amount of time in seconds to wait between polls
+        The starting amount of time in seconds to wait between polls.
     backoff_multiplier: float
-        The backoff factor for the exponential backoff
+        The backoff factor for the exponential backoff.
 
     Returns
     -------
     TxReceipt
         The transaction receipt
     """
+    if timeout is None:
+        timeout = 30.0
     try:
         with Timeout(timeout) as _timeout:
             poll_latency = start_latency
@@ -318,7 +324,7 @@ def wait_for_transaction_receipt(
 async def async_wait_for_transaction_receipt(
     web3: Web3,
     transaction_hash: HexBytes,
-    timeout: float = 30,
+    timeout: float | None = None,
     start_latency: float = 0.01,
     backoff_multiplier: float = 2,
 ) -> TxReceipt:
@@ -329,21 +335,23 @@ async def async_wait_for_transaction_receipt(
     Arguments
     ---------
     web3: Web3
-        web3 provider object
+        web3 provider object.
     transaction_hash: HexBytes
-        The hash of the transaction
-    timeout: float
-        The amount of time in seconds to time out the connection
+        The hash of the transaction.
+    timeout: float | None, optional
+        The amount of time in seconds to time out the connection. Default is 30.
     start_latency: float
-        The starting amount of time in seconds to wait between polls
+        The starting amount of time in seconds to wait between polls.
     backoff_multiplier: float
-        The backoff factor for the exponential backoff
+        The backoff factor for the exponential backoff.
 
     Returns
     -------
     TxReceipt
         The transaction receipt
     """
+    if timeout is None:
+        timeout = 30.0
     try:
         with Timeout(timeout) as _timeout:
             poll_latency = start_latency
@@ -435,20 +443,20 @@ def build_transaction(
 
 
 async def _async_send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: int = 30
+    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt asynchronously.
 
     Arguments
     ---------
     unsent_txn: TxParams
-        The built transaction ready to be sent
+        The built transaction ready to be sent.
     signer: LocalAccount
-        The LocalAccount that will be used to pay for the gas & sign the transaction
-    timeout: int
-        The number of seconds to wait for the transaction to be mined.
+        The LocalAccount that will be used to pay for the gas & sign the transaction.
+    timeout: float | None, optional
+        The number of seconds to wait for the transaction to be mined. Default is defined in `async_wait_for_transaction_receipt`.
     web3: Web3
-        web3 provider object
+        web3 provider object.
 
     Returns
     -------
@@ -628,20 +636,20 @@ async def async_smart_contract_transact(
 
 
 def send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: int = 30
+    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt.
 
     Arguments
     ---------
     unsent_txn: TxParams
-        The built transaction ready to be sent
+        The built transaction ready to be sent.
     signer: LocalAccount
-        The LocalAccount that will be used to pay for the gas & sign the transaction
-    timeout: int
-        The number of seconds to wait for the transaction to be mined.
+        The LocalAccount that will be used to pay for the gas & sign the transaction.
+    timeout: float | None, optional
+        The number of seconds to wait for the transaction to be mined. Default is defined in `wait_for_transaction_receipt`.
     web3: Web3
-        web3 provider object
+        web3 provider object.
 
     Returns
     -------
