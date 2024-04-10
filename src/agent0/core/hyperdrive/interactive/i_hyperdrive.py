@@ -215,7 +215,6 @@ class IHyperdrive:
             self.interface.web3,
             self.interface.base_token_contract,
             str(self.interface.hyperdrive_contract.address),
-            retry_count=5,
         )
 
     def _sync_wallet(self, agent: HyperdriveAgent) -> None:
