@@ -205,10 +205,10 @@ class IHyperdrive:
         # with the same underlying account
         self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
 
-        agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
+        self._sync_wallet(agent)
         return agent
 
-    def _set_max_approval(self, agent: HyperdriveAgent):
+    def _set_max_approval(self, agent: HyperdriveAgent) -> None:
         # Establish max approval for the hyperdrive contract
         set_max_approval(
             agent,
@@ -217,6 +217,10 @@ class IHyperdrive:
             str(self.interface.hyperdrive_contract.address),
             retry_count=5,
         )
+
+    def _sync_wallet(self, agent: HyperdriveAgent) -> None:
+        # TODO add sync from db
+        agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
 
     def _add_funds(
         self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
