@@ -1068,6 +1068,13 @@ class ILocalHyperdrive(IHyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
+    def _sync_wallet(self, agent: HyperdriveAgent) -> None:
+        # TODO add sync from db
+        super()._sync_wallet(agent)
+        # Ensure db is up to date
+        if not self.chain.experimental_data_threading:
+            self._run_blocking_data_pipeline()
+
     def _add_funds(
         self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
     ) -> None:
