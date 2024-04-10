@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
 # Number of arguments is influenced by the underlying solidity contract
 # pylint: disable=too-many-arguments
+# ruff: noqa: PLR0913
 
 
 def _get_total_supply_withdrawal_shares(
@@ -160,6 +161,7 @@ async def _async_open_long(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -229,6 +231,7 @@ async def _async_open_long(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
     except Exception as exc:
@@ -245,6 +248,7 @@ async def _async_close_long(
     trade_amount: FixedPoint,
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -307,6 +311,7 @@ async def _async_close_long(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeLong")
     except Exception as exc:
@@ -322,6 +327,7 @@ async def _async_open_short(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -389,6 +395,7 @@ async def _async_open_short(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
     except Exception as exc:
@@ -404,6 +411,7 @@ async def _async_close_short(
     trade_amount: FixedPoint,
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -466,6 +474,7 @@ async def _async_close_short(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeShort")
     except Exception as exc:
@@ -482,6 +491,7 @@ async def _async_add_liquidity(
     min_apr: FixedPoint,
     max_apr: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -534,6 +544,7 @@ async def _async_add_liquidity(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
     except Exception as exc:
@@ -547,6 +558,7 @@ async def _async_remove_liquidity(
     interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -592,6 +604,7 @@ async def _async_remove_liquidity(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
     except Exception as exc:
@@ -605,6 +618,7 @@ async def _async_redeem_withdraw_shares(
     interface: HyperdriveReadWriteInterface,
     agent: LocalAccount,
     trade_amount: FixedPoint,
+    gas_limit: int | None = None,
     nonce: Nonce | None = None,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
@@ -656,6 +670,7 @@ async def _async_redeem_withdraw_shares(
             nonce=nonce,
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
+            txn_options_gas=gas_limit,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")
     except Exception as exc:

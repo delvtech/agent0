@@ -8,6 +8,7 @@ from typing import Any, Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
+from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
@@ -383,6 +384,7 @@ def build_transaction(
     nonce: Nonce | None = None,
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    txn_options_gas: int | None = None,
 ) -> TxParams:
     """Build a transaction for the given function.
 
@@ -400,6 +402,8 @@ def build_transaction(
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
         The value field to set for transaction options.
+    txn_options_gas: int | None = None
+        The gas field to set for transaction options. Defaults to estimateGas output.
 
     Returns
     -------
@@ -428,7 +432,7 @@ def build_transaction(
     )
     if txn_options_value is not None:
         transaction_kwargs["value"] = Wei(txn_options_value)
-    
+
     # Assign gas parameters
     max_priority_fee = web3.eth.max_priority_fee
     pending_block = web3.eth.get_block("pending")
@@ -436,7 +440,12 @@ def build_transaction(
     if base_fee is None:
         raise AssertionError("The latest block does not have a baseFeePerGas")
     max_fee_per_gas = max_priority_fee + base_fee
-    transaction_kwargs["gas"] = web3.eth.estimate_gas(transaction_kwargs) * GAS_ESTIMATE_MULTIPLIER
+
+    if txn_options_gas is None:
+        transaction_kwargs["gas"] = int(web3.eth.estimate_gas(transaction_kwargs) * GAS_ESTIMATE_MULTIPLIER)
+    else:
+        transaction_kwargs["gas"] = txn_options_gas
+
     transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
     transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
 
@@ -499,6 +508,7 @@ async def async_smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    txn_options_gas: int | None = None,
     timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
@@ -526,6 +536,8 @@ async def async_smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
+    txn_options_gas : int | None
+        The gas field to set for transaction options.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `_async_send_transaction_and_wait_for_receipt`.
@@ -558,6 +570,7 @@ async def async_smart_contract_transact(
             nonce=nonce,
             read_retry_count=read_retry_count,
             txn_options_value=txn_options_value,
+            txn_options_gas=txn_options_gas,
         )
         return await retry_call(
             write_retry_count,
@@ -692,6 +705,7 @@ def smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    txn_options_gas: int | None = None,
     timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
@@ -717,6 +731,8 @@ def smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
+    txn_options_gas : int | None
+        The gas field to set for transaction options.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `send_transaction_and_wait_for_receipt`.
@@ -749,6 +765,7 @@ def smart_contract_transact(
             nonce=nonce,
             read_retry_count=read_retry_count,
             txn_options_value=txn_options_value,
+            txn_options_gas=txn_options_gas,
         )
         return retry_call(
             write_retry_count,
