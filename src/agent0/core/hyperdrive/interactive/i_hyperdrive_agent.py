@@ -249,5 +249,7 @@ class IHyperdriveAgent:
         """Explicitly syncs the wallet to the current state of the chain.
 
         Uses on chain events to generate current wallet positions.
+
+        .. note:: This function can be slow, use it sparingly.
         """
         self._pool._sync_wallet(self.agent)
