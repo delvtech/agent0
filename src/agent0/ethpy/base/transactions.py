@@ -23,8 +23,6 @@ DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
 
 # pylint: disable=too-many-lines
-# smart_contract_transact has lots of parameters
-# pylint: disable=too-many-parameters
 # ruff: noqa: PLR0913
 # too many branches in smart_contract_preview_transaction
 # ruff: noqa: PLR0912
@@ -437,7 +435,7 @@ def build_transaction(
 
 
 async def _async_send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3
+    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: int = 30
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt asynchronously.
 
@@ -447,6 +445,8 @@ async def _async_send_transaction_and_wait_for_receipt(
         The built transaction ready to be sent
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction
+    timeout: int
+        The number of seconds to wait for the transaction to be mined.
     web3: Web3
         web3 provider object
 
@@ -457,7 +457,7 @@ async def _async_send_transaction_and_wait_for_receipt(
     """
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash)
+    tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
     # has errors in the tx_receipt
@@ -650,7 +650,7 @@ def send_transaction_and_wait_for_receipt(
     """
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    tx_receipt = wait_for_transaction_receipt(web3, tx_hash)
+    tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
     # has errors in the tx_receipt
