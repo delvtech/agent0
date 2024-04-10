@@ -79,7 +79,7 @@ class Random(HyperdriveBasePolicy):
         """
 
     def __init__(self, policy_config: Config) -> None:
-        """Initializes the bot
+        """Initialize the bot.
 
         Arguments
         ---------

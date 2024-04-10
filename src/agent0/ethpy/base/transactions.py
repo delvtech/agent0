@@ -21,6 +21,7 @@ from .retry_utils import retry_call
 
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
+GAS_ESTIMATE_MULTIPLIER = 1.1
 
 # pylint: disable=too-many-lines
 # we have lots of parameters in smart_contract_transact and async_smart_contract_transact
@@ -419,21 +420,25 @@ def build_transaction(
 
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = TxParams(
+        {
+            "from": signer_checksum_address,
+            "nonce": nonce,
+        }
+    )
     if txn_options_value is not None:
-        transaction_kwargs = TxParams(
-            {
-                "from": signer_checksum_address,
-                "nonce": nonce,
-                "value": Wei(txn_options_value),
-            }
-        )
-    else:
-        transaction_kwargs = TxParams(
-            {
-                "from": signer_checksum_address,
-                "nonce": nonce,
-            }
-        )
+        transaction_kwargs["value"] = Wei(txn_options_value)
+    
+    # Assign gas parameters
+    max_priority_fee = web3.eth.max_priority_fee
+    pending_block = web3.eth.get_block("pending")
+    base_fee = pending_block.get("baseFeePerGas", None)
+    if base_fee is None:
+        raise AssertionError("The latest block does not have a baseFeePerGas")
+    max_fee_per_gas = max_priority_fee + base_fee
+    transaction_kwargs["gas"] = web3.eth.estimate_gas(transaction_kwargs) * GAS_ESTIMATE_MULTIPLIER
+    transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
+    transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
 
     # Building transactions can also fail, so we add retry here
     unsent_txn = retry_call(
