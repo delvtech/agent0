@@ -8,7 +8,6 @@ from typing import Any, Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
-from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
