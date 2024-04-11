@@ -38,13 +38,15 @@ class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType]):
     maturity_time: int | None = None
     # slippage tolerance percent where 0.01 would be a 1% tolerance
     slippage_tolerance: FixedPoint | None = None
+    # maximum amount of gas to be used for the transaction
+    gas_limit: int | None = None
     # min_apr and max_apr used only for add_liquidity trades to control slippage
     min_apr: FixedPoint = FixedPoint(scaled_value=1)
     max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1)
 
 
 def open_long_trade(
-    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
+    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None, gas_limit: int | None = None
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for opening a long.
 
@@ -56,6 +58,9 @@ def open_long_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
 
     Returns
     -------
@@ -68,12 +73,16 @@ def open_long_trade(
             action_type=HyperdriveActionType.OPEN_LONG,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
         ),
     )
 
 
 def close_long_trade(
-    trade_amount: FixedPoint, maturity_time: int, slippage_tolerance: FixedPoint | None = None
+    trade_amount: FixedPoint,
+    maturity_time: int,
+    slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for closing a long.
 
@@ -87,6 +96,9 @@ def close_long_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
 
     Returns
     -------
@@ -100,12 +112,13 @@ def close_long_trade(
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
         ),
     )
 
 
 def open_short_trade(
-    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
+    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None, gas_limit: int | None = None
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for opening a short.
 
@@ -117,6 +130,9 @@ def open_short_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
 
     Returns
     -------
@@ -129,12 +145,16 @@ def open_short_trade(
             action_type=HyperdriveActionType.OPEN_SHORT,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
         ),
     )
 
 
 def close_short_trade(
-    trade_amount: FixedPoint, maturity_time: int, slippage_tolerance: FixedPoint | None = None
+    trade_amount: FixedPoint,
+    maturity_time: int,
+    slippage_tolerance: FixedPoint | None = None,
+    gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for closing a short.
 
@@ -148,6 +168,9 @@ def close_short_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
 
     Returns
     -------
@@ -161,12 +184,14 @@ def close_short_trade(
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
         ),
     )
 
 
 def add_liquidity_trade(
     trade_amount: FixedPoint,
+    gas_limit: int | None = None,
     min_apr: FixedPoint | None = None,
     max_apr: FixedPoint | None = None,
 ) -> Trade[HyperdriveMarketAction]:
@@ -176,6 +201,9 @@ def add_liquidity_trade(
     ---------
     trade_amount: FixedPoint
         The amount of liquidity you wish to add to the pool.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
     min_apr: FixedPoint, optional
         Minimum allowable APR after liquidity is added.
         If this is not met, the trade will not execute.
@@ -200,6 +228,7 @@ def add_liquidity_trade(
         market_action=HyperdriveMarketAction(
             action_type=HyperdriveActionType.ADD_LIQUIDITY,
             trade_amount=trade_amount,
+            gas_limit=gas_limit,
             min_apr=min_apr,
             max_apr=max_apr,
         ),
@@ -207,7 +236,7 @@ def add_liquidity_trade(
 
 
 def remove_liquidity_trade(
-    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None
+    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None, gas_limit: int | None = None
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for removing liquidity.
 
@@ -219,6 +248,9 @@ def remove_liquidity_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
 
     Returns
     -------
@@ -234,17 +266,23 @@ def remove_liquidity_trade(
             action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
         ),
     )
 
 
-def redeem_withdraw_shares_trade(trade_amount: FixedPoint) -> Trade[HyperdriveMarketAction]:
+def redeem_withdraw_shares_trade(
+    trade_amount: FixedPoint, gas_limit: int | None = None
+) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for redeeming withdraw shares.
 
     Arguments
     ---------
     trade_amount: FixedPoint
         The amount of withdraw shares you wish to redeem from the pool.
+    gas_limit: int | None, optional
+        The maximum amount of gas used by the transaction.
+        Defaults to `eth_estimateGas` RPC output.
 
     Returns
     -------
@@ -257,5 +295,6 @@ def redeem_withdraw_shares_trade(trade_amount: FixedPoint) -> Trade[HyperdriveMa
         market_action=HyperdriveMarketAction(
             action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
             trade_amount=trade_amount,
+            gas_limit=gas_limit,
         ),
     )

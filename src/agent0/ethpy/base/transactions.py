@@ -382,6 +382,7 @@ def build_transaction(
     nonce: Nonce | None = None,
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    txn_options_gas: int | None = None,
 ) -> TxParams:
     """Build a transaction for the given function.
 
@@ -399,6 +400,8 @@ def build_transaction(
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
         The value field to set for transaction options.
+    txn_options_gas: int | None = None
+        The gas field to set for transaction options. Defaults to estimateGas output.
 
     Returns
     -------
@@ -419,21 +422,27 @@ def build_transaction(
 
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = TxParams(
+        {
+            "from": signer_checksum_address,
+            "nonce": nonce,
+        }
+    )
     if txn_options_value is not None:
-        transaction_kwargs = TxParams(
-            {
-                "from": signer_checksum_address,
-                "nonce": nonce,
-                "value": Wei(txn_options_value),
-            }
-        )
-    else:
-        transaction_kwargs = TxParams(
-            {
-                "from": signer_checksum_address,
-                "nonce": nonce,
-            }
-        )
+        transaction_kwargs["value"] = Wei(txn_options_value)
+
+    # Assign gas parameters
+    # other than the optional gas parameter, this is the default behavior of web3py, exposed here for clarity
+    max_priority_fee = web3.eth.max_priority_fee
+    pending_block = web3.eth.get_block("pending")
+    base_fee = pending_block.get("baseFeePerGas", None)
+    if base_fee is None:
+        raise AssertionError("The latest block does not have a baseFeePerGas")
+    max_fee_per_gas = max_priority_fee + base_fee
+    if txn_options_gas is not None:
+        transaction_kwargs["gas"] = txn_options_gas
+    transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
+    transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
 
     # Building transactions can also fail, so we add retry here
     unsent_txn = retry_call(
@@ -494,6 +503,7 @@ async def async_smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    txn_options_gas: int | None = None,
     timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
@@ -521,6 +531,8 @@ async def async_smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
+    txn_options_gas : int | None
+        The gas field to set for transaction options.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `_async_send_transaction_and_wait_for_receipt`.
@@ -553,6 +565,7 @@ async def async_smart_contract_transact(
             nonce=nonce,
             read_retry_count=read_retry_count,
             txn_options_value=txn_options_value,
+            txn_options_gas=txn_options_gas,
         )
         return await retry_call(
             write_retry_count,
@@ -687,6 +700,7 @@ def smart_contract_transact(
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    txn_options_gas: int | None = None,
     timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
@@ -712,6 +726,8 @@ def smart_contract_transact(
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field to set for transaction options.
+    txn_options_gas : int | None
+        The gas field to set for transaction options.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `send_transaction_and_wait_for_receipt`.
@@ -744,6 +760,7 @@ def smart_contract_transact(
             nonce=nonce,
             read_retry_count=read_retry_count,
             txn_options_value=txn_options_value,
+            txn_options_gas=txn_options_gas,
         )
         return retry_call(
             write_retry_count,

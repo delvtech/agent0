@@ -19,6 +19,7 @@ from .read_interface import HyperdriveReadInterface
 
 # We have no control over the number of arguments since it is specified by the smart contracts
 # pylint: disable=too-many-arguments
+# ruff: noqa: PLR0913
 # We only worry about protected access for anyone outside of this folder.
 # pylint: disable=protected-access
 
@@ -45,8 +46,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
     ) -> None:
-        """The HyperdriveReadInterface API. This is the primary endpoint for
-        users to execute transactions on Hyperdrive smart contracts.
+        """Initialize the primary endpoint for users to execute transactions on Hyperdrive smart contracts.
 
         Arguments
         ---------
@@ -120,6 +120,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         agent: LocalAccount,
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
+        gas_limit: int | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a long position.
@@ -134,6 +135,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
@@ -143,7 +147,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_open_long(
-            self, agent, trade_amount, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+            self, agent, trade_amount, slippage_tolerance, gas_limit, nonce, self.eth_config.preview_before_trade
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -154,6 +158,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         trade_amount: FixedPoint,
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
+        gas_limit: int | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a long position.
@@ -170,6 +175,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
@@ -179,7 +187,14 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_close_long(
-            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+            self,
+            agent,
+            trade_amount,
+            maturity_time,
+            slippage_tolerance,
+            gas_limit,
+            nonce,
+            self.eth_config.preview_before_trade,
         )
 
     async def async_open_short(
@@ -187,6 +202,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         agent: LocalAccount,
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
+        gas_limit: int | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a short position.
@@ -201,6 +217,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
         nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
@@ -210,7 +229,13 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_open_short(
-            self, agent, trade_amount, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+            self,
+            agent,
+            trade_amount,
+            slippage_tolerance,
+            gas_limit,
+            nonce,
+            self.eth_config.preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -221,6 +246,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         trade_amount: FixedPoint,
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
+        gas_limit: int | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a short position.
@@ -237,7 +263,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
-        nonce: Nonce, optional
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
+        nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -246,7 +275,14 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_close_short(
-            self, agent, trade_amount, maturity_time, slippage_tolerance, nonce, self.eth_config.preview_before_trade
+            self,
+            agent,
+            trade_amount,
+            maturity_time,
+            slippage_tolerance,
+            gas_limit,
+            nonce,
+            self.eth_config.preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -258,6 +294,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         min_apr: FixedPoint,
         max_apr: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
+        gas_limit: int | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to add liquidity to the Hyperdrive pool.
@@ -276,7 +313,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Amount of slippage allowed from the trade.
             If given, then the trade will not execute unless the slippage is below this value.
             If not given, then execute the trade regardless of the slippage.
-        nonce: Nonce, optional
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
+        nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -291,12 +331,17 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             min_apr,
             max_apr,
             slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
             nonce=nonce,
             preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     async def async_remove_liquidity(
-        self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+        gas_limit: int | None = None,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to remove liquidity from the Hyperdrive pool.
 
@@ -306,7 +351,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The account for the agent that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
-        nonce: Nonce, optional
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
+        nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
         Returns
@@ -314,12 +362,19 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_remove_liquidity(self, agent, trade_amount, nonce, self.eth_config.preview_before_trade)
+        return await _async_remove_liquidity(
+            self, agent, trade_amount, gas_limit, nonce, self.eth_config.preview_before_trade
+        )
 
     async def async_redeem_withdraw_shares(
-        self, agent: LocalAccount, trade_amount: FixedPoint, nonce: Nonce | None = None
+        self,
+        agent: LocalAccount,
+        trade_amount: FixedPoint,
+        gas_limit: int | None = None,
+        nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
+
         This should be done after closing liquidity.
 
         .. note::
@@ -334,6 +389,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The account for the agent that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
+            Defaults to `eth_estimateGas` RPC output.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -342,4 +400,4 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_redeem_withdraw_shares(self, agent, trade_amount, nonce)
+        return await _async_redeem_withdraw_shares(self, agent, trade_amount, gas_limit, nonce)

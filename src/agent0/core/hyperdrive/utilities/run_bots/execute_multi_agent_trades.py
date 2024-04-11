@@ -98,8 +98,9 @@ async def _async_execute_single_agent_trade(
     randomize_liquidation: bool,
     interactive_mode: bool,
 ) -> list[TradeResult]:
-    """Executes a single agent's trade. This function is async as
-    `match_contract_call_to_trade` waits for a transaction receipt.
+    """Execute a single agent's trade.
+
+    This function is async as `match_contract_call_to_trade` waits for a transaction receipt.
 
     .. note::
     This function will soon be deprecated in favor of the IHyperdrive workflow
@@ -237,7 +238,11 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.OPEN_LONG:
             trade_result = await interface.async_open_long(
-                agent, trade.trade_amount, trade.slippage_tolerance, nonce=nonce
+                agent=agent,
+                trade_amount=trade.trade_amount,
+                slippage_tolerance=trade.slippage_tolerance,
+                gas_limit=trade.gas_limit,
+                nonce=nonce,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -255,7 +260,12 @@ async def _async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await interface.async_close_long(
-                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance, nonce=nonce
+                agent=agent,
+                trade_amount=trade.trade_amount,
+                maturity_time=trade.maturity_time,
+                slippage_tolerance=trade.slippage_tolerance,
+                gas_limit=trade.gas_limit,
+                nonce=nonce,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -271,7 +281,7 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.OPEN_SHORT:
             trade_result = await interface.async_open_short(
-                agent, trade.trade_amount, trade.slippage_tolerance, nonce=nonce
+                agent, trade.trade_amount, trade.slippage_tolerance, nonce=nonce, gas_limit=trade.gas_limit
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -289,7 +299,12 @@ async def _async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await interface.async_close_short(
-                agent, trade.trade_amount, trade.maturity_time, trade.slippage_tolerance, nonce=nonce
+                agent=agent,
+                trade_amount=trade.trade_amount,
+                maturity_time=trade.maturity_time,
+                slippage_tolerance=trade.slippage_tolerance,
+                gas_limit=trade.gas_limit,
+                nonce=nonce,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -309,7 +324,13 @@ async def _async_match_contract_call_to_trade(
             if not trade.max_apr:
                 raise AssertionError("max_apr is required for ADD_LIQUIDITY")
             trade_result = await interface.async_add_liquidity(
-                agent, trade.trade_amount, trade.min_apr, trade.max_apr, slippage_tolerance=None, nonce=nonce
+                agent=agent,
+                trade_amount=trade.trade_amount,
+                min_apr=trade.min_apr,
+                max_apr=trade.max_apr,
+                slippage_tolerance=None,
+                gas_limit=trade.gas_limit,
+                nonce=nonce,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
