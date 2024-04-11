@@ -21,7 +21,6 @@ from .retry_utils import retry_call
 
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
-GAS_ESTIMATE_MULTIPLIER = 1.1
 
 # pylint: disable=too-many-lines
 # we have lots of parameters in smart_contract_transact and async_smart_contract_transact
@@ -433,18 +432,17 @@ def build_transaction(
         transaction_kwargs["value"] = Wei(txn_options_value)
 
     # Assign gas parameters
+    # other than the optional gas parameter, this is the default behavior of web3py, exposed here for clarity
     max_priority_fee = web3.eth.max_priority_fee
     pending_block = web3.eth.get_block("pending")
     base_fee = pending_block.get("baseFeePerGas", None)
     if base_fee is None:
         raise AssertionError("The latest block does not have a baseFeePerGas")
     max_fee_per_gas = max_priority_fee + base_fee
-
     if txn_options_gas is None:
-        transaction_kwargs["gas"] = int(web3.eth.estimate_gas(transaction_kwargs) * GAS_ESTIMATE_MULTIPLIER)
+        transaction_kwargs["gas"] = web3.eth.estimate_gas(transaction_kwargs)
     else:
         transaction_kwargs["gas"] = txn_options_gas
-
     transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
     transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
 
