@@ -439,9 +439,7 @@ def build_transaction(
     if base_fee is None:
         raise AssertionError("The latest block does not have a baseFeePerGas")
     max_fee_per_gas = max_priority_fee + base_fee
-    if txn_options_gas is None:
-        transaction_kwargs["gas"] = web3.eth.estimate_gas(transaction_kwargs)
-    else:
+    if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
     transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
     transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
