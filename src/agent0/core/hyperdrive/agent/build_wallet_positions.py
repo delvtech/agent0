@@ -93,11 +93,11 @@ def build_wallet_positions_from_chain(agent: LocalAccount, interface: Hyperdrive
         event_prefix, event_maturity_time = decode_asset_id(token_id)
         if event_prefix == AssetIdPrefix.LONG.value:
             assert event_maturity_time > 0, "ERROR: Long token found without maturity time."
-            assert event_maturity_time in long_obj, "ERROR: transfer to found without corresponding transfer from."
+            assert event_maturity_time in long_obj, "ERROR: transfer from found without corresponding transfer to."
             long_obj[event_maturity_time].balance -= FixedPoint(scaled_value=token_value)
         elif event_prefix == AssetIdPrefix.SHORT.value:
             assert event_maturity_time > 0, "ERROR: Short token found without maturity time."
-            assert event_maturity_time in long_obj, "ERROR: transfer to found without corresponding transfer from."
+            assert event_maturity_time in short_obj, "ERROR: transfer from found without corresponding transfer to."
             short_obj[event_maturity_time].balance -= FixedPoint(scaled_value=token_value)
 
     # Iterate through longs and shorts to remove any zero balance
