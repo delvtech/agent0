@@ -5,16 +5,19 @@ from web3.exceptions import ContractCustomError, ContractLogicError
 from agent0.core.hyperdrive import HyperdriveActionType, TradeResult
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.base.errors import ContractCallException
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
-def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
+def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveReadInterface) -> TradeResult:
     """Detects invalid balance errors in trade_result and adds additional information to the
-    exception in trade_result
+    exception in trade_result.
 
     Arguments
     ---------
     trade_result: TradeResult
-        The trade result object from trading
+        The trade result object from trading.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface to compute expected balances for trades.
 
     Returns
     -------
@@ -59,21 +62,23 @@ def check_for_invalid_balance(trade_result: TradeResult) -> TradeResult:
                     )
 
         case HyperdriveActionType.OPEN_SHORT:
-            # We can't check for invalid balance here since the trade_amount is in units of bonds, and the
-            # amount of base needed for the short isn't available. However, the exception itself has the
-            # "ERC20: transfer amount exceeds balance" error, so should be okay.
-            # TODO this should be solvable using some sort of preview, but the above error might be sufficient.
+            # We use the interface to calculate the amount of deposit required to open
+            # the provided short.
+            # TODO there may be a race condition here if the block ticks while handling this crash
 
-            # We explicitly check for the error here to set flag
-            # TODO this catch is not guaranteed to be correct in the future.
-            if (
-                isinstance(trade_result.exception, ContractCallException)
-                and isinstance(trade_result.exception.orig_exception, ContractLogicError)
-                and ("ERC20: transfer amount exceeds balance" in trade_result.exception.args[0])
-            ):
+            # We catch all errors thrown by calc open short in rust. If the underlying function
+            # fails, it's likely not an invalid balance issue.
+            base_deposit = None
+            try:
+                base_deposit = interface.calc_open_short(trade_amount)
+            except BaseException:  # pylint: disable=broad-except
+                pass
+
+            if base_deposit is not None and base_deposit > wallet.balance.amount:
                 invalid_balance = True
                 add_arg = (
-                    f"Invalid balance: {trade_type.name} for {trade_amount} bonds, ",
+                    f"Invalid balance: {trade_type.name} for {trade_amount} bonds, "
+                    f"expected deposit of {base_deposit} {wallet.balance.unit.name}, "
                     f"balance of {wallet.balance.amount} {wallet.balance.unit.name}.",
                 )
 

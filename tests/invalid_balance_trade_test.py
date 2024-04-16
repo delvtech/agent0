@@ -40,6 +40,92 @@ if TYPE_CHECKING:
 # Start by defining policies for failed trades
 # One policy per failed trade
 # Starting with empty wallet, catching any closing trades.
+
+
+class InvalidAddLiquidity(HyperdriveBasePolicy):
+    """An agent that submits a remove liquidity with a zero wallet."""
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Remove liquidity.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        # Adding liquidity more base than what I have
+        action_list.append(add_liquidity_trade(FixedPoint(20_000)))
+        return action_list, True
+
+
+class InvalidOpenLong(HyperdriveBasePolicy):
+    """An agent that submits a remove liquidity with a zero wallet."""
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Remove liquidity.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        # Opening a long for more base than what I have
+        action_list.append(open_long_trade(FixedPoint(500)))
+        return action_list, True
+
+
+class InvalidOpenShort(HyperdriveBasePolicy):
+    """An agent that submits a remove liquidity with a zero wallet."""
+
+    def action(
+        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
+    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
+        """Remove liquidity.
+
+        Arguments
+        ---------
+        interface: HyperdriveReadInterface
+            The trading market interface.
+        wallet: HyperdriveWallet
+            The agent's wallet.
+
+        Returns
+        -------
+        tuple[list[HyperdriveMarketAction], bool]
+            A tuple where the first element is a list of actions,
+            and the second element defines if the agent is done trading
+        """
+        # pylint: disable=unused-argument
+        action_list = []
+        # Opening a short for bonds for more than what I have
+        action_list.append(open_short_trade(FixedPoint(500)))
+        return action_list, True
+
+
 class InvalidRemoveLiquidityFromZero(HyperdriveBasePolicy):
     """An agent that submits a remove liquidity with a zero wallet."""
 
@@ -484,13 +570,13 @@ class TestInvalidTrades:
         assert False, "Agent was successful with known invalid trade"
 
     @pytest.mark.anvil
-    def test_not_enough_base(
+    def test_invalid_add_liquidity(
         self,
         local_hyperdrive_pool: DeployedHyperdrivePool,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquidityFromNonZero)
+            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidAddLiquidity)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -498,6 +584,48 @@ class TestInvalidTrades:
             # Fails on add liquidity
             assert exc.function_name_or_signature == "addLiquidity"
             # This throws a contract logic error under the hood
+            assert exc.orig_exception is not None
+            assert isinstance(exc.orig_exception, ContractPanicError)
+            assert (
+                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
+            )
+
+    @pytest.mark.anvil
+    def test_invalid_open_long(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
+        """Tests when making a trade with not enough base in wallet."""
+        try:
+            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidOpenLong)
+        except ContractCallException as exc:
+            # Expected error due to illegal trade
+            # We do add an argument for invalid balance to the args, so check for that here
+            assert "Invalid balance:" in exc.args[0]
+            # Fails on open long
+            assert exc.function_name_or_signature == "openLong"
+            # This throws a contract logic error under the hood
+            assert exc.orig_exception is not None
+            assert isinstance(exc.orig_exception, ContractPanicError)
+            assert (
+                exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
+            )
+
+    @pytest.mark.anvil
+    def test_invalid_open_short(
+        self,
+        local_hyperdrive_pool: DeployedHyperdrivePool,
+    ):
+        """Tests when making a trade with not enough base in wallet."""
+        try:
+            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidOpenShort)
+        except ContractCallException as exc:
+            # Expected error due to illegal trade
+            # We do add an argument for invalid balance to the args, so check for that here
+            assert "Invalid balance:" in exc.args[0]
+            # Fails on open short
+            assert exc.function_name_or_signature == "openShort"
+            # This throws a contract panic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
