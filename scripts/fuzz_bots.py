@@ -130,7 +130,7 @@ def run_fuzz_bots(argv: Sequence[str] | None = None) -> None:
                 slippage_tolerance=SLIPPAGE_TOLERANCE,
                 trade_chance=FixedPoint("0.8"),
                 randomly_ignore_slippage_tolerance=True,
-                gas_limit=int(10e6),  # Plenty of gas limit for transactions
+                gas_limit=int(1e6),  # Plenty of gas limit for transactions
             ),
         )
         agents.append(agent)
@@ -144,7 +144,7 @@ def run_fuzz_bots(argv: Sequence[str] | None = None) -> None:
                 trade_chance=FixedPoint("0.8"),
                 randomly_ignore_slippage_tolerance=True,
                 max_open_positions=2_000,
-                gas_limit=int(10e6),  # Plenty of gas limit for transactions
+                gas_limit=int(1e6),  # Plenty of gas limit for transactions
             ),
         )
         agents.append(agent)
