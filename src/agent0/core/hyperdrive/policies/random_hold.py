@@ -194,7 +194,7 @@ class RandomHold(Random):
             slippage = None
         else:
             slippage = self.slippage_tolerance
-        return [close_long_trade(long_to_close.bond_amount, long_to_close.maturity_time, slippage)]
+        return [close_long_trade(long_to_close.bond_amount, long_to_close.maturity_time, slippage, self.gas_limit)]
 
     def close_random_short(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
@@ -232,7 +232,7 @@ class RandomHold(Random):
             slippage = None
         else:
             slippage = self.slippage_tolerance
-        return [close_short_trade(short_to_close.bond_amount, short_to_close.maturity_time, slippage)]
+        return [close_short_trade(short_to_close.bond_amount, short_to_close.maturity_time, slippage, self.gas_limit)]
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
         """Random hold updates open position bookkeeping based on which positions were closed.
