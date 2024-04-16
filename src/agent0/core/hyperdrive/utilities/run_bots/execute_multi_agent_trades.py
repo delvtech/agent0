@@ -84,7 +84,7 @@ async def async_execute_multi_agent_trades(
             # Here, we check for common errors and allow for custom handling of various errors
             # These functions adjust the trade_result.exception object to add
             # additional arguments describing these detected errors for crash reporting
-            trade_result = check_for_invalid_balance(trade_result)
+            trade_result = check_for_invalid_balance(trade_result, interface)
             trade_result = check_for_slippage(trade_result)
             trade_result = check_for_min_txn_amount(trade_result)
         out_trade_results.append(trade_result)
