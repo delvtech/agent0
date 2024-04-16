@@ -79,7 +79,7 @@ def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveRe
                 add_arg = (
                     f"Invalid balance: {trade_type.name} for {trade_amount} bonds, "
                     f"expected deposit of {base_deposit} {wallet.balance.unit.name}, "
-                    f"balance of {wallet.balance.amount} {wallet.balance.unit.name}.",
+                    f"balance of {wallet.balance.amount} {wallet.balance.unit.name}."
                 )
 
         case HyperdriveActionType.CLOSE_SHORT:
