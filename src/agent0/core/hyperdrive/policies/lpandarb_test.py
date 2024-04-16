@@ -112,13 +112,13 @@ def test_open_long(
     manual_agent.open_short(bonds=FixedPoint(trade_amount))
 
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # arbitrage it back (the only trade capable of this is a long)
     arbitrage_andy.execute_policy_action()
 
     # report results
-    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     assert variable_rate is not None
     logging.info("ending fixed rate is %s", fixed_rate)
@@ -141,13 +141,13 @@ def test_open_short(
     manual_agent.open_long(base=FixedPoint(trade_amount))
 
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # arbitrage it back (the only trade capable of this is a short)
     arbitrage_andy.execute_policy_action()
 
     # report results
-    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     assert variable_rate is not None
     logging.info("ending fixed rate is %s", fixed_rate)
@@ -168,7 +168,7 @@ def test_close_long(
 ):
     """Close a long to hit the target rate."""
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # give andy a long position twice the trade amount, to be sufficiently large when closing
     pool_bonds_before = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
@@ -204,7 +204,7 @@ def test_close_long(
     )
 
     # report fixed rate
-    logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # change the fixed rate
     event = manual_agent.open_long(base=FixedPoint(trade_amount))
@@ -216,7 +216,7 @@ def test_close_long(
         event.base_amount,
     )
     # report fixed rate
-    logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # arbitrage it all back in one trade
     pool_bonds_before = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
@@ -246,7 +246,7 @@ def test_close_long(
     )
 
     # report results
-    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
@@ -260,7 +260,7 @@ def test_close_long(
 def test_already_at_target(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
     """Already at target, do nothing."""
     # report starting fixed rate
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # modify Andy to be done_on_empty
     andy_policy = arbitrage_andy.agent.policy
@@ -274,7 +274,7 @@ def test_already_at_target(interactive_hyperdrive: ILocalHyperdrive, arbitrage_a
     arbitrage_andy.execute_policy_action()
 
     # report results
-    fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate()
+    fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
     variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
@@ -305,12 +305,12 @@ def test_reduce_long(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: I
 def test_reduce_short(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
     """Reduce a short position."""
 
-    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # give Andy a short
     event = arbitrage_andy.open_short(bonds=FixedPoint(10))
 
-    logging.info("fixed rate after open short is %s", interactive_hyperdrive.interface.calc_fixed_rate())
+    logging.info("fixed rate after open short is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # advance time to maturity
     interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS / 2), create_checkpoints=False)

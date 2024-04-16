@@ -63,7 +63,7 @@ class TestHyperdriveReadInterface:
         fixed_rate = (FixedPoint(1) - spot_price) / (
             spot_price * hyperdrive_read_interface.calc_position_duration_in_years()
         )
-        assert abs(fixed_rate - hyperdrive_read_interface.calc_fixed_rate()) <= FixedPoint(1e-16)
+        assert abs(fixed_rate - hyperdrive_read_interface.calc_spot_rate()) <= FixedPoint(1e-16)
 
     def test_misc(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Miscellaneous tests only verify that the attributes exist and functions can be called."""
@@ -87,7 +87,7 @@ class TestHyperdriveReadInterface:
 
     def test_deployed_fixed_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
-        assert abs(hyperdrive_read_interface.calc_fixed_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
+        assert abs(hyperdrive_read_interface.calc_spot_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
 
     def test_bonds_given_shares_and_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
@@ -98,13 +98,13 @@ class TestHyperdriveReadInterface:
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
         pool_info.bond_reserves = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        fixed_rate = hyperdrive_read_interface.calc_fixed_rate(pool_state=pool_state)
+        fixed_rate = hyperdrive_read_interface.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
         pool_info.bond_reserves = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        fixed_rate = hyperdrive_read_interface.calc_fixed_rate(pool_state=pool_state)
+        fixed_rate = hyperdrive_read_interface.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
     def test_deployed_values(self, hyperdrive_read_interface: HyperdriveReadInterface):
@@ -192,7 +192,7 @@ class TestHyperdriveReadInterface:
             (api_pool_config.initial_vault_share_price * effective_share_reserves) / api_pool_info.bond_reserves
         ) ** api_pool_config.time_stretch
 
-        api_fixed_rate = hyperdrive_read_interface.calc_fixed_rate()
+        api_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
         expected_fixed_rate = (1 - expected_spot_price) / (
             expected_spot_price * (api_pool_config.position_duration / FixedPoint(365 * 24 * 60 * 60))
         )

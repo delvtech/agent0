@@ -44,7 +44,6 @@ from ._mock_contract import (
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
-    _calc_fixed_rate,
     _calc_max_long,
     _calc_max_short,
     _calc_open_long,
@@ -55,6 +54,7 @@ from ._mock_contract import (
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
     _calc_spot_price,
+    _calc_spot_rate,
     _calc_time_stretch,
 )
 
@@ -585,8 +585,8 @@ class HyperdriveReadInterface:
             block_timestamp = self.current_pool_state.block_time
         return _calc_checkpoint_id(checkpoint_duration, block_timestamp)
 
-    def calc_fixed_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
-        r"""Calculate the fixed rate for a given pool state.
+    def calc_spot_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
+        r"""Calculate the spot fixed rate for a given pool state.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs. The simulation follows the formula:
@@ -607,7 +607,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_fixed_rate(pool_state)
+        return _calc_spot_rate(pool_state)
 
     def calc_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool.

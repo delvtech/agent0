@@ -72,7 +72,7 @@ def trade_if_new_block(
             interface.get_block_number(latest_block),
             str(datetime.fromtimestamp(float(interface.get_block_timestamp(latest_block)))),
             interface.calc_spot_price(),
-            interface.calc_fixed_rate(),
+            interface.calc_spot_rate(),
         )
         # To avoid jumbled print statements due to asyncio, we handle all logging and crash reporting
         # here, with inner functions returning trade results.

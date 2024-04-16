@@ -37,7 +37,7 @@ def _calc_checkpoint_id(checkpoint_duration: int, block_timestamp: Timestamp) ->
     return cast(Timestamp, latest_checkpoint_timestamp)
 
 
-def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
+def _calc_spot_rate(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
     spot_rate = hyperdrivepy.calculate_spot_rate(
         fixedpoint_to_pool_config(pool_state.pool_config),
