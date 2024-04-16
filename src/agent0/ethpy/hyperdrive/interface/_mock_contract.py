@@ -17,15 +17,24 @@ if TYPE_CHECKING:
 # pylint: disable=protected-access
 
 
+def _calc_position_duration_in_years(pool_state: PoolState) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(pool_state.pool_config.position_duration) / FixedPoint(60 * 60 * 24 * 365)
+
+
+def _calc_time_stretch(target_rate: FixedPoint, target_position_duration: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_time_stretch(str(target_rate.scaled_value), str(int(target_position_duration)))
+        )
+    )
+
+
 def _calc_checkpoint_id(checkpoint_duration: int, block_timestamp: Timestamp) -> Timestamp:
     """See API for documentation."""
     latest_checkpoint_timestamp = block_timestamp - (block_timestamp % checkpoint_duration)
     return cast(Timestamp, latest_checkpoint_timestamp)
-
-
-def _calc_position_duration_in_years(pool_state: PoolState) -> FixedPoint:
-    """See API for documentation."""
-    return FixedPoint(pool_state.pool_config.position_duration) / FixedPoint(60 * 60 * 24 * 365)
 
 
 def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
@@ -37,6 +46,15 @@ def _calc_fixed_rate(pool_state: PoolState) -> FixedPoint:
     return FixedPoint(scaled_value=int(spot_rate))
 
 
+def _calc_spot_price(pool_state: PoolState):
+    """See API for documentation."""
+    spot_price = hyperdrivepy.calculate_spot_price(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+    )
+    return FixedPoint(scaled_value=int(spot_price))
+
+
 def _calc_effective_share_reserves(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
     effective_share_reserves = hyperdrivepy.calculate_effective_share_reserves(
@@ -46,13 +64,25 @@ def _calc_effective_share_reserves(pool_state: PoolState) -> FixedPoint:
     return FixedPoint(scaled_value=int(effective_share_reserves))
 
 
-def _calc_spot_price(pool_state: PoolState):
+def _calc_bonds_given_shares_and_rate(
+    pool_state: PoolState,
+    target_rate: FixedPoint,
+    target_shares: FixedPoint | None = None,
+) -> FixedPoint:
     """See API for documentation."""
-    spot_price = hyperdrivepy.calculate_spot_price(
-        fixedpoint_to_pool_config(pool_state.pool_config),
-        fixedpoint_to_pool_info(pool_state.pool_info),
+    if target_shares is None:
+        target_shares = _calc_effective_share_reserves(pool_state)
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_initial_bond_reserves(
+                str(target_shares.scaled_value),
+                str(pool_state.pool_config.initial_vault_share_price.scaled_value),
+                str(target_rate.scaled_value),
+                str(pool_state.pool_config.position_duration),
+                str(pool_state.pool_config.time_stretch.scaled_value),
+            )
+        )
     )
-    return FixedPoint(scaled_value=int(spot_price))
 
 
 def _calc_open_long(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoint:
@@ -63,6 +93,21 @@ def _calc_open_long(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoin
         str(base_amount.scaled_value),
     )
     return FixedPoint(scaled_value=int(long_amount))
+
+
+def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_max_long(
+                fixedpoint_to_pool_config(pool_state.pool_config),
+                fixedpoint_to_pool_info(pool_state.pool_info),
+                str(budget.scaled_value),
+                checkpoint_exposure=str(pool_state.exposure.scaled_value),
+                maybe_max_iterations=None,
+            )
+        )
+    )
 
 
 def _calc_close_long(pool_state: PoolState, bond_amount: FixedPoint, maturity_time: int) -> FixedPoint:
@@ -101,6 +146,23 @@ def _calc_open_short(
     return FixedPoint(scaled_value=int(short_deposit))
 
 
+def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_max_short(
+                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
+                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
+                budget=str(budget.scaled_value),
+                open_vault_share_price=str(pool_state.pool_info.vault_share_price.scaled_value),
+                checkpoint_exposure=str(pool_state.exposure.scaled_value),
+                maybe_conservative_price=None,
+                maybe_max_iterations=None,
+            )
+        )
+    )
+
+
 def _calc_close_short(
     pool_state: PoolState,
     bond_amount: FixedPoint,
@@ -120,6 +182,19 @@ def _calc_close_short(
         str(current_block_time),
     )
     return FixedPoint(scaled_value=int(short_returns))
+
+
+def _calc_present_value(pool_state: PoolState, current_block_timestamp: int) -> FixedPoint:
+    """See API for documentation."""
+    return FixedPoint(
+        scaled_value=int(
+            hyperdrivepy.calculate_present_value(
+                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
+                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
+                current_block_timestamp=str(current_block_timestamp),
+            )
+        )
+    )
 
 
 def _calc_bonds_out_given_shares_in_down(
@@ -227,78 +302,3 @@ def _calc_fees_out_given_shares_in(
         curve_fee * pool_state.pool_config.fees.governance_lp + flat_fee * pool_state.pool_config.fees.governance_lp
     )
     return curve_fee, flat_fee, gov_fee
-
-
-def _calc_bonds_given_shares_and_rate(
-    pool_state: PoolState,
-    target_rate: FixedPoint,
-    target_shares: FixedPoint | None = None,
-) -> FixedPoint:
-    """See API for documentation."""
-    if target_shares is None:
-        target_shares = _calc_effective_share_reserves(pool_state)
-    return FixedPoint(
-        scaled_value=int(
-            hyperdrivepy.calculate_initial_bond_reserves(
-                str(target_shares.scaled_value),
-                str(pool_state.pool_config.initial_vault_share_price.scaled_value),
-                str(target_rate.scaled_value),
-                str(pool_state.pool_config.position_duration),
-                str(pool_state.pool_config.time_stretch.scaled_value),
-            )
-        )
-    )
-
-
-def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
-    """See API for documentation."""
-    return FixedPoint(
-        scaled_value=int(
-            hyperdrivepy.calculate_max_long(
-                fixedpoint_to_pool_config(pool_state.pool_config),
-                fixedpoint_to_pool_info(pool_state.pool_info),
-                str(budget.scaled_value),
-                checkpoint_exposure=str(pool_state.exposure.scaled_value),
-                maybe_max_iterations=None,
-            )
-        )
-    )
-
-
-def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
-    """See API for documentation."""
-    return FixedPoint(
-        scaled_value=int(
-            hyperdrivepy.calculate_max_short(
-                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
-                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
-                budget=str(budget.scaled_value),
-                open_vault_share_price=str(pool_state.pool_info.vault_share_price.scaled_value),
-                checkpoint_exposure=str(pool_state.exposure.scaled_value),
-                maybe_conservative_price=None,
-                maybe_max_iterations=None,
-            )
-        )
-    )
-
-
-def _calc_present_value(pool_state: PoolState, current_block_timestamp: int) -> FixedPoint:
-    """See API for documentation."""
-    return FixedPoint(
-        scaled_value=int(
-            hyperdrivepy.calculate_present_value(
-                pool_config=fixedpoint_to_pool_config(pool_state.pool_config),
-                pool_info=fixedpoint_to_pool_info(pool_state.pool_info),
-                current_block_timestamp=str(current_block_timestamp),
-            )
-        )
-    )
-
-
-def _calc_time_stretch(target_rate: FixedPoint, target_position_duration: FixedPoint) -> FixedPoint:
-    """See API for documentation."""
-    return FixedPoint(
-        scaled_value=int(
-            hyperdrivepy.calculate_time_stretch(str(target_rate.scaled_value), str(int(target_position_duration)))
-        )
-    )
