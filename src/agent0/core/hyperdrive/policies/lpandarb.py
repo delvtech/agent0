@@ -184,6 +184,7 @@ def arb_fixed_rate_up(
         # TODO calc_max_short seems to be a bit off wrt the budget we have, likely
         # due to the underlying calc_open_short being off. We subtract a small amount
         # from the max short for a fix for now to fix test.
+        # https://github.com/delvtech/hyperdrive/issues/969
         max_short -= FixedPoint("0.1")
         amount_bonds = minimum(bonds_needed, max_short)
         action_list.append(open_short_trade(amount_bonds, slippage_tolerance))
