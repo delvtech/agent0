@@ -1,6 +1,6 @@
 """Helper functions for checking for known errors in contract calls."""
 
-from web3.exceptions import ContractCustomError, ContractLogicError
+from web3.exceptions import ContractCustomError
 
 from agent0.core.hyperdrive import HyperdriveActionType, TradeResult
 from agent0.core.test_utils import assert_never
@@ -8,6 +8,7 @@ from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
+# pylint: disable=too-many-statements
 def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveReadInterface) -> TradeResult:
     """Detects invalid balance errors in trade_result and adds additional information to the
     exception in trade_result.
