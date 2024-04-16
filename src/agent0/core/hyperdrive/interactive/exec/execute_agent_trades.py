@@ -107,13 +107,9 @@ async def async_execute_agent_trades(
         )
     )
 
-    trade_results, wallet_updates = _handle_contract_call_to_trade(wallet_deltas_or_exception, trades, interface, agent)
-
-    # The wallet update after should be fine, since we can see what trades went through
-    # and only apply those wallet deltas. Wallet deltas are also invariant to order
-    # as long as the transaction went through.
-    for wallet_delta in wallet_updates:
-        agent.wallet.update(wallet_delta)
+    trade_results = _handle_contract_call_to_trade_and_update_wallets(
+        wallet_deltas_or_exception, trades, interface, agent
+    )
 
     # TODO to avoid adding a post action in base policy, we only call post action
     # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
@@ -169,16 +165,11 @@ async def async_execute_single_trade(
     except Exception as e:  # pylint: disable=broad-except
         wallet_delta_or_exception = e
 
-    trade_results, wallet_updates = _handle_contract_call_to_trade(
+    trade_results = _handle_contract_call_to_trade_and_update_wallets(
         [wallet_delta_or_exception], [trade_object], interface, agent
     )
 
     assert len(trade_results) == 1
-    # Wallet updates will be 0 if the trade failed
-    assert len(wallet_updates) <= 1
-
-    for wallet_delta in wallet_updates:
-        agent.wallet.update(wallet_delta)
 
     # Some policies still need to bookkeep if single trades are being made. We call that here.
     # TODO to avoid adding a post action in base policy, we only call post action
@@ -197,13 +188,13 @@ async def async_execute_single_trade(
     return trade_results[0]
 
 
-def _handle_contract_call_to_trade(
+def _handle_contract_call_to_trade_and_update_wallets(
     wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException],
     trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadInterface,
     agent: HyperdriveAgent,
-):
-    """Handle the results of executing trades.
+) -> list[TradeResult]:
+    """Handle the results of executing trades. This function also updates the underlying agent's wallet.
 
     Arguments
     ---------
@@ -219,9 +210,8 @@ def _handle_contract_call_to_trade(
 
     Returns
     -------
-    Tuple[list[TradeResult], list[HyperdriveWalletDeltas]]
-        Returns the list of trade results, as well as any wallet deltas that need to be
-        applied to the agent.
+    list[TradeResult]
+        Returns the list of trade results.
     """
 
     # Sanity check
@@ -232,7 +222,10 @@ def _handle_contract_call_to_trade(
         )
 
     trade_results: list[TradeResult] = []
-    wallet_deltas: list[HyperdriveWalletDeltas] = []
+    # Since the list of wallet deltas or exceptions is guaranteed to be in the order
+    # of execution, we incrementally update the wallet. Updating the wallet
+    # while iterating will ensure the invalid balance check has the most
+    # up to date wallet for checking balances.
     for result, trade_object in zip(wallet_deltas_or_exception, trades):
         if isinstance(result, Exception):
             trade_result = build_crash_trade_result(result, interface, agent, trade_object)
@@ -250,13 +243,15 @@ def _handle_contract_call_to_trade(
             wallet_delta, tx_receipt = result
             if not isinstance(wallet_delta, HyperdriveWalletDeltas) or not isinstance(tx_receipt, ReceiptBreakdown):
                 raise TypeError("The wallet deltas or the transaction receipt is not the correct type.")
-            wallet_deltas.append(wallet_delta)
+
+            agent.wallet.update(wallet_delta)
+
             trade_result = TradeResult(
                 status=TradeStatus.SUCCESS, agent=agent, trade_object=trade_object, tx_receipt=tx_receipt
             )
         trade_results.append(trade_result)
 
-    return trade_results, wallet_deltas
+    return trade_results
 
 
 async def _async_match_contract_call_to_trade(
