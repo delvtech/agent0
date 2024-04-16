@@ -54,6 +54,7 @@ from ._mock_contract import (
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
     _calc_spot_price,
+    _calc_spot_price_after_short,
     _calc_spot_rate,
     _calc_time_stretch,
 )
@@ -756,7 +757,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_close_long(pool_state, bond_amount, maturity_time)
+        return _calc_close_long(pool_state, bond_amount, maturity_time, int(pool_state.block_time))
 
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.
@@ -781,6 +782,33 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_open_short(
             pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.vault_share_price
+        )
+
+    def calc_spot_price_after_short(
+        self, bond_amount: FixedPoint, base_amount: FixedPoint | None = None, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the spot price for a given Hyperdrive pool after a short is opened for `base_amount`.
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount that woud be used to open a short.
+        base_amount: FixedPoint | None, optional
+            The amount of base provided for the short.
+            The default is to use whatever is returned by `calc_open_short(bond_amount)`.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+        Returns
+        -------
+        FixedPoint
+            The spot price for the Hyperdrive pool state.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_spot_price_after_short(
+            pool_state, bond_amount, pool_state.checkpoint.vault_share_price, base_amount
         )
 
     def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:

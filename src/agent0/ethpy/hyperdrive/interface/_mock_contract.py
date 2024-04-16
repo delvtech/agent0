@@ -110,16 +110,16 @@ def _calc_max_long(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
     )
 
 
-def _calc_close_long(pool_state: PoolState, bond_amount: FixedPoint, maturity_time: int) -> FixedPoint:
+def _calc_close_long(
+    pool_state: PoolState, bond_amount: FixedPoint, maturity_time: int, current_time: int
+) -> FixedPoint:
     """See API for documentation."""
-
-    current_block_time = pool_state.block_time
     long_returns = hyperdrivepy.calculate_close_long(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(bond_amount.scaled_value),
         str(maturity_time),
-        str(current_block_time),
+        str(current_time),
     )
     return FixedPoint(scaled_value=int(long_returns))
 
@@ -131,19 +131,35 @@ def _calc_open_short(
     open_vault_share_price: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    open_vault_share_price_str: str | None
-    if open_vault_share_price is None:  # keep it None
-        open_vault_share_price_str = None
-    else:  # convert FixedPoint to string
-        open_vault_share_price_str = str(open_vault_share_price.scaled_value)
+    if open_vault_share_price is not None:
+        open_vault_share_price = str(open_vault_share_price.scaled_value)
     short_deposit = hyperdrivepy.calculate_open_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(short_amount.scaled_value),
         str(spot_price.scaled_value),
-        open_vault_share_price_str,  # str | None
+        open_vault_share_price,
     )
     return FixedPoint(scaled_value=int(short_deposit))
+
+
+def _calc_spot_price_after_short(
+    pool_state: PoolState,
+    bond_amount: FixedPoint,
+    open_vault_share_price: FixedPoint,
+    base_amount: FixedPoint | None = None,
+):
+    """See API for documentation."""
+    if base_amount is not None:
+        base_amount = str(base_amount.scaled_value)
+    spot_price = hyperdrivepy.calculate_spot_price_after_short(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(open_vault_share_price.scaled_value),
+        base_amount,
+    )
+    return FixedPoint(scaled_value=int(spot_price))
 
 
 def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
