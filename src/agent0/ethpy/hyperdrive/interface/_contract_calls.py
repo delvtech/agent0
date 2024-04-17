@@ -133,6 +133,7 @@ def _create_checkpoint(
         *fn_args,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
+        timeout=interface.txn_receipt_timeout,
     )
     trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "createCheckpoint")
     return trade_result
@@ -152,6 +153,7 @@ def _set_variable_rate(
         new_rate.scaled_value,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
+        timeout=interface.txn_receipt_timeout,
     )
 
 
@@ -232,6 +234,7 @@ async def _async_open_long(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
     except Exception as exc:
@@ -312,6 +315,7 @@ async def _async_close_long(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeLong")
     except Exception as exc:
@@ -396,6 +400,7 @@ async def _async_open_short(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
     except Exception as exc:
@@ -475,6 +480,7 @@ async def _async_close_short(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeShort")
     except Exception as exc:
@@ -545,6 +551,7 @@ async def _async_add_liquidity(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
     except Exception as exc:
@@ -605,6 +612,7 @@ async def _async_remove_liquidity(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
     except Exception as exc:
@@ -671,6 +679,7 @@ async def _async_redeem_withdraw_shares(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")
     except Exception as exc:

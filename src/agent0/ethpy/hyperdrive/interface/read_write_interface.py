@@ -45,6 +45,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
+        txn_receipt_timeout: float | None = None,
     ) -> None:
         """Initialize the primary endpoint for users to execute transactions on Hyperdrive smart contracts.
 
@@ -64,8 +65,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The number of times to retry the read call if it fails. Defaults to 5.
         write_retry_count: int | None, optional
             The number of times to retry the transact call if it fails. Defaults to no retries.
+        txn_receipt_timeout: float | None, optional
+            The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         """
-        super().__init__(eth_config, hyperdrive_address, web3, read_retry_count)
+        super().__init__(eth_config, hyperdrive_address, web3, read_retry_count, txn_receipt_timeout)
         self.write_retry_count = write_retry_count
 
     def get_read_interface(self) -> HyperdriveReadInterface:
