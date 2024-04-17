@@ -48,13 +48,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     Arguments
     ---------
     argv: Sequence[str]
-        A sequnce containing the uri to the database server and the test epsilon.
+        A sequence containing the uri to the database server and the test epsilon.
     """
 
     # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
 
-    log_to_rollbar = initialize_rollbar("fuzzbots_invariantcheck_" + parsed_args.pool)
+    # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
+    if parsed_args.pool_addr == "":
+        rollbar_environment_name = "fuzzbots_invariantcheck_" + parsed_args.pool
+    else:
+        rollbar_environment_name = "fuzzbots_invariantcheck_" + parsed_args.pool_addr
+
+    log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # Run the loop forever
     last_executed_block_number = 0  # no matter what we will run the check the first time
@@ -485,7 +491,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=5,
         help="Sleep time between checks, in seconds.",
     )
-    # TODO read this from the register or pass in pool address
+
     parser.add_argument(
         "--pool",
         type=str,
