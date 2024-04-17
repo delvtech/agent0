@@ -17,6 +17,7 @@ from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.i_hyperdrive_agent import IHyperdriveAgent
 from agent0.ethpy import build_eth_config
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+from scripts.fuzz_bot_invariant_checks import _check_solvency
 
 # Crash behavior
 STOP_CHAIN_ON_CRASH = False
@@ -189,6 +190,16 @@ def run_fuzz_bots(argv: Sequence[str] | None = None) -> None:
                 raise exc
             # Ignore crashes, we want the bot to keep trading
             # These errors will get logged regardless
+
+        # Check for solvency after every iteration
+        check_result = _check_solvency(hyperdrive_pool.interface.get_hyperdrive_state())
+        if check_result.failed:
+            print("Solvency check failed, pausing chain and exiting.")
+            # Pause chain and exit
+            hyperdrive_pool.interface.web3.provider.make_request(
+                method=RPCEndpoint("evm_setIntervalMining"), params=[0]
+            )
+            sys.exit()
 
         # Check agent funds and refund if necessary
         for agent in agents:
