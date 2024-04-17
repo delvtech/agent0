@@ -97,7 +97,7 @@ kwargs = {
 }
 random_dai_14 = dai_14_pool.init_agent(
     private_key=RANDOM_DAI_14_PRIVATE_KEY,
-    policy=PolicyZoo.random,
+    policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(**kwargs),
 )
 random_dai_14.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
@@ -107,7 +107,7 @@ random_dai_14._pool._token = dai_contract
 
 random_dai_30 = dai_30_pool.init_agent(
     private_key=RANDOM_DAI_30_PRIVATE_KEY,
-    policy=PolicyZoo.random,
+    policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(**kwargs),
 )
 random_dai_30.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
@@ -117,7 +117,7 @@ random_dai_30.agent.name = "random_dai30"
 
 random_steth_14 = steth_14_pool.init_agent(
     private_key=RANDOM_STETH_14_PRIVATE_KEY,
-    policy=PolicyZoo.random,
+    policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(**kwargs),
 )
 random_steth_14.agent.TARGET_BASE = FixedPoint(TARGET_STETH)
@@ -127,7 +127,7 @@ random_steth_14.agent.name = "random_steth14"
 
 random_steth_30 = steth_30_pool.init_agent(
     private_key=RANDOM_STETH_30_PRIVATE_KEY,
-    policy=PolicyZoo.random,
+    policy=PolicyZoo.lp_and_arb,
 policy_config=PolicyZoo.lp_and_arb.Config(**kwargs),
 )
 random_steth_30.agent.TARGET_BASE = FixedPoint(TARGET_STETH)
