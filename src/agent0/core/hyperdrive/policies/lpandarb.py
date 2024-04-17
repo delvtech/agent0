@@ -279,15 +279,22 @@ def calc_delta_reserves_for_target_rate(
     divisor = FixedPoint(2)
     trade_delta_bonds = FixedPoint(0)
     target_bonds = interface.calc_bonds_given_shares_and_rate(target_rate=target_rate, pool_state=pool_state)
-    avoid_negative_share_reserves = False
+    good_result = False
     # We want to take as large of a step as possible while avoiding negative share reserves.
     # So we loop through, increasing the divisor until the share reserves are no longer negative.
     pool_delta_shares = FixedPoint(0)
-    while avoid_negative_share_reserves is False:
-        trade_delta_bonds = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
-        pool_delta_shares = calc_shares_needed_for_bonds(
-            interface, pool_state, trade_delta_bonds, min_trade_amount_bonds
-        )
+    while good_result is False:
+        try:
+            trade_delta_bonds = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
+            pool_delta_shares = calc_shares_needed_for_bonds(
+                interface, pool_state, trade_delta_bonds, min_trade_amount_bonds
+            )
+        # here we catch a pyo3_runtime.PanicException error
+        # pylint: disable=W0718
+        except BaseException as ex:
+            logging.warning("calc_delta_reserves_for_target_rate failed with exception=%s, retrying", ex)
+            divisor *= FixedPoint(2)
+            continue
         # simulate pool state update without a deep copy to save time
         new_share_reserves, _ = apply_step_to_reserves(
             pool_state.pool_info.share_reserves,
@@ -295,7 +302,7 @@ def calc_delta_reserves_for_target_rate(
             pool_state.pool_info.bond_reserves,
             trade_delta_bonds,
         )
-        avoid_negative_share_reserves = new_share_reserves >= 0
+        good_result = new_share_reserves >= 0
         divisor *= FixedPoint(2)
     return trade_delta_bonds, pool_delta_shares
 
