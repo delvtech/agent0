@@ -145,7 +145,7 @@ class IHyperdrive:
             self.eth_config,
             hyperdrive_address,
             web3=chain._web3,
-            txn_receipt_timeout=config.txn_receipt_timeout,
+            txn_receipt_timeout=self.config.txn_receipt_timeout,
         )
 
         self.chain = chain
