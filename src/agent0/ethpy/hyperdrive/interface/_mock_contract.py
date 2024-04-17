@@ -118,11 +118,6 @@ def _calc_targeted_long(
     allowable_error: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    max_iterations_str: str | None
-    if max_iterations is None:
-        max_iterations_str = max_iterations
-    else:
-        max_iterations_str = str(max_iterations)
     allowable_error_str: str | None
     if allowable_error is None:
         allowable_error_str = allowable_error
@@ -136,7 +131,7 @@ def _calc_targeted_long(
                 str(budget.scaled_value),
                 str(target_rate.scaled_value),
                 str(pool_state.exposure.scaled_value),
-                max_iterations_str,
+                max_iterations,
                 allowable_error_str,
             )
         )
@@ -182,9 +177,8 @@ def _calc_open_short(
 def _calc_spot_price_after_short(
     pool_state: PoolState,
     bond_amount: FixedPoint,
-    open_vault_share_price: FixedPoint,
     base_amount: FixedPoint | None = None,
-):
+) -> FixedPoint:
     """See API for documentation."""
     base_amount_str: str | None
     if base_amount is None:
@@ -195,7 +189,6 @@ def _calc_spot_price_after_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(bond_amount.scaled_value),
-        str(open_vault_share_price.scaled_value),
         base_amount_str,
     )
     return FixedPoint(scaled_value=int(spot_price))

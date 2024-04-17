@@ -774,12 +774,14 @@ class HyperdriveReadInterface:
         ---------
         budget: FixedPont
             The account budget in base for making a long.
-        target: FixedPoint
+        target_rate: FixedPoint
             The target fixed rate.
         max_iterations: int | None, optional
             The number of iterations to use for the Newtonian method.
+            Defaults to 7.
         allowable_error: FixedPoint | None, optional
             The amount of error supported for reaching the target rate.
+            Defaults to 1e-4.
         pool_state: PoolState, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
@@ -841,9 +843,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_spot_price_after_short(
-            pool_state, bond_amount, pool_state.checkpoint.vault_share_price, base_amount
-        )
+        return _calc_spot_price_after_short(pool_state, bond_amount, base_amount)
 
     def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.

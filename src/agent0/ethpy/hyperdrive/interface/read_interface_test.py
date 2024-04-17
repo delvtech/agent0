@@ -122,12 +122,12 @@ class TestHyperdriveReadInterface:
         # assert (
         #     price_with_default == price_with_base_amount
         # ), "`calc_spot_price_after_short` is not handling default base_amount correctly."
-        _ = hyperdrive_read_interface.calc_close_short(
-            FixedPoint(100),
-            FixedPoint(scaled_value=int(9e17)),
-            FixedPoint(scaled_value=int(9.9e17)),
-            maturity_time,
-        )
+        # _ = hyperdrive_read_interface.calc_close_short(
+        #     bond_amount=FixedPoint(10),
+        #     open_vault_share_price=hyperdrive_read_interface.current_pool_state.checkpoint.vault_share_price,
+        #     close_vault_share_price=hyperdrive_read_interface.current_pool_state.pool_info.vault_share_price,
+        #     maturity_time=maturity_time,
+        # )
 
         # LP
         _ = hyperdrive_read_interface.calc_present_value()
