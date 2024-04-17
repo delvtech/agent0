@@ -89,6 +89,8 @@ class IHyperdrive:
         If False, the policy `post_action` function will only be called after `execute_policy_action`.
         Defaults to False.
         """
+        txn_receipt_timeout: float | None = None
+        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
 
         def __post_init__(self):
             if self.rng is None:
@@ -143,6 +145,7 @@ class IHyperdrive:
             self.eth_config,
             hyperdrive_address,
             web3=chain._web3,
+            txn_receipt_timeout=self.config.txn_receipt_timeout,
         )
 
         self.chain = chain
