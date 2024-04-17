@@ -14,16 +14,13 @@ import time
 
 import numpy as np
 from agent0 import IChain, IHyperdrive, PolicyZoo
-from agent0.core.base import EthAgent
 from agent0.core.base.config import EnvironmentConfig
-from agent0.ethpy import EthConfig, build_eth_config
+from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider, smart_contract_transact
 from agent0.hypertypes import IHyperdriveContract
 from dotenv import load_dotenv
-from eth_account.account import Account
 from eth_typing import ChecksumAddress, HexAddress, HexStr
 from fixedpointmath import FixedPoint
-from web3.contract.contract import Contract
 
 # %%
 # config
@@ -50,7 +47,8 @@ TARGET_BASE = 10_000
 TARGET_STETH = 500
 GAS_LIMIT = 1_000_000
 RANDSEED = 123
-RANDOM_TRADE_CHANCE = 0.04 # every 5 minutes on average
+RANDOM_TRADE_CHANCE = 0.04  # every 5 minutes on average
+TIMEOUT = 600  # seconds to wait for a transaction receipt
 
 # Get the configuration and initialize the web3 provider.
 eth_config = build_eth_config()
@@ -159,7 +157,7 @@ for agent in agents:
             agent._pool._token,  # contract
             agent.agent,  # sender
             "mint(uint256)",  # function
-            timeout = 120,
+            timeout = TIMEOUT,
             *fn_args,
         )
         print("success!")
