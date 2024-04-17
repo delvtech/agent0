@@ -77,7 +77,7 @@ dai_30_address = ChecksumAddress(HexAddress(HexStr("0xb932F8085399C228b16A9F7FC3
 steth_14_address = ChecksumAddress(HexAddress(HexStr("0xff33bd6d7ED4119c99C310F3e5f0Fa467796Ee23")))
 steth_30_address = ChecksumAddress(HexAddress(HexStr("0x4E38fd41c03ff11b3426efaE53138b86116797b8")))
 rng_generator = np.random.default_rng(RANDSEED)
-hyperdrive_config = IHyperdrive.Config(preview_before_trade=True, rng=rng_generator)
+hyperdrive_config = IHyperdrive.Config(preview_before_trade=True, rng=rng_generator, txn_receipt_timeout=TIMEOUT)
 dai_14_pool = IHyperdrive(chain, dai_14_address, hyperdrive_config)
 dai_30_pool = IHyperdrive(chain, dai_30_address, hyperdrive_config)
 steth_14_pool = IHyperdrive(chain, steth_14_address, hyperdrive_config)
