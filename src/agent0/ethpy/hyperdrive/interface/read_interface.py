@@ -56,6 +56,7 @@ from ._mock_contract import (
     _calc_spot_price,
     _calc_spot_price_after_short,
     _calc_spot_rate,
+    _calc_targeted_long,
     _calc_time_stretch,
 )
 
@@ -758,6 +759,39 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_close_long(pool_state, bond_amount, maturity_time, int(pool_state.block_time))
+
+    def calc_targeted_long(
+        self,
+        budget: FixedPoint,
+        target_rate: FixedPoint,
+        max_iterations: int | None = None,
+        allowable_error: FixedPoint | None = None,
+        pool_state: PoolState | None = None,
+    ) -> FixedPoint:
+        """Calculate the amount of bonds that can be purchased for the given budget.
+
+        Arguments
+        ---------
+        budget: FixedPont
+            The account budget in base for making a long.
+        target: FixedPoint
+            The target fixed rate.
+        max_iterations: int | None, optional
+            The number of iterations to use for the Newtonian method.
+        allowable_error: FixedPoint | None, optional
+            The amount of error supported for reaching the target rate.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of shares returned.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_targeted_long(pool_state, budget, target_rate, max_iterations, allowable_error)
 
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.

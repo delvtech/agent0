@@ -78,6 +78,10 @@ class TestHyperdriveReadInterface:
             max_base_amount > max_base_amount_with_budget
         ), f"{max_base_amount=} should be greater than {max_base_amount_with_budget=}"
 
+        # targeted long
+        current_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
+        _ = hyperdrive_read_interface.calc_targeted_long(FixedPoint(1_000_000), current_fixed_rate / FixedPoint(2))
+
         # min long input
         min_base_amount = hyperdrive_read_interface.current_pool_state.pool_config.minimum_transaction_amount
         assert max_base_amount > min_base_amount, f"{max_base_amount=} should be greater than {min_base_amount=}."
