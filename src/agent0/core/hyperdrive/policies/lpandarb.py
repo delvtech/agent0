@@ -26,6 +26,9 @@ if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
+# too many arguments
+# ruff: noqa: PLR0913
+
 # constants
 TOLERANCE = 1e-18
 MAX_ITER = 50
@@ -47,6 +50,7 @@ def arb_fixed_rate_down(
     slippage_tolerance: FixedPoint | None = None,
     base_fee_multiple: float | None = None,
     priority_fee_multiple: float | None = None,
+    gas_limit: int | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
     """Return an action list for arbitraging the fixed rate down to the variable rate.
 
@@ -68,6 +72,8 @@ def arb_fixed_rate_down(
         The base fee multiple for transactions. Defaults to None.
     priority_fee_multiple: float | None, optional
         The priority fee multiple for transactions. Defaults to None.
+    gas_limit: int | None, optional
+        Maximum gas to spend per trade. Defaults to None.
 
     Returns
     -------
@@ -108,7 +114,7 @@ def arb_fixed_rate_down(
                 reduce_short_amount,
                 reduce_short_amount * curve_portion,
             )
-            action_list.append(close_short_trade(reduce_short_amount, maturity_time, slippage_tolerance))
+            action_list.append(close_short_trade(reduce_short_amount, maturity_time, slippage_tolerance, gas_limit))
     # Open a new long, if there's still a need, and we have money
     if max_trade_amount_base >= min_trade_amount_bonds and bonds_needed > min_trade_amount_bonds:
         max_long_shares = interface.calc_shares_in_given_bonds_out_down(
@@ -120,7 +126,7 @@ def arb_fixed_rate_down(
             max_long_shares * pool_state.pool_info.vault_share_price,
             max_trade_amount_base,
         )
-        action_list.append(open_long_trade(amount_base, slippage_tolerance, base_fee_multiple, priority_fee_multiple))
+        action_list.append(open_long_trade(amount_base, slippage_tolerance, base_fee_multiple, priority_fee_multiple, gas_limit))
     return action_list
 
 
@@ -133,6 +139,7 @@ def arb_fixed_rate_up(
     slippage_tolerance: FixedPoint | None = None,
     base_fee_multiple: float | None = None,
     priority_fee_multiple: float | None = None,
+    gas_limit: int | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
     """Return an action list for arbitraging the fixed rate up to the variable rate.
 
@@ -154,6 +161,8 @@ def arb_fixed_rate_up(
         The base fee multiple for transactions. Defaults to None.
     priority_fee_multiple: float | None, optional
         The priority fee multiple for transactions. Defaults to None.
+    gas_limit: int | None, optional
+        Maximum gas to spend per trade. Defaults to None.
 
     Returns
     -------
@@ -189,7 +198,7 @@ def arb_fixed_rate_up(
         if reduce_long_amount > min_trade_amount_bonds:
             bonds_needed -= reduce_long_amount * curve_portion
             logging.debug("reducing long by %s", reduce_long_amount)
-            action_list.append(close_long_trade(reduce_long_amount, maturity_time, slippage_tolerance))
+            action_list.append(close_long_trade(reduce_long_amount, maturity_time, slippage_tolerance, gas_limit))
     # Open a new short, if there's still a need, and we have money
     if max_trade_amount_base >= min_trade_amount_bonds and bonds_needed > min_trade_amount_bonds:
         max_short = interface.calc_max_short(max_trade_amount_base, pool_state)
@@ -199,7 +208,7 @@ def arb_fixed_rate_up(
         # https://github.com/delvtech/hyperdrive/issues/969
         max_short -= FixedPoint("0.1")
         amount_bonds = minimum(bonds_needed, max_short)
-        action_list.append(open_short_trade(amount_bonds, slippage_tolerance, base_fee_multiple, priority_fee_multiple))
+        action_list.append(open_short_trade(amount_bonds, slippage_tolerance, base_fee_multiple, priority_fee_multiple, gas_limit))
     return action_list
 
 
@@ -468,6 +477,10 @@ class LPandArb(HyperdriveBasePolicy):
         """Whether to exit the bot if there are no trades."""
         min_trade_amount_bonds: FixedPoint = FixedPoint(10)
         """The minimum bond trade amount below which the agent won't submit a trade."""
+        gas_limit: int | None = None
+        """Maximum gas to spend per trade."""
+        trade_chance: FixedPoint = FixedPoint("1.0")
+        """The probability of this bot to make a trade on an action call."""
 
         @property
         def arb_portion(self) -> FixedPoint:
@@ -506,6 +519,10 @@ class LPandArb(HyperdriveBasePolicy):
             A tuple where the first element is a list of actions,
             and the second element defines if the agent is done trading.
         """
+        gonna_trade = self.rng.choice([True, False], p=[float(self.config.trade_chance), 1 - float(self.config.trade_chance)])
+        if not gonna_trade:
+            return [], False
+
         action_list = []
 
         # compute these once to avoid race conditions
@@ -527,6 +544,7 @@ class LPandArb(HyperdriveBasePolicy):
                     priority_fee_multiple=self.config.priority_fee_multiple,
                     min_apr=current_fixed_rate - self.config.rate_slippage,  # type: ignore
                     max_apr=current_fixed_rate + self.config.rate_slippage,  # type: ignore
+                    gas_limit=self.config.gas_limit,
                 )
             )
             max_trade_amount_base -= lp_amount
@@ -549,6 +567,7 @@ class LPandArb(HyperdriveBasePolicy):
                     self.slippage_tolerance,
                     self.config.base_fee_multiple,
                     self.config.priority_fee_multiple,
+                    self.config.gas_limit,
                 )
             )
 
@@ -564,6 +583,7 @@ class LPandArb(HyperdriveBasePolicy):
                     self.slippage_tolerance,
                     self.config.base_fee_multiple,
                     self.config.priority_fee_multiple,
+                    self.config.gas_limit,
                 )
             )
 
