@@ -107,8 +107,6 @@ class TestHyperdriveReadInterface:
         the conversion to and from Rust via strings was successful.
         """
         # State
-        current_time = hyperdrive_read_interface.current_pool_state.block_time
-        maturity_time = current_time + hyperdrive_read_interface.current_pool_state.pool_config.position_duration
         _ = hyperdrive_read_interface.current_pool_state
         _ = hyperdrive_read_interface.current_pool_state.variable_rate
         _ = hyperdrive_read_interface.current_pool_state.vault_shares
@@ -117,6 +115,8 @@ class TestHyperdriveReadInterface:
         # Short
         _ = hyperdrive_read_interface.calc_open_short(FixedPoint(100))
         # TODO: This is currently failing; need to fix it in hyperdrive-rs
+        # current_time = hyperdrive_read_interface.current_pool_state.block_time
+        # maturity_time = current_time + hyperdrive_read_interface.current_pool_state.pool_config.position_duration
         # price_with_default = hyperdrive_read_interface.calc_spot_price_after_short(FixedPoint(100))
         # price_with_base_amount = hyperdrive_read_interface.calc_spot_price_after_short(FixedPoint(100), base_amount)
         # assert (
