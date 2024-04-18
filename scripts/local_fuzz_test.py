@@ -22,11 +22,8 @@ def main() -> None:
 
     # Build interactive local hyperdrive
     # TODO explicitly use a block time here to allow for multiple transactions per block
-    print("Launching local chain")
     local_chain_config = ILocalChain.Config(chain_port=11111, db_port=22222)
     chain = ILocalChain(local_chain_config)
-
-    print("Launching hyperdrive")
     # TODO fuzz over pool configs
     rng_seed = random.randint(0, 10000000)
     hyperdrive_config = ILocalHyperdrive.Config(
@@ -38,8 +35,6 @@ def main() -> None:
         crash_report_additional_info={"rng_seed": rng_seed},
     )
     hyperdrive_pool = ILocalHyperdrive(chain, hyperdrive_config)
-
-    print("Running fuzz bots")
 
     # TODO submit multiple transactions per block
     run_fuzz_bots(
