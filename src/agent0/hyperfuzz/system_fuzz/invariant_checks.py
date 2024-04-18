@@ -47,7 +47,7 @@ def run_invariant_checks(
         If True, log to rollbar if any invariant check fails.
     """
     # TODO cleanup
-    # pylint: disable=too-many-local
+    # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
 
     # Get the variables to check & check each invariant
