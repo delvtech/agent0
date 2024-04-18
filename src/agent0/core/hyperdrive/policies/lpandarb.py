@@ -107,6 +107,7 @@ def arb_fixed_rate_down(
             pool_state=pool_state,
             target_rate=variable_rate,
             min_trade_amount_bonds=min_trade_amount_bonds,
+            max_trade_amount_base=max_trade_amount_base
         )
         bonds_needed = -bonds_needed  # we trade positive numbers around here
         end_time = time.time()
@@ -267,6 +268,7 @@ def calc_delta_reserves_for_target_rate(
     pool_state: PoolState,
     target_rate: FixedPoint,
     min_trade_amount_bonds: FixedPoint,
+    max_trade_amount_base: FixedPoint | None = None,
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculate the bonds needed to hit the desired reserves ratio, keeping shares constant.
 
@@ -287,6 +289,8 @@ def calc_delta_reserves_for_target_rate(
         The target rate the pool will have after the calculated change in bonds and shares.
     min_trade_amount_bonds: FixedPoint
         The minimum amount of bonds needed to open a trade.
+    max_trade_amount_base: FixedPoint | None, optional
+        The maximum amount of base allowed to trade.
 
     Returns
     -------
@@ -300,9 +304,13 @@ def calc_delta_reserves_for_target_rate(
     # We want to take as large of a step as possible while avoiding negative share reserves.
     # So we loop through, increasing the divisor until the share reserves are no longer negative.
     pool_delta_shares = FixedPoint(0)
+    max_bonds_needed = target_bonds - pool_state.pool_info.bond_reserves
+    if max_trade_amount_base is not None:
+        max_bonds_needed = min(max_bonds_needed, max_trade_amount_base * interface.calc_spot_price(pool_state))
     while good_result is False:
         try:
-            trade_delta_bonds = (target_bonds - pool_state.pool_info.bond_reserves) / divisor
+            trade_delta_bonds = max_bonds_needed / divisor
+            print(f"{trade_delta_bonds=}")
             pool_delta_shares = calc_shares_needed_for_bonds(
                 interface, pool_state, trade_delta_bonds, min_trade_amount_bonds
             )
@@ -329,6 +337,7 @@ def calc_reserves_to_hit_target_rate(
     pool_state: PoolState,
     target_rate: FixedPoint,
     min_trade_amount_bonds: FixedPoint,
+    max_trade_amount_base: FixedPoint | None = None,
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculate the bonds and shares needed to hit the target fixed rate.
 
@@ -342,6 +351,8 @@ def calc_reserves_to_hit_target_rate(
         The target rate the pool will have after the calculated change in bonds and shares.
     min_trade_amount_bonds: FixedPoint
         The minimum amount of bonds needed to open a trade.
+    max_trade_amount_base: FixedPoint | None, optional
+        The maximum amount of base available to open a trade.
 
     Returns
     -------
@@ -362,7 +373,7 @@ def calc_reserves_to_hit_target_rate(
         latest_fixed_rate = interface.calc_spot_rate(temp_pool_state)
         # get the predicted reserve levels
         bonds_needed, shares_needed = calc_delta_reserves_for_target_rate(
-            interface, temp_pool_state, target_rate, min_trade_amount_bonds
+            interface, temp_pool_state, target_rate, min_trade_amount_bonds, max_trade_amount_base
         )
         # get the fixed rate for an updated pool state, without storing the state variable
         # TODO: This deepcopy is slow. https://github.com/delvtech/agent0/issues/1355
