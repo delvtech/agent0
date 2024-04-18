@@ -32,7 +32,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # TODO consolidate setup into single function
 
     # Get config and addresses
-    eth_config = build_eth_config(dotenv_file="eth.env")
+    eth_config = build_eth_config()
     hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
     if parsed_args.pool not in hyperdrive_addresses:
         raise ValueError(
@@ -40,7 +40,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
     hyperdrive_address = hyperdrive_addresses[parsed_args.pool]
 
-    log_to_rollbar = initialize_rollbar("localfuzzbots_" + parsed_args.pool)
+    log_to_rollbar = initialize_rollbar("remotefuzzbots_" + parsed_args.pool)
 
     rng_seed = random.randint(0, 10000000)
 
@@ -67,6 +67,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             check_invariance=False,
             exit_on_crash=exit_on_crash,
             log_to_rollbar=log_to_rollbar,
+            run_async=True,
         )
     except Exception as exc:  # pylint: disable=broad-exception-caught
         if STOP_CHAIN_ON_CRASH:
