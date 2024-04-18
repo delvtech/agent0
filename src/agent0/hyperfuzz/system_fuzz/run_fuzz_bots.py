@@ -71,8 +71,8 @@ def run_fuzz_bots(
     base_budget_per_bot: FixedPoint | None = None,
     eth_budget_per_bot: FixedPoint | None = None,
     slippage_tolerance: FixedPoint | None = None,
-    exit_on_crash: bool = False,
-    exit_on_failed_invariance_checks: bool = False,
+    raise_error_on_crash: bool = False,
+    raise_error_on_failed_invariance_checks: bool = False,
     invariance_test_epsilon: float | None = None,
     minimum_avg_agent_base: FixedPoint | None = None,
     log_to_rollbar: bool = True,
@@ -96,9 +96,9 @@ def run_fuzz_bots(
         The ETH budget per bot. Defaults to 1_000
     slippage_tolerance: FixedPoint | None, optional
         The slippage tolerance. Defaults to 1% slippage
-    exit_on_crash: bool, optional
+    raise_error_on_crash: bool, optional
         If True, will exit the process if a bot crashes. Defaults to False.
-    exit_on_failed_invariance_checks: bool, optional
+    raise_error_on_failed_invariance_checks: bool, optional
         If True, will exit the process if the pool fails an invariance check. Defaults to False.
     invariance_test_epsilon: float | None, optional
         The epsilon for invariance tests. Defaults to 1e-4
@@ -199,7 +199,7 @@ def run_fuzz_bots(
             else:
                 trades = [agent.execute_policy_action() for agent in agents]
         except Exception as exc:  # pylint: disable=broad-exception-caught
-            if exit_on_crash:
+            if raise_error_on_crash:
                 raise exc
             # Otherwise, we ignore crashes, we want the bot to keep trading
             # These errors will get logged regardless
@@ -218,7 +218,7 @@ def run_fuzz_bots(
                 latest_block_number,
                 hyperdrive_pool.interface,
                 invariance_test_epsilon,
-                raise_error_on_failure=exit_on_failed_invariance_checks,
+                raise_error_on_failure=raise_error_on_failed_invariance_checks,
                 log_to_rollbar=log_to_rollbar,
             )
 

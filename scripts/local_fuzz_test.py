@@ -40,8 +40,8 @@ def main() -> None:
     run_fuzz_bots(
         hyperdrive_pool,
         check_invariance=True,
-        exit_on_failed_invariance_checks=True,
-        exit_on_crash=False,
+        raise_error_on_failed_invariance_checks=True,
+        raise_error_on_crash=False,
         log_to_rollbar=log_to_rollbar,
         run_async=False,
     )
