@@ -188,6 +188,7 @@ def run_fuzz_bots(
     logging.info("Trading...")
     while True:
         # Execute the agent policies
+        trades = []
         try:
             if run_async:
                 trades = asyncio.run(
@@ -203,7 +204,8 @@ def run_fuzz_bots(
             # Otherwise, we ignore crashes, we want the bot to keep trading
             # These errors will get logged regardless
 
-        logging.debug([[t.__name__ for t in trade] for trade in trades])
+        # Logs trades
+        logging.debug([[trade.__name__ for trade in agent_trade] for agent_trade in trades])
 
         # Run invariance checks if flag is set
         if check_invariance:
