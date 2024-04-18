@@ -46,6 +46,10 @@ def run_invariant_checks(
     log_to_rollbar: bool
         If True, log to rollbar if any invariant check fails.
     """
+    # TODO cleanup
+    # pylint: disable=too-many-local
+    # pylint: disable=too-many-arguments
+
     # Get the variables to check & check each invariant
     pool_state = interface.get_hyperdrive_state(latest_block)
     any_check_failed = False

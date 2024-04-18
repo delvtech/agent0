@@ -114,6 +114,7 @@ def run_fuzz_bots(
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
 
     # Set defaults
     if num_random_agents is None:
