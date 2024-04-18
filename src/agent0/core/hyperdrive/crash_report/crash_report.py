@@ -19,6 +19,7 @@ from web3.types import RPCEndpoint
 
 from agent0.core.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
 from agent0.ethpy.base.errors import ContractCallException
+from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.hyperlogs import ExtendedJSONEncoder, logs
 from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
@@ -49,12 +50,14 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
+# pylint: disable=too-many-arguments
 def build_crash_trade_result(
     exception: Exception,
     interface: HyperdriveReadInterface,
     agent: HyperdriveAgent | None = None,
     trade_object: Trade[HyperdriveMarketAction] | None = None,
     additional_info: dict[str, Any] | None = None,
+    pool_state: PoolState | None = None,
 ) -> TradeResult:
     """Build the trade result object when a crash happens.
 
@@ -70,6 +73,8 @@ def build_crash_trade_result(
         A trade provided by a HyperdriveAgent. If None, won't report the trade object.
     additional_info: dict[str, Any] | None, optional
         Additional information used for crash reporting, optional
+    pool_state: PoolState | None, optional
+        The pool state for crash reporting. If none, will get the current pool state from the interface.
 
     Returns
     -------
@@ -114,12 +119,13 @@ def build_crash_trade_result(
             "fn_kwargs": None,
         }
 
-    ## Get the pool state at the desired block number
-    pool_state = None
-    try:
-        pool_state = interface.get_hyperdrive_state(interface.get_block(trade_result.block_number))
-    except Exception:  # pylint: disable=broad-except
-        pass
+    # We trust the caller to provide the correct pool state if it's being passed in.
+    if pool_state is None:
+        # Get the pool state at the desired block number
+        try:
+            pool_state = interface.get_hyperdrive_state(interface.get_block(trade_result.block_number))
+        except Exception:  # pylint: disable=broad-except
+            pass
 
     ## Get pool config
     # Pool config is static, so we can get it from the interface here
