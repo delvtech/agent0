@@ -34,12 +34,9 @@ from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive import ILocalChain
-from agent0.core.interactive_fuzz.helpers import (
-    FuzzAssertionException,
-    advance_time_after_checkpoint,
-    advance_time_before_checkpoint,
-    setup_fuzz,
-)
+from agent0.hyperfuzz import FuzzAssertionException
+
+from .helpers import advance_time_after_checkpoint, advance_time_before_checkpoint, setup_fuzz
 
 # pylint: disable=too-many-locals
 
