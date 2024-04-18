@@ -1,4 +1,4 @@
-"""Setup an interactive enfironment for fuzz testing."""
+"""Setup an interactive environment for fuzz testing."""
 
 from __future__ import annotations
 

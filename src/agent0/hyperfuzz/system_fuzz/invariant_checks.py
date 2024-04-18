@@ -1,3 +1,5 @@
+"""Runs invariant checks against a hyperdrive pool."""
+
 from __future__ import annotations
 
 import logging

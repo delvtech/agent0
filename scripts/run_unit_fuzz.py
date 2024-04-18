@@ -1,4 +1,4 @@
-"""Runs all fuzz tests forever."""
+"""Runs all unit fuzz tests forever."""
 
 from __future__ import annotations
 
