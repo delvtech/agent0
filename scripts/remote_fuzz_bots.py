@@ -61,15 +61,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
-    raise_error_on_crash = False
-    if STOP_CHAIN_ON_CRASH:
-        raise_error_on_crash = True
-
     try:
         run_fuzz_bots(
             hyperdrive_pool,
             check_invariance=False,
-            raise_error_on_crash=raise_error_on_crash,
+            raise_error_on_crash=STOP_CHAIN_ON_CRASH,
             log_to_rollbar=log_to_rollbar,
             run_async=True,
         )
