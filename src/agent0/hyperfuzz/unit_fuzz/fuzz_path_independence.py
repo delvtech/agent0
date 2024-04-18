@@ -44,15 +44,11 @@ from fixedpointmath import FixedPoint, isclose
 
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
-from agent0.core.interactive_fuzz.helpers import (
-    FuzzAssertionException,
-    close_trades,
-    execute_random_trades,
-    permute_trade_events,
-    setup_fuzz,
-)
 from agent0.ethpy.base.errors import ContractCallException
+from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperlogs import ExtendedJSONEncoder
+
+from .helpers import close_trades, execute_random_trades, permute_trade_events, setup_fuzz
 
 
 # pylint: disable=too-many-locals

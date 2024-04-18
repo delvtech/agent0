@@ -1,4 +1,4 @@
-"""Runs random bots against the local chain for fuzz testing."""
+"""Runs random bots against a remote chain for fuzz testing."""
 
 from __future__ import annotations
 

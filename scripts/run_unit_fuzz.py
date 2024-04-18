@@ -7,13 +7,13 @@ import sys
 from typing import NamedTuple, Sequence
 
 from agent0.core.hyperdrive.interactive import ILocalChain
-from agent0.core.interactive_fuzz import (
+from agent0.hyperfuzz import FuzzAssertionException
+from agent0.hyperfuzz.unit_fuzz import (
     fuzz_long_short_maturity_values,
     fuzz_path_independence,
     fuzz_present_value,
     fuzz_profit_check,
 )
-from agent0.core.interactive_fuzz.helpers import FuzzAssertionException
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
