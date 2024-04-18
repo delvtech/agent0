@@ -23,6 +23,7 @@ from typing import Any, NamedTuple, Sequence
 from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint, isclose
 from hexbytes import HexBytes
+from web3 import Web3
 from web3.exceptions import BlockNotFound
 from web3.types import BlockData
 
@@ -47,13 +48,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     Arguments
     ---------
     argv: Sequence[str]
-        A sequnce containing the uri to the database server and the test epsilon.
+        A sequence containing the uri to the database server and the test epsilon.
     """
 
     # Setup the experiment
     parsed_args, interface = setup_fuzz(argv)
 
-    log_to_rollbar = initialize_rollbar("fuzzbots_invariantcheck_" + parsed_args.pool)
+    # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
+    if parsed_args.pool_addr == "":
+        rollbar_environment_name = "fuzzbots_invariantcheck_" + parsed_args.pool
+    else:
+        rollbar_environment_name = "fuzzbots_invariantcheck_" + parsed_args.pool_addr
+
+    log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # Run the loop forever
     last_executed_block_number = 0  # no matter what we will run the check the first time
@@ -98,7 +105,12 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterfac
         The parsed arguments and interface constructed from those arguments.
     """
     parsed_args = parse_arguments(argv)
+
     eth_config = build_eth_config(parsed_args.eth_config_env_file)
+    # CLI arguments overwrite what's in the env file
+    if parsed_args.rpc_uri != "":
+        eth_config.rpc_uri = parsed_args.rpc_uri
+
     env_config = EnvironmentConfig(
         delete_previous_logs=False,
         halt_on_errors=False,
@@ -119,12 +131,15 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterfac
     )
 
     # Setup hyperdrive interface
-    hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
-    if parsed_args.pool not in hyperdrive_addresses:
-        raise ValueError(
-            f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"
-        )
-    hyperdrive_address = hyperdrive_addresses[parsed_args.pool]
+    if parsed_args.pool_addr == "":
+        hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
+        if parsed_args.pool not in hyperdrive_addresses:
+            raise ValueError(
+                f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"
+            )
+        hyperdrive_address = hyperdrive_addresses[parsed_args.pool]
+    else:
+        hyperdrive_address = Web3.to_checksum_address(parsed_args.pool_addr)
 
     interface = HyperdriveReadInterface(eth_config, hyperdrive_address=hyperdrive_address)
     return parsed_args, interface
@@ -417,6 +432,8 @@ class Args(NamedTuple):
     eth_config_env_file: str
     sleep_time: int
     pool: str
+    pool_addr: str
+    rpc_uri: str
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -437,6 +454,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         eth_config_env_file=namespace.eth_config_env_file,
         sleep_time=namespace.sleep_time,
         pool=namespace.pool,
+        pool_addr=namespace.pool_addr,
+        rpc_uri=namespace.rpc_uri,
     )
 
 
@@ -472,12 +491,26 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=5,
         help="Sleep time between checks, in seconds.",
     )
-    # TODO read this from the register or pass in pool address
+
     parser.add_argument(
         "--pool",
         type=str,
         default="erc4626_hyperdrive",
         help='The logical name of the pool to connect to. Options are "erc4626_hyperdrive" and "stethhyperdrive".',
+    )
+
+    parser.add_argument(
+        "--pool-addr",
+        type=str,
+        default="",
+        help="The address of the hyperdrive pool to connect to. Uses `--pool` if not provided.",
+    )
+
+    parser.add_argument(
+        "--rpc-uri",
+        type=str,
+        default="",
+        help="The RPC URI of the chain.",
     )
 
     # Use system arguments if none were passed
