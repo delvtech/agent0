@@ -76,6 +76,7 @@ def run_fuzz_bots(
     invariance_test_epsilon: float | None = None,
     minimum_avg_agent_base: FixedPoint | None = None,
     log_to_rollbar: bool = True,
+    run_async: bool = False,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -158,34 +159,41 @@ def run_fuzz_bots(
         )
         agents.append(agent)
 
-    # Add funds asynchronously
     logging.info("Funding bots...")
-    asyncio.run(
-        _async_runner(
-            [agent.add_funds for agent in agents],
-            base=base_budget_per_bot,
-            eth=eth_budget_per_bot,
+    if run_async:
+        asyncio.run(
+            _async_runner(
+                [agent.add_funds for agent in agents],
+                base=base_budget_per_bot,
+                eth=eth_budget_per_bot,
+            )
         )
-    )
+    else:
+        [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
 
     logging.info("Setting max approval...")
-    # Set max approval asynchronously
-    asyncio.run(
-        _async_runner(
-            [agent.set_max_approval for agent in agents],
+    if run_async:
+        asyncio.run(
+            _async_runner(
+                [agent.set_max_approval for agent in agents],
+            )
         )
-    )
+    else:
+        [agent.set_max_approval() for agent in agents]
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
     while True:
-        # Execute the agent policies asynchronously
+        # Execute the agent policies
         try:
-            asyncio.run(
-                _async_runner(
-                    [agent.execute_policy_action for agent in agents],
+            if run_async:
+                asyncio.run(
+                    _async_runner(
+                        [agent.execute_policy_action for agent in agents],
+                    )
                 )
-            )
+            else:
+                [agent.execute_policy_action() for agent in agents]
         except Exception as exc:  # pylint: disable=broad-exception-caught
             if exit_on_crash:
                 raise exc
@@ -212,10 +220,13 @@ def run_fuzz_bots(
         # Update agent funds
         if average_agent_base < minimum_avg_agent_base:
             logging.info("Refunding agents...")
-            asyncio.run(
-                _async_runner(
-                    [agent.add_funds for agent in agents],
-                    base=base_budget_per_bot,
-                    eth=eth_budget_per_bot,
+            if run_async:
+                asyncio.run(
+                    _async_runner(
+                        [agent.add_funds for agent in agents],
+                        base=base_budget_per_bot,
+                        eth=eth_budget_per_bot,
+                    )
                 )
-            )
+            else:
+                [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
