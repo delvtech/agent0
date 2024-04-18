@@ -41,6 +41,10 @@ def run_invariant_checks(
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
     test_epsilon: float
         The tolerance for the invariance checks.
+    raise_error_on_failure: bool
+        If True, raise an error if any invariant check fails.
+    log_to_rollbar: bool
+        If True, log to rollbar if any invariant check fails.
     """
     # Get the variables to check & check each invariant
     pool_state = interface.get_hyperdrive_state(latest_block)
