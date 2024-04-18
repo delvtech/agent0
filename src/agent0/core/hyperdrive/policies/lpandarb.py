@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -87,17 +88,30 @@ def arb_fixed_rate_down(
     if variable_rate is None:
         variable_rate = interface.get_standardized_variable_rate()
 
-    # calculate bonds needed using iterative refinement
-    # _, bonds_needed = calc_reserves_to_hit_target_rate(
-    #     interface=interface,
-    #     pool_state=pool_state,
-    #     target_rate=variable_rate,
-    #     min_trade_amount_bonds=min_trade_amount_bonds,
-    # )
-    # bonds_needed = -bonds_needed  # we trade positive numbers around here
-    base_needed = interface.calc_targeted_long(budget=wallet.balance.amount, target_rate=variable_rate, pool_state=pool_state)
-    shares_needed = base_needed / pool_state.pool_info.vault_share_price
-    bonds_needed = interface.calc_bonds_out_given_shares_in_down(base_needed)
+    # calculate bonds needed using Rust SDK
+    start_time = time.time()
+    try:
+        base_needed = interface.calc_targeted_long(budget=wallet.balance.amount, target_rate=variable_rate, pool_state=pool_state)
+        shares_needed = base_needed / pool_state.pool_info.vault_share_price
+        bonds_needed = interface.calc_bonds_out_given_shares_in_down(base_needed)
+        end_time = time.time()
+        logging.debug("Time to calculate bonds needed (Rust): %s", end_time - start_time)
+    except ValueError as err:
+        print(f"Error calculating bonds needed (Rust): {err}")
+        end_time = time.time()
+        logging.debug("Time to crash: %s", end_time - start_time)
+        # calculate bonds needed using iterative refinement
+        start_time = time.time()
+        _, bonds_needed = calc_reserves_to_hit_target_rate(
+            interface=interface,
+            pool_state=pool_state,
+            target_rate=variable_rate,
+            min_trade_amount_bonds=min_trade_amount_bonds,
+        )
+        bonds_needed = -bonds_needed  # we trade positive numbers around here
+        end_time = time.time()
+        logging.debug("Time to calculate bonds needed (iterative): %s", end_time - start_time)
+
     # Reduce shorts first, if we have them
     for maturity_time, short in wallet.shorts.items():
         # TODO: Get time_between_blocks from the interface instead of hard-coding to 12
