@@ -28,6 +28,9 @@ class OpenLong:
     bond_amount: FixedPoint
     """The amount of longs opened in units of bonds."""
 
+    # Expose the name of the object
+    __name__: str = "OpenLong"
+
 
 @dataclass
 class CloseLong:
@@ -50,6 +53,9 @@ class CloseLong:
     bond_amount: FixedPoint
     """The amount of longs closed in units of bonds."""
 
+    # Expose the name of the object
+    __name__: str = "CloseLong"
+
 
 @dataclass
 class OpenShort:
@@ -71,6 +77,9 @@ class OpenShort:
     """The amount of base in the underlying short when shorting bonds."""
     bond_amount: FixedPoint
     """The amount of shorts opened in units of bonds."""
+
+    # Expose the name of the object
+    __name__: str = "OpenShort"
 
 
 @dataclass
@@ -96,6 +105,9 @@ class CloseShort:
     bond_amount: FixedPoint
     """The amount of shorts closed in units of bonds."""
 
+    # Expose the name of the object
+    __name__: str = "CloseShort"
+
 
 @dataclass
 class AddLiquidity:
@@ -113,6 +125,9 @@ class AddLiquidity:
     """If the input amount for the trade was in base or shares."""
     lp_share_price: FixedPoint
     """The lp share price for this trade."""
+
+    # Expose the name of the object
+    __name__: str = "AddLiquidity"
 
 
 @dataclass
@@ -136,6 +151,9 @@ class RemoveLiquidity:
     lp_share_price: FixedPoint
     """The lp share price for this trade."""
 
+    # Expose the name of the object
+    __name__: str = "RemoveLiquidity"
+
 
 @dataclass
 class RedeemWithdrawalShares:
@@ -154,6 +172,9 @@ class RedeemWithdrawalShares:
     as_base: bool
     """If the input amount for the trade was in base or shares."""
 
+    # Expose the name of the object
+    __name__: str = "RedeemWithdrawalShares"
+
 
 @dataclass
 class CreateCheckpoint:
@@ -171,3 +192,6 @@ class CreateCheckpoint:
     """The amount of longs that matured within this checkpoint."""
     lp_share_price: FixedPoint
     """The lp share price at the checkpoint."""
+
+    # Expose the name of the object
+    __name__: str = "CreateCheckpoint"

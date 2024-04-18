@@ -107,6 +107,8 @@ def run_fuzz_bots(
         Defaults to 1/10 of base_budget_per_bot
     log_to_rollbar: bool, optional
         If True, log errors rollbar. Defaults to True.
+    run_async: bool, optional
+        If True, will run the bots asynchronously. Defaults to False.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -169,7 +171,7 @@ def run_fuzz_bots(
             )
         )
     else:
-        [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
+        _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
 
     logging.info("Setting max approval...")
     if run_async:
@@ -179,7 +181,7 @@ def run_fuzz_bots(
             )
         )
     else:
-        [agent.set_max_approval() for agent in agents]
+        _ = [agent.set_max_approval() for agent in agents]
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
@@ -187,18 +189,20 @@ def run_fuzz_bots(
         # Execute the agent policies
         try:
             if run_async:
-                asyncio.run(
+                trades = asyncio.run(
                     _async_runner(
                         [agent.execute_policy_action for agent in agents],
                     )
                 )
             else:
-                [agent.execute_policy_action() for agent in agents]
+                trades = [agent.execute_policy_action() for agent in agents]
         except Exception as exc:  # pylint: disable=broad-exception-caught
             if exit_on_crash:
                 raise exc
             # Otherwise, we ignore crashes, we want the bot to keep trading
             # These errors will get logged regardless
+
+        logging.debug([[t.__name__ for t in trade] for trade in trades])
 
         # Run invariance checks if flag is set
         if check_invariance:
@@ -229,4 +233,4 @@ def run_fuzz_bots(
                     )
                 )
             else:
-                [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
+                _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
