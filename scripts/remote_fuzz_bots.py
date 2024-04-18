@@ -13,6 +13,7 @@ from web3.types import RPCEndpoint
 from agent0 import IChain, IHyperdrive
 from agent0.ethpy import build_eth_config
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
+from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 # Crash behavior
@@ -41,6 +42,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     hyperdrive_address = hyperdrive_addresses[parsed_args.pool]
 
     log_to_rollbar = initialize_rollbar("remotefuzzbots_" + parsed_args.pool)
+    setup_logging(
+        log_stdout=True,
+    )
 
     rng_seed = random.randint(0, 10000000)
 
