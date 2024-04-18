@@ -11,6 +11,11 @@ from hexbytes import HexBytes
 from web3.exceptions import BlockNotFound
 from web3.types import BlockData
 
+from agent0.core.hyperdrive.crash_report import (
+    build_crash_trade_result,
+    get_anvil_state_dump,
+    log_hyperdrive_crash_report,
+)
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state.pool_state import PoolState
 from agent0.hyperfuzz import FuzzAssertionException
@@ -21,6 +26,8 @@ def run_invariant_checks(
     latest_block_number: BlockNumber,
     interface: HyperdriveReadInterface,
     test_epsilon: float,
+    raise_error_on_failure: bool = False,
+    log_to_rollbar: bool = True,
 ) -> None:
     """Run the invariant checks.
 
@@ -61,7 +68,20 @@ def run_invariant_checks(
     # Log additional information if any test failed
     if any_check_failed:
         logging.critical("\n".join(exception_message))
-        raise FuzzAssertionException(*exception_message, exception_data=exception_data)
+        error = FuzzAssertionException(*exception_message, exception_data=exception_data)
+        report = build_crash_trade_result(error, interface, additional_info=error.exception_data)
+        report.anvil_state = get_anvil_state_dump(interface.web3)
+        rollbar_data = error.exception_data
+
+        log_hyperdrive_crash_report(
+            report,
+            crash_report_to_file=True,
+            crash_report_file_prefix="fuzz_bots_invariant_checks",
+            log_to_rollbar=log_to_rollbar,
+            rollbar_data=rollbar_data,
+        )
+        if raise_error_on_failure:
+            raise error
 
 
 class InvariantCheckResults(NamedTuple):
