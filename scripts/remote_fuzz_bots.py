@@ -74,7 +74,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             hyperdrive_pool.interface.web3.provider.make_request(
                 method=RPCEndpoint("evm_setIntervalMining"), params=[0]
             )
-            raise exc
+        # If `run_fuzz_bots` exits, it's because we're wanting it to exit on crash
+        # so we reraise the orig exception here
+        raise exc
 
 
 class Args(NamedTuple):
