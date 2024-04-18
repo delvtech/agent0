@@ -467,7 +467,7 @@ class TestBotToDb:
         expected_spot_price = hyperdrive.calc_spot_price()
 
         latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-        expected_fixed_rate = hyperdrive.calc_fixed_rate()
+        expected_fixed_rate = hyperdrive.calc_spot_rate()
 
         assert latest_pool_analysis["block_number"] == hyperdrive.current_pool_state.block_number
         # Spot price and fixed rate is off by one wei

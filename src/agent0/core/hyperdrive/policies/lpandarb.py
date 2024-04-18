@@ -313,17 +313,17 @@ def calc_reserves_to_hit_target_rate(
     iteration = 0
     total_shares_needed = FixedPoint(0)
     total_bonds_needed = FixedPoint(0)
-    logging.info("Targeting %.2f from %.2f", float(target_rate), float(interface.calc_fixed_rate(pool_state)))
+    logging.info("Targeting %.2f from %.2f", float(target_rate), float(interface.calc_spot_rate(pool_state)))
     while float(abs(predicted_rate - target_rate)) > TOLERANCE and iteration < MAX_ITER:
         iteration += 1
-        latest_fixed_rate = interface.calc_fixed_rate(temp_pool_state)
+        latest_fixed_rate = interface.calc_spot_rate(temp_pool_state)
         # get the predicted reserve levels
         bonds_needed, shares_needed = calc_delta_reserves_for_target_rate(
             interface, temp_pool_state, target_rate, min_trade_amount_bonds
         )
         # get the fixed rate for an updated pool state, without storing the state variable
         # TODO: This deepcopy is slow. https://github.com/delvtech/agent0/issues/1355
-        predicted_rate = interface.calc_fixed_rate(
+        predicted_rate = interface.calc_spot_rate(
             apply_step_to_pool_state(deepcopy(temp_pool_state), bonds_needed, shares_needed)
         )
         # adjust guess up or down based on how much the first guess overshot or undershot
@@ -335,7 +335,7 @@ def calc_reserves_to_hit_target_rate(
         shares_to_pool = calc_shares_needed_for_bonds(interface, temp_pool_state, bonds_needed, min_trade_amount_bonds)
         # update pool state with second guess and continue from there
         temp_pool_state = apply_step_to_pool_state(temp_pool_state, bonds_needed, shares_to_pool)
-        predicted_rate = interface.calc_fixed_rate(temp_pool_state)
+        predicted_rate = interface.calc_spot_rate(temp_pool_state)
         # log info about the completed step
         logging.info(
             "iteration %3d: %s%% d_bonds=%s d_shares=%s predicted_precision=%s",
@@ -502,7 +502,7 @@ class LPandArb(HyperdriveBasePolicy):
 
         # compute these once to avoid race conditions
         current_pool_state = interface.current_pool_state
-        current_fixed_rate = interface.calc_fixed_rate(current_pool_state)
+        current_fixed_rate = interface.calc_spot_rate(current_pool_state)
 
         # close matured positions
         self.close_matured_positions(wallet, current_pool_state, self.min_trade_amount_bonds)

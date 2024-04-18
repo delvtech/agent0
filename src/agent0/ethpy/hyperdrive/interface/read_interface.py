@@ -44,7 +44,6 @@ from ._mock_contract import (
     _calc_effective_share_reserves,
     _calc_fees_out_given_bonds_in,
     _calc_fees_out_given_shares_in,
-    _calc_fixed_rate,
     _calc_max_long,
     _calc_max_short,
     _calc_open_long,
@@ -55,6 +54,9 @@ from ._mock_contract import (
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
     _calc_spot_price,
+    _calc_spot_price_after_short,
+    _calc_spot_rate,
+    _calc_targeted_long,
     _calc_time_stretch,
 )
 
@@ -585,8 +587,8 @@ class HyperdriveReadInterface:
             block_timestamp = self.current_pool_state.block_time
         return _calc_checkpoint_id(checkpoint_duration, block_timestamp)
 
-    def calc_fixed_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
-        r"""Calculate the fixed rate for a given pool state.
+    def calc_spot_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
+        r"""Calculate the spot fixed rate for a given pool state.
 
         The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
         to simulate the contract outputs. The simulation follows the formula:
@@ -607,7 +609,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_fixed_rate(pool_state)
+        return _calc_spot_rate(pool_state)
 
     def calc_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool.
@@ -651,6 +653,43 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_effective_share_reserves(pool_state)
 
+    def calc_bonds_given_shares_and_rate(
+        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        r"""Returns the bond reserves for the market share reserves
+        and a given fixed rate.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs. The calculation is based on the formula:
+
+        .. math::
+            \mu * (z - \zeta) * (1 + \text{apr} * t)^{1 / \tau}
+
+        .. todo::
+            This function name matches the Rust implementation, but is not preferred because
+            "given_shares_and_rate" is in the wrong order (should be rate_and_shares) according to arguments
+            and really "given_*" could be removed because it can be inferred from arguments.
+            Need to fix it from the bottom up.
+
+        Arguments
+        ---------
+        target_rate: FixedPoint
+            The target apr for which to calculate the bond reserves given the pools current share reserves.
+        target_shares: FixedPoint, optional
+            The target share reserves for the pool
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The output bonds.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_bonds_given_shares_and_rate(pool_state, target_rate, target_shares)
+
     def calc_open_long(self, base_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the long amount that will be opened for a given base amount after fees.
 
@@ -674,6 +713,29 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_open_long(pool_state, base_amount)
 
+    def calc_max_long(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        budget: FixedPoint
+            How much money the agent is able to spend, in base.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The maximum long, in units of base.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_max_long(pool_state, budget)
+
     def calc_close_long(
         self, bond_amount: FixedPoint, maturity_time: int, pool_state: PoolState | None = None
     ) -> FixedPoint:
@@ -696,7 +758,42 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_close_long(pool_state, bond_amount, maturity_time)
+        return _calc_close_long(pool_state, bond_amount, maturity_time, int(pool_state.block_time))
+
+    def calc_targeted_long(
+        self,
+        budget: FixedPoint,
+        target_rate: FixedPoint,
+        max_iterations: int | None = None,
+        allowable_error: FixedPoint | None = None,
+        pool_state: PoolState | None = None,
+    ) -> FixedPoint:
+        """Calculate the amount of bonds that can be purchased for the given budget.
+
+        Arguments
+        ---------
+        budget: FixedPont
+            The account budget in base for making a long.
+        target_rate: FixedPoint
+            The target fixed rate.
+        max_iterations: int | None, optional
+            The number of iterations to use for the Newtonian method.
+            Defaults to 7.
+        allowable_error: FixedPoint | None, optional
+            The amount of error supported for reaching the target rate.
+            Defaults to 1e-4.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of shares returned.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_targeted_long(pool_state, budget, target_rate, max_iterations, allowable_error)
 
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.
@@ -722,6 +819,54 @@ class HyperdriveReadInterface:
         return _calc_open_short(
             pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.vault_share_price
         )
+
+    def calc_spot_price_after_short(
+        self, bond_amount: FixedPoint, base_amount: FixedPoint | None = None, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the spot price for a given Hyperdrive pool after a short is opened for `base_amount`.
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount that woud be used to open a short.
+        base_amount: FixedPoint | None, optional
+            The amount of base provided for the short.
+            The default is to use whatever is returned by `calc_open_short(bond_amount)`.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+        Returns
+        -------
+        FixedPoint
+            The spot price for the Hyperdrive pool state.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_spot_price_after_short(pool_state, bond_amount, base_amount)
+
+    def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        budget: FixedPoint
+            How much money the agent is able to spend, in base.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The maximum short, in units of bonds.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_max_short(pool_state, budget)
 
     def calc_close_short(
         self,
@@ -759,6 +904,24 @@ class HyperdriveReadInterface:
         return _calc_close_short(
             pool_state, bond_amount, open_vault_share_price, close_vault_share_price, maturity_time
         )
+
+    def calc_present_value(self, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculates the present value of LPs capital in the pool.
+
+        Arguments
+        ---------
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The present value of all LP capital in the pool.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_present_value(pool_state, pool_state.block_time)
 
     def calc_bonds_out_given_shares_in_down(
         self, amount_in: FixedPoint, pool_state: PoolState | None = None
@@ -945,104 +1108,3 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_fees_out_given_shares_in(pool_state, shares_in, maturity_time)
-
-    def calc_bonds_given_shares_and_rate(
-        self, target_rate: FixedPoint, target_shares: FixedPoint | None = None, pool_state: PoolState | None = None
-    ) -> FixedPoint:
-        r"""Returns the bond reserves for the market share reserves
-        and a given fixed rate.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs. The calculation is based on the formula:
-
-        .. math::
-            \mu * (z - \zeta) * (1 + \text{apr} * t)^{1 / \tau}
-
-        .. todo::
-            This function name matches the Rust implementation, but is not preferred because
-            "given_shares_and_rate" is in the wrong order (should be rate_and_shares) according to arguments
-            and really "given_*" could be removed because it can be inferred from arguments.
-            Need to fix it from the bottom up.
-
-        Arguments
-        ---------
-        target_rate: FixedPoint
-            The target apr for which to calculate the bond reserves given the pools current share reserves.
-        target_shares: FixedPoint, optional
-            The target share reserves for the pool
-        pool_state: PoolState, optional
-            The state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
-        Returns
-        -------
-        FixedPoint
-            The output bonds.
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_bonds_given_shares_and_rate(pool_state, target_rate, target_shares)
-
-    def calc_max_long(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs.
-
-        Arguments
-        ---------
-        budget: FixedPoint
-            How much money the agent is able to spend, in base.
-        pool_state: PoolState, optional
-            The state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
-        Returns
-        -------
-        FixedPoint
-            The maximum long, in units of base.
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_max_long(pool_state, budget)
-
-    def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs.
-
-        Arguments
-        ---------
-        budget: FixedPoint
-            How much money the agent is able to spend, in base.
-        pool_state: PoolState, optional
-            The state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
-        Returns
-        -------
-        FixedPoint
-            The maximum short, in units of bonds.
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_max_short(pool_state, budget)
-
-    def calc_present_value(self, pool_state: PoolState | None = None) -> FixedPoint:
-        """Calculates the present value of LPs capital in the pool.
-
-        Arguments
-        ---------
-        pool_state: PoolState, optional
-            The state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
-        Returns
-        -------
-        FixedPoint
-            The present value of all LP capital in the pool.
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_present_value(pool_state, pool_state.block_time)

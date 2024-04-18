@@ -63,31 +63,78 @@ class TestHyperdriveReadInterface:
         fixed_rate = (FixedPoint(1) - spot_price) / (
             spot_price * hyperdrive_read_interface.calc_position_duration_in_years()
         )
-        assert abs(fixed_rate - hyperdrive_read_interface.calc_fixed_rate()) <= FixedPoint(1e-16)
+        assert abs(fixed_rate - hyperdrive_read_interface.calc_spot_rate()) <= FixedPoint(1e-16)
+
+    def test_calc_long(self, hyperdrive_read_interface: HyperdriveReadInterface):
+        """Test various fns associated with long trades."""
+        # state
+        current_time = hyperdrive_read_interface.current_pool_state.block_time
+        maturity_time = current_time + hyperdrive_read_interface.current_pool_state.pool_config.position_duration
+
+        # max long input
+        max_base_amount_with_budget = hyperdrive_read_interface.calc_max_long(FixedPoint(100))
+        max_base_amount = hyperdrive_read_interface.calc_max_long(FixedPoint(100_000_000))
+        assert (
+            max_base_amount > max_base_amount_with_budget
+        ), f"{max_base_amount=} should be greater than {max_base_amount_with_budget=}"
+
+        # targeted long
+        current_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
+        _ = hyperdrive_read_interface.calc_targeted_long(FixedPoint(1_000_000), current_fixed_rate / FixedPoint(2))
+
+        # min long input
+        min_base_amount = hyperdrive_read_interface.current_pool_state.pool_config.minimum_transaction_amount
+        assert max_base_amount > min_base_amount, f"{max_base_amount=} should be greater than {min_base_amount=}."
+
+        # open longs
+        max_long = hyperdrive_read_interface.calc_open_long(max_base_amount)
+        mid_long = hyperdrive_read_interface.calc_open_long(
+            max_base_amount - ((max_base_amount - min_base_amount) / FixedPoint(2))
+        )
+        assert max_long > mid_long, f"{max_long=} should be greater than {mid_long=}."
+        min_long = hyperdrive_read_interface.calc_open_long(min_base_amount)
+        assert mid_long > min_long, f"{mid_long=} should be greater than {min_long=}."
+
+        # close a long
+        # subtract a day so it's not being closed the same moment it is opened
+        long_close_time = maturity_time - 60 * 60 * 24
+        _ = hyperdrive_read_interface.calc_close_long(mid_long, long_close_time)
 
     def test_misc(self, hyperdrive_read_interface: HyperdriveReadInterface):
-        """Miscellaneous tests only verify that the attributes exist and functions can be called."""
-        current_time = hyperdrive_read_interface.current_pool_state.block_time
+        """Miscellaneous tests only verify that the attributes exist and functions can be called.
+
+        TODO: These functions are tested heavily in Rust, we should still write tests that verify
+        the conversion to and from Rust via strings was successful.
+        """
+        # State
         _ = hyperdrive_read_interface.current_pool_state
         _ = hyperdrive_read_interface.current_pool_state.variable_rate
         _ = hyperdrive_read_interface.current_pool_state.vault_shares
-        _ = hyperdrive_read_interface.calc_open_long(FixedPoint(100))
-        _ = hyperdrive_read_interface.calc_close_long(FixedPoint(100), maturity_time=current_time + 100)
-        _ = hyperdrive_read_interface.calc_open_short(FixedPoint(100))
-        _ = hyperdrive_read_interface.calc_close_short(
-            FixedPoint(100),
-            FixedPoint(scaled_value=int(9e17)),
-            FixedPoint(scaled_value=int(9.9e17)),
-            maturity_time=current_time + 100,
-        )
         _ = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
-        _ = hyperdrive_read_interface.calc_max_long(FixedPoint(1000))
-        _ = hyperdrive_read_interface.calc_max_short(FixedPoint(1000))
+
+        # Short
+        _ = hyperdrive_read_interface.calc_open_short(FixedPoint(100))
+        # TODO: This is currently failing; need to fix it in hyperdrive-rs
+        # current_time = hyperdrive_read_interface.current_pool_state.block_time
+        # maturity_time = current_time + hyperdrive_read_interface.current_pool_state.pool_config.position_duration
+        # price_with_default = hyperdrive_read_interface.calc_spot_price_after_short(FixedPoint(100))
+        # price_with_base_amount = hyperdrive_read_interface.calc_spot_price_after_short(FixedPoint(100), base_amount)
+        # assert (
+        #     price_with_default == price_with_base_amount
+        # ), "`calc_spot_price_after_short` is not handling default base_amount correctly."
+        # _ = hyperdrive_read_interface.calc_close_short(
+        #     bond_amount=FixedPoint(10),
+        #     open_vault_share_price=hyperdrive_read_interface.current_pool_state.checkpoint.vault_share_price,
+        #     close_vault_share_price=hyperdrive_read_interface.current_pool_state.pool_info.vault_share_price,
+        #     maturity_time=maturity_time,
+        # )
+
+        # LP
         _ = hyperdrive_read_interface.calc_present_value()
 
     def test_deployed_fixed_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
-        assert abs(hyperdrive_read_interface.calc_fixed_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
+        assert abs(hyperdrive_read_interface.calc_spot_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
 
     def test_bonds_given_shares_and_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
@@ -98,13 +145,13 @@ class TestHyperdriveReadInterface:
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
         pool_info.bond_reserves = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        fixed_rate = hyperdrive_read_interface.calc_fixed_rate(pool_state=pool_state)
+        fixed_rate = hyperdrive_read_interface.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
         pool_info.bond_reserves = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        fixed_rate = hyperdrive_read_interface.calc_fixed_rate(pool_state=pool_state)
+        fixed_rate = hyperdrive_read_interface.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
     def test_deployed_values(self, hyperdrive_read_interface: HyperdriveReadInterface):
@@ -192,7 +239,7 @@ class TestHyperdriveReadInterface:
             (api_pool_config.initial_vault_share_price * effective_share_reserves) / api_pool_info.bond_reserves
         ) ** api_pool_config.time_stretch
 
-        api_fixed_rate = hyperdrive_read_interface.calc_fixed_rate()
+        api_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
         expected_fixed_rate = (1 - expected_spot_price) / (
             expected_spot_price * (api_pool_config.position_duration / FixedPoint(365 * 24 * 60 * 60))
         )

@@ -110,7 +110,7 @@ class SmartLong(HyperdriveBasePolicy):
             variable_rate = interface.get_standardized_variable_rate()
 
         # only open a long if the fixed rate is higher than variable rate
-        if (interface.calc_fixed_rate() - variable_rate) > self.risk_threshold and not has_opened_long:
+        if (interface.calc_spot_rate() - variable_rate) > self.risk_threshold and not has_opened_long:
             # calculate the total number of bonds we want to see in the pool
             total_bonds_to_match_variable_apr = interface.calc_bonds_given_shares_and_rate(target_rate=variable_rate)
             # get the delta bond amount & convert units
