@@ -7,11 +7,91 @@ import logging
 from typing import Callable, ParamSpec, TypeVar
 
 from fixedpointmath import FixedPoint
+from numpy.random._generator import Generator
 
 from agent0 import IHyperdrive, ILocalChain, ILocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.i_hyperdrive_agent import IHyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
+
+ONE_HOUR_IN_SECONDS = 60 * 60
+ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
+ONE_YEAR_IN_SECONDS = 52 * 7 * ONE_DAY_IN_SECONDS
+
+# Fuzz ranges, defined as tuples of (min, max)
+
+INITIAL_LIQUIDITY_RANGE: tuple[float, float] = (10, 100_000)
+INITIAL_VAULT_SHARE_PRICE_RANGE: tuple[float, float] = (0.5, 2.5)
+MINIMUM_SHARE_RESERVES_RANGE: tuple[float, float] = (0.1, 1)
+MINIMUM_TRANSACTION_AMOUNT_RANGE: tuple[float, float] = (0.1, 10)
+
+# TODO fuzz over durations. For now, position duration is set to 1 week, and checkpoint duration
+# is set to 1 hour.
+# Position duration must be a multiple of checkpoint duration
+# POSITION_DURATION_RANGE: tuple[int, int] = (91 * ONE_DAY_IN_SECONDS, ONE_YEAR_IN_SECONDS)
+# CHECKPOINT_DURATION_RANGE: tuple[int, int] = (ONE_HOUR_IN_SECONDS, ONE_DAY_IN_SECONDS)
+
+# The initial time stretch APR
+INITIAL_TIME_STRETCH_APR_RANGE: tuple[float, float] = (0.005, 0.5)
+# The variable rate to set after each episode
+VARIABLE_RATE_RANGE: tuple[float, float] = (0, 1)
+# How much to advance time between episodes
+ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, ONE_HOUR_IN_SECONDS)
+# The fee percentage. The range controls all 4 fees
+FEE_RANGE: tuple[float, float] = (0.0001, 0.2)
+
+
+def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_seed: int) -> ILocalHyperdrive.Config:
+    """Fuzz over hyperdrive config.
+
+    Arguments
+    ---------
+    rng: np.random.Generator
+        Random number generator.
+    log_to_rollbar: bool
+        If True, log errors to rollbar.
+    rng_seed: int
+        Seed for the rng.
+
+    Returns
+    -------
+    ILocalHyperdrive.Config
+        Fuzzed hyperdrive config.
+    """
+    position_duration = 7 * ONE_DAY_IN_SECONDS
+    checkpoint_duration = ONE_DAY_IN_SECONDS
+    initial_time_stretch_apr = FixedPoint(
+        rng.uniform(INITIAL_TIME_STRETCH_APR_RANGE[0], INITIAL_TIME_STRETCH_APR_RANGE[1])
+    )
+    # Generate flat fee in terms of APR
+    flat_fee = FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1]) * (position_duration / ONE_YEAR_IN_SECONDS))
+
+    return ILocalHyperdrive.Config(
+        preview_before_trade=True,
+        rng=rng,
+        log_to_rollbar=log_to_rollbar,
+        rollbar_log_prefix="localfuzzbots",
+        crash_log_level=logging.CRITICAL,
+        crash_report_additional_info={"rng_seed": rng_seed},
+        # Initial hyperdrive config
+        initial_liquidity=FixedPoint(rng.uniform(INITIAL_LIQUIDITY_RANGE[0], INITIAL_LIQUIDITY_RANGE[1])),
+        initial_fixed_apr=initial_time_stretch_apr,
+        initial_time_stretch_apr=initial_time_stretch_apr,
+        initial_variable_rate=FixedPoint(rng.uniform(VARIABLE_RATE_RANGE[0], VARIABLE_RATE_RANGE[1])),
+        minimum_share_reserves=FixedPoint(
+            rng.uniform(MINIMUM_SHARE_RESERVES_RANGE[0], MINIMUM_SHARE_RESERVES_RANGE[1])
+        ),
+        minimum_transaction_amount=FixedPoint(
+            rng.uniform(MINIMUM_TRANSACTION_AMOUNT_RANGE[0], MINIMUM_TRANSACTION_AMOUNT_RANGE[1])
+        ),
+        position_duration=position_duration,
+        checkpoint_duration=checkpoint_duration,
+        curve_fee=FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1])),
+        flat_fee=flat_fee,
+        governance_lp_fee=FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1])),
+        governance_zombie_fee=FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1])),
+    )
+
 
 # Async runner helper
 P = ParamSpec("P")
@@ -259,7 +339,9 @@ def run_fuzz_bots(
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
                 # TODO should there be an upper bound for advancing time?
-                random_time = hyperdrive_pool.config.rng.integers(low=0, high=3000)
+                random_time = hyperdrive_pool.config.rng.integers(
+                    low=ADVANCE_TIME_SECONDS_RANGE[0], high=ADVANCE_TIME_SECONDS_RANGE[1]
+                )
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on ILocalChain")
@@ -269,7 +351,9 @@ def run_fuzz_bots(
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
-                random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(low=0, high=1))
+                random_rate = FixedPoint(
+                    hyperdrive_pool.config.rng.uniform(low=VARIABLE_RATE_RANGE[0], high=VARIABLE_RATE_RANGE[1])
+                )
                 hyperdrive_pool.set_variable_rate(random_rate)
             else:
                 raise ValueError("Random variable rate only allowed for ILocalHyperdrive pools")

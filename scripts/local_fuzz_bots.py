@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import logging
 import random
 
-from fixedpointmath import FixedPoint
+import numpy as np
 
 from agent0 import ILocalChain, ILocalHyperdrive
-from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
+from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
 from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
@@ -23,23 +22,9 @@ def main() -> None:
     )
 
     rng_seed = random.randint(0, 10000000)
-    local_chain_config = ILocalChain.Config(chain_port=11111, db_port=22222, block_timestamp_interval=12)
-    hyperdrive_config = ILocalHyperdrive.Config(
-        preview_before_trade=True,
-        rng_seed=rng_seed,
-        log_to_rollbar=log_to_rollbar,
-        rollbar_log_prefix="localfuzzbots",
-        crash_log_level=logging.CRITICAL,
-        crash_report_additional_info={"rng_seed": rng_seed},
-        # Initial hyperdrive config
-        minimum_share_reserves=FixedPoint("0.001"),
-        position_duration=60 * 60 * 24 * 7,  # 1 week
-        checkpoint_duration=60 * 60,  # 1 hour
-    )
+    rng = np.random.default_rng(rng_seed)
 
-    rng = hyperdrive_config.rng
-    # rng always gets set in post_init
-    assert rng is not None
+    local_chain_config = ILocalChain.Config(chain_port=11111, db_port=22222, block_timestamp_interval=12)
 
     while True:
         # Build interactive local hyperdrive
@@ -48,11 +33,7 @@ def main() -> None:
         chain = ILocalChain(local_chain_config)
 
         # Fuzz over config values
-        hyperdrive_config.initial_liquidity = FixedPoint(rng.uniform(10, 100_000))
-        initial_time_stretch_apr = FixedPoint(rng.uniform(0.01, 0.5))
-        hyperdrive_config.initial_fixed_apr = initial_time_stretch_apr
-        hyperdrive_config.initial_time_stretch_apr = initial_time_stretch_apr
-
+        hyperdrive_config = generate_fuzz_hyperdrive_config(rng, log_to_rollbar, rng_seed)
         hyperdrive_pool = ILocalHyperdrive(chain, hyperdrive_config)
 
         # TODO submit multiple transactions per block
