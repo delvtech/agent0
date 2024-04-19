@@ -36,7 +36,7 @@ INITIAL_TIME_STRETCH_APR_RANGE: tuple[float, float] = (0.005, 0.5)
 # The variable rate to set after each episode
 VARIABLE_RATE_RANGE: tuple[float, float] = (0, 1)
 # How much to advance time between episodes
-ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, ONE_HOUR_IN_SECONDS)
+ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, ONE_DAY_IN_SECONDS)
 # The fee percentage. The range controls all 4 fees
 FEE_RANGE: tuple[float, float] = (0.0001, 0.2)
 
