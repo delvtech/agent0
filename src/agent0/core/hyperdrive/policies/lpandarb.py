@@ -323,6 +323,7 @@ def calc_delta_reserves_for_target_rate(
             pool_delta_shares = calc_shares_needed_for_bonds(
                 interface, pool_state, trade_delta_bonds, min_trade_amount_bonds
             )
+            print(f"{pool_delta_shares=}")
         # here we catch a pyo3_runtime.PanicException error
         # pylint: disable=W0718
         except BaseException as ex:
@@ -384,6 +385,7 @@ def calc_reserves_to_hit_target_rate(
         bonds_needed, shares_needed = calc_delta_reserves_for_target_rate(
             interface, temp_pool_state, target_rate, min_trade_amount_bonds, max_trade_amount_base
         )
+        print(f"{bonds_needed=} {shares_needed=}")
         # get the fixed rate for an updated pool state, without storing the state variable
         # TODO: This deepcopy is slow. https://github.com/delvtech/agent0/issues/1355
         predicted_rate = interface.calc_spot_rate(

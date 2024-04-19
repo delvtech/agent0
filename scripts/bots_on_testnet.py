@@ -172,7 +172,7 @@ for agent in agents:
 previous_block = web3.eth.get_block("latest")
 print(f"current block  = {previous_block['number']}")
 while True:
-    print("waiting for new block..", end="", flush=True)
+    print("waiting for new block..", end="")
     while (latest_block := web3.eth.get_block("latest")) == previous_block:
         print(".", end="")
         time.sleep(1)
