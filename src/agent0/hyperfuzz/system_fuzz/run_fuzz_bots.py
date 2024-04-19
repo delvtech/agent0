@@ -269,5 +269,5 @@ def run_fuzz_bots(
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
-                random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(low=0.01, high=0.15))
+                random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(low=0, high=1))
                 hyperdrive_pool.set_variable_rate(random_rate)
