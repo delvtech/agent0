@@ -13,8 +13,9 @@ import os
 import time
 
 import numpy as np
-from agent0 import HyperdriveAgent, IChain, IHyperdrive, PolicyZoo
+from agent0 import IChain, IHyperdrive, PolicyZoo
 from agent0.core.base.config import EnvironmentConfig
+from agent0.core.hyperdrive import HyperdriveAgent
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider, smart_contract_transact
 from agent0.hypertypes import IHyperdriveContract
