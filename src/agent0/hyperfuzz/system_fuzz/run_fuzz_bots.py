@@ -27,21 +27,21 @@ async def _async_runner(
 
     WARNING: this assumes all functions passed in are thread safe, use at your own risk.
 
-    TODO args and kwargs likely should also be a list for passing in separate arguments.
+    TODO: args and kwargs likely should also be a list for passing in separate arguments.
 
     Arguments
     ---------
     funcs: list[Callable[P, R]]
-        List of functions to run asynchronously
+        List of functions to run asynchronously.
     *args: P.args
-        Positional arguments for the functions
+        Positional arguments for the functions.
     **kwargs: P.kwargs
-        Keyword arguments for the functions
+        Keyword arguments for the functions.
 
     Returns
     -------
     list[R]
-        List of results
+        List of results.
     """
 
     # We launch all functions in threads using the `to_thread` function.
