@@ -50,7 +50,8 @@ TARGET_BASE = 10_000
 TARGET_STETH = 500
 GAS_LIMIT = 1_000_000
 RANDSEED = 123
-RANDOM_TRADE_CHANCE = 0.04  # every 5 minutes on average
+# RANDOM_TRADE_CHANCE = 0.04  # every 5 minutes on average
+RANDOM_TRADE_CHANCE = 0.25  # 1 bot every block
 TIMEOUT = 600  # seconds to wait for a transaction receipt
 
 # Get the configuration and initialize the web3 provider.
@@ -181,8 +182,8 @@ while True:
         time.sleep(1)
     print(f"{latest_block['number']}")
     for agent in agents:
-        print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
-        print(f"{agent._pool.interface.current_pool_state.pool_info}")
+        # print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
+        # print(f"{agent._pool.interface.current_pool_state.pool_info}")
         if agent.agent.wallet.balance.amount < agent.agent.TARGET_BASE:
             mint(agent)
         event_list = agent.execute_policy_action()
