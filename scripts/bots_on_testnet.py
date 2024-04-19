@@ -13,7 +13,7 @@ import os
 import time
 
 import numpy as np
-from agent0 import IChain, IHyperdrive, PolicyZoo
+from agent0 import HyperdriveAgent, IChain, IHyperdrive, PolicyZoo
 from agent0.core.base.config import EnvironmentConfig
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider, smart_contract_transact
@@ -21,6 +21,8 @@ from agent0.hypertypes import IHyperdriveContract
 from dotenv import load_dotenv
 from eth_typing import ChecksumAddress, HexAddress, HexStr
 from fixedpointmath import FixedPoint
+
+# pylint: disable=redefined-outer-name
 
 # %%
 # config
@@ -144,21 +146,21 @@ for agent in agents:
 
  # %%
 # prepare agents
+def mint(agent: HyperdriveAgent):
+    print(f"MINT by {agent.agent.name:<14} ({agent.agent.checksum_address}) of {float(agent.agent.TARGET_BASE):,.0f}..", end="")
+    fn_args = [agent.agent.TARGET_BASE.scaled_value]
+    smart_contract_transact(web3,agent._pool._token,agent.agent,"mint(uint256)",timeout = TIMEOUT,*fn_args)
+    print("success!")
+    # print(f"checking {agent._pool._token.name} balance of {agent.agent.name:<14} ({agent.agent.checksum_address})..", end="")
+    # base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
+    # print("success!")
+    # agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
+    print(f"Balance of {agent.agent.name:<14} ({agent.agent.checksum_address}) topped up to {agent.agent.wallet.balance.amount}")
+
 print("preparing agents..")
 for agent in agents:
-    starting_balance = agent.agent.wallet.balance.amount
-    # top up wallets
-    if starting_balance < agent.agent.TARGET_BASE:
-        print(f"MINT by {agent.agent.name:<14} ({agent.agent.checksum_address}) of {float(agent.agent.TARGET_BASE):,.0f}..", end="")
-        fn_args = [agent.agent.TARGET_BASE.scaled_value]
-        receipt = smart_contract_transact(web3,agent._pool._token,agent.agent,"mint(uint256)",timeout = TIMEOUT,*fn_args)
-        print("success!")
-        print(f"checking {agent._pool._token} balance of {agent.agent.name:<14} ({agent.agent.checksum_address})..", end="")
-        base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
-        print("success!")
-        agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
-
-        print(f"Balance of {agent.agent.name:<14} ({agent.agent.checksum_address}) topped up to {agent.agent.wallet.balance.amount}")
+    if agent.agent.wallet.balance.amount < agent.agent.TARGET_BASE:
+        mint(agent)
     else:
         print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) is good to go!")
 
@@ -179,7 +181,9 @@ while True:
     print(f"{latest_block['number']}")
     for agent in agents:
         print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
-        print(f"{agent._pool}")
+        print(f"{agent._pool.interface.current_pool_state.pool_info}")
+        if agent.agent.wallet.balance.amount < agent.agent.TARGET_BASE:
+            mint(agent)
         event_list = agent.execute_policy_action()
         for event in event_list:
             print(f"agent {agent.agent.name}({agent.agent.checksum_address}) decided to trade: {event}")
