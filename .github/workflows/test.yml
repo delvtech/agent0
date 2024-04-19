@@ -60,11 +60,11 @@ jobs:
           coverage xml -i
           coverage html -i
 
-      #- name: upload coverage report to Codecov
-      #  uses: codecov/codecov-action@v4
-      #  with:
-      #    flags: unittests
-      #    fail_ci_if_error: true
-      #    # A warning is thrown here unnecessarily.  tracking issue here:
-      #    # https://github.com/github/vscode-github-actions/issues/222
-      #    token: ${{ secrets.CODECOV_TOKEN }}
+      - name: upload coverage report to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          flags: unittests
+          fail_ci_if_error: false
+          # A warning is thrown here unnecessarily.  tracking issue here:
+          # https://github.com/github/vscode-github-actions/issues/222
+          token: ${{ secrets.CODECOV_TOKEN }}
