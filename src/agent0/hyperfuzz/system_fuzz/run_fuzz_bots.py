@@ -25,11 +25,8 @@ INITIAL_VAULT_SHARE_PRICE_RANGE: tuple[float, float] = (0.5, 2.5)
 MINIMUM_SHARE_RESERVES_RANGE: tuple[float, float] = (0.1, 1)
 MINIMUM_TRANSACTION_AMOUNT_RANGE: tuple[float, float] = (0.1, 10)
 
-# TODO fuzz over durations. For now, position duration is set to 1 week, and checkpoint duration
-# is set to 1 hour.
-# Position duration must be a multiple of checkpoint duration
-# POSITION_DURATION_RANGE: tuple[int, int] = (91 * ONE_DAY_IN_SECONDS, ONE_YEAR_IN_SECONDS)
-# CHECKPOINT_DURATION_RANGE: tuple[int, int] = (ONE_HOUR_IN_SECONDS, ONE_DAY_IN_SECONDS)
+POSITION_DURATION_RANGE: tuple[int, int] = (91 * ONE_DAY_IN_SECONDS, ONE_YEAR_IN_SECONDS)
+CHECKPOINT_DURATION_RANGE: tuple[int, int] = (ONE_HOUR_IN_SECONDS, ONE_DAY_IN_SECONDS)
 
 # The initial time stretch APR
 INITIAL_TIME_STRETCH_APR_RANGE: tuple[float, float] = (0.005, 0.5)
@@ -58,8 +55,21 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
     ILocalHyperdrive.Config
         Fuzzed hyperdrive config.
     """
-    position_duration = 7 * ONE_DAY_IN_SECONDS
-    checkpoint_duration = ONE_DAY_IN_SECONDS
+    # Position duration must be a multiple of checkpoint duration
+    # To do this, we calculate the number of checkpoints per position
+    # and adjust the position duration accordingly.
+    position_duration = rng.integers(POSITION_DURATION_RANGE[0], POSITION_DURATION_RANGE[1])
+    checkpoint_duration = rng.integers(CHECKPOINT_DURATION_RANGE[0], CHECKPOINT_DURATION_RANGE[1])
+    checkpoints_per_position_duration = position_duration // checkpoint_duration
+    position_duration = checkpoint_duration * checkpoints_per_position_duration
+    # There's a chance the new position duration was truncated to be less than the minimum
+    # If that's the case, we use the ceil instead.
+    if position_duration < POSITION_DURATION_RANGE[0]:
+        position_duration = checkpoint_duration * (checkpoints_per_position_duration + 1)
+
+    # Sanity check
+    assert POSITION_DURATION_RANGE[0] <= position_duration <= POSITION_DURATION_RANGE[1]
+
     initial_time_stretch_apr = FixedPoint(
         rng.uniform(INITIAL_TIME_STRETCH_APR_RANGE[0], INITIAL_TIME_STRETCH_APR_RANGE[1])
     )
