@@ -79,6 +79,7 @@ def run_fuzz_bots(
     run_async: bool = False,
     random_advance_time: bool = False,
     random_variable_rate: bool = False,
+    num_iterations: int | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -115,6 +116,8 @@ def run_fuzz_bots(
         If True, will advance the time randomly between sets of trades. Defaults to False.
     random_variable_rate: bool, optional
         If True, will randomly change the rate between sets of trades. Defaults to False.
+    num_iterations: int | None, optional
+        The number of iterations to run. Defaults to None (infinite)
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -192,7 +195,11 @@ def run_fuzz_bots(
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
+    iteration = 0
     while True:
+        if num_iterations is not None and iteration >= num_iterations:
+            break
+        iteration += 1
         # Execute the agent policies
         trades = []
         try:
