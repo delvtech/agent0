@@ -61,10 +61,8 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
     # Position duration must be a multiple of checkpoint duration
     # To do this, we calculate the number of checkpoints per position
     # and adjust the position duration accordingly.
-    position_duration_hours = int(rng.integers(POSITION_DURATION_HOURS_RANGE[0], POSITION_DURATION_HOURS_RANGE[1]))
-    checkpoint_duration_hours = int(
-        rng.integers(CHECKPOINT_DURATION_HOURS_RANGE[0], CHECKPOINT_DURATION_HOURS_RANGE[1])
-    )
+    position_duration_hours = int(rng.integers(*POSITION_DURATION_HOURS_RANGE))
+    checkpoint_duration_hours = int(rng.integers(*CHECKPOINT_DURATION_HOURS_RANGE))
 
     # Checkpoint duration must be a multiple of `factory_checkpoint_duration_resolution`
     checkpoints_per_position_duration = position_duration_hours // checkpoint_duration_hours
@@ -81,11 +79,9 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
     position_duration = position_duration_hours * ONE_HOUR_IN_SECONDS
     checkpoint_duration = checkpoint_duration_hours * ONE_HOUR_IN_SECONDS
 
-    initial_time_stretch_apr = FixedPoint(
-        rng.uniform(INITIAL_TIME_STRETCH_APR_RANGE[0], INITIAL_TIME_STRETCH_APR_RANGE[1])
-    )
+    initial_time_stretch_apr = FixedPoint(rng.uniform(*INITIAL_TIME_STRETCH_APR_RANGE))
     # Generate flat fee in terms of APR
-    flat_fee = FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1]) * (position_duration / ONE_YEAR_IN_SECONDS))
+    flat_fee = FixedPoint(rng.uniform(*FEE_RANGE) * (position_duration / ONE_YEAR_IN_SECONDS))
 
     return ILocalHyperdrive.Config(
         preview_before_trade=True,
@@ -95,22 +91,18 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
         crash_log_level=logging.CRITICAL,
         crash_report_additional_info={"rng_seed": rng_seed},
         # Initial hyperdrive config
-        initial_liquidity=FixedPoint(rng.uniform(INITIAL_LIQUIDITY_RANGE[0], INITIAL_LIQUIDITY_RANGE[1])),
+        initial_liquidity=FixedPoint(rng.uniform(*INITIAL_LIQUIDITY_RANGE)),
         initial_fixed_apr=initial_time_stretch_apr,
         initial_time_stretch_apr=initial_time_stretch_apr,
-        initial_variable_rate=FixedPoint(rng.uniform(VARIABLE_RATE_RANGE[0], VARIABLE_RATE_RANGE[1])),
-        minimum_share_reserves=FixedPoint(
-            rng.uniform(MINIMUM_SHARE_RESERVES_RANGE[0], MINIMUM_SHARE_RESERVES_RANGE[1])
-        ),
-        minimum_transaction_amount=FixedPoint(
-            rng.uniform(MINIMUM_TRANSACTION_AMOUNT_RANGE[0], MINIMUM_TRANSACTION_AMOUNT_RANGE[1])
-        ),
+        initial_variable_rate=FixedPoint(rng.uniform(*VARIABLE_RATE_RANGE)),
+        minimum_share_reserves=FixedPoint(rng.uniform(*MINIMUM_SHARE_RESERVES_RANGE)),
+        minimum_transaction_amount=FixedPoint(rng.uniform(*MINIMUM_TRANSACTION_AMOUNT_RANGE)),
         position_duration=position_duration,
         checkpoint_duration=checkpoint_duration,
-        curve_fee=FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1])),
+        curve_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
         flat_fee=flat_fee,
-        governance_lp_fee=FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1])),
-        governance_zombie_fee=FixedPoint(rng.uniform(FEE_RANGE[0], FEE_RANGE[1])),
+        governance_lp_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
+        governance_zombie_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
     )
 
 
@@ -361,9 +353,7 @@ def run_fuzz_bots(
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
                 # TODO should there be an upper bound for advancing time?
-                random_time = hyperdrive_pool.config.rng.integers(
-                    low=ADVANCE_TIME_SECONDS_RANGE[0], high=ADVANCE_TIME_SECONDS_RANGE[1]
-                )
+                random_time = hyperdrive_pool.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE)
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on ILocalChain")
@@ -373,9 +363,7 @@ def run_fuzz_bots(
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
-                random_rate = FixedPoint(
-                    hyperdrive_pool.config.rng.uniform(low=VARIABLE_RATE_RANGE[0], high=VARIABLE_RATE_RANGE[1])
-                )
+                random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(*VARIABLE_RATE_RANGE))
                 hyperdrive_pool.set_variable_rate(random_rate)
             else:
                 raise ValueError("Random variable rate only allowed for ILocalHyperdrive pools")
