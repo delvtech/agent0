@@ -17,6 +17,7 @@ from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
 ONE_YEAR_IN_SECONDS = 52 * 7 * ONE_DAY_IN_SECONDS
+ONE_YEAR_IN_HOURS = 52 * 7 * 24
 
 # Fuzz ranges, defined as tuples of (min, max)
 
@@ -25,8 +26,10 @@ INITIAL_VAULT_SHARE_PRICE_RANGE: tuple[float, float] = (0.5, 2.5)
 MINIMUM_SHARE_RESERVES_RANGE: tuple[float, float] = (0.1, 1)
 MINIMUM_TRANSACTION_AMOUNT_RANGE: tuple[float, float] = (0.1, 10)
 
-POSITION_DURATION_RANGE: tuple[int, int] = (91 * ONE_DAY_IN_SECONDS, ONE_YEAR_IN_SECONDS)
-CHECKPOINT_DURATION_RANGE: tuple[int, int] = (ONE_HOUR_IN_SECONDS, ONE_DAY_IN_SECONDS)
+# Position and checkpoint duration are in units of hours, as
+# the `factory_checkpoint_duration_resolution` is 1 hour
+POSITION_DURATION_HOURS_RANGE: tuple[int, int] = (91, ONE_YEAR_IN_HOURS)
+CHECKPOINT_DURATION_HOURS_RANGE: tuple[int, int] = (1, 24)
 
 # The initial time stretch APR
 INITIAL_TIME_STRETCH_APR_RANGE: tuple[float, float] = (0.005, 0.5)
@@ -58,17 +61,25 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
     # Position duration must be a multiple of checkpoint duration
     # To do this, we calculate the number of checkpoints per position
     # and adjust the position duration accordingly.
-    position_duration = rng.integers(POSITION_DURATION_RANGE[0], POSITION_DURATION_RANGE[1])
-    checkpoint_duration = rng.integers(CHECKPOINT_DURATION_RANGE[0], CHECKPOINT_DURATION_RANGE[1])
-    checkpoints_per_position_duration = position_duration // checkpoint_duration
-    position_duration = checkpoint_duration * checkpoints_per_position_duration
+    position_duration_hours = int(rng.integers(POSITION_DURATION_HOURS_RANGE[0], POSITION_DURATION_HOURS_RANGE[1]))
+    checkpoint_duration_hours = int(
+        rng.integers(CHECKPOINT_DURATION_HOURS_RANGE[0], CHECKPOINT_DURATION_HOURS_RANGE[1])
+    )
+
+    # Checkpoint duration must be a multiple of `factory_checkpoint_duration_resolution`
+    checkpoints_per_position_duration = position_duration_hours // checkpoint_duration_hours
+    position_duration_hours = checkpoint_duration_hours * checkpoints_per_position_duration
     # There's a chance the new position duration was truncated to be less than the minimum
     # If that's the case, we use the ceil instead.
-    if position_duration < POSITION_DURATION_RANGE[0]:
-        position_duration = checkpoint_duration * (checkpoints_per_position_duration + 1)
+    if position_duration_hours < POSITION_DURATION_HOURS_RANGE[0]:
+        position_duration_hours = checkpoint_duration_hours * (checkpoints_per_position_duration + 1)
 
     # Sanity check
-    assert POSITION_DURATION_RANGE[0] <= position_duration <= POSITION_DURATION_RANGE[1]
+    assert POSITION_DURATION_HOURS_RANGE[0] <= position_duration_hours <= POSITION_DURATION_HOURS_RANGE[1]
+
+    # Convert checkpoint duration and position duration to seconds
+    position_duration = position_duration_hours * ONE_HOUR_IN_SECONDS
+    checkpoint_duration = checkpoint_duration_hours * ONE_HOUR_IN_SECONDS
 
     initial_time_stretch_apr = FixedPoint(
         rng.uniform(INITIAL_TIME_STRETCH_APR_RANGE[0], INITIAL_TIME_STRETCH_APR_RANGE[1])
