@@ -77,7 +77,7 @@ def run_invariant_checks(
     if any_check_failed:
         logging.critical("\n".join(exception_message))
         error = FuzzAssertionException(*exception_message, exception_data=exception_data)
-        report = build_crash_trade_result(error, interface, additional_info=error.exception_data)
+        report = build_crash_trade_result(error, interface, additional_info=error.exception_data, pool_state=pool_state)
         report.anvil_state = get_anvil_state_dump(interface.web3)
         rollbar_data = error.exception_data
 
@@ -173,9 +173,9 @@ def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
         - pool_state.pool_info.long_exposure / pool_state.pool_info.vault_share_price
         - pool_state.pool_config.minimum_share_reserves
     )
-    if not solvency > FixedPoint(0):
+    if solvency < FixedPoint(0):
         exception_message = (
-            f"{solvency=} <= 0. "
+            f"{solvency=} < 0. "
             f"({pool_state.pool_info.share_reserves=} - {pool_state.pool_info.long_exposure=} - "
             f"{pool_state.pool_config.minimum_share_reserves=})."
         )
@@ -302,6 +302,8 @@ def _check_lp_share_price(
     failed = False
     exception_message = ""
     exception_data: dict[str, Any] = {}
+
+    # TODO normalize the test epsilon based on block time between the 2 blocks
 
     # This is known to fail when checking the first block, as block - 1 doesn't exist.
     try:

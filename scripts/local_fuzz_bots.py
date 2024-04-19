@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import logging
 import random
 
+import numpy as np
+
 from agent0 import ILocalChain, ILocalHyperdrive
-from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
+from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
 from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
@@ -20,31 +21,35 @@ def main() -> None:
         log_stdout=True,
     )
 
-    # Build interactive local hyperdrive
-    # TODO explicitly use a block time here to allow for multiple transactions per block
-    local_chain_config = ILocalChain.Config(chain_port=11111, db_port=22222)
-    chain = ILocalChain(local_chain_config)
-    # TODO fuzz over pool configs
     rng_seed = random.randint(0, 10000000)
-    hyperdrive_config = ILocalHyperdrive.Config(
-        preview_before_trade=True,
-        rng_seed=rng_seed,
-        log_to_rollbar=log_to_rollbar,
-        rollbar_log_prefix="localfuzzbots",
-        crash_log_level=logging.CRITICAL,
-        crash_report_additional_info={"rng_seed": rng_seed},
-    )
-    hyperdrive_pool = ILocalHyperdrive(chain, hyperdrive_config)
+    rng = np.random.default_rng(rng_seed)
 
-    # TODO submit multiple transactions per block
-    run_fuzz_bots(
-        hyperdrive_pool,
-        check_invariance=True,
-        raise_error_on_failed_invariance_checks=True,
-        raise_error_on_crash=False,
-        log_to_rollbar=log_to_rollbar,
-        run_async=False,
-    )
+    local_chain_config = ILocalChain.Config(chain_port=11111, db_port=22222, block_timestamp_interval=12)
+
+    while True:
+        # Build interactive local hyperdrive
+        # TODO can likely reuse some of these resources
+        # instead, we start from scratch every time.
+        chain = ILocalChain(local_chain_config)
+
+        # Fuzz over config values
+        hyperdrive_config = generate_fuzz_hyperdrive_config(rng, log_to_rollbar, rng_seed)
+        hyperdrive_pool = ILocalHyperdrive(chain, hyperdrive_config)
+
+        # TODO submit multiple transactions per block
+        run_fuzz_bots(
+            hyperdrive_pool,
+            check_invariance=True,
+            raise_error_on_failed_invariance_checks=False,
+            raise_error_on_crash=False,
+            log_to_rollbar=log_to_rollbar,
+            run_async=False,
+            random_advance_time=True,
+            random_variable_rate=True,
+            num_iterations=3000,
+        )
+
+        chain.cleanup()
 
 
 if __name__ == "__main__":
