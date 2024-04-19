@@ -8,7 +8,7 @@ from typing import Callable, ParamSpec, TypeVar
 
 from fixedpointmath import FixedPoint
 
-from agent0 import IHyperdrive, ILocalChain, PolicyZoo
+from agent0 import IHyperdrive, ILocalChain, ILocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.i_hyperdrive_agent import IHyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
@@ -78,6 +78,7 @@ def run_fuzz_bots(
     log_to_rollbar: bool = True,
     run_async: bool = False,
     random_advance_time: bool = False,
+    random_variable_rate: bool = False,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -112,6 +113,8 @@ def run_fuzz_bots(
         If True, will run the bots asynchronously. Defaults to False.
     random_advance_time: bool, optional
         If True, will advance the time randomly between sets of trades. Defaults to False.
+    random_variable_rate: bool, optional
+        If True, will randomly change the rate between sets of trades. Defaults to False.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -131,7 +134,7 @@ def run_fuzz_bots(
     if slippage_tolerance is None:
         slippage_tolerance = FixedPoint("0.01")  # 1% slippage
     if invariance_test_epsilon is None:
-        invariance_test_epsilon = 1e-3
+        invariance_test_epsilon = 1e-4
     if minimum_avg_agent_base is None:
         minimum_avg_agent_base = base_budget_per_bot / FixedPoint(10)
 
@@ -249,7 +252,15 @@ def run_fuzz_bots(
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
                 # TODO should there be an upper bound for advancing time?
-                random_time = hyperdrive_pool.config.rng.integers(low=0, high=10000)
+                random_time = hyperdrive_pool.config.rng.integers(low=0, high=3000)
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on ILocalChain")
+
+        if random_variable_rate:
+            if isinstance(hyperdrive_pool, ILocalHyperdrive):
+                # RNG should always exist, config's post_init should always
+                # initialize an rng object
+                assert hyperdrive_pool.config.rng is not None
+                random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(low=0.01, high=0.15))
+                hyperdrive_pool.set_variable_rate(random_rate)

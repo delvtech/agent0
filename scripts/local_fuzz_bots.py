@@ -46,6 +46,8 @@ def main() -> None:
     )
     hyperdrive_pool = ILocalHyperdrive(chain, hyperdrive_config)
 
+    hyperdrive_pool.run_dashboard()
+
     # TODO submit multiple transactions per block
     run_fuzz_bots(
         hyperdrive_pool,
@@ -55,6 +57,7 @@ def main() -> None:
         log_to_rollbar=log_to_rollbar,
         run_async=False,
         random_advance_time=True,
+        random_variable_rate=True,
     )
 
 
