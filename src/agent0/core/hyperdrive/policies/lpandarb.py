@@ -306,7 +306,14 @@ def calc_delta_reserves_for_target_rate(
     pool_delta_shares = FixedPoint(0)
     max_bonds_needed = target_bonds - pool_state.pool_info.bond_reserves
     if max_trade_amount_base is not None:
-        max_bonds_needed = min(max_bonds_needed, max_trade_amount_base * interface.calc_spot_price(pool_state))
+        print(f"{max_trade_amount_base=}")
+        max_trade_amount_bonds = abs(max_trade_amount_base * interface.calc_spot_price(pool_state))
+        print(f"{max_trade_amount_bonds=}")
+        if max_bonds_needed < 0:
+            max_bonds_needed = max(max_bonds_needed, -max_trade_amount_bonds)
+        else:
+            max_bonds_needed = min(max_bonds_needed, max_trade_amount_bonds)
+        print(f"{max_bonds_needed=}")
     while good_result is False:
         try:
             print(f"{max_bonds_needed=}")
