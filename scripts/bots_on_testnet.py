@@ -149,33 +149,11 @@ for agent in agents:
     starting_balance = agent.agent.wallet.balance.amount
     # top up wallets
     if starting_balance < agent.agent.TARGET_BASE:
-        # mint mo' money
-        # try:
         print(f"MINT by {agent.agent.name:<14} ({agent.agent.checksum_address}) of {float(agent.agent.TARGET_BASE):,.0f}..", end="")
         fn_args = [agent.agent.TARGET_BASE.scaled_value]
-        receipt = smart_contract_transact(
-            web3,
-            agent._pool._token,  # contract
-            agent.agent,  # sender
-            "mint(uint256)",  # function
-            timeout = TIMEOUT,
-            *fn_args,
-        )
+        receipt = smart_contract_transact(web3,agent._pool._token,agent.agent,"mint(uint256)",timeout = TIMEOUT,*fn_args)
         print("success!")
-        # except Exception as e:  # pylint: disable=broad-except
-        #     logging.warning("Mint transaction failed with exception=%s, retrying", e)
-
-        # base_from_chain = interface.base_token_contract.functions.balanceOf(
-        #     interface.web3.to_checksum_address(wallet.address.hex())
-        # ).call()
         print(f"checking {agent._pool._token} balance of {agent.agent.name:<14} ({agent.agent.checksum_address})..", end="")
-        # base_from_chain = smart_contract_transact(
-        #     web3,
-        #     agent._pool._token,  # contract
-        #     agent.agent,  # sender
-        #     "balanceOf",
-        #     agent.agent.checksum_address,
-        # )
         base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
         print("success!")
         agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
@@ -183,10 +161,6 @@ for agent in agents:
         print(f"Balance of {agent.agent.name:<14} ({agent.agent.checksum_address}) topped up to {agent.agent.wallet.balance.amount}")
     else:
         print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) is good to go!")
-
-# arbitrage_andy = hyperdrive_pool.init_agent(
-#     private_key=ARBITRAGE_PRIVATE_KEY,
-# )
 
 # %%
 # report agents again
@@ -198,12 +172,14 @@ for agent in agents:
 previous_block = web3.eth.get_block("latest")
 print(f"current block  = {previous_block['number']}")
 while True:
-    print("waiting for new block..", end="")
+    print("waiting for new block..", end="", flush=True)
     while (latest_block := web3.eth.get_block("latest")) == previous_block:
         print(".", end="")
         time.sleep(1)
-    print(f"{latest_block['number']:,.0f}")
+    print(f"{latest_block['number']}")
     for agent in agents:
+        print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
+        print(f"{agent._pool}")
         event_list = agent.execute_policy_action()
         for event in event_list:
             print(f"agent {agent.agent.name}({agent.agent.checksum_address}) decided to trade: {event}")
