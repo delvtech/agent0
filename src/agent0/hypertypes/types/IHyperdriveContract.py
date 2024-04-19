@@ -26,7 +26,7 @@ https://github.com/delvtech/pypechain"""
 
 from __future__ import annotations
 
-from typing import Any, Iterable, NamedTuple, Sequence, Type, cast
+from typing import Any, Iterable, NamedTuple, Sequence, Type, cast, overload
 
 from eth_abi.codec import ABICodec
 from eth_abi.registry import registry as default_registry
@@ -663,14 +663,12 @@ class IHyperdriveLoadContractFunction(ContractFunction):
         return cast(list[bytes], rename_returned_types(structs, return_types, raw_values))
 
 
-class IHyperdriveNameContractFunction(ContractFunction):
+class IHyperdriveNameContractFunction0(ContractFunction):
     """ContractFunction for the name method."""
 
     def __call__(self, tokenId: int) -> IHyperdriveNameContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(tokenId))
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
+        super().__call__()  # type: ignore
+        return cast(IHyperdriveNameContractFunction, self)
 
     def call(
         self,
@@ -685,9 +683,56 @@ class IHyperdriveNameContractFunction(ContractFunction):
         return_types = str
 
         # Call the function
-
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+
         return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class IHyperdriveNameContractFunction1(ContractFunction):
+    """ContractFunction for the name method."""
+
+    def __call__(self) -> IHyperdriveNameContractFunction:  # type: ignore
+        super().__call__()  # type: ignore
+        return cast(IHyperdriveNameContractFunction, self)
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class IHyperdriveNameContractFunction(ContractFunction):
+    """ContractFunction for the name method."""
+
+    # super() call methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ# disable this warning when there is overloading
+    # pylint: disable=function-redefined
+
+    @overload
+    def __call__(self, tokenId: int) -> IHyperdriveNameContractFunction0:  # type: ignore
+        ...
+
+    @overload
+    def __call__(self) -> IHyperdriveNameContractFunction1:  # type: ignore
+        ...
+
+    def __call__(self, *args) -> IHyperdriveNameContractFunction:  # type: ignore
+        clone = super().__call__(*(dataclass_to_tuple(arg) for arg in args))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self  # type: ignore
 
 
 class IHyperdriveNoncesContractFunction(ContractFunction):
@@ -1391,6 +1436,33 @@ class IHyperdriveVaultSharesTokenContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
+class IHyperdriveVersionContractFunction(ContractFunction):
+    """ContractFunction for the version method."""
+
+    def __call__(self) -> IHyperdriveVersionContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
 class IHyperdriveContractFunctions(ContractFunctions):
     """ContractFunctions for the IHyperdrive contract."""
 
@@ -1491,6 +1563,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
     transferFromBridge: IHyperdriveTransferFromBridgeContractFunction
 
     vaultSharesToken: IHyperdriveVaultSharesTokenContractFunction
+
+    version: IHyperdriveVersionContractFunction
 
     def __init__(
         self,
@@ -1891,6 +1965,14 @@ class IHyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="vaultSharesToken",
+        )
+        self.version = IHyperdriveVersionContractFunction.factory(
+            "version",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="version",
         )
 
 
@@ -5991,6 +6073,13 @@ ihyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "name",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "string", "internalType": "string"}],
+            "stateMutability": "pure",
+        },
+        {
+            "type": "function",
             "name": "nonces",
             "inputs": [{"name": "owner", "type": "address", "internalType": "address"}],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
@@ -6274,6 +6363,13 @@ ihyperdrive_abi: ABI = cast(
             "inputs": [],
             "outputs": [{"name": "", "type": "address", "internalType": "address"}],
             "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "version",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "string", "internalType": "string"}],
+            "stateMutability": "pure",
         },
         {
             "type": "event",
