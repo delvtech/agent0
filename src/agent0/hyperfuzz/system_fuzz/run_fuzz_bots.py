@@ -271,3 +271,5 @@ def run_fuzz_bots(
                 assert hyperdrive_pool.config.rng is not None
                 random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(low=0, high=1))
                 hyperdrive_pool.set_variable_rate(random_rate)
+            else:
+                raise ValueError("Random variable rate only allowed for ILocalHyperdrive pools")
