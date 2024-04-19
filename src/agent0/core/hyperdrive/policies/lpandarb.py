@@ -309,6 +309,8 @@ def calc_delta_reserves_for_target_rate(
         max_bonds_needed = min(max_bonds_needed, max_trade_amount_base * interface.calc_spot_price(pool_state))
     while good_result is False:
         try:
+            print(f"{max_bonds_needed=}")
+            print(f"{divisor=}")
             trade_delta_bonds = max_bonds_needed / divisor
             print(f"{trade_delta_bonds=}")
             pool_delta_shares = calc_shares_needed_for_bonds(

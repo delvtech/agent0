@@ -202,7 +202,7 @@ while True:
     while (latest_block := web3.eth.get_block("latest")) == previous_block:
         print(".", end="")
         time.sleep(1)
-    print(f"\nlatest block = {latest_block['number']}")
+    print(f"{latest_block['number']:,.0f}")
     for agent in agents:
         event_list = agent.execute_policy_action()
         for event in event_list:
