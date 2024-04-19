@@ -24,14 +24,8 @@ from web3 import Web3
 
 from agent0 import IHyperdrive
 from agent0.core.base.config import EnvironmentConfig
-from agent0.core.hyperdrive.crash_report import (
-    build_crash_trade_result,
-    get_anvil_state_dump,
-    log_hyperdrive_crash_report,
-)
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
-from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
@@ -51,9 +45,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
     if parsed_args.pool_addr == "":
-        rollbar_environment_name = "fuzzbots_invariantcheck_" + parsed_args.pool
+        rollbar_environment_name = "remote_fuzz_bot_invariant_check_" + parsed_args.pool
     else:
-        rollbar_environment_name = "fuzzbots_invariantcheck_" + parsed_args.pool_addr
+        rollbar_environment_name = "remote_fuzz_bot_invariant_check_" + parsed_args.pool_addr
 
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
@@ -70,22 +64,17 @@ def main(argv: Sequence[str] | None = None) -> None:
             continue
         # Update block number
         last_executed_block_number = latest_block_number
-        try:
-            run_invariant_checks(latest_block, latest_block_number, interface, parsed_args.test_epsilon)
-        except FuzzAssertionException as error:
-            report = build_crash_trade_result(error, interface, additional_info=error.exception_data)
-            report.anvil_state = get_anvil_state_dump(interface.web3)
-            rollbar_data = error.exception_data
-
-            log_hyperdrive_crash_report(
-                report,
-                crash_report_to_file=True,
-                crash_report_file_prefix="fuzz_bots_invariant_checks",
-                log_to_rollbar=log_to_rollbar,
-                rollbar_data=rollbar_data,
-            )
+        run_invariant_checks(
+            latest_block,
+            latest_block_number,
+            interface,
+            parsed_args.test_epsilon,
+            raise_error_on_failure=False,
+            log_to_rollbar=log_to_rollbar,
+        )
 
 
+# TODO consolidate setup fuzz within hyperfuzz
 def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterface]:
     """Setup the fuzz config & interface.
 
