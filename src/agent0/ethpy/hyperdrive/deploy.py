@@ -227,7 +227,7 @@ def _deploy_hyperdrive_factory(
     factory_contract = HyperdriveFactoryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config),
+        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
     )
     core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target0_contract = ERC4626Target0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
