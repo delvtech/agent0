@@ -153,9 +153,9 @@ def mint(agent: HyperdriveAgent):
     smart_contract_transact(web3,agent._pool._token,agent.agent,"mint(uint256)",timeout = TIMEOUT,*fn_args)
     print("success!")
     # print(f"checking {agent._pool._token.name} balance of {agent.agent.name:<14} ({agent.agent.checksum_address})..", end="")
-    # base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
+    base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
     # print("success!")
-    # agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
+    agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
     print(f"Balance of {agent.agent.name:<14} ({agent.agent.checksum_address}) topped up to {agent.agent.wallet.balance.amount}")
 
 print("preparing agents..")
