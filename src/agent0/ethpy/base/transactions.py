@@ -21,6 +21,8 @@ from .retry_utils import retry_call
 
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
+DEFAULT_BASE_FEE_MULTIPLE = 1
+DEFAULT_PRIORITY_FEE_MULTIPLE = 1
 
 # pylint: disable=too-many-lines
 # we have lots of parameters in smart_contract_transact and async_smart_contract_transact
@@ -383,6 +385,8 @@ def build_transaction(
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
 ) -> TxParams:
     """Build a transaction for the given function.
 
@@ -402,6 +406,10 @@ def build_transaction(
         The value field to set for transaction options.
     txn_options_gas: int | None = None
         The gas field to set for transaction options. Defaults to estimateGas output.
+    txn_options_base_fee_multiple: float | None = None
+        The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+    txn_options_priority_fee_multiple: float | None = None
+        The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
 
     Returns
     -------
@@ -410,6 +418,10 @@ def build_transaction(
     """
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = DEFAULT_BASE_FEE_MULTIPLE
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = DEFAULT_PRIORITY_FEE_MULTIPLE
     signer_checksum_address = Web3.to_checksum_address(signer.address)
     # TODO figure out which exception here to retry on
     base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
@@ -433,12 +445,14 @@ def build_transaction(
 
     # Assign gas parameters
     # other than the optional gas parameter, this is the default behavior of web3py, exposed here for clarity
-    max_priority_fee = web3.eth.max_priority_fee
+    max_priority_fee = int(web3.eth.max_priority_fee * txn_options_priority_fee_multiple)
     pending_block = web3.eth.get_block("pending")
     base_fee = pending_block.get("baseFeePerGas", None)
+    if base_fee is not None:
+        base_fee *= txn_options_base_fee_multiple
     if base_fee is None:
         raise AssertionError("The latest block does not have a baseFeePerGas")
-    max_fee_per_gas = max_priority_fee + base_fee
+    max_fee_per_gas = int(max_priority_fee + base_fee)
     if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
     transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
@@ -504,6 +518,8 @@ async def async_smart_contract_transact(
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
@@ -533,6 +549,10 @@ async def async_smart_contract_transact(
         The value field to set for transaction options.
     txn_options_gas : int | None
         The gas field to set for transaction options.
+    txn_options_base_fee_multiple: float | None = None
+        The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+    txn_options_priority_fee_multiple: float | None = None
+        The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `_async_send_transaction_and_wait_for_receipt`.
@@ -566,6 +586,8 @@ async def async_smart_contract_transact(
             read_retry_count=read_retry_count,
             txn_options_value=txn_options_value,
             txn_options_gas=txn_options_gas,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         )
         return await retry_call(
             write_retry_count,
@@ -701,6 +723,8 @@ def smart_contract_transact(
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     timeout: float | None = None,
     **fn_kwargs,
 ) -> TxReceipt:
@@ -728,6 +752,10 @@ def smart_contract_transact(
         The value field to set for transaction options.
     txn_options_gas : int | None
         The gas field to set for transaction options.
+    txn_options_base_fee_multiple: float | None = None
+        The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+    txn_options_priority_fee_multiple: float | None = None
+        The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `send_transaction_and_wait_for_receipt`.
@@ -761,6 +789,8 @@ def smart_contract_transact(
             read_retry_count=read_retry_count,
             txn_options_value=txn_options_value,
             txn_options_gas=txn_options_gas,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         )
         return retry_call(
             write_retry_count,

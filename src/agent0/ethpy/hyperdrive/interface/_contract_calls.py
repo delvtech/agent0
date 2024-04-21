@@ -164,6 +164,8 @@ async def _async_open_long(
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -181,6 +183,10 @@ async def _async_open_long(
         as_base_option = False
     else:
         as_base_option = True
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     fn_args = (
         trade_amount.scaled_value,
@@ -234,6 +240,8 @@ async def _async_open_long(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
@@ -252,12 +260,18 @@ async def _async_close_long(
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # We use the yield as the base token in steth pools
     if interface.is_steth:
@@ -315,6 +329,8 @@ async def _async_close_long(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeLong")
@@ -332,6 +348,8 @@ async def _async_open_short(
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -344,6 +362,10 @@ async def _async_open_short(
         as_base_option = False
     else:
         as_base_option = True
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # min_vault_share_price: int
     #   Minium share price at which to open the short.
@@ -400,6 +422,8 @@ async def _async_open_short(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
@@ -417,12 +441,18 @@ async def _async_close_short(
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # We use the yield as the base token in steth pools
     if interface.is_steth:
@@ -480,6 +510,8 @@ async def _async_close_short(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeShort")
@@ -498,6 +530,8 @@ async def _async_add_liquidity(
     max_apr: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -505,6 +539,10 @@ async def _async_add_liquidity(
     # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
     if slippage_tolerance is not None:
         raise NotImplementedError("Slippage tolerance for add liquidity not yet supported")
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_lp_share_price = 0
@@ -551,6 +589,8 @@ async def _async_add_liquidity(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
@@ -566,6 +606,8 @@ async def _async_remove_liquidity(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -578,6 +620,10 @@ async def _async_remove_liquidity(
         as_base_option = False
     else:
         as_base_option = True
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     fn_args = (
         trade_amount.scaled_value,
@@ -612,6 +658,8 @@ async def _async_remove_liquidity(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
@@ -627,12 +675,18 @@ async def _async_redeem_withdraw_shares(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = FixedPoint(scaled_value=1)
+    if txn_options_base_fee_multiple is None:
+        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
+    if txn_options_priority_fee_multiple is None:
+        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # We use the yield as the base token in steth pools
     if interface.is_steth:
@@ -679,6 +733,8 @@ async def _async_redeem_withdraw_shares(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")

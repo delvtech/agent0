@@ -46,6 +46,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
     ) -> None:
         """Initialize the primary endpoint for users to execute transactions on Hyperdrive smart contracts.
 
@@ -67,8 +69,20 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The number of times to retry the transact call if it fails. Defaults to no retries.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
         """
-        super().__init__(eth_config, hyperdrive_address, web3, read_retry_count, txn_receipt_timeout)
+        super().__init__(
+            eth_config=eth_config,
+            hyperdrive_address=hyperdrive_address,
+            web3=web3,
+            read_retry_count=read_retry_count,
+            txn_receipt_timeout=txn_receipt_timeout,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        )
         self.write_retry_count = write_retry_count
 
     def get_read_interface(self) -> HyperdriveReadInterface:
@@ -79,7 +93,15 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         HyperdriveReadInterface
             This instantiated object, but as a ReadInterface.
         """
-        return HyperdriveReadInterface(self.eth_config, self.hyperdrive_address, self.web3, self.read_retry_count)
+        return HyperdriveReadInterface(
+            eth_config=self.eth_config,
+            hyperdrive_address=self.hyperdrive_address,
+            web3=self.web3,
+            read_retry_count=self.read_retry_count,
+            txn_receipt_timeout=self.txn_receipt_timeout,
+            txn_options_base_fee_multiple=self.txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=self.txn_options_priority_fee_multiple,
+        )
 
     def create_checkpoint(
         self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
@@ -101,7 +123,12 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         ReceiptBreakdown
             A dataclass containing the output event of the contract call.
         """
-        return _create_checkpoint(self, sender, block_number, checkpoint_time)
+        return _create_checkpoint(
+            interface=self,
+            sender=sender,
+            block_number=block_number,
+            checkpoint_time=checkpoint_time,
+        )
 
     def set_variable_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:
         """Set the variable rate for the yield source.
@@ -124,6 +151,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a long position.
@@ -141,6 +170,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
@@ -150,7 +183,15 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_open_long(
-            self, agent, trade_amount, slippage_tolerance, gas_limit, nonce, self.eth_config.preview_before_trade
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            nonce=nonce,
+            preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -162,6 +203,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a long position.
@@ -181,6 +224,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
@@ -190,14 +237,16 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_close_long(
-            self,
-            agent,
-            trade_amount,
-            maturity_time,
-            slippage_tolerance,
-            gas_limit,
-            nonce,
-            self.eth_config.preview_before_trade,
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            maturity_time=maturity_time,
+            slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            nonce=nonce,
+            preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     async def async_open_short(
@@ -206,6 +255,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to open a short position.
@@ -223,6 +274,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
@@ -232,13 +287,15 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_open_short(
-            self,
-            agent,
-            trade_amount,
-            slippage_tolerance,
-            gas_limit,
-            nonce,
-            self.eth_config.preview_before_trade,
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            nonce=nonce,
+            preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -250,6 +307,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to close a short position.
@@ -269,6 +328,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -278,14 +341,16 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the maturity time and the absolute values for token quantities changed.
         """
         return await _async_close_short(
-            self,
-            agent,
-            trade_amount,
-            maturity_time,
-            slippage_tolerance,
-            gas_limit,
-            nonce,
-            self.eth_config.preview_before_trade,
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            maturity_time=maturity_time,
+            slippage_tolerance=slippage_tolerance,
+            gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            nonce=nonce,
+            preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -298,6 +363,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         max_apr: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to add liquidity to the Hyperdrive pool.
@@ -319,6 +386,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -328,13 +399,15 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the absolute values for token quantities changed.
         """
         return await _async_add_liquidity(
-            self,
-            agent,
-            trade_amount,
-            min_apr,
-            max_apr,
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            min_apr=min_apr,
+            max_apr=max_apr,
             slippage_tolerance=slippage_tolerance,
             gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
             preview_before_trade=self.eth_config.preview_before_trade,
         )
@@ -344,6 +417,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         agent: LocalAccount,
         trade_amount: FixedPoint,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to remove liquidity from the Hyperdrive pool.
@@ -357,6 +432,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -366,7 +445,14 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             A dataclass containing the absolute values for token quantities changed.
         """
         return await _async_remove_liquidity(
-            self, agent, trade_amount, gas_limit, nonce, self.eth_config.preview_before_trade
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            nonce=nonce,
+            preview_before_trade=self.eth_config.preview_before_trade,
         )
 
     async def async_redeem_withdraw_shares(
@@ -374,6 +460,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         agent: LocalAccount,
         trade_amount: FixedPoint,
         gas_limit: int | None = None,
+        txn_options_base_fee_multiple: float | None = None,
+        txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
     ) -> ReceiptBreakdown:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
@@ -395,6 +483,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
+        txn_options_base_fee_multiple: float | None, optional
+            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+        txn_options_priority_fee_multiple: float | None, optional
+            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -403,4 +495,12 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         ReceiptBreakdown
             A dataclass containing the absolute values for token quantities changed.
         """
-        return await _async_redeem_withdraw_shares(self, agent, trade_amount, gas_limit, nonce)
+        return await _async_redeem_withdraw_shares(
+            interface=self,
+            agent=agent,
+            trade_amount=trade_amount,
+            gas_limit=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            nonce=nonce,
+        )
