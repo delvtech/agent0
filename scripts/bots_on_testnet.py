@@ -28,6 +28,8 @@ from fixedpointmath import FixedPoint
 # %%
 # config
 load_dotenv()
+BASE_FEE_MULTIPLE = 1.5
+PRIORITY_FEE_MULTIPLE = 2
 RANDOM_DAI_14_PRIVATE_KEY = os.getenv("RANDOM_DAI_14")
 RANDOM_DAI_30_PRIVATE_KEY = os.getenv("RANDOM_DAI_30")
 RANDOM_STETH_14_PRIVATE_KEY = os.getenv("RANDOM_STETH_14")
@@ -81,7 +83,13 @@ dai_30_address = ChecksumAddress(HexAddress(HexStr("0xb932F8085399C228b16A9F7FC3
 steth_14_address = ChecksumAddress(HexAddress(HexStr("0xff33bd6d7ED4119c99C310F3e5f0Fa467796Ee23")))
 steth_30_address = ChecksumAddress(HexAddress(HexStr("0x4E38fd41c03ff11b3426efaE53138b86116797b8")))
 rng_generator = np.random.default_rng(RANDSEED)
-hyperdrive_config = IHyperdrive.Config(preview_before_trade=True, rng=rng_generator, txn_receipt_timeout=TIMEOUT)
+hyperdrive_config = IHyperdrive.Config(
+    preview_before_trade=True,
+    rng=rng_generator,
+    txn_receipt_timeout=TIMEOUT,
+    txn_options_base_fee_multiple=BASE_FEE_MULTIPLE,
+    txn_options_priority_fee_multiple=PRIORITY_FEE_MULTIPLE,
+)
 dai_14_pool = IHyperdrive(chain, dai_14_address, hyperdrive_config)
 dai_30_pool = IHyperdrive(chain, dai_30_address, hyperdrive_config)
 steth_14_pool = IHyperdrive(chain, steth_14_address, hyperdrive_config)
@@ -102,7 +110,7 @@ kwargs = {
 random_dai_14 = dai_14_pool.init_agent(
     private_key=RANDOM_DAI_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
-    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=dai_14_pool.interface.pool_config.minimum_transaction_amount*FixedPoint(2),**kwargs),
+    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=dai_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
 random_dai_14.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
 random_dai_14.agent.name = "random_dai14"
@@ -112,7 +120,7 @@ random_dai_14._pool._token = dai_contract
 random_dai_30 = dai_30_pool.init_agent(
     private_key=RANDOM_DAI_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
-    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=dai_30_pool.interface.pool_config.minimum_transaction_amount*FixedPoint(2),**kwargs),
+    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=dai_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
 random_dai_30.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
 random_dai_30._pool._contract = dai_30_contract
@@ -122,7 +130,7 @@ random_dai_30.agent.name = "random_dai30"
 random_steth_14 = steth_14_pool.init_agent(
     private_key=RANDOM_STETH_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
-    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=steth_14_pool.interface.pool_config.minimum_transaction_amount*FixedPoint(2),**kwargs),
+    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=steth_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
 random_steth_14.agent.TARGET_BASE = FixedPoint(TARGET_STETH)
 random_steth_14._pool._contract = steth_14_contract
@@ -132,7 +140,7 @@ random_steth_14.agent.name = "random_steth14"
 random_steth_30 = steth_30_pool.init_agent(
     private_key=RANDOM_STETH_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
-policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=steth_30_pool.interface.pool_config.minimum_transaction_amount*FixedPoint(2),**kwargs),
+    policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=steth_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
 random_steth_30.agent.TARGET_BASE = FixedPoint(TARGET_STETH)
 random_steth_30._pool._contract = steth_30_contract
@@ -146,18 +154,29 @@ agents = [random_dai_14, random_dai_30, random_steth_14, random_steth_30]
 for agent in agents:
     print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
 
- # %%
+
+# %%
 # prepare agents
 def mint(agent: HyperdriveAgent):
-    print(f"MINT by {agent.agent.name:<14} ({agent.agent.checksum_address}) of {float(agent.agent.TARGET_BASE):,.0f}..", end="")
+    print(f"MINT by {agent.agent.name:<14} ({agent.agent.checksum_address}) of {float(agent.agent.TARGET_BASE):,.0f}..",end="",)
     fn_args = [agent.agent.TARGET_BASE.scaled_value]
-    smart_contract_transact(web3,agent._pool._token,agent.agent,"mint(uint256)",timeout = TIMEOUT,*fn_args)
+    smart_contract_transact(
+        web3,
+        agent._pool._token,
+        agent.agent,
+        "mint(uint256)",
+        timeout=TIMEOUT,
+        txn_options_base_fee_multiple=BASE_FEE_MULTIPLE,
+        txn_options_priority_fee_multiple=PRIORITY_FEE_MULTIPLE,
+        *fn_args,
+    )
     print("success!")
     # print(f"checking {agent._pool._token.name} balance of {agent.agent.name:<14} ({agent.agent.checksum_address})..", end="")
     base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
     # print("success!")
     agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
     print(f"Balance of {agent.agent.name:<14} ({agent.agent.checksum_address}) topped up to {agent.agent.wallet.balance.amount}")
+
 
 print("preparing agents..")
 for agent in agents:
