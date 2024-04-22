@@ -264,6 +264,12 @@ def log_hyperdrive_crash_report(
     else:
         agent_wallet = None
 
+    # Best attempt at getting a git commit version
+    try:
+        commit_hash = _get_git_revision_hash()
+    except Exception:  # pylint: disable=broad-except
+        commit_hash = None
+
     dump_obj = OrderedDict(
         [
             ("log_time", time_str),
@@ -286,7 +292,7 @@ def log_hyperdrive_crash_report(
             ("orig_traceback", orig_traceback),
             # NOTE if this crash report happens in a PR that gets squashed,
             # we loose this hash.
-            ("commit_hash", _get_git_revision_hash()),
+            ("commit_hash", commit_hash),
             # Environment details
         ]
     )
@@ -407,7 +413,9 @@ def _hyperdrive_agent_to_dict(agent: HyperdriveAgent | None):
 
 def _get_git_revision_hash() -> str:
     """Helper function for getting commit hash from git."""
-    return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+    # Use the directory of this file
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return subprocess.check_output(["git", "-C", dir_path, "rev-parse", "HEAD"]).decode("ascii").strip()
 
 
 def get_anvil_state_dump(web3: Web3) -> str | None:
