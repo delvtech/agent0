@@ -427,8 +427,15 @@ class ILocalChain(IChain):
             # Container doesn't exist, ignore
             existing_container = None
 
+        # There's a race condition here where the container gets removed between
+        # checking the container and attempting to remove it.
+        # Hence, we ignore any errors from attempting to remove
+
         if existing_container is not None and remove_existing_db_container:
-            existing_container.remove(v=True, force=True)
+            try:
+                existing_container.remove(v=True, force=True)
+            except Exception:  # pylint: disable=broad-except
+                pass
 
         # TODO ensure this container auto removes by itself
         container = client.containers.run(
