@@ -110,14 +110,17 @@ class IHyperdrive:
 
         Arguments
         ---------
-        factory_contract_addr: str
+        registry_contract_addr: str
             The address of the Hyperdrive factory contract.
+        chain: IChain
+            The IChain object connected to a chain.
 
         Returns
         -------
         dict[str, ChecksumAddress]
             A dictionary keyed by the pool's name, valued by the pool's address
         """
+        # pylint: disable=protected-access
         return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
     def __init__(
