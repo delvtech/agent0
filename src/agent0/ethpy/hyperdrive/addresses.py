@@ -91,8 +91,9 @@ def get_hyperdrive_addresses_from_registry(
 
     Returns
     -------
-    HyperdriveAddresses
-        The addresses for deployed Hyperdrive contracts.
+    dict[str, ChecksumAddress] | dict[int, ChecksumAddress]
+        A dictionary keyed by either a name (if `generate_name` is true) or an index (if `generate_name` is false),
+        with a value of the address of the deployed hyperdrive pool.
     """
     # TODO
     # pylint: disable=too-many-locals
