@@ -9,7 +9,7 @@ import requests
 from eth_typing import ChecksumAddress
 from web3 import Web3
 
-from agent0.hypertypes import HyperdriveFactoryContract
+from agent0.hypertypes import HyperdriveRegistryContract
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 
@@ -72,7 +72,9 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     HyperdriveAddresses
         The addresses for deployed Hyperdrive contracts.
     """
-    factory_contract = HyperdriveFactoryContract.factory(w3=web3)(
+    registry_contract = HyperdriveRegistryContract.factory(w3=web3)(
         address=web3.to_checksum_address(hyperdrive_registry_addr)
     )
+    # Look for events from the contract
+    events = registry_contract.events.HyperdriveInfoUpdated.get_logs(fromBlock=0)
     pass

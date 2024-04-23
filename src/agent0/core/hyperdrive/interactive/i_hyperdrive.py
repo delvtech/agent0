@@ -103,7 +103,7 @@ class IHyperdrive:
     @classmethod
     def get_deployed_hyperdrive_addresses(
         cls,
-        factory_contract_addr: str,
+        registry_contract_addr: str,
         chain: IChain,
     ) -> dict[str, ChecksumAddress]:
         """Helper function to gather deployed Hyperdrive pool addresses.
@@ -118,7 +118,7 @@ class IHyperdrive:
         dict[str, ChecksumAddress]
             A dictionary keyed by the pool's name, valued by the pool's address
         """
-        return get_hyperdrive_addresses_from_registry(factory_contract_addr, chain._web3)
+        return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
     def __init__(
         self,
