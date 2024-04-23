@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 from eth_account import Account
 from fixedpointmath import FixedPoint
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy import build_eth_config
@@ -301,6 +301,12 @@ class HyperdriveReadInterface:
         except BadFunctionCallOutput:
             logging.warning(
                 "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
+            )
+            variable_rate = None
+        # Some contracts throw a logic error
+        except ContractLogicError:
+            logging.warning(
+                "Underlying yield contract reverted `getRate` function, setting `state.variable_rate` as `None`."
             )
             variable_rate = None
 

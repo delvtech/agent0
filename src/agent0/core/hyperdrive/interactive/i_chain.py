@@ -2,6 +2,8 @@
 
 import contextlib
 
+from web3.types import BlockData
+
 from agent0.ethpy.base import initialize_web3_with_http_provider
 
 
@@ -37,3 +39,23 @@ class IChain:
                 "Cannot manage a separate interactive hyperdrive agent with the same address."
             )
         self._account_addrs[addr] = True
+
+    def curr_block_number(self) -> int:
+        """Get the current block number on the chain.
+
+        Returns
+        -------
+        int
+            The current block number
+        """
+        return self._web3.eth.get_block_number()
+
+    def curr_block_data(self) -> BlockData:
+        """Get the current block number on the chain.
+
+        Returns
+        -------
+        int
+            The current block number
+        """
+        return self._web3.eth.get_block("latest")

@@ -28,6 +28,7 @@ def run_invariant_checks(
     test_epsilon: float,
     raise_error_on_failure: bool = False,
     log_to_rollbar: bool = True,
+    pool_name: str | None = None,
 ) -> None:
     """Run the invariant checks.
 
@@ -45,6 +46,8 @@ def run_invariant_checks(
         If True, raise an error if any invariant check fails.
     log_to_rollbar: bool
         If True, log to rollbar if any invariant check fails.
+    pool_name: str | None
+        The name of the pool for crash reporting information.
     """
     # TODO cleanup
     # pylint: disable=too-many-locals
@@ -81,12 +84,20 @@ def run_invariant_checks(
         report.anvil_state = get_anvil_state_dump(interface.web3)
         rollbar_data = error.exception_data
 
+        if pool_name is not None:
+            crash_report_file_prefix = "fuzz_bots_invariant_checks_" + pool_name
+            rollbar_log_prefix = pool_name + "_"
+        else:
+            crash_report_file_prefix = "fuzz_bots_invariant_checks"
+            rollbar_log_prefix = None
+
         log_hyperdrive_crash_report(
             report,
             crash_report_to_file=True,
-            crash_report_file_prefix="fuzz_bots_invariant_checks",
+            crash_report_file_prefix=crash_report_file_prefix,
             log_to_rollbar=log_to_rollbar,
             rollbar_data=rollbar_data,
+            rollbar_log_prefix=rollbar_log_prefix,
         )
         if raise_error_on_failure:
             raise error
