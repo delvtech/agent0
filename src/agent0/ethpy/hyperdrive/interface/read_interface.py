@@ -177,7 +177,6 @@ class HyperdriveReadInterface:
             hyperdrive_contract=self.hyperdrive_contract,
             base_token_contract=self.base_token_contract,
             vault_shares_token_contract=self.vault_shares_token_contract,
-            factory_contract=None,
             deploy_block_number=0,  # don't have access to this here, use at your own risk
         )
 

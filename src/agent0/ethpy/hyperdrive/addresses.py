@@ -86,7 +86,7 @@ def get_hyperdrive_addresses_from_registry(
     web3: Web3
         The instantiated Web3 instance that's connect to a chain to use.
     generate_name: bool
-        If true, the key for the output will be the combination of the base token name + position duration,
+        If true, the key for the output will be the combination of the yield token name + position duration,
         e.g., "steth_14_day". If false, the key will be an integer index based on the order of registration.
 
     Returns
