@@ -47,9 +47,12 @@ class DeployedHyperdrivePool(NamedTuple):
 
     web3: Web3
     deploy_account: LocalAccount
-    hyperdrive_contract: Contract
+    hyperdrive_contract: IHyperdriveContract
+    # Keeping the base and vault shares contract generic
     base_token_contract: Contract
     vault_shares_token_contract: Contract
+    # Factory contract is optional
+    factory_contract: HyperdriveFactoryContract | None
     deploy_block_number: int
 
 
@@ -160,6 +163,7 @@ def deploy_hyperdrive_from_factory(
         hyperdrive_contract=IHyperdriveContract.factory(web3)(hyperdrive_checksum_address),
         base_token_contract=base_token_contract,
         vault_shares_token_contract=vault_contract,
+        factory_contract=factory_contract,
         deploy_block_number=web3.eth.block_number,
     )
 

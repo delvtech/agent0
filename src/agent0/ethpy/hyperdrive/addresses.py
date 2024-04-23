@@ -9,10 +9,11 @@ import requests
 from eth_typing import ChecksumAddress
 from web3 import Web3
 
+from agent0.hypertypes import HyperdriveFactoryContract
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 
-def fetch_hyperdrive_addresses_from_uri(contracts_uri: str) -> dict[str, ChecksumAddress]:
+def get_hyperdrive_addresses_from_uri(contracts_uri: str) -> dict[str, ChecksumAddress]:
     """Fetch addresses for deployed contracts in the Hyperdrive system.
 
     Arguments
@@ -56,3 +57,22 @@ def fetch_hyperdrive_addresses_from_uri(contracts_uri: str) -> dict[str, Checksu
             hyperdrive_addresses[camel_to_snake(key)] = Web3.to_checksum_address(value)
 
     return hyperdrive_addresses
+
+
+def get_hyperdrive_addresses_from_factory(hyperdrive_registry_addr: str, web3: Web3) -> dict[str, ChecksumAddress]:
+    """Fetch addresses for deployed contracts in the Hyperdrive system.
+
+    Arguments
+    ---------
+    contracts_uri: str
+        The URI for the artifacts endpoint.
+
+    Returns
+    -------
+    HyperdriveAddresses
+        The addresses for deployed Hyperdrive contracts.
+    """
+    factory_contract = HyperdriveFactoryContract.factory(w3=web3)(
+        address=web3.to_checksum_address(hyperdrive_registry_addr)
+    )
+    pass

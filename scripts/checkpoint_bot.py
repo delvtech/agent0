@@ -17,7 +17,7 @@ from agent0.core.base import EthAgent
 from agent0.core.base.config import EnvironmentConfig
 from agent0.ethpy import EthConfig, build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import fetch_hyperdrive_addresses_from_uri, get_hyperdrive_pool_config
+from agent0.ethpy.hyperdrive import get_hyperdrive_addresses_from_uri, get_hyperdrive_pool_config
 from agent0.hyperlogs import setup_logging
 from agent0.hypertypes import IHyperdriveContract
 
@@ -130,7 +130,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Get the Hyperdrive contract.
     # TODO replace this with the hyperdrive interface
     if parsed_args.pool_addr == "":
-        addresses = fetch_hyperdrive_addresses_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
+        addresses = get_hyperdrive_addresses_from_uri(os.path.join(eth_config.artifacts_uri, "addresses.json"))
         if parsed_args.pool not in addresses:
             raise ValueError(f"Pool {parsed_args.pool} not recognized. Available options are {list(addresses.keys())}")
         hyperdrive_contract_address = web3.to_checksum_address(addresses[parsed_args.pool])

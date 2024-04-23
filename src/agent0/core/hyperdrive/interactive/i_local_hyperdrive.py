@@ -285,6 +285,18 @@ class ILocalHyperdrive(IHyperdrive):
         # pylint: disable=protected-access
         return self._deployed_hyperdrive.hyperdrive_contract.address
 
+    def get_hyperdrive_factory_address(self) -> ChecksumAddress:
+        """Returns the hyperdrive addresses for this pool.
+
+        Returns
+        -------
+        IHyperdrive.Addresses
+            The hyperdrive addresses for this pool
+        """
+        # pylint: disable=protected-access
+        assert self._deployed_hyperdrive.factory_contract is not None
+        return self._deployed_hyperdrive.factory_contract.address
+
     def _launch_data_pipeline(self, start_block: int | None = None):
         """Launches the data pipeline in background threads.
 

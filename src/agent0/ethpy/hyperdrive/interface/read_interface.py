@@ -14,7 +14,7 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive.addresses import fetch_hyperdrive_addresses_from_uri
+from agent0.ethpy.hyperdrive.addresses import get_hyperdrive_addresses_from_uri
 from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -113,7 +113,7 @@ class HyperdriveReadInterface:
         # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
         if hyperdrive_address is None:
-            hyperdrive_address = fetch_hyperdrive_addresses_from_uri(
+            hyperdrive_address = get_hyperdrive_addresses_from_uri(
                 os.path.join(self.eth_config.artifacts_uri, "addresses.json")
             )["erc4626_hyperdrive"]
 
@@ -177,6 +177,7 @@ class HyperdriveReadInterface:
             hyperdrive_contract=self.hyperdrive_contract,
             base_token_contract=self.base_token_contract,
             vault_shares_token_contract=self.vault_shares_token_contract,
+            factory_contract=None,
             deploy_block_number=0,  # don't have access to this here, use at your own risk
         )
 

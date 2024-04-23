@@ -33,7 +33,11 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy import EthConfig
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown, fetch_hyperdrive_addresses_from_uri
+from agent0.ethpy.hyperdrive import (
+    HyperdriveReadWriteInterface,
+    ReceiptBreakdown,
+    get_hyperdrive_addresses_from_factory,
+)
 
 from .event_types import (
     AddLiquidity,
@@ -99,22 +103,22 @@ class IHyperdrive:
     @classmethod
     def get_deployed_hyperdrive_addresses(
         cls,
-        artifacts_uri: str,
+        factory_contract_addr: str,
+        chain: IChain,
     ) -> dict[str, ChecksumAddress]:
         """Helper function to gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
-        artifacts_uri: str
-            The uri of the artifacts server from which we get addresses.
-            E.g., `http://localhost:8080`.
+        factory_contract_addr: str
+            The address of the Hyperdrive factory contract.
 
         Returns
         -------
         dict[str, ChecksumAddress]
             A dictionary keyed by the pool's name, valued by the pool's address
         """
-        return fetch_hyperdrive_addresses_from_uri(artifacts_uri)
+        return get_hyperdrive_addresses_from_factory(factory_contract_addr, chain._web3)
 
     def __init__(
         self,
