@@ -16,7 +16,7 @@ from agent0.hypertypes.utilities.conversions import camel_to_snake
 from .transactions import get_hyperdrive_pool_config
 
 
-def get_hyperdrive_addresses_from_uri(artifacts_uri: str) -> dict[str, ChecksumAddress]:
+def get_hyperdrive_addresses_from_artifacts(artifacts_uri: str) -> dict[str, ChecksumAddress]:
     """Fetch addresses for deployed contracts in the Hyperdrive system.
 
     Arguments

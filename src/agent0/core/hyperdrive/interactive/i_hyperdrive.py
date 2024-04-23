@@ -36,6 +36,7 @@ from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
+    get_hyperdrive_addresses_from_artifacts,
     get_hyperdrive_addresses_from_registry,
 )
 
@@ -101,7 +102,27 @@ class IHyperdrive:
                 self.rng = np.random.default_rng(self.rng_seed)
 
     @classmethod
-    def get_deployed_hyperdrive_addresses(
+    def get_hyperdrive_addresses_from_artifacts(
+        cls,
+        artifacts_uri: str,
+    ) -> dict[str, ChecksumAddress]:
+        """Helper function to gather deployed Hyperdrive pool addresses.
+
+        Arguments
+        ---------
+        artifacts_uri: str
+            The uri of the artifacts json file. This is specific to the infra deployment.
+
+        Returns
+        -------
+        dict[str, ChecksumAddress]
+            A dictionary keyed by the pool's name, valued by the pool's address
+        """
+        # pylint: disable=protected-access
+        return get_hyperdrive_addresses_from_artifacts(artifacts_uri)
+
+    @classmethod
+    def get_hyperdrive_addresses_from_registry(
         cls,
         registry_contract_addr: str,
         chain: IChain,

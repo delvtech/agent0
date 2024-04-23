@@ -34,7 +34,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Get config and addresses
     eth_config = build_eth_config()
-    hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
+    hyperdrive_addresses = IHyperdrive.get_hyperdrive_addresses_from_artifacts(eth_config.artifacts_uri)
     if parsed_args.pool not in hyperdrive_addresses:
         raise ValueError(
             f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"
