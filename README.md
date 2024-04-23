@@ -18,13 +18,16 @@ This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https
 
 This repo contains general purpose code for interacting with Ethereum smart contracts.
 However, it was bulit for the primary use case of trading on [Hyperdrive](https://hyperdrive.delv.tech) markets.
-Using a Python 3.10 environment, you can install agent0 via pip:
+
+First, install [Foundry](https://book.getfoundry.sh/getting-started/installation) and [Docker](https://docs.docker.com/engine/install/).
+
+Next, using a Python 3.10 environment, you can install agent0 via pip:
 
 ```sh
 pip install --upgrade agent0
 ```
 
-Next you can execute Hyperdrive trades in a simulated blockchain environment:
+Finally, you can execute Hyperdrive trades in a simulated blockchain environment:
 
 ```python
 import datetime
