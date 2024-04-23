@@ -36,7 +36,7 @@ from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
-    get_hyperdrive_addresses_from_factory,
+    get_hyperdrive_addresses_from_registry,
 )
 
 from .event_types import (
@@ -118,7 +118,7 @@ class IHyperdrive:
         dict[str, ChecksumAddress]
             A dictionary keyed by the pool's name, valued by the pool's address
         """
-        return get_hyperdrive_addresses_from_factory(factory_contract_addr, chain._web3)
+        return get_hyperdrive_addresses_from_registry(factory_contract_addr, chain._web3)
 
     def __init__(
         self,

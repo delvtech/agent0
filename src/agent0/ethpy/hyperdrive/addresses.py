@@ -59,7 +59,7 @@ def get_hyperdrive_addresses_from_uri(contracts_uri: str) -> dict[str, ChecksumA
     return hyperdrive_addresses
 
 
-def get_hyperdrive_addresses_from_factory(hyperdrive_registry_addr: str, web3: Web3) -> dict[str, ChecksumAddress]:
+def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: Web3) -> dict[str, ChecksumAddress]:
     """Fetch addresses for deployed contracts in the Hyperdrive system.
 
     Arguments
