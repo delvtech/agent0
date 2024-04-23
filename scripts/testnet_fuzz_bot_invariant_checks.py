@@ -1,8 +1,5 @@
-"""Script for checking Hyperdrive invariants at each block on a remote chain.
-
-This script assumes that fuzz_bots is running in a concurrent process.
-Given that, we will periodically run this test:
-
+"""Script for automatically detecting deployed pools using the registry contract on testnet,
+and checking Hyperdrive invariants.
 
 # Invariance checks (these should be True):
 - hyperdrive base & eth balances are zero
