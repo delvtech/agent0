@@ -13,11 +13,18 @@ from agent0 import IChain, IHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 
 # %%
-chain = IChain("http://localhost:8545")
+# Set the rpc_uri to the chain, e.g., to sepolia testnet
+rpc_uri = "http://uri.to.sepolia.testnet"
+chain = IChain(rpc_uri)
 
-
+# Set the address of the hyperdrive pool
 # hyperdrive_address = "0x0000000000000000000000000000000000000000"
-hyperdrive_address = IHyperdrive.get_deployed_hyperdrive_addresses("http://localhost:8080/")["erc4626_hyperdrive"]
+
+# Alternatively, look up the list of registered hyperdrive pools
+# This is the registry address deployed on sepolia.
+registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
+
+hyperdrive_address = IHyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
 hyperdrive_config = IHyperdrive.Config()
 hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
 

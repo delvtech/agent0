@@ -47,7 +47,8 @@ class DeployedHyperdrivePool(NamedTuple):
 
     web3: Web3
     deploy_account: LocalAccount
-    hyperdrive_contract: Contract
+    hyperdrive_contract: IHyperdriveContract
+    # Keeping the base and vault shares contract generic
     base_token_contract: Contract
     vault_shares_token_contract: Contract
     deploy_block_number: int

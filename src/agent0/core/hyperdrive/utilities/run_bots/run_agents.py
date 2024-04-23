@@ -16,7 +16,7 @@ from agent0.core.base import Quantity, TokenType
 from agent0.core.base.config import DEFAULT_USERNAME
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_chain, build_wallet_positions_from_db
 from agent0.ethpy import build_eth_config
-from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, fetch_hyperdrive_addresses_from_uri
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, get_hyperdrive_addresses_from_artifacts
 
 from .fund_agents import async_fund_agents_with_fake_user
 from .setup_experiment import setup_experiment
@@ -152,7 +152,7 @@ def _setup_agents(
     if eth_config is None:
         eth_config = build_eth_config()
     if hyperdrive_address is None:
-        hyperdrive_address = fetch_hyperdrive_addresses_from_uri(
+        hyperdrive_address = get_hyperdrive_addresses_from_artifacts(
             os.path.join(eth_config.artifacts_uri, "addresses.json")
         )["erc4626_hyperdrive"]
 

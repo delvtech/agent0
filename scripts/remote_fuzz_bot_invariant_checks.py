@@ -116,7 +116,7 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterfac
 
     # Setup hyperdrive interface
     if parsed_args.pool_addr == "":
-        hyperdrive_addresses = IHyperdrive.get_deployed_hyperdrive_addresses(eth_config.artifacts_uri)
+        hyperdrive_addresses = IHyperdrive.get_hyperdrive_addresses_from_artifacts(eth_config.artifacts_uri)
         if parsed_args.pool not in hyperdrive_addresses:
             raise ValueError(
                 f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"

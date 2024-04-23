@@ -33,7 +33,12 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy import EthConfig
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown, fetch_hyperdrive_addresses_from_uri
+from agent0.ethpy.hyperdrive import (
+    HyperdriveReadWriteInterface,
+    ReceiptBreakdown,
+    get_hyperdrive_addresses_from_artifacts,
+    get_hyperdrive_addresses_from_registry,
+)
 
 from .event_types import (
     AddLiquidity,
@@ -97,7 +102,7 @@ class IHyperdrive:
                 self.rng = np.random.default_rng(self.rng_seed)
 
     @classmethod
-    def get_deployed_hyperdrive_addresses(
+    def get_hyperdrive_addresses_from_artifacts(
         cls,
         artifacts_uri: str,
     ) -> dict[str, ChecksumAddress]:
@@ -106,15 +111,38 @@ class IHyperdrive:
         Arguments
         ---------
         artifacts_uri: str
-            The uri of the artifacts server from which we get addresses.
-            E.g., `http://localhost:8080`.
+            The uri of the artifacts json file. This is specific to the infra deployment.
 
         Returns
         -------
         dict[str, ChecksumAddress]
             A dictionary keyed by the pool's name, valued by the pool's address
         """
-        return fetch_hyperdrive_addresses_from_uri(artifacts_uri)
+        # pylint: disable=protected-access
+        return get_hyperdrive_addresses_from_artifacts(artifacts_uri)
+
+    @classmethod
+    def get_hyperdrive_addresses_from_registry(
+        cls,
+        registry_contract_addr: str,
+        chain: IChain,
+    ) -> dict[str, ChecksumAddress]:
+        """Helper function to gather deployed Hyperdrive pool addresses.
+
+        Arguments
+        ---------
+        registry_contract_addr: str
+            The address of the Hyperdrive factory contract.
+        chain: IChain
+            The IChain object connected to a chain.
+
+        Returns
+        -------
+        dict[str, ChecksumAddress]
+            A dictionary keyed by the pool's name, valued by the pool's address
+        """
+        # pylint: disable=protected-access
+        return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
     def __init__(
         self,
