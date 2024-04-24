@@ -111,6 +111,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+# TODO move this to somewhere that's more general
 async def _async_runner(
     funcs: list[Callable[P, R]],
     *args: P.args,
