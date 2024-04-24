@@ -370,7 +370,6 @@ def _check_initial_lp_profitable(pool_state: PoolState, epsilon: FixedPoint | No
     vault_rate = (current_vault_share_price - initial_vault_share_price) / initial_vault_share_price
     lp_rate = (current_lp_share_price - initial_lp_share_price) / initial_lp_share_price
 
-    # There's a rounding difference of 1 wei between the two, so we use that as an epsilon
     difference_in_wei = lp_rate.scaled_value - vault_rate.scaled_value
 
     # There's a weird type error for unary operator - for None type,
