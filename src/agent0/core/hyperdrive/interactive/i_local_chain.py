@@ -432,10 +432,15 @@ class ILocalChain(IChain):
         # Hence, we ignore any errors from attempting to remove
 
         if existing_container is not None and remove_existing_db_container:
-            try:
-                existing_container.remove(v=True, force=True)
-            except Exception:  # pylint: disable=broad-except
-                pass
+            exception = None
+            for _ in range(5):
+                try:
+                    existing_container.remove(v=True, force=True)
+                    break
+                except Exception as e:  # pylint: disable=broad-except
+                    exception = e
+            if exception is not None:
+                logging.warning("Failed to remove existing container: %s", repr(exception))
 
         # TODO ensure this container auto removes by itself
         container = client.containers.run(
