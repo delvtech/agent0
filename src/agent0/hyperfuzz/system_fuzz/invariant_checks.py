@@ -61,7 +61,7 @@ def run_invariant_checks(
 
     results: list[InvariantCheckResults] = [
         _check_eth_balances(pool_state),
-        _check_base_balances(pool_state, interface.is_steth),
+        _check_base_balances(pool_state, interface.base_is_eth),
         _check_total_shares(pool_state),
         _check_minimum_share_reserves(pool_state),
         _check_solvency(pool_state),

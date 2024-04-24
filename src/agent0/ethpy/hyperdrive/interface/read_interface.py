@@ -141,11 +141,11 @@ class HyperdriveReadInterface:
             address=web3.to_checksum_address(vault_shares_token_address)
         )
 
-        # Check symbol to see if the underlying vault is steth market
-        vault_shares_token_symbol = self.vault_shares_token_contract.functions.symbol().call()
-        if "stETH" in vault_shares_token_symbol:
-            self.is_steth = True
-            # If we're using steth, we use the yield token as the base token (i.e., steth)
+        # Agent0 doesn't support eth as base, so if it is, we use the yield token as the base, and
+        # calls to trades will use "as_base=False"
+        if base_token_contract_address == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
+            self.base_is_eth = True
+            # If the base token is eth, we use the yield token as the base token (e.g., steth)
             # and pass in "as_base=False" to the contract calls.
             # This simplifies accounting to have only one base token for steth.
             # The alternative of having eth as base token requires keeping track of both
@@ -153,7 +153,7 @@ class HyperdriveReadInterface:
             # eth.
             base_token_contract_address = vault_shares_token_address
         else:
-            self.is_steth = False
+            self.base_is_eth = False
 
         self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
             web3.to_checksum_address(base_token_contract_address)
