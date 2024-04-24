@@ -224,12 +224,17 @@ def main(argv: Sequence[str] | None = None) -> None:
         # TODO because _async_runner only takes one set of arguments for all calls,
         # we make partial calls for each call. The proper fix here is to generalize
         # _async_runner to take separate arguments for each call.
-        partials = [partial(run_checkpoint_bot, pool_address=pool_addr) for pool_addr in deployed_pools.values()]
+        partials = [
+            partial(run_checkpoint_bot, pool_address=pool_addr, pool_name=pool_name)
+            for pool_name, pool_addr in deployed_pools.items()
+        ]
 
         # Run checkpoint bots
+        # We set return_exceptions to False to crash immediately if a thread fails
         asyncio.run(
             _async_runner(
-                partials,
+                return_exceptions=False,
+                funcs=partials,
                 chain=chain,
                 sender=sender,
                 block_to_exit=chain.curr_block_number() + pool_check_num_blocks,
