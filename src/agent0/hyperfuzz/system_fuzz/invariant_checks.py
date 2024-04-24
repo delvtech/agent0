@@ -32,6 +32,14 @@ def run_invariant_checks(
 ) -> None:
     """Run the invariant checks.
 
+    # Invariance checks (these should be True):
+    - hyperdrive base & eth balances are zero
+    - the expected total shares equals the hyperdrive balance in the vault contract
+    - the pool has more than the minimum share reserves
+    - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
+    - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
+    - initializer's lp pnl should always be at or above the variable rate.
+
     Arguments
     ---------
     latest_block: BlockData
@@ -68,6 +76,7 @@ def run_invariant_checks(
         _check_present_value_greater_than_idle_shares(latest_block_number, interface, pool_state),
         _check_lp_share_price(latest_block_number, interface, test_epsilon, pool_state),
         _check_checkpointing_should_never_fail(latest_block, interface, pool_state),
+        _check_initial_lp_profitable(pool_state),
     ]
 
     for failed, message, data in results:
@@ -332,6 +341,45 @@ def _check_lp_share_price(
         exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
         exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
+        failed = True
+
+    return InvariantCheckResults(failed, exception_message, exception_data)
+
+
+def _check_initial_lp_profitable(pool_state: PoolState, epsilon: FixedPoint | None = None) -> InvariantCheckResults:
+
+    # There's a rounding difference of 1 wei due to rounding lp_rate down
+    if epsilon is None:
+        epsilon = FixedPoint(scaled_value=1)
+
+    failed = False
+    exception_message = ""
+    exception_data: dict[str, Any] = {}
+
+    # We compare the rate of lp share price vs the rate of vault share price
+    # For this, we need to get the initial and current prices of both
+    initial_vault_share_price = pool_state.pool_config.initial_vault_share_price
+    current_vault_share_price = pool_state.pool_info.vault_share_price
+
+    # LP Share price is always 1 at initialization
+    initial_lp_share_price = FixedPoint(1)
+    current_lp_share_price = pool_state.pool_info.lp_share_price
+
+    # We calculate both rates and compare
+    # The rate calculated here is for the time range of how long the pool has deployed
+    vault_rate = (current_vault_share_price - initial_vault_share_price) / initial_vault_share_price
+    lp_rate = (current_lp_share_price - initial_lp_share_price) / initial_lp_share_price
+
+    # There's a rounding difference of 1 wei between the two, so we use that as an epsilon
+    difference_in_wei = lp_rate.scaled_value - vault_rate.scaled_value
+
+    # There's a weird type error for unary operator - for None type,
+    # so we do multiplication here
+    if difference_in_wei < (-1 * epsilon):
+        exception_message = f"{lp_rate=} is expected to be >= {vault_rate=}, {difference_in_wei=}"
+        exception_data["invariance_check:lp_rate"] = lp_rate
+        exception_data["invariance_check:vault_rate"] = vault_rate
+        exception_data["invariance_check:lp_vault_rate_difference_in_wei"] = difference_in_wei
         failed = True
 
     return InvariantCheckResults(failed, exception_message, exception_data)

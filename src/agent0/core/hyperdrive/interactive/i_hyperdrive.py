@@ -82,7 +82,7 @@ class IHyperdrive:
         log_to_rollbar: bool = False
         """Whether to log crash reports to rollbar. Defaults to False."""
         rollbar_log_prefix: str | None = None
-        """Whether to log crash reports to rollbar. Defaults to False."""
+        """Additional prefix for this hyperdrive to log to rollbar."""
         crash_log_level: int = logging.CRITICAL
         """The log level to log crashes at. Defaults to critical."""
         crash_report_additional_info: dict[str, Any] | None = None
