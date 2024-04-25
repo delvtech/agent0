@@ -822,9 +822,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_open_short(
-            pool_state, bond_amount, _calc_spot_price(pool_state), pool_state.pool_info.vault_share_price
-        )
+        return _calc_open_short(pool_state, bond_amount, pool_state.pool_info.vault_share_price)
 
     def calc_spot_price_after_short(
         self, bond_amount: FixedPoint, base_amount: FixedPoint | None = None, pool_state: PoolState | None = None
