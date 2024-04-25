@@ -9,6 +9,9 @@ from hexbytes import HexBytes
 from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.ethpy.base.transactions import build_transaction
 
+# we're testing here
+# pylint: disable: too-many-locals
+
 
 @pytest.mark.anvil
 def test_gas_price_base_multiple_explicit(chain: ILocalChain):
