@@ -155,7 +155,6 @@ def _calc_close_long(
 def _calc_open_short(
     pool_state: PoolState,
     short_amount: FixedPoint,
-    spot_price: FixedPoint,
     open_vault_share_price: FixedPoint | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
@@ -168,7 +167,6 @@ def _calc_open_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(short_amount.scaled_value),
-        str(spot_price.scaled_value),
         open_vault_share_price_str,
     )
     return FixedPoint(scaled_value=int(short_deposit))
