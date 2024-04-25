@@ -323,7 +323,10 @@ def _check_lp_share_price(
     exception_message = ""
     exception_data: dict[str, Any] = {}
 
-    # TODO normalize the test epsilon based on block time between the 2 blocks
+    # We expect the lp share price to be less than the test epsilon between sequential blocks
+    # However, when simulating, we can advance time by any amount of time. Hence, we define
+    # the test epsilon to be relative to 12 seconds (1 block), and normalize by the actual time
+    # between blocks.
 
     # This is known to fail when checking the first block, as block - 1 doesn't exist.
     try:
@@ -331,9 +334,12 @@ def _check_lp_share_price(
     except BlockNotFound:
         return InvariantCheckResults(False, exception_message, exception_data)
 
+    block_time_delta = pool_state.block_time - previous_pool_state.block_time
+    normalized_test_epsilon = test_epsilon * (block_time_delta / 12)
+
     previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
     current_lp_share_price = pool_state.pool_info.lp_share_price
-    test_tolerance = previous_lp_share_price * FixedPoint(str(test_epsilon))
+    test_tolerance = previous_lp_share_price * FixedPoint(str(normalized_test_epsilon))
 
     if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
         difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
