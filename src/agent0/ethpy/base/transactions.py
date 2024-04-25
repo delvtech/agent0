@@ -453,16 +453,12 @@ def build_transaction(
     if base_fee is None:
         raise AssertionError("The latest block does not have a baseFeePerGas")
     max_fee_per_gas = int(max_priority_fee + base_fee)
-    if txn_options_gas is not None:
-        transaction_kwargs["gas"] = txn_options_gas
     transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
     transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
+    if txn_options_gas is not None:
+        transaction_kwargs["gas"] = txn_options_gas
 
-    # Building transactions can also fail, so we add retry here
-    unsent_txn = retry_call(
-        read_retry_count, _retry_preview_check, func_handle.build_transaction, TxParams(transaction_kwargs)
-    )
-    return unsent_txn
+    return func_handle.build_transaction(TxParams(transaction_kwargs))
 
 
 async def _async_send_transaction_and_wait_for_receipt(
