@@ -168,7 +168,7 @@ def smart_contract_preview_transaction(
     read_retry_count: int | None
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
-        The value field to set for transaction options.
+        The value field for the transaction.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -403,13 +403,13 @@ def build_transaction(
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
-        The value field to set for transaction options.
+        The value field for the transaction.
     txn_options_gas: int | None = None
-        The gas field to set for transaction options. Defaults to estimateGas output.
+        The amount of gas used by the transaction. Defaults to estimateGas output.
     txn_options_base_fee_multiple: float | None = None
-        The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+        The multiple applied to the base fee for the transaction. Defaults to 1.
     txn_options_priority_fee_multiple: float | None = None
-        The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
+        The multiple applied to the priority fee for the transaction. Defaults to 1.
 
     Returns
     -------
@@ -542,13 +542,13 @@ async def async_smart_contract_transact(
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
-        The value field to set for transaction options.
+        The value field for the transaction.
     txn_options_gas : int | None
-        The gas field to set for transaction options.
+        The amount of gas used by the transaction.
     txn_options_base_fee_multiple: float | None = None
-        The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+        The multiple applied to the base fee for the transaction. Defaults to 1.
     txn_options_priority_fee_multiple: float | None = None
-        The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
+        The multiple applied to the priority fee for the transaction. Defaults to 1.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `_async_send_transaction_and_wait_for_receipt`.
@@ -745,13 +745,13 @@ def smart_contract_transact(
     write_retry_count: BlockNumber | None
         The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
-        The value field to set for transaction options.
+        The value field for the transaction.
     txn_options_gas : int | None
-        The gas field to set for transaction options.
+        The amount of gas used by the transaction.
     txn_options_base_fee_multiple: float | None = None
-        The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+        The multiple applied to the base fee for the transaction. Defaults to 1.
     txn_options_priority_fee_multiple: float | None = None
-        The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
+        The multiple applied to the priority fee for the transaction. Defaults to 1.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `send_transaction_and_wait_for_receipt`.

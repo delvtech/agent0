@@ -114,9 +114,9 @@ class HyperdriveReadInterface:
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+            The multiple applied to the base fee for any transaction, unless otherwise specified. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
+            The multiple applied to the priority fee for any transaction, unless otherwise specified. Defaults to 1.
         """
         # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config

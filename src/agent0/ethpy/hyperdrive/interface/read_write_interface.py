@@ -70,9 +70,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee to set for transaction options. Defaults to 1.
+            The multiple applied to the base fee for any transaction, unless otherwise specified. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee to set for transaction options. Defaults to 1.
+            The multiple applied to the priority fee for any transaction, unless otherwise specified. Defaults to 1.
         """
         super().__init__(
             eth_config=eth_config,
@@ -171,9 +171,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
@@ -225,9 +225,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
 
@@ -275,9 +275,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An explicit nonce to set with the transaction.
 
@@ -329,9 +329,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -387,9 +387,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -433,9 +433,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
@@ -484,9 +484,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The maximum amount of gas used by the transaction.
             Defaults to `eth_estimateGas` RPC output.
         txn_options_base_fee_multiple: float | None, optional
-            The multiple by which to multiply the base fee for the transaction. Defaults to 1.
+            The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
-            The multiple by which to multiply the priority fee for the transaction. Defaults to 1.
+            The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
 
