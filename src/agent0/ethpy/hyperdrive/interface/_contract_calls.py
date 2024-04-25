@@ -179,7 +179,7 @@ async def _async_open_long(
     min_output = 0  # TODO: give the user access to this parameter
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True
@@ -274,7 +274,7 @@ async def _async_close_long(
         txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True
@@ -358,7 +358,7 @@ async def _async_open_short(
     max_deposit = int(MAX_WEI)
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True
@@ -455,7 +455,7 @@ async def _async_close_short(
         txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True
@@ -548,7 +548,7 @@ async def _async_add_liquidity(
     min_lp_share_price = 0
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True
@@ -616,7 +616,7 @@ async def _async_remove_liquidity(
     min_output = 0
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True
@@ -689,7 +689,7 @@ async def _async_redeem_withdraw_shares(
         txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     # We use the yield as the base token in steth pools
-    if interface.is_steth:
+    if interface.base_is_eth:
         as_base_option = False
     else:
         as_base_option = True

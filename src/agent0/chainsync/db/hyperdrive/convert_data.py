@@ -48,7 +48,8 @@ def convert_hyperdrive_transactions_for_block(
         transaction_dict["hash"] = tx_hash.hex()
         # Decode the transaction input
         try:
-            method, params = hyperdrive_contract.decode_function_input(transaction["input"])
+            # although input may not be a required key, we catch this case
+            method, params = hyperdrive_contract.decode_function_input(transaction["input"])  # type: ignore
             transaction_dict["input"] = {"method": method.fn_name, "params": params}
         except ValueError:  # if the input is not meant for the contract, ignore it
             continue

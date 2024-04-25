@@ -111,7 +111,9 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+# TODO move this to somewhere that's more general
 async def _async_runner(
+    return_exceptions: bool,
     funcs: list[Callable[P, R]],
     *args: P.args,
     **kwargs: P.kwargs,
@@ -124,6 +126,9 @@ async def _async_runner(
 
     Arguments
     ---------
+    return_exceptions: bool
+        If True, return exceptions from the functions. Otherwise, will throw exception if
+        a thread fails.
     funcs: list[Callable[P, R]]
         List of functions to run asynchronously.
     *args: P.args
@@ -136,13 +141,12 @@ async def _async_runner(
     list[R]
         List of results.
     """
-
     # We launch all functions in threads using the `to_thread` function.
     # This allows the underlying functions to use non-async waits.
 
     # Runs all functions passed in and gathers results
     gather_result: list[R | BaseException] = await asyncio.gather(
-        *[asyncio.to_thread(func, *args, **kwargs) for func in funcs], return_exceptions=True
+        *[asyncio.to_thread(func, *args, **kwargs) for func in funcs], return_exceptions=return_exceptions
     )
 
     # Error checking
@@ -268,7 +272,8 @@ def run_fuzz_bots(
     if run_async:
         asyncio.run(
             _async_runner(
-                [agent.add_funds for agent in agents],
+                return_exceptions=True,
+                funcs=[agent.add_funds for agent in agents],
                 base=base_budget_per_bot,
                 eth=eth_budget_per_bot,
             )
@@ -280,7 +285,8 @@ def run_fuzz_bots(
     if run_async:
         asyncio.run(
             _async_runner(
-                [agent.set_max_approval for agent in agents],
+                return_exceptions=True,
+                funcs=[agent.set_max_approval for agent in agents],
             )
         )
     else:
@@ -299,7 +305,8 @@ def run_fuzz_bots(
             if run_async:
                 trades = asyncio.run(
                     _async_runner(
-                        [agent.execute_policy_action for agent in agents],
+                        return_exceptions=True,
+                        funcs=[agent.execute_policy_action for agent in agents],
                     )
                 )
             else:
@@ -337,7 +344,8 @@ def run_fuzz_bots(
             if run_async:
                 asyncio.run(
                     _async_runner(
-                        [agent.add_funds for agent in agents],
+                        return_exceptions=True,
+                        funcs=[agent.add_funds for agent in agents],
                         base=base_budget_per_bot,
                         eth=eth_budget_per_bot,
                     )

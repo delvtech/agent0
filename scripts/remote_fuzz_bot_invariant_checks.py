@@ -1,15 +1,4 @@
 """Script for checking Hyperdrive invariants at each block on a remote chain.
-
-This script assumes that fuzz_bots is running in a concurrent process.
-Given that, we will periodically run this test:
-
-
-# Invariance checks (these should be True):
-- hyperdrive base & eth balances are zero
-- the expected total shares equals the hyperdrive balance in the vault contract
-- the pool has more than the minimum share reserves
-- the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
-- if a hyperdrive trade happened then a checkpoint was created at the appropriate time
 """
 
 from __future__ import annotations
