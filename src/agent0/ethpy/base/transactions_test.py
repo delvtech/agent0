@@ -10,7 +10,7 @@ from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
 from agent0.ethpy.base.transactions import build_transaction
 
 # we're testing here
-# pylint: disable: too-many-locals
+# pylint: disable=too-many-locals
 
 
 @pytest.mark.anvil
