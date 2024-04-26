@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Type, TypeVar, cast
+from typing import Type, TypeVar
 
 from agent0.core.base.types import FrozenClass, freezable
 from agent0.hyperlogs import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, ExtendedJSONEncoder
