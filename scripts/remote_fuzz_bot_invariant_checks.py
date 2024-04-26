@@ -54,10 +54,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Update block number
         last_executed_block_number = latest_block_number
         run_invariant_checks(
-            latest_block,
-            latest_block_number,
-            interface,
-            parsed_args.test_epsilon,
+            latest_block=latest_block,
+            interface=interface,
+            test_epsilon=parsed_args.test_epsilon,
             raise_error_on_failure=False,
             log_to_rollbar=log_to_rollbar,
         )

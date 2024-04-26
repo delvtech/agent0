@@ -327,10 +327,9 @@ def run_fuzz_bots(
             if latest_block_number is None:
                 raise AssertionError("Block has no number.")
             run_invariant_checks(
-                latest_block,
-                latest_block_number,
-                hyperdrive_pool.interface,
-                invariance_test_epsilon,
+                latest_block=latest_block,
+                interface=hyperdrive_pool.interface,
+                test_epsilon=invariance_test_epsilon,
                 raise_error_on_failure=raise_error_on_failed_invariance_checks,
                 log_to_rollbar=log_to_rollbar,
             )
@@ -361,7 +360,7 @@ def run_fuzz_bots(
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
                 # TODO should there be an upper bound for advancing time?
-                random_time = hyperdrive_pool.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE)
+                random_time = int(hyperdrive_pool.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on ILocalChain")
