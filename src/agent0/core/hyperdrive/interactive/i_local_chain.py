@@ -62,7 +62,7 @@ class ILocalChain(IChain):
         experimental_data_threading: bool = False
         """Flag for running the data pipeline in a separate thread. Defaults to False."""
 
-    def __init__(self, config: Config | None = None):
+    def __init__(self, config: Config | None = None, fork_uri: str | None = None, fork_block_number: int | None = None):
         """Initialize the Chain class that connects to an existing chain.
 
         Also launch a postgres docker container for gathering data.
@@ -88,6 +88,12 @@ class ILocalChain(IChain):
         ]
         if config.block_time is not None:
             anvil_launch_args.extend(("--block-time", str(config.block_time)))
+
+        if fork_uri is not None:
+            anvil_launch_args.extend(["--fork-url", fork_uri])
+            if fork_block_number is not None:
+                anvil_launch_args.extend(["--fork-block-number", str(fork_block_number)])
+
         # This process never stops, so we run this in the background and explicitly clean up later
         self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
             # Suppressing output of anvil
@@ -95,6 +101,11 @@ class ILocalChain(IChain):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
+
+        # TODO HACK wait for anvil to start, ideally we would be looking for the output to stdout
+        # Forking takes a bit longer to spin up, so we only sleep when forking
+        if fork_uri is not None:
+            time.sleep(2)
 
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}")
 
