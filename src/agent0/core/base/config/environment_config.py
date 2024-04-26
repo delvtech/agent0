@@ -126,9 +126,9 @@ class EnvironmentConfig(FrozenClass):
         FrozenClass[U]
             The new frozen class with the member attributes cast to the new type.
         """
-        return cast(FrozenClass[U], self.__class__())
+        raise NotImplementedError
 
     @property
-    def dtypes(self) -> dict[str, type]:
+    def dtypes(self):
         """Return a dict listing name & type of each member variable."""
-        return {}
+        raise NotImplementedError

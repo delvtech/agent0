@@ -93,7 +93,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Callable[[T
                 """Disallows adding new members."""
                 super().__setattr__("no_new_attribs", True)
 
-            def astype(self, new_type: Type[U]) -> FrozenClass[U]:
+            def astype(self, new_type: Callable[[Any], U]) -> FrozenClass[U]:
                 """Cast all member attributes to a new type.
 
                 Arguments
@@ -105,9 +105,9 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Callable[[T
                 for attr_name, attr_value in asdict(self).items():
                     try:
                         if isinstance(attr_value, list):
-                            new_data[attr_name] = [cast(U, val) for val in attr_value]
+                            new_data[attr_name] = [new_type(val) for val in attr_value]
                         else:
-                            new_data[attr_name] = cast(U, attr_value)
+                            new_data[attr_name] = new_type(attr_value)
                         self.__annotations__[attr_name] = new_type
                     except (ValueError, TypeError) as err:
                         raise TypeError(
