@@ -80,10 +80,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         for name, hyperdrive_obj in hyperdrive_objs.items():
             logging.info("Running invariance check on %s", name)
             run_invariant_checks(
-                latest_block,
-                latest_block_number,
-                hyperdrive_obj.interface,
-                parsed_args.test_epsilon,
+                latest_block=latest_block,
+                interface=hyperdrive_obj.interface,
+                test_epsilon=parsed_args.test_epsilon,
                 raise_error_on_failure=False,
                 log_to_rollbar=log_to_rollbar,
                 pool_name=name,

@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any, NamedTuple, Sequence
 
-from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint, isclose
 from hexbytes import HexBytes
 from web3.exceptions import BlockNotFound
@@ -23,7 +22,6 @@ from agent0.hyperfuzz import FuzzAssertionException
 
 def run_invariant_checks(
     latest_block: BlockData,
-    latest_block_number: BlockNumber,
     interface: HyperdriveReadInterface,
     test_epsilon: float,
     raise_error_on_failure: bool = False,
@@ -44,8 +42,6 @@ def run_invariant_checks(
     ---------
     latest_block: BlockData
         The current block to be tested.
-    latest_block_number: BlockNumber
-        The current block number.
     interface: HyperdriveReadInterface
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
     test_epsilon: float
@@ -73,9 +69,9 @@ def run_invariant_checks(
         _check_total_shares(pool_state),
         _check_minimum_share_reserves(pool_state),
         _check_solvency(pool_state),
-        _check_present_value_greater_than_idle_shares(latest_block_number, interface, pool_state),
-        _check_lp_share_price(latest_block_number, interface, test_epsilon, pool_state),
-        _check_checkpointing_should_never_fail(latest_block, interface, pool_state),
+        _check_present_value_greater_than_idle_shares(interface, pool_state),
+        _check_lp_share_price(interface, test_epsilon, pool_state),
+        _check_checkpointing_should_never_fail(interface, pool_state),
         _check_initial_lp_profitable(pool_state),
     ]
 
@@ -150,7 +146,7 @@ def _check_base_balances(pool_state: PoolState, is_steth: bool) -> InvariantChec
 
 
 def _check_checkpointing_should_never_fail(
-    block: BlockData, interface: HyperdriveReadInterface, pool_state: PoolState
+    interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
     # Creating a checkpoint should never fail
     # TODO: add get_block_transactions() to interface
@@ -160,6 +156,8 @@ def _check_checkpointing_should_never_fail(
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
+
+    block = pool_state.block
 
     transactions = block.get("transactions", None)
     if transactions is not None and isinstance(transactions, Sequence):
@@ -262,7 +260,6 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
 
 
 def _check_present_value_greater_than_idle_shares(
-    block_number: BlockNumber,
     interface: HyperdriveReadInterface,
     pool_state: PoolState,
 ) -> InvariantCheckResults:
@@ -284,6 +281,7 @@ def _check_present_value_greater_than_idle_shares(
     exception_data: dict[str, Any] = {}
 
     present_value = interface.calc_present_value(pool_state)
+    block_number = pool_state.block_number
     idle_shares = interface.get_idle_shares(block_number)
 
     if not present_value >= idle_shares:
@@ -298,7 +296,6 @@ def _check_present_value_greater_than_idle_shares(
 
 
 def _check_lp_share_price(
-    block_number: BlockNumber,
     interface: HyperdriveReadInterface,
     test_epsilon: float,
     pool_state: PoolState,
@@ -322,6 +319,8 @@ def _check_lp_share_price(
     failed = False
     exception_message = ""
     exception_data: dict[str, Any] = {}
+
+    block_number = pool_state.block_number
 
     # We expect the lp share price to be less than the test epsilon between sequential blocks
     # However, when simulating, we can advance time by any amount of time. Hence, we define
