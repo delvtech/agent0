@@ -1,4 +1,4 @@
-"""Core types used across the repo"""
+"""Core types used across the repo."""
 
 from __future__ import annotations  # types will be strings by default in 3.11
 
@@ -40,7 +40,7 @@ class FrozenClass:
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False):
-    """A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed.
+    """Allow classes to be frozen, such that existing member attributes cannot be changed.
 
     Arguments
     ---------
@@ -53,7 +53,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
     """
 
     def decorator(cls):
-        """Decorator for the provided class.
+        """Define decorator for the provided class.
 
         Arguments
         ---------
@@ -139,7 +139,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
 
 
 class TokenType(Enum):
-    r"""A type of token"""
+    r"""A type of token."""
 
     BASE = "base"
 
