@@ -1,14 +1,17 @@
-"""State object for setting environment configuration"""
+"""State object for setting environment configuration."""
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from typing import Type, TypeVar, cast
 
 from agent0.core.base.types import FrozenClass, freezable
 from agent0.hyperlogs import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, ExtendedJSONEncoder
 
 DEFAULT_USERNAME = "changeme"
+
+U = TypeVar("U")
 
 
 @freezable(frozen=False, no_new_attribs=True)
@@ -77,7 +80,7 @@ class EnvironmentConfig(FrozenClass):
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
 
     def copy(self) -> EnvironmentConfig:
-        """Returns a new copy of self.
+        """Return a new copy of self.
 
         Returns
         -------
@@ -109,15 +112,23 @@ class EnvironmentConfig(FrozenClass):
         with open(json_file_location, mode="w", encoding="UTF-8") as file:
             json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
 
-    def freeze(self):
+    def freeze(self) -> None:
         """Disallows changing existing members."""
 
-    def disable_new_attribs(self):
+    def disable_new_attribs(self) -> None:
         """Disallows adding new members."""
 
-    def astype(self, _):
-        """Cast all member attributes to a new type."""
+    def astype(self, _new_type: Type[U]) -> FrozenClass[U]:
+        """Cast all member attributes to a new type.
+
+        Returns
+        -------
+        FrozenClass[U]
+            The new frozen class with the member attributes cast to the new type.
+        """
+        return cast(FrozenClass[U], self.__class__())
 
     @property
-    def dtypes(self):
+    def dtypes(self) -> dict[str, type]:
         """Return a dict listing name & type of each member variable."""
+        return {}
