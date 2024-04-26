@@ -1,11 +1,11 @@
-"""Core types used across the repo"""
+"""Core types used across the repo."""
 
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from dataclasses import asdict, dataclass, is_dataclass, replace
+from dataclasses import asdict, dataclass, is_dataclass
 from enum import Enum
 from functools import wraps
-from typing import Any, Generic, TypeVar
+from typing import Any, Callable, Generic, Type, TypeVar, cast
 
 from fixedpointmath import FixedPoint
 
@@ -16,31 +16,34 @@ from fixedpointmath import FixedPoint
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
 WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
+T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
+U = TypeVar("U")
 
 
-class FrozenClass:
+class FrozenClass(Generic[T_co]):
     """Config object with frozen attributes."""
 
-    def freeze(self):
+    def freeze(self) -> None:
         """Disallows changing existing members."""
         raise NotImplementedError
 
-    def disable_new_attribs(self):
+    def disable_new_attribs(self) -> None:
         """Disallows adding new members."""
         raise NotImplementedError
 
-    def astype(self, _new_type):
+    def astype(self, _new_type: Type[U]) -> FrozenClass[U]:
         """Cast all member attributes to a new type."""
         raise NotImplementedError
 
     @property
-    def dtypes(self):
+    def dtypes(self) -> dict[str, type]:
         """Return a dict listing name & type of each member variable."""
         raise NotImplementedError
 
 
-def freezable(frozen: bool = False, no_new_attribs: bool = False):
-    """A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed.
+def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Callable[[Type[T]], Type[T]]:
+    """Allow classes to be frozen, such that existing member attributes cannot be changed.
 
     Arguments
     ---------
@@ -52,8 +55,8 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
         Defaults to False, indicating that new attributes can be added.
     """
 
-    def decorator(cls):
-        """Decorator for the provided class.
+    def decorator(cls: Type[T]) -> Type[T]:
+        """Define decorator for the provided class.
 
         Arguments
         ---------
@@ -65,11 +68,8 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
             raise TypeError("The class must be a data class.")
 
         @wraps(wrapped=cls, updated=())
-        class DecoratedFrozenClass(cls, FrozenClass):
-            """Subclass cls to enable freezing of attributes.
-
-            .. todo:: resolve why pyright cannot access member "freeze" when instantiated_class.freeze() is called
-            """
+        class DecoratedFrozenClass(cls):
+            """Subclass cls to enable freezing of attributes."""
 
             def __init__(self, *args, frozen=frozen, no_new_attribs=no_new_attribs, **kwargs) -> None:
                 super().__init__(*args, **kwargs)
@@ -93,7 +93,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
                 """Disallows adding new members."""
                 super().__setattr__("no_new_attribs", True)
 
-            def astype(self, new_type):
+            def astype(self, new_type: Type[U]) -> FrozenClass[U]:
                 """Cast all member attributes to a new type.
 
                 Arguments
@@ -105,9 +105,9 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
                 for attr_name, attr_value in asdict(self).items():
                     try:
                         if isinstance(attr_value, list):
-                            new_data[attr_name] = [new_type(val) for val in attr_value]
+                            new_data[attr_name] = [cast(U, val) for val in attr_value]
                         else:
-                            new_data[attr_name] = new_type(attr_value)
+                            new_data[attr_name] = cast(U, attr_value)
                         self.__annotations__[attr_name] = new_type
                     except (ValueError, TypeError) as err:
                         raise TypeError(
@@ -115,7 +115,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
                         ) from err
                 # create a new instance of the data class with the updated
                 # attributes, rather than modifying the current instance in-place
-                return replace(self, **new_data)
+                return cast(FrozenClass[U], self.__class__(**new_data))
 
             @property
             def dtypes(self) -> dict[str, type]:
@@ -133,13 +133,13 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False):
 
         # Set the name of the wrapped class to the name of the input class to preserve metadata
         DecoratedFrozenClass.__name__ = cls.__name__
-        return DecoratedFrozenClass
+        return cast(Type[T], DecoratedFrozenClass)
 
     return decorator
 
 
 class TokenType(Enum):
-    r"""A type of token"""
+    r"""A type of token."""
 
     BASE = "base"
 
@@ -152,6 +152,7 @@ class Quantity:
     unit: TokenType
 
     def __neg__(self):
+        """Return the negative of the amount."""
         return Quantity(amount=-self.amount, unit=self.unit)
 
 
