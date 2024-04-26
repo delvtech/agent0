@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fixedpointmath import FixedPoint
 
-from agent0 import IHyperdrive, ILocalChain
+from agent0 import IHyperdrive, ILocalChain, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 
 # %%
@@ -25,7 +25,7 @@ registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
 # Launch a local anvil chain forked from the rpc uri.
 chain = ILocalChain(fork_uri=rpc_uri, fork_block_number=fork_block_number)
 
-hyperdrive_address = IHyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["reth_30_day"]
+hyperdrive_address = IHyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
 
 # Note that we use IHyperdrive here instead of ILocalHyperdrive,
 # as ILocalHyperdrive deploys a new pool, whereas we want to connect to an existing pool
@@ -43,13 +43,11 @@ hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
 private_key = make_private_key()
 
 # Init from private key and attach policy
-# This ties the hyperdrive_agent to the hyperdrive_pool here.
-# We can connect to another hyperdrive pool and create a separate
-# agent object using the same private key, but the underlying wallet
-# object would then be out of date if both agents are making trades.
-# TODO add registry of public key to the chain object, preventing this from happening
 hyperdrive_agent0 = hyperdrive_pool.init_agent(
     private_key=private_key,
+    policy=PolicyZoo.random,
+    # The configuration for the underlying policy
+    policy_config=PolicyZoo.random.Config(rng_seed=123),
 )
 
 # %%
@@ -57,7 +55,7 @@ hyperdrive_agent0 = hyperdrive_pool.init_agent(
 # TODO this will likely fail when we fork from mainnet, as we call `mint`
 # on the base token. This will work on testnet, as we allow minting on the testnet
 # base token.
-hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
+hyperdrive_agent0.add_funds(base=FixedPoint(1000), eth=FixedPoint(100))
 
 # Set max approval
 hyperdrive_agent0.set_max_approval()
@@ -68,7 +66,7 @@ hyperdrive_agent0.set_max_approval()
 # Return values here mirror the various events emitted from these contract calls
 # These functions are blocking, but relatively easy to expose async versions of the
 # trades below
-open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(11111))
+open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(111))
 close_long_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
 )
