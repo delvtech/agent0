@@ -9,13 +9,12 @@ from typing import Iterable
 
 from fixedpointmath import FixedPoint
 
-from agent0.core.base import EthWallet, EthWalletDeltas, freezable
+from agent0.core.base import EthWallet, EthWalletDeltas
 
 
-@freezable()
 @dataclass()
 class HyperdriveWalletDeltas(EthWalletDeltas):
-    r"""Stores changes for an agent's wallet"""
+    r"""Store changes for an agent's wallet."""
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -31,7 +30,7 @@ class HyperdriveWalletDeltas(EthWalletDeltas):
     """The withdraw shares held by the trader."""
 
     def copy(self) -> HyperdriveWalletDeltas:
-        """Returns a new copy of self.
+        """Return a new copy of self.
 
         Returns
         -------
@@ -86,7 +85,7 @@ class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
     """
 
     def _update_longs(self, longs: Iterable[tuple[int, Long]]) -> None:
-        """Helper internal function that updates the data about Longs contained in the Agent's Wallet.
+        """Update the data about Longs contained in the Agent's Wallet.
 
         Arguments
         ---------
@@ -115,7 +114,7 @@ class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[maturity_time]}.")
 
     def _update_shorts(self, shorts: Iterable[tuple[int, Short]]) -> None:
-        """Helper internal function that updates the data about Shorts contained in the Agent's Wallet.
+        """Update the data about Shorts contained in the Agent's Wallet.
 
         Arguments
         ---------
@@ -144,7 +143,7 @@ class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
                 raise AssertionError(f"wallet balance should be >= 0, not {self.shorts[maturity_time]}")
 
     def copy(self) -> HyperdriveWallet:
-        """Returns a new copy of self.
+        """Return a new copy of self.
 
         Returns
         -------
