@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
+from agent0.core.base.types import FrozenClass, freezable
+
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
 
@@ -24,8 +26,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
 
     # Because we're inheriting from this config, we need to set
     # kw_only so that we can mix and match defaults and non-defaults
+    @freezable(frozen=False, no_new_attribs=False)
     @dataclass(kw_only=True)
-    class Config:
+    class Config(FrozenClass):  # pylint: disable=abstract-method
         """Config data class for policy specific configuration."""
 
         rng_seed: int | None = None
@@ -34,8 +37,12 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """The experiment's stateful random number generator. Defaults to a spawn of the global rng."""
         slippage_tolerance: FixedPoint | None = None
         """The slippage tolerance for trades. Defaults to None."""
+        txn_options_base_fee_multiple: float | None = None
+        """The base fee multiple for transactions. Defaults to None."""
+        txn_options_max_priority_fee_per_gas: FixedPoint | None = None
+        """The max priority fee per gas for transactions. Defaults to None."""
 
-    def __init__(self, policy_config: Config):
+    def __init__(self, policy_config: BasePolicy.Config):
         """Initialize the policy.
 
         Arguments
@@ -44,6 +51,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
             The configuration for the policy.
         """
         self.config: BasePolicy.Config = policy_config
+        # lock down the config so we can't change it by either modifying existing attribs or adding new ones
+        self.config.freeze()
+        self.config.disable_new_attribs()
         self.slippage_tolerance = policy_config.slippage_tolerance
         # Generate rng if not set in config
         if policy_config.rng is None:
