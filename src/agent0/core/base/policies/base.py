@@ -42,7 +42,7 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         priority_fee_multiple: float | None = None
         """The priority fee multiple for transactions. Defaults to None."""
 
-    def __init__(self, policy_config: BasePolicy.Config):
+    def __init__(self, policy_config: Config):
         """Initialize the policy.
 
         Arguments
