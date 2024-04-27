@@ -450,7 +450,7 @@ def build_transaction(
     base_fee = pending_block.get("baseFeePerGas", None)
     if base_fee is not None:
         base_fee *= txn_options_base_fee_multiple
-    if base_fee is None:
+    else:
         raise AssertionError("The latest block does not have a baseFeePerGas")
     max_fee_per_gas = int(max_priority_fee + base_fee)
     transaction_kwargs["maxFeePerGas"] = Wei(max_fee_per_gas)
