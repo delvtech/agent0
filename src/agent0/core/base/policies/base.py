@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
+from agent0.core.base.types import freezable
+
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
 
@@ -24,6 +26,7 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
 
     # Because we're inheriting from this config, we need to set
     # kw_only so that we can mix and match defaults and non-defaults
+    @freezable(frozen=False, no_new_attribs=False)
     @dataclass(kw_only=True)
     class Config:
         """Config data class for policy specific configuration."""
@@ -34,6 +37,10 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """The experiment's stateful random number generator. Defaults to a spawn of the global rng."""
         slippage_tolerance: FixedPoint | None = None
         """The slippage tolerance for trades. Defaults to None."""
+        base_fee_multiple: float | None = None
+        """The base fee multiple for transactions. Defaults to None."""
+        priority_fee_multiple: float | None = None
+        """The priority fee multiple for transactions. Defaults to None."""
 
     def __init__(self, policy_config: Config):
         """Initialize the policy.
@@ -47,6 +54,9 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         # overwriting the __init__ function. The downside is that users of this member variable
         # can't be type checked. There's probably a way to do this with generics instead of Any.
         self.config: Any = policy_config
+        # lock down the config so we can't change it by either modifying existing attribs or adding new ones
+        self.config.freeze()  # type: ignore
+        self.config.disable_new_attribs()  # type: ignore
         self.slippage_tolerance = policy_config.slippage_tolerance
         # Generate rng if not set in config
         if policy_config.rng is None:

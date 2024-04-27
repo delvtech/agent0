@@ -98,6 +98,7 @@ class IHyperdrive:
         """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
 
         def __post_init__(self):
+            """Create the random number generator if not set."""
             if self.rng is None:
                 self.rng = np.random.default_rng(self.rng_seed)
 
@@ -106,7 +107,7 @@ class IHyperdrive:
         cls,
         artifacts_uri: str,
     ) -> dict[str, ChecksumAddress]:
-        """Helper function to gather deployed Hyperdrive pool addresses.
+        """Gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
@@ -127,7 +128,7 @@ class IHyperdrive:
         registry_contract_addr: str,
         chain: IChain,
     ) -> dict[str, ChecksumAddress]:
-        """Helper function to gather deployed Hyperdrive pool addresses.
+        """Gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
@@ -150,6 +151,17 @@ class IHyperdrive:
         hyperdrive_address: ChecksumAddress,
         config: Config | None = None,
     ):
+        """Initialize the interactive hyperdrive class.
+
+        Arguments
+        ---------
+        chain: IChain
+            The chain to interact with
+        hyperdrive_address: ChecksumAddress
+            The address of the hyperdrive contract
+        config: Config | None
+            The configuration for the interactive hyperdrive class
+        """
         if config is None:
             self.config = self.Config()
         else:
@@ -184,7 +196,7 @@ class IHyperdrive:
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
     ) -> IHyperdriveAgent:
-        """Initializes an agent object given a private key.
+        """Initialize an agent object given a private key.
 
         .. note::
             Due to the underlying bookkeeping, each agent object needs a unique private key.
@@ -475,6 +487,7 @@ class IHyperdrive:
         self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
     ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
         # pylint: disable=too-many-return-statements
+        # ruff: noqa: PLR0911 (too many return statements)
         match trade_type:
             case HyperdriveActionType.INITIALIZE_MARKET:
                 raise ValueError(f"{trade_type} not supported!")

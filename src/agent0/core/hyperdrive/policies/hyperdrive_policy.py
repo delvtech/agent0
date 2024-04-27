@@ -1,4 +1,4 @@
-"""Base class for hyperdrive policies"""
+"""Base class for hyperdrive policies."""
 
 from fixedpointmath import FixedPoint
 
@@ -47,7 +47,7 @@ class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]
     def action(
         self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
     ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Returns an empty list, indicating no action.
+        """Return an empty list, indicating no action.
 
         Arguments
         ---------
@@ -65,7 +65,8 @@ class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]
         raise NotImplementedError
 
     def post_action(self, interface: HyperdriveReadInterface, trade_results: list[TradeResult]) -> None:
-        """Function that gets called after the actions specified by the `action` function have been executed.
+        """Execute any behavior after after the actions specified by the `action` function have been executed.
+
         This allows the policy to e.g., do additional bookkeeping based on the results of the executed actions.
 
         Arguments

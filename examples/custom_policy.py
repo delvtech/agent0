@@ -1,11 +1,9 @@
-"""Custom policy example"""
+"""Custom policy example."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
-
-from fixedpointmath import FixedPoint
 
 from agent0 import (
     HyperdriveBasePolicy,
@@ -17,6 +15,7 @@ from agent0 import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
+from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
@@ -27,7 +26,7 @@ if TYPE_CHECKING:
 # Build custom policy
 # Simple agent, opens a set of all trades for a fixed amount and closes them after
 class CustomCycleTradesPolicy(HyperdriveBasePolicy):
-    """An agent that simply cycles through all trades"""
+    """An agent that simply cycles through all trades."""
 
     @dataclass(kw_only=True)
     class Config(HyperdriveBasePolicy.Config):
