@@ -164,6 +164,8 @@ async def _async_open_long(
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -234,6 +236,8 @@ async def _async_open_long(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
@@ -252,6 +256,8 @@ async def _async_close_long(
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -315,6 +321,8 @@ async def _async_close_long(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeLong")
@@ -332,6 +340,8 @@ async def _async_open_short(
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -400,6 +410,8 @@ async def _async_open_short(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
@@ -417,6 +429,8 @@ async def _async_close_short(
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -480,6 +494,8 @@ async def _async_close_short(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeShort")
@@ -498,6 +514,8 @@ async def _async_add_liquidity(
     max_apr: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -551,6 +569,8 @@ async def _async_add_liquidity(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
@@ -566,6 +586,8 @@ async def _async_remove_liquidity(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
@@ -612,6 +634,8 @@ async def _async_remove_liquidity(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
@@ -627,6 +651,8 @@ async def _async_redeem_withdraw_shares(
     agent: LocalAccount,
     trade_amount: FixedPoint,
     gas_limit: int | None = None,
+    txn_options_base_fee_multiple: float | None = None,
+    txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
@@ -679,6 +705,8 @@ async def _async_redeem_withdraw_shares(
             read_retry_count=interface.read_retry_count,
             write_retry_count=interface.write_retry_count,
             txn_options_gas=gas_limit,
+            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
         trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")

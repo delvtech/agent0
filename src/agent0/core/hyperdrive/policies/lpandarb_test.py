@@ -37,7 +37,8 @@ def interactive_hyperdrive(chain: ILocalChain) -> ILocalHyperdrive:
     Returns
     -------
     InteractiveHyperdrive
-        Interactive hyperdrive."""
+        Interactive hyperdrive.
+    """
     interactive_config = ILocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         initial_fixed_apr=FixedPoint("0.05"),
@@ -57,7 +58,8 @@ def arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
     Returns
     -------
     InteractiveHyperdriveAgent
-        Arbitrage Andy interactive hyperdrive agent."""
+        Arbitrage Andy interactive hyperdrive agent.
+    """
     return create_arbitrage_andy(interactive_hyperdrive)
 
 
@@ -72,7 +74,8 @@ def create_arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
     Returns
     -------
     InteractiveHyperdriveAgent
-        Arbitrage Andy interactive hyperdrive agent."""
+        Arbitrage Andy interactive hyperdrive agent.
+    """
     andy_base = FixedPoint(1e9)
     andy_config = PolicyZoo.lp_and_arb.Config(
         lp_portion=FixedPoint(0),
@@ -95,7 +98,8 @@ def manual_agent(interactive_hyperdrive) -> ILocalHyperdriveAgent:
     Returns
     -------
     InteractiveHyperdriveAgent
-        Manual interactive hyperdrive agent."""
+        Manual interactive hyperdrive agent.
+    """
     return interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
 
@@ -262,14 +266,6 @@ def test_already_at_target(interactive_hyperdrive: ILocalHyperdrive, arbitrage_a
     # report starting fixed rate
     logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
-    # modify Andy to be done_on_empty
-    andy_policy = arbitrage_andy.agent.policy
-    assert isinstance(andy_policy, PolicyZoo.lp_and_arb)
-    assert hasattr(andy_policy, "policy_config") and isinstance(
-        getattr(andy_policy, "policy_config"), PolicyZoo.lp_and_arb.Config
-    )
-    andy_policy.policy_config.done_on_empty = True
-
     # arbitrage it back
     arbitrage_andy.execute_policy_action()
 
@@ -287,7 +283,6 @@ def test_already_at_target(interactive_hyperdrive: ILocalHyperdrive, arbitrage_a
 @pytest.mark.anvil
 def test_reduce_long(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
     """Reduce a long position."""
-
     # give Andy a long
     event = arbitrage_andy.open_long(base=FixedPoint(10))
 
@@ -304,7 +299,6 @@ def test_reduce_long(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: I
 @pytest.mark.anvil
 def test_reduce_short(interactive_hyperdrive: ILocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
     """Reduce a short position."""
-
     logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
     # give Andy a short
