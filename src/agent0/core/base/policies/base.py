@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
@@ -50,7 +50,10 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         policy_config: Config
             The configuration for the policy.
         """
-        self.config: BasePolicy.Config = policy_config
+        # TODO: We add this as a helper property so that subclasses can access the config without
+        # overwriting the __init__ function. The downside is that users of this member variable
+        # can't be type checked. There's probably a way to do this with generics instead of Any.
+        self.config: Any = policy_config
         # lock down the config so we can't change it by either modifying existing attribs or adding new ones
         self.config.freeze()  # type: ignore
         self.config.disable_new_attribs()  # type: ignore
