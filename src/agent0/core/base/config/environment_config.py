@@ -1,19 +1,18 @@
-"""State object for setting environment configuration"""
+"""State object for setting environment configuration."""
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
 
-from agent0.core.base.types import FrozenClass, freezable
+from agent0.core.base.types import Freezable
 from agent0.hyperlogs import DEFAULT_LOG_LEVEL, DEFAULT_LOG_MAXBYTES, ExtendedJSONEncoder
 
 DEFAULT_USERNAME = "changeme"
 
 
-@freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class EnvironmentConfig(FrozenClass):
+class EnvironmentConfig(Freezable):
     """Parameters that can be set either locally or passed from docker."""
 
     # lots of configs!
@@ -66,18 +65,25 @@ class EnvironmentConfig(FrozenClass):
     randomize_liquidation: bool = False
     """If true, will randomize liquidation trades when liquidating."""
 
+    def __post_init__(self) -> None:
+        """Disallow adding new attributes."""
+        self.no_new_attribs = True
+
     def __getitem__(self, attrib) -> None:
+        """Get the value of the attribute."""
         return getattr(self, attrib)
 
     def __setitem__(self, attrib, value) -> None:
+        """Set the value of the attribute."""
         self.__setattr__(attrib, value)
 
     def __str__(self) -> str:
+        """Return a string representation of the object."""
         # cls arg tells json how to handle numpy objects and nested dataclasses
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
 
     def copy(self) -> EnvironmentConfig:
-        """Returns a new copy of self.
+        """Return a new copy of self.
 
         Returns
         -------
@@ -108,16 +114,3 @@ class EnvironmentConfig(FrozenClass):
         """
         with open(json_file_location, mode="w", encoding="UTF-8") as file:
             json.dump(self.__dict__, file, sort_keys=True, indent=2, cls=ExtendedJSONEncoder)
-
-    def freeze(self):
-        """Disallows changing existing members."""
-
-    def disable_new_attribs(self):
-        """Disallows adding new members."""
-
-    def astype(self, _):
-        """Cast all member attributes to a new type."""
-
-    @property
-    def dtypes(self):
-        """Return a dict listing name & type of each member variable."""

@@ -162,6 +162,7 @@ class TestBotLoadState:
             global_random_seed=1234,
             username="test",
         )
+        env_config.freeze()
 
         # Build agent config
         agent_config: list[AgentConfig] = [

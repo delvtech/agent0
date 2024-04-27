@@ -11,11 +11,11 @@ from typing import Any, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-from agent0.core.base.types import Quantity, TokenType, freezable
+from agent0.core.base.types import Freezable, Quantity, TokenType
 
 
 def check_non_zero(data: Any) -> None:
-    r"""Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+    r"""Perform a general non-zero check on a dictionary or class that has a __dict__ attribute.
 
     Arguments
     ---------
@@ -41,9 +41,8 @@ def check_non_zero(data: Any) -> None:
                 continue  # noop; frozen, etc
 
 
-@freezable()
 @dataclass()
-class EthWalletDeltas:
+class EthWalletDeltas(Freezable):
     r"""Stores changes for an agent's wallet."""
 
     # fungible
@@ -53,7 +52,7 @@ class EthWalletDeltas:
     # TODO: Support multiple typed balances:
     #     balance: Dict[TokenType, Quantity] = field(default_factory=dict)
     def copy(self) -> EthWalletDeltas:
-        """Returns a new copy of self.
+        """Return a new copy of self.
 
         Returns
         -------
@@ -86,7 +85,7 @@ class EthWallet(Generic[T]):
         setattr(self, key, value)
 
     def copy(self) -> EthWallet:
-        """Returns a new copy of self.
+        """Return a new copy of self.
 
         Returns
         -------
@@ -96,7 +95,7 @@ class EthWallet(Generic[T]):
         return EthWallet(**copy.deepcopy(self.__dict__))
 
     def update(self, wallet_deltas: T) -> None:
-        """Update the agent's wallet in-place
+        """Update the agent's wallet in-place.
 
         Arguments
         ---------
