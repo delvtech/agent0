@@ -96,10 +96,6 @@ class IHyperdrive:
         """
         txn_receipt_timeout: float | None = None
         """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
-        txn_options_base_fee_multiple: float | None = None
-        """The base fee multiple for transaction options. Defaults to 1.0."""
-        txn_options_priority_fee_multiple: float | None = None
-        """The priority fee multiple for transaction options. Defaults to 1.0."""
 
         def __post_init__(self):
             """Create the random number generator if not set."""
@@ -132,7 +128,7 @@ class IHyperdrive:
         registry_contract_addr: str,
         chain: IChain,
     ) -> dict[str, ChecksumAddress]:
-        """Helper function to gather deployed Hyperdrive pool addresses.
+        """Gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
@@ -190,8 +186,6 @@ class IHyperdrive:
             hyperdrive_address,
             web3=chain._web3,
             txn_receipt_timeout=self.config.txn_receipt_timeout,
-            txn_options_base_fee_multiple=self.config.txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=self.config.txn_options_priority_fee_multiple,
         )
 
         self.chain = chain

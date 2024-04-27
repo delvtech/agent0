@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random import default_rng
 
-from agent0.core.base.types import FrozenClass, freezable
+from agent0.core.base.types import freezable
 
 if TYPE_CHECKING:
     from numpy.random._generator import Generator
@@ -28,7 +28,7 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
     # kw_only so that we can mix and match defaults and non-defaults
     @freezable(frozen=False, no_new_attribs=False)
     @dataclass(kw_only=True)
-    class Config(FrozenClass):  # pylint: disable=abstract-method
+    class Config:
         """Config data class for policy specific configuration."""
 
         rng_seed: int | None = None
@@ -37,10 +37,10 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """The experiment's stateful random number generator. Defaults to a spawn of the global rng."""
         slippage_tolerance: FixedPoint | None = None
         """The slippage tolerance for trades. Defaults to None."""
-        txn_options_base_fee_multiple: float | None = None
+        base_fee_multiple: float | None = None
         """The base fee multiple for transactions. Defaults to None."""
-        txn_options_max_priority_fee_per_gas: FixedPoint | None = None
-        """The max priority fee per gas for transactions. Defaults to None."""
+        priority_fee_multiple: float | None = None
+        """The priority fee multiple for transactions. Defaults to None."""
 
     def __init__(self, policy_config: BasePolicy.Config):
         """Initialize the policy.
@@ -52,8 +52,8 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """
         self.config: BasePolicy.Config = policy_config
         # lock down the config so we can't change it by either modifying existing attribs or adding new ones
-        self.config.freeze()
-        self.config.disable_new_attribs()
+        self.config.freeze()  # type: ignore
+        self.config.disable_new_attribs()  # type: ignore
         self.slippage_tolerance = policy_config.slippage_tolerance
         # Generate rng if not set in config
         if policy_config.rng is None:

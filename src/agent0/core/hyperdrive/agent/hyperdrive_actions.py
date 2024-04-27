@@ -26,6 +26,13 @@ class HyperdriveActionType(Enum):
     REDEEM_WITHDRAW_SHARE = "redeem_withdraw_share"
 
 
+# TODO: consolidate these arguments (pass in just the config?)
+# these functions have lots of arguments
+# pylint: disable=too-many-arguments
+# ruff: noqa: PLR0913
+
+
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType]):
     r"""Market action specification."""
@@ -40,13 +47,21 @@ class HyperdriveMarketAction(BaseMarketAction[HyperdriveActionType]):
     slippage_tolerance: FixedPoint | None = None
     # maximum amount of gas to be used for the transaction
     gas_limit: int | None = None
+    # gas price base multiple
+    base_fee_multiple: float | None = None
+    # gas price priority multipe
+    priority_fee_multiple: float | None = None
     # min_apr and max_apr used only for add_liquidity trades to control slippage
     min_apr: FixedPoint = FixedPoint(scaled_value=1)
     max_apr: FixedPoint = FixedPoint(scaled_value=2**256 - 1)
 
 
 def open_long_trade(
-    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None, gas_limit: int | None = None
+    trade_amount: FixedPoint,
+    slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
+    gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for opening a long.
 
@@ -58,6 +73,10 @@ def open_long_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -73,6 +92,8 @@ def open_long_trade(
             action_type=HyperdriveActionType.OPEN_LONG,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
         ),
     )
@@ -82,6 +103,8 @@ def close_long_trade(
     trade_amount: FixedPoint,
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
     gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for closing a long.
@@ -96,6 +119,10 @@ def close_long_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -112,13 +139,19 @@ def close_long_trade(
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
         ),
     )
 
 
 def open_short_trade(
-    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None, gas_limit: int | None = None
+    trade_amount: FixedPoint,
+    slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
+    gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for opening a short.
 
@@ -130,6 +163,10 @@ def open_short_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -145,6 +182,8 @@ def open_short_trade(
             action_type=HyperdriveActionType.OPEN_SHORT,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
         ),
     )
@@ -154,6 +193,8 @@ def close_short_trade(
     trade_amount: FixedPoint,
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
     gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for closing a short.
@@ -168,6 +209,10 @@ def close_short_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -184,6 +229,8 @@ def close_short_trade(
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
         ),
     )
@@ -191,6 +238,8 @@ def close_short_trade(
 
 def add_liquidity_trade(
     trade_amount: FixedPoint,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
     gas_limit: int | None = None,
     min_apr: FixedPoint | None = None,
     max_apr: FixedPoint | None = None,
@@ -201,6 +250,10 @@ def add_liquidity_trade(
     ---------
     trade_amount: FixedPoint
         The amount of liquidity you wish to add to the pool.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -228,6 +281,8 @@ def add_liquidity_trade(
         market_action=HyperdriveMarketAction(
             action_type=HyperdriveActionType.ADD_LIQUIDITY,
             trade_amount=trade_amount,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
             min_apr=min_apr,
             max_apr=max_apr,
@@ -236,7 +291,11 @@ def add_liquidity_trade(
 
 
 def remove_liquidity_trade(
-    trade_amount: FixedPoint, slippage_tolerance: FixedPoint | None = None, gas_limit: int | None = None
+    trade_amount: FixedPoint,
+    slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
+    gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for removing liquidity.
 
@@ -248,6 +307,10 @@ def remove_liquidity_trade(
         Amount of slippage allowed from the trade.
         If given, then the trade will not execute unless the slippage is below this value.
         If not given, then execute the trade regardless of the slippage.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -266,13 +329,18 @@ def remove_liquidity_trade(
             action_type=HyperdriveActionType.REMOVE_LIQUIDITY,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
         ),
     )
 
 
 def redeem_withdraw_shares_trade(
-    trade_amount: FixedPoint, gas_limit: int | None = None
+    trade_amount: FixedPoint,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
+    gas_limit: int | None = None,
 ) -> Trade[HyperdriveMarketAction]:
     """Return a trade object for redeeming withdraw shares.
 
@@ -280,6 +348,10 @@ def redeem_withdraw_shares_trade(
     ---------
     trade_amount: FixedPoint
         The amount of withdraw shares you wish to redeem from the pool.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for the transaction.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for the transaction.
     gas_limit: int | None, optional
         The maximum amount of gas used by the transaction.
         Defaults to `eth_estimateGas` RPC output.
@@ -295,6 +367,8 @@ def redeem_withdraw_shares_trade(
         market_action=HyperdriveMarketAction(
             action_type=HyperdriveActionType.REDEEM_WITHDRAW_SHARE,
             trade_amount=trade_amount,
+            base_fee_multiple=base_fee_multiple,
+            priority_fee_multiple=priority_fee_multiple,
             gas_limit=gas_limit,
         ),
     )

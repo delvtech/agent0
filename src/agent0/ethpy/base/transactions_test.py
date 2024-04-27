@@ -4,13 +4,10 @@ import logging
 
 import pytest
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 
 from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.policies import PolicyZoo
 from agent0.ethpy.base.transactions import build_transaction
-
-# we're testing here
-# pylint: disable=too-many-locals
 
 
 @pytest.mark.anvil
@@ -94,39 +91,54 @@ def test_gas_price_priority_multiple_explicit(chain: ILocalChain):
 
 
 @pytest.mark.anvil
-def test_gas_price_priority_multiple_default(chain: ILocalChain):
-    """Set the gas price priority multiple as the default."""
-    # set up regular and multiplied copies of config, hyperdrive, interface, web3, and agent
+def test_gas_price_base_multiple_policy(chain: ILocalChain):
+    """Set the gas price base multiple through an agent policy."""
+    # set up config, hyperdrive, interface, web3, and agent
+    base_fee_multiple = 100
+    config = ILocalHyperdrive.Config()
+    hyperdrive = ILocalHyperdrive(chain, config)
+    interface = hyperdrive.interface
+
+    regular_agent = hyperdrive.init_agent(
+        base=FixedPoint(11111), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
+    )
+    multiplied_agent = hyperdrive.init_agent(
+        base=FixedPoint(11111),
+        policy=PolicyZoo.random,
+        policy_config=PolicyZoo.random.Config(base_fee_multiple=base_fee_multiple),
+    )
+
+    actions, _ = regular_agent.agent.policy.action(interface, regular_agent.agent.wallet)
+    regular_base_fee_multiple = actions[0].market_action.base_fee_multiple
+    assert regular_base_fee_multiple is None
+
+    actions, _ = multiplied_agent.agent.policy.action(interface, multiplied_agent.agent.wallet)
+    multiplied_base_fee_multiple = actions[0].market_action.base_fee_multiple
+    assert multiplied_base_fee_multiple == base_fee_multiple
+
+
+@pytest.mark.anvil
+def test_gas_price_priority_multiple_policy(chain: ILocalChain):
+    """Set the gas price priority multiple through an agent policy."""
+    # set up config, hyperdrive, interface, web3, and agent
     priority_fee_multiple = 100
-    regular_config = ILocalHyperdrive.Config()
-    multiplied_config = ILocalHyperdrive.Config(txn_options_priority_fee_multiple=priority_fee_multiple)
-    regular_hyperdrive = ILocalHyperdrive(chain, regular_config)
-    multiplied_hyperdrive = ILocalHyperdrive(chain, multiplied_config)
-    regular_interface = regular_hyperdrive.interface
-    multiplied_interface = multiplied_hyperdrive.interface
-    regular_web3 = regular_interface.web3
-    multiplied_web3 = multiplied_interface.web3
-    regular_agent = regular_hyperdrive.init_agent(base=FixedPoint(11111), eth=FixedPoint(1))
-    multiplied_agent = multiplied_hyperdrive.init_agent(base=FixedPoint(11111), eth=FixedPoint(1))
+    config = ILocalHyperdrive.Config()
+    hyperdrive = ILocalHyperdrive(chain, config)
+    interface = hyperdrive.interface
 
-    regular_agent.add_liquidity(base=FixedPoint(11111))
-    latest_block = regular_web3.eth.get_block("latest")
-    assert "transactions" in latest_block
-    regular_event = latest_block["transactions"][0]
-    assert isinstance(regular_event, HexBytes)
-    regular_txn_receipt = regular_web3.eth.get_transaction_receipt(regular_event)
-    regular_effective_gas_price = regular_txn_receipt["effectiveGasPrice"] / 1e9
+    regular_agent = hyperdrive.init_agent(
+        base=FixedPoint(11111), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
+    )
+    multiplied_agent = hyperdrive.init_agent(
+        base=FixedPoint(11111),
+        policy=PolicyZoo.random,
+        policy_config=PolicyZoo.random.Config(priority_fee_multiple=priority_fee_multiple),
+    )
 
-    multiplied_agent.add_liquidity(base=FixedPoint(11111))
-    latest_block = multiplied_web3.eth.get_block("latest")
-    assert "transactions" in latest_block
-    multiplied_event = latest_block["transactions"][0]
-    assert isinstance(multiplied_event, HexBytes)
-    multiplied_txn_receipt = multiplied_web3.eth.get_transaction_receipt(multiplied_event)
-    multiplied_effective_gas_price = multiplied_txn_receipt["effectiveGasPrice"] / 1e9
+    actions, _ = regular_agent.agent.policy.action(interface, regular_agent.agent.wallet)
+    regular_priority_fee_multiple = actions[0].market_action.priority_fee_multiple
+    assert regular_priority_fee_multiple is None
 
-    multiplied_effective_gas_price_floored = int(multiplied_effective_gas_price // 1)
-    logging.info(multiplied_effective_gas_price_floored)
-    regular_effective_gas_price_floored = int(regular_effective_gas_price // 1)
-    logging.info(regular_effective_gas_price_floored)
-    assert multiplied_effective_gas_price_floored / regular_effective_gas_price_floored == priority_fee_multiple
+    actions, _ = multiplied_agent.agent.policy.action(interface, multiplied_agent.agent.wallet)
+    multiplied_priority_fee_multiple = actions[0].market_action.priority_fee_multiple
+    assert multiplied_priority_fee_multiple == priority_fee_multiple

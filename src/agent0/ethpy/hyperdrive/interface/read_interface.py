@@ -90,8 +90,6 @@ class HyperdriveReadInterface:
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
-        txn_options_base_fee_multiple: float | None = None,
-        txn_options_priority_fee_multiple: float | None = None,
     ) -> None:
         """Initialize the HyperdriveReadInterface API.
 
@@ -113,10 +111,6 @@ class HyperdriveReadInterface:
             The number of times to retry the read call if it fails. Defaults to 5.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
-        txn_options_base_fee_multiple: float | None, optional
-            The multiple applied to the base fee for any transaction, unless otherwise specified. Defaults to 1.
-        txn_options_priority_fee_multiple: float | None, optional
-            The multiple applied to the priority fee for any transaction, unless otherwise specified. Defaults to 1.
         """
         # Handle defaults for config and addresses.
         self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
@@ -176,8 +170,6 @@ class HyperdriveReadInterface:
         # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
         self.read_retry_count = read_retry_count
         self.txn_receipt_timeout = txn_receipt_timeout
-        self.txn_options_base_fee_multiple = txn_options_base_fee_multiple
-        self.txn_options_priority_fee_multiple = txn_options_priority_fee_multiple
         self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
 
     def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:

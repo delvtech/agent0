@@ -35,6 +35,7 @@ MAX_ITER = 50
 # or we can make them static utils and pass the agent object itself. Either way,
 # this will simplify the argument space down to a much smaller set.
 # pylint: disable=too-many-arguments
+# ruff: noqa: PLR0913
 # pylint: disable=too-many-locals
 
 
@@ -45,8 +46,10 @@ def arb_fixed_rate_down(
     max_trade_amount_base: FixedPoint,
     min_trade_amount_bonds: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
-    """Returns an action list for arbitraging the fixed rate down to the variable rate.
+    """Return an action list for arbitraging the fixed rate down to the variable rate.
 
     Arguments
     ---------
@@ -62,6 +65,10 @@ def arb_fixed_rate_down(
         The minimum amount of bonds needed to open a trade.
     slippage_tolerance: FixedPoint | None, optional
         The slippage tolerance for trades. Defaults to None.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for transactions. Defaults to None.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for transactions. Defaults to None.
 
     Returns
     -------
@@ -114,7 +121,7 @@ def arb_fixed_rate_down(
             max_long_shares * pool_state.pool_info.vault_share_price,
             max_trade_amount_base,
         )
-        action_list.append(open_long_trade(amount_base, slippage_tolerance))
+        action_list.append(open_long_trade(amount_base, slippage_tolerance, base_fee_multiple, priority_fee_multiple))
     return action_list
 
 
@@ -125,8 +132,10 @@ def arb_fixed_rate_up(
     max_trade_amount_base: FixedPoint,
     min_trade_amount_bonds: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
+    base_fee_multiple: float | None = None,
+    priority_fee_multiple: float | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
-    """Returns an action list for arbitraging the fixed rate up to the variable rate.
+    """Return an action list for arbitraging the fixed rate up to the variable rate.
 
     Arguments
     ---------
@@ -142,6 +151,10 @@ def arb_fixed_rate_up(
         The minimum amount of bonds needed to open a trade.
     slippage_tolerance: FixedPoint | None, optional
         The slippage tolerance for trades. Defaults to None.
+    base_fee_multiple: float | None, optional
+        The base fee multiple for transactions. Defaults to None.
+    priority_fee_multiple: float | None, optional
+        The priority fee multiple for transactions. Defaults to None.
 
     Returns
     -------
@@ -187,7 +200,7 @@ def arb_fixed_rate_up(
         # https://github.com/delvtech/hyperdrive/issues/969
         max_short -= FixedPoint("0.1")
         amount_bonds = minimum(bonds_needed, max_short)
-        action_list.append(open_short_trade(amount_bonds, slippage_tolerance))
+        action_list.append(open_short_trade(amount_bonds, slippage_tolerance, base_fee_multiple, priority_fee_multiple))
     return action_list
 
 
@@ -475,9 +488,7 @@ class LPandArb(HyperdriveBasePolicy):
         policy_config: Config
             The custom arguments for this policy
         """
-        self.policy_config = policy_config
         self.min_trade_amount_bonds = policy_config.min_trade_amount_bonds
-
         super().__init__(policy_config)
 
     def action(
@@ -509,14 +520,16 @@ class LPandArb(HyperdriveBasePolicy):
 
         # open LP position
         max_trade_amount_base = wallet.balance.amount
-        lp_amount = self.policy_config.lp_portion * wallet.balance.amount
-        if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):
+        lp_amount = self.config.lp_portion * wallet.balance.amount  # type: ignore
+        if wallet.lp_tokens == FixedPoint(0) and lp_amount > FixedPoint(0):  # type: ignore
             # Add liquidity
             action_list.append(
                 add_liquidity_trade(
                     trade_amount=lp_amount,
-                    min_apr=current_fixed_rate - self.policy_config.rate_slippage,
-                    max_apr=current_fixed_rate + self.policy_config.rate_slippage,
+                    base_fee_multiple=self.config.base_fee_multiple,
+                    priority_fee_multiple=self.config.priority_fee_multiple,
+                    min_apr=current_fixed_rate - self.config.rate_slippage,  # type: ignore
+                    max_apr=current_fixed_rate + self.config.rate_slippage,  # type: ignore
                 )
             )
             max_trade_amount_base -= lp_amount
@@ -528,7 +541,7 @@ class LPandArb(HyperdriveBasePolicy):
 
         # arbitrage from here on out
         # check for a high fixed rate
-        if current_fixed_rate >= variable_rate + self.policy_config.high_fixed_rate_thresh:
+        if current_fixed_rate >= variable_rate + self.config.high_fixed_rate_thresh:  # type: ignore
             action_list.extend(
                 arb_fixed_rate_down(
                     interface,
@@ -537,11 +550,13 @@ class LPandArb(HyperdriveBasePolicy):
                     max_trade_amount_base,
                     self.min_trade_amount_bonds,
                     self.slippage_tolerance,
+                    self.config.base_fee_multiple,
+                    self.config.priority_fee_multiple,
                 )
             )
 
         # check for a low fixed rate
-        if current_fixed_rate <= variable_rate - self.policy_config.low_fixed_rate_thresh:
+        if current_fixed_rate <= variable_rate - self.config.low_fixed_rate_thresh:  # type: ignore
             action_list.extend(
                 arb_fixed_rate_up(
                     interface,
@@ -550,9 +565,11 @@ class LPandArb(HyperdriveBasePolicy):
                     max_trade_amount_base,
                     self.min_trade_amount_bonds,
                     self.slippage_tolerance,
+                    self.config.base_fee_multiple,
+                    self.config.priority_fee_multiple,
                 )
             )
 
-        if self.policy_config.done_on_empty and len(action_list) == 0:
+        if self.config.done_on_empty and len(action_list) == 0:
             return [], True
         return action_list, False
