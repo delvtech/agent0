@@ -1,7 +1,5 @@
 """Test transaction behavior."""
 
-import logging
-
 import pytest
 from fixedpointmath import FixedPoint
 

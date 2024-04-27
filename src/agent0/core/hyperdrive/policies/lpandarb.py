@@ -570,6 +570,6 @@ class LPandArb(HyperdriveBasePolicy):
                 )
             )
 
-        if self.config.done_on_empty and len(action_list) == 0:
+        if self.config.done_on_empty and len(action_list) == 0:  # type: ignore
             return [], True
         return action_list, False
