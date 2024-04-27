@@ -600,10 +600,6 @@ async def _async_remove_liquidity(
         as_base_option = False
     else:
         as_base_option = True
-    if txn_options_base_fee_multiple is None:
-        txn_options_base_fee_multiple = interface.txn_options_base_fee_multiple
-    if txn_options_priority_fee_multiple is None:
-        txn_options_priority_fee_multiple = interface.txn_options_priority_fee_multiple
 
     fn_args = (
         trade_amount.scaled_value,
