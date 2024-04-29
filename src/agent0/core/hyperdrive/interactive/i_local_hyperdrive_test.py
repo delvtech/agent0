@@ -18,6 +18,7 @@ from .i_local_chain import ILocalChain
 from .i_local_hyperdrive import ILocalHyperdrive
 
 YEAR_IN_SECONDS = 31_536_000
+TIME_STRETCH_LIST = [0.01, 0.1, 0.5, 1]
 
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
@@ -799,3 +800,17 @@ def test_hyperdrive_read_interface_standardized_variable_rate(chain: ILocalChain
     standardized_variable_rate = hyperdrive_interface.get_standardized_variable_rate(time_range=604800)
 
     assert isclose(mock_variable_rate, standardized_variable_rate, abs_tol=FixedPoint("1e-5"))
+
+@pytest.mark.anvil
+@pytest.mark.parametrize("time_stretch", TIME_STRETCH_LIST)
+def test_deploy_nonstandard_timestretch(chain: ILocalChain, time_stretch: float):
+    """Deplopy with nonstandard timestretch parameters."""
+    initial_pool_config = ILocalHyperdrive.Config(
+        initial_liquidity=FixedPoint(10_000_000),
+        position_duration=60 * 60 * 24 * 365,  # 1 year
+        factory_min_time_stretch_apr = FixedPoint(0.001),
+        factory_max_time_stretch_apr = FixedPoint(100),
+        initial_time_stretch_apr=FixedPoint(time_stretch),
+    )
+    interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    assert isinstance(interactive_hyperdrive.interface.current_pool_state.pool_config.time_stretch, FixedPoint)
