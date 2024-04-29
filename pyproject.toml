@@ -77,6 +77,10 @@ dev = [
     "urllib3",
 ]
 
+datascience = [
+    "seaborn",
+]
+
 ai = [
     "gymnasium",
     "scipy",

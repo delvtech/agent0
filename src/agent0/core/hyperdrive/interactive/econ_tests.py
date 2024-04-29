@@ -4,19 +4,20 @@ import logging
 from copy import deepcopy
 from decimal import Decimal
 
+import numpy as np
 import pandas as pd
 import pytest
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import LocalHyperdriveAgent
-from agent0.core.hyperdrive.policies import PolicyZoo
 from agent0.core.utilities import predict_long, predict_short
 from fixedpointmath import FixedPoint
 
-from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.utilities import predict_long, predict_short
-
 YEAR_IN_SECONDS = 31_536_000
 
+# too many local variables
+# pylint: disable=too-many-locals
+# too many statements
+# pylint: disable=too-many-statements
+# ruff: noqa: PLR0915
 # I want to be able to use fancy f-string formatting
 # pylint: disable=logging-fstring-interpolation
 
@@ -45,57 +46,66 @@ def test_symmetry(chain: LocalChain):
 
 @pytest.mark.anvil
 def test_discoverability(chain: LocalChain):
-    """Test discoverability of rates across by time stretch."""
+    """Test discoverability of rates by time stretch."""
     liquidity = FixedPoint(10_000_000)
-    time_stretch_apr_list = [0.03, 0.05, 0.1]
-    with open("discoverability.csv", "w", encoding="UTF-8") as file:
-        file.write("trade_size,rate,time_stretch_apr\n")
-        for time_stretch_apr in time_stretch_apr_list:
-            logging.info(f"Time stretch APR: {time_stretch_apr}")
-            interactive_config = LocalHyperdrive.Config(
-                position_duration=YEAR_IN_SECONDS,  # 1 year term
-                governance_lp_fee=FixedPoint(0.1),
-                curve_fee=FixedPoint(0.01),
-                flat_fee=FixedPoint(0),
-                initial_liquidity=liquidity,
-                initial_time_stretch_apr=FixedPoint(str(time_stretch_apr)),
-            )
-            interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-            interface = interactive_hyperdrive.interface
+    time_stretch_apr_list = [0.01, 0.03, 0.05, 0.1]
+    # time_stretch_apr_list = [0.05]
+    trade_portion_list = [*np.arange(0.1, 1.0, 0.1), 0.99]
+    records = []
+    for time_stretch_apr in time_stretch_apr_list:
+        logging.info(f"Time stretch APR: {time_stretch_apr}")
+        interactive_config = LocalHyperdrive.Config(
+            position_duration=YEAR_IN_SECONDS,  # 1 year term
+            governance_lp_fee=FixedPoint(0.1),
+            curve_fee=FixedPoint(0.01),
+            flat_fee=FixedPoint(0),
+            initial_liquidity=liquidity,
+            initial_time_stretch_apr=FixedPoint(str(time_stretch_apr)),
+            # factory_min_fixed_apr = FixedPoint(scaled_value=1)
+            factory_min_fixed_apr = FixedPoint(0.001),
+            factory_max_fixed_apr = FixedPoint(100),
+            # factory_min_time_stretch_apr = FixedPoint(scaled_value=1),
+            factory_min_time_stretch_apr = FixedPoint(0.001),
+            factory_max_time_stretch_apr = FixedPoint(100),
+        )
+        interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+        interface = interactive_hyperdrive.interface
+        time_stretch = interface.current_pool_state.pool_config.time_stretch
+        logging.info("Time stretch: %s", time_stretch)
+        logging.info("Time stretch: %s", time_stretch)
 
-            max_long = interface.calc_max_long(liquidity)
-            logging.info(f"Max long : base={float(max_long):>10,.0f}")
-            max_short = interface.calc_max_short(liquidity)
-            logging.info(f"Max short: base={float(max_short):>10,.0f}")
-            biggest = int(max(max_long, max_short))
-            increment = biggest // 10
-            records = []
-            for trade_size in range(increment, 11 * increment, increment):
-                long_price = short_price = long_rate = short_rate = None
-                if trade_size <= max_long:
-                    long_trade = predict_long(interface, base=FixedPoint(trade_size))
-                    pool_state = deepcopy(interface.current_pool_state)
-                    pool_state.pool_info.bond_reserves += long_trade.pool.bonds
-                    pool_state.pool_info.share_reserves += long_trade.pool.shares
-                    long_price = interface.calc_spot_price(pool_state)
-                    long_rate = interface.calc_fixed_rate(pool_state)
-                if trade_size <= max_short:
-                    short_trade = predict_short(interface, bonds=FixedPoint(trade_size))
-                    pool_state = deepcopy(interface.current_pool_state)
-                    pool_state.pool_info.bond_reserves += short_trade.pool.bonds
-                    pool_state.pool_info.share_reserves += short_trade.pool.shares
-                    short_price = interface.calc_spot_price(pool_state)
-                    short_rate = interface.calc_fixed_rate(pool_state)
-                records.append((trade_size, long_price, short_price, long_rate, short_rate))
-            results_df = pd.DataFrame.from_records(
-                records, columns=["trade_size", "long_price", "short_price", "long_rate", "short_rate"]
-            )
-            logging.info(f"Prices:\n{results_df[['trade_size', 'long_price', 'short_price']]}")
-            logging.info(f"Rates:\n{results_df[['trade_size', 'long_rate', 'short_rate']]}")
+        max_long = interface.calc_max_long(liquidity)
+        max_short = interface.calc_max_short(liquidity)
+        logging.info(f"Max long : base={float(max_long):>10,.0f}")
+        logging.info(f"Max short: base={float(max_short):>10,.0f}")
+        for trade_portion in trade_portion_list:
+            long_price = long_rate = None
+            trade_size = int(float(max_long) * trade_portion)
+            logging.info(f"Attempting long trade of {trade_size}")
+            long_trade = predict_long(interface, base=FixedPoint(trade_size))
+            pool_state = deepcopy(interface.current_pool_state)
+            pool_state.pool_info.bond_reserves += long_trade.pool.bonds
+            pool_state.pool_info.share_reserves += long_trade.pool.shares
+            long_price = interface.calc_spot_price(pool_state)
+            long_rate = interface.calc_fixed_rate(pool_state)
+            records.append((trade_size, trade_portion, long_price, long_rate, time_stretch_apr))
+        for trade_portion in trade_portion_list:
+            short_price = short_rate = None
+            trade_size = int(float(max_short) * trade_portion)
+            logging.info(f"Attempting short trade of {trade_size}")
+            short_trade = predict_short(interface, bonds=FixedPoint(trade_size))
+            pool_state = deepcopy(interface.current_pool_state)
+            pool_state.pool_info.bond_reserves += short_trade.pool.bonds
+            pool_state.pool_info.share_reserves += short_trade.pool.shares
+            short_price = interface.calc_spot_price(pool_state)
+            short_rate = interface.calc_fixed_rate(pool_state)
+            records.append((-trade_size, -trade_portion, short_price, short_rate, time_stretch_apr))
+    results_df = pd.DataFrame.from_records(records, columns=["trade_size", "portion", "price", "rate", "time_stretch_apr"])
+    logging.info(f"\n{results_df[['trade_size', 'portion', 'price', 'rate']]}")
 
-            for row in results_df.itertuples():
-                file.write(f"{row.trade_size},{row.long_rate},{time_stretch_apr}\n")
-                file.write(f"{-row.trade_size},{row.short_rate},{time_stretch_apr}\n")
+    # for row in results_df.itertuples():
+    #     file.write(f"{row.trade_size},{row.portion},{row.price},{row.rate},{time_stretch_apr}\n")
+    results_df.to_csv("discoverability.csv", index=False)
 
 
 @pytest.mark.anvil
