@@ -801,6 +801,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(chain: ILocalChain
 
     assert isclose(mock_variable_rate, standardized_variable_rate, abs_tol=FixedPoint("1e-5"))
 
+
 @pytest.mark.anvil
 @pytest.mark.parametrize("time_stretch", TIME_STRETCH_LIST)
 def test_deploy_nonstandard_timestretch(chain: ILocalChain, time_stretch: float):
