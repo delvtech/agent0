@@ -810,8 +810,8 @@ def test_deploy_nonstandard_timestretch(chain: ILocalChain, time_stretch: float)
         position_duration=60 * 60 * 24 * 365,  # 1 year
         factory_min_fixed_apr=FixedPoint(0.001),
         factory_max_fixed_apr=FixedPoint(1000),
-        factory_min_time_stretch_apr = FixedPoint(0.001),
-        factory_max_time_stretch_apr = FixedPoint(1000),
+        factory_min_time_stretch_apr=FixedPoint(0.001),
+        factory_max_time_stretch_apr=FixedPoint(1000),
         initial_fixed_apr=FixedPoint(time_stretch),
         initial_time_stretch_apr=FixedPoint(time_stretch),
     )
