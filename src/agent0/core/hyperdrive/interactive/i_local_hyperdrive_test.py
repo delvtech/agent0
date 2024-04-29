@@ -18,7 +18,7 @@ from .i_local_chain import ILocalChain
 from .i_local_hyperdrive import ILocalHyperdrive
 
 YEAR_IN_SECONDS = 31_536_000
-TIME_STRETCH_LIST = [0.01, 0.1, 0.5, 1]
+TIME_STRETCH_LIST = [0.01, 0.1, 0.5, 1, 10, 100]
 
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
@@ -808,8 +808,11 @@ def test_deploy_nonstandard_timestretch(chain: ILocalChain, time_stretch: float)
     initial_pool_config = ILocalHyperdrive.Config(
         initial_liquidity=FixedPoint(10_000_000),
         position_duration=60 * 60 * 24 * 365,  # 1 year
+        factory_min_fixed_apr=FixedPoint(0.001),
+        factory_max_fixed_apr=FixedPoint(1000),
         factory_min_time_stretch_apr = FixedPoint(0.001),
-        factory_max_time_stretch_apr = FixedPoint(100),
+        factory_max_time_stretch_apr = FixedPoint(1000),
+        initial_fixed_apr=FixedPoint(time_stretch),
         initial_time_stretch_apr=FixedPoint(time_stretch),
     )
     interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
