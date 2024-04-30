@@ -384,24 +384,23 @@ class HyperdriveReadInterface:
             block_number = self.get_block_number(self.get_current_block())
         return _get_vault_shares(self.vault_shares_token_contract, self.hyperdrive_contract, block_number)
 
-    def get_idle_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_idle_shares(self, pool_state: PoolState | None) -> FixedPoint:
         """Get the balance of idle shares that the Hyperdrive pool has.
 
         Arguments
         ---------
-        block_number: BlockNumber, optional
-            The number for any minted block.
-            Defaults to the current block number.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
 
         Returns
         -------
         FixedPoint
             The quantity of vault shares for the yield source at the provided block.
         """
-        if block_number is None:
-            block_number = self.get_block_number(self.get_current_block())
-        pool_state = self.current_pool_state
-        long_exposure_shares = self.current_pool_state.pool_info.long_exposure / pool_state.pool_info.vault_share_price
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        long_exposure_shares = pool_state.pool_info.long_exposure / pool_state.pool_info.vault_share_price
         idle_shares = (
             pool_state.pool_info.share_reserves - long_exposure_shares - pool_state.pool_config.minimum_share_reserves
         )
