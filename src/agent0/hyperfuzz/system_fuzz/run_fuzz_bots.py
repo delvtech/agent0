@@ -11,7 +11,7 @@ from numpy.random._generator import Generator
 
 from agent0 import Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive.interactive.hyperdrive_agent import IHyperdriveAgent
+from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 
 ONE_HOUR_IN_SECONDS = 60 * 60
@@ -239,10 +239,10 @@ def run_fuzz_bots(
         minimum_avg_agent_base = base_budget_per_bot / FixedPoint(10)
 
     # Initialize agents
-    agents: list[IHyperdriveAgent] = []
+    agents: list[HyperdriveAgent] = []
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
-        agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
+        agent: HyperdriveAgent = hyperdrive_pool.init_agent(
             private_key=make_private_key(),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
@@ -255,7 +255,7 @@ def run_fuzz_bots(
         agents.append(agent)
 
     for _ in range(num_random_hold_agents):
-        agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
+        agent: HyperdriveAgent = hyperdrive_pool.init_agent(
             private_key=make_private_key(),
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(

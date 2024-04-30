@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 # pylint: disable=protected-access
 
 
-class IHyperdriveAgent:
+class HyperdriveAgent:
     """Interactive Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these

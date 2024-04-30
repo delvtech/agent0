@@ -51,7 +51,7 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
-from .hyperdrive_agent import IHyperdriveAgent
+from .hyperdrive_agent import HyperdriveAgent
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -195,7 +195,7 @@ class Hyperdrive:
         private_key: str,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
-    ) -> IHyperdriveAgent:
+    ) -> HyperdriveAgent:
         """Initialize an agent object given a private key.
 
         .. note::
@@ -212,13 +212,13 @@ class Hyperdrive:
 
         Returns
         -------
-        IHyperdriveAgent
+        HyperdriveAgent
             The agent object for a user to execute trades with.
         """
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
-        out_agent = IHyperdriveAgent(
+        out_agent = HyperdriveAgent(
             pool=self,
             policy=policy,
             policy_config=policy_config,

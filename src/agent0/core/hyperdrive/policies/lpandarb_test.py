@@ -9,7 +9,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, CloseLong, CloseShort, OpenLong, OpenShort
-from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import ILocalHyperdriveAgent
+from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
 from agent0.core.hyperdrive.policies import PolicyZoo
 
 # avoid unnecessary warning from using fixtures defined in outer scope
@@ -47,7 +47,7 @@ def interactive_hyperdrive(chain: LocalChain) -> LocalHyperdrive:
 
 
 @pytest.fixture(scope="function")
-def arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
+def arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
     """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
 
     Arguments
@@ -63,7 +63,7 @@ def arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
     return create_arbitrage_andy(interactive_hyperdrive)
 
 
-def create_arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
+def create_arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
     """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
 
     Arguments
@@ -87,7 +87,7 @@ def create_arbitrage_andy(interactive_hyperdrive) -> ILocalHyperdriveAgent:
 
 
 @pytest.fixture(scope="function")
-def manual_agent(interactive_hyperdrive) -> ILocalHyperdriveAgent:
+def manual_agent(interactive_hyperdrive) -> LocalHyperdriveAgent:
     """Create manual interactive hyperdrive agent used to manually move markets.
 
     Arguments
@@ -108,8 +108,8 @@ def manual_agent(interactive_hyperdrive) -> ILocalHyperdriveAgent:
 def test_open_long(
     interactive_hyperdrive: LocalHyperdrive,
     trade_amount: float,
-    arbitrage_andy: ILocalHyperdriveAgent,
-    manual_agent: ILocalHyperdriveAgent,
+    arbitrage_andy: LocalHyperdriveAgent,
+    manual_agent: LocalHyperdriveAgent,
 ):
     """Open a long to hit the target rate."""
     # change the fixed rate
@@ -137,8 +137,8 @@ def test_open_long(
 def test_open_short(
     interactive_hyperdrive: LocalHyperdrive,
     trade_amount: float,
-    arbitrage_andy: ILocalHyperdriveAgent,
-    manual_agent: ILocalHyperdriveAgent,
+    arbitrage_andy: LocalHyperdriveAgent,
+    manual_agent: LocalHyperdriveAgent,
 ):
     """Open a short to hit the target rate."""
     # change the fixed rate
@@ -167,8 +167,8 @@ def test_open_short(
 def test_close_long(
     interactive_hyperdrive: LocalHyperdrive,
     trade_amount: float,
-    arbitrage_andy: ILocalHyperdriveAgent,
-    manual_agent: ILocalHyperdriveAgent,
+    arbitrage_andy: LocalHyperdriveAgent,
+    manual_agent: LocalHyperdriveAgent,
 ):
     """Close a long to hit the target rate."""
     # report starting fixed rate
@@ -261,7 +261,7 @@ def test_close_long(
 
 
 @pytest.mark.anvil
-def test_already_at_target(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
+def test_already_at_target(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: LocalHyperdriveAgent):
     """Already at target, do nothing."""
     # report starting fixed rate
     logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
@@ -281,7 +281,7 @@ def test_already_at_target(interactive_hyperdrive: LocalHyperdrive, arbitrage_an
 
 
 @pytest.mark.anvil
-def test_reduce_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
+def test_reduce_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: LocalHyperdriveAgent):
     """Reduce a long position."""
     # give Andy a long
     event = arbitrage_andy.open_long(base=FixedPoint(10))
@@ -297,7 +297,7 @@ def test_reduce_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: IL
 
 
 @pytest.mark.anvil
-def test_reduce_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: ILocalHyperdriveAgent):
+def test_reduce_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: LocalHyperdriveAgent):
     """Reduce a short position."""
     logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
 
@@ -317,7 +317,7 @@ def test_reduce_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: I
 
 
 @pytest.mark.anvil
-def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent: ILocalHyperdriveAgent):
+def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent: LocalHyperdriveAgent):
     """Test that the agent doesn't overextend itself."""
     # setup
     larry_base = FixedPoint(1e4)
@@ -339,7 +339,7 @@ def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent
 
 
 @pytest.mark.anvil
-def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent: ILocalHyperdriveAgent):
+def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent: LocalHyperdriveAgent):
     """Test that the agent doesn't overextend itself."""
     # setup
     larry_base = FixedPoint(1e4)

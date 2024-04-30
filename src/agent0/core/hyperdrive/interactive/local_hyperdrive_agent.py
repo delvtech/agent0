@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from .hyperdrive_agent import IHyperdriveAgent
+from .hyperdrive_agent import HyperdriveAgent
 
 if TYPE_CHECKING:
     from typing import Type
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from .local_hyperdrive import LocalHyperdrive
 
 
-class ILocalHyperdriveAgent(IHyperdriveAgent):
+class LocalHyperdriveAgent(HyperdriveAgent):
     """Interactive Local Hyperdrive Agent.
 
     This class is barebones with documentation, will just call the corresponding function

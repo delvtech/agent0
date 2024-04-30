@@ -69,7 +69,7 @@ from .event_types import (
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
-from .local_hyperdrive_agent import ILocalHyperdriveAgent
+from .local_hyperdrive_agent import LocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
@@ -272,7 +272,7 @@ class LocalHyperdrive(Hyperdrive):
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
-        self._pool_agents: list[ILocalHyperdriveAgent] = []
+        self._pool_agents: list[LocalHyperdriveAgent] = []
 
     def get_hyperdrive_address(self) -> ChecksumAddress:
         """Returns the hyperdrive addresses for this pool.
@@ -555,7 +555,7 @@ class LocalHyperdrive(Hyperdrive):
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-    ) -> ILocalHyperdriveAgent:
+    ) -> LocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
@@ -590,7 +590,7 @@ class LocalHyperdrive(Hyperdrive):
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
-        out_agent = ILocalHyperdriveAgent(
+        out_agent = LocalHyperdriveAgent(
             base=base,
             eth=eth,
             name=name,
