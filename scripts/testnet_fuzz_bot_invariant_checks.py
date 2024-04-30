@@ -17,7 +17,7 @@ import sys
 import time
 from typing import NamedTuple, Sequence
 
-from agent0 import IChain, IHyperdrive
+from agent0 import Chain, Hyperdrive
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
@@ -33,7 +33,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     """
 
     parsed_args = parse_arguments(argv)
-    chain = IChain(parsed_args.rpc_uri)
+    chain = Chain(parsed_args.rpc_uri)
 
     # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
     rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
@@ -48,7 +48,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     last_executed_block_number = -pool_check_num_blocks - 1  # no matter what we will run the check the first time
     last_pool_check_block_number = 0
 
-    hyperdrive_objs: dict[str, IHyperdrive] = {}
+    hyperdrive_objs: dict[str, Hyperdrive] = {}
 
     # Run the loop forever
     while True:
@@ -61,12 +61,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         if latest_block_number > last_pool_check_block_number + pool_check_num_blocks:
             logging.info("Checking for new pools...")
             # Reset hyperdrive objs
-            hyperdrive_objs: dict[str, IHyperdrive] = {}
+            hyperdrive_objs: dict[str, Hyperdrive] = {}
             # First iteration, get list of deployed pools
-            deployed_pools = IHyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
             for name, addr in deployed_pools.items():
                 logging.info("Adding pool %s", name)
-                hyperdrive_objs[name] = IHyperdrive(chain, addr)
+                hyperdrive_objs[name] = Hyperdrive(chain, addr)
             last_pool_check_block_number = latest_block_number
 
         if not latest_block_number > last_executed_block_number:

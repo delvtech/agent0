@@ -6,17 +6,17 @@
 
 from fixedpointmath import FixedPoint
 
-from agent0 import ILocalChain, ILocalHyperdrive, PolicyZoo
+from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
-local_chain_config = ILocalChain.Config()
+local_chain_config = LocalChain.Config()
 # Launches a local chain in a subprocess
 # This also launches a local postgres docker container for data under the hood, attached to the chain.
 # Each hyperdrive pool will have it's own database within this container
 # NOTE: LocalChain is a subclass of Chain
 # TODO can also implement functionality such as save/load state here
-chain = ILocalChain(local_chain_config)
+chain = LocalChain(local_chain_config)
 # Can connect to a specific existing chain
 # existing_chain = Chain("http://localhost:8545")
 
@@ -25,9 +25,9 @@ chain = ILocalChain(local_chain_config)
 # An "admin" user (as provided by the Chain object) is launched/funded here for deploying hyperdrive
 
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-initial_pool_config = ILocalHyperdrive.Config()
+initial_pool_config = LocalHyperdrive.Config()
 # Launches 2 pools on the same local chain
-interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
 # %%
 # Generate funded trading agents from the interactive object

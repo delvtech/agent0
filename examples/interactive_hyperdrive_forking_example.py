@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fixedpointmath import FixedPoint
 
-from agent0 import IHyperdrive, ILocalChain, PolicyZoo
+from agent0 import Hyperdrive, LocalChain, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 
 # %%
@@ -23,9 +23,9 @@ registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
 
 # %%
 # Launch a local anvil chain forked from the rpc uri.
-chain = ILocalChain(fork_uri=rpc_uri, fork_block_number=fork_block_number)
+chain = LocalChain(fork_uri=rpc_uri, fork_block_number=fork_block_number)
 
-hyperdrive_address = IHyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
+hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
 
 # Note that we use IHyperdrive here instead of ILocalHyperdrive,
 # as ILocalHyperdrive deploys a new pool, whereas we want to connect to an existing pool
@@ -34,8 +34,8 @@ hyperdrive_address = IHyperdrive.get_hyperdrive_addresses_from_registry(registry
 # load a ILocalHyperdrive from an IHyperdrive object that connects to an existing pool and populates
 # the database. This is blocked by needing an archive node, the fix here would be to
 # (1) use event data instead, and (2) build historical data from event data.
-hyperdrive_config = IHyperdrive.Config()
-hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
+hyperdrive_config = Hyperdrive.Config()
+hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
 # %%
 

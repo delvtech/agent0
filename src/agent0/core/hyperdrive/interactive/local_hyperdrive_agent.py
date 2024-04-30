@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
 
-from .i_hyperdrive_agent import IHyperdriveAgent
+from .hyperdrive_agent import IHyperdriveAgent
 
 if TYPE_CHECKING:
     from typing import Type
 
     from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
-    from .i_local_hyperdrive import ILocalHyperdrive
+    from .local_hyperdrive import LocalHyperdrive
 
 
 class ILocalHyperdriveAgent(IHyperdriveAgent):
@@ -29,7 +29,7 @@ class ILocalHyperdriveAgent(IHyperdriveAgent):
         base: FixedPoint,
         eth: FixedPoint,
         name: str | None,
-        pool: ILocalHyperdrive,
+        pool: LocalHyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,

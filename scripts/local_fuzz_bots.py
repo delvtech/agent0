@@ -6,7 +6,7 @@ import random
 
 import numpy as np
 
-from agent0 import ILocalChain, ILocalHyperdrive
+from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
 from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
@@ -24,17 +24,17 @@ def main() -> None:
     rng_seed = random.randint(0, 10000000)
     rng = np.random.default_rng(rng_seed)
 
-    local_chain_config = ILocalChain.Config(chain_port=11111, db_port=22222, block_timestamp_interval=12)
+    local_chain_config = LocalChain.Config(chain_port=11111, db_port=22222, block_timestamp_interval=12)
 
     while True:
         # Build interactive local hyperdrive
         # TODO can likely reuse some of these resources
         # instead, we start from scratch every time.
-        chain = ILocalChain(local_chain_config)
+        chain = LocalChain(local_chain_config)
 
         # Fuzz over config values
         hyperdrive_config = generate_fuzz_hyperdrive_config(rng, log_to_rollbar, rng_seed)
-        hyperdrive_pool = ILocalHyperdrive(chain, hyperdrive_config)
+        hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
 
         # TODO submit multiple transactions per block
         run_fuzz_bots(

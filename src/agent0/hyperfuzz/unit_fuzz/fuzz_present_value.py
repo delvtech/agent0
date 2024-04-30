@@ -29,7 +29,7 @@ from fixedpointmath import FixedPoint, isclose
 
 from agent0.core.hyperdrive import HyperdriveActionType
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz import FuzzAssertionException
 
 from .helpers import setup_fuzz
@@ -54,7 +54,7 @@ def main(argv: Sequence[str] | None = None):
 
 def fuzz_present_value(
     test_epsilon: float,
-    chain_config: ILocalChain.Config,
+    chain_config: LocalChain.Config,
     log_to_stdout: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
@@ -202,7 +202,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     test_epsilon: float
-    chain_config: ILocalChain.Config
+    chain_config: LocalChain.Config
     log_to_stdout: bool
 
 
@@ -221,7 +221,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         test_epsilon=namespace.test_epsilon,
-        chain_config=ILocalChain.Config(chain_port=namespace.chain_port),
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
 
@@ -267,7 +267,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 def invariant_check(
     check_data: dict[str, Any],
     test_epsilon: float,
-    interactive_hyperdrive: ILocalHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
 

@@ -15,7 +15,7 @@ from fixedpointmath import FixedPoint
 from gymnasium import spaces
 from scipy.special import expit
 
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.policies import PolicyZoo
 
 # Global suppression of warnings, TODO fix
@@ -79,12 +79,12 @@ class FullHyperdriveEnv(gym.Env):
         self.eval_mode = gym_config.eval_mode
         self.sample_actions = gym_config.sample_actions
         if self.eval_mode:
-            local_chain_config = ILocalChain.Config(block_timestamp_interval=12, db_port=5434, chain_port=10001)
+            local_chain_config = LocalChain.Config(block_timestamp_interval=12, db_port=5434, chain_port=10001)
         else:
-            local_chain_config = ILocalChain.Config(block_timestamp_interval=12, db_port=5435, chain_port=10002)
-        initial_pool_config = ILocalHyperdrive.Config()
-        self.chain = ILocalChain(local_chain_config)
-        self.interactive_hyperdrive = ILocalHyperdrive(self.chain, initial_pool_config)
+            local_chain_config = LocalChain.Config(block_timestamp_interval=12, db_port=5435, chain_port=10002)
+        initial_pool_config = LocalHyperdrive.Config()
+        self.chain = LocalChain(local_chain_config)
+        self.interactive_hyperdrive = LocalHyperdrive(self.chain, initial_pool_config)
 
         # TODO set seed
         self.rng = np.random.default_rng()

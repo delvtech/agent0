@@ -6,7 +6,7 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive import HyperdriveActionType
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import (
     AddLiquidity,
     CloseLong,
@@ -20,14 +20,14 @@ from agent0.core.hyperdrive.policies import PolicyZoo
 
 
 @pytest.mark.anvil
-def test_random_policy(chain: ILocalChain):
-    initial_pool_config = ILocalHyperdrive.Config(
+def test_random_policy(chain: LocalChain):
+    initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 7,  # 1 week
         checkpoint_duration=60 * 60 * 24,  # 1 day
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
     random_agent = interactive_hyperdrive.init_agent(
         base=FixedPoint(1_000_000),
@@ -44,14 +44,14 @@ def test_random_policy(chain: ILocalChain):
 
 
 @pytest.mark.anvil
-def test_random_policy_trades(chain: ILocalChain):
-    initial_pool_config = ILocalHyperdrive.Config(
+def test_random_policy_trades(chain: LocalChain):
+    initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 7,  # 1 week
         checkpoint_duration=60 * 60 * 24,  # 1 day
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
     random_agent = interactive_hyperdrive.init_agent(
         base=FixedPoint(1_000_000),

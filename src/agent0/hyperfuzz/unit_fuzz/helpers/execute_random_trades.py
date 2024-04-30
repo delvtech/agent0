@@ -9,16 +9,16 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
 from agent0.core.hyperdrive import HyperdriveActionType
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
-from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
+from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import ILocalHyperdriveAgent
 
 
 def execute_random_trades(
     num_trades: int,
-    chain: ILocalChain,
+    chain: LocalChain,
     rng: Generator,
-    interactive_hyperdrive: ILocalHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
     advance_time: bool = False,
 ) -> list[tuple[ILocalHyperdriveAgent, OpenLong | OpenShort]]:
     """Conduct some trades specified by the trade list.
@@ -79,7 +79,7 @@ def execute_random_trades(
 def _get_open_trade_amount(
     trade_type: HyperdriveActionType,
     rng: Generator,
-    interactive_hyperdrive: ILocalHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
     max_budget: FixedPoint = FixedPoint("1e9"),
     percent_max: FixedPoint = FixedPoint("0.75"),
 ) -> FixedPoint:

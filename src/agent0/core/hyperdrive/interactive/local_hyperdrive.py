@@ -67,21 +67,21 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .i_hyperdrive import IHyperdrive
-from .i_local_chain import ILocalChain
-from .i_local_hyperdrive_agent import ILocalHyperdriveAgent
+from .hyperdrive import Hyperdrive
+from .local_chain import LocalChain
+from .local_hyperdrive_agent import ILocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
 
 
-class ILocalHyperdrive(IHyperdrive):
+class LocalHyperdrive(Hyperdrive):
     """Interactive Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
-    class Config(IHyperdrive.Config):
+    class Config(Hyperdrive.Config):
         """The configuration for the local hyperdrive pool."""
 
         # Environment variables
@@ -209,7 +209,7 @@ class ILocalHyperdrive(IHyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: ILocalChain, config: Config | None = None):
+    def __init__(self, chain: LocalChain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
@@ -447,7 +447,7 @@ class ILocalHyperdrive(IHyperdrive):
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: ILocalChain) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function

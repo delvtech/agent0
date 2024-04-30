@@ -32,12 +32,12 @@ Finally, you can execute Hyperdrive trades in a simulated blockchain environment
 ```python
 import datetime
 from fixedpointmath import FixedPoint
-from agent0 import ILocalHyperdrive, ILocalChain
+from agent0 import LocalHyperdrive, LocalChain
 
 # Initialize
-chain = ILocalChain()
-interactive_hyperdrive = ILocalHyperdrive(chain)
-hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000))
+chain = LocalChain()
+hyperdrive = LocalHyperdrive(chain)
+hyperdrive_agent0 = hyperdrive.init_agent(base=FixedPoint(100_000))
 
 # Run trades
 chain.advance_time(datetime.timedelta(weeks=1))
@@ -48,7 +48,7 @@ close_event = hyperdrive_agent0.close_long(
 )
 
 # Analyze
-pool_state = interactive_hyperdrive.get_pool_state(coerce_float=True)
+pool_state = hyperdrive.get_pool_state(coerce_float=True)
 pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
 ```
 

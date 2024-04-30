@@ -40,6 +40,7 @@ from agent0.ethpy.hyperdrive import (
     get_hyperdrive_addresses_from_registry,
 )
 
+from .chain import Chain
 from .event_types import (
     AddLiquidity,
     CloseLong,
@@ -50,8 +51,7 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
-from .i_chain import IChain
-from .i_hyperdrive_agent import IHyperdriveAgent
+from .hyperdrive_agent import IHyperdriveAgent
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -61,7 +61,7 @@ from .i_hyperdrive_agent import IHyperdriveAgent
 nest_asyncio.apply()
 
 
-class IHyperdrive:
+class Hyperdrive:
     """Interactive Hyperdrive class that supports connecting to an existing hyperdrive deployment."""
 
     # Lots of config
@@ -126,7 +126,7 @@ class IHyperdrive:
     def get_hyperdrive_addresses_from_registry(
         cls,
         registry_contract_addr: str,
-        chain: IChain,
+        chain: Chain,
     ) -> dict[str, ChecksumAddress]:
         """Gather deployed Hyperdrive pool addresses.
 
@@ -147,7 +147,7 @@ class IHyperdrive:
 
     def __init__(
         self,
-        chain: IChain,
+        chain: Chain,
         hyperdrive_address: ChecksumAddress,
         config: Config | None = None,
     ):

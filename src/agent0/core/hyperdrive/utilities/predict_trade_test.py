@@ -26,7 +26,7 @@ import pytest
 from fixedpointmath import FixedPoint
 from tabulate import tabulate
 
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.core.hyperdrive.utilities.predict import TradeDeltas, predict_long, predict_short
 
@@ -77,7 +77,7 @@ def _log_event(
     )
 
 
-def test_prediction_example(chain: ILocalChain):
+def test_prediction_example(chain: LocalChain):
     """Demonstrate the simplest case of a prediction.
 
     Output:
@@ -93,13 +93,13 @@ def test_prediction_example(chain: ILocalChain):
         | governance |   0.00475964 |    0.00499762 |   0.00475964 |
         +------------+--------------+---------------+--------------+
     """
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     base_needed = FixedPoint(100)
     delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
@@ -108,15 +108,15 @@ def test_prediction_example(chain: ILocalChain):
     _log_table(delta)
 
 
-def test_open_long_bonds(chain: ILocalChain):
+def test_open_long_bonds(chain: LocalChain):
     """Demonstrate abililty to open long with bonds as input."""
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
     bonds_needed = FixedPoint(100)
@@ -125,15 +125,15 @@ def test_open_long_bonds(chain: ILocalChain):
     _log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
 
 
-def test_open_short_base(chain: ILocalChain):
+def test_open_short_base(chain: LocalChain):
     """Demonstrate abililty to open short with base as input."""
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
     base_needed = FixedPoint(100)
@@ -144,16 +144,16 @@ def test_open_short_base(chain: ILocalChain):
 
 
 @pytest.mark.anvil
-def test_predict_open_long_bonds(chain: ILocalChain):
+def test_predict_open_long_bonds(chain: LocalChain):
     """Predict outcome of an open long, for a given amount of bonds."""
     # setup
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
     pool_state = deepcopy(hyperdrive_interface.current_pool_state)
@@ -215,16 +215,16 @@ def test_predict_open_long_bonds(chain: ILocalChain):
 
 
 @pytest.mark.anvil
-def test_predict_open_long_base(chain: ILocalChain):
+def test_predict_open_long_base(chain: LocalChain):
     """Predict outcome of an open long, for a given amount of base."""
     # setup
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
@@ -275,15 +275,15 @@ def test_predict_open_long_base(chain: ILocalChain):
 
 
 @pytest.mark.anvil
-def test_predict_open_short_bonds(chain: ILocalChain):
+def test_predict_open_short_bonds(chain: LocalChain):
     """Predict outcome of an open short, for a given amount of bonds."""
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 
@@ -337,15 +337,15 @@ def test_predict_open_short_bonds(chain: ILocalChain):
 
 
 @pytest.mark.anvil
-def test_predict_open_short_base(chain: ILocalChain):
+def test_predict_open_short_base(chain: LocalChain):
     """Predict outcome of an open short, for a given amount of base."""
-    interactive_config = ILocalHyperdrive.Config(
+    interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         governance_lp_fee=FixedPoint(0.1),
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = ILocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
 

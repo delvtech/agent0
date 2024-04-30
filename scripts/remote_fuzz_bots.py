@@ -10,7 +10,7 @@ from typing import NamedTuple, Sequence
 
 from web3.types import RPCEndpoint
 
-from agent0 import IChain, IHyperdrive
+from agent0 import Chain, Hyperdrive
 from agent0.ethpy import build_eth_config
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs import setup_logging
@@ -34,7 +34,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Get config and addresses
     eth_config = build_eth_config()
-    hyperdrive_addresses = IHyperdrive.get_hyperdrive_addresses_from_artifacts(eth_config.artifacts_uri)
+    hyperdrive_addresses = Hyperdrive.get_hyperdrive_addresses_from_artifacts(eth_config.artifacts_uri)
     if parsed_args.pool not in hyperdrive_addresses:
         raise ValueError(
             f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"
@@ -49,9 +49,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     rng_seed = random.randint(0, 10000000)
 
     # Connect to the chain
-    chain = IChain(eth_config.rpc_uri)
+    chain = Chain(eth_config.rpc_uri)
 
-    hyperdrive_config = IHyperdrive.Config(
+    hyperdrive_config = Hyperdrive.Config(
         preview_before_trade=True,
         rng_seed=rng_seed,
         log_to_rollbar=log_to_rollbar,
@@ -59,7 +59,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         crash_log_level=logging.CRITICAL,
         crash_report_additional_info={"rng_seed": rng_seed},
     )
-    hyperdrive_pool = IHyperdrive(chain, hyperdrive_address, hyperdrive_config)
+    hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
     try:
         run_fuzz_bots(

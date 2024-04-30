@@ -15,7 +15,7 @@ from typing import NamedTuple, Sequence
 from eth_account.account import Account
 from eth_typing import ChecksumAddress
 
-from agent0 import IChain, IHyperdrive
+from agent0 import Chain, Hyperdrive
 from agent0.core.base import EthAgent
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
@@ -53,7 +53,7 @@ def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_t
 
 
 def run_checkpoint_bot(
-    chain: IChain,
+    chain: Chain,
     pool_address: ChecksumAddress,
     sender: EthAgent,
     block_time: int = 1,
@@ -206,7 +206,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     # Initialize
-    chain = IChain(parsed_args.rpc_uri)
+    chain = Chain(parsed_args.rpc_uri)
 
     # We calculate how many blocks we should wait before checking for a new pool
     pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12
@@ -217,7 +217,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     while True:
         logging.info("Checking for new pools...")
         # Reset hyperdrive objs
-        deployed_pools = IHyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
 
         logging.info("Running for all pools...")
 
