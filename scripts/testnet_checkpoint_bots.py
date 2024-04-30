@@ -66,7 +66,7 @@ def run_checkpoint_bot(
 
     Arguments
     ---------
-    chain: IChain
+    chain: Chain
         The chain object.
     pool_address: ChecksumAddress
         The pool address.

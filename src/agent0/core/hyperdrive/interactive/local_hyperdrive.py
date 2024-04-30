@@ -279,7 +279,7 @@ class LocalHyperdrive(Hyperdrive):
 
         Returns
         -------
-        IHyperdrive.Addresses
+        ChecksumAddress
             The hyperdrive addresses for this pool
         """
         # pylint: disable=protected-access

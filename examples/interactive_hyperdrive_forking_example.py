@@ -27,11 +27,11 @@ chain = LocalChain(fork_uri=rpc_uri, fork_block_number=fork_block_number)
 
 hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
 
-# Note that we use IHyperdrive here instead of ILocalHyperdrive,
+# Note that we use Hyperdrive here instead of ILocalHyperdrive,
 # as ILocalHyperdrive deploys a new pool, whereas we want to connect to an existing pool
 # on the forked local chain.
 # TODO this prevents us from using data tools provided by ILocalHyperdrive, ideally we can
-# load a ILocalHyperdrive from an IHyperdrive object that connects to an existing pool and populates
+# load a ILocalHyperdrive from an Hyperdrive object that connects to an existing pool and populates
 # the database. This is blocked by needing an archive node, the fix here would be to
 # (1) use event data instead, and (2) build historical data from event data.
 hyperdrive_config = Hyperdrive.Config()

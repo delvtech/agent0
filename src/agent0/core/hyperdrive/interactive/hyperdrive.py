@@ -134,8 +134,8 @@ class Hyperdrive:
         ---------
         registry_contract_addr: str
             The address of the Hyperdrive factory contract.
-        chain: IChain
-            The IChain object connected to a chain.
+        chain: Chain
+            The Chain object connected to a chain.
 
         Returns
         -------
@@ -155,7 +155,7 @@ class Hyperdrive:
 
         Arguments
         ---------
-        chain: IChain
+        chain: Chain
             The chain to interact with
         hyperdrive_address: ChecksumAddress
             The address of the hyperdrive contract

@@ -182,7 +182,7 @@ def run_fuzz_bots(
 
     Arguments
     ---------
-    hyperdrive_pool: IHyperdrive
+    hyperdrive_pool: Hyperdrive
         The hyperdrive pool to run the bots on.
     check_invariance: bool
         If True, will run invariance checks after each set of trades.
@@ -354,7 +354,7 @@ def run_fuzz_bots(
 
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
-            # ILocalChain object
+            # LocalChain object
             if isinstance(hyperdrive_pool.chain, LocalChain):
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
@@ -363,7 +363,7 @@ def run_fuzz_bots(
                 random_time = int(hyperdrive_pool.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
-                raise ValueError("Random advance time only allowed for pools deployed on ILocalChain")
+                raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
 
         if random_variable_rate:
             if isinstance(hyperdrive_pool, LocalHyperdrive):
