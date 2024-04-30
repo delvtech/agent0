@@ -6,7 +6,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from agent0.core.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive.exec import check_for_new_block
 from agent0.core.test_utils import assert_never
@@ -19,7 +19,7 @@ from .execute_multi_agent_trades import async_execute_multi_agent_trades
 # pylint: disable=too-many-arguments
 def trade_if_new_block(
     interface: HyperdriveReadWriteInterface,
-    agent_accounts: list[HyperdriveAgent],
+    agent_accounts: list[HyperdrivePolicyAgent],
     halt_on_errors: bool,
     halt_on_slippage: bool,
     crash_report_to_file: bool,
@@ -38,8 +38,8 @@ def trade_if_new_block(
     ---------
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
-    agent_accounts: list[HyperdriveAgent]]
-        A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades.
+    agent_accounts: list[HyperdrivePolicyAgent]]
+        A list of HyperdrivePolicyAgent objects that contain a wallet address and Agent for determining trades.
     halt_on_errors: bool
         If true, raise an exception if a trade reverts.
         Otherwise, log a warning and move on.

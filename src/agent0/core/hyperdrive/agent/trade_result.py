@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from agent0.core.base import Trade
 
     from .hyperdrive_actions import HyperdriveMarketAction
-    from .hyperdrive_agent import HyperdriveAgent
+    from .hyperdrive_policy_agent import HyperdrivePolicyAgent
 
 
 class TradeStatus(Enum):
@@ -32,7 +32,7 @@ class TradeResult:
 
     status: TradeStatus
     """The status of the trade."""
-    agent: HyperdriveAgent | None = None
+    agent: HyperdrivePolicyAgent | None = None
     """The agent that was executing the trade."""
     trade_object: Trade[HyperdriveMarketAction] | None = None
     """The trade object for the trade."""

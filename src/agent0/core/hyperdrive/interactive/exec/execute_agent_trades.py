@@ -31,12 +31,12 @@ from agent0.ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface, ReceiptBreakdown
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveAgent
+    from agent0.core.hyperdrive import HyperdrivePolicyAgent
 
 
 async def async_execute_agent_trades(
     interface: HyperdriveReadWriteInterface,
-    agent: HyperdriveAgent,
+    agent: HyperdrivePolicyAgent,
     liquidate: bool,
     randomize_liquidation: bool = False,
     interactive_mode: bool = False,
@@ -53,8 +53,8 @@ async def async_execute_agent_trades(
     ---------
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
-    agent: HyperdriveAgent
-        The HyperdriveAgent that is conducting the trade.
+    agent: HyperdrivePolicyAgent
+        The HyperdrivePolicyAgent that is conducting the trade.
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions.
     randomize_liquidation: bool, optional
@@ -129,7 +129,7 @@ async def async_execute_agent_trades(
 
 async def async_execute_single_trade(
     interface: HyperdriveReadWriteInterface,
-    agent: HyperdriveAgent,
+    agent: HyperdrivePolicyAgent,
     trade_object: Trade[HyperdriveMarketAction],
     execute_policy_post_action: bool,
 ) -> TradeResult:
@@ -143,8 +143,8 @@ async def async_execute_single_trade(
     ---------
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
-    agent: HyperdriveAgent
-        The HyperdriveAgent that is conducting the trade.
+    agent: HyperdrivePolicyAgent
+        The HyperdrivePolicyAgent that is conducting the trade.
     trade_object: Trade[HyperdriveMarketAction]
         The trade to execute.
     execute_policy_post_action: bool
@@ -192,7 +192,7 @@ def _handle_contract_call_to_trade_and_update_wallets(
     wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException],
     trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadInterface,
-    agent: HyperdriveAgent,
+    agent: HyperdrivePolicyAgent,
 ) -> list[TradeResult]:
     """Handle the results of executing trades. This function also updates the underlying agent's wallet.
 
@@ -205,7 +205,7 @@ def _handle_contract_call_to_trade_and_update_wallets(
         The list of trades that were executed.
     interface: HyperdriveReadInterface
         The read interface for the market.
-    agent: HyperdriveAgent
+    agent: HyperdrivePolicyAgent
         The agent that executed the trades.
 
     Returns
@@ -255,7 +255,7 @@ def _handle_contract_call_to_trade_and_update_wallets(
 
 
 async def _async_match_contract_call_to_trade(
-    agent: HyperdriveAgent,
+    agent: HyperdrivePolicyAgent,
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
@@ -264,7 +264,7 @@ async def _async_match_contract_call_to_trade(
 
     Arguments
     ---------
-    agent: HyperdriveAgent
+    agent: HyperdrivePolicyAgent
         Object containing a wallet address and Agent for determining trades.
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.

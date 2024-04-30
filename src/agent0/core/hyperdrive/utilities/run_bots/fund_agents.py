@@ -10,7 +10,7 @@ from web3.types import Nonce, TxReceipt
 
 from agent0.core import AccountKeyConfig
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.core.hyperdrive import HyperdrivePolicyAgent
 from agent0.ethpy.base import (
     async_eth_transfer,
     async_smart_contract_transact,
@@ -41,7 +41,7 @@ def async_fund_agents_with_fake_user(
     """
     # Generate fake user account
     user_private_key = make_private_key(extra_entropy="FAKE USER")  # argument value can be any str
-    user_account = HyperdriveAgent(Account().from_key(user_private_key))
+    user_account = HyperdrivePolicyAgent(Account().from_key(user_private_key))
     # Fund the user with Eth
     eth_balance = sum((int(budget) for budget in account_key_config.AGENT_ETH_BUDGETS)) * 2  # double for good measure
     _ = set_anvil_account_balance(interface.web3, user_account.address, eth_balance)
@@ -60,7 +60,7 @@ def async_fund_agents_with_fake_user(
 
 async def async_fund_agents(
     interface: HyperdriveReadInterface,
-    user_account: HyperdriveAgent,
+    user_account: HyperdrivePolicyAgent,
     account_key_config: AccountKeyConfig,
 ) -> None:
     """Fund agents using passed in configs.
@@ -69,8 +69,8 @@ async def async_fund_agents(
     ---------
     interface: HyperdriveReadInterface
         An Hyperdrive interface object for accessing the base token contract.
-    user_account: HyperdriveAgent
-        The HyperdriveAgent corresponding to the user account to fund the agents.
+    user_account: HyperdrivePolicyAgent
+        The HyperdrivePolicyAgent corresponding to the user account to fund the agents.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
@@ -85,7 +85,8 @@ async def async_fund_agents(
     # Prepare accounts and eth budgets
     # Sanity check for zip function
     agent_accounts = [
-        HyperdriveAgent(Account().from_key(agent_private_key)) for agent_private_key in account_key_config.AGENT_KEYS
+        HyperdrivePolicyAgent(Account().from_key(agent_private_key))
+        for agent_private_key in account_key_config.AGENT_KEYS
     ]
     accounts_left = list(zip(agent_accounts, account_key_config.AGENT_ETH_BUDGETS))
     for attempt in range(FUND_RETRY_COUNT):
@@ -180,7 +181,7 @@ async def async_fund_agents(
 
 def _check_user_balances(
     interface: HyperdriveReadInterface,
-    user_account: HyperdriveAgent,
+    user_account: HyperdrivePolicyAgent,
     account_key_config: AccountKeyConfig,
 ) -> None:
     """Check the user eth and base balances to ensure there is enough for funding agents.
@@ -189,8 +190,8 @@ def _check_user_balances(
     ---------
     interface: HyperdriveReadInterface
         An Hyperdrive interface object for accessing the base token contract.
-    user_account: HyperdriveAgent
-        The HyperdriveAgent corresponding to the user account to fund the agents.
+    user_account: HyperdrivePolicyAgent
+        The HyperdrivePolicyAgent corresponding to the user account to fund the agents.
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.

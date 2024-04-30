@@ -17,7 +17,7 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 from web3 import Web3
 
-from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdriveActionType, HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     build_wallet_positions_from_chain,
@@ -231,7 +231,7 @@ class Hyperdrive:
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
-    ) -> HyperdriveAgent[HyperdriveBasePolicy]:
+    ) -> HyperdrivePolicyAgent[HyperdriveBasePolicy]:
         # Setting the budget to 0 here, we'll update the wallet from the chain
         if policy is None:
             if policy_config is None:
@@ -242,7 +242,7 @@ class Hyperdrive:
                 policy_config = policy.Config(rng=self.config.rng)
             policy_obj = policy(policy_config)
 
-        agent = HyperdriveAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
+        agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
 
         # Add the public address to the chain object to avoid multiple objects
         # with the same underlying account
@@ -251,7 +251,7 @@ class Hyperdrive:
         self._sync_wallet(agent)
         return agent
 
-    def _set_max_approval(self, agent: HyperdriveAgent) -> None:
+    def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
         # Establish max approval for the hyperdrive contract
         set_max_approval(
             agent,
@@ -260,12 +260,16 @@ class Hyperdrive:
             str(self.interface.hyperdrive_contract.address),
         )
 
-    def _sync_wallet(self, agent: HyperdriveAgent) -> None:
+    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
         # TODO add sync from db
         agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
 
     def _add_funds(
-        self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
+        self,
+        agent: HyperdrivePolicyAgent,
+        base: FixedPoint,
+        eth: FixedPoint,
+        signer_account: LocalAccount | None = None,
     ) -> None:
         # The signer of the mint transaction defaults to the agent itself, unless specified.
         if signer_account is None:
@@ -290,7 +294,7 @@ class Hyperdrive:
             # Update the agent's wallet balance
             agent.wallet.balance.amount += base
 
-    def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
+    def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         # Build trade object
         trade_object = open_long_trade(base)
         # TODO expose async here to the caller eventually
@@ -302,7 +306,7 @@ class Hyperdrive:
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
-    def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
+    def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
         # Build trade object
         trade_object = close_long_trade(bonds, maturity_time)
         # TODO expose async here to the caller eventually
@@ -314,7 +318,7 @@ class Hyperdrive:
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
-    def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
+    def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
         trade_object = open_short_trade(bonds)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
@@ -325,7 +329,7 @@ class Hyperdrive:
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
-    def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
+    def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
         trade_object = close_short_trade(bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
@@ -336,7 +340,7 @@ class Hyperdrive:
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
-    def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
+    def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
         trade_object = add_liquidity_trade(base)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
@@ -347,7 +351,7 @@ class Hyperdrive:
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
-    def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
+    def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
         trade_object = remove_liquidity_trade(shares)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
@@ -358,7 +362,7 @@ class Hyperdrive:
         tx_receipt = self._handle_trade_result(trade_result)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
-    def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
+    def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
         trade_object = redeem_withdraw_shares_trade(shares)
         # TODO expose async here to the caller eventually
         trade_results: TradeResult = asyncio.run(
@@ -370,7 +374,7 @@ class Hyperdrive:
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def _execute_policy_action(
-        self, agent: HyperdriveAgent
+        self, agent: HyperdrivePolicyAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         # Only allow executing agent policies if a policy was passed in the constructor
         # we check type instead of isinstance to explicitly check for the hyperdrive base class
@@ -392,7 +396,7 @@ class Hyperdrive:
         return out_events
 
     def _liquidate(
-        self, agent: HyperdriveAgent, randomize: bool
+        self, agent: HyperdrivePolicyAgent, randomize: bool
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(

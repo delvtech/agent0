@@ -2,8 +2,8 @@
 
 from .agent import (
     HyperdriveActionType,
-    HyperdriveAgent,
     HyperdriveMarketAction,
+    HyperdrivePolicyAgent,
     HyperdriveWallet,
     HyperdriveWalletDeltas,
     Long,

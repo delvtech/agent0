@@ -20,7 +20,7 @@ MarketInterface = TypeVar("MarketInterface")
 MarketAction = TypeVar("MarketAction")
 
 
-class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
+class PolicyAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state"""
 
     def __init__(self, account: LocalAccount, initial_budget: FixedPoint | None = None, policy: Policy | None = None):
@@ -43,18 +43,18 @@ class EthAgent(LocalAccount, Generic[Policy, MarketInterface, MarketAction]):
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from agent0.core.base import EthAgent
-            >>> agent = EthAgent(Account().create("CHECKPOINT_BOT"))
+            >>> from agent0.core.base import PolicyAgent
+            >>> agent = PolicyAgent(Account().create("CHECKPOINT_BOT"))
 
         Alternatively, you can also use the Account api to provide a pre-generated key:
 
         .. code-block:: python
 
             >>> from eth_account.account import Account
-            >>> from agent0.core.base import EthAgent
-            >>> agent = EthAgent(Account().from_key(agent_private_key))
+            >>> from agent0.core.base import PolicyAgent
+            >>> agent = PolicyAgent(Account().from_key(agent_private_key))
 
-        The EthAgent has the same properties as a Web3 LocalAgent.
+        The PolicyAgent has the same properties as a Web3 LocalAgent.
         For example, you can get public and private keys as well as the address:
 
             .. code-block:: python
