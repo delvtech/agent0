@@ -55,7 +55,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
 
     Returns
     -------
-    ILocalHyperdrive.Config
+    LocalHyperdrive.Config
         Fuzzed hyperdrive config.
     """
     # Position duration must be a multiple of checkpoint duration
@@ -373,4 +373,4 @@ def run_fuzz_bots(
                 random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(*VARIABLE_RATE_RANGE))
                 hyperdrive_pool.set_variable_rate(random_rate)
             else:
-                raise ValueError("Random variable rate only allowed for ILocalHyperdrive pools")
+                raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")
