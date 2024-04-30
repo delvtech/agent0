@@ -306,7 +306,7 @@ def invariant_check(
     # idle shares are the shares that are not reserved by open positions
     # TODO: Add calculate_idle_share_reserves to hyperdrivepy and use that here.
     current_present_value = interactive_hyperdrive.interface.calc_present_value(pool_state)
-    idle_shares = interactive_hyperdrive.interface.get_idle_shares(pool_state.block_number)
+    idle_shares = interactive_hyperdrive.interface.get_idle_shares(pool_state)
     if current_present_value < idle_shares:
         difference_in_wei = abs(current_present_value.scaled_value - idle_shares.scaled_value)
         exception_message.append("The present value is not greater than or equal to the idle.")
