@@ -18,7 +18,6 @@ from .i_local_chain import ILocalChain
 from .i_local_hyperdrive import ILocalHyperdrive
 
 YEAR_IN_SECONDS = 31_536_000
-TIME_STRETCH_LIST = [0.01, 0.1, 0.5, 1, 10, 100]
 
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
@@ -803,7 +802,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(chain: ILocalChain
 
 
 @pytest.mark.anvil
-@pytest.mark.parametrize("time_stretch", TIME_STRETCH_LIST)
+@pytest.mark.parametrize("time_stretch", [0.01, 0.1, 0.5, 1, 10, 100])
 def test_deploy_nonstandard_timestretch(chain: ILocalChain, time_stretch: float):
     """Deplopy with nonstandard timestretch parameters."""
     initial_pool_config = ILocalHyperdrive.Config(
