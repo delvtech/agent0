@@ -21,15 +21,15 @@ from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 
+from .chain import Chain
 from .event_types import CreateCheckpoint
-from .i_chain import IChain
 
 if TYPE_CHECKING:
-    from .i_local_hyperdrive import ILocalHyperdrive
+    from .local_hyperdrive import LocalHyperdrive
 
 
 # pylint: disable=too-many-instance-attributes
-class ILocalChain(IChain):
+class LocalChain(Chain):
     """Launches a local anvil chain in a subprocess, along with a postgres container."""
 
     # Pylint is complaining that `load_state` is an abstract method, so we need to overwrite here.
@@ -123,7 +123,7 @@ class ILocalChain(IChain):
         self._snapshot_dir = config.snapshot_dir
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
-        self._deployed_hyperdrive_pools: list[ILocalHyperdrive] = []
+        self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
         self.experimental_data_threading = config.experimental_data_threading
 
         if config.block_timestamp_interval is not None:
@@ -183,7 +183,7 @@ class ILocalChain(IChain):
     # pylint: disable=too-many-branches
     def advance_time(
         self, time_delta: int | timedelta, create_checkpoints: bool = True
-    ) -> dict[ILocalHyperdrive, list[CreateCheckpoint]]:
+    ) -> dict[LocalHyperdrive, list[CreateCheckpoint]]:
         """Advance time for this chain using the `evm_mine` RPC call.
 
         This function looks at the timestamp of the current block, then
@@ -218,9 +218,7 @@ class ILocalChain(IChain):
         else:
             time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
 
-        out_dict: dict[ILocalHyperdrive, list[CreateCheckpoint]] = {
-            pool: [] for pool in self._deployed_hyperdrive_pools
-        }
+        out_dict: dict[LocalHyperdrive, list[CreateCheckpoint]] = {pool: [] for pool in self._deployed_hyperdrive_pools}
 
         # Don't checkpoint when advancing time if `create_checkpoints` is false
         # or there are no deployed pools
@@ -470,7 +468,7 @@ class ILocalChain(IChain):
 
         return postgres_config, container
 
-    def _add_deployed_pool_to_bookkeeping(self, pool: ILocalHyperdrive):
+    def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         if self._has_saved_snapshot:
             raise ValueError("Cannot add a new pool after saving a snapshot")
         self._deployed_hyperdrive_pools.append(pool)

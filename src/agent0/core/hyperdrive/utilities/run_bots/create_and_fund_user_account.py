@@ -8,7 +8,7 @@ from eth_account.account import Account
 
 from agent0.core import AccountKeyConfig
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.core.hyperdrive import HyperdrivePolicyAgent
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def create_and_fund_user_account(
     account_key_config: AccountKeyConfig,
     interface: HyperdriveReadInterface,
-) -> HyperdriveAgent:
+) -> HyperdrivePolicyAgent:
     """Helper function for funding a fake user account.
 
     .. note::
@@ -38,7 +38,7 @@ def create_and_fund_user_account(
 
     Returns
     -------
-    HyperdriveAgent
+    HyperdrivePolicyAgent
         An agent that corresponds to the fake "user"
     """
     # generate fake user account
@@ -47,26 +47,26 @@ def create_and_fund_user_account(
     return user_account
 
 
-def _create_user_account() -> HyperdriveAgent:
-    """Create a fake HyperdriveAgent.
+def _create_user_account() -> HyperdrivePolicyAgent:
+    """Create a fake HyperdrivePolicyAgent.
 
     .. note::
     This function will soon be deprecated in favor of the IHyperdrive workflow
 
     Returns
     -------
-    HyperdriveAgent
+    HyperdrivePolicyAgent
         The fake user.
     """
     user_private_key = make_private_key(extra_entropy="FAKE USER")  # argument value can be any str
-    user_account = HyperdriveAgent(Account().from_key(user_private_key))
+    user_account = HyperdrivePolicyAgent(Account().from_key(user_private_key))
     return user_account
 
 
 def _fund_user_account(
     web3: Web3,
     account_key_config: AccountKeyConfig,
-    user_account: HyperdriveAgent,
+    user_account: HyperdrivePolicyAgent,
     base_token_contract: ERC20MintableContract,
 ) -> tuple[RPCResponse, TxReceipt]:
     """Fund a user account.
@@ -81,7 +81,7 @@ def _fund_user_account(
     account_key_config: AccountKeyConfig
         Configuration linking to the env file for storing private keys and initial budgets.
         Defines the agents to be funded.
-    user_account: HyperdriveAgent
+    user_account: HyperdrivePolicyAgent
         Object containing a wallet address and Agent for determining trades
     base_token_contract: ERC20MintableContract
         The deployed ERC20 base token contract.

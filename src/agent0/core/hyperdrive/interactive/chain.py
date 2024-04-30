@@ -7,7 +7,7 @@ from web3.types import BlockData
 from agent0.ethpy.base import initialize_web3_with_http_provider
 
 
-class IChain:
+class Chain:
     """A class that represents a ethereum node."""
 
     def __init__(self, rpc_uri: str):

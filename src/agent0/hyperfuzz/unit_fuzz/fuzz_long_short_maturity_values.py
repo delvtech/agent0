@@ -28,7 +28,7 @@ import numpy as np
 from fixedpointmath import FixedPoint, isclose
 
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hypertypes.fixedpoint_types import CheckpointFP
@@ -56,7 +56,7 @@ def fuzz_long_short_maturity_values(
     num_trades: int,
     long_maturity_vals_epsilon: float,
     short_maturity_vals_epsilon: float,
-    chain_config: ILocalChain.Config | None = None,
+    chain_config: LocalChain.Config | None = None,
     log_to_stdout: bool = False,
 ):
     """Does fuzzy invariant checks on closing longs and shorts past maturity.
@@ -194,7 +194,7 @@ class Args(NamedTuple):
     num_trades: int
     long_maturity_vals_epsilon: float
     short_maturity_vals_epsilon: float
-    chain_config: ILocalChain.Config
+    chain_config: LocalChain.Config
     log_to_stdout: bool
 
 
@@ -216,7 +216,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         num_trades=namespace.num_trades,
         long_maturity_vals_epsilon=namespace.long_maturity_vals_epsilon,
         short_maturity_vals_epsilon=namespace.short_maturity_vals_epsilon,
-        chain_config=ILocalChain.Config(chain_port=namespace.chain_port),
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
         log_to_stdout=namespace.log_to_stdout,
     )
 
@@ -279,7 +279,7 @@ def invariant_check(
     maturity_checkpoint: CheckpointFP,
     long_maturity_vals_epsilon: float,
     short_maturity_vals_epsilon: float,
-    interactive_hyperdrive: ILocalHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
 ) -> None:
     """Check the pool state invariants and throws an assertion exception if fails.
 

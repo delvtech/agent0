@@ -13,7 +13,7 @@ from web3.types import TxReceipt
 
 from agent0.core import AccountKeyConfig
 from agent0.core.base.config import AgentConfig
-from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.core.hyperdrive import HyperdrivePolicyAgent
 from agent0.ethpy.base import async_smart_contract_transact, get_account_balance
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
@@ -25,7 +25,7 @@ def get_agent_accounts(
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
     global_rng: Generator,
-) -> list[HyperdriveAgent]:
+) -> list[HyperdrivePolicyAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     Arguments
@@ -46,7 +46,7 @@ def get_agent_accounts(
     """
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
-    agents: list[HyperdriveAgent] = []
+    agents: list[HyperdrivePolicyAgent] = []
     num_agents_so_far: list[int] = []  # maintains the total number of agents for each agent type
     agent_base_budgets = [int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS]
 
@@ -66,7 +66,7 @@ def get_agent_accounts(
             if agent_info.policy_config.rng_seed is None and agent_info.policy_config.rng is None:
                 agent_info.policy_config.rng = global_rng.spawn(1)[0]
 
-            eth_agent = HyperdriveAgent(
+            eth_agent = HyperdrivePolicyAgent(
                 Account().from_key(account_key_config.AGENT_KEYS[agent_count]),
                 initial_budget=agent_budget,
                 policy=agent_info.policy(agent_info.policy_config),
@@ -86,12 +86,12 @@ def get_agent_accounts(
     return agents
 
 
-async def _set_max_approval(agents: list[HyperdriveAgent], interface: HyperdriveReadInterface) -> None:
+async def _set_max_approval(agents: list[HyperdrivePolicyAgent], interface: HyperdriveReadInterface) -> None:
     """Establish max approval for the hyperdrive contract for all agents async
 
     Arguments
     ---------
-    agents: list[HyperdriveAgent]
+    agents: list[HyperdrivePolicyAgent]
         List of agents
     """
     agents_left = list(agents)

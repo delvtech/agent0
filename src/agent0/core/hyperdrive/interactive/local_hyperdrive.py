@@ -43,7 +43,7 @@ from agent0.chainsync.db.hyperdrive import (
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdriveAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
@@ -67,21 +67,21 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .i_hyperdrive import IHyperdrive
-from .i_local_chain import ILocalChain
-from .i_local_hyperdrive_agent import ILocalHyperdriveAgent
+from .hyperdrive import Hyperdrive
+from .local_chain import LocalChain
+from .local_hyperdrive_agent import LocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
 
 
-class ILocalHyperdrive(IHyperdrive):
+class LocalHyperdrive(Hyperdrive):
     """Interactive Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
-    class Config(IHyperdrive.Config):
+    class Config(Hyperdrive.Config):
         """The configuration for the local hyperdrive pool."""
 
         # Environment variables
@@ -209,7 +209,7 @@ class ILocalHyperdrive(IHyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: ILocalChain, config: Config | None = None):
+    def __init__(self, chain: LocalChain, config: Config | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
@@ -272,14 +272,14 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
-        self._pool_agents: list[ILocalHyperdriveAgent] = []
+        self._pool_agents: list[LocalHyperdriveAgent] = []
 
     def get_hyperdrive_address(self) -> ChecksumAddress:
         """Returns the hyperdrive addresses for this pool.
 
         Returns
         -------
-        IHyperdrive.Addresses
+        ChecksumAddress
             The hyperdrive addresses for this pool
         """
         # pylint: disable=protected-access
@@ -447,7 +447,7 @@ class ILocalHyperdrive(IHyperdrive):
             other._deployed_hyperdrive.hyperdrive_contract.address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: ILocalChain) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
@@ -555,7 +555,7 @@ class ILocalHyperdrive(IHyperdrive):
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
         name: str | None = None,
-    ) -> ILocalHyperdriveAgent:
+    ) -> LocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
         Arguments
@@ -590,7 +590,7 @@ class ILocalHyperdrive(IHyperdrive):
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
-        out_agent = ILocalHyperdriveAgent(
+        out_agent = LocalHyperdriveAgent(
             base=base,
             eth=eth,
             name=name,
@@ -1023,7 +1023,7 @@ class ILocalHyperdrive(IHyperdrive):
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
-    ) -> HyperdriveAgent:
+    ) -> HyperdrivePolicyAgent:
         # We overwrite the base init agents with different parameters
         # pylint: disable=arguments-differ
         # pylint: disable=too-many-arguments
@@ -1040,7 +1040,9 @@ class ILocalHyperdrive(IHyperdrive):
             policy_obj = policy(policy_config)
 
         # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
-        agent = HyperdriveAgent(Account().from_key(agent_private_key), initial_budget=FixedPoint(0), policy=policy_obj)
+        agent = HyperdrivePolicyAgent(
+            Account().from_key(agent_private_key), initial_budget=FixedPoint(0), policy=policy_obj
+        )
         # Update wallet to agent's previous budget
         if private_key is not None:  # address already existed
             agent.wallet.balance.amount = self.interface.get_eth_base_balances(agent)[1]
@@ -1068,7 +1070,7 @@ class ILocalHyperdrive(IHyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _sync_wallet(self, agent: HyperdriveAgent) -> None:
+    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
         # TODO add sync from db
         super()._sync_wallet(agent)
         # Ensure db is up to date
@@ -1076,7 +1078,11 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
 
     def _add_funds(
-        self, agent: HyperdriveAgent, base: FixedPoint, eth: FixedPoint, signer_account: LocalAccount | None = None
+        self,
+        agent: HyperdrivePolicyAgent,
+        base: FixedPoint,
+        eth: FixedPoint,
+        signer_account: LocalAccount | None = None,
     ) -> None:
         # TODO this can be fixed by getting actual base values from the chain.
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
@@ -1115,7 +1121,7 @@ class ILocalHyperdrive(IHyperdrive):
 
         return super()._handle_trade_result(trade_result)
 
-    def _open_long(self, agent: HyperdriveAgent, base: FixedPoint) -> OpenLong:
+    def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         out = super()._open_long(agent, base)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1123,7 +1129,7 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
         return out
 
-    def _close_long(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
+    def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
         out = super()._close_long(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1131,7 +1137,7 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
         return out
 
-    def _open_short(self, agent: HyperdriveAgent, bonds: FixedPoint) -> OpenShort:
+    def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
         out = super()._open_short(agent, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1139,7 +1145,7 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
         return out
 
-    def _close_short(self, agent: HyperdriveAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
+    def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
         out = super()._close_short(agent, maturity_time, bonds)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1147,7 +1153,7 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
         return out
 
-    def _add_liquidity(self, agent: HyperdriveAgent, base: FixedPoint) -> AddLiquidity:
+    def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
         out = super()._add_liquidity(agent, base)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1155,7 +1161,7 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
         return out
 
-    def _remove_liquidity(self, agent: HyperdriveAgent, shares: FixedPoint) -> RemoveLiquidity:
+    def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
         out = super()._remove_liquidity(agent, shares)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1163,7 +1169,7 @@ class ILocalHyperdrive(IHyperdrive):
             self._run_blocking_data_pipeline()
         return out
 
-    def _redeem_withdraw_share(self, agent: HyperdriveAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
+    def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
         out = super()._redeem_withdraw_share(agent, shares)
         # Experimental changes runs data pipeline in thread
         # Turn that off here to run in slow, but won't crash mode
@@ -1172,7 +1178,7 @@ class ILocalHyperdrive(IHyperdrive):
         return out
 
     def _execute_policy_action(
-        self, agent: HyperdriveAgent
+        self, agent: HyperdrivePolicyAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         out = super()._execute_policy_action(agent)
         # Experimental changes runs data pipeline in thread
@@ -1182,7 +1188,7 @@ class ILocalHyperdrive(IHyperdrive):
         return out
 
     def _liquidate(
-        self, agent: HyperdriveAgent, randomize: bool
+        self, agent: HyperdrivePolicyAgent, randomize: bool
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         out = super()._liquidate(agent, randomize)
         # Experimental changes runs data pipeline in thread

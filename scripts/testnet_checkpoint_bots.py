@@ -15,8 +15,8 @@ from typing import NamedTuple, Sequence
 from eth_account.account import Account
 from eth_typing import ChecksumAddress
 
-from agent0 import IChain, IHyperdrive
-from agent0.core.base import EthAgent
+from agent0 import Chain, Hyperdrive
+from agent0.core.base import PolicyAgent
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
 from agent0.hyperfuzz.system_fuzz.run_fuzz_bots import _async_runner
@@ -53,9 +53,9 @@ def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_t
 
 
 def run_checkpoint_bot(
-    chain: IChain,
+    chain: Chain,
     pool_address: ChecksumAddress,
-    sender: EthAgent,
+    sender: PolicyAgent,
     block_time: int = 1,
     block_timestamp_interval: int = 1,
     check_checkpoint: bool = False,
@@ -66,11 +66,11 @@ def run_checkpoint_bot(
 
     Arguments
     ---------
-    chain: IChain
+    chain: Chain
         The chain object.
     pool_address: ChecksumAddress
         The pool address.
-    sender: EthAgent
+    sender: PolicyAgent
         The sender of the transaction.
     block_time: int
         The block time in seconds.
@@ -206,18 +206,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     # Initialize
-    chain = IChain(parsed_args.rpc_uri)
+    chain = Chain(parsed_args.rpc_uri)
 
     # We calculate how many blocks we should wait before checking for a new pool
     pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12
 
     private_key = os.getenv("CHECKPOINT_BOT_KEY")
-    sender = EthAgent(Account().from_key(private_key))
+    sender = PolicyAgent(Account().from_key(private_key))
 
     while True:
         logging.info("Checking for new pools...")
         # Reset hyperdrive objs
-        deployed_pools = IHyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
 
         logging.info("Running for all pools...")
 

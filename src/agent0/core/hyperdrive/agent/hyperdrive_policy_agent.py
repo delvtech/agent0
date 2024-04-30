@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from fixedpointmath import FixedPoint
 
-from agent0.core.base import EthAgent, MarketType
+from agent0.core.base import MarketType, PolicyAgent
 from agent0.core.base.policies import BasePolicy
 from agent0.ethpy.hyperdrive.interface import HyperdriveReadInterface
 
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 Policy = TypeVar("Policy", bound=BasePolicy)
 
 
-class HyperdriveAgent(EthAgent[Policy, HyperdriveReadInterface, HyperdriveMarketAction]):
+class HyperdrivePolicyAgent(PolicyAgent[Policy, HyperdriveReadInterface, HyperdriveMarketAction]):
     r"""Enact policies on smart contracts and tracks wallet state
 
     .. todo::

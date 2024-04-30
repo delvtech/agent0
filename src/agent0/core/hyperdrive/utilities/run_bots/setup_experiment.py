@@ -16,7 +16,7 @@ from web3.types import TxReceipt
 
 from agent0.core import AccountKeyConfig
 from agent0.core.base.config import AgentConfig, EnvironmentConfig
-from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.core.hyperdrive import HyperdrivePolicyAgent
 from agent0.core.hyperdrive.crash_report import setup_hyperdrive_crash_report_logging
 from agent0.ethpy.base import async_smart_contract_transact, get_account_balance
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -32,7 +32,7 @@ def setup_experiment(
     agent_config: list[AgentConfig],
     account_key_config: AccountKeyConfig,
     interface: HyperdriveReadInterface,
-) -> list[HyperdriveAgent]:
+) -> list[HyperdrivePolicyAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     .. note::
@@ -51,8 +51,8 @@ def setup_experiment(
 
     Returns
     -------
-    list[HyperdriveAgent]
-        A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
+    list[HyperdrivePolicyAgent]
+        A list of HyperdrivePolicyAgent objects that contain a wallet address and Agent for determining trades
     """
     # this is the global rng object that generates child rng objects for each agent
     # random number generator should be used everywhere so that the experiment is repeatable
@@ -88,7 +88,7 @@ def _get_agent_accounts(
     base_token_contract: Contract,
     hyperdrive_address: str,
     global_rng: Generator,
-) -> list[HyperdriveAgent]:
+) -> list[HyperdrivePolicyAgent]:
     """Get agents according to provided config, provide eth, base token and approve hyperdrive.
 
     .. note::
@@ -116,7 +116,7 @@ def _get_agent_accounts(
     """
     # TODO: raise issue on failure by looking at `rpc_response`, `tx_receipt` returned from function
     #   Do this for `set_anvil_account_balance`, `smart_contract_transact(mint)`, `smart_contract_transact(approve)`
-    agents: list[HyperdriveAgent] = []
+    agents: list[HyperdrivePolicyAgent] = []
     num_agents_so_far: list[int] = []  # maintains the total number of agents for each agent type
     agent_base_budgets = [int(budget) for budget in account_key_config.AGENT_BASE_BUDGETS]
 
@@ -136,7 +136,7 @@ def _get_agent_accounts(
             if agent_info.policy_config.rng_seed is None and agent_info.policy_config.rng is None:
                 agent_info.policy_config.rng = global_rng.spawn(1)[0]
 
-            eth_agent = HyperdriveAgent(
+            eth_agent = HyperdrivePolicyAgent(
                 Account().from_key(account_key_config.AGENT_KEYS[agent_count]),
                 initial_budget=agent_budget,
                 policy=agent_info.policy(agent_info.policy_config),
@@ -157,7 +157,7 @@ def _get_agent_accounts(
 
 
 async def _set_max_approval(
-    agents: list[HyperdriveAgent], web3: Web3, base_token_contract: Contract, hyperdrive_address: str
+    agents: list[HyperdrivePolicyAgent], web3: Web3, base_token_contract: Contract, hyperdrive_address: str
 ) -> None:
     """Establish max approval for the hyperdrive contract for all agents async
 
@@ -166,7 +166,7 @@ async def _set_max_approval(
 
     Arguments
     ---------
-    agents: list[HyperdriveAgent]
+    agents: list[HyperdrivePolicyAgent]
         List of agents
     web3: Web3
         web3 provider object

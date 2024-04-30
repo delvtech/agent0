@@ -9,18 +9,18 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
 from agent0.core.hyperdrive import HyperdriveActionType
-from agent0.core.hyperdrive.interactive import ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
-from agent0.core.hyperdrive.interactive.i_local_hyperdrive_agent import ILocalHyperdriveAgent
+from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
 
 
 def execute_random_trades(
     num_trades: int,
-    chain: ILocalChain,
+    chain: LocalChain,
     rng: Generator,
-    interactive_hyperdrive: ILocalHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
     advance_time: bool = False,
-) -> list[tuple[ILocalHyperdriveAgent, OpenLong | OpenShort]]:
+) -> list[tuple[LocalHyperdriveAgent, OpenLong | OpenShort]]:
     """Conduct some trades specified by the trade list.
     If advance time is true, the sum of all time passed between all trades will be between 0 and the position duration.
 
@@ -59,7 +59,7 @@ def execute_random_trades(
     # Generate a list of trades
     available_actions = np.array([HyperdriveActionType.OPEN_LONG, HyperdriveActionType.OPEN_SHORT])
     # Do the trades
-    trade_events: list[tuple[ILocalHyperdriveAgent, OpenLong | OpenShort]] = []
+    trade_events: list[tuple[LocalHyperdriveAgent, OpenLong | OpenShort]] = []
     for trade_index, trade_type in enumerate([rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]):
         trade_amount = _get_open_trade_amount(trade_type, rng, interactive_hyperdrive)
         # the short trade amount is technically bonds, but we know that will be less than the required base
@@ -79,7 +79,7 @@ def execute_random_trades(
 def _get_open_trade_amount(
     trade_type: HyperdriveActionType,
     rng: Generator,
-    interactive_hyperdrive: ILocalHyperdrive,
+    interactive_hyperdrive: LocalHyperdrive,
     max_budget: FixedPoint = FixedPoint("1e9"),
     percent_max: FixedPoint = FixedPoint("0.75"),
 ) -> FixedPoint:
@@ -122,18 +122,18 @@ def _get_open_trade_amount(
 
 @overload
 def _execute_trade(
-    trade_type: Literal[HyperdriveActionType.OPEN_LONG], trade_amount: FixedPoint, agent: ILocalHyperdriveAgent
+    trade_type: Literal[HyperdriveActionType.OPEN_LONG], trade_amount: FixedPoint, agent: LocalHyperdriveAgent
 ) -> OpenLong: ...
 
 
 @overload
 def _execute_trade(
-    trade_type: Literal[HyperdriveActionType.OPEN_SHORT], trade_amount: FixedPoint, agent: ILocalHyperdriveAgent
+    trade_type: Literal[HyperdriveActionType.OPEN_SHORT], trade_amount: FixedPoint, agent: LocalHyperdriveAgent
 ) -> OpenShort: ...
 
 
 def _execute_trade(
-    trade_type: HyperdriveActionType, trade_amount: FixedPoint, agent: ILocalHyperdriveAgent
+    trade_type: HyperdriveActionType, trade_amount: FixedPoint, agent: LocalHyperdriveAgent
 ) -> OpenLong | OpenShort:
     """Execute a trade given the type, amount, and agent.
 

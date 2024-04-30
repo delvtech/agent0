@@ -31,12 +31,12 @@ from agent0.ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface, ReceiptBreakdown
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveAgent
+    from agent0.core.hyperdrive import HyperdrivePolicyAgent
 
 
 async def async_execute_multi_agent_trades(
     interface: HyperdriveReadWriteInterface,
-    agents: list[HyperdriveAgent],
+    agents: list[HyperdrivePolicyAgent],
     liquidate: bool,
     randomize_liquidation: bool = False,
     interactive_mode: bool = False,
@@ -50,8 +50,8 @@ async def async_execute_multi_agent_trades(
     ---------
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
-    agents: list[HyperdriveAgent]
-        A list of HyperdriveAgent that are conducting the trades.
+    agents: list[HyperdrivePolicyAgent]
+        A list of HyperdrivePolicyAgent that are conducting the trades.
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions.
     randomize_liquidation: bool
@@ -92,7 +92,7 @@ async def async_execute_multi_agent_trades(
 
 
 async def _async_execute_single_agent_trade(
-    agent: HyperdriveAgent,
+    agent: HyperdrivePolicyAgent,
     interface: HyperdriveReadWriteInterface,
     liquidate: bool,
     randomize_liquidation: bool,
@@ -107,8 +107,8 @@ async def _async_execute_single_agent_trade(
 
     Arguments
     ---------
-    agent: HyperdriveAgent
-        The HyperdriveAgent that is conducting the trade
+    agent: HyperdrivePolicyAgent
+        The HyperdrivePolicyAgent that is conducting the trade
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object
     liquidate: bool
@@ -205,7 +205,7 @@ async def _async_execute_single_agent_trade(
 
 
 async def _async_match_contract_call_to_trade(
-    agent: HyperdriveAgent,
+    agent: HyperdrivePolicyAgent,
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
@@ -217,7 +217,7 @@ async def _async_match_contract_call_to_trade(
 
     Arguments
     ---------
-    agent: HyperdriveAgent
+    agent: HyperdrivePolicyAgent
         Object containing a wallet address and Agent for determining trades.
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.

@@ -11,7 +11,7 @@ from typing import NamedTuple, Sequence
 
 from web3 import Web3
 
-from agent0 import IHyperdrive
+from agent0 import Hyperdrive
 from agent0.core.base.config import EnvironmentConfig
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -104,7 +104,7 @@ def setup_fuzz(argv: Sequence[str] | None) -> tuple[Args, HyperdriveReadInterfac
 
     # Setup hyperdrive interface
     if parsed_args.pool_addr == "":
-        hyperdrive_addresses = IHyperdrive.get_hyperdrive_addresses_from_artifacts(eth_config.artifacts_uri)
+        hyperdrive_addresses = Hyperdrive.get_hyperdrive_addresses_from_artifacts(eth_config.artifacts_uri)
         if parsed_args.pool not in hyperdrive_addresses:
             raise ValueError(
                 f"Pool {parsed_args.pool} not recognized. Available options are {list(hyperdrive_addresses.keys())}"

@@ -9,5 +9,5 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
-from agent0.core.hyperdrive.interactive import IChain, IHyperdrive, ILocalChain, ILocalHyperdrive
+from agent0.core.hyperdrive.interactive import Chain, Hyperdrive, LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo

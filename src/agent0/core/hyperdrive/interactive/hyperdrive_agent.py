@@ -23,14 +23,14 @@ if TYPE_CHECKING:
         RedeemWithdrawalShares,
         RemoveLiquidity,
     )
-    from .i_hyperdrive import IHyperdrive
+    from .hyperdrive import Hyperdrive
 
 # We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
 # Hence, we call protected class methods in this class.
 # pylint: disable=protected-access
 
 
-class IHyperdriveAgent:
+class HyperdriveAgent:
     """Interactive Hyperdrive Agent.
     This class is barebones with documentation, will just call the corresponding function
     in the interactive hyperdrive class to keep all logic in the same place. Adding these
@@ -39,7 +39,7 @@ class IHyperdriveAgent:
 
     def __init__(
         self,
-        pool: IHyperdrive,
+        pool: Hyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,

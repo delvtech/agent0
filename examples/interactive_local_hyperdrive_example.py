@@ -8,16 +8,16 @@ import datetime
 
 from fixedpointmath import FixedPoint
 
-from agent0 import ILocalChain, ILocalHyperdrive
+from agent0 import LocalChain, LocalHyperdrive
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
-local_chain_config = ILocalChain.Config()
+local_chain_config = LocalChain.Config()
 # Launches a local chain in a subprocess
 # This also launches a local postgres docker container for data under the hood, attached to the chain.
 # Each hyperdrive pool will have it's own database within this container
 # NOTE: LocalChain is a subclass of Chain
-chain = ILocalChain(local_chain_config)
+chain = LocalChain(local_chain_config)
 # Can connect to a specific existing chain
 # existing_chain = Chain("http://localhost:8545")
 
@@ -26,18 +26,18 @@ chain = ILocalChain(local_chain_config)
 # An "admin" user (as provided by the Chain object) is launched/funded here for deploying hyperdrive
 
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-initial_pool_config = ILocalHyperdrive.Config()
+initial_pool_config = LocalHyperdrive.Config()
 # Launches 2 pools on the same local chain
-interactive_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
-interactive_hyperdrive_2 = ILocalHyperdrive(chain, initial_pool_config)
+hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+hyperdrive_2 = LocalHyperdrive(chain, initial_pool_config)
 
 # %%
 # Generate funded trading agents from the interactive object
 # Names are reflected on output data frames and plots later
-hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
-hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
+hyperdrive_agent0 = hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
+hyperdrive_agent1 = hyperdrive_2.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
 # Omission of name defaults to wallet address
-hyperdrive_agent2 = interactive_hyperdrive.init_agent(base=FixedPoint(100000))
+hyperdrive_agent2 = hyperdrive.init_agent(base=FixedPoint(100000))
 
 # Add funds to an agent
 hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
@@ -93,18 +93,18 @@ remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.wa
 
 # %%
 # Get data from database under the hood
-pool_config = interactive_hyperdrive.get_pool_config()
+pool_config = hyperdrive.get_pool_config()
 # The underlying data is in Decimal format, which is lossless. We don't care about precision
 # here, and pandas need a numerical float for plotting, so we coerce decimals to floats here
-pool_state = interactive_hyperdrive.get_pool_state(coerce_float=True)
+pool_state = hyperdrive.get_pool_state(coerce_float=True)
 # TODO checkpoint info doesn't play nice with advancing time.
 # This is because we don't create checkpoints when we advance time.
-checkpoint_info = interactive_hyperdrive.get_checkpoint_info()
+checkpoint_info = hyperdrive.get_checkpoint_info()
 
-current_wallet = interactive_hyperdrive.get_current_wallet()
-ticker = interactive_hyperdrive.get_ticker()
-wallet_positions = interactive_hyperdrive.get_wallet_positions()
-total_wallet_pnl_over_time = interactive_hyperdrive.get_total_wallet_pnl_over_time(coerce_float=True)
+current_wallet = hyperdrive.get_current_wallet()
+ticker = hyperdrive.get_ticker()
+wallet_positions = hyperdrive.get_wallet_positions()
+total_wallet_pnl_over_time = hyperdrive.get_total_wallet_pnl_over_time(coerce_float=True)
 
 # %%
 print(pool_state)

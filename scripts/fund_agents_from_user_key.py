@@ -8,7 +8,7 @@ import os
 from eth_account.account import Account
 
 from agent0.core import build_account_config_from_env
-from agent0.core.hyperdrive import HyperdriveAgent
+from agent0.core.hyperdrive import HyperdrivePolicyAgent
 from agent0.core.hyperdrive.utilities.run_bots import async_fund_agents
 from agent0.ethpy import build_eth_config
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, get_hyperdrive_addresses_from_artifacts
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     hyperdrive_address = get_hyperdrive_addresses_from_artifacts(
         os.path.join(eth_config.artifacts_uri, "addresses.json")
     )["erc4626_hyperdrive"]
-    user_account = HyperdriveAgent(Account().from_key(account_key_config.USER_KEY))
+    user_account = HyperdrivePolicyAgent(Account().from_key(account_key_config.USER_KEY))
 
     interface = HyperdriveReadInterface(eth_config, hyperdrive_address, read_retry_count=5)
 

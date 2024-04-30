@@ -25,7 +25,7 @@ from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
-    from agent0.core.hyperdrive import HyperdriveAgent, HyperdriveMarketAction
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdrivePolicyAgent
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
@@ -54,7 +54,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 def build_crash_trade_result(
     exception: Exception,
     interface: HyperdriveReadInterface,
-    agent: HyperdriveAgent | None = None,
+    agent: HyperdrivePolicyAgent | None = None,
     trade_object: Trade[HyperdriveMarketAction] | None = None,
     additional_info: dict[str, Any] | None = None,
     pool_state: PoolState | None = None,
@@ -67,10 +67,10 @@ def build_crash_trade_result(
         The exception that was thrown
     interface: HyperdriveReadInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-    agent: HyperdriveAgent | None, optional.
+    agent: HyperdrivePolicyAgent | None, optional.
         Object containing a wallet address and Agent for determining trades. If None, won't report the agent.
     trade_object: Trade[HyperdriveMarketAction] | None, optional
-        A trade provided by a HyperdriveAgent. If None, won't report the trade object.
+        A trade provided by a HyperdrivePolicyAgent. If None, won't report the trade object.
     additional_info: dict[str, Any] | None, optional
         Additional information used for crash reporting, optional
     pool_state: PoolState | None, optional
@@ -405,7 +405,7 @@ def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction] | Non
     }
 
 
-def _hyperdrive_agent_to_dict(agent: HyperdriveAgent | None):
+def _hyperdrive_agent_to_dict(agent: HyperdrivePolicyAgent | None):
     if agent is None:
         return {}
     return {"address": agent.checksum_address, "policy": agent.policy.name}

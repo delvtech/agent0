@@ -9,9 +9,9 @@ from typing import Callable, ParamSpec, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0 import IHyperdrive, ILocalChain, ILocalHyperdrive, PolicyZoo
+from agent0 import Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive.interactive.i_hyperdrive_agent import IHyperdriveAgent
+from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 
 ONE_HOUR_IN_SECONDS = 60 * 60
@@ -41,7 +41,7 @@ ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, ONE_DAY_IN_SECONDS)
 FEE_RANGE: tuple[float, float] = (0.0001, 0.2)
 
 
-def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_seed: int) -> ILocalHyperdrive.Config:
+def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_seed: int) -> LocalHyperdrive.Config:
     """Fuzz over hyperdrive config.
 
     Arguments
@@ -55,7 +55,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
 
     Returns
     -------
-    ILocalHyperdrive.Config
+    LocalHyperdrive.Config
         Fuzzed hyperdrive config.
     """
     # Position duration must be a multiple of checkpoint duration
@@ -83,7 +83,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
     # Generate flat fee in terms of APR
     flat_fee = FixedPoint(rng.uniform(*FEE_RANGE) * (position_duration / ONE_YEAR_IN_SECONDS))
 
-    return ILocalHyperdrive.Config(
+    return LocalHyperdrive.Config(
         preview_before_trade=True,
         rng=rng,
         log_to_rollbar=log_to_rollbar,
@@ -161,7 +161,7 @@ async def _async_runner(
 
 
 def run_fuzz_bots(
-    hyperdrive_pool: IHyperdrive,
+    hyperdrive_pool: Hyperdrive,
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -182,7 +182,7 @@ def run_fuzz_bots(
 
     Arguments
     ---------
-    hyperdrive_pool: IHyperdrive
+    hyperdrive_pool: Hyperdrive
         The hyperdrive pool to run the bots on.
     check_invariance: bool
         If True, will run invariance checks after each set of trades.
@@ -239,10 +239,10 @@ def run_fuzz_bots(
         minimum_avg_agent_base = base_budget_per_bot / FixedPoint(10)
 
     # Initialize agents
-    agents: list[IHyperdriveAgent] = []
+    agents: list[HyperdriveAgent] = []
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
-        agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
+        agent: HyperdriveAgent = hyperdrive_pool.init_agent(
             private_key=make_private_key(),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
@@ -255,7 +255,7 @@ def run_fuzz_bots(
         agents.append(agent)
 
     for _ in range(num_random_hold_agents):
-        agent: IHyperdriveAgent = hyperdrive_pool.init_agent(
+        agent: HyperdriveAgent = hyperdrive_pool.init_agent(
             private_key=make_private_key(),
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
@@ -354,8 +354,8 @@ def run_fuzz_bots(
 
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
-            # ILocalChain object
-            if isinstance(hyperdrive_pool.chain, ILocalChain):
+            # LocalChain object
+            if isinstance(hyperdrive_pool.chain, LocalChain):
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
@@ -363,14 +363,14 @@ def run_fuzz_bots(
                 random_time = int(hyperdrive_pool.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
-                raise ValueError("Random advance time only allowed for pools deployed on ILocalChain")
+                raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
 
         if random_variable_rate:
-            if isinstance(hyperdrive_pool, ILocalHyperdrive):
+            if isinstance(hyperdrive_pool, LocalHyperdrive):
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
                 assert hyperdrive_pool.config.rng is not None
                 random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(*VARIABLE_RATE_RANGE))
                 hyperdrive_pool.set_variable_rate(random_rate)
             else:
-                raise ValueError("Random variable rate only allowed for ILocalHyperdrive pools")
+                raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")

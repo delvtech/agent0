@@ -7,10 +7,10 @@ from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveWallet
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 
-from .i_chain import IChain
-from .i_hyperdrive import IHyperdrive
-from .i_local_chain import ILocalChain
-from .i_local_hyperdrive import ILocalHyperdrive
+from .chain import Chain
+from .hyperdrive import Hyperdrive
+from .local_chain import LocalChain
+from .local_hyperdrive import LocalHyperdrive
 
 # needed to pass in fixtures
 # pylint: disable=redefined-outer-name
@@ -70,28 +70,28 @@ def _ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: Hyperdr
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
 @pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool):
+def test_remote_funding_and_trades(chain: LocalChain, check_remote_chain: bool):
     """Deploy a local chain and point the remote interface to the local chain."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
-    initial_pool_config = ILocalHyperdrive.Config(
+    initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches a local hyperdrive pool
     # This deploys the pool
-    interactive_local_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    interactive_local_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
     hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
 
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
-        remote_chain = IChain(chain.rpc_uri)
-        interactive_remote_hyperdrive = IHyperdrive(remote_chain, hyperdrive_addresses)
+        remote_chain = Chain(chain.rpc_uri)
+        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
     else:
-        interactive_remote_hyperdrive = IHyperdrive(chain, hyperdrive_addresses)
+        interactive_remote_hyperdrive = Hyperdrive(chain, hyperdrive_addresses)
 
     # Generate trading agents from the interactive object
     hyperdrive_agent0 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
@@ -206,18 +206,18 @@ def test_remote_funding_and_trades(chain: ILocalChain, check_remote_chain: bool)
 
 @pytest.mark.anvil
 @pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool):
+def test_multi_account_bookkeeping(chain: LocalChain, check_remote_chain: bool):
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
-    initial_pool_config = ILocalHyperdrive.Config(
+    initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches a local hyperdrive pool
     # This deploys the pool
-    interactive_local_hyperdrive_0 = ILocalHyperdrive(chain, initial_pool_config)
-    interactive_local_hyperdrive_1 = ILocalHyperdrive(chain, initial_pool_config)
+    interactive_local_hyperdrive_0 = LocalHyperdrive(chain, initial_pool_config)
+    interactive_local_hyperdrive_1 = LocalHyperdrive(chain, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
     hyperdrive_addresses_0 = interactive_local_hyperdrive_0.get_hyperdrive_address()
@@ -225,12 +225,12 @@ def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool)
 
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
-        remote_chain = IChain(chain.rpc_uri)
-        interactive_remote_hyperdrive_0 = IHyperdrive(remote_chain, hyperdrive_addresses_0)
-        interactive_remote_hyperdrive_1 = IHyperdrive(remote_chain, hyperdrive_addresses_1)
+        remote_chain = Chain(chain.rpc_uri)
+        interactive_remote_hyperdrive_0 = Hyperdrive(remote_chain, hyperdrive_addresses_0)
+        interactive_remote_hyperdrive_1 = Hyperdrive(remote_chain, hyperdrive_addresses_1)
     else:
-        interactive_remote_hyperdrive_0 = IHyperdrive(chain, hyperdrive_addresses_0)
-        interactive_remote_hyperdrive_1 = IHyperdrive(chain, hyperdrive_addresses_1)
+        interactive_remote_hyperdrive_0 = Hyperdrive(chain, hyperdrive_addresses_0)
+        interactive_remote_hyperdrive_1 = Hyperdrive(chain, hyperdrive_addresses_1)
 
     # Generate trading agents from the interactive object
     private_key = make_private_key()
@@ -247,17 +247,17 @@ def test_multi_account_bookkeeping(chain: ILocalChain, check_remote_chain: bool)
 
 @pytest.mark.anvil
 @pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_no_policy_call(chain: ILocalChain, check_remote_chain: bool):
+def test_no_policy_call(chain: LocalChain, check_remote_chain: bool):
     """Deploy a local chain and point the remote interface to the local chain."""
-    initial_pool_config = ILocalHyperdrive.Config()
-    interactive_local_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    initial_pool_config = LocalHyperdrive.Config()
+    interactive_local_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
     hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
-        remote_chain = IChain(chain.rpc_uri)
-        interactive_remote_hyperdrive = IHyperdrive(remote_chain, hyperdrive_addresses)
+        remote_chain = Chain(chain.rpc_uri)
+        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
     else:
-        interactive_remote_hyperdrive = IHyperdrive(chain, hyperdrive_addresses)
+        interactive_remote_hyperdrive = Hyperdrive(chain, hyperdrive_addresses)
 
     # Create agent without policy passed in
     hyperdrive_agent = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
@@ -268,28 +268,28 @@ def test_no_policy_call(chain: ILocalChain, check_remote_chain: bool):
 
 @pytest.mark.anvil
 @pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_sync_wallet_from_chain(chain: ILocalChain, check_remote_chain: bool):
+def test_sync_wallet_from_chain(chain: LocalChain, check_remote_chain: bool):
     """Deploy a local chain and point the remote interface to the local chain."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
-    initial_pool_config = ILocalHyperdrive.Config(
+    initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches a local hyperdrive pool
     # This deploys the pool
-    interactive_local_hyperdrive = ILocalHyperdrive(chain, initial_pool_config)
+    interactive_local_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
     hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
 
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
-        remote_chain = IChain(chain.rpc_uri)
-        interactive_remote_hyperdrive = IHyperdrive(remote_chain, hyperdrive_addresses)
+        remote_chain = Chain(chain.rpc_uri)
+        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
     else:
-        interactive_remote_hyperdrive = IHyperdrive(chain, hyperdrive_addresses)
+        interactive_remote_hyperdrive = Hyperdrive(chain, hyperdrive_addresses)
 
     # Generate trading agents from the interactive object using the same underlying wallet
     private_key = make_private_key()

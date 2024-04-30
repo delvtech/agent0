@@ -25,7 +25,7 @@ from .trade_loop import trade_if_new_block
 if TYPE_CHECKING:
     from agent0.core import AccountKeyConfig
     from agent0.core.base.config import AgentConfig, EnvironmentConfig
-    from agent0.core.hyperdrive import HyperdriveAgent
+    from agent0.core.hyperdrive import HyperdrivePolicyAgent
     from agent0.ethpy import EthConfig
 
 START_LATENCY = 1
@@ -108,7 +108,7 @@ def _setup_agents(
     hyperdrive_address: ChecksumAddress | None = None,
     load_wallet_state: bool = True,
     liquidate: bool = False,
-) -> tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, ChecksumAddress]:
+) -> tuple[HyperdriveReadWriteInterface, list[HyperdrivePolicyAgent], EthConfig, ChecksumAddress]:
     """Entrypoint to setup agents for automated trading.
 
     .. note::
@@ -137,10 +137,10 @@ def _setup_agents(
 
     Returns
     -------
-    tuple[HyperdriveReadWriteInterface, list[HyperdriveAgent], EthConfig, ChecksumAddress]
+    tuple[HyperdriveReadWriteInterface, list[HyperdrivePolicyAgent], EthConfig, ChecksumAddress]
         A tuple containing:
             - The Hyperdrive interface API object
-            - A list of HyperdriveAgent objects that contain a wallet address and Agent for determining trades
+            - A list of HyperdrivePolicyAgent objects that contain a wallet address and Agent for determining trades
             - The eth_config with defaults assigned.
             - The contract_addresses with defaults assigned.
     """
@@ -216,7 +216,7 @@ def _run_agents(
     environment_config: EnvironmentConfig,
     account_key_config: AccountKeyConfig,
     interface: HyperdriveReadWriteInterface,
-    agent_accounts: list[HyperdriveAgent],
+    agent_accounts: list[HyperdrivePolicyAgent],
     liquidate: bool = False,
     minimum_avg_agent_base: FixedPoint | None = None,
 ):
@@ -233,8 +233,8 @@ def _run_agents(
         Dataclass containing configuration options for the agent account, including keys and budgets.
     interface: HyperdriveReadWriteInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-    agent_accounts: list[HyperdriveAgent]
-        A list of HyperdriveAgent that are conducting the trades
+    agent_accounts: list[HyperdrivePolicyAgent]
+        A list of HyperdrivePolicyAgent that are conducting the trades
     liquidate: bool, optional
         If set, will ignore all policy settings and liquidate all open positions.
         Defaults to False.

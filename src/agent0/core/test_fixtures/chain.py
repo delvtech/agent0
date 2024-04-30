@@ -9,11 +9,11 @@ import docker
 import pytest
 from docker.errors import DockerException
 
-from agent0.core.hyperdrive.interactive import ILocalChain
+from agent0.core.hyperdrive.interactive import LocalChain
 
 
 @pytest.fixture
-def chain() -> Iterator[ILocalChain]:
+def chain() -> Iterator[LocalChain]:
     """Local chain connected to a local database hosted in docker.
 
     Yield
@@ -44,7 +44,7 @@ def chain() -> Iterator[ILocalChain]:
         else:
             raise exc
 
-    local_chain_config = ILocalChain.Config()
-    _chain = ILocalChain(local_chain_config)
+    local_chain_config = LocalChain.Config()
+    _chain = LocalChain(local_chain_config)
     yield _chain
     _chain.cleanup()

@@ -13,7 +13,7 @@ from typing import NamedTuple, Sequence
 from eth_account.account import Account
 from fixedpointmath import FixedPoint
 
-from agent0.core.base import EthAgent
+from agent0.core.base import PolicyAgent
 from agent0.core.base.config import EnvironmentConfig
 from agent0.ethpy import EthConfig, build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider, set_anvil_account_balance, smart_contract_transact
@@ -120,12 +120,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Fund the checkpoint sender with some ETH.
     if parsed_args.fund:
         balance = FixedPoint(100).scaled_value
-        sender = EthAgent(Account().create("CHECKPOINT_BOT"))
+        sender = PolicyAgent(Account().create("CHECKPOINT_BOT"))
         set_anvil_account_balance(web3, sender.address, balance)
         logging.info("Successfully funded the sender=%s.", sender.address)
     else:
         private_key = os.getenv("CHECKPOINT_BOT_KEY")
-        sender = EthAgent(Account().from_key(private_key))
+        sender = PolicyAgent(Account().from_key(private_key))
 
     # Get the Hyperdrive contract.
     # TODO replace this with the hyperdrive interface

@@ -1,6 +1,6 @@
 """Interactive hyperdrive"""
 
-from .i_chain import IChain
-from .i_hyperdrive import IHyperdrive
-from .i_local_chain import ILocalChain
-from .i_local_hyperdrive import ILocalHyperdrive
+from .chain import Chain
+from .hyperdrive import Hyperdrive
+from .local_chain import LocalChain
+from .local_hyperdrive import LocalHyperdrive
