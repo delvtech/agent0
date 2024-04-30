@@ -282,8 +282,7 @@ def _check_present_value_greater_than_idle_shares(
     exception_data: dict[str, Any] = {}
 
     present_value = interface.calc_present_value(pool_state)
-    block_number = pool_state.block_number
-    idle_shares = interface.get_idle_shares(block_number)
+    idle_shares = interface.get_idle_shares(pool_state)
 
     if not present_value >= idle_shares:
         difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
