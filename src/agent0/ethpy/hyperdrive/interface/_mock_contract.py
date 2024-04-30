@@ -192,6 +192,26 @@ def _calc_spot_price_after_short(
     return FixedPoint(scaled_value=int(spot_price))
 
 
+def _calc_spot_price_after_long(
+    pool_state: PoolState,
+    base_amount: FixedPoint,
+    bond_amount: FixedPoint | None = None,
+) -> FixedPoint:
+    """See API for documentation."""
+    bond_amount_str: str | None
+    if bond_amount is None:
+        bond_amount_str = bond_amount
+    else:
+        bond_amount_str = str(bond_amount.scaled_value)
+    spot_price = hyperdrivepy.calculate_spot_price_after_long(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(base_amount.scaled_value),
+        bond_amount_str,
+    )
+    return FixedPoint(scaled_value=int(spot_price))
+
+
 def _calc_max_short(pool_state: PoolState, budget: FixedPoint) -> FixedPoint:
     """See API for documentation."""
     return FixedPoint(

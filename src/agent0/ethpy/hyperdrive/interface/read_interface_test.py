@@ -100,6 +100,9 @@ class TestHyperdriveReadInterface:
         long_close_time = maturity_time - 60 * 60 * 24
         _ = hyperdrive_read_interface.calc_close_long(mid_long, long_close_time)
 
+        # TODO compare values
+        _ = hyperdrive_read_interface.calc_spot_price_after_long(FixedPoint(100))
+
     def test_misc(self, hyperdrive_read_interface: HyperdriveReadInterface):
         """Miscellaneous tests only verify that the attributes exist and functions can be called.
 
