@@ -54,6 +54,7 @@ from ._mock_contract import (
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
     _calc_spot_price,
+    _calc_spot_price_after_long,
     _calc_spot_price_after_short,
     _calc_spot_rate,
     _calc_targeted_long,
@@ -715,6 +716,34 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_open_long(pool_state, base_amount)
+
+    def calc_spot_price_after_long(
+        self, base_amount: FixedPoint, bond_amount: FixedPoint | None = None, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the spot price for a given Hyperdrive pool after a long is opened for `base_amount`.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        base_amount: FixedPoint
+            The amount of base provided for the long.
+        bond_amount: FixedPoint | None, optional
+            The amount of bonds that would be purchased by the long.
+            The default is to use whatever is returned by `calc_open_long(base_amount)`.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The spot price for the Hyperdrive pool state.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_spot_price_after_long(pool_state, base_amount, bond_amount)
 
     def calc_max_long(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
