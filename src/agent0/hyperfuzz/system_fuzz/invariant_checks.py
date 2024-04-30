@@ -80,6 +80,7 @@ def run_invariant_checks(
         if message:
             exception_message.append(message)
         exception_data.update(data)
+        exception_data["block_number"] = pool_state.block_number
 
     # Log additional information if any test failed
     if any_check_failed:
