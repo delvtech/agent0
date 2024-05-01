@@ -53,7 +53,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Run the loop forever
     while True:
         # Check for new pools
-        latest_block = chain.curr_block_data()
+        latest_block = chain.block_data()
         latest_block_number = latest_block.get("number", None)
         if latest_block_number is None:
             raise AssertionError("Block has no number.")
@@ -63,7 +63,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             # Reset hyperdrive objs
             hyperdrive_objs: dict[str, Hyperdrive] = {}
             # First iteration, get list of deployed pools
-            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, parsed_args.registry_addr)
             for name, addr in deployed_pools.items():
                 logging.info("Adding pool %s", name)
                 hyperdrive_objs[name] = Hyperdrive(chain, addr)

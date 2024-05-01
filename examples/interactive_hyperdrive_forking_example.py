@@ -25,7 +25,7 @@ registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
 # Launch a local anvil chain forked from the rpc uri.
 chain = LocalChain(fork_uri=rpc_uri, fork_block_number=fork_block_number)
 
-hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
+hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
 
 # Note that we use Hyperdrive here instead of LocalHyperdrive,
 # as LocalHyperdrive deploys a new pool, whereas we want to connect to an existing pool
