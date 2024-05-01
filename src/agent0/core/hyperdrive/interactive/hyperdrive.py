@@ -125,17 +125,17 @@ class Hyperdrive:
     @classmethod
     def get_hyperdrive_addresses_from_registry(
         cls,
-        registry_contract_addr: str,
         chain: Chain,
+        registry_contract_addr: str,
     ) -> dict[str, ChecksumAddress]:
         """Gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
-        registry_contract_addr: str
-            The address of the Hyperdrive factory contract.
         chain: Chain
             The Chain object connected to a chain.
+        registry_contract_addr: str
+            The address of the Hyperdrive factory contract.
 
         Returns
         -------
@@ -243,10 +243,6 @@ class Hyperdrive:
             policy_obj = policy(policy_config)
 
         agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
-
-        # Add the public address to the chain object to avoid multiple objects
-        # with the same underlying account
-        self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
 
         self._sync_wallet(agent)
         return agent

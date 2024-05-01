@@ -99,7 +99,7 @@ def run_checkpoint_bot(
 
     while True:
         # Check if we've reached the block to exit
-        if block_to_exit is not None and chain.curr_block_number() >= block_to_exit:
+        if block_to_exit is not None and chain.block_number() >= block_to_exit:
             logging.info("Exiting checkpoint bot...")
             break
 
@@ -107,7 +107,7 @@ def run_checkpoint_bot(
         # be minted. This bot waits for a portion of the checkpoint to reduce
         # the probability of needing a checkpoint. After the waiting period,
         # the bot will attempt to mint a checkpoint.
-        latest_block = chain.curr_block_data()
+        latest_block = chain.block_data()
         timestamp = latest_block.get("timestamp", None)
         if timestamp is None:
             raise AssertionError(f"{latest_block=} has no timestamp")
@@ -158,7 +158,7 @@ def run_checkpoint_bot(
             if check_checkpoint:
                 # TODO: Add crash report
                 assert receipt["status"] == 1, "Checkpoint failed."
-                latest_block = chain.curr_block_data()
+                latest_block = chain.block_data()
                 timestamp = latest_block.get("timestamp", None)
                 if timestamp is None:
                     raise AssertionError(f"{latest_block=} has no timestamp")
@@ -217,7 +217,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     while True:
         logging.info("Checking for new pools...")
         # Reset hyperdrive objs
-        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, parsed_args.registry_addr)
 
         logging.info("Running for all pools...")
 
@@ -237,7 +237,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 funcs=partials,
                 chain=chain,
                 sender=sender,
-                block_to_exit=chain.curr_block_number() + pool_check_num_blocks,
+                block_to_exit=chain.block_number() + pool_check_num_blocks,
             )
         )
 

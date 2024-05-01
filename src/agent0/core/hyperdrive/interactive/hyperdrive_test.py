@@ -206,47 +206,6 @@ def test_remote_funding_and_trades(chain: LocalChain, check_remote_chain: bool):
 
 @pytest.mark.anvil
 @pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_multi_account_bookkeeping(chain: LocalChain, check_remote_chain: bool):
-    # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
-    initial_pool_config = LocalHyperdrive.Config(
-        initial_liquidity=FixedPoint(1_000),
-        initial_fixed_apr=FixedPoint("0.05"),
-        position_duration=60 * 60 * 24 * 365,  # 1 year
-    )
-    # Launches a local hyperdrive pool
-    # This deploys the pool
-    interactive_local_hyperdrive_0 = LocalHyperdrive(chain, initial_pool_config)
-    interactive_local_hyperdrive_1 = LocalHyperdrive(chain, initial_pool_config)
-
-    # Gather relevant objects from the local hyperdrive
-    hyperdrive_addresses_0 = interactive_local_hyperdrive_0.get_hyperdrive_address()
-    hyperdrive_addresses_1 = interactive_local_hyperdrive_1.get_hyperdrive_address()
-
-    # Connect to the local chain using the remote hyperdrive interface
-    if check_remote_chain:
-        remote_chain = Chain(chain.rpc_uri)
-        interactive_remote_hyperdrive_0 = Hyperdrive(remote_chain, hyperdrive_addresses_0)
-        interactive_remote_hyperdrive_1 = Hyperdrive(remote_chain, hyperdrive_addresses_1)
-    else:
-        interactive_remote_hyperdrive_0 = Hyperdrive(chain, hyperdrive_addresses_0)
-        interactive_remote_hyperdrive_1 = Hyperdrive(chain, hyperdrive_addresses_1)
-
-    # Generate trading agents from the interactive object
-    private_key = make_private_key()
-    _ = interactive_remote_hyperdrive_0.init_agent(private_key=private_key)
-
-    # Initializing an agent with an existing key should fail
-    with pytest.raises(ValueError):
-        _ = interactive_remote_hyperdrive_0.init_agent(private_key=private_key)
-
-    # Initializing an agent with an existing key on a separate pool should fail
-    with pytest.raises(ValueError):
-        _ = interactive_remote_hyperdrive_1.init_agent(private_key=private_key)
-
-
-@pytest.mark.anvil
-@pytest.mark.parametrize("check_remote_chain", [True, False])
 def test_no_policy_call(chain: LocalChain, check_remote_chain: bool):
     """Deploy a local chain and point the remote interface to the local chain."""
     initial_pool_config = LocalHyperdrive.Config()
