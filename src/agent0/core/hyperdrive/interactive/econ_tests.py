@@ -7,9 +7,10 @@ from decimal import Decimal
 import numpy as np
 import pandas as pd
 import pytest
+from fixedpointmath import FixedPoint
+
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.utilities import predict_long, predict_short
-from fixedpointmath import FixedPoint
 
 YEAR_IN_SECONDS = 31_536_000
 
