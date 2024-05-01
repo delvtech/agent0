@@ -10,7 +10,7 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.utilities import predict_long, predict_short
+from agent0.core.hyperdrive.utilities import predict_long, predict_short
 
 YEAR_IN_SECONDS = 31_536_000
 
