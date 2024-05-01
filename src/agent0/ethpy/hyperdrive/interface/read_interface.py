@@ -48,6 +48,7 @@ from ._mock_contract import (
     _calc_max_short,
     _calc_open_long,
     _calc_open_short,
+    _calc_open_short_share_adjustment,
     _calc_position_duration_in_years,
     _calc_present_value,
     _calc_shares_in_given_bonds_out_down,
@@ -848,6 +849,28 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_open_short(pool_state, bond_amount, pool_state.pool_info.vault_share_price)
+
+    def calc_open_short_share_adjustment(
+        self, bond_amount: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the amount of shares the pool will add after opening a short.
+
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount to of bonds to short.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of base to add to the pool share reserves.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_open_short_share_adjustment(pool_state, bond_amount)
 
     def calc_spot_price_after_short(
         self, bond_amount: FixedPoint, base_amount: FixedPoint | None = None, pool_state: PoolState | None = None

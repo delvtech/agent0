@@ -127,14 +127,14 @@ class TestHyperdriveReadInterface:
         _ = hyperdrive_read_interface_fixture.current_pool_state.vault_shares
         _ = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
         current_time = hyperdrive_read_interface_fixture.current_pool_state.block_time
-        maturity_time = (
-            current_time + hyperdrive_read_interface_fixture.current_pool_state.pool_config.position_duration
-        )
 
         # Short
-        bond_amount = hyperdrive_read_interface_fixture.calc_max_short(budget=FixedPoint(1_000_000))
-        base_amount = hyperdrive_read_interface_fixture.calc_open_short(bond_amount)
+        bond_amount = FixedPoint(100)
         price_with_default = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount)
+        base_amount = (
+            hyperdrive_read_interface_fixture.calc_open_short_share_adjustment(bond_amount)
+            * hyperdrive_read_interface_fixture.current_pool_state.pool_info.vault_share_price
+        )
         price_with_base_amount = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount, base_amount)
         assert (
             price_with_default == price_with_base_amount
@@ -143,7 +143,7 @@ class TestHyperdriveReadInterface:
             bond_amount=FixedPoint(10),
             open_vault_share_price=hyperdrive_read_interface_fixture.current_pool_state.checkpoint.vault_share_price,
             close_vault_share_price=hyperdrive_read_interface_fixture.current_pool_state.pool_info.vault_share_price,
-            maturity_time=maturity_time,
+            maturity_time=current_time + 100,
         )
 
         # LP
