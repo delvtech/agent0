@@ -46,7 +46,7 @@ def test_symmetry(chain: LocalChain):
 
 
 # parametrize with time_stretch_apr
-@pytest.mark.parametrize("time_stretch_apr", [1])
+@pytest.mark.parametrize("time_stretch_apr", [0.01, 0.05, 0.1, 0.5, 1])
 @pytest.mark.anvil
 def test_discoverability(chain: LocalChain, time_stretch_apr: float):
     """Test discoverability of rates by time stretch."""
@@ -86,7 +86,7 @@ def test_discoverability(chain: LocalChain, time_stretch_apr: float):
         pool_state.pool_info.bond_reserves += long_trade.pool.bonds
         pool_state.pool_info.share_reserves += long_trade.pool.shares
         long_price = interface.calc_spot_price(pool_state)
-        long_rate = interface.calc_fixed_rate(pool_state)
+        long_rate = interface.calc_spot_rate(pool_state)
         records.append((trade_size, trade_portion, long_price, long_rate, time_stretch_apr))
     for trade_portion in trade_portion_list:
         short_price = short_rate = None
@@ -97,7 +97,7 @@ def test_discoverability(chain: LocalChain, time_stretch_apr: float):
         pool_state.pool_info.bond_reserves += short_trade.pool.bonds
         pool_state.pool_info.share_reserves += short_trade.pool.shares
         short_price = interface.calc_spot_price(pool_state)
-        short_rate = interface.calc_fixed_rate(pool_state)
+        short_rate = interface.calc_spot_rate(pool_state)
         records.append((-trade_size, -trade_portion, short_price, short_rate, time_stretch_apr))
     new_result = pd.DataFrame.from_records(records, columns=["trade_size", "portion", "price", "rate", "time_stretch_apr"])
     logging.info(f"\n{new_result[['trade_size', 'portion', 'price', 'rate']]}")
@@ -128,7 +128,7 @@ def test_lp_pnl(chain: LocalChain):
 
             manual_agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
             manual_agent.open_short(bonds=FixedPoint(9_050_000))
-            logging.info(f"New rate: {interface.calc_fixed_rate()}")
+            logging.info(f"New rate: {interface.calc_spot_rate()}")
 
 
 def test_lp_pnl_calculator(chain: LocalChain):
@@ -182,7 +182,7 @@ def test_lp_pnl_calculator(chain: LocalChain):
             if k is not None:
                 print(f"{k:6}: {float(v):>17,.0f}")
         pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
-        print("fixed rate is", interactive_hyperdrive.interface.calc_fixed_rate(pool_state))
+        print("fixed rate is", interactive_hyperdrive.interface.calc_spot_rate(pool_state))
         print(f"lp_share_price={pool_state.pool_info.lp_share_price}")
 
         print(f"=== TRADE ({trade_size:,.0f}) ===")
@@ -197,7 +197,7 @@ def test_lp_pnl_calculator(chain: LocalChain):
         for agent in interactive_hyperdrive._pool_agents:  # pylint: disable=protected-access
             spent_base[agent.name] = starting_base[agent.name] - agent.wallet.balance.amount
         ending_pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
-        new_fixed_rate = interactive_hyperdrive.interface.calc_fixed_rate(ending_pool_state)
+        new_fixed_rate = interactive_hyperdrive.interface.calc_spot_rate(ending_pool_state)
         print("fixed rate is", new_fixed_rate)
         print(f"lp_share_price={ending_pool_state.pool_info.lp_share_price}")
         # set variable rate equal to fixed rate
@@ -240,7 +240,7 @@ def test_lp_pnl_calculator(chain: LocalChain):
         lp_larry_return_abs = lp_larry_ending_base - lp_larry_starting_base
         lp_larry_return_pct = lp_larry_return_abs / lp_larry_starting_base
         ending_pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
-        print("fixed rate is", interactive_hyperdrive.interface.calc_fixed_rate(ending_pool_state))
+        print("fixed rate is", interactive_hyperdrive.interface.calc_spot_rate(ending_pool_state))
         print(f"lp_share_price={ending_pool_state.pool_info.lp_share_price}")
         print("returns:")
         # calculate rule of thumb return
