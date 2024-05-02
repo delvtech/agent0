@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 from fixedpointmath import FixedPoint
+from utils import run_with_funded_bot
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
@@ -153,15 +154,4 @@ class TestWalletAgainstChain:
     ):
         """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
 
-        agent = hyperdrive.init_agent(
-            base=FixedPoint(10_000_000),
-            eth=FixedPoint(100),
-            policy=WalletTestAgainstChainPolicy,
-            policy_config=WalletTestAgainstChainPolicy.Config(
-                slippage_tolerance=FixedPoint("0.0001"),
-            ),
-        )
-
-        # Run test trades
-        while not agent.policy_done_trading:
-            agent.execute_policy_action()
+        run_with_funded_bot(hyperdrive, WalletTestAgainstChainPolicy)
