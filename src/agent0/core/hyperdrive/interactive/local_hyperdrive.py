@@ -587,7 +587,6 @@ class LocalHyperdrive(Hyperdrive):
                 "Adding new agent with existing snapshot. "
                 "This object will no longer be valid if the snapshot is loaded."
             )
-            raise ValueError("Cannot add a new agent after saving a snapshot")
         if base is None:
             base = FixedPoint(0)
         if eth is None:
