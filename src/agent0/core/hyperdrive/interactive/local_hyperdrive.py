@@ -10,7 +10,7 @@ import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from threading import Thread
-from typing import Type
+from typing import Literal, Type, overload
 
 import dill
 import pandas as pd
@@ -1112,7 +1112,17 @@ class LocalHyperdrive(Hyperdrive):
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
-    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+    ) -> ReceiptBreakdown: ...
+
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+    ) -> ReceiptBreakdown | None: ...
+
+    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
         # We add specific data to the trade result from interactive hyperdrive
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
@@ -1126,7 +1136,11 @@ class LocalHyperdrive(Hyperdrive):
                 else:
                     trade_result.additional_info["ticker"] = self.get_ticker()
 
-        return super()._handle_trade_result(trade_result)
+        # This check is necessary for subclass overloading and typing,
+        # as types are narrowed based on the literal `always_throw_exception`
+        if always_throw_exception:
+            return super()._handle_trade_result(trade_result, always_throw_exception)
+        return super()._handle_trade_result(trade_result, always_throw_exception)
 
     def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         out = super()._open_long(agent, base)

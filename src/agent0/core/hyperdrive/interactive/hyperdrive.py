@@ -70,6 +70,10 @@ class Hyperdrive:
     class Config:
         """The configuration for the interactive hyperdrive class."""
 
+        exception_on_policy_error: bool = True
+        """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
+        exception_on_policy_slippage: bool = False
+        """When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False."""
         preview_before_trade: bool = False
         """Whether to preview the position before executing a trade. Defaults to False."""
         rng_seed: int | None = None
@@ -299,7 +303,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
     def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
@@ -311,7 +315,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
     def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
@@ -322,7 +326,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
     def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
@@ -333,7 +337,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
     def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
@@ -344,7 +348,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
     def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
@@ -355,7 +359,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
     def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
@@ -366,7 +370,7 @@ class Hyperdrive:
                 self.interface, agent, trade_object, self.config.always_execute_policy_post_action
             )
         )
-        tx_receipt = self._handle_trade_result(trade_results)
+        tx_receipt = self._handle_trade_result(trade_results, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def _execute_policy_action(
@@ -384,10 +388,11 @@ class Hyperdrive:
         out_events = []
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result)
-            assert trade_result.trade_object is not None
-            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
+            tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=False)
+            if tx_receipt is not None:
+                assert trade_result.trade_object is not None
+                action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
+                out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
         # Build event from tx_receipt
         return out_events
 
@@ -407,14 +412,25 @@ class Hyperdrive:
 
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result)
-            assert trade_result.trade_object is not None
-            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
+            tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=False)
+            if tx_receipt is not None:
+                assert trade_result.trade_object is not None
+                action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
+                out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
         # Build event from tx_receipt
         return out_events
 
-    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+    ) -> ReceiptBreakdown: ...
+
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+    ) -> ReceiptBreakdown | None: ...
+
+    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
         if trade_result.status == TradeStatus.FAIL:
             # Defaults to CRITICAL
             assert trade_result.exception is not None
@@ -427,11 +443,18 @@ class Hyperdrive:
                 rollbar_log_prefix=self.config.rollbar_log_prefix,
                 additional_info=self.config.crash_report_additional_info,
             )
-            # TODO likely want to expose a "crash if slippage" flag and only
-            # raise if we want to check slippage.
-            raise trade_result.exception
 
-        assert trade_result.status == TradeStatus.SUCCESS
+            if self.config.exception_on_policy_error:
+                # Check for slippage and if we want to throw an exception on slippage
+                if (
+                    always_throw_exception
+                    or (not trade_result.is_slippage)
+                    or (trade_result.is_slippage and self.config.exception_on_policy_slippage)
+                ):
+                    raise trade_result.exception
+
+        if trade_result.status != TradeStatus.SUCCESS:
+            return None
         tx_receipt = trade_result.tx_receipt
         assert tx_receipt is not None
         return tx_receipt
