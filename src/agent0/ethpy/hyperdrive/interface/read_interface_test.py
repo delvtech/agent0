@@ -132,7 +132,7 @@ class TestHyperdriveReadInterface:
         bond_amount = FixedPoint(100)
         price_with_default = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount)
         base_amount = (
-            hyperdrive_read_interface_fixture.calc_open_short_share_adjustment(bond_amount)
+            hyperdrive_read_interface_fixture.calc_pool_deltas_after_open_short(bond_amount)
             * hyperdrive_read_interface_fixture.current_pool_state.pool_info.vault_share_price
         )
         price_with_base_amount = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount, base_amount)
