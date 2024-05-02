@@ -163,7 +163,5 @@ class TestWalletAgainstChain:
         )
 
         # Run test trades
-        # TODO expose done_trading via the policy
-        # for now, we hard code the number of times to trade here
-        for _ in range(8):
+        while not agent.policy_done_trading:
             agent.execute_policy_action()

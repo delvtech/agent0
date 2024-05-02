@@ -78,6 +78,11 @@ class HyperdriveAgent:
         """Return the checksum address of the account."""
         return self.agent.checksum_address
 
+    @property
+    def policy_done_trading(self) -> bool:
+        """Return whether the agent's policy is done trading."""
+        return self.agent.done_trading
+
     def open_long(self, base: FixedPoint) -> OpenLong:
         """Opens a long for this agent.
 

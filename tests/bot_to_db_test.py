@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-import os
 from decimal import Decimal
 from typing import Type
 
@@ -57,9 +55,7 @@ class TestBotToDb:
         )
 
         # Run trades
-        # TODO expose "done_trading" via the policy
-        # For now, we hard code the number of times to trade here
-        for _ in range(7):
+        while not agent.policy_done_trading:
             agent.execute_policy_action()
 
         # Run bots again, but this time only for 3 trades
@@ -72,10 +68,11 @@ class TestBotToDb:
             policy=cycle_trade_policy,
             policy_config=cycle_trade_policy.Config(
                 slippage_tolerance=FixedPoint("0.0001"),
+                max_trades=3,
             ),
         )
 
-        for _ in range(3):
+        while not agent.policy_done_trading:
             agent.execute_policy_action()
 
         # This bot does the following known trades in sequence:
