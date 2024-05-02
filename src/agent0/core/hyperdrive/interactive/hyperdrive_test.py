@@ -252,8 +252,8 @@ def test_sync_wallet_from_chain(chain: LocalChain, check_remote_chain: bool):
 
     # Generate trading agents from the interactive object using the same underlying wallet
     private_key = make_private_key()
+    hyperdrive_local_agent = interactive_local_hyperdrive.init_agent(private_key=private_key, eth=FixedPoint(10))
     hyperdrive_remote_agent = interactive_remote_hyperdrive.init_agent(private_key=private_key)
-    hyperdrive_local_agent = interactive_local_hyperdrive.init_agent(private_key=private_key)
 
     # TODO check balance of calls in this test
 

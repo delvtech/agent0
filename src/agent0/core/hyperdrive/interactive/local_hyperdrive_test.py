@@ -95,7 +95,7 @@ def test_funding_and_trades(chain: LocalChain):
     hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
     hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(222_222), eth=FixedPoint(222), name="bob")
     # Omission of name defaults to wallet address
-    hyperdrive_agent2 = interactive_hyperdrive.init_agent()
+    hyperdrive_agent2 = interactive_hyperdrive.init_agent(eth=FixedPoint(10))
 
     # Add funds to an agent
     hyperdrive_agent2.add_funds(base=FixedPoint(333_333), eth=FixedPoint(333))
@@ -449,7 +449,7 @@ def test_set_variable_rate(chain: LocalChain):
     interactive_hyperdrive = LocalHyperdrive(chain, config)
 
     # Make a trade to mine the block on this variable rate so it shows up in the data pipeline
-    _ = interactive_hyperdrive.init_agent()
+    _ = interactive_hyperdrive.init_agent(eth=FixedPoint(10))
 
     # Set the variable rate
     # This mines a block since it's a transaction
@@ -471,7 +471,9 @@ def test_access_deployer_account(chain: LocalChain):
     interactive_hyperdrive = LocalHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
     pubkey = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    larry = interactive_hyperdrive.init_agent(
+        base=FixedPoint(100_000), eth=FixedPoint(10), name="larry", private_key=privkey
+    )
     larry_pubkey = larry.wallet.address.hex().strip("0x").lower()
     assert larry_pubkey == pubkey.lower().strip("0x")  # deployer public key
 
@@ -484,7 +486,9 @@ def test_access_deployer_liquidity(chain: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
-    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    larry = interactive_hyperdrive.init_agent(
+        base=FixedPoint(100_000), eth=FixedPoint(10), name="larry", private_key=privkey
+    )
     assert (
         FixedPoint(
             scaled_value=interactive_hyperdrive.interface.hyperdrive_contract.functions.balanceOf(
@@ -506,7 +510,9 @@ def test_remove_deployer_liquidity(chain: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(chain, config)
     privkey = chain.get_deployer_account_private_key()  # anvil account 0
-    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    larry = interactive_hyperdrive.init_agent(
+        base=FixedPoint(100_000), eth=FixedPoint(10), name="larry", private_key=privkey
+    )
     larry.remove_liquidity(shares=larry.wallet.lp_tokens)
     assert larry.wallet.lp_tokens == 0
     assert (
@@ -542,7 +548,7 @@ def test_get_config_with_transactions(chain: LocalChain):
 def test_liquidate(chain: LocalChain):
     """Test liquidation."""
     interactive_hyperdrive = LocalHyperdrive(chain)
-    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), eth=FixedPoint(10), name="alice")
     alice.open_long(base=FixedPoint(100))
     alice.open_short(bonds=FixedPoint(100))
     alice.add_liquidity(base=FixedPoint(100))
@@ -559,7 +565,7 @@ def test_random_liquidate(chain: LocalChain):
     # Explicitly setting a random seed to remove randomness in the test
     interactive_config = LocalHyperdrive.Config(rng_seed=1234)
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), eth=FixedPoint(10), name="alice")
 
     # We run the same trades 5 times, and ensure there's at least one difference
     # between the 5 liquidations.
@@ -656,6 +662,7 @@ def test_policy_config_forgotten(chain: LocalChain):
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="alice",
         policy=PolicyZoo.random,
     )
@@ -671,6 +678,7 @@ def test_policy_config_none_rng(chain: LocalChain):
     agent_policy.rng = None
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="alice",
         policy=PolicyZoo.random,
         policy_config=agent_policy,
@@ -708,7 +716,7 @@ def test_snapshot_policy_state(chain: LocalChain):
 
     # Initialize agent with sub policy
     interactive_hyperdrive = LocalHyperdrive(chain)
-    agent = interactive_hyperdrive.init_agent(policy=_SubPolicy)
+    agent = interactive_hyperdrive.init_agent(eth=FixedPoint(10), policy=_SubPolicy)
     # Snapshot state
     chain.save_snapshot()
 
@@ -750,12 +758,14 @@ def test_load_rng_on_snapshot(chain: LocalChain):
 
     alice = load_rng_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="alice",
         policy=PolicyZoo.random,
         policy_config=agent_policy,
     )
     bob = non_load_rng_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="bob",
         policy=PolicyZoo.random,
         policy_config=agent_policy,
