@@ -17,6 +17,10 @@ def init_hyperdrive(init_chain: LocalChain):
     # liquidity as the first trade of the pool.
     config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
+        # TODO this differs from the default, rework
+        # the set of trades to do to ensure withdrawal shares
+        # instead of changing the default here
+        position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     return LocalHyperdrive(init_chain, config)
 
