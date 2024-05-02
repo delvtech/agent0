@@ -570,7 +570,7 @@ class LocalHyperdrive(Hyperdrive):
             The amount of base to fund the agent with. Defaults to 0.
             If a private key is provided then the base amount is added to their previous balance.
         eth: FixedPoint, optional
-            The amount of ETH to fund the agent with. Defaults to 10.
+            The amount of ETH to fund the agent with. Defaults to 0.
             If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
@@ -586,7 +586,7 @@ class LocalHyperdrive(Hyperdrive):
         if base is None:
             base = FixedPoint(0)
         if eth is None:
-            eth = FixedPoint(10)
+            eth = FixedPoint(0)
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng

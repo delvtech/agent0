@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING
 import docker
 from docker.errors import NotFound
 from docker.models.containers import Container
+from eth_account.account import Account
+from eth_account.signers.local import LocalAccount
 from web3.types import RPCEndpoint
 
 from agent0.chainsync import PostgresConfig
@@ -157,6 +159,17 @@ class LocalChain(Chain):
         """
         # TODO this is the deployed account for anvil, get this programmatically
         return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+
+    def get_deployer_account_address(self) -> str:
+        """Get the public key of the deployer account.
+
+        Returns
+        -------
+        src
+            The public key for the deployer account.
+        """
+        account: LocalAccount = Account().from_key(self.get_deployer_account_private_key())
+        return account.address
 
     def _advance_chain_time(self, time_delta: int) -> None:
         # We explicitly set the next block timestamp to be exactly time_delta seconds

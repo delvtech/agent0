@@ -5,16 +5,12 @@ from __future__ import annotations
 import logging
 import os
 from decimal import Decimal
-from typing import Type, cast
+from typing import Type
 
 import numpy as np
 import pandas as pd
 import pytest
-from eth_account.signers.local import LocalAccount
-from eth_typing import URI
 from fixedpointmath import FixedPoint, isclose
-from sqlalchemy.orm import Session
-from web3 import HTTPProvider
 
 from agent0.chainsync.db.hyperdrive.interface import (
     get_current_wallet,
@@ -24,14 +20,10 @@ from agent0.chainsync.db.hyperdrive.interface import (
     get_transactions,
     get_wallet_deltas,
 )
-from agent0.chainsync.exec import acquire_data, data_analysis
-from agent0.core import build_account_key_config_from_agent_config
-from agent0.core.base.config import AgentConfig, EnvironmentConfig
-from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
+from agent0.core.base.make_key import make_private_key
+from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.test_utils import CycleTradesPolicy
-from agent0.ethpy import EthConfig
-from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
-from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
+from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
@@ -47,130 +39,44 @@ class TestBotToDb:
     @pytest.mark.anvil
     def test_bot_to_db(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
         cycle_trade_policy: Type[CycleTradesPolicy],
-        db_session: Session,
-        db_api: str,
     ):
         """Run the entire pipeline and checks the database at the end. All arguments are fixtures."""
-        # Run this test with develop mode on
-        os.environ["DEVELOP"] = "true"
-        # Get hyperdrive chain info
-        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-        rpc_uri = uri if uri else URI("http://localhost:8545")
-        deploy_account: LocalAccount = local_hyperdrive_pool.deploy_account
-        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
-        base_contract_address = local_hyperdrive_pool.base_token_contract.address
-        vault_shares_contract_address = local_hyperdrive_pool.vault_shares_token_contract.address
 
-        # Build environment config
-        env_config = EnvironmentConfig(
-            delete_previous_logs=False,
-            halt_on_errors=True,
-            log_filename="system_test",
-            log_level=logging.INFO,
-            log_stdout=True,
-            global_random_seed=1234,
-            username="test",
-        )
-
-        # Build agent config
-        agent_config: list[AgentConfig] = [
-            AgentConfig(
-                policy=cycle_trade_policy,
-                number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
-                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(
-                    slippage_tolerance=FixedPoint("0.0001"),
-                ),
+        # Initialize agent
+        private_key = make_private_key()
+        agent = hyperdrive.init_agent(
+            private_key=private_key,
+            base=FixedPoint(1_000_000),
+            eth=FixedPoint(100),
+            policy=cycle_trade_policy,
+            policy_config=cycle_trade_policy.Config(
+                slippage_tolerance=FixedPoint("0.0001"),
             ),
-        ]
-
-        # No need for random seed, this bot is deterministic
-        account_key_config = build_account_key_config_from_agent_config(agent_config)
-
-        # Build custom eth config pointing to local test chain
-        eth_config = EthConfig(
-            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-            artifacts_uri="not_used",
-            database_api_uri=db_api,
-            rpc_uri=rpc_uri,
-            # Using default abi dir
         )
 
-        # Run bots
-        setup_and_run_agent_loop(
-            env_config,
-            agent_config,
-            account_key_config,
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
-        )
+        # Run trades
+        # TODO expose "done_trading" via the policy
+        # For now, we hard code the number of times to trade here
+        for _ in range(7):
+            agent.execute_policy_action()
 
-        # Run acquire data to get data from chain to db
-        acquire_data(
-            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
-            eth_config=eth_config,
-            db_session=db_session,
-            hyperdrive_address=hyperdrive_contract_address,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
-
-        # Run data analysis to calculate various analysis values
-        data_analysis(
-            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
-            eth_config=eth_config,
-            db_session=db_session,
-            hyperdrive_address=hyperdrive_contract_address,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
-
-        # Run bots again, but this time only for 4 trades
-
-        # Build agent config
-        agent_config: list[AgentConfig] = [
-            AgentConfig(
-                policy=cycle_trade_policy,
-                number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
-                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=cycle_trade_policy.Config(
-                    slippage_tolerance=FixedPoint("0.0001"),
-                    max_trades=3,
-                ),
+        # Run bots again, but this time only for 3 trades
+        # TODO agent rework will allow us to separate policy from agent
+        # but for now, we need to reinitialize another agent with the same
+        # key to run the policy from scratch again
+        agent = hyperdrive.init_agent(
+            private_key=private_key,
+            # We don't add funds here again, as the agent already has funds
+            policy=cycle_trade_policy,
+            policy_config=cycle_trade_policy.Config(
+                slippage_tolerance=FixedPoint("0.0001"),
             ),
-        ]
-
-        setup_and_run_agent_loop(
-            env_config,
-            agent_config,
-            account_key_config,
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
         )
 
-        # Run acquire data to get data from chain to db
-        acquire_data(
-            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
-            eth_config=eth_config,
-            db_session=db_session,
-            hyperdrive_address=hyperdrive_contract_address,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
-
-        # Run data analysis to calculate various analysis values
-        data_analysis(
-            start_block=local_hyperdrive_pool.deploy_block_number,
-            eth_config=eth_config,
-            db_session=db_session,
-            hyperdrive_address=hyperdrive_contract_address,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
+        for _ in range(3):
+            agent.execute_policy_action()
 
         # This bot does the following known trades in sequence:
         # 1. addLiquidity of 111_111 base
@@ -187,7 +93,8 @@ class TestBotToDb:
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
-        db_pool_config_df: pd.DataFrame = get_pool_config(db_session, coerce_float=False)
+
+        db_pool_config_df: pd.DataFrame = get_pool_config(hyperdrive.db_session, coerce_float=False)
 
         # TODO these expected values are defined in src/agent0/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
@@ -200,19 +107,20 @@ class TestBotToDb:
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
+        deployer_address = hyperdrive.chain.get_deployer_account_address()
         expected_pool_config = {
-            "contract_address": hyperdrive_contract_address,
-            "base_token": base_contract_address,
-            "vault_shares_token": vault_shares_contract_address,
+            "contract_address": hyperdrive.get_hyperdrive_address(),
+            "base_token": hyperdrive._deployed_hyperdrive.base_token_contract.address,
+            "vault_shares_token": hyperdrive._deployed_hyperdrive.vault_shares_token_contract.address,
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
             "position_duration": 60 * 60 * 24 * 365,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,
-            "governance": deploy_account.address,
-            "fee_collector": deploy_account.address,
-            "sweep_collector": deploy_account.address,
+            "governance": deployer_address,
+            "fee_collector": deployer_address,
+            "sweep_collector": deployer_address,
             "curve_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
             "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05% APR
             "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
@@ -236,7 +144,7 @@ class TestBotToDb:
             assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
 
         # Pool info comparison
-        db_pool_info: pd.DataFrame = get_pool_info(db_session, coerce_float=False)
+        db_pool_info: pd.DataFrame = get_pool_info(hyperdrive.db_session, coerce_float=False)
         expected_pool_info_keys = [
             # Keys from contract call
             "block_number",
@@ -268,11 +176,11 @@ class TestBotToDb:
         # Convert to sets and compare
         assert set(db_pool_info.columns) == set(expected_pool_info_keys)
 
-        db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
+        db_transaction_info: pd.DataFrame = get_transactions(hyperdrive.db_session, coerce_float=False)
         # TODO check transaction keys
         # This likely involves cleaning up what columns we grab from transactions
 
-        db_wallet_delta: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
+        db_wallet_delta: pd.DataFrame = get_wallet_deltas(hyperdrive.db_session, coerce_float=False)
 
         # Ensure trades exist in database
         # Should be 10 total transactions
@@ -448,28 +356,25 @@ class TestBotToDb:
                 # TODO check pool info after this tx
 
         # Check final wallet positions
-        db_current_wallet: pd.DataFrame = get_current_wallet(db_session, coerce_float=False)
+        db_current_wallet: pd.DataFrame = get_current_wallet(hyperdrive.db_session, coerce_float=False)
         # TODO currently only shorts are not dependent on poolinfo, so we only check shorts here
         # Eventually we want to double check all token types
         short_pos = db_current_wallet[db_current_wallet["base_token_type"] == "SHORT"]
         assert short_pos.iloc[0]["value"] == Decimal(333)
 
         # Check spot price and fixed rate
-        db_pool_analysis: pd.DataFrame = get_pool_analysis(db_session, coerce_float=False)
+        db_pool_analysis: pd.DataFrame = get_pool_analysis(hyperdrive.db_session, coerce_float=False)
         # Compare last value to what hyperdrive interface is reporting
-        hyperdrive = HyperdriveReadInterface(
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
-        )
+        interface = hyperdrive.interface
         latest_pool_analysis = db_pool_analysis.iloc[-1]
 
         latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
-        expected_spot_price = hyperdrive.calc_spot_price()
+        expected_spot_price = interface.calc_spot_price()
 
         latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-        expected_fixed_rate = hyperdrive.calc_spot_rate()
+        expected_fixed_rate = interface.calc_spot_rate()
 
-        assert latest_pool_analysis["block_number"] == hyperdrive.current_pool_state.block_number
+        assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
         # Spot price and fixed rate is off by one wei
         assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("1e-18"))
         assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("1e-18"))
