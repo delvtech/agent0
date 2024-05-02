@@ -2,31 +2,21 @@
 
 from __future__ import annotations
 
-import logging
-import os
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import pytest
-from eth_typing import URI
 from fixedpointmath import FixedPoint
-from sqlalchemy.orm import Session
-from web3 import HTTPProvider
 
 from agent0.chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
-from agent0.chainsync.exec import acquire_data, data_analysis
-from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base import Trade
-from agent0.core.base.config import AgentConfig, EnvironmentConfig
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
+from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
-from agent0.ethpy import EthConfig
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
-    from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 class MultiTradePolicy(HyperdriveBasePolicy):
@@ -85,9 +75,7 @@ class TestMultiTradePerBlock:
     @pytest.mark.docker
     def test_multi_trade_per_block(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
-        db_session: Session,
-        db_api: str,
+        hyperdrive: LocalHyperdrive,
     ):
         """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # TODO local_hyperdrive_pool is currently being run with automining. Hence, multiple trades
@@ -95,77 +83,15 @@ class TestMultiTradePerBlock:
         # For now, this is simply testing that the introduction of async trades doesn't break
         # when automining.
 
-        # Run this test with develop mode on
-        os.environ["DEVELOP"] = "true"
-
-        # Get hyperdrive chain info
-        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-        rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
-
-        # Build environment config
-        env_config = EnvironmentConfig(
-            delete_previous_logs=True,
-            halt_on_errors=True,
-            # We don't want tests to write lots of files
-            crash_report_to_file=False,
-            log_filename=".logging/multi_trade_per_block_test.log",
-            log_level=logging.INFO,
-            log_stdout=True,
-            global_random_seed=1234,
-            username="test",
+        agent = hyperdrive.init_agent(
+            base=FixedPoint(10_000_000),
+            eth=FixedPoint(100),
+            policy=MultiTradePolicy,
+            policy_config=MultiTradePolicy.Config(),
         )
 
-        # Build agent config
-        agent_config: list[AgentConfig] = [
-            AgentConfig(
-                policy=MultiTradePolicy,
-                number_of_agents=1,
-                base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
-                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=MultiTradePolicy.Config(),
-            ),
-        ]
-
-        # No need for random seed, this bot is deterministic
-        account_key_config = build_account_key_config_from_agent_config(agent_config)
-
-        # Build custom eth config pointing to local test chain
-        eth_config = EthConfig(
-            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-            artifacts_uri="not_used",
-            rpc_uri=rpc_uri,
-            database_api_uri=db_api,
-            # Using default abi dir
-        )
-
-        setup_and_run_agent_loop(
-            env_config,
-            agent_config,
-            account_key_config,
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
-        )
-
-        # Run acquire data to get data from chain to db
-        acquire_data(
-            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
-            eth_config=eth_config,
-            db_session=db_session,
-            hyperdrive_address=hyperdrive_contract_address,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
-
-        # Run data analysis to calculate various analysis values
-        data_analysis(
-            start_block=local_hyperdrive_pool.deploy_block_number,  # We only want to get data past the deploy block
-            eth_config=eth_config,
-            db_session=db_session,
-            hyperdrive_address=hyperdrive_contract_address,
-            # Exit the script after catching up to the chain
-            exit_on_catch_up=True,
-        )
+        while not agent.policy_done_trading:
+            agent.execute_policy_action()
 
         # Ensure all 4 trades went through
         # 1. addLiquidity of 111_111 base
@@ -173,7 +99,7 @@ class TestMultiTradePerBlock:
         # 3. openLong of 22_222 base
         # 4. openShort of 33_333 bonds
 
-        db_transaction_info: pd.DataFrame = get_transactions(db_session, coerce_float=False)
+        db_transaction_info: pd.DataFrame = get_transactions(hyperdrive.db_session, coerce_float=False)
         expected_number_of_transactions = 4
         assert len(db_transaction_info == expected_number_of_transactions)
         # Checking first add liquidity
@@ -184,7 +110,7 @@ class TestMultiTradePerBlock:
         assert "openLong" in trxs
         assert "openShort" in trxs
 
-        db_ticker: pd.DataFrame = get_ticker(db_session, coerce_float=False)
+        db_ticker: pd.DataFrame = get_ticker(hyperdrive.db_session, coerce_float=False)
         assert len(db_ticker == expected_number_of_transactions)
         assert "addLiquidity" == db_ticker["trade_type"].iloc[0]
         ticker_ops = db_ticker["trade_type"].iloc[1:].to_list()
@@ -192,7 +118,7 @@ class TestMultiTradePerBlock:
         assert "openLong" in ticker_ops
         assert "openShort" in ticker_ops
 
-        wallet_deltas: pd.DataFrame = get_wallet_deltas(db_session, coerce_float=False)
+        wallet_deltas: pd.DataFrame = get_wallet_deltas(hyperdrive.db_session, coerce_float=False)
         # Ensure deltas only exist for valid trades
         # 2 for each trade
         assert len(wallet_deltas) == 2 * expected_number_of_transactions
