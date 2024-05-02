@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from agent0.chainsync.test_fixtures import database_engine, db_api, db_session, dummy_session, psql_docker
+from agent0.chainsync.test_fixtures import database_engine, db_session, dummy_session, psql_docker
 from agent0.core.test_utils import cycle_trade_policy
 from agent0.test_fixtures import (
     chain,
@@ -63,7 +63,6 @@ __all__ = [
     "init_hyperdrive",
     "cycle_trade_policy",
     "database_engine",
-    "db_api",
     "db_session",
     "dummy_session",
     "hyperdrive_read_interface",
