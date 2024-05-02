@@ -1222,6 +1222,20 @@ class LocalHyperdrive(Hyperdrive):
                 agent.checksum_address, db_balances, self.interface.base_token_contract
             )
 
+    def _save_agent_bookkeeping(self, save_dir: str) -> None:
+        """Saves the policy state to file.
+
+        Arguments
+        ---------
+        save_dir: str
+            The directory to save the state to.
+        """
+        policy_file = save_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
+        agents = [agent.checksum_address for agent in self._pool_agents]
+        with open(policy_file, "wb") as file:
+            # We use dill, as pickle can't store local objects
+            dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
+
     def _save_policy_state(self, save_dir: str) -> None:
         """Saves the policy state to file.
 
@@ -1237,6 +1251,22 @@ class LocalHyperdrive(Hyperdrive):
             with open(policy_file, "wb") as file:
                 # We use dill, as pickle can't store local objects
                 dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
+
+    def _load_agent_bookkeeping(self, load_dir: str) -> None:
+        """Loads the list of agents from file.
+
+        Arguments
+        ---------
+        load_dir: str
+            The directory to load the state from.
+        """
+        policy_file = load_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
+        with open(policy_file, "rb") as file:
+            # We use dill, as pickle can't store local objects
+            load_agents = dill.load(file)
+        # Remove references of all agents added after snapshot
+        # NOTE: existing agent objects initialized after snapshot will no longer be valid.
+        self._pool_agents = [agent for agent in self._pool_agents if agent.checksum_address in load_agents]
 
     def _load_policy_state(self, load_dir: str) -> None:
         """Loads the policy state from file.
