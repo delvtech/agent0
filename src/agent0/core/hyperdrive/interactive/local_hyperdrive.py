@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import pathlib
 import subprocess
@@ -582,6 +583,10 @@ class LocalHyperdrive(Hyperdrive):
         """
         # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            logging.warning(
+                "Adding new agent with existing snapshot. "
+                "This object will no longer be valid if the snapshot is loaded."
+            )
             raise ValueError("Cannot add a new agent after saving a snapshot")
         if base is None:
             base = FixedPoint(0)
@@ -1084,9 +1089,12 @@ class LocalHyperdrive(Hyperdrive):
         eth: FixedPoint,
         signer_account: LocalAccount | None = None,
     ) -> None:
+
         # TODO this can be fixed by getting actual base values from the chain.
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            raise ValueError("Cannot add funds to an agent after saving a snapshot")
+        # TODO this will no longer be an issue once we refactor
+        # wallets to be from events + db
+        if base > 0 and eth > 0 and self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            logging.warning("Adding funds to to an agent after saving a snapshot. This may make pnl values incorrect.")
 
         # Adding funds default to the deploy account
         if signer_account is None:
