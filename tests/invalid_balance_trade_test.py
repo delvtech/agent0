@@ -2,19 +2,14 @@
 
 from __future__ import annotations
 
-import logging
-import os
-from typing import TYPE_CHECKING, Type, cast
+from typing import TYPE_CHECKING
 
 import pytest
-from eth_typing import URI
 from fixedpointmath import FixedPoint
-from web3 import HTTPProvider
+from utils import expect_failure_with_funded_bot, expect_failure_with_non_funded_bot
 from web3.exceptions import ContractCustomError, ContractLogicError, ContractPanicError
 
-from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base import Trade
-from agent0.core.base.config import AgentConfig, EnvironmentConfig
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
@@ -25,14 +20,12 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
+from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
-from agent0.ethpy import EthConfig
 from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
-    from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 # ruff: noqa: PLR2004 (magic values used for counter)
 
@@ -40,6 +33,8 @@ if TYPE_CHECKING:
 # Start by defining policies for failed trades
 # One policy per failed trade
 # Starting with empty wallet, catching any closing trades.
+
+# TODO clean up this test by not using policies and instead executing trades directly
 
 
 class InvalidAddLiquidity(HyperdriveBasePolicy):
@@ -467,116 +462,14 @@ class InvalidRedeemWithdrawFromNonZero(HyperdriveBasePolicy):
 class TestInvalidTrades:
     """Test pipeline from bots making trades to viewing the trades in the db."""
 
-    def _build_and_run_with_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
-    ):
-        # Run this test with develop mode on
-        os.environ["DEVELOP"] = "true"
-
-        env_config = EnvironmentConfig(
-            delete_previous_logs=True,
-            halt_on_errors=True,
-            # We don't want tests to write lots of files
-            crash_report_to_file=False,
-            log_filename=".logging/invalid_test.log",
-            log_level=logging.INFO,
-            log_stdout=True,
-            global_random_seed=1234,
-            username="test",
-        )
-
-        # Get hyperdrive chain info
-        rpc_uri: URI | None = cast(HTTPProvider, in_hyperdrive_pool.web3.provider).endpoint_uri
-        assert rpc_uri is not None
-        hyperdrive_contract_address = in_hyperdrive_pool.hyperdrive_contract.address
-
-        # Build agent config
-        agent_config: list[AgentConfig] = [
-            AgentConfig(
-                policy=in_policy,
-                number_of_agents=1,
-                base_budget_wei=FixedPoint("1_000_000").scaled_value,  # 1 million base
-                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=in_policy.Config(),
-            ),
-        ]
-        account_key_config = build_account_key_config_from_agent_config(agent_config)
-        # Build custom eth config pointing to local test chain
-        eth_config = EthConfig(
-            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-            artifacts_uri="not_used",
-            rpc_uri=rpc_uri,
-        )
-        setup_and_run_agent_loop(
-            env_config,
-            agent_config,
-            account_key_config,
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
-            load_wallet_state=False,
-        )
-        # If this reaches this point, the agent was successful, which means this test should fail
-        assert False, "Agent was successful with known invalid trade"
-
-    def _build_and_run_with_non_funded_bot(
-        self, in_hyperdrive_pool: DeployedHyperdrivePool, in_policy: Type[HyperdriveBasePolicy]
-    ):
-        # Run this test with develop mode on
-        os.environ["DEVELOP"] = "true"
-
-        env_config = EnvironmentConfig(
-            delete_previous_logs=True,
-            halt_on_errors=True,
-            # We don't want tests to write lots of files
-            crash_report_to_file=False,
-            log_filename=".logging/invalid_test.log",
-            log_level=logging.INFO,
-            log_stdout=True,
-            global_random_seed=1234,
-            username="test",
-        )
-
-        # Get hyperdrive chain info
-        rpc_uri: URI | None = cast(HTTPProvider, in_hyperdrive_pool.web3.provider).endpoint_uri
-        assert rpc_uri is not None
-        hyperdrive_contract_address = in_hyperdrive_pool.hyperdrive_contract.address
-
-        # Build agent config
-        agent_config: list[AgentConfig] = [
-            AgentConfig(
-                policy=in_policy,
-                number_of_agents=1,
-                base_budget_wei=FixedPoint("10").scaled_value,  # 10 base
-                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=in_policy.Config(),
-            ),
-        ]
-        account_key_config = build_account_key_config_from_agent_config(agent_config)
-        # Build custom eth config pointing to local test chain
-        eth_config = EthConfig(
-            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-            artifacts_uri="not_used",
-            rpc_uri=rpc_uri,
-        )
-        setup_and_run_agent_loop(
-            env_config,
-            agent_config,
-            account_key_config,
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
-            load_wallet_state=False,
-        )
-        # If this reaches this point, the agent was successful, which means this test should fail
-        assert False, "Agent was successful with known invalid trade"
-
     @pytest.mark.anvil
     def test_invalid_add_liquidity(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidAddLiquidity)
+            expect_failure_with_non_funded_bot(hyperdrive, InvalidAddLiquidity)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -593,11 +486,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_open_long(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidOpenLong)
+            expect_failure_with_non_funded_bot(hyperdrive, InvalidOpenLong)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -614,11 +507,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_open_short(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            self._build_and_run_with_non_funded_bot(local_hyperdrive_pool, InvalidOpenShort)
+            expect_failure_with_non_funded_bot(hyperdrive, InvalidOpenShort)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -635,11 +528,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_zero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid remove liquidity with zero lp tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquidityFromZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidRemoveLiquidityFromZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -654,11 +547,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_long_from_zero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid close long with zero long tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseLongFromZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongFromZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -674,11 +567,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_short_from_zero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid close long with zero long tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseShortFromZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortFromZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -694,11 +587,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_share_from_zero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid redeem withdrawal shares with zero withdrawal tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdrawFromZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidRedeemWithdrawFromZero)
         # This is catching a value error, since this transaction is actually valid on the chain
         # We're explicitly catching this and throwing a value error in redeem withdraw shares
         except ValueError as exc:
@@ -712,11 +605,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_nonzero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid remove liquidity trade with nonzero lp tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquidityFromNonZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidRemoveLiquidityFromNonZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -731,11 +624,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_long_from_nonzero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test when making a invalid close long with nonzero long tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseLongFromNonZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongFromNonZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -750,11 +643,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_short_from_nonzero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid close short with nonzero short tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidCloseShortFromNonZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortFromNonZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -769,11 +662,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_from_nonzero(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid close short with nonzero short tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdrawFromNonZero)
+            expect_failure_with_funded_bot(hyperdrive, InvalidRedeemWithdrawFromNonZero)
         # This is catching a value error, since this transaction is actually valid on the chain
         # We're explicitly catching this and throwing a value error in redeem withdraw shares
         except ValueError as exc:
@@ -787,11 +680,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_in_pool(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        hyperdrive: LocalHyperdrive,
     ):
         """Test making a invalid close short with nonzero short tokens."""
         try:
-            self._build_and_run_with_funded_bot(local_hyperdrive_pool, InvalidRedeemWithdrawInPool)
+            expect_failure_with_funded_bot(hyperdrive, InvalidRedeemWithdrawInPool)
         # This is catching a value error, since this transaction is actually valid on the chain
         # We're explicitly catching this and throwing a value error in redeem withdraw shares
         except ValueError as exc:
