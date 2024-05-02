@@ -19,6 +19,8 @@ class Chain:
         rpc_uri: str
             The uri for the chain to connect to, e.g., `http://localhost:8545`.
         """
+        # TODO setup logging here
+
         self.rpc_uri = rpc_uri
         # Initialize web3 here for rpc calls
         self._web3 = initialize_web3_with_http_provider(self.rpc_uri, reset_provider=False)
