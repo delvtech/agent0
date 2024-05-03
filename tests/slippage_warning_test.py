@@ -231,14 +231,14 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_no_halt_on_slippage(
         self,
-        chain: LocalChain,
+        fast_chain_fixture: LocalChain,
     ):
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
             exception_on_policy_slippage=False,
         )
-        hyperdrive = LocalHyperdrive(chain, config)
+        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
         # All of these calls should pass if we're not halting on slippage
         run_with_funded_bot(hyperdrive, InvalidOpenLongSlippage)
         run_with_funded_bot(hyperdrive, InvalidOpenShortSlippage)
@@ -248,14 +248,14 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_invalid_slippage_open_long(
         self,
-        chain: LocalChain,
+        fast_chain_fixture: LocalChain,
     ):
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
             exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(chain, config)
+        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenLongSlippage)
         except ContractCallException as exc:
@@ -264,14 +264,14 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_invalid_slippage_open_short(
         self,
-        chain: LocalChain,
+        fast_chain_fixture: LocalChain,
     ):
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
             exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(chain, config)
+        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenShortSlippage)
         except ContractCallException as exc:
@@ -283,14 +283,14 @@ class TestSlippageWarning:
     # @pytest.mark.docker
     # def test_invalid_slippage_remove_liquidity(
     #    self,
-    #    chain: LocalChain,
+    #    fast_chain_fixture: LocalChain,
     # ):
     #    config = LocalHyperdrive.Config(
     #        initial_liquidity=FixedPoint(1_000),
     #        position_duration=60 * 60 * 24 * 365,  # 1 year
     #        exception_on_policy_slippage=True,
     #    )
-    #    hyperdrive = LocalHyperdrive(chain, config)
+    #    hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     #    try:
     #        expected_failure_with_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquiditySlippage)
     #    except ContractCallException as exc:
@@ -299,14 +299,14 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_invalid_slippage_close_long(
         self,
-        chain: LocalChain,
+        fast_chain_fixture: LocalChain,
     ):
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
             exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(chain, config)
+        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongSlippage)
         except ContractCallException as exc:
@@ -315,14 +315,14 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_invalid_slippage_close_short(
         self,
-        chain: LocalChain,
+        fast_chain_fixture: LocalChain,
     ):
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
             exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(chain, config)
+        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortSlippage)
         except ContractCallException as exc:

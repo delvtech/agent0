@@ -37,14 +37,14 @@ class TestBotToDb:
     @pytest.mark.anvil
     def test_bot_to_db(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
         cycle_trade_policy: Type[CycleTradesPolicy],
     ):
         """Run the entire pipeline and checks the database at the end. All arguments are fixtures."""
 
         # Initialize agent
         private_key = make_private_key()
-        agent = hyperdrive.init_agent(
+        agent = fast_hyperdrive_fixture.init_agent(
             private_key=private_key,
             base=FixedPoint(1_000_000),
             eth=FixedPoint(100),
@@ -62,7 +62,7 @@ class TestBotToDb:
         # TODO agent rework will allow us to separate policy from agent
         # but for now, we need to reinitialize another agent with the same
         # key to run the policy from scratch again
-        agent = hyperdrive.init_agent(
+        agent = fast_hyperdrive_fixture.init_agent(
             private_key=private_key,
             # We don't add funds here again, as the agent already has funds
             policy=cycle_trade_policy,
@@ -91,7 +91,7 @@ class TestBotToDb:
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
 
-        db_pool_config_df: pd.DataFrame = get_pool_config(hyperdrive.db_session, coerce_float=False)
+        db_pool_config_df: pd.DataFrame = get_pool_config(fast_hyperdrive_fixture.db_session, coerce_float=False)
 
         # TODO these expected values are defined in src/agent0/ethpy/test_fixtures/deploy_hyperdrive.py
         # Eventually, we want to parameterize these values to pass into deploying hyperdrive
@@ -104,12 +104,12 @@ class TestBotToDb:
         expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
-        deployer_address = hyperdrive.chain.get_deployer_account_address()
+        deployer_address = fast_hyperdrive_fixture.chain.get_deployer_account_address()
         # pylint: disable=protected-access
-        base_token_addr = hyperdrive._deployed_hyperdrive.base_token_contract.address
-        vault_shares_token_addr = hyperdrive._deployed_hyperdrive.vault_shares_token_contract.address
+        base_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.base_token_contract.address
+        vault_shares_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.vault_shares_token_contract.address
         expected_pool_config = {
-            "contract_address": hyperdrive.get_hyperdrive_address(),
+            "contract_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
             "base_token": base_token_addr,
             "vault_shares_token": vault_shares_token_addr,
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
@@ -144,7 +144,7 @@ class TestBotToDb:
             assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
 
         # Pool info comparison
-        db_pool_info: pd.DataFrame = get_pool_info(hyperdrive.db_session, coerce_float=False)
+        db_pool_info: pd.DataFrame = get_pool_info(fast_hyperdrive_fixture.db_session, coerce_float=False)
         expected_pool_info_keys = [
             # Keys from contract call
             "block_number",
@@ -176,11 +176,11 @@ class TestBotToDb:
         # Convert to sets and compare
         assert set(db_pool_info.columns) == set(expected_pool_info_keys)
 
-        db_transaction_info: pd.DataFrame = get_transactions(hyperdrive.db_session, coerce_float=False)
+        db_transaction_info: pd.DataFrame = get_transactions(fast_hyperdrive_fixture.db_session, coerce_float=False)
         # TODO check transaction keys
         # This likely involves cleaning up what columns we grab from transactions
 
-        db_wallet_delta: pd.DataFrame = get_wallet_deltas(hyperdrive.db_session, coerce_float=False)
+        db_wallet_delta: pd.DataFrame = get_wallet_deltas(fast_hyperdrive_fixture.db_session, coerce_float=False)
 
         # Ensure trades exist in database
         # Should be 10 total transactions
@@ -356,16 +356,16 @@ class TestBotToDb:
                 # TODO check pool info after this tx
 
         # Check final wallet positions
-        db_current_wallet: pd.DataFrame = get_current_wallet(hyperdrive.db_session, coerce_float=False)
+        db_current_wallet: pd.DataFrame = get_current_wallet(fast_hyperdrive_fixture.db_session, coerce_float=False)
         # TODO currently only shorts are not dependent on poolinfo, so we only check shorts here
         # Eventually we want to double check all token types
         short_pos = db_current_wallet[db_current_wallet["base_token_type"] == "SHORT"]
         assert short_pos.iloc[0]["value"] == Decimal(333)
 
         # Check spot price and fixed rate
-        db_pool_analysis: pd.DataFrame = get_pool_analysis(hyperdrive.db_session, coerce_float=False)
+        db_pool_analysis: pd.DataFrame = get_pool_analysis(fast_hyperdrive_fixture.db_session, coerce_float=False)
         # Compare last value to what hyperdrive interface is reporting
-        interface = hyperdrive.interface
+        interface = fast_hyperdrive_fixture.interface
         latest_pool_analysis = db_pool_analysis.iloc[-1]
 
         latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))

@@ -57,7 +57,7 @@ def launch_chain(port_base) -> LocalChain:
 
 
 @pytest.fixture(scope="function")
-def clean_chain() -> Iterator[LocalChain]:
+def chain_fixture() -> Iterator[LocalChain]:
     """Local chain connected to a local database hosted in docker.
     This fixture launches a chain from scratch in a function scope.
 
@@ -89,7 +89,7 @@ def init_chain() -> Iterator[LocalChain]:
 
 
 @pytest.fixture(scope="function")
-def chain(init_chain: LocalChain) -> Iterator[LocalChain]:
+def fast_chain_fixture(init_chain: LocalChain) -> Iterator[LocalChain]:
     """Local chain connected to a local database hosted in docker.
     This fixture uses snapshot on an existing chain in a function scope.
 

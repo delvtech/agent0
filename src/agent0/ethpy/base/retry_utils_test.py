@@ -7,12 +7,12 @@ from agent0.ethpy.base import retry_call
 
 
 @pytest.mark.anvil
-def test_retry_call_success(chain: LocalChain, caplog: pytest.LogCaptureFixture):
+def test_retry_call_success(fast_chain_fixture: LocalChain, caplog: pytest.LogCaptureFixture):
     """Verify that a bogus call produces the correct number of retries."""
     retry_count = 5
     # getting the block should always work
 
-    web3 = chain._web3  # pylint: disable=protected-access
+    web3 = fast_chain_fixture._web3  # pylint: disable=protected-access
 
     _ = retry_call(retry_count, None, web3.eth.get_block, "latest", full_transactions=True)
     retries = [r for r in caplog.records if r.message.startswith("Retry")]

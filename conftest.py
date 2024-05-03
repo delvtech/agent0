@@ -10,12 +10,12 @@ import pytest
 from agent0.chainsync.test_fixtures import database_engine, db_session, dummy_session, psql_docker
 from agent0.core.test_utils import cycle_trade_policy
 from agent0.test_fixtures import (
-    chain,
-    clean_chain,
-    clean_hyperdrive,
-    hyperdrive,
-    hyperdrive_read_interface,
-    hyperdrive_read_write_interface,
+    chain_fixture,
+    fast_chain_fixture,
+    fast_hyperdrive_fixture,
+    hyperdrive_fixture,
+    hyperdrive_read_interface_fixture,
+    hyperdrive_read_write_interface_fixture,
     init_chain,
     init_hyperdrive,
 )
@@ -59,17 +59,17 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 # This allows for users of fixtures to not have to import all dependency fixtures when running
 # NOTE: this means pytest can only be ran from this directory
 __all__ = [
-    "chain",
-    "clean_chain",
+    "fast_chain_fixture",
+    "chain_fixture",
     "init_chain",
-    "hyperdrive",
-    "clean_hyperdrive",
+    "fast_hyperdrive_fixture",
+    "hyperdrive_fixture",
     "init_hyperdrive",
     "cycle_trade_policy",
     "database_engine",
     "db_session",
     "dummy_session",
-    "hyperdrive_read_interface",
-    "hyperdrive_read_write_interface",
+    "hyperdrive_read_interface_fixture",
+    "hyperdrive_read_write_interface_fixture",
     "psql_docker",
 ]

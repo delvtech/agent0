@@ -243,10 +243,10 @@ class TestMinTxAmount:
     @pytest.mark.anvil
     def test_invalid_add_liquidity_min_txn(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidAddLiquidity)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidAddLiquidity)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -261,10 +261,10 @@ class TestMinTxAmount:
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_min_txn(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidRemoveLiquidity)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidity)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -281,10 +281,10 @@ class TestMinTxAmount:
     @pytest.mark.anvil
     def test_invalid_open_long_min_txn(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidOpenLong)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidOpenLong)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -299,10 +299,10 @@ class TestMinTxAmount:
     @pytest.mark.anvil
     def test_invalid_open_short_min_txn(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidOpenShort)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidOpenShort)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -317,10 +317,10 @@ class TestMinTxAmount:
     @pytest.mark.anvil
     def test_invalid_close_long_min_txn(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidCloseLong)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLong)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -335,10 +335,10 @@ class TestMinTxAmount:
     @pytest.mark.anvil
     def test_invalid_close_short_min_txn(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidCloseShort)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShort)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here

@@ -150,8 +150,8 @@ class TestWalletAgainstChain:
     @pytest.mark.anvil
     def test_wallet_against_chain(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
 
-        run_with_funded_bot(hyperdrive, WalletTestAgainstChainPolicy)
+        run_with_funded_bot(fast_hyperdrive_fixture, WalletTestAgainstChainPolicy)

@@ -465,11 +465,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_add_liquidity(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            expect_failure_with_non_funded_bot(hyperdrive, InvalidAddLiquidity)
+            expect_failure_with_non_funded_bot(fast_hyperdrive_fixture, InvalidAddLiquidity)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -486,11 +486,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_open_long(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            expect_failure_with_non_funded_bot(hyperdrive, InvalidOpenLong)
+            expect_failure_with_non_funded_bot(fast_hyperdrive_fixture, InvalidOpenLong)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -507,11 +507,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_open_short(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Tests when making a trade with not enough base in wallet."""
         try:
-            expect_failure_with_non_funded_bot(hyperdrive, InvalidOpenShort)
+            expect_failure_with_non_funded_bot(fast_hyperdrive_fixture, InvalidOpenShort)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -528,11 +528,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_zero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid remove liquidity with zero lp tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidRemoveLiquidityFromZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidityFromZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -547,11 +547,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_long_from_zero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid close long with zero long tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongFromZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLongFromZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -567,11 +567,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_short_from_zero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid close long with zero long tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortFromZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShortFromZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -587,11 +587,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_share_from_zero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid redeem withdrawal shares with zero withdrawal tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidRedeemWithdrawFromZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRedeemWithdrawFromZero)
         # This is catching a value error, since this transaction is actually valid on the chain
         # We're explicitly catching this and throwing a value error in redeem withdraw shares
         except ValueError as exc:
@@ -605,11 +605,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_nonzero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid remove liquidity trade with nonzero lp tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidRemoveLiquidityFromNonZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidityFromNonZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -624,11 +624,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_long_from_nonzero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test when making a invalid close long with nonzero long tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongFromNonZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLongFromNonZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -643,11 +643,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_close_short_from_nonzero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid close short with nonzero short tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortFromNonZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShortFromNonZero)
         except ContractCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
@@ -662,11 +662,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_from_nonzero(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid close short with nonzero short tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidRedeemWithdrawFromNonZero)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRedeemWithdrawFromNonZero)
         # This is catching a value error, since this transaction is actually valid on the chain
         # We're explicitly catching this and throwing a value error in redeem withdraw shares
         except ValueError as exc:
@@ -680,11 +680,11 @@ class TestInvalidTrades:
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_in_pool(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Test making a invalid close short with nonzero short tokens."""
         try:
-            expect_failure_with_funded_bot(hyperdrive, InvalidRedeemWithdrawInPool)
+            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRedeemWithdrawInPool)
         # This is catching a value error, since this transaction is actually valid on the chain
         # We're explicitly catching this and throwing a value error in redeem withdraw shares
         except ValueError as exc:

@@ -12,12 +12,12 @@ from agent0.ethpy.hyperdrive.interface import HyperdriveReadInterface, Hyperdriv
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_read_interface(hyperdrive: LocalHyperdrive) -> HyperdriveReadInterface:
+def hyperdrive_read_interface_fixture(fast_hyperdrive_fixture: LocalHyperdrive) -> HyperdriveReadInterface:
     """Fixture representing a hyperdrive read interface to a deployed hyperdrive pool.
 
     Arguments
     ---------
-    hyperdrive: LocalHyperdrive
+    fast_hyperdrive_fixture: LocalHyperdrive
         Fixture representing the deployed hyperdrive pool
 
     Returns
@@ -25,18 +25,18 @@ def hyperdrive_read_interface(hyperdrive: LocalHyperdrive) -> HyperdriveReadInte
     HyperdriveReadInterface
         The interface to access the deployed hyperdrive pool.
     """
-    return hyperdrive.interface.get_read_interface()
+    return fast_hyperdrive_fixture.interface.get_read_interface()
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_read_write_interface(
-    hyperdrive: LocalHyperdrive,
+def hyperdrive_read_write_interface_fixture(
+    fast_hyperdrive_fixture: LocalHyperdrive,
 ) -> HyperdriveReadWriteInterface:
     """Fixture representing a hyperdrive interface to a deployed hyperdrive pool.
 
     Arguments
     ---------
-    hyperdrive: LocalHyperdrive
+    fast_hyperdrive_fixture: LocalHyperdrive
         Fixture representing the deployed hyperdrive pool
 
     Returns
@@ -44,4 +44,4 @@ def hyperdrive_read_write_interface(
     HyperdriveReadWriteInterface
         The interface to access and write to the deployed hyperdrive pool.
     """
-    return hyperdrive.interface
+    return fast_hyperdrive_fixture.interface

@@ -17,12 +17,12 @@ class TestPipelineWithRandom:
     @pytest.mark.anvil
     def test_pipeline_with_random_policy(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Runs the random policy with different pool and input configurations.
         All arguments are fixtures.
         """
-        agent = hyperdrive.init_agent(
+        agent = fast_hyperdrive_fixture.init_agent(
             base=FixedPoint(10_000_000),
             eth=FixedPoint(100),
             policy=PolicyZoo.random,

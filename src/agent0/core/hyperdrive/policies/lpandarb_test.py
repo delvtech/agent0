@@ -25,6 +25,7 @@ YEAR_IN_SECONDS = 31_536_000
 # pylint: disable=missing-return-doc,too-many-function-args
 
 
+# TODO use the existing fixtures instead of custom fixture here
 @pytest.fixture(scope="function")
 def interactive_hyperdrive(chain: LocalChain) -> LocalHyperdrive:
     """Create interactive hyperdrive.

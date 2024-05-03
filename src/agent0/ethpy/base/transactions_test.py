@@ -9,12 +9,12 @@ from agent0.ethpy.base.transactions import build_transaction
 
 
 @pytest.mark.anvil
-def test_gas_price_base_multiple_explicit(chain: LocalChain):
+def test_gas_price_base_multiple_explicit(fast_chain_fixture: LocalChain):
     """Set the gas price base multiple explicitly."""
     # set up config, hyperdrive, interface, web3, and agent
     base_fee_multiple = 100
     config = LocalHyperdrive.Config()
-    hyperdrive = LocalHyperdrive(chain, config)
+    hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
     web3 = interface.web3
     agent = hyperdrive.init_agent(eth=FixedPoint(1))
@@ -52,12 +52,12 @@ def test_gas_price_base_multiple_explicit(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_gas_price_priority_multiple_explicit(chain: LocalChain):
+def test_gas_price_priority_multiple_explicit(fast_chain_fixture: LocalChain):
     """Set the gas price priority multiple explicitly."""
     # set up config, hyperdrive, interface, web3, and agent
     priority_fee_multiple = 100
     config = LocalHyperdrive.Config()
-    hyperdrive = LocalHyperdrive(chain, config)
+    hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
     web3 = interface.web3
     agent = hyperdrive.init_agent(eth=FixedPoint(1))
@@ -89,12 +89,12 @@ def test_gas_price_priority_multiple_explicit(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_gas_price_base_multiple_policy(chain: LocalChain):
+def test_gas_price_base_multiple_policy(fast_chain_fixture: LocalChain):
     """Set the gas price base multiple through an agent policy."""
     # set up config, hyperdrive, interface, web3, and agent
     base_fee_multiple = 100
     config = LocalHyperdrive.Config()
-    hyperdrive = LocalHyperdrive(chain, config)
+    hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
 
     regular_agent = hyperdrive.init_agent(
@@ -117,12 +117,12 @@ def test_gas_price_base_multiple_policy(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_gas_price_priority_multiple_policy(chain: LocalChain):
+def test_gas_price_priority_multiple_policy(fast_chain_fixture: LocalChain):
     """Set the gas price priority multiple through an agent policy."""
     # set up config, hyperdrive, interface, web3, and agent
     priority_fee_multiple = 100
     config = LocalHyperdrive.Config()
-    hyperdrive = LocalHyperdrive(chain, config)
+    hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
 
     regular_agent = hyperdrive.init_agent(

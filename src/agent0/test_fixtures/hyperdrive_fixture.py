@@ -39,13 +39,13 @@ def launch_hyperdrive(in_chain: LocalChain) -> LocalHyperdrive:
 
 
 @pytest.fixture(scope="function")
-def clean_hyperdrive(clean_chain: LocalChain) -> LocalHyperdrive:
+def hyperdrive_fixture(chain_fixture: LocalChain) -> LocalHyperdrive:
     """Local hyperdrive pool test fixture.
     This fixture launches a chain from scratch in a function scope.
 
     Arguments
     ---------
-    clean_chain: LocalChain
+    chain_fixture: LocalChain
         Function scoped chain fixture.
 
     Returns
@@ -53,7 +53,7 @@ def clean_hyperdrive(clean_chain: LocalChain) -> LocalHyperdrive:
     LocalHyperdrive
         The deployed hyperdrive object.
     """
-    return launch_hyperdrive(clean_chain)
+    return launch_hyperdrive(chain_fixture)
 
 
 @pytest.fixture(scope="session")
@@ -75,7 +75,7 @@ def init_hyperdrive(init_chain: LocalChain) -> LocalHyperdrive:
 
 
 @pytest.fixture(scope="function")
-def hyperdrive(init_hyperdrive: LocalHyperdrive) -> Iterator[LocalHyperdrive]:
+def fast_hyperdrive_fixture(init_hyperdrive: LocalHyperdrive) -> Iterator[LocalHyperdrive]:
     """Local hyperdrive pool test fixture.
     This fixture uses snapshot on an existing chain in a function scope.
 

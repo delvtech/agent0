@@ -75,7 +75,7 @@ class TestMultiTradePerBlock:
     @pytest.mark.docker
     def test_multi_trade_per_block(
         self,
-        hyperdrive: LocalHyperdrive,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
         # TODO local_hyperdrive_pool is currently being run with automining. Hence, multiple trades
@@ -83,7 +83,7 @@ class TestMultiTradePerBlock:
         # For now, this is simply testing that the introduction of async trades doesn't break
         # when automining.
 
-        agent = hyperdrive.init_agent(
+        agent = fast_hyperdrive_fixture.init_agent(
             base=FixedPoint(10_000_000),
             eth=FixedPoint(100),
             policy=MultiTradePolicy,
@@ -99,7 +99,7 @@ class TestMultiTradePerBlock:
         # 3. openLong of 22_222 base
         # 4. openShort of 33_333 bonds
 
-        db_transaction_info: pd.DataFrame = get_transactions(hyperdrive.db_session, coerce_float=False)
+        db_transaction_info: pd.DataFrame = get_transactions(fast_hyperdrive_fixture.db_session, coerce_float=False)
         expected_number_of_transactions = 4
         assert len(db_transaction_info == expected_number_of_transactions)
         # Checking first add liquidity
@@ -110,7 +110,7 @@ class TestMultiTradePerBlock:
         assert "openLong" in trxs
         assert "openShort" in trxs
 
-        db_ticker: pd.DataFrame = get_ticker(hyperdrive.db_session, coerce_float=False)
+        db_ticker: pd.DataFrame = get_ticker(fast_hyperdrive_fixture.db_session, coerce_float=False)
         assert len(db_ticker == expected_number_of_transactions)
         assert "addLiquidity" == db_ticker["trade_type"].iloc[0]
         ticker_ops = db_ticker["trade_type"].iloc[1:].to_list()
@@ -118,7 +118,7 @@ class TestMultiTradePerBlock:
         assert "openLong" in ticker_ops
         assert "openShort" in ticker_ops
 
-        wallet_deltas: pd.DataFrame = get_wallet_deltas(hyperdrive.db_session, coerce_float=False)
+        wallet_deltas: pd.DataFrame = get_wallet_deltas(fast_hyperdrive_fixture.db_session, coerce_float=False)
         # Ensure deltas only exist for valid trades
         # 2 for each trade
         assert len(wallet_deltas) == 2 * expected_number_of_transactions
