@@ -105,10 +105,13 @@ class TestBotToDb:
         # Ignore linker factory since we don't know the target address
         db_pool_config_df = db_pool_config_df.drop(columns=["linker_factory"])
         deployer_address = hyperdrive.chain.get_deployer_account_address()
+        # pylint: disable=protected-access
+        base_token_addr = hyperdrive._deployed_hyperdrive.base_token_contract.address
+        vault_shares_token_addr = hyperdrive._deployed_hyperdrive.vault_shares_token_contract.address
         expected_pool_config = {
             "contract_address": hyperdrive.get_hyperdrive_address(),
-            "base_token": hyperdrive._deployed_hyperdrive.base_token_contract.address,
-            "vault_shares_token": hyperdrive._deployed_hyperdrive.vault_shares_token_contract.address,
+            "base_token": base_token_addr,
+            "vault_shares_token": vault_shares_token_addr,
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),

@@ -7,6 +7,9 @@ from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
+# Fixtures defined in the same file
+# pylint: disable=redefined-outer-name
+
 
 def launch_hyperdrive(in_chain: LocalChain) -> LocalHyperdrive:
     """Launches a hyperdrive pool on a given chain.
