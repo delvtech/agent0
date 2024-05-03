@@ -32,8 +32,8 @@ def interactive_hyperdrive(fast_chain_fixture: LocalChain) -> LocalHyperdrive:
 
     Arguments
     ---------
-    chain: LocalChain
-        Local chain.
+    fast_chain_fixture: LocalChain
+        Local chain fixture.
 
     Returns
     -------
