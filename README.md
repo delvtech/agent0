@@ -37,11 +37,11 @@ from agent0 import LocalHyperdrive, LocalChain
 # Initialize
 chain = LocalChain()
 hyperdrive = LocalHyperdrive(chain)
-hyperdrive_agent0 = hyperdrive.init_agent(base=FixedPoint(100_000))
+hyperdrive_agent0 = hyperdrive.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10))
 
 # Run trades
 chain.advance_time(datetime.timedelta(weeks=1))
-open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100))
+open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100), eth=FixedPoint(10))
 chain.advance_time(datetime.timedelta(weeks=5))
 close_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount

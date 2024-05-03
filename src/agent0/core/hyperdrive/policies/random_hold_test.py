@@ -13,7 +13,7 @@ from agent0.core.hyperdrive.policies import PolicyZoo
 
 
 @pytest.mark.anvil
-def test_random_hold_policy(chain: LocalChain):
+def test_random_hold_policy(fast_chain_fixture: LocalChain):
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = LocalHyperdrive.Config(
@@ -22,7 +22,7 @@ def test_random_hold_policy(chain: LocalChain):
         position_duration=60 * 60 * 24 * 7,  # 1 week
         checkpoint_duration=60 * 60 * 24,  # 1 day
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     random_hold_agent = interactive_hyperdrive.init_agent(
         base=FixedPoint(1_111_111),
         eth=FixedPoint(111),
@@ -47,7 +47,7 @@ def test_random_hold_policy(chain: LocalChain):
     assert CloseShort not in trade_types
 
     # Advance time to be before min_hold_time
-    chain.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
+    fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
 
     # Execute more random trades
     trade_events = []
@@ -59,7 +59,7 @@ def test_random_hold_policy(chain: LocalChain):
     assert CloseShort not in trade_types
 
     # Advance time to be after min_hold_time
-    chain.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
+    fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
 
     # Execute more random trades
     trade_events = []

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import pathlib
 import subprocess
@@ -9,7 +10,7 @@ import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from threading import Thread
-from typing import Type
+from typing import Literal, Type, overload
 
 import dill
 import pandas as pd
@@ -18,6 +19,7 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
+from sqlalchemy_utils.functions import drop_database
 from web3._utils.threads import Timeout
 from web3.exceptions import TimeExhausted
 
@@ -243,7 +245,7 @@ class LocalHyperdrive(Hyperdrive):
         # Make a copy of the dataclass to avoid changing the base class
         self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(self.interface.hyperdrive_contract.address)
+        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
 
         # Store the db_id here for later reference
         self._db_name = self.postgres_config.POSTGRES_DB
@@ -418,11 +420,17 @@ class LocalHyperdrive(Hyperdrive):
             calc_pnl=self.calc_pnl,
         )
 
-    def _cleanup(self):
+    def _cleanup(self, drop_data: bool = False):
         """Cleans up resources used by this object."""
         if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
+
         self.db_session.close()
+
+        # We drop the database attached to this pool on cleanup
+        if drop_data:
+            drop_database(self.postgres_config.create_url_obj())
+
         if self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
             self.dashboard_subprocess = None
@@ -566,11 +574,11 @@ class LocalHyperdrive(Hyperdrive):
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
-        base: FixedPoint, optional
+        base: FixedPoint | None, optional
             The amount of base to fund the agent with. Defaults to 0.
             If a private key is provided then the base amount is added to their previous balance.
-        eth: FixedPoint, optional
-            The amount of ETH to fund the agent with. Defaults to 10.
+        eth: FixedPoint | None, optional
+            The amount of ETH to fund the agent with. Defaults to 0.
             If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
@@ -582,11 +590,14 @@ class LocalHyperdrive(Hyperdrive):
         """
         # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            raise ValueError("Cannot add a new agent after saving a snapshot")
+            logging.warning(
+                "Adding new agent with existing snapshot. "
+                "This object will no longer be valid if the snapshot is loaded."
+            )
         if base is None:
             base = FixedPoint(0)
         if eth is None:
-            eth = FixedPoint(10)
+            eth = FixedPoint(0)
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
@@ -1084,9 +1095,12 @@ class LocalHyperdrive(Hyperdrive):
         eth: FixedPoint,
         signer_account: LocalAccount | None = None,
     ) -> None:
+
         # TODO this can be fixed by getting actual base values from the chain.
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            raise ValueError("Cannot add funds to an agent after saving a snapshot")
+        # TODO this will no longer be an issue once we refactor
+        # wallets to be from events + db
+        if base > 0 and eth > 0 and self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            logging.warning("Adding funds to to an agent after saving a snapshot. This may make pnl values incorrect.")
 
         # Adding funds default to the deploy account
         if signer_account is None:
@@ -1105,7 +1119,17 @@ class LocalHyperdrive(Hyperdrive):
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
-    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+    ) -> ReceiptBreakdown: ...
+
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+    ) -> ReceiptBreakdown | None: ...
+
+    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
         # We add specific data to the trade result from interactive hyperdrive
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
@@ -1119,7 +1143,11 @@ class LocalHyperdrive(Hyperdrive):
                 else:
                     trade_result.additional_info["ticker"] = self.get_ticker()
 
-        return super()._handle_trade_result(trade_result)
+        # This check is necessary for subclass overloading and typing,
+        # as types are narrowed based on the literal `always_throw_exception`
+        if always_throw_exception:
+            return super()._handle_trade_result(trade_result, always_throw_exception)
+        return super()._handle_trade_result(trade_result, always_throw_exception)
 
     def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         out = super()._open_long(agent, base)
@@ -1215,6 +1243,20 @@ class LocalHyperdrive(Hyperdrive):
                 agent.checksum_address, db_balances, self.interface.base_token_contract
             )
 
+    def _save_agent_bookkeeping(self, save_dir: str) -> None:
+        """Saves the policy state to file.
+
+        Arguments
+        ---------
+        save_dir: str
+            The directory to save the state to.
+        """
+        policy_file = save_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
+        agents = [agent.checksum_address for agent in self._pool_agents]
+        with open(policy_file, "wb") as file:
+            # We use dill, as pickle can't store local objects
+            dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
+
     def _save_policy_state(self, save_dir: str) -> None:
         """Saves the policy state to file.
 
@@ -1230,6 +1272,22 @@ class LocalHyperdrive(Hyperdrive):
             with open(policy_file, "wb") as file:
                 # We use dill, as pickle can't store local objects
                 dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
+
+    def _load_agent_bookkeeping(self, load_dir: str) -> None:
+        """Loads the list of agents from file.
+
+        Arguments
+        ---------
+        load_dir: str
+            The directory to load the state from.
+        """
+        policy_file = load_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
+        with open(policy_file, "rb") as file:
+            # We use dill, as pickle can't store local objects
+            load_agents = dill.load(file)
+        # Remove references of all agents added after snapshot
+        # NOTE: existing agent objects initialized after snapshot will no longer be valid.
+        self._pool_agents = [agent for agent in self._pool_agents if agent.checksum_address in load_agents]
 
     def _load_policy_state(self, load_dir: str) -> None:
         """Loads the policy state from file.

@@ -26,12 +26,11 @@ YEAR_IN_SECONDS = 31_536_000
 # pylint: disable=logging-fstring-interpolation
 
 
-@pytest.mark.anvil
-def _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive: LocalHyperdrive, agent_wallet: HyperdriveWallet):
+def _ensure_db_wallet_matches_agent_wallet(in_hyperdrive: LocalHyperdrive, agent_wallet: HyperdriveWallet):
     # NOTE this function is assuming only one agent is making trades
 
     # Test against db
-    current_wallet_df = interactive_hyperdrive.get_current_wallet(coerce_float=False)
+    current_wallet_df = in_hyperdrive.get_current_wallet(coerce_float=False)
 
     base_wallet_df = current_wallet_df[current_wallet_df["base_token_type"] == BASE_TOKEN_SYMBOL]
     assert len(base_wallet_df) == 1
@@ -77,7 +76,7 @@ def _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive: LocalHyperdri
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-def test_funding_and_trades(chain: LocalChain):
+def test_funding_and_trades(fast_chain_fixture: LocalChain):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
@@ -87,15 +86,15 @@ def test_funding_and_trades(chain: LocalChain):
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches 2 pools on the same local chain
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
-    interactive_hyperdrive_2 = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+    interactive_hyperdrive_2 = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later
     hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
     hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(222_222), eth=FixedPoint(222), name="bob")
     # Omission of name defaults to wallet address
-    hyperdrive_agent2 = interactive_hyperdrive.init_agent()
+    hyperdrive_agent2 = interactive_hyperdrive.init_agent(eth=FixedPoint(10))
 
     # Add funds to an agent
     hyperdrive_agent2.add_funds(base=FixedPoint(333_333), eth=FixedPoint(333))
@@ -189,12 +188,12 @@ def test_funding_and_trades(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_block_timestamp_interval(chain: LocalChain):
+def test_block_timestamp_interval(fast_chain_fixture: LocalChain):
     """Ensure block timestamp interval is set correctly."""
     # The chain in the test fixture defaults to 12 seconds
 
     # We need the underlying hyperdrive interface here to test time
-    interactive_hyperdrive = LocalHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture)
     hyperdrive_interface = interactive_hyperdrive.interface
     hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
 
@@ -209,18 +208,18 @@ def test_block_timestamp_interval(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_advance_time(chain: LocalChain):
+def test_advance_time(fast_chain_fixture: LocalChain):
     """Advance time by 3600 seconds then 1 week."""
     # We need the underlying hyperdrive interface here to test time
-    interactive_hyperdrive = LocalHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Testing passing in seconds
-    chain.advance_time(3600, create_checkpoints=False)
+    fast_chain_fixture.advance_time(3600, create_checkpoints=False)
     current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Testing passing in timedelta
-    chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+    fast_chain_fixture.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
     current_time_3 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
 
     assert current_time_2 - current_time_1 == 3600
@@ -228,15 +227,15 @@ def test_advance_time(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_advance_time_with_checkpoints(chain: LocalChain):
+def test_advance_time_with_checkpoints(fast_chain_fixture: LocalChain):
     """Checkpoint creation with advance time."""
     # Since advancing time with checkpoints can be off by a block, we set block timestamp interval here
     # to be 1 to avoid advancing extra time
-    chain._set_block_timestamp_interval(1)  # pylint: disable=protected-access
+    fast_chain_fixture._set_block_timestamp_interval(1)  # pylint: disable=protected-access
 
     # We need the underlying hyperdrive interface here to test time
     config = LocalHyperdrive.Config(checkpoint_duration=3600)
-    interactive_hyperdrive = LocalHyperdrive(chain, config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     # TODO there is a non-determininstic element here, the first advance time for 600 seconds
@@ -248,7 +247,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
 
     # Advance time lower than a checkpoint duration
     pre_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
-    checkpoint_events = chain.advance_time(600, create_checkpoints=True)
+    checkpoint_events = fast_chain_fixture.advance_time(600, create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     assert abs(post_time - pre_time - 600) <= min_time_error
     # assert 0 or 1 checkpoints made
@@ -256,7 +255,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
 
     # Advance time equal to a checkpoint duration
     pre_time = post_time
-    checkpoint_events = chain.advance_time(3600, create_checkpoints=True)
+    checkpoint_events = fast_chain_fixture.advance_time(3600, create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
     assert abs(post_time - pre_time - 3600) <= min_time_error
@@ -265,7 +264,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
 
     # Advance time with multiple checkpoints
     pre_time = post_time
-    checkpoint_events = chain.advance_time(datetime.timedelta(hours=3), create_checkpoints=True)
+    checkpoint_events = fast_chain_fixture.advance_time(datetime.timedelta(hours=3), create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
     assert abs(post_time - pre_time - 3600 * 3) <= min_time_error
@@ -275,7 +274,7 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     ## Checking when advancing time of a value not a multiple of checkpoint_duration ##
     pre_time = post_time
     # Advance time with multiple checkpoints
-    checkpoint_events = chain.advance_time(4000, create_checkpoints=True)
+    checkpoint_events = fast_chain_fixture.advance_time(4000, create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
     assert abs(post_time - pre_time - 4000) <= min_time_error
@@ -286,12 +285,14 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     # then check `hyperdrive_interface.get_checkpoint_info` for proper checkpoints.
 
 
+# We use session chain here to avoid snapshotting since
+# we use snapshotting in the test
 @pytest.mark.anvil
-def test_save_load_snapshot(chain: LocalChain):
+def test_save_load_snapshot(chain_fixture: LocalChain):
     """Save and load snapshot."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     initial_pool_config = LocalHyperdrive.Config()
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(chain_fixture, initial_pool_config)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     # Generate funded trading agents from the interactive object
@@ -302,7 +303,7 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.add_liquidity(base=FixedPoint(4_444))
 
     # Save the state on the chain
-    chain.save_snapshot()
+    chain_fixture.save_snapshot()
 
     # To ensure snapshots are working, we check the agent's wallet on the chain, the wallet object in the agent,
     # and in the db
@@ -336,7 +337,7 @@ def test_save_load_snapshot(chain: LocalChain):
     assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
     # Save snapshot and check for equality
-    chain.load_snapshot()
+    chain_fixture.load_snapshot()
 
     (
         check_eth_on_chain,
@@ -379,7 +380,7 @@ def test_save_load_snapshot(chain: LocalChain):
     assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
     # Save snapshot and check for equality
-    chain.load_snapshot()
+    chain_fixture.load_snapshot()
 
     (
         check_eth_on_chain,
@@ -422,7 +423,7 @@ def test_save_load_snapshot(chain: LocalChain):
     assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
     # Save snapshot and check for equality
-    chain.load_snapshot()
+    chain_fixture.load_snapshot()
 
     (
         check_eth_on_chain,
@@ -442,14 +443,14 @@ def test_save_load_snapshot(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_set_variable_rate(chain: LocalChain):
+def test_set_variable_rate(fast_chain_fixture: LocalChain):
     """Set the variable rate."""
     # We need the underlying hyperdrive interface here to test time
     config = LocalHyperdrive.Config(initial_variable_rate=FixedPoint("0.05"))
-    interactive_hyperdrive = LocalHyperdrive(chain, config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
 
     # Make a trade to mine the block on this variable rate so it shows up in the data pipeline
-    _ = interactive_hyperdrive.init_agent()
+    _ = interactive_hyperdrive.init_agent(eth=FixedPoint(10))
 
     # Set the variable rate
     # This mines a block since it's a transaction
@@ -463,28 +464,32 @@ def test_set_variable_rate(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_access_deployer_account(chain: LocalChain):
+def test_access_deployer_account(fast_chain_fixture: LocalChain):
     """Access the deployer account."""
     config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint("100"),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, config)
-    privkey = chain.get_deployer_account_private_key()  # anvil account 0
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+    privkey = fast_chain_fixture.get_deployer_account_private_key()  # anvil account 0
     pubkey = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    larry = interactive_hyperdrive.init_agent(
+        base=FixedPoint(100_000), eth=FixedPoint(10), name="larry", private_key=privkey
+    )
     larry_pubkey = larry.wallet.address.hex().strip("0x").lower()
     assert larry_pubkey == pubkey.lower().strip("0x")  # deployer public key
 
 
 @pytest.mark.anvil
-def test_access_deployer_liquidity(chain: LocalChain):
+def test_access_deployer_liquidity(fast_chain_fixture: LocalChain):
     """Remove liquidity from the deployer account."""
     config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(100),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, config)
-    privkey = chain.get_deployer_account_private_key()  # anvil account 0
-    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+    privkey = fast_chain_fixture.get_deployer_account_private_key()  # anvil account 0
+    larry = interactive_hyperdrive.init_agent(
+        base=FixedPoint(100_000), eth=FixedPoint(10), name="larry", private_key=privkey
+    )
     assert (
         FixedPoint(
             scaled_value=interactive_hyperdrive.interface.hyperdrive_contract.functions.balanceOf(
@@ -499,14 +504,16 @@ def test_access_deployer_liquidity(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_remove_deployer_liquidity(chain: LocalChain):
+def test_remove_deployer_liquidity(fast_chain_fixture: LocalChain):
     """Remove liquidity from the deployer account."""
     config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(100),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, config)
-    privkey = chain.get_deployer_account_private_key()  # anvil account 0
-    larry = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), name="larry", private_key=privkey)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+    privkey = fast_chain_fixture.get_deployer_account_private_key()  # anvil account 0
+    larry = interactive_hyperdrive.init_agent(
+        base=FixedPoint(100_000), eth=FixedPoint(10), name="larry", private_key=privkey
+    )
     larry.remove_liquidity(shares=larry.wallet.lp_tokens)
     assert larry.wallet.lp_tokens == 0
     assert (
@@ -521,17 +528,17 @@ def test_remove_deployer_liquidity(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_get_config_no_transactions(chain: LocalChain):
+def test_get_config_no_transactions(fast_chain_fixture: LocalChain):
     """Get pool config before executing any transactions."""
-    interactive_hyperdrive = LocalHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture)
     pool_config = interactive_hyperdrive.get_pool_config()
     assert isinstance(pool_config, Series)
 
 
 @pytest.mark.anvil
-def test_get_config_with_transactions(chain: LocalChain):
+def test_get_config_with_transactions(fast_chain_fixture: LocalChain):
     """Get pool config after executing one transaction."""
-    interactive_hyperdrive = LocalHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture)
     agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), name="alice")
     agent0.open_long(base=FixedPoint(11_111))
     pool_config = interactive_hyperdrive.get_pool_config()
@@ -539,10 +546,10 @@ def test_get_config_with_transactions(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_liquidate(chain: LocalChain):
+def test_liquidate(fast_chain_fixture: LocalChain):
     """Test liquidation."""
-    interactive_hyperdrive = LocalHyperdrive(chain)
-    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture)
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), eth=FixedPoint(10), name="alice")
     alice.open_long(base=FixedPoint(100))
     alice.open_short(bonds=FixedPoint(100))
     alice.add_liquidity(base=FixedPoint(100))
@@ -554,12 +561,12 @@ def test_liquidate(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_random_liquidate(chain: LocalChain):
+def test_random_liquidate(fast_chain_fixture: LocalChain):
     """Test random liquidation."""
     # Explicitly setting a random seed to remove randomness in the test
     interactive_config = LocalHyperdrive.Config(rng_seed=1234)
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), name="alice")
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
+    alice = interactive_hyperdrive.init_agent(base=FixedPoint(10_000), eth=FixedPoint(10), name="alice")
 
     # We run the same trades 5 times, and ensure there's at least one difference
     # between the 5 liquidations.
@@ -598,7 +605,7 @@ def test_random_liquidate(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_share_price_compounding_quincunx(chain: LocalChain):
+def test_share_price_compounding_quincunx(fast_chain_fixture: LocalChain):
     """Share price when compounding by quincunx (one fifth of a year) should increase by more than the APR."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
@@ -609,13 +616,13 @@ def test_share_price_compounding_quincunx(chain: LocalChain):
         flat_fee=FixedPoint(0),
         initial_variable_rate=initial_variable_rate,
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
     number_of_compounding_periods = 5
     for _ in range(number_of_compounding_periods):
-        chain.advance_time(YEAR_IN_SECONDS // number_of_compounding_periods, create_checkpoints=False)
+        fast_chain_fixture.advance_time(YEAR_IN_SECONDS // number_of_compounding_periods, create_checkpoints=False)
         # This calls the mock yield source's accrue interest function, which acts to compound return
         interactive_hyperdrive._create_checkpoint()  # pylint: disable=protected-access
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
@@ -628,7 +635,7 @@ def test_share_price_compounding_quincunx(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_share_price_compounding_annus(chain: LocalChain):
+def test_share_price_compounding_annus(fast_chain_fixture: LocalChain):
     """Share price when compounding by annus (one year) should increase by exactly the APR (no compounding)."""
     # setup
     initial_variable_rate = FixedPoint("0.045")
@@ -639,23 +646,24 @@ def test_share_price_compounding_annus(chain: LocalChain):
         flat_fee=FixedPoint(0),
         initial_variable_rate=initial_variable_rate,
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
-    chain.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
+    fast_chain_fixture.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Ending   share price: {ending_share_price}")
     assert ending_share_price - 1 == initial_variable_rate
 
 
 @pytest.mark.anvil
-def test_policy_config_forgotten(chain: LocalChain):
+def test_policy_config_forgotten(fast_chain_fixture: LocalChain):
     """The policy config is not passed in."""
     interactive_config = LocalHyperdrive.Config()
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="alice",
         policy=PolicyZoo.random,
     )
@@ -663,14 +671,15 @@ def test_policy_config_forgotten(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_policy_config_none_rng(chain: LocalChain):
+def test_policy_config_none_rng(fast_chain_fixture: LocalChain):
     """The policy config has rng set to None."""
     interactive_config = LocalHyperdrive.Config()
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     agent_policy = PolicyZoo.random.Config()
     agent_policy.rng = None
     alice = interactive_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="alice",
         policy=PolicyZoo.random,
         policy_config=agent_policy,
@@ -679,7 +688,26 @@ def test_policy_config_none_rng(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_snapshot_policy_state(chain: LocalChain):
+def test_pool_creation_after_snapshot(chain_fixture: LocalChain):
+    # pylint: disable=protected-access
+    assert len(chain_fixture._deployed_hyperdrive_pools) == 0
+    chain_fixture.save_snapshot()
+    _ = LocalHyperdrive(chain_fixture)
+    assert len(chain_fixture._deployed_hyperdrive_pools) == 1
+    chain_fixture.load_snapshot()
+    assert len(chain_fixture._deployed_hyperdrive_pools) == 0
+    _ = LocalHyperdrive(chain_fixture)
+    chain_fixture.save_snapshot()
+    _ = LocalHyperdrive(chain_fixture)
+    assert len(chain_fixture._deployed_hyperdrive_pools) == 2
+    chain_fixture.load_snapshot()
+    assert len(chain_fixture._deployed_hyperdrive_pools) == 1
+
+
+# Since we use snapshots in test fixtures, we can't use the fixture here
+# So we build from scratch
+@pytest.mark.anvil
+def test_snapshot_policy_state(chain_fixture: LocalChain):
     """Tests proper saving/loading of policy state during snapshotting."""
 
     # Define dummy class for deep state copy
@@ -707,10 +735,10 @@ def test_snapshot_policy_state(chain: LocalChain):
             return [], False
 
     # Initialize agent with sub policy
-    interactive_hyperdrive = LocalHyperdrive(chain)
-    agent = interactive_hyperdrive.init_agent(policy=_SubPolicy)
+    interactive_hyperdrive = LocalHyperdrive(chain_fixture)
+    agent = interactive_hyperdrive.init_agent(eth=FixedPoint(10), policy=_SubPolicy)
     # Snapshot state
-    chain.save_snapshot()
+    chain_fixture.save_snapshot()
 
     # Sanity check and type narrowing
     assert isinstance(agent.agent.policy, _SubPolicy)
@@ -730,7 +758,7 @@ def test_snapshot_policy_state(chain: LocalChain):
     assert agent.agent.policy.inner_state.inner_list == [1, 111]
 
     # Load snapshot
-    chain.load_snapshot()
+    chain_fixture.load_snapshot()
 
     # Ensure inner states were restored
     assert agent.agent.policy.outer_var == 2
@@ -740,35 +768,37 @@ def test_snapshot_policy_state(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_load_rng_on_snapshot(chain: LocalChain):
+def test_load_rng_on_snapshot(chain_fixture: LocalChain):
     """The policy config has rng set to None."""
-    load_rng_hyperdrive = LocalHyperdrive(chain, LocalHyperdrive.Config(load_rng_on_snapshot=True))
-    non_load_rng_hyperdrive = LocalHyperdrive(chain, LocalHyperdrive.Config(load_rng_on_snapshot=False))
+    load_rng_hyperdrive = LocalHyperdrive(chain_fixture, LocalHyperdrive.Config(load_rng_on_snapshot=True))
+    non_load_rng_hyperdrive = LocalHyperdrive(chain_fixture, LocalHyperdrive.Config(load_rng_on_snapshot=False))
 
     agent_policy = PolicyZoo.random.Config()
     agent_policy.rng = None
 
     alice = load_rng_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="alice",
         policy=PolicyZoo.random,
         policy_config=agent_policy,
     )
     bob = non_load_rng_hyperdrive.init_agent(
         base=FixedPoint(10_000),
+        eth=FixedPoint(10),
         name="bob",
         policy=PolicyZoo.random,
         policy_config=agent_policy,
     )
 
-    chain.save_snapshot()
+    chain_fixture.save_snapshot()
 
     assert alice.agent.policy.rng is not None
     assert bob.agent.policy.rng is not None
     alice_random_before_snap = alice.agent.policy.rng.standard_normal(10)
     bob_random_before_snap = bob.agent.policy.rng.standard_normal(10)
 
-    chain.load_snapshot()
+    chain_fixture.load_snapshot()
 
     alice_random_after_snap = alice.agent.policy.rng.standard_normal(10)
     bob_random_after_snap = bob.agent.policy.rng.standard_normal(10)
@@ -777,14 +807,14 @@ def test_load_rng_on_snapshot(chain: LocalChain):
     assert not np.array_equal(bob_random_before_snap, bob_random_after_snap)
 
 
-def test_hyperdrive_read_interface_standardized_variable_rate(chain: LocalChain):
+def test_hyperdrive_read_interface_standardized_variable_rate(fast_chain_fixture: LocalChain):
     # TODO this is testing the underlying standardized_variable_rate call in
     # the hyperdrive interface. Ideally, this would live in `read_interface_test.py`,
     # but we need a local chain for advancing time for testing. Move this test
     # to `read_interface_test` once we start using interactive hyperdrive for all tests.
 
     hyperdrive_config = LocalHyperdrive.Config(checkpoint_duration=86400)  # checkpoint duration of 1 day
-    interactive_hyperdrive = LocalHyperdrive(chain, hyperdrive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, hyperdrive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     mock_variable_rate = hyperdrive_interface.get_variable_rate()
@@ -794,7 +824,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(chain: LocalChain)
         hyperdrive_interface.get_standardized_variable_rate(time_range=604800)  # Get var rate for 1 week
 
     # Advance time by 8 days, past time_range
-    chain.advance_time(datetime.timedelta(days=8), create_checkpoints=True)
+    fast_chain_fixture.advance_time(datetime.timedelta(days=8), create_checkpoints=True)
 
     standardized_variable_rate = hyperdrive_interface.get_standardized_variable_rate(time_range=604800)
 
@@ -803,8 +833,8 @@ def test_hyperdrive_read_interface_standardized_variable_rate(chain: LocalChain)
 
 @pytest.mark.anvil
 @pytest.mark.parametrize("time_stretch", [0.01, 0.1, 0.5, 1, 10, 100])
-def test_deploy_nonstandard_timestretch(chain: LocalChain, time_stretch: float):
-    """Deplopy with nonstandard timestretch parameters."""
+def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_stretch: float):
+    """Deploy with nonstandard timestretch parameters."""
     initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(10_000_000),
         position_duration=60 * 60 * 24 * 365,  # 1 year
@@ -815,5 +845,5 @@ def test_deploy_nonstandard_timestretch(chain: LocalChain, time_stretch: float):
         initial_fixed_apr=FixedPoint(time_stretch),
         initial_time_stretch_apr=FixedPoint(time_stretch),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     assert isinstance(interactive_hyperdrive.interface.current_pool_state.pool_config.time_stretch, FixedPoint)

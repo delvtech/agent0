@@ -22,101 +22,113 @@ if TYPE_CHECKING:
 class TestHyperdriveReadInterface:
     """Tests for the HyperdriveReadInterface api class."""
 
-    def test_pool_config(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_pool_config(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
-        pool_config = cast(PoolConfig, hyperdrive_read_interface.hyperdrive_contract.functions.getPoolConfig().call())
-        assert pool_config_to_fixedpoint(pool_config) == hyperdrive_read_interface.current_pool_state.pool_config
-
-    def test_pool_config_deployed(self, hyperdrive_read_interface: HyperdriveReadInterface):
-        """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
-        pool_config = cast(PoolConfig, hyperdrive_read_interface.hyperdrive_contract.functions.getPoolConfig().call())
-        assert pool_config_to_fixedpoint(pool_config) == hyperdrive_read_interface.current_pool_state.pool_config
-
-    def test_pool_info(self, hyperdrive_read_interface: HyperdriveReadInterface):
-        """Checks that the Hyperdrive pool_info matches what is returned from the smart contract."""
-        pool_info = hyperdrive_read_interface.hyperdrive_contract.functions.getPoolInfo().call()
-        assert pool_info_to_fixedpoint(pool_info) == hyperdrive_read_interface.current_pool_state.pool_info
-
-    def test_checkpoint(self, hyperdrive_read_interface: HyperdriveReadInterface):
-        """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract."""
-        checkpoint_id = hyperdrive_read_interface.calc_checkpoint_id(
-            block_timestamp=hyperdrive_read_interface.current_pool_state.block_time
+        pool_config = cast(
+            PoolConfig, hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolConfig().call()
         )
-        checkpoint = hyperdrive_read_interface.get_checkpoint(checkpoint_id)
-        assert checkpoint == hyperdrive_read_interface.current_pool_state.checkpoint
+        assert (
+            pool_config_to_fixedpoint(pool_config) == hyperdrive_read_interface_fixture.current_pool_state.pool_config
+        )
 
-    def test_spot_price_and_fixed_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_pool_config_deployed(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
+        """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
+        pool_config = cast(
+            PoolConfig, hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolConfig().call()
+        )
+        assert (
+            pool_config_to_fixedpoint(pool_config) == hyperdrive_read_interface_fixture.current_pool_state.pool_config
+        )
+
+    def test_pool_info(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
+        """Checks that the Hyperdrive pool_info matches what is returned from the smart contract."""
+        pool_info = hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolInfo().call()
+        assert pool_info_to_fixedpoint(pool_info) == hyperdrive_read_interface_fixture.current_pool_state.pool_info
+
+    def test_checkpoint(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
+        """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract."""
+        checkpoint_id = hyperdrive_read_interface_fixture.calc_checkpoint_id(
+            block_timestamp=hyperdrive_read_interface_fixture.current_pool_state.block_time
+        )
+        checkpoint = hyperdrive_read_interface_fixture.get_checkpoint(checkpoint_id)
+        assert checkpoint == hyperdrive_read_interface_fixture.current_pool_state.checkpoint
+
+    def test_spot_price_and_fixed_rate(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Checks that the Hyperdrive spot price and fixed rate match computing it by hand."""
         # get pool config variables
-        pool_config = hyperdrive_read_interface.current_pool_state.pool_config
+        pool_config = hyperdrive_read_interface_fixture.current_pool_state.pool_config
         init_vault_share_price: FixedPoint = pool_config.initial_vault_share_price
         time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
-        pool_info = hyperdrive_read_interface.current_pool_state.pool_info
+        pool_info = hyperdrive_read_interface_fixture.current_pool_state.pool_info
         share_reserves: FixedPoint = pool_info.share_reserves
         bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
         spot_price = ((init_vault_share_price * share_reserves) / bond_reserves) ** time_stretch
-        assert abs(spot_price - hyperdrive_read_interface.calc_spot_price()) <= FixedPoint(1e-18)
+        assert abs(spot_price - hyperdrive_read_interface_fixture.calc_spot_price()) <= FixedPoint(1e-18)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
         fixed_rate = (FixedPoint(1) - spot_price) / (
-            spot_price * hyperdrive_read_interface.calc_position_duration_in_years()
+            spot_price * hyperdrive_read_interface_fixture.calc_position_duration_in_years()
         )
-        assert abs(fixed_rate - hyperdrive_read_interface.calc_spot_rate()) <= FixedPoint(1e-16)
+        assert abs(fixed_rate - hyperdrive_read_interface_fixture.calc_spot_rate()) <= FixedPoint(1e-16)
 
-    def test_calc_long(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_calc_long(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Test various fns associated with long trades."""
         # state
-        current_time = hyperdrive_read_interface.current_pool_state.block_time
-        maturity_time = current_time + hyperdrive_read_interface.current_pool_state.pool_config.position_duration
+        current_time = hyperdrive_read_interface_fixture.current_pool_state.block_time
+        maturity_time = (
+            current_time + hyperdrive_read_interface_fixture.current_pool_state.pool_config.position_duration
+        )
 
         # max long input
-        max_base_amount_with_budget = hyperdrive_read_interface.calc_max_long(FixedPoint(100))
-        max_base_amount = hyperdrive_read_interface.calc_max_long(FixedPoint(100_000_000))
+        max_base_amount_with_budget = hyperdrive_read_interface_fixture.calc_max_long(FixedPoint(100))
+        max_base_amount = hyperdrive_read_interface_fixture.calc_max_long(FixedPoint(100_000_000))
         assert (
             max_base_amount > max_base_amount_with_budget
         ), f"{max_base_amount=} should be greater than {max_base_amount_with_budget=}"
 
         # targeted long
-        current_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
-        _ = hyperdrive_read_interface.calc_targeted_long(FixedPoint(1_000_000), current_fixed_rate / FixedPoint(2))
+        current_fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate()
+        _ = hyperdrive_read_interface_fixture.calc_targeted_long(
+            FixedPoint(1_000_000), current_fixed_rate / FixedPoint(2)
+        )
 
         # min long input
-        min_base_amount = hyperdrive_read_interface.current_pool_state.pool_config.minimum_transaction_amount
+        min_base_amount = hyperdrive_read_interface_fixture.current_pool_state.pool_config.minimum_transaction_amount
         assert max_base_amount > min_base_amount, f"{max_base_amount=} should be greater than {min_base_amount=}."
 
         # open longs
-        max_long = hyperdrive_read_interface.calc_open_long(max_base_amount)
-        mid_long = hyperdrive_read_interface.calc_open_long(
+        max_long = hyperdrive_read_interface_fixture.calc_open_long(max_base_amount)
+        mid_long = hyperdrive_read_interface_fixture.calc_open_long(
             max_base_amount - ((max_base_amount - min_base_amount) / FixedPoint(2))
         )
         assert max_long > mid_long, f"{max_long=} should be greater than {mid_long=}."
-        min_long = hyperdrive_read_interface.calc_open_long(min_base_amount)
+        min_long = hyperdrive_read_interface_fixture.calc_open_long(min_base_amount)
         assert mid_long > min_long, f"{mid_long=} should be greater than {min_long=}."
 
         # close a long
         # subtract a day so it's not being closed the same moment it is opened
         long_close_time = maturity_time - 60 * 60 * 24
-        _ = hyperdrive_read_interface.calc_close_long(mid_long, long_close_time)
+        _ = hyperdrive_read_interface_fixture.calc_close_long(mid_long, long_close_time)
 
         # TODO compare values
-        _ = hyperdrive_read_interface.calc_spot_price_after_long(FixedPoint(100))
+        _ = hyperdrive_read_interface_fixture.calc_spot_price_after_long(FixedPoint(100))
 
-    def test_misc(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_misc(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Miscellaneous tests only verify that the attributes exist and functions can be called.
 
         TODO: These functions are tested heavily in Rust, we should still write tests that verify
         the conversion to and from Rust via strings was successful.
         """
         # State
-        _ = hyperdrive_read_interface.current_pool_state
-        _ = hyperdrive_read_interface.current_pool_state.variable_rate
-        _ = hyperdrive_read_interface.current_pool_state.vault_shares
-        _ = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
+        _ = hyperdrive_read_interface_fixture.current_pool_state
+        _ = hyperdrive_read_interface_fixture.current_pool_state.variable_rate
+        _ = hyperdrive_read_interface_fixture.current_pool_state.vault_shares
+        _ = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
 
         # Short
-        _ = hyperdrive_read_interface.calc_open_short(FixedPoint(100))
+        _ = hyperdrive_read_interface_fixture.calc_open_short(FixedPoint(100))
         # TODO: This is currently failing; need to fix it in hyperdrive-rs
         # current_time = hyperdrive_read_interface.current_pool_state.block_time
         # maturity_time = current_time + hyperdrive_read_interface.current_pool_state.pool_config.position_duration
@@ -133,34 +145,39 @@ class TestHyperdriveReadInterface:
         # )
 
         # LP
-        _ = hyperdrive_read_interface.calc_present_value()
+        _ = hyperdrive_read_interface_fixture.calc_present_value()
 
-    def test_deployed_fixed_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_deployed_fixed_rate(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
-        assert abs(hyperdrive_read_interface.calc_spot_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
+        assert abs(hyperdrive_read_interface_fixture.calc_spot_rate() - FixedPoint(0.05)) < FixedPoint(1e-16)
 
-    def test_bonds_given_shares_and_rate(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_bonds_given_shares_and_rate(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
         # get pool state so we can modify them to run what-if scenarios
-        pool_state = deepcopy(hyperdrive_read_interface.current_pool_state)
+        pool_state = deepcopy(hyperdrive_read_interface_fixture.current_pool_state)
         pool_info = pool_state.pool_info
 
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
-        pool_info.bond_reserves = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        fixed_rate = hyperdrive_read_interface.calc_spot_rate(pool_state=pool_state)
+        pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=target_apr
+        )
+        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
-        pool_info.bond_reserves = hyperdrive_read_interface.calc_bonds_given_shares_and_rate(target_rate=target_apr)
-        fixed_rate = hyperdrive_read_interface.calc_spot_rate(pool_state=pool_state)
+        pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=target_apr
+        )
+        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
-    def test_deployed_values(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_deployed_values(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Test the hyperdrive interface versus expected values."""
         # pylint: disable=too-many-locals
-        local_hyperdrive_pool = hyperdrive_read_interface.deployed_hyperdrive_pool
+        local_hyperdrive_pool = hyperdrive_read_interface_fixture.deployed_hyperdrive_pool
+        # Fixed rate is annualized
         initial_fixed_rate = FixedPoint("0.05")
         # This expected time stretch is only true for 1 year position duration
         expected_timestretch_fp = FixedPoint(1) / (
@@ -184,12 +201,12 @@ class TestHyperdriveReadInterface:
         }
         expected_pool_config["fees"] = FeesFP(
             curve=FixedPoint("0.01"),  # 1%,
-            flat=FixedPoint("0.0005"),  # 0.05%
+            flat=FixedPoint("0.0005"),  # 0.05 apr%
             governance_lp=FixedPoint("0.15"),  # 15%
             governance_zombie=FixedPoint("0.03"),  # 3%
         )
 
-        api_pool_config = hyperdrive_read_interface.current_pool_state.pool_config
+        api_pool_config = hyperdrive_read_interface_fixture.current_pool_state.pool_config
 
         # Existence test
         assert len(fields(api_pool_config)) > 0, "API pool config must have length greater than 0"
@@ -226,7 +243,7 @@ class TestHyperdriveReadInterface:
             "withdrawal_shares_proceeds",
         }
 
-        api_pool_info = hyperdrive_read_interface.current_pool_state.pool_info
+        api_pool_info = hyperdrive_read_interface_fixture.current_pool_state.pool_info
 
         # Ensure keys and fields match (ignoring linker_factory and linker_code_hash)
         api_keys = [n.name for n in fields(api_pool_info)]
@@ -236,13 +253,13 @@ class TestHyperdriveReadInterface:
             assert key in expected_pool_info_keys, f"Key {key} in API not in expected."
 
         # Check spot price and fixed rate
-        api_spot_price = hyperdrive_read_interface.calc_spot_price()
+        api_spot_price = hyperdrive_read_interface_fixture.calc_spot_price()
         effective_share_reserves = api_pool_info.share_reserves - api_pool_info.share_adjustment
         expected_spot_price = (
             (api_pool_config.initial_vault_share_price * effective_share_reserves) / api_pool_info.bond_reserves
         ) ** api_pool_config.time_stretch
 
-        api_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
+        api_fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate()
         expected_fixed_rate = (1 - expected_spot_price) / (
             expected_spot_price * (api_pool_config.position_duration / FixedPoint(365 * 24 * 60 * 60))
         )

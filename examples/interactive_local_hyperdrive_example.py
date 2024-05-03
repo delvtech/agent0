@@ -37,7 +37,7 @@ hyperdrive_2 = LocalHyperdrive(chain, initial_pool_config)
 hyperdrive_agent0 = hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="alice")
 hyperdrive_agent1 = hyperdrive_2.init_agent(base=FixedPoint(100000), eth=FixedPoint(100), name="bob")
 # Omission of name defaults to wallet address
-hyperdrive_agent2 = hyperdrive.init_agent(base=FixedPoint(100000))
+hyperdrive_agent2 = hyperdrive.init_agent(base=FixedPoint(100000), eth=FixedPoint(10))
 
 # Add funds to an agent
 hyperdrive_agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))

@@ -12,9 +12,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import dill
 import docker
 from docker.errors import NotFound
 from docker.models.containers import Container
+from eth_account.account import Account
+from eth_account.signers.local import LocalAccount
 from web3.types import RPCEndpoint
 
 from agent0.chainsync import PostgresConfig
@@ -110,21 +113,23 @@ class LocalChain(Chain):
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}")
 
         # Remove protocol and replace . and : with dashes
-        formatted_rpc_url = (
-            self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
-        )
-        db_container_name = f"postgres-interactive-hyperdrive-{formatted_rpc_url}"
+        self.chain_id = self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
+        db_container_name = f"postgres-interactive-hyperdrive-{self.chain_id}"
         self.postgres_config, self.postgres_container = self._initialize_postgres_container(
             db_container_name, config.db_port, config.remove_existing_db_container
         )
         assert isinstance(self.postgres_container, Container)
 
         # Snapshot bookkeeping
+        # TODO snapshot dir will be clobbered if you run multiple chains simultaneously
         self._snapshot_dir = config.snapshot_dir
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
         self.experimental_data_threading = config.experimental_data_threading
+
+        # Ensure snapshot dir exists
+        os.makedirs(self._snapshot_dir, exist_ok=True)
 
         if config.block_timestamp_interval is not None:
             self._set_block_timestamp_interval(config.block_timestamp_interval)
@@ -137,7 +142,10 @@ class LocalChain(Chain):
         # Runs cleanup on all deployed pools
         for pool in self._deployed_hyperdrive_pools:
             pool._cleanup()  # pylint: disable=protected-access
-        self.postgres_container.kill()
+        try:
+            self.postgres_container.kill()
+        except Exception:  # pylint: disable=broad-except
+            pass
         self.anvil_process.kill()
         super().cleanup()
 
@@ -157,6 +165,17 @@ class LocalChain(Chain):
         """
         # TODO this is the deployed account for anvil, get this programmatically
         return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+
+    def get_deployer_account_address(self) -> str:
+        """Get the public key of the deployer account.
+
+        Returns
+        -------
+        src
+            The public key for the deployer account.
+        """
+        account: LocalAccount = Account().from_key(self.get_deployer_account_private_key())
+        return account.address
 
     def _advance_chain_time(self, time_delta: int) -> None:
         # We explicitly set the next block timestamp to be exactly time_delta seconds
@@ -370,6 +389,16 @@ class LocalChain(Chain):
         # Save the db state
         self._dump_db(self._snapshot_dir)
 
+        # Save bookkeeping of deployed pools
+        # We save the addresses of deployed pools for loading
+        pool_filename = self._snapshot_dir + "/" + self.chain_id + "-pools.pkl"
+        pool_addr_list = [pool.get_hyperdrive_address() for pool in self._deployed_hyperdrive_pools]
+        with open(pool_filename, "wb") as file:
+            dill.dump(pool_addr_list, file, dill.HIGHEST_PROTOCOL)
+
+        for pool in self._deployed_hyperdrive_pools:
+            pool._save_agent_bookkeeping(self._snapshot_dir)  # pylint: disable=protected-access
+
         # Need to save all agent's policy states
         for pool in self._deployed_hyperdrive_pools:
             pool._save_policy_state(self._snapshot_dir)  # pylint: disable=protected-access
@@ -394,8 +423,31 @@ class LocalChain(Chain):
         if "result" not in response:
             raise KeyError("Response did not have a result.")
 
+        # Load the bookkeeping of deployed pools
+        pool_filename = self._snapshot_dir + "/" + self.chain_id + "-pools.pkl"
+        with open(pool_filename, "rb") as file:
+            hyperdrive_pools: list[str] = dill.load(file)
+
+        # Run cleanup on any invalid pools on load snapshot
+        invalid_pools = [
+            p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() not in hyperdrive_pools
+        ]
+        for pool in invalid_pools:
+            pool._cleanup(drop_data=True)  # pylint: disable=protected-access
+
+        # Given the current list of deployed hyperdrive pools, we throw away any pools deployed
+        # after the snapshot
+        self._deployed_hyperdrive_pools = [
+            p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() in hyperdrive_pools
+        ]
+        # NOTE: existing pool objects initialized after snapshot will no longer be valid.
+
         # load snapshot database state
         self._load_db(self._snapshot_dir)
+
+        # Update pool's agent bookkeeping
+        for pool in self._deployed_hyperdrive_pools:
+            pool._load_agent_bookkeeping(self._snapshot_dir)  # pylint: disable=protected-access
 
         # The hyperdrive interface in deployed pools need to wipe it's cache
         for pool in self._deployed_hyperdrive_pools:
@@ -469,8 +521,6 @@ class LocalChain(Chain):
         return postgres_config, container
 
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
-        if self._has_saved_snapshot:
-            raise ValueError("Cannot add a new pool after saving a snapshot")
         self._deployed_hyperdrive_pools.append(pool)
 
     def _dump_db(self, save_dir: str):
