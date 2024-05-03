@@ -161,7 +161,8 @@ class TestHyperdriveReadInterface:
         """Test the hyperdrive interface versus expected values."""
         # pylint: disable=too-many-locals
         local_hyperdrive_pool = hyperdrive_read_interface.deployed_hyperdrive_pool
-        initial_fixed_rate = FixedPoint("0.05")
+        # Fixed rate is annualized
+        initial_fixed_rate = FixedPoint("0.05") / 52
         # This expected time stretch is only true for 1 year position duration
         expected_timestretch_fp = FixedPoint(1) / (
             FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))

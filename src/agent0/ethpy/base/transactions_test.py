@@ -98,10 +98,11 @@ def test_gas_price_base_multiple_policy(chain: LocalChain):
     interface = hyperdrive.interface
 
     regular_agent = hyperdrive.init_agent(
-        base=FixedPoint(11111), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
+        base=FixedPoint(11111), eth=FixedPoint(10), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
     )
     multiplied_agent = hyperdrive.init_agent(
         base=FixedPoint(11111),
+        eth=FixedPoint(10),
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(base_fee_multiple=base_fee_multiple),
     )
@@ -125,10 +126,11 @@ def test_gas_price_priority_multiple_policy(chain: LocalChain):
     interface = hyperdrive.interface
 
     regular_agent = hyperdrive.init_agent(
-        base=FixedPoint(11111), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
+        base=FixedPoint(11111), eth=FixedPoint(10), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
     )
     multiplied_agent = hyperdrive.init_agent(
         base=FixedPoint(11111),
+        eth=FixedPoint(10),
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(priority_fee_multiple=priority_fee_multiple),
     )
