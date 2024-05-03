@@ -11,6 +11,8 @@ from agent0.chainsync.test_fixtures import database_engine, db_session, dummy_se
 from agent0.core.test_utils import cycle_trade_policy
 from agent0.test_fixtures import (
     chain,
+    clean_chain,
+    clean_hyperdrive,
     hyperdrive,
     hyperdrive_read_interface,
     hyperdrive_read_write_interface,
@@ -58,8 +60,10 @@ if os.getenv("_PYTEST_RAISE", "0") != "0":
 # NOTE: this means pytest can only be ran from this directory
 __all__ = [
     "chain",
+    "clean_chain",
     "init_chain",
     "hyperdrive",
+    "clean_hyperdrive",
     "init_hyperdrive",
     "cycle_trade_policy",
     "database_engine",

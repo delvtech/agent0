@@ -8,9 +8,7 @@ from fixedpointmath import FixedPoint
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
 
-@pytest.fixture(scope="session")
-def init_hyperdrive(init_chain: LocalChain):
-
+def launch_hyperdrive(in_chain: LocalChain):
     # Initial pool variables
     # NOTE: we set the initial liquidity here to be very small to ensure we can do trades to ensure withdrawal shares
     # Hence, for testing normal conditions, we likely need to increase the initial liquidity by adding
@@ -22,12 +20,22 @@ def init_hyperdrive(init_chain: LocalChain):
         # instead of changing the default here
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
-    return LocalHyperdrive(init_chain, config)
+    return LocalHyperdrive(in_chain, config)
 
 
 @pytest.fixture(scope="function")
-def hyperdrive(init_hyperdrive: LocalHyperdrive) -> Iterator[LocalHyperdrive]:
+def clean_hyperdrive(clean_chain: LocalChain):
+    return launch_hyperdrive(clean_chain)
 
-    init_hyperdrive.chain.save_snapshot()
-    yield init_hyperdrive
-    init_hyperdrive.chain.load_snapshot()
+
+@pytest.fixture(scope="session")
+def init_hyperdrive(session_chain: LocalChain):
+    return launch_hyperdrive(session_chain)
+
+
+@pytest.fixture(scope="function")
+def hyperdrive(session_hyperdrive: LocalHyperdrive) -> Iterator[LocalHyperdrive]:
+
+    session_hyperdrive.chain.save_snapshot()
+    yield session_hyperdrive
+    session_hyperdrive.chain.load_snapshot()

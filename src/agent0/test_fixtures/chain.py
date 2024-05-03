@@ -12,15 +12,7 @@ from docker.errors import DockerException
 from agent0.core.hyperdrive.interactive import LocalChain
 
 
-@pytest.fixture(scope="session")
-def init_chain() -> Iterator[LocalChain]:
-    """Local chain connected to a local database hosted in docker.
-
-    Yield
-    -----
-    LocalChain
-        local chain instance.
-    """
+def launch_chain(port_base) -> LocalChain:
     # Attempt to determine if docker is installed
     try:
         try:
@@ -44,15 +36,42 @@ def init_chain() -> Iterator[LocalChain]:
         else:
             raise exc
 
-    local_chain_config = LocalChain.Config()
-    _chain = LocalChain(local_chain_config)
+    local_chain_config = LocalChain.Config(chain_port=port_base, db_port=port_base + 1)
+    return LocalChain(local_chain_config)
+
+
+@pytest.fixture(scope="function")
+def clean_chain() -> Iterator[LocalChain]:
+    """Local chain connected to a local database hosted in docker.
+
+    Yield
+    -----
+    LocalChain
+        local chain instance.
+    """
+    _chain = launch_chain(port_base=20000)
     yield _chain
     _chain.cleanup()
+    del _chain
+
+
+@pytest.fixture(scope="session")
+def init_chain() -> Iterator[LocalChain]:
+    """Local chain connected to a local database hosted in docker.
+
+    Yield
+    -----
+    LocalChain
+        local chain instance.
+    """
+    _chain = launch_chain(30000)
+    yield _chain
+    _chain.cleanup()
+    del _chain
 
 
 @pytest.fixture(scope="function")
 def chain(init_chain: LocalChain) -> Iterator[LocalChain]:
-
     init_chain.save_snapshot()
     yield init_chain
     init_chain.load_snapshot()
