@@ -122,7 +122,7 @@ class TestBotToDb:
             "fee_collector": deployer_address,
             "sweep_collector": deployer_address,
             "curve_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
-            "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005") / 52),  # 0.05% APR
+            "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05% APR
             "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
             "governance_zombie_fee": _to_unscaled_decimal(FixedPoint("0.03")),  # 3%
             "inv_time_stretch": expected_inv_timestretch,

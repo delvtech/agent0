@@ -201,7 +201,7 @@ class TestHyperdriveReadInterface:
         }
         expected_pool_config["fees"] = FeesFP(
             curve=FixedPoint("0.01"),  # 1%,
-            flat=FixedPoint("0.0005") / 52,  # 0.05%
+            flat=FixedPoint("0.0005"),  # 0.05 apr%
             governance_lp=FixedPoint("0.15"),  # 15%
             governance_zombie=FixedPoint("0.03"),  # 3%
         )

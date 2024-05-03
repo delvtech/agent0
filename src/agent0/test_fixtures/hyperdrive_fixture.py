@@ -34,6 +34,7 @@ def launch_hyperdrive(in_chain: LocalChain) -> LocalHyperdrive:
         # the set of trades to do to ensure withdrawal shares
         # instead of changing the default here
         position_duration=60 * 60 * 24 * 365,  # 1 year
+        flat_fee=FixedPoint("0.0005"),
     )
     return LocalHyperdrive(in_chain, config)
 
