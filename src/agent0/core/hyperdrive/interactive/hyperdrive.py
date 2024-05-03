@@ -73,7 +73,9 @@ class Hyperdrive:
         exception_on_policy_error: bool = True
         """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
         exception_on_policy_slippage: bool = False
-        """When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False."""
+        """
+        When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False.
+        """
         preview_before_trade: bool = False
         """Whether to preview the position before executing a trade. Defaults to False."""
         rng_seed: int | None = None

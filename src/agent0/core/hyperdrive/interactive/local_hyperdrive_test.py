@@ -690,6 +690,7 @@ def test_policy_config_none_rng(chain: LocalChain):
 
 @pytest.mark.anvil
 def test_pool_creation_after_snapshot(clean_chain: LocalChain):
+    # pylint: disable=protected-access
     assert len(clean_chain._deployed_hyperdrive_pools) == 0
     clean_chain.save_snapshot()
     _ = LocalHyperdrive(clean_chain)

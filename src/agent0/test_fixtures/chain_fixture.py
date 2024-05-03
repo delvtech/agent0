@@ -11,8 +11,24 @@ from docker.errors import DockerException
 
 from agent0.core.hyperdrive.interactive import LocalChain
 
+# Fixtures defined in the same file
+# pylint: disable=redefined-outer-name
+
 
 def launch_chain(port_base) -> LocalChain:
+    """Launches a local chain.
+
+    Arguments
+    ---------
+    port_base: int
+        The base port number to use for the chain and database.
+        The chain port will be `port_base`, and the database port will be `port_base + 1`.
+
+    Returns
+    -------
+    LocalChain
+        The local chain.
+    """
     # Attempt to determine if docker is installed
     try:
         try:
@@ -43,11 +59,12 @@ def launch_chain(port_base) -> LocalChain:
 @pytest.fixture(scope="function")
 def clean_chain() -> Iterator[LocalChain]:
     """Local chain connected to a local database hosted in docker.
+    This fixture launches a chain from scratch in a function scope.
 
     Yield
     -----
     LocalChain
-        local chain instance.
+        The local chain instance.
     """
     _chain = launch_chain(port_base=20000)
     yield _chain
@@ -58,6 +75,7 @@ def clean_chain() -> Iterator[LocalChain]:
 @pytest.fixture(scope="session")
 def init_chain() -> Iterator[LocalChain]:
     """Local chain connected to a local database hosted in docker.
+    This fixture launches a chain from scratch in a session scope.
 
     Yield
     -----
@@ -72,6 +90,19 @@ def init_chain() -> Iterator[LocalChain]:
 
 @pytest.fixture(scope="function")
 def chain(init_chain: LocalChain) -> Iterator[LocalChain]:
+    """Local chain connected to a local database hosted in docker.
+    This fixture uses snapshot on an existing chain in a function scope.
+
+    Arguments
+    ---------
+    init_chain: LocalChain
+        Session scoped chain fixture.
+
+    Yield
+    -----
+    LocalChain
+        local chain instance.
+    """
     init_chain.save_snapshot()
     yield init_chain
     init_chain.load_snapshot()

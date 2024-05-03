@@ -33,7 +33,13 @@ class PostgresConfig:
     """The postgres version."""
 
     def create_url_obj(self) -> URL:
-        """Creates an SQLAlchemy URL object from the config."""
+        """Creates an SQLAlchemy URL object from the config.
+
+        Returns
+        -------
+        URL
+            An SQLAlchemy URL object.
+        """
         return URL.create(
             drivername="postgresql+psycopg",
             username=self.POSTGRES_USER,

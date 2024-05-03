@@ -141,7 +141,7 @@ class LocalChain(Chain):
             pool._cleanup()  # pylint: disable=protected-access
         try:
             self.postgres_container.kill()
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             pass
         self.anvil_process.kill()
         super().cleanup()
@@ -430,7 +430,7 @@ class LocalChain(Chain):
             p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() not in hyperdrive_pools
         ]
         for pool in invalid_pools:
-            pool._cleanup(drop_data=True)
+            pool._cleanup(drop_data=True)  # pylint: disable=protected-access
 
         # Given the current list of deployed hyperdrive pools, we throw away any pools deployed
         # after the snapshot
