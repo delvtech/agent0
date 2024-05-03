@@ -51,13 +51,27 @@ def calc_price_and_rate(interface:HyperdriveReadWriteInterface):
     rate = interface.calc_spot_rate()
     return price, rate
 
+def trade(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_portion, max_long, max_short):
+    relevant_max = max_long if trade_portion > 0 else max_short
+    trade_size = int(float(relevant_max) * trade_portion)
+    trade_result = trade_long(interface, agent, trade_size) if trade_size > 0 else trade_short(interface, agent, abs(trade_size))
+    return *trade_result, trade_size
+
 def trade_long(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
-    agent.open_long(base=FixedPoint(trade_size))
-    return calc_price_and_rate(interface)
+    try:
+        agent.open_long(base=FixedPoint(trade_size))
+        return calc_price_and_rate(interface)
+    except:
+        pass
+    return None, None
 
 def trade_short(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
-    agent.open_short(bonds=FixedPoint(trade_size))
-    return calc_price_and_rate(interface)
+    try:
+        agent.open_short(bonds=FixedPoint(trade_size))
+        return calc_price_and_rate(interface)
+    except:
+        pass
+    return None, None
 
 def trade_liq(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
     agent.add_liquidity(base=trade_size)
@@ -76,6 +90,7 @@ def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float,
     """Test discoverability of rates by time stretch."""
     liquidity = FixedPoint(100)
     trade_portion_list = [*np.arange(0.1, 1.0, 0.1), 0.99]
+    trade_portion_list += [-x for x in trade_portion_list]  # add negative portions
     records = []
     logging.info(f"Time stretch APR: {time_stretch_apr}")
     interactive_config = LocalHyperdrive.Config(
@@ -102,13 +117,10 @@ def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float,
     max_short = interface.calc_max_short(budget=agent.wallet.balance.amount)
     logging.info(f"Max long :  base={float(max_long):>10,.0f}")
     logging.info(f"Max short: bonds={float(max_short):>10,.0f}")
-
-    # we short
-    trade_size = int(float(max_short) * trade_portion_one)
-    price, rate = trade_short(interface, agent, trade_size)
-    records.append((trial, "first", interface.calc_effective_share_reserves(), -trade_size, -trade_portion_one, price, rate, time_stretch_apr))
+    price, rate, trade_size = trade(interface, agent, trade_portion_one, max_long, max_short)
+    records.append((trial, "first", interface.calc_effective_share_reserves(), trade_size, trade_portion_one, price, rate, time_stretch_apr))
     price, rate = trade_liq(interface, agent, liquidity)
-    records.append((trial, "addliq", interface.calc_effective_share_reserves(), -trade_size, -trade_portion_one, price, rate, time_stretch_apr))
+    records.append((trial, "addliq", interface.calc_effective_share_reserves(), trade_size, trade_portion_one, price, rate, time_stretch_apr))
     del price, rate, trade_size
 
     # save the snapshot
@@ -116,30 +128,14 @@ def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float,
 
     # then we short
     max_short_two = interface.calc_max_short(budget=agent.wallet.balance.amount)
-    logging.info(f"Max short: bonds={float(max_short_two):>10,.0f}")
-    for trade_portion_two in trade_portion_list:
-        chain.load_snapshot()
-        trade_size = int(float(max_short_two) * trade_portion_two)
-        try:
-            price, rate = trade_short(interface, agent, trade_size)
-            records.append((trial, "second", interface.calc_effective_share_reserves(), -trade_size, -trade_portion_two, price, rate, time_stretch_apr))
-            logging.info("trade_portion=%s, rate=%s", -trade_portion_two, rate)
-        except:
-            logging.info("FAILED trade_portion=%s, rate=NA", -trade_portion_two)
-            pass
-    # then we long
     max_long_two = interface.calc_max_long(budget=agent.wallet.balance.amount)
+    logging.info(f"Max short: bonds={float(max_short_two):>10,.0f}")
     logging.info(f"Max long :  base={float(max_long_two):>10,.0f}")
     for trade_portion_two in trade_portion_list:
         chain.load_snapshot()
-        trade_size = int(float(max_long_two) * trade_portion_two)
-        try:
-            price, rate = trade_long(interface, agent, trade_size)
-            records.append((trial, "second", interface.calc_effective_share_reserves(), trade_size, trade_portion_two, price, rate, time_stretch_apr))
-            logging.info("trade_portion=%s, rate=%s", trade_portion_two, rate)
-        except:
-            logging.info("FAILED trade_portion=%s, rate=NA", trade_portion_two)
-            pass
+        price, rate, trade_size = trade(interface, agent, trade_portion_two, max_long_two, max_short_two)
+        records.append((trial, "second", interface.calc_effective_share_reserves(), trade_size, trade_portion_two, price, rate, time_stretch_apr))
+        logging.info("trade_portion=%s, rate=%s", trade_portion_two, rate)
     columns = ["trial", "type", "liquidity", "trade_size", "portion", "price", "rate", "time_stretch_apr"]
     new_result = pd.DataFrame.from_records(records, columns=columns)
     logging.info(f"\n{new_result[columns[:-1]]}")
