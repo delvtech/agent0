@@ -128,6 +128,9 @@ class LocalChain(Chain):
         self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
         self.experimental_data_threading = config.experimental_data_threading
 
+        # Ensure snapshot dir exists
+        os.makedirs(self._snapshot_dir, exist_ok=True)
+
         if config.block_timestamp_interval is not None:
             self._set_block_timestamp_interval(config.block_timestamp_interval)
 
