@@ -1,6 +1,7 @@
 """Tests of economic intuition."""
 
 import logging
+import os
 from copy import deepcopy
 from decimal import Decimal
 
@@ -10,7 +11,8 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.utilities import predict_long, predict_short
+from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
+from agent0.ethpy.hyperdrive.interface.read_write_interface import HyperdriveReadWriteInterface
 
 YEAR_IN_SECONDS = 31_536_000
 
@@ -44,13 +46,35 @@ def test_symmetry(chain: LocalChain):
     print(shares_in)
     assert shares_out != shares_in
 
+def calc_price_and_rate(interface:HyperdriveReadWriteInterface):
+    price = interface.calc_spot_price()
+    rate = interface.calc_spot_rate()
+    return price, rate
+
+def trade_long(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
+    agent.open_long(base=FixedPoint(trade_size))
+    return calc_price_and_rate(interface)
+
+def trade_short(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
+    agent.open_short(bonds=FixedPoint(trade_size))
+    return calc_price_and_rate(interface)
+
+def trade_liq(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
+    agent.add_liquidity(base=trade_size)
+    return calc_price_and_rate(interface)
 
 # parametrize with time_stretch_apr
-@pytest.mark.parametrize("time_stretch_apr", [0.01, 0.05, 0.1, 0.5, 1])
+# TODO: add back 1% time_stretch_apr, currently failing in rust (https://github.com/delvtech/hyperdrive-rs/issues/62)
+# @pytest.mark.parametrize("time_stretch_apr", [0.01, 0.05, 0.1, 0.2, 0.3])
+@pytest.mark.parametrize(
+    "trial,time_stretch_apr, trade_portion_one",
+    [(1, 0.2, 0.90), (2, 0.2, 0.99)],
+    # [(1, 0.2, 0.99)],
+)
 @pytest.mark.anvil
-def test_discoverability(chain: LocalChain, time_stretch_apr: float):
+def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float, trade_portion_one: float):
     """Test discoverability of rates by time stretch."""
-    liquidity = FixedPoint(10_000_000)
+    liquidity = FixedPoint(100)
     trade_portion_list = [*np.arange(0.1, 1.0, 0.1), 0.99]
     records = []
     logging.info(f"Time stretch APR: {time_stretch_apr}")
@@ -67,42 +91,62 @@ def test_discoverability(chain: LocalChain, time_stretch_apr: float):
         factory_min_time_stretch_apr=FixedPoint(0.001),
         factory_max_time_stretch_apr=FixedPoint(1000),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    interface = interactive_hyperdrive.interface
+    hyperdrive:LocalHyperdrive = LocalHyperdrive(chain, interactive_config)
+    agent:LocalHyperdriveAgent = hyperdrive.init_agent(base=FixedPoint(1e18))
+    interface = hyperdrive.interface
     time_stretch = interface.current_pool_state.pool_config.time_stretch
     logging.info("Time stretch: %s", time_stretch)
     logging.info("Time stretch: %s", time_stretch)
 
-    max_long = interface.calc_max_long(liquidity)
-    max_short = interface.calc_max_short(liquidity)
-    logging.info(f"Max long : base={float(max_long):>10,.0f}")
-    logging.info(f"Max short: base={float(max_short):>10,.0f}")
-    for trade_portion in trade_portion_list:
-        long_price = long_rate = None
-        trade_size = int(float(max_long) * trade_portion)
-        logging.info(f"Attempting long trade of {trade_size}")
-        long_trade = predict_long(interface, base=FixedPoint(trade_size))
-        pool_state = deepcopy(interface.current_pool_state)
-        pool_state.pool_info.bond_reserves += long_trade.pool.bonds
-        pool_state.pool_info.share_reserves += long_trade.pool.shares
-        long_price = interface.calc_spot_price(pool_state)
-        long_rate = interface.calc_spot_rate(pool_state)
-        records.append((trade_size, trade_portion, long_price, long_rate, time_stretch_apr))
-    for trade_portion in trade_portion_list:
-        short_price = short_rate = None
-        trade_size = int(float(max_short) * trade_portion)
-        logging.info(f"Attempting short trade of {trade_size}")
-        short_trade = predict_short(interface, bonds=FixedPoint(trade_size))
-        pool_state = deepcopy(interface.current_pool_state)
-        pool_state.pool_info.bond_reserves += short_trade.pool.bonds
-        pool_state.pool_info.share_reserves += short_trade.pool.shares
-        short_price = interface.calc_spot_price(pool_state)
-        short_rate = interface.calc_spot_rate(pool_state)
-        records.append((-trade_size, -trade_portion, short_price, short_rate, time_stretch_apr))
-    new_result = pd.DataFrame.from_records(records, columns=["trade_size", "portion", "price", "rate", "time_stretch_apr"])
-    logging.info(f"\n{new_result[['trade_size', 'portion', 'price', 'rate']]}")
-    previous_results = pd.read_csv("discoverability.csv", index_col=0)
-    all_results = pd.concat([previous_results, new_result])
+    max_long = interface.calc_max_long(budget=agent.wallet.balance.amount)
+    max_short = interface.calc_max_short(budget=agent.wallet.balance.amount)
+    logging.info(f"Max long :  base={float(max_long):>10,.0f}")
+    logging.info(f"Max short: bonds={float(max_short):>10,.0f}")
+
+    # we short
+    trade_size = int(float(max_short) * trade_portion_one)
+    price, rate = trade_short(interface, agent, trade_size)
+    records.append((trial, "first", interface.calc_effective_share_reserves(), -trade_size, -trade_portion_one, price, rate, time_stretch_apr))
+    price, rate = trade_liq(interface, agent, liquidity)
+    records.append((trial, "addliq", interface.calc_effective_share_reserves(), -trade_size, -trade_portion_one, price, rate, time_stretch_apr))
+    del price, rate, trade_size
+
+    # save the snapshot
+    chain.save_snapshot()
+
+    # then we short
+    max_short_two = interface.calc_max_short(budget=agent.wallet.balance.amount)
+    logging.info(f"Max short: bonds={float(max_short_two):>10,.0f}")
+    for trade_portion_two in trade_portion_list:
+        chain.load_snapshot()
+        trade_size = int(float(max_short_two) * trade_portion_two)
+        try:
+            price, rate = trade_short(interface, agent, trade_size)
+            records.append((trial, "second", interface.calc_effective_share_reserves(), -trade_size, -trade_portion_two, price, rate, time_stretch_apr))
+            logging.info("trade_portion=%s, rate=%s", -trade_portion_two, rate)
+        except:
+            logging.info("FAILED trade_portion=%s, rate=NA", -trade_portion_two)
+            pass
+    # then we long
+    max_long_two = interface.calc_max_long(budget=agent.wallet.balance.amount)
+    logging.info(f"Max long :  base={float(max_long_two):>10,.0f}")
+    for trade_portion_two in trade_portion_list:
+        chain.load_snapshot()
+        trade_size = int(float(max_long_two) * trade_portion_two)
+        try:
+            price, rate = trade_long(interface, agent, trade_size)
+            records.append((trial, "second", interface.calc_effective_share_reserves(), trade_size, trade_portion_two, price, rate, time_stretch_apr))
+            logging.info("trade_portion=%s, rate=%s", trade_portion_two, rate)
+        except:
+            logging.info("FAILED trade_portion=%s, rate=NA", trade_portion_two)
+            pass
+    columns = ["trial", "type", "liquidity", "trade_size", "portion", "price", "rate", "time_stretch_apr"]
+    new_result = pd.DataFrame.from_records(records, columns=columns)
+    logging.info(f"\n{new_result[columns[:-1]]}")
+    previous_results = pd.read_csv("discoverability.csv") if os.path.exists("discoverability.csv") else pd.DataFrame()
+    logging.info(f"previous_results.shape: {previous_results.shape}")
+    all_results = pd.concat([previous_results, new_result], ignore_index=True, axis=0)
+    logging.info(f"all_results.shape: {all_results.shape}")
     all_results.to_csv("discoverability.csv", index=False)
 
 
