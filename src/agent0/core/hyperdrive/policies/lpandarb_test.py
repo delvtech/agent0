@@ -27,7 +27,7 @@ YEAR_IN_SECONDS = 31_536_000
 
 # TODO use the existing fixtures instead of custom fixture here
 @pytest.fixture(scope="function")
-def interactive_hyperdrive(chain: LocalChain) -> LocalHyperdrive:
+def interactive_hyperdrive(fast_chain_fixture: LocalChain) -> LocalHyperdrive:
     """Create interactive hyperdrive.
 
     Arguments
@@ -44,7 +44,7 @@ def interactive_hyperdrive(chain: LocalChain) -> LocalHyperdrive:
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         initial_fixed_apr=FixedPoint("0.05"),
     )
-    return LocalHyperdrive(chain, interactive_config)
+    return LocalHyperdrive(fast_chain_fixture, interactive_config)
 
 
 @pytest.fixture(scope="function")
