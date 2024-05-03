@@ -77,14 +77,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
     if postgres_config is None:
         postgres_config = build_postgres_config()
 
-    url_object = URL.create(
-        drivername="postgresql+psycopg",
-        username=postgres_config.POSTGRES_USER,
-        password=postgres_config.POSTGRES_PASSWORD,
-        host=postgres_config.POSTGRES_HOST,
-        port=postgres_config.POSTGRES_PORT,
-        database=postgres_config.POSTGRES_DB,
-    )
+    url_object = postgres_config.create_url_obj()
     engine = create_engine(url_object)
 
     if ensure_database_created:
