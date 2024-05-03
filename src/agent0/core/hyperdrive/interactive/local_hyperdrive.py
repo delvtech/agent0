@@ -19,6 +19,7 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
+from sqlalchemy_utils.functions import drop_database
 from web3._utils.threads import Timeout
 from web3.exceptions import TimeExhausted
 
@@ -244,7 +245,7 @@ class LocalHyperdrive(Hyperdrive):
         # Make a copy of the dataclass to avoid changing the base class
         self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(self.interface.hyperdrive_contract.address)
+        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
 
         # Store the db_id here for later reference
         self._db_name = self.postgres_config.POSTGRES_DB
@@ -419,11 +420,17 @@ class LocalHyperdrive(Hyperdrive):
             calc_pnl=self.calc_pnl,
         )
 
-    def _cleanup(self):
+    def _cleanup(self, drop_data: bool = False):
         """Cleans up resources used by this object."""
         if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
+
         self.db_session.close()
+
+        # We drop the database attached to this pool on cleanup
+        if drop_data:
+            drop_database(self.postgres_config.create_url_obj())
+
         if self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
             self.dashboard_subprocess = None
