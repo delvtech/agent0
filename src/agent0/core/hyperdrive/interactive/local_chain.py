@@ -113,10 +113,8 @@ class LocalChain(Chain):
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}")
 
         # Remove protocol and replace . and : with dashes
-        formatted_rpc_url = (
-            self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
-        )
-        db_container_name = f"postgres-interactive-hyperdrive-{formatted_rpc_url}"
+        self.chain_id = self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
+        db_container_name = f"postgres-interactive-hyperdrive-{self.chain_id}"
         self.postgres_config, self.postgres_container = self._initialize_postgres_container(
             db_container_name, config.db_port, config.remove_existing_db_container
         )
@@ -141,7 +139,10 @@ class LocalChain(Chain):
         # Runs cleanup on all deployed pools
         for pool in self._deployed_hyperdrive_pools:
             pool._cleanup()  # pylint: disable=protected-access
-        self.postgres_container.kill()
+        try:
+            self.postgres_container.kill()
+        except Exception:
+            pass
         self.anvil_process.kill()
         super().cleanup()
 
@@ -387,7 +388,7 @@ class LocalChain(Chain):
 
         # Save bookkeeping of deployed pools
         # We save the addresses of deployed pools for loading
-        pool_filename = self._snapshot_dir + "/" + "pools.pkl"
+        pool_filename = self._snapshot_dir + "/" + self.chain_id + "-pools.pkl"
         pool_addr_list = [pool.get_hyperdrive_address() for pool in self._deployed_hyperdrive_pools]
         with open(pool_filename, "wb") as file:
             dill.dump(pool_addr_list, file, dill.HIGHEST_PROTOCOL)
@@ -419,13 +420,17 @@ class LocalChain(Chain):
         if "result" not in response:
             raise KeyError("Response did not have a result.")
 
-        # load snapshot database state
-        self._load_db(self._snapshot_dir)
-
         # Load the bookkeeping of deployed pools
-        pool_filename = self._snapshot_dir + "/" + "pools.pkl"
+        pool_filename = self._snapshot_dir + "/" + self.chain_id + "-pools.pkl"
         with open(pool_filename, "rb") as file:
             hyperdrive_pools: list[str] = dill.load(file)
+
+        # Run cleanup on any invalid pools on load snapshot
+        invalid_pools = [
+            p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() not in hyperdrive_pools
+        ]
+        for pool in invalid_pools:
+            pool._cleanup(drop_data=True)
 
         # Given the current list of deployed hyperdrive pools, we throw away any pools deployed
         # after the snapshot
@@ -433,6 +438,9 @@ class LocalChain(Chain):
             p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() in hyperdrive_pools
         ]
         # NOTE: existing pool objects initialized after snapshot will no longer be valid.
+
+        # load snapshot database state
+        self._load_db(self._snapshot_dir)
 
         # Update pool's agent bookkeeping
         for pool in self._deployed_hyperdrive_pools:
