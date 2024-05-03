@@ -286,12 +286,14 @@ def test_advance_time_with_checkpoints(chain: LocalChain):
     # then check `hyperdrive_interface.get_checkpoint_info` for proper checkpoints.
 
 
+# We use session chain here to avoid snapshotting since
+# we use snapshotting in the test
 @pytest.mark.anvil
-def test_save_load_snapshot(chain: LocalChain):
+def test_save_load_snapshot(clean_chain: LocalChain):
     """Save and load snapshot."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     initial_pool_config = LocalHyperdrive.Config()
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(clean_chain, initial_pool_config)
     hyperdrive_interface = interactive_hyperdrive.interface
 
     # Generate funded trading agents from the interactive object
@@ -302,7 +304,7 @@ def test_save_load_snapshot(chain: LocalChain):
     hyperdrive_agent.add_liquidity(base=FixedPoint(4_444))
 
     # Save the state on the chain
-    chain.save_snapshot()
+    clean_chain.save_snapshot()
 
     # To ensure snapshots are working, we check the agent's wallet on the chain, the wallet object in the agent,
     # and in the db
@@ -336,7 +338,7 @@ def test_save_load_snapshot(chain: LocalChain):
     assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
     # Save snapshot and check for equality
-    chain.load_snapshot()
+    clean_chain.load_snapshot()
 
     (
         check_eth_on_chain,
@@ -379,7 +381,7 @@ def test_save_load_snapshot(chain: LocalChain):
     assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
     # Save snapshot and check for equality
-    chain.load_snapshot()
+    clean_chain.load_snapshot()
 
     (
         check_eth_on_chain,
@@ -422,7 +424,7 @@ def test_save_load_snapshot(chain: LocalChain):
     assert not check_pool_state_on_db.equals(init_pool_state_on_db)
 
     # Save snapshot and check for equality
-    chain.load_snapshot()
+    clean_chain.load_snapshot()
 
     (
         check_eth_on_chain,
@@ -687,7 +689,25 @@ def test_policy_config_none_rng(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_snapshot_policy_state(chain: LocalChain):
+def test_pool_creation_after_snapshot(clean_chain: LocalChain):
+    assert len(clean_chain._deployed_hyperdrive_pools) == 0
+    clean_chain.save_snapshot()
+    _ = LocalHyperdrive(clean_chain)
+    assert len(clean_chain._deployed_hyperdrive_pools) == 1
+    clean_chain.load_snapshot()
+    assert len(clean_chain._deployed_hyperdrive_pools) == 0
+    _ = LocalHyperdrive(clean_chain)
+    clean_chain.save_snapshot()
+    _ = LocalHyperdrive(clean_chain)
+    assert len(clean_chain._deployed_hyperdrive_pools) == 2
+    clean_chain.load_snapshot()
+    assert len(clean_chain._deployed_hyperdrive_pools) == 1
+
+
+# Since we use snapshots in test fixtures, we can't use the fixture here
+# So we build from scratch
+@pytest.mark.anvil
+def test_snapshot_policy_state(clean_chain: LocalChain):
     """Tests proper saving/loading of policy state during snapshotting."""
 
     # Define dummy class for deep state copy
@@ -715,10 +735,10 @@ def test_snapshot_policy_state(chain: LocalChain):
             return [], False
 
     # Initialize agent with sub policy
-    interactive_hyperdrive = LocalHyperdrive(chain)
+    interactive_hyperdrive = LocalHyperdrive(clean_chain)
     agent = interactive_hyperdrive.init_agent(eth=FixedPoint(10), policy=_SubPolicy)
     # Snapshot state
-    chain.save_snapshot()
+    clean_chain.save_snapshot()
 
     # Sanity check and type narrowing
     assert isinstance(agent.agent.policy, _SubPolicy)
@@ -738,7 +758,7 @@ def test_snapshot_policy_state(chain: LocalChain):
     assert agent.agent.policy.inner_state.inner_list == [1, 111]
 
     # Load snapshot
-    chain.load_snapshot()
+    clean_chain.load_snapshot()
 
     # Ensure inner states were restored
     assert agent.agent.policy.outer_var == 2
@@ -748,10 +768,10 @@ def test_snapshot_policy_state(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_load_rng_on_snapshot(chain: LocalChain):
+def test_load_rng_on_snapshot(clean_chain: LocalChain):
     """The policy config has rng set to None."""
-    load_rng_hyperdrive = LocalHyperdrive(chain, LocalHyperdrive.Config(load_rng_on_snapshot=True))
-    non_load_rng_hyperdrive = LocalHyperdrive(chain, LocalHyperdrive.Config(load_rng_on_snapshot=False))
+    load_rng_hyperdrive = LocalHyperdrive(clean_chain, LocalHyperdrive.Config(load_rng_on_snapshot=True))
+    non_load_rng_hyperdrive = LocalHyperdrive(clean_chain, LocalHyperdrive.Config(load_rng_on_snapshot=False))
 
     agent_policy = PolicyZoo.random.Config()
     agent_policy.rng = None
@@ -771,14 +791,14 @@ def test_load_rng_on_snapshot(chain: LocalChain):
         policy_config=agent_policy,
     )
 
-    chain.save_snapshot()
+    clean_chain.save_snapshot()
 
     assert alice.agent.policy.rng is not None
     assert bob.agent.policy.rng is not None
     alice_random_before_snap = alice.agent.policy.rng.standard_normal(10)
     bob_random_before_snap = bob.agent.policy.rng.standard_normal(10)
 
-    chain.load_snapshot()
+    clean_chain.load_snapshot()
 
     alice_random_after_snap = alice.agent.policy.rng.standard_normal(10)
     bob_random_after_snap = bob.agent.policy.rng.standard_normal(10)
@@ -814,7 +834,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(chain: LocalChain)
 @pytest.mark.anvil
 @pytest.mark.parametrize("time_stretch", [0.01, 0.1, 0.5, 1, 10, 100])
 def test_deploy_nonstandard_timestretch(chain: LocalChain, time_stretch: float):
-    """Deplopy with nonstandard timestretch parameters."""
+    """Deploy with nonstandard timestretch parameters."""
     initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(10_000_000),
         position_duration=60 * 60 * 24 * 365,  # 1 year
