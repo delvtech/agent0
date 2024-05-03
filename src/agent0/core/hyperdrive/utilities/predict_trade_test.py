@@ -100,7 +100,7 @@ def test_prediction_example(chain: LocalChain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
     base_needed = FixedPoint(100)
     delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_long(base=base_needed)
@@ -117,7 +117,7 @@ def test_open_long_bonds(chain: LocalChain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     bonds_needed = FixedPoint(100)
     delta = predict_long(interactive_hyperdrive.interface, bonds=bonds_needed)
@@ -134,7 +134,7 @@ def test_open_short_base(chain: LocalChain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     base_needed = FixedPoint(100)
     delta = predict_short(interactive_hyperdrive.interface, base=base_needed)
@@ -155,7 +155,7 @@ def test_predict_open_long_bonds(chain: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
     pool_state = deepcopy(hyperdrive_interface.current_pool_state)
 
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
@@ -226,7 +226,7 @@ def test_predict_open_long_base(chain: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     base_needed = FixedPoint(100_000)
     delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed)
@@ -285,7 +285,7 @@ def test_predict_open_short_bonds(chain: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     bonds_needed = FixedPoint(100_000)
     delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
@@ -347,7 +347,7 @@ def test_predict_open_short_base(chain: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     # start with base_needed, convert to bonds_needed
     base_needed = FixedPoint(100_000)
