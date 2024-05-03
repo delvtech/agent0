@@ -173,10 +173,10 @@ class TestHyperdriveReadInterface:
         fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
-    def test_deployed_values(self, hyperdrive_read_interface: HyperdriveReadInterface):
+    def test_deployed_values(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Test the hyperdrive interface versus expected values."""
         # pylint: disable=too-many-locals
-        local_hyperdrive_pool = hyperdrive_read_interface.deployed_hyperdrive_pool
+        local_hyperdrive_pool = hyperdrive_read_interface_fixture.deployed_hyperdrive_pool
         # Fixed rate is annualized
         initial_fixed_rate = FixedPoint("0.05")
         # This expected time stretch is only true for 1 year position duration
@@ -206,7 +206,7 @@ class TestHyperdriveReadInterface:
             governance_zombie=FixedPoint("0.03"),  # 3%
         )
 
-        api_pool_config = hyperdrive_read_interface.current_pool_state.pool_config
+        api_pool_config = hyperdrive_read_interface_fixture.current_pool_state.pool_config
 
         # Existence test
         assert len(fields(api_pool_config)) > 0, "API pool config must have length greater than 0"
@@ -243,7 +243,7 @@ class TestHyperdriveReadInterface:
             "withdrawal_shares_proceeds",
         }
 
-        api_pool_info = hyperdrive_read_interface.current_pool_state.pool_info
+        api_pool_info = hyperdrive_read_interface_fixture.current_pool_state.pool_info
 
         # Ensure keys and fields match (ignoring linker_factory and linker_code_hash)
         api_keys = [n.name for n in fields(api_pool_info)]
@@ -253,13 +253,13 @@ class TestHyperdriveReadInterface:
             assert key in expected_pool_info_keys, f"Key {key} in API not in expected."
 
         # Check spot price and fixed rate
-        api_spot_price = hyperdrive_read_interface.calc_spot_price()
+        api_spot_price = hyperdrive_read_interface_fixture.calc_spot_price()
         effective_share_reserves = api_pool_info.share_reserves - api_pool_info.share_adjustment
         expected_spot_price = (
             (api_pool_config.initial_vault_share_price * effective_share_reserves) / api_pool_info.bond_reserves
         ) ** api_pool_config.time_stretch
 
-        api_fixed_rate = hyperdrive_read_interface.calc_spot_rate()
+        api_fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate()
         expected_fixed_rate = (1 - expected_spot_price) / (
             expected_spot_price * (api_pool_config.position_duration / FixedPoint(365 * 24 * 60 * 60))
         )
