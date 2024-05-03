@@ -162,7 +162,7 @@ class TestHyperdriveReadInterface:
         # pylint: disable=too-many-locals
         local_hyperdrive_pool = hyperdrive_read_interface.deployed_hyperdrive_pool
         # Fixed rate is annualized
-        initial_fixed_rate = FixedPoint("0.05") / 52
+        initial_fixed_rate = FixedPoint("0.05")
         # This expected time stretch is only true for 1 year position duration
         expected_timestretch_fp = FixedPoint(1) / (
             FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
@@ -185,7 +185,7 @@ class TestHyperdriveReadInterface:
         }
         expected_pool_config["fees"] = FeesFP(
             curve=FixedPoint("0.01"),  # 1%,
-            flat=FixedPoint("0.0005"),  # 0.05%
+            flat=FixedPoint("0.0005") / 52,  # 0.05%
             governance_lp=FixedPoint("0.15"),  # 15%
             governance_zombie=FixedPoint("0.03"),  # 3%
         )
