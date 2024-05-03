@@ -18,7 +18,7 @@ def hyperdrive_read_interface_fixture(fast_hyperdrive_fixture: LocalHyperdrive) 
     Arguments
     ---------
     fast_hyperdrive_fixture: LocalHyperdrive
-        Fixture representing the deployed hyperdrive pool
+        Fixture representing the deployed hyperdrive pool.
 
     Returns
     ------
@@ -37,7 +37,7 @@ def hyperdrive_read_write_interface_fixture(
     Arguments
     ---------
     fast_hyperdrive_fixture: LocalHyperdrive
-        Fixture representing the deployed hyperdrive pool
+        Fixture representing the deployed hyperdrive pool.
 
     Returns
     ------

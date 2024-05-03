@@ -93,6 +93,9 @@ def fast_chain_fixture(init_chain: LocalChain) -> Iterator[LocalChain]:
     """Local chain connected to a local database hosted in docker.
     This fixture uses snapshot on an existing chain in a function scope.
 
+    ...note:: This chain is booted from an existing snapshot for speed.
+    If you save a new snapshot the first will be overwritten.
+
     Arguments
     ---------
     init_chain: LocalChain
@@ -101,7 +104,7 @@ def fast_chain_fixture(init_chain: LocalChain) -> Iterator[LocalChain]:
     Yield
     -----
     LocalChain
-        local chain instance.
+        Local chain instance.
     """
     init_chain.save_snapshot()
     yield init_chain

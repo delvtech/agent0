@@ -280,22 +280,6 @@ class TestSlippageWarning:
     # TODO slippage isn't implemented in the python side for add/remove liquidity and
     # withdrawal shares. Remove liquidity has bindings for slippage, but is ignored.
 
-    # @pytest.mark.docker
-    # def test_invalid_slippage_remove_liquidity(
-    #    self,
-    #    fast_chain_fixture: LocalChain,
-    # ):
-    #    config = LocalHyperdrive.Config(
-    #        initial_liquidity=FixedPoint(1_000),
-    #        position_duration=60 * 60 * 24 * 365,  # 1 year
-    #        exception_on_policy_slippage=True,
-    #    )
-    #    hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
-    #    try:
-    #        expected_failure_with_funded_bot(local_hyperdrive_pool, InvalidRemoveLiquiditySlippage)
-    #    except ContractCallException as exc:
-    #        assert "Slippage detected" in exc.args[0]
-
     @pytest.mark.docker
     def test_invalid_slippage_close_long(
         self,

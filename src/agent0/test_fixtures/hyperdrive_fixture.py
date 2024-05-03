@@ -80,6 +80,9 @@ def fast_hyperdrive_fixture(init_hyperdrive: LocalHyperdrive) -> Iterator[LocalH
     """Local hyperdrive pool test fixture.
     This fixture uses snapshot on an existing chain in a function scope.
 
+    ...note:: This pool is booted from an existing snapshot for speed.
+    If you save a new snapshot the first will be overwritten.
+
     Arguments
     ---------
     init_hyperdrive: LocalHyperdrive
