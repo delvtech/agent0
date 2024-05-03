@@ -82,7 +82,7 @@ def create_arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     return interactive_hyperdrive.init_agent(
-        base=andy_base, name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
+        base=andy_base, eth=FixedPoint(10), name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
     )
 
 
@@ -100,7 +100,7 @@ def manual_agent(interactive_hyperdrive) -> LocalHyperdriveAgent:
     InteractiveHyperdriveAgent
         Manual interactive hyperdrive agent.
     """
-    return interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    return interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
 
 @pytest.mark.anvil
@@ -326,7 +326,7 @@ def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     larry = interactive_hyperdrive.init_agent(
-        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+        base=larry_base, eth=FixedPoint(10), name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
     )
     # change the fixed rate
     manual_agent.open_short(bonds=FixedPoint(100_000))
@@ -348,7 +348,7 @@ def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agen
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     larry = interactive_hyperdrive.init_agent(
-        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+        base=larry_base, eth=FixedPoint(10), name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
     )
     # change the fixed rate
     manual_agent.open_long(base=FixedPoint(100_000))
