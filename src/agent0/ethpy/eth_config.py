@@ -21,8 +21,6 @@ class EthConfig:
     """The uri to the database server. If set to None, we don't use the database."""
     abi_dir: str = "./packages/hyperdrive/src/abis"
     """The path to the abi directory."""
-    preview_before_trade: bool = False
-    """Whether to preview the trade before submitting it. Defaults to False."""
 
     def __post_init__(self):
         if isinstance(self.artifacts_uri, str):

@@ -302,7 +302,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
@@ -314,7 +318,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
@@ -325,7 +333,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
@@ -336,7 +348,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
@@ -347,7 +363,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
@@ -358,7 +378,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
@@ -369,7 +393,11 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_results: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
         tx_receipt = self._handle_trade_result(trade_results, always_throw_exception=True)
@@ -385,7 +413,13 @@ class Hyperdrive:
             raise ValueError("Must pass in a policy in the constructor to execute policy action.")
 
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(
+                self.interface,
+                agent,
+                preview_before_trade=self.config.preview_before_trade,
+                liquidate=False,
+                interactive_mode=True,
+            )
         )
         out_events = []
         # The underlying policy can execute multiple actions in one step
@@ -405,6 +439,7 @@ class Hyperdrive:
             async_execute_agent_trades(
                 self.interface,
                 agent,
+                preview_before_trade=self.config.preview_before_trade,
                 liquidate=True,
                 randomize_liquidation=randomize,
                 interactive_mode=True,
