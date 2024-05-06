@@ -11,7 +11,9 @@ from fixedpointmath import FixedPoint
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 
 # %% [markdown]
+#####################
 # Initialization
+#####################
 
 # %%
 # Parameters for local chain initialization, defines defaults in constructor
@@ -50,7 +52,9 @@ initial_pool_config = LocalHyperdrive.Config(initial_liquidity=FixedPoint(100_00
 hyperdrive1 = LocalHyperdrive(chain, initial_pool_config, deployer=agent0)
 
 # %% [markdown]
+#####################
 # Executing Trades
+#####################
 
 # %%
 # Here, we execute a trade on a pool.
@@ -115,7 +119,9 @@ for i in range(10):
     agent1.execute_policy_action()
 
 # %% [markdown]
+#####################
 # Simulation Management
+#####################
 
 # %%
 # The local chain and hyperdrive objects provide various simulation tools, such as
@@ -138,7 +144,9 @@ chain.load_snapshot()
 hyperdrive0.set_variable_rate(FixedPoint("0.10"))
 
 # %% [markdown]
+#####################
 # Analysis
+#####################
 
 # %%
 # Runs a dashboard showing various metrics on the pool.
@@ -175,6 +183,10 @@ pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
 # Change wallet_address to be columns for plotting
 pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
 
+# %% [markdown]
+#####################
+# Cleanup
+#####################
 # %%
 # Cleanup resources
 chain.cleanup()
