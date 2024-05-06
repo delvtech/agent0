@@ -199,6 +199,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
+        preview_before_trade: bool = False,
     ) -> ReceiptBreakdown:
         """Contract call to close a long position.
 
@@ -223,6 +224,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An optional explicit nonce to set with the transaction.
+        preview_before_trade: bool, optional
+            Whether to preview the trade before executing.
 
         Returns
         -------
@@ -239,7 +242,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
-            preview_before_trade=self.eth_config.preview_before_trade,
+            preview_before_trade=preview_before_trade,
         )
 
     async def async_open_short(
@@ -251,6 +254,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
+        preview_before_trade: bool = False,
     ) -> ReceiptBreakdown:
         """Contract call to open a short position.
 
@@ -273,6 +277,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce, optional
             An explicit nonce to set with the transaction.
+        preview_before_trade: bool, optional
+            Whether to preview the trade before executing.
 
         Returns
         -------
@@ -288,7 +294,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
-            preview_before_trade=self.eth_config.preview_before_trade,
+            preview_before_trade=preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -303,6 +309,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
+        preview_before_trade: bool = False,
     ) -> ReceiptBreakdown:
         """Contract call to close a short position.
 
@@ -327,6 +334,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
+        preview_before_trade: bool, optional
+            Whether to preview the trade before executing.
 
         Returns
         -------
@@ -343,7 +352,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
-            preview_before_trade=self.eth_config.preview_before_trade,
+            preview_before_trade=preview_before_trade,
         )
 
     # We do not control the number of arguments; this is set by hyperdrive-rs
@@ -359,6 +368,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
+        preview_before_trade: bool = False,
     ) -> ReceiptBreakdown:
         """Contract call to add liquidity to the Hyperdrive pool.
 
@@ -385,6 +395,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
+        preview_before_trade: bool, optional
+            Whether to preview the trade before executing.
 
         Returns
         -------
@@ -402,7 +414,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
-            preview_before_trade=self.eth_config.preview_before_trade,
+            preview_before_trade=preview_before_trade,
         )
 
     async def async_remove_liquidity(
@@ -413,6 +425,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
+        preview_before_trade: bool = False,
     ) -> ReceiptBreakdown:
         """Contract call to remove liquidity from the Hyperdrive pool.
 
@@ -431,6 +444,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
+        preview_before_trade: bool, optional
+            Whether to preview the trade before executing.
 
         Returns
         -------
@@ -445,7 +460,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
-            preview_before_trade=self.eth_config.preview_before_trade,
+            preview_before_trade=preview_before_trade,
         )
 
     async def async_redeem_withdraw_shares(
@@ -456,6 +471,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
+        preview_before_trade: bool = False,
     ) -> ReceiptBreakdown:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
 
@@ -482,6 +498,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the priority fee for the transaction. Defaults to 1.
         nonce: Nonce | None, optional
             An explicit nonce to set with the transaction.
+        preview_before_trade: bool, optional
+            Whether to preview the trade before executing.
 
         Returns
         -------
@@ -496,4 +514,5 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             nonce=nonce,
+            preview_before_trade=preview_before_trade,
         )
