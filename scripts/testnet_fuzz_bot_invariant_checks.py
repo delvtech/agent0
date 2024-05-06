@@ -19,7 +19,6 @@ from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
@@ -38,9 +37,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
     rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
-    setup_logging(
-        log_stdout=True,
-    )
 
     # We calculate how many blocks we should wait before checking for a new pool
     pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12

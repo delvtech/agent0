@@ -36,7 +36,12 @@ def main(argv: Sequence[str] | None = None):
     while True:
         try:
             print("Running long short maturity test")
-            chain_config = LocalChain.Config(db_port=5434, chain_port=10001)
+            chain_config = LocalChain.Config(
+                db_port=5434,
+                chain_port=10001,
+                log_filename=".logging/fuzz_long_short_maturity_values.log",
+                log_to_stdout=False,
+            )
             long_maturity_vals_epsilon = 1e-14
             short_maturity_vals_epsilon = 1e-9
             fuzz_long_short_maturity_values(
@@ -51,7 +56,12 @@ def main(argv: Sequence[str] | None = None):
 
         try:
             print("Running path independence test")
-            chain_config = LocalChain.Config(db_port=5435, chain_port=10002)
+            chain_config = LocalChain.Config(
+                db_port=5435,
+                chain_port=10002,
+                log_filename=".logging/fuzz_path_independence.log",
+                log_to_stdout=False,
+            )
             lp_share_price_epsilon = 1e-14
             effective_share_reserves_epsilon = 1e-4
             present_value_epsilon = 1e-4
@@ -69,7 +79,12 @@ def main(argv: Sequence[str] | None = None):
 
         try:
             print("Running fuzz profit test")
-            chain_config = LocalChain.Config(db_port=5436, chain_port=10003)
+            chain_config = LocalChain.Config(
+                db_port=5436,
+                chain_port=10003,
+                log_filename=".logging/fuzz_profit_check.log",
+                log_to_stdout=False,
+            )
             fuzz_profit_check(chain_config)
         except FuzzAssertionException:
             pass
@@ -78,7 +93,12 @@ def main(argv: Sequence[str] | None = None):
 
         try:
             print("Running fuzz present value test")
-            chain_config = LocalChain.Config(db_port=5437, chain_port=10004)
+            chain_config = LocalChain.Config(
+                db_port=5437,
+                chain_port=10004,
+                log_filename=".logging/fuzz_present_value.log",
+                log_to_stdout=False,
+            )
             present_value_epsilon = 0.01
             fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config)
         except FuzzAssertionException:
