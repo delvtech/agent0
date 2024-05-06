@@ -29,6 +29,9 @@ class TestPipelineWithRandom:
             policy_config=PolicyZoo.random.Config(slippage_tolerance=None),
         )
 
+        # Add liquidity to avoid insufficient liquidity error
+        agent.add_liquidity(FixedPoint(100_000))
+
         # Do a handful of trades
         for _ in range(3):
             agent.execute_policy_action()
