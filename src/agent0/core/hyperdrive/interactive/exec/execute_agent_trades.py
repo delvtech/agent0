@@ -34,9 +34,11 @@ if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdrivePolicyAgent
 
 
+# pylint: disable=too-many-arguments
 async def async_execute_agent_trades(
     interface: HyperdriveReadWriteInterface,
     agent: HyperdrivePolicyAgent,
+    preview_before_trade: bool,
     liquidate: bool,
     randomize_liquidation: bool = False,
     interactive_mode: bool = False,
@@ -55,6 +57,8 @@ async def async_execute_agent_trades(
         The Hyperdrive API interface object.
     agent: HyperdrivePolicyAgent
         The HyperdrivePolicyAgent that is conducting the trade.
+    preview_before_trade: bool
+        Whether or not to preview the trade before it is executed.
     liquidate: bool
         If set, will ignore all policy settings and liquidate all open positions.
     randomize_liquidation: bool, optional
@@ -99,7 +103,13 @@ async def async_execute_agent_trades(
     wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException] = (
         await asyncio.gather(
             *[
-                _async_match_contract_call_to_trade(agent, interface, trade_object, nonce=Nonce(base_nonce + i))
+                _async_match_contract_call_to_trade(
+                    agent,
+                    interface,
+                    trade_object,
+                    nonce=Nonce(base_nonce + i),
+                    preview_before_trade=preview_before_trade,
+                )
                 for i, trade_object in enumerate(trades)
             ],
             # Instead of throwing exception, return the exception to the caller here
@@ -132,6 +142,7 @@ async def async_execute_single_trade(
     agent: HyperdrivePolicyAgent,
     trade_object: Trade[HyperdriveMarketAction],
     execute_policy_post_action: bool,
+    preview_before_trade: bool,
 ) -> TradeResult:
     """Executes a single trade made by the agent.
 
@@ -149,6 +160,8 @@ async def async_execute_single_trade(
         The trade to execute.
     execute_policy_post_action: bool
         Whether or not to execute the post_action of the policy after the trade.
+    preview_before_trade: bool
+        Whether or not to preview the trade before it is executed.
 
     Returns
     -------
@@ -161,7 +174,13 @@ async def async_execute_single_trade(
     nonce = retry_call(DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, agent.checksum_address)
 
     try:
-        wallet_delta_or_exception = await _async_match_contract_call_to_trade(agent, interface, trade_object, nonce)
+        wallet_delta_or_exception = await _async_match_contract_call_to_trade(
+            agent,
+            interface,
+            trade_object,
+            nonce,
+            preview_before_trade,
+        )
     except Exception as e:  # pylint: disable=broad-except
         wallet_delta_or_exception = e
 
@@ -259,6 +278,7 @@ async def _async_match_contract_call_to_trade(
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
+    preview_before_trade,
 ) -> tuple[HyperdriveWalletDeltas, ReceiptBreakdown]:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -290,6 +310,7 @@ async def _async_match_contract_call_to_trade(
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -313,6 +334,7 @@ async def _async_match_contract_call_to_trade(
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -333,6 +355,7 @@ async def _async_match_contract_call_to_trade(
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -356,6 +379,7 @@ async def _async_match_contract_call_to_trade(
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -382,6 +406,7 @@ async def _async_match_contract_call_to_trade(
                 slippage_tolerance=None,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -393,7 +418,11 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.REMOVE_LIQUIDITY:
             trade_result = await interface.async_remove_liquidity(
-                agent, trade.trade_amount, gas_limit=trade.gas_limit, nonce=nonce
+                agent,
+                trade.trade_amount,
+                gas_limit=trade.gas_limit,
+                nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
@@ -406,7 +435,11 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             trade_result = await interface.async_redeem_withdraw_shares(
-                agent, trade.trade_amount, gas_limit=trade.gas_limit, nonce=nonce
+                agent,
+                trade.trade_amount,
+                gas_limit=trade.gas_limit,
+                nonce=nonce,
+                preview_before_trade=preview_before_trade,
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
