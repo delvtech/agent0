@@ -184,7 +184,6 @@ class Hyperdrive:
             artifacts_uri="not_used",
             rpc_uri=chain.rpc_uri,
             abi_dir=abi_dir,
-            preview_before_trade=self.config.preview_before_trade,
         )
 
         self.interface = HyperdriveReadWriteInterface(
