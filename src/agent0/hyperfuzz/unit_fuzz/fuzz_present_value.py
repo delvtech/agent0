@@ -55,7 +55,6 @@ def main(argv: Sequence[str] | None = None):
 def fuzz_present_value(
     test_epsilon: float,
     chain_config: LocalChain.Config,
-    log_to_stdout: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
@@ -65,15 +64,9 @@ def fuzz_present_value(
         The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
-    log_to_stdout: bool, optional
-        If True, log to stdout in addition to a file.
-        Defaults to False.
     """
-    log_filename = ".logging/fuzz_present_value.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename,
         chain_config,
-        log_to_stdout,
         curve_fee=FixedPoint(0),
         flat_fee=FixedPoint(0),
         governance_lp_fee=FixedPoint(0),
@@ -203,7 +196,6 @@ class Args(NamedTuple):
 
     test_epsilon: float
     chain_config: LocalChain.Config
-    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -221,8 +213,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         test_epsilon=namespace.test_epsilon,
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
-        log_to_stdout=namespace.log_to_stdout,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port, log_to_stdout=namespace.log_to_stdout),
     )
 
 

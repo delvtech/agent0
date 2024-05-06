@@ -53,25 +53,19 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False):
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
     ----------
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
-    log_to_stdout: bool, optional
-        If True, log to stdout in addition to a file.
-        Defaults to False.
     """
     # pylint: disable=too-many-statements
 
     # Setup the environment
-    log_filename = ".logging/fuzz_profit_check.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename,
         chain_config,
-        log_to_stdout,
         fuzz_test_name="fuzz_profit_check",
         flat_fee=FixedPoint(0),
         curve_fee=FixedPoint(0.001),  # 0.1%
@@ -224,7 +218,6 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     chain_config: LocalChain.Config
-    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -241,8 +234,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
-        log_to_stdout=namespace.log_to_stdout,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port, log_to_stdout=namespace.log_to_stdout),
     )
 
 

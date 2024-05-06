@@ -57,7 +57,6 @@ def fuzz_long_short_maturity_values(
     long_maturity_vals_epsilon: float,
     short_maturity_vals_epsilon: float,
     chain_config: LocalChain.Config | None = None,
-    log_to_stdout: bool = False,
 ):
     """Does fuzzy invariant checks on closing longs and shorts past maturity.
 
@@ -71,20 +70,14 @@ def fuzz_long_short_maturity_values(
         The allowed error for maturity values equality tests for shorts.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
-    log_to_stdout: bool, optional
-        If True, log to stdout in addition to a file.
-        Defaults to False.
     """
 
-    log_filename = ".logging/fuzz_long_short_maturity_values.log"
     # Parameters for local chain initialization, defines defaults in constructor
     # set a large block time so i can manually control when it ticks
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename,
         chain_config,
-        log_to_stdout,
         fuzz_test_name="fuzz_long_short_maturity_values",
     )
     signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
@@ -195,7 +188,6 @@ class Args(NamedTuple):
     long_maturity_vals_epsilon: float
     short_maturity_vals_epsilon: float
     chain_config: LocalChain.Config
-    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -216,8 +208,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         num_trades=namespace.num_trades,
         long_maturity_vals_epsilon=namespace.long_maturity_vals_epsilon,
         short_maturity_vals_epsilon=namespace.short_maturity_vals_epsilon,
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
-        log_to_stdout=namespace.log_to_stdout,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port, log_to_stdout=namespace.log_to_stdout),
     )
 
 

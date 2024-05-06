@@ -20,7 +20,6 @@ from agent0.core.base import PolicyAgent
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
 from agent0.hyperfuzz.system_fuzz.run_fuzz_bots import _async_runner
-from agent0.hyperlogs import setup_logging
 from agent0.hypertypes import IHyperdriveContract
 
 # Checkpoint bot has a lot going on
@@ -199,11 +198,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     # pylint: disable=too-many-branches
 
     parsed_args = parse_arguments(argv)
-
-    # Setup logging
-    setup_logging(
-        log_stdout=True,
-    )
 
     # Initialize
     chain = Chain(parsed_args.rpc_uri)
