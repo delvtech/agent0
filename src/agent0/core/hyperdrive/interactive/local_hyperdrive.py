@@ -105,7 +105,7 @@ class LocalHyperdrive(Hyperdrive):
         """Whether to calculate pnl. Defaults to True."""
 
         # Initial pool variables
-        initial_liquidity: FixedPoint = FixedPoint(100_000_000)
+        initial_liquidity: FixedPoint = FixedPoint(100_000)
         """The amount of money to be provided by the `deploy_account` for initial pool liquidity."""
         initial_variable_rate: FixedPoint = FixedPoint("0.05")
         """The starting variable rate for an underlying yield source."""
