@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import copy
 import logging
-import os
 from typing import TYPE_CHECKING, cast
 
 from eth_account import Account
@@ -12,9 +11,7 @@ from fixedpointmath import FixedPoint
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
-from agent0.ethpy import build_eth_config
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive.addresses import get_hyperdrive_addresses_from_artifacts
 from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -77,8 +74,6 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber, ChecksumAddress
     from web3 import Web3
 
-    from agent0.ethpy import EthConfig
-
 
 class HyperdriveReadInterface:
     """Read-only end-point API for interfacing with a deployed Hyperdrive pool."""
@@ -87,8 +82,8 @@ class HyperdriveReadInterface:
 
     def __init__(
         self,
-        eth_config: EthConfig | None = None,
-        hyperdrive_address: ChecksumAddress | None = None,
+        hyperdrive_address: ChecksumAddress,
+        rpc_uri: str | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
@@ -99,32 +94,27 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        eth_config: EthConfig, optional
-            Configuration dataclass for the ethereum environment.
-            If given, then it is constructed from environment variables.
-        hyperdrive_address: ChecksumAddress | None, optional
+        hyperdrive_address: ChecksumAddress
             This is a contract address for a deployed hyperdrive.
-            If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
-            If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
+        rpc_uri: str, optional
+            The URI for the web3 provider. If not provided, will use the provided web3 object.
         web3: Web3, optional
             web3 provider object, optional
-            If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
+            If not given, a web3 object is constructed using the `rpc_uri` as the http provider.
         read_retry_count: int | None, optional
             The number of times to retry the read call if it fails. Defaults to 5.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         """
         # Handle defaults for config and addresses.
-        self.eth_config: EthConfig = build_eth_config() if eth_config is None else eth_config
-        if hyperdrive_address is None:
-            hyperdrive_address = get_hyperdrive_addresses_from_artifacts(
-                os.path.join(self.eth_config.artifacts_uri, "addresses.json")
-            )["erc4626_hyperdrive"]
-
         self.hyperdrive_address = hyperdrive_address
+
         # Setup provider for communicating with the chain.
+        if web3 is None and rpc_uri is None:
+            raise ValueError("Must provide either `web3` or `rpc_uri`")
         if web3 is None:
-            web3 = initialize_web3_with_http_provider(self.eth_config.rpc_uri, reset_provider=False)
+            assert rpc_uri is not None
+            web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
         self.web3 = web3
 
         # Setup Hyperdrive contract

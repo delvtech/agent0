@@ -31,7 +31,6 @@ from agent0.core.hyperdrive.agent import (
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
-from agent0.ethpy import EthConfig
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
@@ -173,22 +172,9 @@ class Hyperdrive:
         else:
             self.config = config
 
-        # Define agent0 configs with this setup
-        # TODO use hypertypes abis here
-        # https://github.com/delvtech/agent0/issues/1125
-        full_path = os.path.realpath(__file__)
-        current_file_dir, _ = os.path.split(full_path)
-        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
-
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used",
-            rpc_uri=chain.rpc_uri,
-            abi_dir=abi_dir,
-        )
-
         self.interface = HyperdriveReadWriteInterface(
-            self.eth_config,
             hyperdrive_address,
+            rpc_uri=chain.rpc_uri,
             web3=chain._web3,
             txn_receipt_timeout=self.config.txn_receipt_timeout,
         )
