@@ -110,13 +110,13 @@ random_policy = PolicyZoo.random(random_policy_config)
 agent0_trades = []
 for i in range(10):
     # NOTE Since a policy can execute multiple trades per action, the output events is a list
-    agent0.execute_policy_action(policy=random_policy, pool=hyperdrive0)
+    agent0_trades.extend(agent0.execute_policy_action(policy=random_policy, pool=hyperdrive0))
 
 # Similar to pools, we can set an active policy for an agent
 agent1.set_active_policy(random_policy)
 agent1_trades = []
 for i in range(10):
-    agent1.execute_policy_action()
+    agent1_trades.extend(agent1.execute_policy_action())
 
 # %% [markdown]
 #####################
