@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     from web3 import Web3
     from web3.types import Nonce
 
-    from agent0.ethpy import EthConfig
     from agent0.ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
 
 
@@ -40,8 +39,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
     def __init__(
         self,
-        eth_config: EthConfig | None = None,
-        hyperdrive_address: ChecksumAddress | None = None,
+        hyperdrive_address: ChecksumAddress,
+        rpc_uri: str | None = None,
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
@@ -51,16 +50,13 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        eth_config: EthConfig, optional
-            Configuration dataclass for the ethereum environment.
-            If given, then it is constructed from environment variables.
-        hyperdrive_address: ChecksumAddress | None, optional
+        hyperdrive_address: ChecksumAddress
             This is a contract address for a deployed hyperdrive.
-            If given, then the `eth_config.artifacts_uri` variable is not used, and this address is used instead.
-            If not given, then we use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
+        rpc_uri: str, optional
+            The URI for the web3 provider. If not provided, will use the provided web3 object.
         web3: Web3, optional
             web3 provider object, optional
-            If given, a web3 object is constructed using the `eth_config.rpc_uri` as the http provider.
+            If not given, a web3 object is constructed using the `rpc_uri` as the http provider.
         read_retry_count: int | None, optional
             The number of times to retry the read call if it fails. Defaults to 5.
         write_retry_count: int | None, optional
@@ -69,8 +65,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         """
         super().__init__(
-            eth_config=eth_config,
             hyperdrive_address=hyperdrive_address,
+            rpc_uri=rpc_uri,
             web3=web3,
             read_retry_count=read_retry_count,
             txn_receipt_timeout=txn_receipt_timeout,
@@ -86,7 +82,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             This instantiated object, but as a ReadInterface.
         """
         return HyperdriveReadInterface(
-            eth_config=self.eth_config,
             hyperdrive_address=self.hyperdrive_address,
             web3=self.web3,
             read_retry_count=self.read_retry_count,

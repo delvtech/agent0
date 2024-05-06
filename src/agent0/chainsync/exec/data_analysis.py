@@ -18,7 +18,6 @@ from agent0.chainsync.db.hyperdrive import (
     get_latest_block_number_from_table,
     get_pool_config,
 )
-from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 _SLEEP_AMOUNT = 1
@@ -31,10 +30,10 @@ _SLEEP_AMOUNT = 1
 def data_analysis(
     start_block: int = 0,
     interface: HyperdriveReadInterface | None = None,
-    eth_config: EthConfig | None = None,
+    rpc_uri: str | None = None,
+    hyperdrive_address: ChecksumAddress | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
-    hyperdrive_address: ChecksumAddress | None = None,
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
     suppress_logs: bool = False,
@@ -48,18 +47,18 @@ def data_analysis(
         The starting block to filter the query on
     interface: HyperdriveReadInterface | None, optional
         An initialized HyperdriveReadInterface object. If not set, will initialize one based on
-        eth_config and hyperdrive_address.
-    eth_config: EthConfig | None
-        Configuration for URIs to the rpc and artifacts. If not set, will look for addresses
-        in eth.env.
+        rpc_uri and hyperdrive_address.
+    rpc_uri: str, optional
+        The URI for the web3 provider to initialize the interface with. Not used if an interface
+        is provided.
+    hyperdrive_address: ChecksumAddress | None, optional
+        The address of the hyperdrive contract to initialize the interface with. Not used if
+        an interface is provided.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
     postgres_config: PostgresConfig | None = None,
         PostgresConfig for connecting to db. If none, will set from postgres.env.
-    hyperdrive_address: ChecksumAddress | None, optional
-        The address of the hyperdrive contract.
-        If not set, will use the erc4626_hyperdrive contract from `eth_config.artifacts_uri`.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
     exit_callback_fn: Callable[[], bool] | None, optional
@@ -74,9 +73,10 @@ def data_analysis(
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization
-    # create hyperdrive interface
     if interface is None:
-        interface = HyperdriveReadInterface(eth_config, hyperdrive_address)
+        if hyperdrive_address is None or rpc_uri is None:
+            raise ValueError("hyperdrive_address and rpc_uri must be provided if not providing interface")
+        interface = HyperdriveReadInterface(hyperdrive_address, rpc_uri)
 
     # postgres session
     db_session_init = False
