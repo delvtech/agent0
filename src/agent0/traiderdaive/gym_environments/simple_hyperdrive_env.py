@@ -393,9 +393,9 @@ class SimpleHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         # The total delta for this episode
 
-        current_wallet = self.interactive_hyperdrive.get_current_wallet()
+        current_positions = self.interactive_hyperdrive.get_current_positions()
         # Filter by rl bot
-        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
+        rl_bot_wallet = current_positions[current_positions["wallet_address"] == self.rl_bot.checksum_address]
         # The rl_bot_wallet shows the pnl of all positions
         # Sum across all positions
         # TODO one option here is to only look at base positions instead of sum across all positions.

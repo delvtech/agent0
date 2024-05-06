@@ -162,10 +162,9 @@ pool_state = hyperdrive0.get_pool_state(coerce_float=True)
 checkpoint_info = hyperdrive0.get_checkpoint_info()
 ticker = hyperdrive0.get_ticker()
 
-# TODO figure out the differences between these 3 calls and name functions better to describe.
-current_wallet = hyperdrive0.get_current_wallet()
-wallet_positions = hyperdrive0.get_wallet_positions()
-total_wallet_pnl_over_time = hyperdrive0.get_total_wallet_pnl_over_time(coerce_float=True)
+pool_positions = hyperdrive0.get_current_positions()
+positions_over_time = hyperdrive0.get_positions_over_time()
+pnl_over_time = hyperdrive0.get_pnl_over_time(coerce_float=True)
 
 # Get data from the database wrt an agent
 # This function shows an agent's wallet across all pools.
@@ -174,7 +173,7 @@ agent0_wallet = agent0.get_wallet()
 # Since this data is pandas, we can utilize pandas plotting functions
 pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
 # Change wallet_address to be columns for plotting
-total_wallet_pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
+pnl_over_time.pivot(index="block_number", columns="username", values="pnl").plot()
 
 # %%
 # Cleanup resources

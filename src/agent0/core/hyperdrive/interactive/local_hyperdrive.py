@@ -698,8 +698,8 @@ class LocalHyperdrive(Hyperdrive):
                 out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
         return out_df
 
-    def get_current_wallet(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Gets the current wallet positions of all agents and their corresponding pnl
+    def get_current_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the current positions of this pool and each position's pnl
         and returns as a pandas dataframe.
 
         Arguments
@@ -804,8 +804,8 @@ class LocalHyperdrive(Hyperdrive):
         ]
         return out
 
-    def get_wallet_positions(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Get a dataframe summarizing all wallet deltas and positions
+    def get_positions_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Get positions over time of all changes and values in positions of this pool
         and returns as a pandas dataframe.
 
         Arguments
@@ -868,8 +868,8 @@ class LocalHyperdrive(Hyperdrive):
         ]
         return out
 
-    def get_total_wallet_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Gets total pnl for each wallet for each block, aggregated across all open positions.
+    def get_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets total pnl for each wallet for each block, aggregated across all positions.
 
         Arguments
         ---------
