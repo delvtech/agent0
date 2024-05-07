@@ -222,27 +222,33 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
 
 
 def get_pool_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+    session: Session,
+    hyperdrive_address: str | None = None,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    coerce_float=True,
 ) -> pd.DataFrame:
     """Get all pool info and returns as a pandas dataframe.
 
     Arguments
     ---------
     session: Session
-        The initialized session object
+        The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive_address to filter the query on.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
+        matches python slicing notation, e.g., list[:3], list[:-3].
     end_block: int | None, optional
         The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
+        matches python slicing notation, e.g., list[:3], list[:-3].
     coerce_float: bool, optional
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
 
     Returns
     -------
     DataFrame
-        A DataFrame that consists of the queried pool info data
+        A DataFrame that consists of the queried pool info data.
     """
     query = session.query(PoolInfo)
 
@@ -251,6 +257,9 @@ def get_pool_info(
         start_block = get_latest_block_number_from_pool_info_table(session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
         end_block = get_latest_block_number_from_pool_info_table(session) + end_block + 1
+
+    if hyperdrive_address is not None:
+        query = query.filter(PoolInfo.hyperdrive_address == hyperdrive_address)
 
     if start_block is not None:
         query = query.filter(PoolInfo.block_number >= start_block)

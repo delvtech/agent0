@@ -42,6 +42,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_total_wallet_pnl_over_time,
     get_wallet_deltas,
     get_wallet_pnl,
+    transfer_events_to_db,
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
 from agent0.core.base.make_key import make_private_key
@@ -414,7 +415,7 @@ class LocalHyperdrive(Hyperdrive):
         )
         data_analysis(
             start_block=start_block,
-            interface=[self.interface],
+            interfaces=[self.interface],
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
@@ -612,6 +613,7 @@ class LocalHyperdrive(Hyperdrive):
             policy_config=policy_config,
             private_key=private_key,
         )
+        self._sync_wallet(out_agent)
         self._pool_agents.append(out_agent)
         return out_agent
 
@@ -1084,11 +1086,9 @@ class LocalHyperdrive(Hyperdrive):
         return agent
 
     def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
-        # TODO add sync from db
-        super()._sync_wallet(agent)
-        # Ensure db is up to date
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        # Update the db with this wallet
+        transfer_events_to_db([self.interface], agent.checksum_address, self.db_session)
+        pass
 
     def _add_funds(
         self,

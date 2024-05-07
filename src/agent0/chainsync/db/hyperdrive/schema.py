@@ -260,6 +260,7 @@ class PoolAnalysis(Base):
     __tablename__ = "pool_analysis"
 
     block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
 
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

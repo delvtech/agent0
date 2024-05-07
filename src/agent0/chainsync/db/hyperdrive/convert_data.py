@@ -151,6 +151,8 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
     """
     args_dict = {}
     for key in PoolInfo.__annotations__:
+        if key == "id":
+            continue
         if key not in pool_info_dict:
             logging.warning("Missing %s from pool info", key)
             value = None

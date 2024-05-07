@@ -45,7 +45,7 @@ def acquire_data(
         The starting block to filter the query on
     lookback_block_limit: int
         The maximum number of blocks to look back when filling in missing data
-    interface: list[HyperdriveReadInterface] | None, optional
+    interfaces: list[HyperdriveReadInterface] | None, optional
         A list of initialized HyperdriveReadInterface object, one for each registered pool.
         If not set, will initialize based on rpc_uri and hyperdrive_addresses.
     rpc_uri: str, optional
@@ -139,7 +139,7 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(interfaces, interfaces.get_block(block_number), db_session)
+            data_chain_to_db(interfaces, interfaces[0].get_block(block_number), db_session)
         curr_write_block = latest_mined_block + 1
 
     # Clean up resources on clean exit

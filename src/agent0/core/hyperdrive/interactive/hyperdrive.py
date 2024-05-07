@@ -247,7 +247,8 @@ class Hyperdrive:
         )
 
     def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
-        # TODO add sync from db
+        # TODO add sync to db once we boot db in chain object
+        # transfer_events_to_db([self.interface], agent.checksum_address, self.session)
         agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
 
     def _add_funds(
