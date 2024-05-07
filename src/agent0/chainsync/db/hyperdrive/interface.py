@@ -14,8 +14,8 @@ from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from .schema import (
     CheckpointInfo,
     CurrentWallet,
-    HyperdriveEvents,
     HyperdriveTransaction,
+    HyperdriveTransferEvent,
     PoolAnalysis,
     PoolConfig,
     PoolInfo,
@@ -23,6 +23,57 @@ from .schema import (
     WalletDelta,
     WalletPNL,
 )
+
+# Event Data Ingestion Interface
+
+
+def add_transfer_events(transfer_events: list[HyperdriveTransferEvent], session: Session) -> None:
+    """Add transfer events to the transfer events table.
+
+    Arguments
+    ---------
+    transfer_events: list[HyperdriveTransferEvent]
+        A list of HyperdriveTransferEvent objects to insert into postgres.
+    session: Session
+        The initialized session object.
+    """
+    for transfer_event in transfer_events:
+        session.add(transfer_event)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error adding transaction: %s", err)
+        raise err
+
+
+def get_latest_block_number_from_transfer_event(session: Session, wallet_addr: str) -> int:
+    """Get the latest block number based on the hyperdrive events table in the db.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object.
+    wallet_addr: str
+        The wallet address to filter the results on.
+
+    Returns
+    -------
+    int
+        The latest block number in the hyperdrive_events table.
+    """
+
+    query = (
+        session.query(func.max(HyperdriveTransferEvent.block_number))
+        .filter(HyperdriveTransferEvent.wallet_address == wallet_addr)
+        .scalar()
+    )
+    if query is None:
+        return 0
+    return int(query)
+
+
+# Chain To Data Ingestion Interface
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
@@ -43,235 +94,6 @@ def add_transactions(transactions: list[HyperdriveTransaction], session: Session
         session.rollback()
         logging.error("Error adding transaction: %s", err)
         raise err
-
-
-def get_pool_config(session: Session, contract_address: str | None = None, coerce_float=True) -> pd.DataFrame:
-    """Get all pool config and returns as a pandas dataframe.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object
-    contract_address: str | None, optional
-        The contract_address to filter the results on. Return all if None
-    coerce_float: bool
-        If True, will coerce all numeric columns to float
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried pool config data
-    """
-    query = session.query(PoolConfig)
-    if contract_address is not None:
-        query = query.filter(PoolConfig.hyperdrive_address == contract_address)
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
-
-
-def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
-    """Add pool config to the pool config table if not exist.
-
-    Verify pool config if it does exist.
-
-    Arguments
-    ---------
-    pool_config: PoolConfig
-        A PoolConfig object to insert into postgres
-    session: Session
-        The initialized session object
-    """
-    # NOTE the logic below is not thread safe, i.e., a race condition can exists
-    # if multiple threads try to add pool config at the same time
-    # This function is being called by acquire_data.py, which should only have one
-    # instance per db, so no need to worry about it here
-    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_pool_config = get_pool_config(session, contract_address=pool_config.hyperdrive_address, coerce_float=False)
-    if len(existing_pool_config) == 0:
-        session.add(pool_config)
-        try:
-            session.commit()
-        except exc.DataError as err:
-            session.rollback()
-            logging.error("Error adding pool_config: %s", err)
-            raise err
-    elif len(existing_pool_config) == 1:
-        # Verify pool config
-        for key in PoolConfig.__annotations__.keys():
-            new_value = getattr(pool_config, key)
-            old_value = existing_pool_config.loc[0, key]
-            if new_value != old_value:
-                raise ValueError(
-                    f"Adding pool configuration field: key {key} doesn't match (new: {new_value}, old:{old_value})"
-                )
-    else:
-        # Should never get here, contract_address is primary_key, which is unique
-        raise ValueError
-
-
-def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
-    """Add a pool info to the poolinfo table.
-
-    Arguments
-    ---------
-    pool_infos: list[PoolInfo]
-        A list of PoolInfo objects to insert into postgres
-    session: Session
-        The initialized session object
-    """
-    for pool_info in pool_infos:
-        session.add(pool_info)
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error adding pool_infos: %s", err)
-        raise err
-
-
-def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> None:
-    """Add checkpoint info to the checkpointinfo table if it doesn't exist.
-
-    Arguments
-    ---------
-    checkpoint_info: CheckpointInfo
-        A CheckpointInfo object to insert into postgres
-    session: Session
-        The initialized session object
-    """
-    # NOTE the logic below is not thread safe, i.e., a race condition can exists
-    # if multiple threads try to add checkpoint info at the same time
-    # This function is being called by acquire_data.py, which should only have one
-    # instance per db, so no need to worry about it here
-    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_checkpoint_info = get_checkpoint_info(session, checkpoint_info.checkpoint_time, coerce_float=False)
-    if len(existing_checkpoint_info) == 0:
-        session.add(checkpoint_info)
-        try:
-            session.commit()
-        except exc.DataError as err:
-            session.rollback()
-            logging.error("Error adding checkpoint info: %s", err)
-            raise err
-    elif len(existing_checkpoint_info) == 1:
-        # Verify checkpoint info
-        for key in CheckpointInfo.__annotations__.keys():
-            new_value = getattr(checkpoint_info, key)
-            old_value = existing_checkpoint_info.loc[0, key]
-            if new_value != old_value:
-                raise ValueError(f"Adding checkpoint info field: key {key} doesn't match ({new_value=}, {old_value=})")
-    else:
-        # Should never get here, checkpoint time is primary_key, which is unique
-        raise ValueError
-
-
-def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> None:
-    """Add wallet deltas to the walletdelta table.
-
-    Arguments
-    ---------
-    wallet_deltas: list[WalletDelta]
-        A list of WalletDelta objects to insert into postgres
-    session: Session
-        The initialized session object
-    """
-    for wallet_delta in wallet_deltas:
-        session.add(wallet_delta)
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error in adding wallet_deltas: %s", err)
-        raise err
-
-
-def get_latest_block_number_from_events_table(session: Session) -> int:
-    """Get the latest block number based on the hyperdrive events table in the db.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object
-
-    Returns
-    -------
-    int
-        The latest block number in the hyperdrive_events table
-    """
-    return get_latest_block_number_from_table(HyperdriveEvents, session)
-
-
-def get_latest_block_number_from_pool_info_table(session: Session) -> int:
-    """Get the latest block number based on the pool info table in the db.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object
-
-    Returns
-    -------
-    int
-        The latest block number in the poolinfo table
-    """
-    return get_latest_block_number_from_table(PoolInfo, session)
-
-
-def get_latest_block_number_from_analysis_table(session: Session) -> int:
-    """Get the latest block number based on the pool info table in the db.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object
-
-    Returns
-    -------
-    int
-        The latest block number in the poolinfo table
-    """
-    return get_latest_block_number_from_table(PoolAnalysis, session)
-
-
-def get_pool_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
-) -> pd.DataFrame:
-    """Get all pool info and returns as a pandas dataframe.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object
-    start_block: int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    end_block: int | None, optional
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3]
-    coerce_float: bool, optional
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried pool info data
-    """
-    query = session.query(PoolInfo)
-
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_pool_info_table(session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_pool_info_table(session) + end_block + 1
-
-    if start_block is not None:
-        query = query.filter(PoolInfo.block_number >= start_block)
-    if end_block is not None:
-        query = query.filter(PoolInfo.block_number < end_block)
-
-    # Always sort by time in order
-    query = query.order_by(PoolInfo.timestamp)
-
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_transactions(
@@ -316,6 +138,183 @@ def get_transactions(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
+def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
+    """Add pool config to the pool config table if not exist.
+
+    Verify pool config if it does exist.
+
+    Arguments
+    ---------
+    pool_config: PoolConfig
+        A PoolConfig object to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    # NOTE the logic below is not thread safe, i.e., a race condition can exists
+    # if multiple threads try to add pool config at the same time
+    # This function is being called by acquire_data.py, which should only have one
+    # instance per db, so no need to worry about it here
+    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
+    existing_pool_config = get_pool_config(session, contract_address=pool_config.hyperdrive_address, coerce_float=False)
+    if len(existing_pool_config) == 0:
+        session.add(pool_config)
+        try:
+            session.commit()
+        except exc.DataError as err:
+            session.rollback()
+            logging.error("Error adding pool_config: %s", err)
+            raise err
+    elif len(existing_pool_config) == 1:
+        # Verify pool config
+        for key in PoolConfig.__annotations__.keys():
+            new_value = getattr(pool_config, key)
+            old_value = existing_pool_config.loc[0, key]
+            if new_value != old_value:
+                raise ValueError(
+                    f"Adding pool configuration field: key {key} doesn't match (new: {new_value}, old:{old_value})"
+                )
+    else:
+        # Should never get here, contract_address is primary_key, which is unique
+        raise ValueError
+
+
+def get_pool_config(session: Session, contract_address: str | None = None, coerce_float=True) -> pd.DataFrame:
+    """Get all pool config and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    contract_address: str | None, optional
+        The contract_address to filter the results on. Return all if None
+    coerce_float: bool
+        If True, will coerce all numeric columns to float
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool config data
+    """
+    query = session.query(PoolConfig)
+    if contract_address is not None:
+        query = query.filter(PoolConfig.hyperdrive_address == contract_address)
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
+def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
+    """Add a pool info to the poolinfo table.
+
+    Arguments
+    ---------
+    pool_infos: list[PoolInfo]
+        A list of PoolInfo objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    for pool_info in pool_infos:
+        session.add(pool_info)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error adding pool_infos: %s", err)
+        raise err
+
+
+def get_pool_info(
+    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+) -> pd.DataFrame:
+    """Get all pool info and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    start_block: int | None, optional
+        The starting block to filter the query on. start_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    end_block: int | None, optional
+        The ending block to filter the query on. end_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3]
+    coerce_float: bool, optional
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool info data
+    """
+    query = session.query(PoolInfo)
+
+    # Support for negative indices
+    if (start_block is not None) and (start_block < 0):
+        start_block = get_latest_block_number_from_pool_info_table(session) + start_block + 1
+    if (end_block is not None) and (end_block < 0):
+        end_block = get_latest_block_number_from_pool_info_table(session) + end_block + 1
+
+    if start_block is not None:
+        query = query.filter(PoolInfo.block_number >= start_block)
+    if end_block is not None:
+        query = query.filter(PoolInfo.block_number < end_block)
+
+    # Always sort by time in order
+    query = query.order_by(PoolInfo.timestamp)
+
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
+def get_latest_block_number_from_pool_info_table(session: Session) -> int:
+    """Get the latest block number based on the pool info table in the db.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number in the poolinfo table
+    """
+    return get_latest_block_number_from_table(PoolInfo, session)
+
+
+def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> None:
+    """Add checkpoint info to the checkpointinfo table if it doesn't exist.
+
+    Arguments
+    ---------
+    checkpoint_info: CheckpointInfo
+        A CheckpointInfo object to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    # NOTE the logic below is not thread safe, i.e., a race condition can exists
+    # if multiple threads try to add checkpoint info at the same time
+    # This function is being called by acquire_data.py, which should only have one
+    # instance per db, so no need to worry about it here
+    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
+    existing_checkpoint_info = get_checkpoint_info(session, checkpoint_info.checkpoint_time, coerce_float=False)
+    if len(existing_checkpoint_info) == 0:
+        session.add(checkpoint_info)
+        try:
+            session.commit()
+        except exc.DataError as err:
+            session.rollback()
+            logging.error("Error adding checkpoint info: %s", err)
+            raise err
+    elif len(existing_checkpoint_info) == 1:
+        # Verify checkpoint info
+        for key in CheckpointInfo.__annotations__.keys():
+            new_value = getattr(checkpoint_info, key)
+            old_value = existing_checkpoint_info.loc[0, key]
+            if new_value != old_value:
+                raise ValueError(f"Adding checkpoint info field: key {key} doesn't match ({new_value=}, {old_value=})")
+    else:
+        # Should never get here, checkpoint time is primary_key, which is unique
+        raise ValueError
+
+
 def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all info associated with a given checkpoint.
 
@@ -346,6 +345,26 @@ def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, co
     query = query.order_by(CheckpointInfo.checkpoint_time)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
+
+
+def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> None:
+    """Add wallet deltas to the walletdelta table.
+
+    Arguments
+    ---------
+    wallet_deltas: list[WalletDelta]
+        A list of WalletDelta objects to insert into postgres
+    session: Session
+        The initialized session object
+    """
+    for wallet_delta in wallet_deltas:
+        session.add(wallet_delta)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error in adding wallet_deltas: %s", err)
+        raise err
 
 
 def get_wallet_deltas(
@@ -445,6 +464,22 @@ def get_all_traders(
 
 
 # Analysis schema interfaces
+
+
+def get_latest_block_number_from_analysis_table(session: Session) -> int:
+    """Get the latest block number based on the pool info table in the db.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number in the poolinfo table
+    """
+    return get_latest_block_number_from_table(PoolAnalysis, session)
 
 
 def add_current_wallet(current_wallet: list[CurrentWallet], session: Session) -> None:

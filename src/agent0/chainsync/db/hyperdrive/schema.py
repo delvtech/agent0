@@ -77,8 +77,8 @@ class PoolInfo(Base):
     hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     # TODO we can add an index here if we end up querying on timestamp at any point.
-    epoch_timestamp: Mapped[Union[int, None]] = mapped_column(BigInteger)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
+    epoch_timestamp: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
 
     # Pool info fields
     share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -106,11 +106,12 @@ class PoolInfo(Base):
     vault_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
-class HyperdriveEvents(Base):
-    __tablename__ = "hyperdrive_events"
+class HyperdriveTransferEvent(Base):
+    __tablename__ = "hyperdrive_transfer_events"
     # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    wallet_address: Mapped[str] = mapped_column(String, index=True)
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta

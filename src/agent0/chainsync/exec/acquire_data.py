@@ -13,7 +13,6 @@ from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
 from agent0.chainsync.db.hyperdrive import (
     data_chain_to_db,
-    events_to_db,
     get_latest_block_number_from_pool_info_table,
     init_data_chain_to_db,
 )
@@ -120,15 +119,6 @@ def acquire_data(
                 break
             time.sleep(_SLEEP_AMOUNT)
             continue
-
-        # Gather all event data
-        # While calling this function is gated by the latest pool_info table,
-        # the function itself is self sufficient in ensuring the database contains
-        # all events from deployment to the latest mined block.
-        # This means that the latest block in events may be newer than
-        # the latest block in the pool_info table.
-        # TODO ensure this doesn't break anything.
-        events_to_db(interfaces, db_session)
 
         # Backfilling for blocks that need updating
         for block_int in range(curr_write_block, latest_mined_block + 1):
