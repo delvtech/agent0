@@ -404,16 +404,17 @@ class LocalHyperdrive(Hyperdrive):
         if start_block is None:
             start_block = self._deploy_block_number
 
+        # TODO move this to chain object
         acquire_data(
             start_block=start_block,  # Start block is the block hyperdrive was deployed
-            interface=self.interface,
+            interfaces=[self.interface],
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
         )
         data_analysis(
             start_block=start_block,
-            interface=self.interface,
+            interface=[self.interface],
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
@@ -431,7 +432,8 @@ class LocalHyperdrive(Hyperdrive):
         if drop_data:
             drop_database(self.postgres_config.create_url_obj())
 
-        if self.dashboard_subprocess is not None:
+        # Kill the dashboard
+        if hasattr(self, "dashboard_subprocess") and self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
             self.dashboard_subprocess = None
 

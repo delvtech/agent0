@@ -14,6 +14,7 @@ from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from .schema import (
     CheckpointInfo,
     CurrentWallet,
+    HyperdriveEvents,
     HyperdriveTransaction,
     PoolAnalysis,
     PoolConfig,
@@ -63,7 +64,7 @@ def get_pool_config(session: Session, contract_address: str | None = None, coerc
     """
     query = session.query(PoolConfig)
     if contract_address is not None:
-        query = query.filter(PoolConfig.contract_address == contract_address)
+        query = query.filter(PoolConfig.hyperdrive_address == contract_address)
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
@@ -84,7 +85,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_pool_config = get_pool_config(session, contract_address=pool_config.contract_address, coerce_float=False)
+    existing_pool_config = get_pool_config(session, contract_address=pool_config.hyperdrive_address, coerce_float=False)
     if len(existing_pool_config) == 0:
         session.add(pool_config)
         try:
@@ -181,6 +182,22 @@ def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> Non
         session.rollback()
         logging.error("Error in adding wallet_deltas: %s", err)
         raise err
+
+
+def get_latest_block_number_from_events_table(session: Session) -> int:
+    """Get the latest block number based on the hyperdrive events table in the db.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+
+    Returns
+    -------
+    int
+        The latest block number in the hyperdrive_events table
+    """
+    return get_latest_block_number_from_table(HyperdriveEvents, session)
 
 
 def get_latest_block_number_from_pool_info_table(session: Session) -> int:

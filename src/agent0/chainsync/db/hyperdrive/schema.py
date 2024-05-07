@@ -28,7 +28,10 @@ class PoolConfig(Base):
 
     __tablename__ = "pool_config"
 
-    contract_address: Mapped[str] = mapped_column(String, primary_key=True)
+    # Indices
+    hyperdrive_address: Mapped[str] = mapped_column(String, primary_key=True)
+
+    # Pool Config Parameters
     base_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
     vault_shares_token: Mapped[Union[str, None]] = mapped_column(String, default=None)
     linker_factory: Mapped[Union[str, None]] = mapped_column(String, default=None)
@@ -55,10 +58,12 @@ class CheckpointInfo(Base):
     __tablename__ = "checkpoint_info"
 
     checkpoint_time: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
     vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # TODO we'd like to add the checkpoint id here as a field as well
 
 
+# TODO change this table to allow for missing data in block time.
 class PoolInfo(Base):
     """Table/dataclass schema for pool info.
 
@@ -67,8 +72,15 @@ class PoolInfo(Base):
 
     __tablename__ = "pool_info"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # Indices
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    # TODO we can add an index here if we end up querying on timestamp at any point.
+    epoch_timestamp: Mapped[Union[int, None]] = mapped_column(BigInteger)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
+
+    # Pool info fields
     share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     share_adjustment: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     zombie_base_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -84,8 +96,8 @@ class PoolInfo(Base):
     withdrawal_shares_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+
     # Added fields from pool_state
-    epoch_timestamp: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     total_supply_withdrawal_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     gov_fees_accrued: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     hyperdrive_base_balance: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -94,7 +106,15 @@ class PoolInfo(Base):
     vault_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
+class HyperdriveEvents(Base):
+    __tablename__ = "hyperdrive_events"
+    # Indices
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+
+
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
+# TODO: this table might be able to be deprecated in favor of hyperdrive events.
 class WalletDelta(Base):
     """Table/dataclass schema for wallet deltas."""
 
@@ -114,6 +134,7 @@ class WalletDelta(Base):
     maturity_time: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
 
 
+# TODO this table likely isn't needed, use events table instead
 class HyperdriveTransaction(Base):
     """Table/dataclass schema for Transactions.
 

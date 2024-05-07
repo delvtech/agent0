@@ -157,14 +157,14 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_get_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_1 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
 
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
         np.testing.assert_array_equal(pool_config_df_1["initial_vault_share_price"], np.array([3.2]))
 
-        pool_config_2 = PoolConfig(contract_address="1", initial_vault_share_price=Decimal("3.4"))
+        pool_config_2 = PoolConfig(hyperdrive_address="1", initial_vault_share_price=Decimal("3.4"))
         add_pool_config(pool_config_2, db_session)
 
         pool_config_df_2 = get_pool_config(db_session)
@@ -174,7 +174,7 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
         pool_config_df_1 = get_pool_config(db_session, contract_address="0")
@@ -187,21 +187,21 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_pool_config_verify(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_1 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initial_vault_share_price"] == 3.2
 
         # Nothing should happen if we give the same pool_config
-        pool_config_2 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_2 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
         assert pool_config_df_2.loc[0, "initial_vault_share_price"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
-        pool_config_3 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.4"))
+        pool_config_3 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.4"))
         with pytest.raises(ValueError):
             add_pool_config(pool_config_3, db_session)
 
