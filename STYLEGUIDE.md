@@ -7,4 +7,5 @@
 - Write docstrings in [Numpy format](https://numpydoc.readthedocs.io/en/latest/format.html), with a few tweaks:
   - Use "Arguments" instead of "Parameters".
   - Don't use space before `:` in the type specification. Sphinx and VSCode render it the same, and it's closer to the signature.
+- Document each class attribute immediately after its declaration ([example](https://github.com/delvtech/agent0/blob/86bebba71faeefb78b2f272e3ccf28e696e1828c/src/agent0/core/hyperdrive/interactive/local_chain.py#L43))
 - When in doubt, lean in the direction of verbosity and readability.
