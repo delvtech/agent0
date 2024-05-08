@@ -14,8 +14,8 @@ from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from .schema import (
     CheckpointInfo,
     CurrentWallet,
+    HyperdriveEvent,
     HyperdriveTransaction,
-    HyperdriveTransferEvent,
     PoolAnalysis,
     PoolConfig,
     PoolInfo,
@@ -27,7 +27,7 @@ from .schema import (
 # Event Data Ingestion Interface
 
 
-def add_transfer_events(transfer_events: list[HyperdriveTransferEvent], session: Session) -> None:
+def add_transfer_events(transfer_events: list[HyperdriveEvent], session: Session) -> None:
     """Add transfer events to the transfer events table.
 
     Arguments
@@ -64,8 +64,8 @@ def get_latest_block_number_from_transfer_event(session: Session, wallet_addr: s
     """
 
     query = (
-        session.query(func.max(HyperdriveTransferEvent.block_number))
-        .filter(HyperdriveTransferEvent.wallet_address == wallet_addr)
+        session.query(func.max(HyperdriveEvent.block_number))
+        .filter(HyperdriveEvent.wallet_address == wallet_addr)
         .scalar()
     )
     if query is None:

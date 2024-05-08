@@ -46,7 +46,7 @@ from agent0.chainsync.db.hyperdrive import (
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, HyperdriveWallet, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
@@ -613,7 +613,6 @@ class LocalHyperdrive(Hyperdrive):
             policy_config=policy_config,
             private_key=private_key,
         )
-        self._sync_wallet(out_agent)
         self._pool_agents.append(out_agent)
         return out_agent
 
@@ -1085,9 +1084,11 @@ class LocalHyperdrive(Hyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
+    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         # Update the db with this wallet
         transfer_events_to_db([self.interface], agent.checksum_address, self.db_session)
+        # TODO query for the updated wallet and return as a wallet object
+
         pass
 
     def _add_funds(

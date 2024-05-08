@@ -31,8 +31,8 @@ from .interface import (
 from .schema import (
     CheckpointInfo,
     CurrentWallet,
+    HyperdriveEvent,
     HyperdriveTransaction,
-    HyperdriveTransferEvent,
     PoolConfig,
     PoolInfo,
     WalletDelta,
@@ -419,14 +419,14 @@ class TestHyperdriveEventsInterface:
     @pytest.mark.docker
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        transfer_event = HyperdriveTransferEvent(block_number=1, wallet_address="a")
+        transfer_event = HyperdriveEvent(block_number=1, wallet_address="a")
         add_transfer_events([transfer_event], db_session)
 
         latest_block_number = get_latest_block_number_from_transfer_event(db_session, "a")
         assert latest_block_number == 1
 
-        transfer_event_1 = HyperdriveTransferEvent(block_number=2, wallet_address="a")
-        transfer_event_2 = HyperdriveTransferEvent(block_number=3, wallet_address="b")
+        transfer_event_1 = HyperdriveEvent(block_number=2, wallet_address="a")
+        transfer_event_2 = HyperdriveEvent(block_number=3, wallet_address="b")
         add_transfer_events([transfer_event_1, transfer_event_2], db_session)
         latest_block_number = get_latest_block_number_from_transfer_event(db_session, "a")
         assert latest_block_number == 2

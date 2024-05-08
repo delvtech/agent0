@@ -72,7 +72,13 @@ def transfer_events_to_db(
             fromBlock=latest_db_block_entry,
             argument_filters={"to": wallet_addr},
         )
-        events.append(transfer_event_objs)
+        events.extend(transfer_event_objs)
+        transfer_event_objs = interface.hyperdrive_contract.events.TransferSingle.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"from": wallet_addr},
+        )
+        events.extend(transfer_event_objs)
+
     pass
 
 

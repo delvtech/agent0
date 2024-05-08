@@ -2,9 +2,10 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Union
+from typing import Any, Union
 
 from sqlalchemy import ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent0.chainsync.db.base import Base
@@ -106,12 +107,65 @@ class PoolInfo(Base):
     vault_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
-class HyperdriveTransferEvent(Base):
+class HyperdriveEvent(Base):
+    """Table for storing any transfer events emitted by the Hyperdrive contract.
+    This table only contains events of "registered" wallet addresses, which are any agents
+    that are managed by agent0. This table does not store all wallet addresses that have
+    interacted with all Hyperdrive contracts.
+
+    TODO this table would take the place of the `WalletDelta` table with the following updates:
+    - We explicitly fill this table with all addresses that have interacted with all hyperdrive pools.
+        - This is very slow on existing pools, which makes it useful for simulations and
+          any managed chains to run a dashboard on, but not so much for connections to remote chains
+          to execute trades.
+    """
+
     __tablename__ = "hyperdrive_transfer_events"
     # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    """The unique identifier for the entry to the table."""
+    transaction_hash: Mapped[str] = mapped_column(String, index=True)
+    """The transaction hash for the entry."""
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    """The block number for the entry."""
     wallet_address: Mapped[str] = mapped_column(String, index=True)
+    """The wallet address for the entry."""
+
+    # Fields
+    event_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    """
+    The underlying event type for the entry. Can be one of the following:
+    `OpenLong`, `OpenShort`, `CloseLong`, `CloseShort`, `AddLiquidity`, 
+    `RemoveLiquidity`, `RedeemWithdrawalShares`, or `Transfer`.
+    """
+    token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    """
+    The underlying token type for the entry. Can be one of the following:
+    `LONG`, `SHORT, `LP`, or `WITHDRAWAL_SHARE`.
+    """
+    # While time here is in epoch seconds, we use Numeric to allow for
+    # (1) lossless storage and (2) allow for NaNs
+    maturity_time: Mapped[Union[int, None]] = mapped_column(Numeric, default=None)
+    """The maturity time of the token"""
+    token_id: Mapped[Union[str, None]] = mapped_column(String, default=None)
+    """
+    The id for the token itself, which consists of the `token_type`, appended 
+    with `maturity_time` for LONG and SHORT. For example, `LONG-1715126400`.
+    """
+    token_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """
+    The change in tokens with respect to the wallet address.
+    """
+    base_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """
+    The change in base tokens for the event with respect to the wallet address.
+    """
+    vault_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """
+    The change in vault tokens for the event with respect to the wallet address.
+    """
+    event_json: Mapped[Union[dict[str, Any], None]] = mapped_column(JSONB, default=None)
+    """The raw event data is stored here in a json format."""
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
