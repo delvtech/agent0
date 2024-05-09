@@ -14,6 +14,7 @@ from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 from .schema import (
     CheckpointInfo,
     CurrentWallet,
+    HyperdriveEvent,
     HyperdriveTransaction,
     PoolAnalysis,
     PoolConfig,
@@ -22,6 +23,54 @@ from .schema import (
     WalletDelta,
     WalletPNL,
 )
+
+# Event Data Ingestion Interface
+
+
+def add_transfer_events(transfer_events: list[HyperdriveEvent], session: Session) -> None:
+    """Add transfer events to the transfer events table.
+    Arguments
+    ---------
+    transfer_events: list[HyperdriveTransferEvent]
+        A list of HyperdriveTransferEvent objects to insert into postgres.
+    session: Session
+        The initialized session object.
+    """
+    for transfer_event in transfer_events:
+        session.add(transfer_event)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error adding transaction: %s", err)
+        raise err
+
+
+def get_latest_block_number_from_transfer_event(session: Session, wallet_addr: str) -> int:
+    """Get the latest block number based on the hyperdrive events table in the db.
+    Arguments
+    ---------
+    session: Session
+        The initialized session object.
+    wallet_addr: str
+        The wallet address to filter the results on.
+    Returns
+    -------
+    int
+        The latest block number in the hyperdrive_events table.
+    """
+
+    query = (
+        session.query(func.max(HyperdriveEvent.block_number))
+        .filter(HyperdriveEvent.wallet_address == wallet_addr)
+        .scalar()
+    )
+    if query is None:
+        return 0
+    return int(query)
+
+
+# Chain To Data Ingestion Interface
 
 
 def add_transactions(transactions: list[HyperdriveTransaction], session: Session) -> None:
@@ -63,7 +112,7 @@ def get_pool_config(session: Session, contract_address: str | None = None, coerc
     """
     query = session.query(PoolConfig)
     if contract_address is not None:
-        query = query.filter(PoolConfig.contract_address == contract_address)
+        query = query.filter(PoolConfig.hyperdrive_address == contract_address)
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
@@ -84,7 +133,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_pool_config = get_pool_config(session, contract_address=pool_config.contract_address, coerce_float=False)
+    existing_pool_config = get_pool_config(session, contract_address=pool_config.hyperdrive_address, coerce_float=False)
     if len(existing_pool_config) == 0:
         session.add(pool_config)
         try:

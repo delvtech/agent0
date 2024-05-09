@@ -1,12 +1,16 @@
 """Functions for gathering data from the chain and adding it to the db"""
 
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
+from typing import Any
 
+import pandas as pd
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
-from web3.types import BlockData
+from web3.types import BlockData, EventData
 
+from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.base import fetch_contract_transactions_for_block
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
@@ -16,7 +20,14 @@ from .convert_data import (
     convert_pool_config,
     convert_pool_info,
 )
-from .interface import add_checkpoint_info, add_pool_config, add_pool_infos, add_transactions, add_wallet_deltas
+from .interface import (
+    add_checkpoint_info,
+    add_pool_config,
+    add_pool_infos,
+    add_transactions,
+    add_wallet_deltas,
+    get_latest_block_number_from_transfer_event,
+)
 
 
 def init_data_chain_to_db(
@@ -87,7 +98,7 @@ def data_chain_to_db(interface: HyperdriveReadInterface, block: BlockData, sessi
     # Adding this last as pool info is what we use to determine if this block is in the db for analysis
     pool_info_dict = asdict(pool_state.pool_info)
     pool_info_dict["block_number"] = int(pool_state.block_number)
-    pool_info_dict["timestamp"] = datetime.utcfromtimestamp(pool_state.block_time)
+    pool_info_dict["timestamp"] = datetime.fromtimestamp(pool_state.block_time, timezone.utc)
 
     # Adding additional fields
     pool_info_dict["epoch_timestamp"] = pool_state.block_time
@@ -100,3 +111,271 @@ def data_chain_to_db(interface: HyperdriveReadInterface, block: BlockData, sessi
 
     block_pool_info = convert_pool_info(pool_info_dict)
     add_pool_infos([block_pool_info], session)
+
+
+def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
+    out = dict(in_val)
+    # The args field is also an attribute dict, change to dict
+    out["args"] = dict(in_val["args"])
+    # Convert transaction hash to string
+    out["transactionHash"] = in_val["transactionHash"].to_0x_hex()
+    # Get token id field from args.
+    # This field is `assetId` for open/close long/short
+    return out
+
+
+# TODO cleanup
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-statements
+def transfer_events_to_db(
+    interfaces: list[HyperdriveReadInterface],
+    wallet_addr: str,
+    db_session: Session,
+) -> None:
+    """Function to query trade events from all pools and add them to the db.
+
+    Arguments
+    ---------
+    interfaces: list[HyperdriveReadInterface]
+        The hyperdrive interface objects connected to a pool.
+    wallet_addr: str
+        The wallet address to query.
+    db_session: Session
+        The database session.
+
+    """
+    assert len(interfaces) > 0
+
+    # Get the earliest block to get events from
+    # TODO can narrow this down to the last block we checked
+    # For now, keep this as the latest entry of this wallet.
+    latest_db_block_entry = get_latest_block_number_from_transfer_event(db_session, wallet_addr)
+
+    # Gather all events we care about here
+    # Transfers to and from wallet address
+    # db_event_objs: dict[str, HyperdriveEvent] = {}
+
+    all_events = []
+
+    for interface in interfaces:
+        events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"to": wallet_addr},
+        )
+        # Change events from attribute dict to dictionary
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"from": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        # Hyperdrive events
+        events = interface.hyperdrive_contract.events.OpenLong.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"trader": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.CloseLong.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"trader": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.OpenShort.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"trader": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.CloseShort.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"trader": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.AddLiquidity.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"provider": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.RemoveLiquidity.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"provider": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+        events = interface.hyperdrive_contract.events.RedeemWithdrawalShares.get_logs(
+            fromBlock=latest_db_block_entry,
+            argument_filters={"provider": wallet_addr},
+        )
+        all_events.extend([_event_data_to_dict(event) for event in events])
+
+    # Convert to dataframe
+    events_df = pd.DataFrame(all_events)
+    # If no events, we just return
+    if len(events_df) == 0:
+        return
+
+    # Each transaction made through hyperdrive has two rows for each transaction,
+    # one TransferSingle and one for the trade.
+    # Any transactions without a corresponding trade is a wallet to wallet transfer.
+    # We detect this case and throw an error if we find this.
+    # TODO handle transfer events
+
+    # Look for any transfer events not associated with a trade
+    unique_events_per_transaction = events_df.groupby("transactionHash")["event"].agg(["unique", "nunique"])
+    if (unique_events_per_transaction["nunique"] < 2).any():
+        raise ValueError(
+            "Found less than 2 unique events for transaction, likely due to "
+            "a transfer event not associated with a trade. This is not supported yet. "
+            f"{unique_events_per_transaction[unique_events_per_transaction['nunique'] < 2]['unique']}"
+        )
+    if (unique_events_per_transaction["nunique"] > 2).any():
+        raise ValueError(
+            "Found more than 2 unique events for transaction."
+            f"{unique_events_per_transaction[unique_events_per_transaction['nunique'] > 2]['unique']}"
+        )
+
+    # Drop all transfer single events
+    events_df = events_df[events_df["event"] != "TransferSingle"].reset_index(drop=True)
+
+    # Sanity check, one hyperdrive event per transaction hash
+    assert events_df.groupby("transactionHash")["event"].nunique().all() == 1
+
+    # Expand the args dict without losing the args dict field
+    # json_normalize works on series, but typing doesn't support it.
+    args_columns = pd.json_normalize(events_df["args"])  # type: ignore
+    events_df = pd.concat([events_df, args_columns], axis=1)
+
+    # Convert fields to db schema
+    # Longs
+    events_idx = events_df["event"].isin(["OpenLong", "CloseLong"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "LONG"
+        events_df.loc[events_idx, "token_id"] = "LONG-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
+            str
+        )
+
+    events_idx = events_df["event"] == "OpenLong"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = -events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "CloseLong"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    # Shorts
+    events_idx = events_df["event"].isin(["OpenShort", "CloseShort"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "SHORT"
+        events_df.loc[events_idx, "token_id"] = "SHORT-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
+            str
+        )
+
+    events_idx = events_df["event"] == "OpenShort"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = -events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "CloseShort"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    # LP
+    events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "LP"
+        events_df.loc[events_idx, "token_id"] = "LP"
+        # The wallet here is the "provider" column, we remap it to "trader"
+        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+
+    events_idx = events_df["event"] == "AddLiquidity"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "lpAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = -events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "RemoveLiquidity"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "lpAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        # We need to also add any withdrawal shares as additional rows
+        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] > 0)
+        if withdrawal_shares_idx.any():
+            withdrawal_rows = events_df[withdrawal_shares_idx].copy()
+            withdrawal_rows["token_type"] = "WITHDRAWAL_SHARE"
+            withdrawal_rows["token_id"] = "WITHDRAWAL_SHARE"
+            withdrawal_rows["token_delta"] = withdrawal_rows["withdrawalShareAmount"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+            withdrawal_rows["base_delta"] = Decimal(0)
+            events_df = pd.concat([events_df, withdrawal_rows], axis=0)
+
+    events_idx = events_df["event"] == "RedeemWithdrawalShares"
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "WITHDRAWAL_SHARE"
+        events_df.loc[events_idx, "token_id"] = "WITHDRAWAL_SHARE"
+        # The wallet here is the "provider" column, we remap it to "trader"
+        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "withdrawalShareAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    # We select the subset of columns we need and rename to match db schema
+    rename_dict = {
+        "address": "hyperdrive_address",
+        "transactionHash": "transaction_hash",
+        "blockNumber": "block_number",
+        "trader": "wallet_address",
+        "event": "event_type",
+        "token_type": "token_type",
+        "maturityTime": "maturity_time",
+        "token_id": "token_id",
+        "token_delta": "token_delta",
+        "base_delta": "base_delta",
+        "args": "event_json",
+    }
+
+    events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
+    # Add to db
+    df_to_db(events_df, HyperdriveEvent, db_session)

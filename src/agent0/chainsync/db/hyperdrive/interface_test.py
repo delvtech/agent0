@@ -15,18 +15,28 @@ from .interface import (
     add_pool_config,
     add_pool_infos,
     add_transactions,
+    add_transfer_events,
     add_wallet_deltas,
     get_all_traders,
     get_checkpoint_info,
     get_current_wallet,
     get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_table,
+    get_latest_block_number_from_transfer_event,
     get_pool_config,
     get_pool_info,
     get_transactions,
     get_wallet_deltas,
 )
-from .schema import CheckpointInfo, CurrentWallet, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
+from .schema import (
+    CheckpointInfo,
+    CurrentWallet,
+    HyperdriveEvent,
+    HyperdriveTransaction,
+    PoolConfig,
+    PoolInfo,
+    WalletDelta,
+)
 
 
 # These tests are using fixtures defined in conftest.py
@@ -157,14 +167,14 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_get_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_1 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
 
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
         np.testing.assert_array_equal(pool_config_df_1["initial_vault_share_price"], np.array([3.2]))
 
-        pool_config_2 = PoolConfig(contract_address="1", initial_vault_share_price=Decimal("3.4"))
+        pool_config_2 = PoolConfig(hyperdrive_address="1", initial_vault_share_price=Decimal("3.4"))
         add_pool_config(pool_config_2, db_session)
 
         pool_config_df_2 = get_pool_config(db_session)
@@ -174,7 +184,7 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
         pool_config_df_1 = get_pool_config(db_session, contract_address="0")
@@ -187,21 +197,21 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_pool_config_verify(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_1 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
         pool_config_df_1 = get_pool_config(db_session)
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initial_vault_share_price"] == 3.2
 
         # Nothing should happen if we give the same pool_config
-        pool_config_2 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_2 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session)
         assert len(pool_config_df_2) == 1
         assert pool_config_df_2.loc[0, "initial_vault_share_price"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
-        pool_config_3 = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.4"))
+        pool_config_3 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.4"))
         with pytest.raises(ValueError):
             add_pool_config(pool_config_3, db_session)
 
@@ -401,3 +411,24 @@ class TestCurrentWalletInterface:
         wallet_info_df = wallet_info_df.sort_values(by=["value"])
         np.testing.assert_array_equal(wallet_info_df["token_type"], ["LP", BASE_TOKEN_SYMBOL])
         np.testing.assert_array_equal(wallet_info_df["value"], [5.1, 6.1])
+
+
+class TestHyperdriveEventsInterface:
+    """Testing postgres interface for walletinfo table"""
+
+    @pytest.mark.docker
+    def test_latest_block_number(self, db_session):
+        """Testing retrieval of wallet info via interface"""
+        transfer_event = HyperdriveEvent(block_number=1, wallet_address="a")
+        add_transfer_events([transfer_event], db_session)
+
+        latest_block_number = get_latest_block_number_from_transfer_event(db_session, "a")
+        assert latest_block_number == 1
+
+        transfer_event_1 = HyperdriveEvent(block_number=2, wallet_address="a")
+        transfer_event_2 = HyperdriveEvent(block_number=3, wallet_address="b")
+        add_transfer_events([transfer_event_1, transfer_event_2], db_session)
+        latest_block_number = get_latest_block_number_from_transfer_event(db_session, "a")
+        assert latest_block_number == 2
+        latest_block_number = get_latest_block_number_from_transfer_event(db_session, "b")
+        assert latest_block_number == 3

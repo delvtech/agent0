@@ -103,7 +103,7 @@ class TestPoolConfigTable:
     @pytest.mark.docker
     def test_create_pool_config(self, db_session):
         """Create and entry"""
-        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
@@ -114,7 +114,7 @@ class TestPoolConfigTable:
     @pytest.mark.docker
     def test_delete_pool_config(self, db_session):
         """Delete an entry"""
-        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
