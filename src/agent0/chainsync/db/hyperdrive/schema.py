@@ -98,7 +98,7 @@ class PoolInfo(Base):
     vault_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
-class HyperdriveEvent(Base):
+class TradeEvent(Base):
     """Table for storing any transfer events emitted by the Hyperdrive contract.
     This table only contains events of "registered" wallet addresses, which are any agents
     that are managed by agent0. This table does not store all wallet addresses that have
@@ -110,7 +110,7 @@ class HyperdriveEvent(Base):
           to execute trades.
     """
 
-    __tablename__ = "hyperdrive_transfer_events"
+    __tablename__ = "trade_event"
     # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     """The unique identifier for the entry to the table."""

@@ -26,8 +26,9 @@ from .interface import (
     add_pool_infos,
     add_transactions,
     add_wallet_deltas,
-    get_latest_block_number_from_transfer_event,
+    get_latest_block_number_from_trade_event,
 )
+from .schema import TradeEvent
 
 
 def init_data_chain_to_db(
@@ -127,7 +128,7 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
 # TODO cleanup
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
-def transfer_events_to_db(
+def trade_events_to_db(
     interfaces: list[HyperdriveReadInterface],
     wallet_addr: str,
     db_session: Session,
@@ -149,7 +150,7 @@ def transfer_events_to_db(
     # Get the earliest block to get events from
     # TODO can narrow this down to the last block we checked
     # For now, keep this as the latest entry of this wallet.
-    latest_db_block_entry = get_latest_block_number_from_transfer_event(db_session, wallet_addr)
+    latest_db_block_entry = get_latest_block_number_from_trade_event(db_session, wallet_addr)
 
     # Gather all events we care about here
     # Transfers to and from wallet address
@@ -378,4 +379,4 @@ def transfer_events_to_db(
 
     events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
     # Add to db
-    df_to_db(events_df, HyperdriveEvent, db_session)
+    df_to_db(events_df, TradeEvent, db_session)
