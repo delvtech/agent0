@@ -613,6 +613,33 @@ class HyperdriveFactoryMaxCheckpointDurationContractFunction(ContractFunction):
         return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
+class HyperdriveFactoryMaxCircuitBreakerDeltaContractFunction(ContractFunction):
+    """ContractFunction for the maxCircuitBreakerDelta method."""
+
+    def __call__(self) -> HyperdriveFactoryMaxCircuitBreakerDeltaContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
 class HyperdriveFactoryMaxFeesContractFunction(ContractFunction):
     """ContractFunction for the maxFees method."""
 
@@ -725,6 +752,33 @@ class HyperdriveFactoryMinCheckpointDurationContractFunction(ContractFunction):
     """ContractFunction for the minCheckpointDuration method."""
 
     def __call__(self) -> HyperdriveFactoryMinCheckpointDurationContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveFactoryMinCircuitBreakerDeltaContractFunction(ContractFunction):
+    """ContractFunction for the minCircuitBreakerDelta method."""
+
+    def __call__(self) -> HyperdriveFactoryMinCircuitBreakerDeltaContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -1108,6 +1162,28 @@ class HyperdriveFactoryUpdateMaxCheckpointDurationContractFunction(ContractFunct
         # Call the function
 
 
+class HyperdriveFactoryUpdateMaxCircuitBreakerDeltaContractFunction(ContractFunction):
+    """ContractFunction for the updateMaxCircuitBreakerDelta method."""
+
+    def __call__(self, maxCircuitBreakerDelta: int) -> HyperdriveFactoryUpdateMaxCircuitBreakerDeltaContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(maxCircuitBreakerDelta))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
 class HyperdriveFactoryUpdateMaxFeesContractFunction(ContractFunction):
     """ContractFunction for the updateMaxFees method."""
 
@@ -1201,6 +1277,28 @@ class HyperdriveFactoryUpdateMinCheckpointDurationContractFunction(ContractFunct
 
     def __call__(self, minCheckpointDuration: int) -> HyperdriveFactoryUpdateMinCheckpointDurationContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(minCheckpointDuration))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveFactoryUpdateMinCircuitBreakerDeltaContractFunction(ContractFunction):
+    """ContractFunction for the updateMinCircuitBreakerDelta method."""
+
+    def __call__(self, minCircuitBreakerDelta: int) -> HyperdriveFactoryUpdateMinCircuitBreakerDeltaContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(minCircuitBreakerDelta))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1398,6 +1496,8 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     maxCheckpointDuration: HyperdriveFactoryMaxCheckpointDurationContractFunction
 
+    maxCircuitBreakerDelta: HyperdriveFactoryMaxCircuitBreakerDeltaContractFunction
+
     maxFees: HyperdriveFactoryMaxFeesContractFunction
 
     maxFixedAPR: HyperdriveFactoryMaxFixedAPRContractFunction
@@ -1407,6 +1507,8 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
     maxTimeStretchAPR: HyperdriveFactoryMaxTimeStretchAPRContractFunction
 
     minCheckpointDuration: HyperdriveFactoryMinCheckpointDurationContractFunction
+
+    minCircuitBreakerDelta: HyperdriveFactoryMinCircuitBreakerDeltaContractFunction
 
     minFees: HyperdriveFactoryMinFeesContractFunction
 
@@ -1438,6 +1540,8 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
 
     updateMaxCheckpointDuration: HyperdriveFactoryUpdateMaxCheckpointDurationContractFunction
 
+    updateMaxCircuitBreakerDelta: HyperdriveFactoryUpdateMaxCircuitBreakerDeltaContractFunction
+
     updateMaxFees: HyperdriveFactoryUpdateMaxFeesContractFunction
 
     updateMaxFixedAPR: HyperdriveFactoryUpdateMaxFixedAPRContractFunction
@@ -1447,6 +1551,8 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
     updateMaxTimeStretchAPR: HyperdriveFactoryUpdateMaxTimeStretchAPRContractFunction
 
     updateMinCheckpointDuration: HyperdriveFactoryUpdateMinCheckpointDurationContractFunction
+
+    updateMinCircuitBreakerDelta: HyperdriveFactoryUpdateMinCircuitBreakerDeltaContractFunction
 
     updateMinFees: HyperdriveFactoryUpdateMinFeesContractFunction
 
@@ -1628,6 +1734,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="maxCheckpointDuration",
         )
+        self.maxCircuitBreakerDelta = HyperdriveFactoryMaxCircuitBreakerDeltaContractFunction.factory(
+            "maxCircuitBreakerDelta",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="maxCircuitBreakerDelta",
+        )
         self.maxFees = HyperdriveFactoryMaxFeesContractFunction.factory(
             "maxFees",
             w3=w3,
@@ -1667,6 +1781,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="minCheckpointDuration",
+        )
+        self.minCircuitBreakerDelta = HyperdriveFactoryMinCircuitBreakerDeltaContractFunction.factory(
+            "minCircuitBreakerDelta",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="minCircuitBreakerDelta",
         )
         self.minFees = HyperdriveFactoryMinFeesContractFunction.factory(
             "minFees",
@@ -1790,6 +1912,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="updateMaxCheckpointDuration",
         )
+        self.updateMaxCircuitBreakerDelta = HyperdriveFactoryUpdateMaxCircuitBreakerDeltaContractFunction.factory(
+            "updateMaxCircuitBreakerDelta",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMaxCircuitBreakerDelta",
+        )
         self.updateMaxFees = HyperdriveFactoryUpdateMaxFeesContractFunction.factory(
             "updateMaxFees",
             w3=w3,
@@ -1829,6 +1959,14 @@ class HyperdriveFactoryContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="updateMinCheckpointDuration",
+        )
+        self.updateMinCircuitBreakerDelta = HyperdriveFactoryUpdateMinCircuitBreakerDeltaContractFunction.factory(
+            "updateMinCircuitBreakerDelta",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateMinCircuitBreakerDelta",
         )
         self.updateMinFees = HyperdriveFactoryUpdateMinFeesContractFunction.factory(
             "updateMinFees",
@@ -2716,6 +2854,82 @@ class HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent(ContractEvent):
         )
 
 
+class HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MaxCircuitBreakerDeltaUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class HyperdriveFactoryMaxFeesUpdatedContractEvent(ContractEvent):
     """ContractEvent for MaxFeesUpdated."""
 
@@ -3081,6 +3295,82 @@ class HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent(ContractEvent):
     @classmethod
     def create_filter(  # type: ignore
         cls: Type["HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent(ContractEvent):
+    """ContractEvent for MinCircuitBreakerDeltaUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent"],
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -3501,6 +3791,8 @@ class HyperdriveFactoryContractEvents(ContractEvents):
 
     MaxCheckpointDurationUpdated: HyperdriveFactoryMaxCheckpointDurationUpdatedContractEvent
 
+    MaxCircuitBreakerDeltaUpdated: HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent
+
     MaxFeesUpdated: HyperdriveFactoryMaxFeesUpdatedContractEvent
 
     MaxFixedAPRUpdated: HyperdriveFactoryMaxFixedAPRUpdatedContractEvent
@@ -3510,6 +3802,8 @@ class HyperdriveFactoryContractEvents(ContractEvents):
     MaxTimeStretchAPRUpdated: HyperdriveFactoryMaxTimeStretchAPRUpdatedContractEvent
 
     MinCheckpointDurationUpdated: HyperdriveFactoryMinCheckpointDurationUpdatedContractEvent
+
+    MinCircuitBreakerDeltaUpdated: HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent
 
     MinFeesUpdated: HyperdriveFactoryMinFeesUpdatedContractEvent
 
@@ -3614,6 +3908,16 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 event_name="MaxCheckpointDurationUpdated",
             ),
         )
+        self.MaxCircuitBreakerDeltaUpdated = cast(
+            HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent,
+            HyperdriveFactoryMaxCircuitBreakerDeltaUpdatedContractEvent.factory(
+                "MaxCircuitBreakerDeltaUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MaxCircuitBreakerDeltaUpdated",
+            ),
+        )
         self.MaxFeesUpdated = cast(
             HyperdriveFactoryMaxFeesUpdatedContractEvent,
             HyperdriveFactoryMaxFeesUpdatedContractEvent.factory(
@@ -3654,6 +3958,16 @@ class HyperdriveFactoryContractEvents(ContractEvents):
                 contract_abi=abi,
                 address=address,
                 event_name="MinCheckpointDurationUpdated",
+            ),
+        )
+        self.MinCircuitBreakerDeltaUpdated = cast(
+            HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent,
+            HyperdriveFactoryMinCircuitBreakerDeltaUpdatedContractEvent.factory(
+                "MinCircuitBreakerDeltaUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="MinCircuitBreakerDeltaUpdated",
             ),
         )
         self.MinFeesUpdated = cast(
@@ -4038,6 +4352,63 @@ class HyperdriveFactoryInvalidCheckpointDurationResolutionContractError:
         return decoded
 
 
+class HyperdriveFactoryInvalidCircuitBreakerDeltaContractError:
+    """ContractError for InvalidCircuitBreakerDelta."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidCircuitBreakerDeltaContractError",
+    ) -> None:
+        self.selector = "0xef9bc65f"
+        self.signature = "InvalidCircuitBreakerDelta()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidCircuitBreakerDeltaContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidCircuitBreakerDelta" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidCircuitBreakerDeltaContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidCircuitBreakerDelta" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class HyperdriveFactoryInvalidDeployConfigContractError:
     """ContractError for InvalidDeployConfig."""
 
@@ -4380,6 +4751,63 @@ class HyperdriveFactoryInvalidMaxCheckpointDurationContractError:
         return decoded
 
 
+class HyperdriveFactoryInvalidMaxCircuitBreakerDeltaContractError:
+    """ContractError for InvalidMaxCircuitBreakerDelta."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMaxCircuitBreakerDeltaContractError",
+    ) -> None:
+        self.selector = "0xfdb80c26"
+        self.signature = "InvalidMaxCircuitBreakerDelta()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMaxCircuitBreakerDeltaContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxCircuitBreakerDelta" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMaxCircuitBreakerDeltaContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMaxCircuitBreakerDelta" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class HyperdriveFactoryInvalidMaxFeesContractError:
     """ContractError for InvalidMaxFees."""
 
@@ -4657,6 +5085,63 @@ class HyperdriveFactoryInvalidMinCheckpointDurationContractError:
                 item
                 for item in hyperdrivefactory_abi
                 if item.get("name") == "InvalidMinCheckpointDuration" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveFactoryInvalidMinCircuitBreakerDeltaContractError:
+    """ContractError for InvalidMinCircuitBreakerDelta."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveFactoryInvalidMinCircuitBreakerDeltaContractError",
+    ) -> None:
+        self.selector = "0x28a2d9a9"
+        self.signature = "InvalidMinCircuitBreakerDelta()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveFactoryInvalidMinCircuitBreakerDeltaContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinCircuitBreakerDelta" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveFactoryInvalidMinCircuitBreakerDeltaContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdrivefactory_abi
+                if item.get("name") == "InvalidMinCircuitBreakerDelta" and item.get("type") == "error"
             ][0],
         )
         types = get_abi_input_types(error_abi)
@@ -5307,6 +5792,8 @@ class HyperdriveFactoryContractErrors:
 
     InvalidCheckpointDurationResolution: HyperdriveFactoryInvalidCheckpointDurationResolutionContractError
 
+    InvalidCircuitBreakerDelta: HyperdriveFactoryInvalidCircuitBreakerDeltaContractError
+
     InvalidDeployConfig: HyperdriveFactoryInvalidDeployConfigContractError
 
     InvalidDeployerCoordinator: HyperdriveFactoryInvalidDeployerCoordinatorContractError
@@ -5319,6 +5806,8 @@ class HyperdriveFactoryContractErrors:
 
     InvalidMaxCheckpointDuration: HyperdriveFactoryInvalidMaxCheckpointDurationContractError
 
+    InvalidMaxCircuitBreakerDelta: HyperdriveFactoryInvalidMaxCircuitBreakerDeltaContractError
+
     InvalidMaxFees: HyperdriveFactoryInvalidMaxFeesContractError
 
     InvalidMaxFixedAPR: HyperdriveFactoryInvalidMaxFixedAPRContractError
@@ -5328,6 +5817,8 @@ class HyperdriveFactoryContractErrors:
     InvalidMaxTimeStretchAPR: HyperdriveFactoryInvalidMaxTimeStretchAPRContractError
 
     InvalidMinCheckpointDuration: HyperdriveFactoryInvalidMinCheckpointDurationContractError
+
+    InvalidMinCircuitBreakerDelta: HyperdriveFactoryInvalidMinCircuitBreakerDeltaContractError
 
     InvalidMinFees: HyperdriveFactoryInvalidMinFeesContractError
 
@@ -5360,17 +5851,20 @@ class HyperdriveFactoryContractErrors:
         self.EndIndexTooLarge = HyperdriveFactoryEndIndexTooLargeContractError()
         self.InvalidCheckpointDuration = HyperdriveFactoryInvalidCheckpointDurationContractError()
         self.InvalidCheckpointDurationResolution = HyperdriveFactoryInvalidCheckpointDurationResolutionContractError()
+        self.InvalidCircuitBreakerDelta = HyperdriveFactoryInvalidCircuitBreakerDeltaContractError()
         self.InvalidDeployConfig = HyperdriveFactoryInvalidDeployConfigContractError()
         self.InvalidDeployerCoordinator = HyperdriveFactoryInvalidDeployerCoordinatorContractError()
         self.InvalidFees = HyperdriveFactoryInvalidFeesContractError()
         self.InvalidFixedAPR = HyperdriveFactoryInvalidFixedAPRContractError()
         self.InvalidIndexes = HyperdriveFactoryInvalidIndexesContractError()
         self.InvalidMaxCheckpointDuration = HyperdriveFactoryInvalidMaxCheckpointDurationContractError()
+        self.InvalidMaxCircuitBreakerDelta = HyperdriveFactoryInvalidMaxCircuitBreakerDeltaContractError()
         self.InvalidMaxFees = HyperdriveFactoryInvalidMaxFeesContractError()
         self.InvalidMaxFixedAPR = HyperdriveFactoryInvalidMaxFixedAPRContractError()
         self.InvalidMaxPositionDuration = HyperdriveFactoryInvalidMaxPositionDurationContractError()
         self.InvalidMaxTimeStretchAPR = HyperdriveFactoryInvalidMaxTimeStretchAPRContractError()
         self.InvalidMinCheckpointDuration = HyperdriveFactoryInvalidMinCheckpointDurationContractError()
+        self.InvalidMinCircuitBreakerDelta = HyperdriveFactoryInvalidMinCircuitBreakerDeltaContractError()
         self.InvalidMinFees = HyperdriveFactoryInvalidMinFeesContractError()
         self.InvalidMinFixedAPR = HyperdriveFactoryInvalidMinFixedAPRContractError()
         self.InvalidMinPositionDuration = HyperdriveFactoryInvalidMinPositionDurationContractError()
@@ -5390,17 +5884,20 @@ class HyperdriveFactoryContractErrors:
             self.EndIndexTooLarge,
             self.InvalidCheckpointDuration,
             self.InvalidCheckpointDurationResolution,
+            self.InvalidCircuitBreakerDelta,
             self.InvalidDeployConfig,
             self.InvalidDeployerCoordinator,
             self.InvalidFees,
             self.InvalidFixedAPR,
             self.InvalidIndexes,
             self.InvalidMaxCheckpointDuration,
+            self.InvalidMaxCircuitBreakerDelta,
             self.InvalidMaxFees,
             self.InvalidMaxFixedAPR,
             self.InvalidMaxPositionDuration,
             self.InvalidMaxTimeStretchAPR,
             self.InvalidMinCheckpointDuration,
+            self.InvalidMinCircuitBreakerDelta,
             self.InvalidMinFees,
             self.InvalidMinFixedAPR,
             self.InvalidMinPositionDuration,
@@ -5445,6 +5942,8 @@ hyperdrivefactory_abi: ABI = cast(
                         {"name": "maxCheckpointDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "minPositionDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "maxPositionDuration", "type": "uint256", "internalType": "uint256"},
+                        {"name": "minCircuitBreakerDelta", "type": "uint256", "internalType": "uint256"},
+                        {"name": "maxCircuitBreakerDelta", "type": "uint256", "internalType": "uint256"},
                         {"name": "minFixedAPR", "type": "uint256", "internalType": "uint256"},
                         {"name": "maxFixedAPR", "type": "uint256", "internalType": "uint256"},
                         {"name": "minTimeStretchAPR", "type": "uint256", "internalType": "uint256"},
@@ -5518,6 +6017,7 @@ hyperdrivefactory_abi: ABI = cast(
                         {"name": "linkerCodeHash", "type": "bytes32", "internalType": "bytes32"},
                         {"name": "minimumShareReserves", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumTransactionAmount", "type": "uint256", "internalType": "uint256"},
+                        {"name": "circuitBreakerDelta", "type": "uint256", "internalType": "uint256"},
                         {"name": "positionDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "checkpointDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "timeStretch", "type": "uint256", "internalType": "uint256"},
@@ -5573,6 +6073,7 @@ hyperdrivefactory_abi: ABI = cast(
                         {"name": "linkerCodeHash", "type": "bytes32", "internalType": "bytes32"},
                         {"name": "minimumShareReserves", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumTransactionAmount", "type": "uint256", "internalType": "uint256"},
+                        {"name": "circuitBreakerDelta", "type": "uint256", "internalType": "uint256"},
                         {"name": "positionDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "checkpointDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "timeStretch", "type": "uint256", "internalType": "uint256"},
@@ -5714,6 +6215,13 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "maxCircuitBreakerDelta",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "maxFees",
             "inputs": [],
             "outputs": [
@@ -5755,6 +6263,13 @@ hyperdrivefactory_abi: ABI = cast(
         {
             "type": "function",
             "name": "minCheckpointDuration",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "minCircuitBreakerDelta",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
@@ -5881,6 +6396,13 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "updateMaxCircuitBreakerDelta",
+            "inputs": [{"name": "_maxCircuitBreakerDelta", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
             "name": "updateMaxFees",
             "inputs": [
                 {
@@ -5923,6 +6445,13 @@ hyperdrivefactory_abi: ABI = cast(
             "type": "function",
             "name": "updateMinCheckpointDuration",
             "inputs": [{"name": "_minCheckpointDuration", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateMinCircuitBreakerDelta",
+            "inputs": [{"name": "_minCircuitBreakerDelta", "type": "uint256", "internalType": "uint256"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -6019,6 +6548,7 @@ hyperdrivefactory_abi: ABI = cast(
                         {"name": "linkerCodeHash", "type": "bytes32", "internalType": "bytes32"},
                         {"name": "minimumShareReserves", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumTransactionAmount", "type": "uint256", "internalType": "uint256"},
+                        {"name": "circuitBreakerDelta", "type": "uint256", "internalType": "uint256"},
                         {"name": "positionDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "checkpointDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "timeStretch", "type": "uint256", "internalType": "uint256"},
@@ -6094,6 +6624,14 @@ hyperdrivefactory_abi: ABI = cast(
         },
         {
             "type": "event",
+            "name": "MaxCircuitBreakerDeltaUpdated",
+            "inputs": [
+                {"name": "newMaxCircuitBreakerDelta", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
             "name": "MaxFeesUpdated",
             "inputs": [
                 {
@@ -6138,6 +6676,14 @@ hyperdrivefactory_abi: ABI = cast(
             "name": "MinCheckpointDurationUpdated",
             "inputs": [
                 {"name": "newMinCheckpointDuration", "type": "uint256", "indexed": False, "internalType": "uint256"}
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "MinCircuitBreakerDeltaUpdated",
+            "inputs": [
+                {"name": "newMinCircuitBreakerDelta", "type": "uint256", "indexed": False, "internalType": "uint256"}
             ],
             "anonymous": False,
         },
@@ -6194,17 +6740,20 @@ hyperdrivefactory_abi: ABI = cast(
         {"type": "error", "name": "EndIndexTooLarge", "inputs": []},
         {"type": "error", "name": "InvalidCheckpointDuration", "inputs": []},
         {"type": "error", "name": "InvalidCheckpointDurationResolution", "inputs": []},
+        {"type": "error", "name": "InvalidCircuitBreakerDelta", "inputs": []},
         {"type": "error", "name": "InvalidDeployConfig", "inputs": []},
         {"type": "error", "name": "InvalidDeployerCoordinator", "inputs": []},
         {"type": "error", "name": "InvalidFees", "inputs": []},
         {"type": "error", "name": "InvalidFixedAPR", "inputs": []},
         {"type": "error", "name": "InvalidIndexes", "inputs": []},
         {"type": "error", "name": "InvalidMaxCheckpointDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMaxCircuitBreakerDelta", "inputs": []},
         {"type": "error", "name": "InvalidMaxFees", "inputs": []},
         {"type": "error", "name": "InvalidMaxFixedAPR", "inputs": []},
         {"type": "error", "name": "InvalidMaxPositionDuration", "inputs": []},
         {"type": "error", "name": "InvalidMaxTimeStretchAPR", "inputs": []},
         {"type": "error", "name": "InvalidMinCheckpointDuration", "inputs": []},
+        {"type": "error", "name": "InvalidMinCircuitBreakerDelta", "inputs": []},
         {"type": "error", "name": "InvalidMinFees", "inputs": []},
         {"type": "error", "name": "InvalidMinFixedAPR", "inputs": []},
         {"type": "error", "name": "InvalidMinPositionDuration", "inputs": []},
@@ -6220,7 +6769,7 @@ hyperdrivefactory_abi: ABI = cast(
 )
 # pylint: disable=line-too-long
 hyperdrivefactory_bytecode = HexStr(
-    "0x608060405260026001553480156200001657600080fd5b5060405162003a7738038062003a7783398101604081905262000039916200069d565b6000620000478282620008c2565b508160a001518260c0015110806200007357508160a001518260c001516200007091906200098e565b15155b156200009257604051630219d66360e11b815260040160405180910390fd5b60c0820151600981905560e08301511080620000c257508160a001518260e00151620000bf91906200098e565b15155b15620000e15760405163f9c0959d60e01b815260040160405180910390fd5b60e0820151600a81905561010083015110806200011357508160a001518261010001516200011091906200098e565b15155b156200013257604051633007ad0160e11b815260040160405180910390fd5b610100820151600b81905561012083015110806200016557508160a001518261012001516200016291906200098e565b15155b15620001845760405163cfb699cb60e01b815260040160405180910390fd5b610120820151600c556101608201516101408301511115620001b9576040516330554de160e01b815260040160405180910390fd5b610140820151600d55610160820151600e556101a08201516101808301511115620001f7576040516383ebdfb760e01b815260040160405180910390fd5b610180820151600f556101a08201516010556101e082015151670de0b6b3a76400001080620002365750670de0b6b3a7640000826101e0015160200151115b80620002525750670de0b6b3a7640000826101e0015160400151115b806200026e5750670de0b6b3a7640000826101e0015160600151115b156200028d5760405163161071fb60e11b815260040160405180910390fd5b6101e082015180516015819055602082015160165560408201516017556060909101516018556101c0830151511180620002d85750816101e0015160200151826101c0015160200151115b80620002f55750816101e0015160400151826101c0015160400151115b80620003125750816101e0015160600151826101c0015160600151115b1562000331576040516315b05a8f60e01b815260040160405180910390fd5b6101c082015180516011556020808201516012556040808301516013556060928301516014558451600280546001600160a01b03199081166001600160a01b03938416179091558387015160038054831691841691909117905593860151600680548616918316919091179055608086015160078054909516911617909255908301518051620003c692601992019062000403565b5050610200810151600480546001600160a01b0319166001600160a01b0390921691909117905561022081015160055560a00151600855620009b1565b8280548282559060005260206000209081019282156200045b579160200282015b828111156200045b57825182546001600160a01b0319166001600160a01b0390911617825560209092019160019091019062000424565b50620004699291506200046d565b5090565b5b808211156200046957600081556001016200046e565b634e487b7160e01b600052604160045260246000fd5b60405161024081016001600160401b0381118282101715620004c057620004c062000484565b60405290565b604051601f8201601f191681016001600160401b0381118282101715620004f157620004f162000484565b604052919050565b80516001600160a01b03811681146200051157600080fd5b919050565b600082601f8301126200052857600080fd5b815160206001600160401b0382111562000546576200054662000484565b8160051b62000557828201620004c6565b92835284810182019282810190878511156200057257600080fd5b83870192505b848310156200059c576200058c83620004f9565b8252918301919083019062000578565b979650505050505050565b600060808284031215620005ba57600080fd5b604051608081016001600160401b0381118282101715620005df57620005df62000484565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b600082601f8301126200062257600080fd5b81516001600160401b038111156200063e576200063e62000484565b602062000654601f8301601f19168201620004c6565b82815285828487010111156200066957600080fd5b60005b83811015620006895785810183015182820184015282016200066c565b506000928101909101919091529392505050565b60008060408385031215620006b157600080fd5b82516001600160401b0380821115620006c957600080fd5b908401906103008287031215620006df57600080fd5b620006e96200049a565b620006f483620004f9565b81526200070460208401620004f9565b60208201526040830151828111156200071c57600080fd5b6200072a8882860162000516565b6040830152506200073e60608401620004f9565b60608201526200075160808401620004f9565b608082015260a0838101519082015260c0808401519082015260e08084015190820152610100808401519082015261012080840151908201526101408084015190820152610160808401519082015261018080840151908201526101a080840151908201526101c0620007c788828601620005a7565b90820152620007db876102408501620005a7565b6101e0820152620007f06102c08401620004f9565b6102008201526102e092909201516102208301526020850151919350808211156200081a57600080fd5b50620008298582860162000610565b9150509250929050565b600181811c908216806200084857607f821691505b6020821081036200086957634e487b7160e01b600052602260045260246000fd5b50919050565b601f821115620008bd57600081815260208120601f850160051c81016020861015620008985750805b601f850160051c820191505b81811015620008b957828155600101620008a4565b5050505b505050565b81516001600160401b03811115620008de57620008de62000484565b620008f681620008ef845462000833565b846200086f565b602080601f8311600181146200092e5760008415620009155750858301515b600019600386901b1c1916600185901b178555620008b9565b600085815260208120601f198616915b828110156200095f578886015182559484019460019091019084016200093e565b50858210156200097e5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b600082620009ac57634e487b7160e01b600052601260045260246000fd5b500690565b6130b680620009c16000396000f3fe6080604052600436106102e85760003560e01c806397b0e8ce11610190578063d6f50169116100dc578063e333155511610095578063eb71f66c1161006f578063eb71f66c146108de578063ec895f11146108fe578063f8c09e591461091e578063fe3d5aeb1461094e57600080fd5b8063e333155514610889578063e71f34b3146108a9578063e83e34b1146108c957600080fd5b8063d6f50169146107f2578063daac24da14610808578063daf012e614610828578063dd2b8fbb1461083e578063e0e2daaa1461085e578063e1b39c801461087457600080fd5b8063bf9bd5cd11610149578063c905a4b511610123578063c905a4b514610790578063d0f96b92146107a6578063d23d7ea3146107bc578063d2c35ce8146107d257600080fd5b8063bf9bd5cd14610738578063c17225631461074e578063c415b95c1461077057600080fd5b806397b0e8ce1461067657806399623bb1146106965780639af25262146106b6578063a64c90bf146106d6578063b2561263146106f8578063bc30e7a11461071857600080fd5b806354fd4d501161024f5780636e95d67c1161020857806385229785116101e257806385229785146106005780638627a4f0146106205780638e127cf5146106405780638efc09861461066057600080fd5b80636e95d67c146105ab5780636f6d5c4a146105c057806383b361e8146105e057600080fd5b806354fd4d50146104ad5780635720c9d5146104df5780635aa6e675146104f5578063628027a3146105155780636b44e6be146105355780636c8cc8651461057557600080fd5b80632885e3ac116102a15780632885e3ac146103e95780632facc51914610409578063411c303514610429578063421caba81461044957806348800760146104695780634fbfee771461048d57600080fd5b8063069024941461031757806306fdde031461034757806310780f731461036957806310d1dc3e1461038957806311e77bfe146103a95780631978ebcf146103c957600080fd5b366103125760026001540361031057604051630aac75b560e31b815260040160405180910390fd5b005b600080fd5b61032a610325366004612958565b61096e565b6040516001600160a01b0390911681526020015b60405180910390f35b34801561035357600080fd5b5061035c610d5d565b60405161033e9190612acd565b34801561037557600080fd5b5060075461032a906001600160a01b031681565b34801561039557600080fd5b506103106103a4366004612ae0565b610deb565b3480156103b557600080fd5b506103106103c4366004612af2565b610f04565b3480156103d557600080fd5b506103106103e4366004612af2565b610fdd565b3480156103f557600080fd5b50610310610404366004612ae0565b61105f565b34801561041557600080fd5b5061032a610424366004612b0b565b6111c5565b34801561043557600080fd5b50610310610444366004612b9f565b6112b7565b34801561045557600080fd5b50610310610464366004612bcb565b61146f565b34801561047557600080fd5b5061047f60105481565b60405190815260200161033e565b34801561049957600080fd5b506103106104a8366004612af2565b61155f565b3480156104b957600080fd5b5061035c604051806040016040528060068152602001653b189718171960d11b81525081565b3480156104eb57600080fd5b5061047f60095481565b34801561050157600080fd5b5060025461032a906001600160a01b031681565b34801561052157600080fd5b50610310610530366004612af2565b6115bc565b34801561054157600080fd5b50610565610550366004612bcb565b601e6020526000908152604090205460ff1681565b604051901515815260200161033e565b34801561058157600080fd5b5061032a610590366004612bcb565b601c602052600090815260409020546001600160a01b031681565b3480156105b757600080fd5b50601d5461047f565b3480156105cc57600080fd5b506103106105db366004612af2565b61163e565b3480156105ec57600080fd5b506103106105fb366004612af2565b6116e2565b34801561060c57600080fd5b5061031061061b366004612bcb565b611764565b34801561062c57600080fd5b5061031061063b366004612bcb565b6117d8565b34801561064c57600080fd5b5061031061065b366004612af2565b61184c565b34801561066c57600080fd5b5061047f600c5481565b34801561068257600080fd5b50610310610691366004612af2565b6118f0565b3480156106a257600080fd5b5060045461032a906001600160a01b031681565b3480156106c257600080fd5b506103106106d1366004612bef565b611972565b3480156106e257600080fd5b506106eb6119da565b60405161033e9190612c64565b34801561070457600080fd5b50610310610713366004612bcb565b611a3c565b34801561072457600080fd5b506106eb610733366004612cb1565b611ab0565b34801561074457600080fd5b5061047f600e5481565b34801561075a57600080fd5b50610763611bcd565b60405161033e9190612cd3565b34801561077c57600080fd5b5060065461032a906001600160a01b031681565b34801561079c57600080fd5b5061047f60055481565b3480156107b257600080fd5b5061047f60085481565b3480156107c857600080fd5b5061047f600d5481565b3480156107de57600080fd5b506103106107ed366004612bcb565b611c25565b3480156107fe57600080fd5b5061047f600f5481565b34801561081457600080fd5b5061032a610823366004612af2565b611c99565b34801561083457600080fd5b5061047f600b5481565b34801561084a57600080fd5b50610310610859366004612bcb565b611cc9565b34801561086a57600080fd5b5061047f600a5481565b34801561088057600080fd5b50601a5461047f565b34801561089557600080fd5b5060035461032a906001600160a01b031681565b3480156108b557600080fd5b506103106108c4366004612af2565b611d3d565b3480156108d557600080fd5b50610763611de1565b3480156108ea57600080fd5b506103106108f9366004612af2565b611e39565b34801561090a57600080fd5b506106eb610919366004612cb1565b611ed1565b34801561092a57600080fd5b50610565610939366004612bcb565b601b6020526000908152604090205460ff1681565b34801561095a57600080fd5b5061032a610969366004612af2565b611fe7565b6001600160a01b0388166000908152601b602052604081205460ff166109a757604051636e623f0f60e01b815260040160405180910390fd5b6109b2888686611ffc565b60408051336020808301919091528183018d905282518083038401815260608301938490528051910120631ae6f51560e01b9092526000916001600160a01b038c1691631ae6f51591610a0d918d908d908990606401612df6565b6020604051808303816000875af1158015610a2c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610a509190612e31565b6001600160a01b038181166000908152601c60205260409081902080546001600160a01b0319168e84169081179091556003549092166101208d015251919250907fd371ed88cc563fd25b2a95ce8bb8d0adbf9bb4d8725c94996d2cae1d0ddf2a7290610ac29084908d908d90612e4e565b60405180910390a2601d805460018082019092557f6d4407e7be21f808e6509aa9fa9143369579dd7d760fe20a2c09680fc146134f0180546001600160a01b0319166001600160a01b038481169182179092556000908152601e6020908152604091829020805460ff1916851790559280558051339381019390935282018d90528b16906316abfc7090349060600160405160208183030381529060405280519060200120338b8b8a6040518763ffffffff1660e01b8152600401610b8b959493929190612e89565b60206040518083038185885af1158015610ba9573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190610bce9190612eec565b50600260015560005b601954811015610c7a57816001600160a01b0316637180c8ca60198381548110610c0357610c03612f05565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b158015610c5757600080fd5b505af1158015610c6b573d6000803e3d6000fd5b50505050806001019050610bd7565b5060035460405163ab033ea960e01b81526001600160a01b0391821660048201529082169063ab033ea990602401600060405180830381600087803b158015610cc257600080fd5b505af1158015610cd6573d6000803e3d6000fd5b504792505081159050610d4e57604051600090339083908381818185875af1925050503d8060008114610d25576040519150601f19603f3d011682016040523d82523d6000602084013e610d2a565b606091505b5050905080610d4c576040516312171d8360e31b815260040160405180910390fd5b505b509a9950505050505050505050565b60008054610d6a90612f1b565b80601f0160208091040260200160405190810160405280929190818152602001828054610d9690612f1b565b8015610de35780601f10610db857610100808354040283529160200191610de3565b820191906000526020600020905b815481529060010190602001808311610dc657829003601f168201915b505050505081565b6002546001600160a01b03163314610e15576040516282b42960e81b815260040160405180910390fd5b6040805160808101825260155480825260165460208301526017549282019290925260185460608201529082351180610e55575080602001518260200135115b80610e67575080604001518260400135115b80610e79575080606001518260600135115b15610e97576040516315b05a8f60e01b815260040160405180910390fd5b81356011819055602080840135601281905560408086013560138190556060808801356014819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a15050565b6002546001600160a01b03163314610f2e576040516282b42960e81b815260040160405180910390fd5b80600954610f3c9190612f4f565b151580610f55575080600a54610f529190612f4f565b15155b80610f6c575080600b54610f699190612f4f565b15155b80610f83575080600c54610f809190612f4f565b15155b15610fa1576040516311b75c1560e31b815260040160405180910390fd5b60088190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a906020015b60405180910390a150565b6002546001600160a01b03163314611007576040516282b42960e81b815260040160405180910390fd5b600e5481111561102a57604051631670f79760e01b815260040160405180910390fd5b600d8190556040518181527faab0ee9100629c405a4d75336e1640cc81e0608fb0d7f17389c06ee8d4f0219190602001610fd2565b6002546001600160a01b03163314611089576040516282b42960e81b815260040160405180910390fd5b6040805160808101825260115481526012546020820152601354918101919091526014546060820152670de0b6b3a7640000823511806110d45750670de0b6b3a76400008260200135115b806110ea5750670de0b6b3a76400008260400135115b806111005750670de0b6b3a76400008260600135115b8061110c575080518235105b8061111e575080602001518260200135105b80611130575080604001518260400135105b80611142575080606001518260600135105b156111605760405163161071fb60e11b815260040160405180910390fd5b81356015819055602080840135601681905560408086013560178190556060808801356018819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a790608001610ef8565b6001600160a01b0387166000908152601b602052604081205460ff166111fe57604051636e623f0f60e01b815260040160405180910390fd5b611209878686611ffc565b60408051336020808301919091528183018c90528251808303840181526060830193849052805191012063059e27c360e11b9092526000916001600160a01b038b1691630b3c4f8691611266918c908c908a908a90606401612f71565b6020604051808303816000875af1158015611285573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906112a99190612e31565b9a9950505050505050505050565b6002546001600160a01b031633146112e1576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0382166000908152601b602052604090205460ff1661131a57604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b0316601a828154811061133757611337612f05565b6000918252602090912001546001600160a01b03161461136a57604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601b60205260409020805460ff19169055601a805461139a90600190612fc6565b815481106113aa576113aa612f05565b600091825260209091200154601a80546001600160a01b0390921691839081106113d6576113d6612f05565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b03160217905550601a80548061141557611415612fd9565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6002546001600160a01b03163314611499576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0381166000908152601b602052604090205460ff16156114d35760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b0381166000818152601b6020526040808220805460ff19166001908117909155601a8054918201815583527f057c384a7d1c54f3a1b2e5e67b2617b8224fdfd1ea7234eea573a6ff665ff63e0180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6002546001600160a01b03163314611589576040516282b42960e81b815260040160405180910390fd5b600581905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6002546001600160a01b031633146115e6576040516282b42960e81b815260040160405180910390fd5b600f5481101561160957604051630a35539d60e41b815260040160405180910390fd5b60108190556040518181527fa9e7961bb3342715dbecc208087a6a9df8986d524b3a0a829fd90f5a2f5ba53e90602001610fd2565b6002546001600160a01b03163314611668576040516282b42960e81b815260040160405180910390fd5b60095481108061168357506008546116809082612f4f565b15155b8061168f5750600b5481115b156116ad5760405163f9c0959d60e01b815260040160405180910390fd5b600a8190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f290602001610fd2565b6002546001600160a01b0316331461170c576040516282b42960e81b815260040160405180910390fd5b60105481111561172f57604051635a8f655760e01b815260040160405180910390fd5b600f8190556040518181527f490eb2a91746aa933c9ffe2f7939aa06498f3259139f8805f008b12c8c697a4690602001610fd2565b6002546001600160a01b0316331461178e576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6002546001600160a01b03163314611802576040516282b42960e81b815260040160405180910390fd5b600780546001600160a01b0319166001600160a01b0383169081179091556040517fc049058b1df2dd8902739ceb78992df12fa8369c06c450b3c6787137b452fdd290600090a250565b6002546001600160a01b03163314611876576040516282b42960e81b815260040160405180910390fd5b600854811080611891575060085461188e9082612f4f565b15155b8061189d5750600a5481115b156118bb57604051630219d66360e11b815260040160405180910390fd5b60098190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b763190602001610fd2565b6002546001600160a01b0316331461191a576040516282b42960e81b815260040160405180910390fd5b600d5481101561193d5760405163019cfb7b60e61b815260040160405180910390fd5b600e8190556040518181527f4fa35c11ce9a45ae882c154ecb53ab5cac52a74a5b9b0373be36deb30c78297890602001610fd2565b6002546001600160a01b0316331461199c576040516282b42960e81b815260040160405180910390fd5b6119a8601983836126b7565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc388282604051610ef8929190612fef565b60606019805480602002602001604051908101604052809291908181526020018280548015611a3257602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311611a14575b5050505050905090565b6002546001600160a01b03163314611a66576040516282b42960e81b815260040160405180910390fd5b600280546001600160a01b0319166001600160a01b0383169081179091556040517f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab90600090a250565b606081831115611ad357604051633b2735ab60e11b815260040160405180910390fd5b601d548210611af55760405163e0f7becb60e01b815260040160405180910390fd5b611aff8383612fc6565b611b0a90600161303d565b67ffffffffffffffff811115611b2257611b2261274e565b604051908082528060200260200182016040528015611b4b578160200160208202803683370190505b509050825b828111611bc657601d8181548110611b6a57611b6a612f05565b9060005260206000200160009054906101000a90046001600160a01b03168285830381518110611b9c57611b9c612f05565b6001600160a01b039092166020928302919091019091015280611bbe81613050565b915050611b50565b5092915050565b611bf86040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526011548152601254602082015260135491810191909152601454606082015290565b6002546001600160a01b03163314611c4f576040516282b42960e81b815260040160405180910390fd5b600680546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b6000601d8281548110611cae57611cae612f05565b6000918252602090912001546001600160a01b031692915050565b6002546001600160a01b03163314611cf3576040516282b42960e81b815260040160405180910390fd5b600380546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6002546001600160a01b03163314611d67576040516282b42960e81b815260040160405180910390fd5b600a54811080611d825750600854611d7f9082612f4f565b15155b80611d8e5750600c5481115b15611dac57604051633007ad0160e11b815260040160405180910390fd5b600b8190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f17890602001610fd2565b611e0c6040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526015548152601654602082015260175491810191909152601854606082015290565b6002546001600160a01b03163314611e63576040516282b42960e81b815260040160405180910390fd5b600b54811080611e7e5750600854611e7b9082612f4f565b15155b15611e9c5760405163cfb699cb60e01b815260040160405180910390fd5b600c8190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b90602001610fd2565b606081831115611ef457604051633b2735ab60e11b815260040160405180910390fd5b601a548210611f165760405163e0f7becb60e01b815260040160405180910390fd5b611f208383612fc6565b611f2b90600161303d565b67ffffffffffffffff811115611f4357611f4361274e565b604051908082528060200260200182016040528015611f6c578160200160208202803683370190505b509050825b828111611bc657601a8181548110611f8b57611f8b612f05565b9060005260206000200160009054906101000a90046001600160a01b03168285830381518110611fbd57611fbd612f05565b6001600160a01b039092166020928302919091019091015280611fdf81613050565b915050611f71565b6000601a8281548110611cae57611cae612f05565b6009548360e0015110806120155750600a548360e00151115b8061203057506008548360e0015161202d9190612f4f565b15155b1561204e57604051635428734d60e01b815260040160405180910390fd5b600b548360c0015110806120675750600c548360c00151115b8061208457508260e001518360c001516120819190612f4f565b15155b156120a25760405163253fffcf60e11b815260040160405180910390fd5b6015546101808401515111806120d6575060165460c0840151610180850151602001516120d4916301e1338090612313565b115b806120eb575060175461018084015160400151115b80612100575060185461018084015160600151115b80612112575060115461018084015151105b8061213b575060125460c084015161018085015160200151612139916301e1338090612339565b105b80612150575060135461018084015160400151105b80612165575060145461018084015160600151105b1561218357604051632d8768f960e01b815260040160405180910390fd5b600d548210806121945750600e5482115b156121b2576040516330554de160e01b815260040160405180910390fd5b60006121d76611c37937e080006121d185671bc16d674ec80000612357565b90612375565b600f549091506121e79082612375565b82108061221a575061221761220e671bc16d674ec800006122088685612375565b9061238b565b601054906123a0565b82115b15612238576040516383ebdfb760e01b815260040160405180910390fd5b6000612248838660c001516123b5565b60045460408701519192506001600160a01b0391821691161415806122735750600554856060015114155b8061229257506006546101408601516001600160a01b03908116911614155b806122b157506007546101608601516001600160a01b03908116911614155b806122d057506003546101208601516001600160a01b03908116911614155b806122df575061010085015115155b156122fd5760405163e8c02dd760e01b815260040160405180910390fd5b3061012086015261010090940193909352505050565b600082600019048411830215820261232a57600080fd5b50910281810615159190040190565b600082600019048411830215820261235057600080fd5b5091020490565b600061236c83670de0b6b3a764000084612339565b90505b92915050565b6000818311612384578161236c565b5090919050565b600061236c8383670de0b6b3a7640000612339565b60008183116123af578261236c565b50919050565b6000806123e66123d76123c9866064613069565b66a5bbed86c5a0009061238b565b6748cd4072281e000090612357565b90506123fa670de0b6b3a764000082612357565b90506124528161220861242561242061241b89670de0b6b3a764000061303d565b61245a565b612488565b61244c61242061243a8a8a6301e13380612339565b61241b90670de0b6b3a764000061303d565b90612357565b949350505050565b60006001600160ff1b038211156124845760405163396ea70160e11b815260040160405180910390fd5b5090565b60008082136124aa5760405163e61b497560e01b815260040160405180910390fd5b506fffffffffffffffffffffffffffffffff811160071b81811c67ffffffffffffffff1060061b1781811c63ffffffff1060051b1781811c61ffff1060041b1781811c60ff10600390811b90911782811c600f1060021b1782811c909110600190811b90911782811c90911017609f8181036060019290921b91605f198201906125369084901c61245a565b6c465772b2bbbb5f824b15207a3081018102606090811d6d0388eaa27412d5aca026815d636e018202811d6d0df99ac502031bf953eff472fdcc018202811d6d13cdffb29d51d99322bdff5f2211018202811d6d0a0f742023def783a307a986912e018202811d6d01920d8043ca89b5239253284e42018202811d6c0b7a86d7375468fac667a0a527016c29508e458543d8aa4df2abee7883018302821d6d0139601a2efabe717e604cbb4894018302821d6d02247f7a7b6594320649aa03aba1018302821d6c8c3f38e95a6b1ff2ab1c3b343619018302821d6d02384773bdf1ac5676facced60901901830290911d6cb9a025d814b29c212b8b1a07cd1901909102780a09507084cc699bb0e71ea869ffffffffffffffffffffffff190105711340daa0d5f769dba1915cef59f0815a5506027d0267a36c0c95b3975ab3ee5b203a7614a3f75373f047d803ae7b6687f2b391909102017d57115e47018c7177eebf7cd370a3356a1b7863008a5ae8028c72b88642840160ae1d92915050565b82805482825590600052602060002090810192821561270a579160200282015b8281111561270a5781546001600160a01b0319166001600160a01b038435161782556020909201916001909101906126d7565b506124849291505b808211156124845760008155600101612712565b6001600160a01b038116811461273b57600080fd5b50565b803561274981612726565b919050565b634e487b7160e01b600052604160045260246000fd5b6040516101a0810167ffffffffffffffff811182821017156127885761278861274e565b60405290565b6000608082840312156127a057600080fd5b6040516080810181811067ffffffffffffffff821117156127c3576127c361274e565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b6000610200828403121561280757600080fd5b61280f612764565b905061281a8261273e565b81526128286020830161273e565b60208201526128396040830161273e565b6040820152606082013560608201526080820135608082015260a082013560a082015260c082013560c082015260e082013560e082015261010080830135818301525061012061288a81840161273e565b9082015261014061289c83820161273e565b908201526101606128ae83820161273e565b908201526101806128c18484830161278e565b9082015292915050565b600082601f8301126128dc57600080fd5b813567ffffffffffffffff808211156128f7576128f761274e565b604051601f8301601f19908116603f0116810190828211818310171561291f5761291f61274e565b8160405283815286602085880101111561293857600080fd5b836020870160208301376000602085830101528094505050505092915050565b60008060008060008060008060006103008a8c03121561297757600080fd5b8935985060208a013561298981612726565b97506129988b60408c016127f4565b96506102408a013567ffffffffffffffff808211156129b657600080fd5b6129c28d838e016128cb565b97506102608c013596506102808c013595506102a08c013594506102c08c01359150808211156129f157600080fd5b908b01906060828e031215612a0557600080fd5b604051606081018181108382111715612a2057612a2061274e565b6040528235612a2e81612726565b815260208301358015158114612a4357600080fd5b6020820152604083013582811115612a5a57600080fd5b612a668f8286016128cb565b6040830152508094505050506102e08a013590509295985092959850929598565b6000815180845260005b81811015612aad57602081850181015186830182015201612a91565b506000602082860101526020601f19601f83011685010191505092915050565b60208152600061236c6020830184612a87565b6000608082840312156123af57600080fd5b600060208284031215612b0457600080fd5b5035919050565b6000806000806000806000806102e0898b031215612b2857600080fd5b883597506020890135612b3a81612726565b9650612b498a60408b016127f4565b955061024089013567ffffffffffffffff811115612b6657600080fd5b612b728b828c016128cb565b989b979a5095986102608101359761028082013597506102a082013596506102c090910135945092505050565b60008060408385031215612bb257600080fd5b8235612bbd81612726565b946020939093013593505050565b600060208284031215612bdd57600080fd5b8135612be881612726565b9392505050565b60008060208385031215612c0257600080fd5b823567ffffffffffffffff80821115612c1a57600080fd5b818501915085601f830112612c2e57600080fd5b813581811115612c3d57600080fd5b8660208260051b8501011115612c5257600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015612ca55783516001600160a01b031683529284019291840191600101612c80565b50909695505050505050565b60008060408385031215612cc457600080fd5b50508035926020909101359150565b815181526020808301519082015260408083015190820152606080830151908201526080810161236f565b80516001600160a01b031682526020810151612d2560208401826001600160a01b03169052565b506040810151612d4060408401826001600160a01b03169052565b50606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e083015261010080820151818401525061012080820151612d9a828501826001600160a01b03169052565b5050610140818101516001600160a01b039081169184019190915261016080830151909116908301526101809081015180519183019190915260208101516101a083015260408101516101c0830152606001516101e090910152565b6000610260868352612e0b6020840187612cfe565b80610220840152612e1e81840186612a87565b9150508261024083015295945050505050565b600060208284031215612e4357600080fd5b8151612be881612726565b6001600160a01b03841681526000610240612e6c6020840186612cfe565b80610220840152612e7f81840185612a87565b9695505050505050565b858152600060018060a01b03808716602084015285604084015284606084015260a060808401528084511660a0840152506020830151151560c08301526040830151606060e0840152612ee0610100840182612a87565b98975050505050505050565b600060208284031215612efe57600080fd5b5051919050565b634e487b7160e01b600052603260045260246000fd5b600181811c90821680612f2f57607f821691505b6020821081036123af57634e487b7160e01b600052602260045260246000fd5b600082612f6c57634e487b7160e01b600052601260045260246000fd5b500690565b6000610280878352612f866020840188612cfe565b80610220840152612f9981840187612a87565b610240840195909552505061026001529392505050565b634e487b7160e01b600052601160045260246000fd5b8181038181111561236f5761236f612fb0565b634e487b7160e01b600052603160045260246000fd5b60208082528181018390526000908460408401835b8681101561303257823561301781612726565b6001600160a01b031682529183019190830190600101613004565b509695505050505050565b8082018082111561236f5761236f612fb0565b60006001820161306257613062612fb0565b5060010190565b808202811582820484141761236f5761236f612fb056fea264697066735822122019b8cdc2fd9c286a46896b2fe741b9d7f08ca5a05660763919e822af6168350e64736f6c63430008140033"
+    "0x608060405260026001553480156200001657600080fd5b5060405162003cfb38038062003cfb8339810160408190526200003991620006db565b600062000047828262000916565b508160a001518260c0015110806200007357508160a001518260c00151620000709190620009e2565b15155b156200009257604051630219d66360e11b815260040160405180910390fd5b60c0820151600981905560e08301511080620000c257508160a001518260e00151620000bf9190620009e2565b15155b15620000e15760405163f9c0959d60e01b815260040160405180910390fd5b60e0820151600a81905561010083015110806200011357508160a00151826101000151620001109190620009e2565b15155b156200013257604051633007ad0160e11b815260040160405180910390fd5b610100820151600b81905561012083015110806200016557508160a00151826101200151620001629190620009e2565b15155b15620001845760405163cfb699cb60e01b815260040160405180910390fd5b610120820151600c556101608201516101408301511115620001b95760405163ef9bc65f60e01b815260040160405180910390fd5b610140820151600d55610160820151600e556101a08201516101808301511115620001f7576040516330554de160e01b815260040160405180910390fd5b610180820151600f556101a08201516010556101e08201516101c0830151111562000235576040516383ebdfb760e01b815260040160405180910390fd5b6101c08201516011556101e082015160125561022082015151670de0b6b3a76400001080620002745750670de0b6b3a764000082610220015160200151115b80620002905750670de0b6b3a764000082610220015160400151115b80620002ac5750670de0b6b3a764000082610220015160600151115b15620002cb5760405163161071fb60e11b815260040160405180910390fd5b6102208201518051601781905560208201516018556040820151601955606090910151601a556102008301515111806200031657508161022001516020015182610200015160200151115b806200033357508161022001516040015182610200015160400151115b806200035057508161022001516060015182610200015160600151115b156200036f576040516315b05a8f60e01b815260040160405180910390fd5b61020082015180516013556020808201516014556040808301516015556060928301516016558451600280546001600160a01b03199081166001600160a01b039384161790915583870151600380548316918416919091179055938601516006805486169183169190911790556080860151600780549095169116179092559083015180516200040492601b92019062000441565b5050610240810151600480546001600160a01b0319166001600160a01b0390921691909117905561026081015160055560a0015160085562000a05565b82805482825590600052602060002090810192821562000499579160200282015b828111156200049957825182546001600160a01b0319166001600160a01b0390911617825560209092019160019091019062000462565b50620004a7929150620004ab565b5090565b5b80821115620004a75760008155600101620004ac565b634e487b7160e01b600052604160045260246000fd5b60405161028081016001600160401b0381118282101715620004fe57620004fe620004c2565b60405290565b604051601f8201601f191681016001600160401b03811182821017156200052f576200052f620004c2565b604052919050565b80516001600160a01b03811681146200054f57600080fd5b919050565b600082601f8301126200056657600080fd5b815160206001600160401b03821115620005845762000584620004c2565b8160051b6200059582820162000504565b9283528481018201928281019087851115620005b057600080fd5b83870192505b84831015620005da57620005ca8362000537565b82529183019190830190620005b6565b979650505050505050565b600060808284031215620005f857600080fd5b604051608081016001600160401b03811182821017156200061d576200061d620004c2565b8060405250809150825181526020830151602082015260408301516040820152606083015160608201525092915050565b600082601f8301126200066057600080fd5b81516001600160401b038111156200067c576200067c620004c2565b602062000692601f8301601f1916820162000504565b8281528582848701011115620006a757600080fd5b60005b83811015620006c7578581018301518282018401528201620006aa565b506000928101909101919091529392505050565b60008060408385031215620006ef57600080fd5b82516001600160401b03808211156200070757600080fd5b9084019061034082870312156200071d57600080fd5b62000727620004d8565b620007328362000537565b8152620007426020840162000537565b60208201526040830151828111156200075a57600080fd5b620007688882860162000554565b6040830152506200077c6060840162000537565b60608201526200078f6080840162000537565b608082015260a0838101519082015260c0808401519082015260e08084015190820152610100808401519082015261012080840151908201526101408084015190820152610160808401519082015261018080840151908201526101a080840151908201526101c080840151908201526101e080840151908201526102006200081b88828601620005e5565b908201526200082f876102808501620005e5565b61022082015262000844610300840162000537565b61024082015261032092909201516102608301526020850151919350808211156200086e57600080fd5b506200087d858286016200064e565b9150509250929050565b600181811c908216806200089c57607f821691505b602082108103620008bd57634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156200091157600081815260208120601f850160051c81016020861015620008ec5750805b601f850160051c820191505b818110156200090d57828155600101620008f8565b5050505b505050565b81516001600160401b03811115620009325762000932620004c2565b6200094a8162000943845462000887565b84620008c3565b602080601f831160018114620009825760008415620009695750858301515b600019600386901b1c1916600185901b1785556200090d565b600085815260208120601f198616915b82811015620009b35788860151825594840194600190910190840162000992565b5085821015620009d25787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b60008262000a0057634e487b7160e01b600052601260045260246000fd5b500690565b6132e68062000a156000396000f3fe6080604052600436106103545760003560e01c806397b0e8ce116101c6578063d6f50169116100f7578063e71f34b311610095578063ec895f111161006f578063ec895f11146109b9578063f8c09e59146109d9578063fe3d5aeb14610a09578063fec4513914610a2957600080fd5b8063e71f34b314610964578063e83e34b114610984578063eb71f66c1461099957600080fd5b8063dd2b8fbb116100d1578063dd2b8fbb146108f9578063e0e2daaa14610919578063e1b39c801461092f578063e33315551461094457600080fd5b8063d6f50169146108ad578063daac24da146108c3578063daf012e6146108e357600080fd5b8063bf9bd5cd11610164578063c905a4b51161013e578063c905a4b51461084b578063d0f96b9214610861578063d23d7ea314610877578063d2c35ce81461088d57600080fd5b8063bf9bd5cd146107f3578063c172256314610809578063c415b95c1461082b57600080fd5b8063a64c90bf116101a0578063a64c90bf1461077e578063b2561263146107a0578063b9fdb319146107c0578063bc30e7a1146107d357600080fd5b806397b0e8ce1461071e57806399623bb11461073e5780639af252621461075e57600080fd5b806354fd4d50116102a05780636f6d5c4a1161023e578063852297851161021857806385229785146106a85780638627a4f0146106c85780638e127cf5146106e85780638efc09861461070857600080fd5b80636f6d5c4a1461064857806383b361e81461066857806384c19aab1461068857600080fd5b8063628027a31161027a578063628027a31461059e5780636b44e6be146105be5780636c8cc865146105fd5780636e95d67c1461063357600080fd5b806354fd4d50146105365780635720c9d5146105685780635aa6e6751461057e57600080fd5b80632885e3ac1161030d578063421caba8116102e7578063421caba8146104ca5780634554f9a9146104ea57806348800760146105005780634fbfee771461051657600080fd5b80632885e3ac1461046a5780632907d3dd1461048a578063411c3035146104aa57600080fd5b806306fdde031461038357806310780f73146103ae57806310d1dc3e146103e657806311e77bfe146104065780631978ebcf146104265780631ecda0fe1461044657600080fd5b3661037e5760026001540361037c57604051630aac75b560e31b815260040160405180910390fd5b005b600080fd5b34801561038f57600080fd5b50610398610a49565b6040516103a59190612984565b60405180910390f35b3480156103ba57600080fd5b506007546103ce906001600160a01b031681565b6040516001600160a01b0390911681526020016103a5565b3480156103f257600080fd5b5061037c610401366004612997565b610ad7565b34801561041257600080fd5b5061037c6104213660046129a9565b610bf0565b34801561043257600080fd5b5061037c6104413660046129a9565b610cc9565b34801561045257600080fd5b5061045c600d5481565b6040519081526020016103a5565b34801561047657600080fd5b5061037c610485366004612997565b610d4b565b34801561049657600080fd5b5061037c6104a53660046129a9565b610eb1565b3480156104b657600080fd5b5061037c6104c53660046129ea565b610f33565b3480156104d657600080fd5b5061037c6104e5366004612a16565b6110eb565b3480156104f657600080fd5b5061045c600e5481565b34801561050c57600080fd5b5061045c60125481565b34801561052257600080fd5b5061037c6105313660046129a9565b6111db565b34801561054257600080fd5b50610398604051806040016040528060068152602001653b189718171960d11b81525081565b34801561057457600080fd5b5061045c60095481565b34801561058a57600080fd5b506002546103ce906001600160a01b031681565b3480156105aa57600080fd5b5061037c6105b93660046129a9565b611238565b3480156105ca57600080fd5b506105ed6105d9366004612a16565b602080526000908152604090205460ff1681565b60405190151581526020016103a5565b34801561060957600080fd5b506103ce610618366004612a16565b601e602052600090815260409020546001600160a01b031681565b34801561063f57600080fd5b50601f5461045c565b34801561065457600080fd5b5061037c6106633660046129a9565b6112ba565b34801561067457600080fd5b5061037c6106833660046129a9565b61135e565b34801561069457600080fd5b5061037c6106a33660046129a9565b6113e0565b3480156106b457600080fd5b5061037c6106c3366004612a16565b611462565b3480156106d457600080fd5b5061037c6106e3366004612a16565b6114d6565b3480156106f457600080fd5b5061037c6107033660046129a9565b61154a565b34801561071457600080fd5b5061045c600c5481565b34801561072a57600080fd5b5061037c6107393660046129a9565b6115ee565b34801561074a57600080fd5b506004546103ce906001600160a01b031681565b34801561076a57600080fd5b5061037c610779366004612a3a565b611670565b34801561078a57600080fd5b506107936116d8565b6040516103a59190612aaf565b3480156107ac57600080fd5b5061037c6107bb366004612a16565b61173a565b6103ce6107ce366004612d12565b6117ae565b3480156107df57600080fd5b506107936107ee366004612e41565b611b9b565b3480156107ff57600080fd5b5061045c60105481565b34801561081557600080fd5b5061081e611cb8565b6040516103a59190612e63565b34801561083757600080fd5b506006546103ce906001600160a01b031681565b34801561085757600080fd5b5061045c60055481565b34801561086d57600080fd5b5061045c60085481565b34801561088357600080fd5b5061045c600f5481565b34801561089957600080fd5b5061037c6108a8366004612a16565b611d10565b3480156108b957600080fd5b5061045c60115481565b3480156108cf57600080fd5b506103ce6108de3660046129a9565b611d84565b3480156108ef57600080fd5b5061045c600b5481565b34801561090557600080fd5b5061037c610914366004612a16565b611db4565b34801561092557600080fd5b5061045c600a5481565b34801561093b57600080fd5b50601c5461045c565b34801561095057600080fd5b506003546103ce906001600160a01b031681565b34801561097057600080fd5b5061037c61097f3660046129a9565b611e28565b34801561099057600080fd5b5061081e611ecc565b3480156109a557600080fd5b5061037c6109b43660046129a9565b611f24565b3480156109c557600080fd5b506107936109d4366004612e41565b611fbc565b3480156109e557600080fd5b506105ed6109f4366004612a16565b601d6020526000908152604090205460ff1681565b348015610a1557600080fd5b506103ce610a243660046129a9565b6120d2565b348015610a3557600080fd5b506103ce610a44366004612e8e565b6120e7565b60008054610a5690612f22565b80601f0160208091040260200160405190810160405280929190818152602001828054610a8290612f22565b8015610acf5780601f10610aa457610100808354040283529160200191610acf565b820191906000526020600020905b815481529060010190602001808311610ab257829003601f168201915b505050505081565b6002546001600160a01b03163314610b01576040516282b42960e81b815260040160405180910390fd5b60408051608081018252601754808252601854602083015260195492820192909252601a5460608201529082351180610b41575080602001518260200135115b80610b53575080604001518260400135115b80610b65575080606001518260600135115b15610b83576040516315b05a8f60e01b815260040160405180910390fd5b81356013819055602080840135601481905560408086013560158190556060808801356016819055835196875294860193909352908401528201527fe1c45f8aeb543f30b37cc2fccfbac0f32cc8f234284df921d71cff04e51ef421906080015b60405180910390a15050565b6002546001600160a01b03163314610c1a576040516282b42960e81b815260040160405180910390fd5b80600954610c289190612f56565b151580610c41575080600a54610c3e9190612f56565b15155b80610c58575080600b54610c559190612f56565b15155b80610c6f575080600c54610c6c9190612f56565b15155b15610c8d576040516311b75c1560e31b815260040160405180910390fd5b60088190556040518181527f04ed835b488b4fcf0a212a46ed67cbbffc2fc81b5cb6a12c546572cbf7b7e06a906020015b60405180910390a150565b6002546001600160a01b03163314610cf3576040516282b42960e81b815260040160405180910390fd5b601054811115610d1657604051631670f79760e01b815260040160405180910390fd5b600f8190556040518181527faab0ee9100629c405a4d75336e1640cc81e0608fb0d7f17389c06ee8d4f0219190602001610cbe565b6002546001600160a01b03163314610d75576040516282b42960e81b815260040160405180910390fd5b6040805160808101825260135481526014546020820152601554918101919091526016546060820152670de0b6b3a764000082351180610dc05750670de0b6b3a76400008260200135115b80610dd65750670de0b6b3a76400008260400135115b80610dec5750670de0b6b3a76400008260600135115b80610df8575080518235105b80610e0a575080602001518260200135105b80610e1c575080604001518260400135105b80610e2e575080606001518260600135105b15610e4c5760405163161071fb60e11b815260040160405180910390fd5b8135601781905560208084013560188190556040808601356019819055606080880135601a819055835196875294860193909352908401528201527f8c6093c7e65dd862e88162770c4e156e8a0da57d25d961e0fb6f28cfb7ff89a790608001610be4565b6002546001600160a01b03163314610edb576040516282b42960e81b815260040160405180910390fd5b600e54811115610efe576040516328a2d9a960e01b815260040160405180910390fd5b600d8190556040518181527f41f729b931ad8e33d697fff6bc6736a1ac6ee09e8265efae2794ac1635c217a690602001610cbe565b6002546001600160a01b03163314610f5d576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0382166000908152601d602052604090205460ff16610f9657604051634bf121ab60e01b815260040160405180910390fd5b816001600160a01b0316601c8281548110610fb357610fb3612f78565b6000918252602090912001546001600160a01b031614610fe657604051630f2700cb60e21b815260040160405180910390fd5b6001600160a01b0382166000908152601d60205260409020805460ff19169055601c805461101690600190612fa4565b8154811061102657611026612f78565b600091825260209091200154601c80546001600160a01b03909216918390811061105257611052612f78565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b03160217905550601c80548061109157611091612fb7565b600082815260208120820160001990810180546001600160a01b03191690559091019091556040516001600160a01b038416917f709b7450bfafda93efd91d29149870a794637ac9d696ca61625fd2f53548afe091a25050565b6002546001600160a01b03163314611115576040516282b42960e81b815260040160405180910390fd5b6001600160a01b0381166000908152601d602052604090205460ff161561114f5760405163bd34634f60e01b815260040160405180910390fd5b6001600160a01b0381166000818152601d6020526040808220805460ff19166001908117909155601c8054918201815583527f0e4562a10381dec21b205ed72637e6b1b523bdd0e4d4d50af5cd23dd4500a2110180546001600160a01b03191684179055517f16ce88285cfd59829a5aa04370a5ec8090a18c14e7e7fb9d4b12a42291c098e39190a250565b6002546001600160a01b03163314611205576040516282b42960e81b815260040160405180910390fd5b600581905560405181907f395a61259037298d1c4cd4bf177b64ad5995d38a9394573fcd9060d649314ad090600090a250565b6002546001600160a01b03163314611262576040516282b42960e81b815260040160405180910390fd5b60115481101561128557604051630a35539d60e41b815260040160405180910390fd5b60128190556040518181527fa9e7961bb3342715dbecc208087a6a9df8986d524b3a0a829fd90f5a2f5ba53e90602001610cbe565b6002546001600160a01b031633146112e4576040516282b42960e81b815260040160405180910390fd5b6009548110806112ff57506008546112fc9082612f56565b15155b8061130b5750600b5481115b156113295760405163f9c0959d60e01b815260040160405180910390fd5b600a8190556040518181527f31407ddd1722f500b8aa2c18e112398626dd7c2869a5f80731ec30b244d9b5f290602001610cbe565b6002546001600160a01b03163314611388576040516282b42960e81b815260040160405180910390fd5b6012548111156113ab57604051635a8f655760e01b815260040160405180910390fd5b60118190556040518181527f490eb2a91746aa933c9ffe2f7939aa06498f3259139f8805f008b12c8c697a4690602001610cbe565b6002546001600160a01b0316331461140a576040516282b42960e81b815260040160405180910390fd5b600d5481101561142d57604051637edc061360e11b815260040160405180910390fd5b600e8190556040518181527f0e56d83f54e6f5b08716a54b3abdb59b3025bf12c1875c87ab98ab081d6f838190602001610cbe565b6002546001600160a01b0316331461148c576040516282b42960e81b815260040160405180910390fd5b600480546001600160a01b0319166001600160a01b0383169081179091556040517f03aa5b0fb65014eea89fda04a7bc11742014881f3c078f2c75b7226ce10d941890600090a250565b6002546001600160a01b03163314611500576040516282b42960e81b815260040160405180910390fd5b600780546001600160a01b0319166001600160a01b0383169081179091556040517fc049058b1df2dd8902739ceb78992df12fa8369c06c450b3c6787137b452fdd290600090a250565b6002546001600160a01b03163314611574576040516282b42960e81b815260040160405180910390fd5b60085481108061158f575060085461158c9082612f56565b15155b8061159b5750600a5481115b156115b957604051630219d66360e11b815260040160405180910390fd5b60098190556040518181527f6f8175cdbac1b4d238abba24a17d2554d7b9750bbeda6414e191c478384b763190602001610cbe565b6002546001600160a01b03163314611618576040516282b42960e81b815260040160405180910390fd5b600f5481101561163b5760405163019cfb7b60e61b815260040160405180910390fd5b60108190556040518181527f4fa35c11ce9a45ae882c154ecb53ab5cac52a74a5b9b0373be36deb30c78297890602001610cbe565b6002546001600160a01b0316331461169a576040516282b42960e81b815260040160405180910390fd5b6116a6601b83836128cf565b507f2a85276cf604a3822e19b29a3e97aebfbc47a19025c2e8f6e80b3af774dcbc388282604051610be4929190612fcd565b6060601b80548060200260200160405190810160405280929190818152602001828054801561173057602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311611712575b5050505050905090565b6002546001600160a01b03163314611764576040516282b42960e81b815260040160405180910390fd5b600280546001600160a01b0319166001600160a01b0383169081179091556040517f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab90600090a250565b6001600160a01b0388166000908152601d602052604081205460ff166117e757604051636e623f0f60e01b815260040160405180910390fd5b6117f28886866121d9565b60408051336020808301919091528183018d90528251808303840181526060830193849052805191012063c29d10c160e01b9092526000916001600160a01b038c169163c29d10c19161184d918d908d90899060640161311f565b6020604051808303816000875af115801561186c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611890919061315a565b6001600160a01b038181166000908152601e60205260409081902080546001600160a01b0319168e84169081179091556003549092166101408d015251919250907ff353a3c7608dc37624175f4f0c0a6d2e6b418797ecbff5943616e9da3eb1ae82906119029084908d908d90613177565b60405180910390a2601f805460018082019092557fa03837a25210ee280c2113ff4b77ca23440b19d4866cca721c801278fd08d8070180546001600160a01b0319166001600160a01b0384811691821790925560009081526020808052604091829020805460ff1916851790559280558051339381019390935282018d90528b16906316abfc7090349060600160405160208183030381529060405280519060200120338b8b8a6040518763ffffffff1660e01b81526004016119c99594939291906131b2565b60206040518083038185885af11580156119e7573d6000803e3d6000fd5b50505050506040513d601f19601f82011682018060405250810190611a0c9190613215565b50600260015560005b601b54811015611ab857816001600160a01b0316637180c8ca601b8381548110611a4157611a41612f78565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b03909116600482015260016024820152604401600060405180830381600087803b158015611a9557600080fd5b505af1158015611aa9573d6000803e3d6000fd5b50505050806001019050611a15565b5060035460405163ab033ea960e01b81526001600160a01b0391821660048201529082169063ab033ea990602401600060405180830381600087803b158015611b0057600080fd5b505af1158015611b14573d6000803e3d6000fd5b504792505081159050611b8c57604051600090339083908381818185875af1925050503d8060008114611b63576040519150601f19603f3d011682016040523d82523d6000602084013e611b68565b606091505b5050905080611b8a576040516312171d8360e31b815260040160405180910390fd5b505b509a9950505050505050505050565b606081831115611bbe57604051633b2735ab60e11b815260040160405180910390fd5b601f548210611be05760405163e0f7becb60e01b815260040160405180910390fd5b611bea8383612fa4565b611bf590600161322e565b67ffffffffffffffff811115611c0d57611c0d612afc565b604051908082528060200260200182016040528015611c36578160200160208202803683370190505b509050825b828111611cb157601f8181548110611c5557611c55612f78565b9060005260206000200160009054906101000a90046001600160a01b03168285830381518110611c8757611c87612f78565b6001600160a01b039092166020928302919091019091015280611ca981613241565b915050611c3b565b5092915050565b611ce36040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526013548152601454602082015260155491810191909152601654606082015290565b6002546001600160a01b03163314611d3a576040516282b42960e81b815260040160405180910390fd5b600680546001600160a01b0319166001600160a01b0383169081179091556040517fe5693914d19c789bdee50a362998c0bc8d035a835f9871da5d51152f0582c34f90600090a250565b6000601f8281548110611d9957611d99612f78565b6000918252602090912001546001600160a01b031692915050565b6002546001600160a01b03163314611dde576040516282b42960e81b815260040160405180910390fd5b600380546001600160a01b0319166001600160a01b0383169081179091556040517ff3e07b4bb4394f2ff320bd1dd151551dff304d5e948b401d8558b228482c97d890600090a250565b6002546001600160a01b03163314611e52576040516282b42960e81b815260040160405180910390fd5b600a54811080611e6d5750600854611e6a9082612f56565b15155b80611e795750600c5481115b15611e9757604051633007ad0160e11b815260040160405180910390fd5b600b8190556040518181527fe9ef3e93dff799d4db8a12ff79e0918a5a78d75b10527864f4b1c920f6f4f17890602001610cbe565b611ef76040518060800160405280600081526020016000815260200160008152602001600081525090565b50604080516080810182526017548152601854602082015260195491810191909152601a54606082015290565b6002546001600160a01b03163314611f4e576040516282b42960e81b815260040160405180910390fd5b600b54811080611f695750600854611f669082612f56565b15155b15611f875760405163cfb699cb60e01b815260040160405180910390fd5b600c8190556040518181527f866fe9485f9983afceaa1385307b6eb0fd3df5a250ae2b0bf76dc9ddd316926b90602001610cbe565b606081831115611fdf57604051633b2735ab60e11b815260040160405180910390fd5b601c5482106120015760405163e0f7becb60e01b815260040160405180910390fd5b61200b8383612fa4565b61201690600161322e565b67ffffffffffffffff81111561202e5761202e612afc565b604051908082528060200260200182016040528015612057578160200160208202803683370190505b509050825b828111611cb157601c818154811061207657612076612f78565b9060005260206000200160009054906101000a90046001600160a01b031682858303815181106120a8576120a8612f78565b6001600160a01b0390921660209283029190910190910152806120ca81613241565b91505061205c565b6000601c8281548110611d9957611d99612f78565b6001600160a01b0387166000908152601d602052604081205460ff1661212057604051636e623f0f60e01b815260040160405180910390fd5b61212b8786866121d9565b60408051336020808301919091528183018c905282518083038401815260608301938490528051910120637f88be8160e01b9092526000916001600160a01b038b1691637f88be8191612188918c908c908a908a9060640161325a565b6020604051808303816000875af11580156121a7573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906121cb919061315a565b9a9950505050505050505050565b60095483610100015110806121f45750600a54836101000151115b80612210575060085483610100015161220d9190612f56565b15155b1561222e57604051635428734d60e01b815260040160405180910390fd5b600b548360e0015110806122475750600c548360e00151115b8061226557508261010001518360e001516122629190612f56565b15155b156122835760405163253fffcf60e11b815260040160405180910390fd5b600d548360c00151108061229c5750600e548360c00151115b156122ba5760405163ef9bc65f60e01b815260040160405180910390fd5b6017546101a08401515111806122ee575060185460e08401516101a0850151602001516122ec916301e133809061252b565b115b8061230357506019546101a084015160400151115b806123185750601a546101a084015160600151115b8061232a57506013546101a084015151105b80612353575060145460e08401516101a085015160200151612351916301e1338090612551565b105b8061236857506015546101a084015160400151105b8061237d57506016546101a084015160600151105b1561239b57604051632d8768f960e01b815260040160405180910390fd5b600f548210806123ac575060105482115b156123ca576040516330554de160e01b815260040160405180910390fd5b60006123ef6611c37937e080006123e985671bc16d674ec8000061256f565b9061258d565b6011549091506123ff908261258d565b821080612432575061242f612426671bc16d674ec80000612420868561258d565b906125a3565b601254906125b8565b82115b15612450576040516383ebdfb760e01b815260040160405180910390fd5b6000612460838660e001516125cd565b60045460408701519192506001600160a01b03918216911614158061248b5750600554856060015114155b806124aa57506006546101608601516001600160a01b03908116911614155b806124c957506007546101808601516001600160a01b03908116911614155b806124e857506003546101408601516001600160a01b03908116911614155b806124f7575061012085015115155b156125155760405163e8c02dd760e01b815260040160405180910390fd5b3061014086015261012090940193909352505050565b600082600019048411830215820261254257600080fd5b50910281810615159190040190565b600082600019048411830215820261256857600080fd5b5091020490565b600061258483670de0b6b3a764000084612551565b90505b92915050565b600081831161259c5781612584565b5090919050565b60006125848383670de0b6b3a7640000612551565b60008183116125c75782612584565b50919050565b6000806125fe6125ef6125e1866064613299565b66a5bbed86c5a000906125a3565b6748cd4072281e00009061256f565b9050612612670de0b6b3a76400008261256f565b905061266a8161242061263d61263861263389670de0b6b3a764000061322e565b612672565b6126a0565b6126646126386126528a8a6301e13380612551565b61263390670de0b6b3a764000061322e565b9061256f565b949350505050565b60006001600160ff1b0382111561269c5760405163396ea70160e11b815260040160405180910390fd5b5090565b60008082136126c25760405163e61b497560e01b815260040160405180910390fd5b506fffffffffffffffffffffffffffffffff811160071b81811c67ffffffffffffffff1060061b1781811c63ffffffff1060051b1781811c61ffff1060041b1781811c60ff10600390811b90911782811c600f1060021b1782811c909110600190811b90911782811c90911017609f8181036060019290921b91605f1982019061274e9084901c612672565b6c465772b2bbbb5f824b15207a3081018102606090811d6d0388eaa27412d5aca026815d636e018202811d6d0df99ac502031bf953eff472fdcc018202811d6d13cdffb29d51d99322bdff5f2211018202811d6d0a0f742023def783a307a986912e018202811d6d01920d8043ca89b5239253284e42018202811d6c0b7a86d7375468fac667a0a527016c29508e458543d8aa4df2abee7883018302821d6d0139601a2efabe717e604cbb4894018302821d6d02247f7a7b6594320649aa03aba1018302821d6c8c3f38e95a6b1ff2ab1c3b343619018302821d6d02384773bdf1ac5676facced60901901830290911d6cb9a025d814b29c212b8b1a07cd1901909102780a09507084cc699bb0e71ea869ffffffffffffffffffffffff190105711340daa0d5f769dba1915cef59f0815a5506027d0267a36c0c95b3975ab3ee5b203a7614a3f75373f047d803ae7b6687f2b391909102017d57115e47018c7177eebf7cd370a3356a1b7863008a5ae8028c72b88642840160ae1d92915050565b828054828255906000526020600020908101928215612922579160200282015b828111156129225781546001600160a01b0319166001600160a01b038435161782556020909201916001909101906128ef565b5061269c9291505b8082111561269c576000815560010161292a565b6000815180845260005b8181101561296457602081850181015186830182015201612948565b506000602082860101526020601f19601f83011685010191505092915050565b602081526000612584602083018461293e565b6000608082840312156125c757600080fd5b6000602082840312156129bb57600080fd5b5035919050565b6001600160a01b03811681146129d757600080fd5b50565b80356129e5816129c2565b919050565b600080604083850312156129fd57600080fd5b8235612a08816129c2565b946020939093013593505050565b600060208284031215612a2857600080fd5b8135612a33816129c2565b9392505050565b60008060208385031215612a4d57600080fd5b823567ffffffffffffffff80821115612a6557600080fd5b818501915085601f830112612a7957600080fd5b813581811115612a8857600080fd5b8660208260051b8501011115612a9d57600080fd5b60209290920196919550909350505050565b6020808252825182820181905260009190848201906040850190845b81811015612af05783516001600160a01b031683529284019291840191600101612acb565b50909695505050505050565b634e487b7160e01b600052604160045260246000fd5b6040516101c0810167ffffffffffffffff81118282101715612b3657612b36612afc565b60405290565b600060808284031215612b4e57600080fd5b6040516080810181811067ffffffffffffffff82111715612b7157612b71612afc565b8060405250809150823581526020830135602082015260408301356040820152606083013560608201525092915050565b60006102208284031215612bb557600080fd5b612bbd612b12565b9050612bc8826129da565b8152612bd6602083016129da565b6020820152612be7604083016129da565b6040820152606082013560608201526080820135608082015260a082013560a082015260c082013560c082015260e082013560e0820152610100808301358183015250610120808301358183015250610140612c448184016129da565b90820152610160612c568382016129da565b90820152610180612c688382016129da565b908201526101a0612c7b84848301612b3c565b9082015292915050565b600082601f830112612c9657600080fd5b813567ffffffffffffffff80821115612cb157612cb1612afc565b604051601f8301601f19908116603f01168101908282118183101715612cd957612cd9612afc565b81604052838152866020858801011115612cf257600080fd5b836020870160208301376000602085830101528094505050505092915050565b60008060008060008060008060006103208a8c031215612d3157600080fd5b8935985060208a0135612d43816129c2565b9750612d528b60408c01612ba2565b96506102608a013567ffffffffffffffff80821115612d7057600080fd5b612d7c8d838e01612c85565b97506102808c013596506102a08c013595506102c08c013594506102e08c0135915080821115612dab57600080fd5b908b01906060828e031215612dbf57600080fd5b604051606081018181108382111715612dda57612dda612afc565b6040528235612de8816129c2565b815260208301358015158114612dfd57600080fd5b6020820152604083013582811115612e1457600080fd5b612e208f828601612c85565b6040830152508094505050506103008a013590509295985092959850929598565b60008060408385031215612e5457600080fd5b50508035926020909101359150565b8151815260208083015190820152604080830151908201526060808301519082015260808101612587565b600080600080600080600080610300898b031215612eab57600080fd5b883597506020890135612ebd816129c2565b9650612ecc8a60408b01612ba2565b955061026089013567ffffffffffffffff811115612ee957600080fd5b612ef58b828c01612c85565b989b979a509598610280810135976102a082013597506102c082013596506102e090910135945092505050565b600181811c90821680612f3657607f821691505b6020821081036125c757634e487b7160e01b600052602260045260246000fd5b600082612f7357634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052601160045260246000fd5b8181038181111561258757612587612f8e565b634e487b7160e01b600052603160045260246000fd5b60208082528181018390526000908460408401835b86811015613010578235612ff5816129c2565b6001600160a01b031682529183019190830190600101612fe2565b509695505050505050565b80516001600160a01b03168252602081015161304260208401826001600160a01b03169052565b50604081015161305d60408401826001600160a01b03169052565b50606081015160608301526080810151608083015260a081015160a083015260c081015160c083015260e081015160e0830152610100808201518184015250610120808201518184015250610140808201516130c3828501826001600160a01b03169052565b5050610160818101516001600160a01b039081169184019190915261018080830151909116908301526101a09081015180519183019190915260208101516101c083015260408101516101e08301526060015161020090910152565b6000610280868352613134602084018761301b565b806102408401526131478184018661293e565b9150508261026083015295945050505050565b60006020828403121561316c57600080fd5b8151612a33816129c2565b6001600160a01b03841681526000610260613195602084018661301b565b806102408401526131a88184018561293e565b9695505050505050565b858152600060018060a01b03808716602084015285604084015284606084015260a060808401528084511660a0840152506020830151151560c08301526040830151606060e084015261320961010084018261293e565b98975050505050505050565b60006020828403121561322757600080fd5b5051919050565b8082018082111561258757612587612f8e565b60006001820161325357613253612f8e565b5060010190565b60006102a087835261326f602084018861301b565b806102408401526132828184018761293e565b610260840195909552505061028001529392505050565b808202811582820484141761258757612587612f8e56fea2646970667358221220c7d21cacfc8a4de3005ba3e56528a0495371542e30a0a0b890a1e2d6b45be79164736f6c63430008140033"
 )
 
 

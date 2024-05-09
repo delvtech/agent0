@@ -33,7 +33,6 @@ class Deployment:
     target1: str
     target2: str
     target3: str
-    target4: str
 
 
 @dataclass
