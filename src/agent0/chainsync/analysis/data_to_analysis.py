@@ -1,15 +1,11 @@
 """Functions to gather data from postgres, do analysis, and add back into postgres"""
 
-import logging
 from decimal import Decimal
-from typing import Type
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from agent0.chainsync.db.base import Base
 from agent0.chainsync.db.hyperdrive import (
     CurrentWallet,
     PoolAnalysis,
@@ -21,6 +17,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_transactions,
     get_wallet_deltas,
 )
+from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .calc_base_buffer import calc_base_buffer
@@ -30,33 +27,6 @@ from .calc_spot_price import calc_spot_price
 from .calc_ticker import calc_ticker
 
 pd.set_option("display.max_columns", None)
-
-MAX_BATCH_SIZE = 10000
-
-
-def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
-    """Helper function to add a dataframe to a database"""
-    table_name = schema_obj.__tablename__
-
-    # dataframe to_sql needs data types from the schema object
-    dtype = {c.name: c.type for c in schema_obj.__table__.columns}
-    # Pandas doesn't play nice with types
-    insert_df.to_sql(
-        table_name,
-        con=session.connection(),
-        if_exists="append",
-        method="multi",
-        index=False,
-        dtype=dtype,  # type: ignore
-        chunksize=MAX_BATCH_SIZE,
-    )
-    # commit the transaction
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error on adding %s: %s", table_name, err)
-        raise err
 
 
 def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
@@ -188,7 +158,7 @@ def data_to_analysis(
         # If it doesn't exist, should be an empty dataframe
         latest_wallet = get_current_wallet(db_session, end_block=start_block, coerce_float=False)
         current_wallet_df = calc_current_wallet(wallet_deltas_df, latest_wallet)
-        _df_to_db(current_wallet_df, CurrentWallet, db_session)
+        df_to_db(current_wallet_df, CurrentWallet, db_session)
 
         # calculate pnl through closeout pnl
         # TODO this function might be slow due to contract call on chain
@@ -217,13 +187,13 @@ def data_to_analysis(
         # TODO do scaling tests to see the limit of this
         wallet_pnl["pnl"] = pnl_df
         # Add wallet_pnl to the database
-        _df_to_db(wallet_pnl, WalletPNL, db_session)
+        df_to_db(wallet_pnl, WalletPNL, db_session)
 
         # Build ticker from wallet delta
         transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
         ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
         # TODO add ticker to database
-        _df_to_db(ticker_df, Ticker, db_session)
+        df_to_db(ticker_df, Ticker, db_session)
 
     # We add pool analysis last since this table is what's being used to determine how far the data pipeline is.
     # Calculate spot price
@@ -248,4 +218,4 @@ def data_to_analysis(
 
     pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
     pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
-    _df_to_db(pool_analysis_df, PoolAnalysis, db_session)
+    df_to_db(pool_analysis_df, PoolAnalysis, db_session)
