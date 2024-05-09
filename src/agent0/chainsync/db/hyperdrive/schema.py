@@ -124,6 +124,8 @@ class HyperdriveEvent(Base):
     # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     """The unique identifier for the entry to the table."""
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
+    """The hyperdrive address for the entry."""
     transaction_hash: Mapped[str] = mapped_column(String, index=True)
     """The transaction hash for the entry."""
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
@@ -136,7 +138,7 @@ class HyperdriveEvent(Base):
     """
     The underlying event type for the entry. Can be one of the following:
     `OpenLong`, `OpenShort`, `CloseLong`, `CloseShort`, `AddLiquidity`, 
-    `RemoveLiquidity`, `RedeemWithdrawalShares`, or `Transfer`.
+    `RemoveLiquidity`, `RedeemWithdrawalShares`, or `TransferSingle`.
     """
     token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     """
@@ -159,10 +161,6 @@ class HyperdriveEvent(Base):
     base_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
     The change in base tokens for the event with respect to the wallet address.
-    """
-    vault_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    """
-    The change in vault tokens for the event with respect to the wallet address.
     """
     event_json: Mapped[Union[dict[str, Any], None]] = mapped_column(JSONB, default=None)
     """The raw event data is stored here in a json format."""

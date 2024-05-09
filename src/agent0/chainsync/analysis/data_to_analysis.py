@@ -1,15 +1,11 @@
 """Functions to gather data from postgres, do analysis, and add back into postgres"""
 
-import logging
 from decimal import Decimal
-from typing import Type
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from agent0.chainsync.db.base import Base
 from agent0.chainsync.db.hyperdrive import (
     CurrentWallet,
     PoolAnalysis,
@@ -21,6 +17,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_transactions,
     get_wallet_deltas,
 )
+from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .calc_base_buffer import calc_base_buffer
@@ -28,35 +25,6 @@ from .calc_fixed_rate import calc_fixed_rate
 from .calc_pnl import calc_closeout_pnl
 from .calc_spot_price import calc_spot_price
 from .calc_ticker import calc_ticker
-
-pd.set_option("display.max_columns", None)
-
-MAX_BATCH_SIZE = 10000
-
-
-def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
-    """Helper function to add a dataframe to a database"""
-    table_name = schema_obj.__tablename__
-
-    # dataframe to_sql needs data types from the schema object
-    dtype = {c.name: c.type for c in schema_obj.__table__.columns}
-    # Pandas doesn't play nice with types
-    insert_df.to_sql(
-        table_name,
-        con=session.connection(),
-        if_exists="append",
-        method="multi",
-        index=False,
-        dtype=dtype,  # type: ignore
-        chunksize=MAX_BATCH_SIZE,
-    )
-    # commit the transaction
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error on adding %s: %s", table_name, err)
-        raise err
 
 
 def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
@@ -253,4 +221,4 @@ def data_to_analysis(
         pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
         pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
         pool_analysis_df["hyperdrive_address"] = interface.hyperdrive_address
-        _df_to_db(pool_analysis_df, PoolAnalysis, db_session)
+        df_to_db(pool_analysis_df, PoolAnalysis, db_session)
