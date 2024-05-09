@@ -82,7 +82,7 @@ def trade_liq(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent
 # @pytest.mark.parametrize("time_stretch_apr", [0.01, 0.05, 0.1, 0.2, 0.3])
 @pytest.mark.parametrize(
     "trial,time_stretch_apr, trade_portion_one",
-    [(1, 0.2, 0.90), (2, 0.2, 0.99)],
+    [(1, 0.2, -0.90), (2, 0.2, -0.99)],
     # [(1, 0.2, 0.99)],
 )
 @pytest.mark.anvil
