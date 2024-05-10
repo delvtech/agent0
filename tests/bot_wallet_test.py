@@ -74,10 +74,11 @@ class WalletTestAgainstChainPolicy(HyperdriveBasePolicy):
     COUNTER_OPEN_LONG = 1
     COUNTER_OPEN_SHORT = 2
     COUNTER_REMOVE_LIQUIDITY = 3
-    COUNTER_CLOSE_LONGS = 4
-    COUNTER_CLOSE_SHORTS = 5
-    COUNTER_REDEEM_WITHDRAW_SHARES = 6
-    COUNTER_CHECK = 7
+    COUNTER_READD_LIQUIDITY = 4
+    COUNTER_CLOSE_LONGS = 5
+    COUNTER_CLOSE_SHORTS = 6
+    COUNTER_REDEEM_WITHDRAW_SHARES = 7
+    COUNTER_CHECK = 8
 
     counter = 0
 
@@ -117,6 +118,9 @@ class WalletTestAgainstChainPolicy(HyperdriveBasePolicy):
         elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
             # Remove All Liquidity
             action_list.append(remove_liquidity_trade(wallet.lp_tokens))
+        if self.counter == self.COUNTER_READD_LIQUIDITY:
+            # Add liquidity
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == self.COUNTER_CLOSE_LONGS:
             # Close All Longs
             assert len(wallet.longs) == 1
