@@ -141,12 +141,11 @@ def trade_events_to_db(
     Arguments
     ---------
     interfaces: list[HyperdriveReadInterface]
-        The hyperdrive interface objects connected to a pool.
+        A collection of Hyperdrive interface objects, each connected to a pool.
     wallet_addr: str
         The wallet address to query.
     db_session: Session
         The database session.
-
     """
     assert len(interfaces) > 0
 
@@ -157,9 +156,6 @@ def trade_events_to_db(
     from_block = get_latest_block_number_from_trade_event(db_session, wallet_addr) + 1
 
     # Gather all events we care about here
-    # Transfers to and from wallet address
-    # db_event_objs: dict[str, HyperdriveEvent] = {}
-
     all_events = []
 
     for interface in interfaces:
@@ -225,7 +221,7 @@ def trade_events_to_db(
     if len(events_df) == 0:
         return
 
-    # Each transaction made through hyperdrive has two rows for each transaction,
+    # Each transaction made through hyperdrive has two rows,
     # one TransferSingle and one for the trade.
     # Any transactions without a corresponding trade is a wallet to wallet transfer.
 
@@ -291,7 +287,8 @@ def trade_events_to_db(
     events_df = events_df[events_df["event"] != "TransferSingle"].reset_index(drop=True)
 
     # Sanity check, one hyperdrive event per transaction hash
-    assert events_df.groupby("transactionHash")["event"].nunique().all() == 1
+    if events_df.groupby("transactionHash")["event"].nunique().all() != 1:
+        raise ValueError("Found more than one event per transaction hash.")
 
     # Expand the args dict without losing the args dict field
     # json_normalize works on series, but typing doesn't support it.

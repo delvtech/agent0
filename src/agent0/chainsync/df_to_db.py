@@ -18,11 +18,11 @@ def df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
     Arguments
     ---------
     insert_df: pd.DataFrame
-        The dataframe to insert
+        The dataframe to insert.
     schema_obj: Type[Base]
-        The schema object to use
+        The schema object to use.
     session: Session
-        The initialized session object
+        The initialized session object.
     """
     table_name = schema_obj.__tablename__
 
