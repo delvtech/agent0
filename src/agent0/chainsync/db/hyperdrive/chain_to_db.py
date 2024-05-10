@@ -45,7 +45,7 @@ def init_data_chain_to_db(
         The database session
     """
     pool_config_dict = asdict(interface.current_pool_state.pool_config)
-    pool_config_dict["contract_address"] = interface.hyperdrive_address
+    pool_config_dict["hyperdrive_address"] = interface.hyperdrive_address
     fees = pool_config_dict["fees"]
     pool_config_dict["curve_fee"] = fees["curve"]
     pool_config_dict["flat_fee"] = fees["flat"]
