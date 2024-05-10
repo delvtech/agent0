@@ -130,6 +130,7 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
 # TODO cleanup
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
+# pylint: disable=too-many-locals
 def trade_events_to_db(
     interfaces: list[HyperdriveReadInterface],
     wallet_addr: str,

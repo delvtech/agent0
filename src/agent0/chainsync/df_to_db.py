@@ -1,3 +1,5 @@
+"""Helper function to add a dataframe to a database."""
+
 import logging
 from typing import Type
 
