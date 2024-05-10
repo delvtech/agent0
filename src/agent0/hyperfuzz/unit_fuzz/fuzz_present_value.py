@@ -91,12 +91,12 @@ def fuzz_present_value(
         HyperdriveActionType.REMOVE_LIQUIDITY,
     ]:
         # Keep the agent flush
-        if agent.wallet.balance.amount < FixedPoint("1e10"):
-            agent.add_funds(base=FixedPoint("1e10") - agent.wallet.balance.amount)
+        if agent.get_positions().balance.amount < FixedPoint("1e10"):
+            agent.add_funds(base=FixedPoint("1e10") - agent.get_positions().balance.amount)
 
         # Set up trade amount bounds
         min_trade = interactive_hyperdrive.interface.pool_config.minimum_transaction_amount
-        max_budget = agent.wallet.balance.amount
+        max_budget = agent.get_positions().balance.amount
         trade_amount = None
 
         # Execute the trade
@@ -110,7 +110,7 @@ def fuzz_present_value(
                 )
                 trade_event = agent.open_long(base=trade_amount)
             case HyperdriveActionType.CLOSE_LONG:
-                maturity_time, open_trade = next(iter(agent.wallet.longs.items()))
+                maturity_time, open_trade = next(iter(agent.get_positions().longs.items()))
                 trade_event = agent.close_long(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.OPEN_SHORT:
                 max_trade = interactive_hyperdrive.interface.calc_max_short(
@@ -121,7 +121,7 @@ def fuzz_present_value(
                 )
                 trade_event = agent.open_short(trade_amount)
             case HyperdriveActionType.CLOSE_SHORT:
-                maturity_time, open_trade = next(iter(agent.wallet.shorts.items()))
+                maturity_time, open_trade = next(iter(agent.get_positions().shorts.items()))
                 trade_event = agent.close_short(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.ADD_LIQUIDITY:
                 # recompute initial present value for liquidity actions
@@ -130,7 +130,11 @@ def fuzz_present_value(
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(
-                        np.floor(rng.uniform(low=min_trade.scaled_value, high=agent.wallet.balance.amount.scaled_value))
+                        np.floor(
+                            rng.uniform(
+                                low=min_trade.scaled_value, high=agent.get_positions().balance.amount.scaled_value
+                            )
+                        )
                     )
                 )
                 trade_event = agent.add_liquidity(trade_amount)
@@ -139,8 +143,8 @@ def fuzz_present_value(
                 check_data["initial_present_value"] = interactive_hyperdrive.interface.calc_present_value(
                     interactive_hyperdrive.interface.current_pool_state
                 )
-                trade_amount = agent.wallet.lp_tokens
-                trade_event = agent.remove_liquidity(agent.wallet.lp_tokens)
+                trade_amount = agent.get_positions().lp_tokens
+                trade_event = agent.remove_liquidity(agent.get_positions().lp_tokens)
             case _:
                 raise ValueError(f"Invalid {trade_type=}")
 
