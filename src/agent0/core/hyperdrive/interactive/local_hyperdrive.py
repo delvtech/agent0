@@ -133,6 +133,10 @@ class LocalHyperdrive(Hyperdrive):
         """The factory's minimum position duration."""
         factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
         """The factory's maximum position duration."""
+        factory_min_circuit_breaker_delta: FixedPoint = FixedPoint("0.15")
+        """The factory's minimum circuit breaker delta."""
+        factory_max_circuit_breaker_delta: FixedPoint = FixedPoint("2")
+        """The factory's maximum circuit breaker delta."""
         factory_min_fixed_apr: FixedPoint = FixedPoint("0.01")  # 1%
         """The factory's minimum fixed APR."""
         factory_max_fixed_apr: FixedPoint = FixedPoint("0.5")  # 50%
@@ -163,6 +167,11 @@ class LocalHyperdrive(Hyperdrive):
         """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         """The minimum amount of tokens that a position can be opened or closed with."""
+        circuit_breaker_delta: FixedPoint = FixedPoint(2)
+        """
+        The circuit breaker delta defines the maximum delta between the last checkpoint's
+        weighted spot rate and the current spot rate to allow an LP to add liquidity.
+        """
         position_duration: int = 604_800  # 1 week
         """The duration of a position prior to maturity (in seconds)."""
         checkpoint_duration: int = 3_600  # 1 hour
@@ -474,6 +483,8 @@ class LocalHyperdrive(Hyperdrive):
             maxCheckpointDuration=config.factory_max_checkpoint_duration,
             minPositionDuration=config.factory_min_position_duration,
             maxPositionDuration=config.factory_max_position_duration,
+            minCircuitBreakerDelta=config.factory_min_circuit_breaker_delta.scaled_value,
+            maxCircuitBreakerDelta=config.factory_max_circuit_breaker_delta.scaled_value,
             minFixedAPR=config.factory_min_fixed_apr.scaled_value,
             maxFixedAPR=config.factory_max_fixed_apr.scaled_value,
             minTimeStretchAPR=config.factory_min_time_stretch_apr.scaled_value,
@@ -491,6 +502,7 @@ class LocalHyperdrive(Hyperdrive):
             linkerCodeHash=bytes(),  # will be determined in the deploy function
             minimumShareReserves=config.minimum_share_reserves.scaled_value,
             minimumTransactionAmount=config.minimum_transaction_amount.scaled_value,
+            circuitBreakerDelta=config.circuit_breaker_delta.scaled_value,
             positionDuration=config.position_duration,
             checkpointDuration=config.checkpoint_duration,
             timeStretch=0,

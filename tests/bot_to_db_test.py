@@ -115,6 +115,7 @@ class TestBotToDb:
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
+            "circuit_breaker_delta": _to_unscaled_decimal(FixedPoint("2")),
             "position_duration": 60 * 60 * 24 * 365,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,

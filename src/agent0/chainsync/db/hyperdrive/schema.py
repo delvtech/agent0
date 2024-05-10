@@ -39,6 +39,7 @@ class PoolConfig(Base):
     initial_vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_transaction_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    circuit_breaker_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     position_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpoint_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

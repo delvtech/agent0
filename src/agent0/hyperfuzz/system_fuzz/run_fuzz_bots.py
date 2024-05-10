@@ -25,6 +25,7 @@ INITIAL_LIQUIDITY_RANGE: tuple[float, float] = (10, 100_000)
 INITIAL_VAULT_SHARE_PRICE_RANGE: tuple[float, float] = (0.5, 2.5)
 MINIMUM_SHARE_RESERVES_RANGE: tuple[float, float] = (0.1, 1)
 MINIMUM_TRANSACTION_AMOUNT_RANGE: tuple[float, float] = (0.1, 10)
+CIRCUIT_BREAKER_DELTA_RANGE: tuple[float, float] = (0.15, 2)
 
 # Position and checkpoint duration are in units of hours, as
 # the `factory_checkpoint_duration_resolution` is 1 hour
@@ -97,6 +98,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
         initial_variable_rate=FixedPoint(rng.uniform(*VARIABLE_RATE_RANGE)),
         minimum_share_reserves=FixedPoint(rng.uniform(*MINIMUM_SHARE_RESERVES_RANGE)),
         minimum_transaction_amount=FixedPoint(rng.uniform(*MINIMUM_TRANSACTION_AMOUNT_RANGE)),
+        circuit_breaker_delta=FixedPoint(rng.uniform(*CIRCUIT_BREAKER_DELTA_RANGE)),
         position_duration=position_duration,
         checkpoint_duration=checkpoint_duration,
         curve_fee=FixedPoint(rng.uniform(*FEE_RANGE)),

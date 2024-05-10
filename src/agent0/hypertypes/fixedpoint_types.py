@@ -60,6 +60,7 @@ class PoolConfigFP:
     initial_vault_share_price: FixedPoint
     minimum_share_reserves: FixedPoint
     minimum_transaction_amount: FixedPoint
+    circuit_breaker_delta: FixedPoint
     position_duration: int
     checkpoint_duration: int
     time_stretch: FixedPoint

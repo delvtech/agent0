@@ -149,6 +149,7 @@ def pool_config_to_fixedpoint(
         "initial_vault_share_price",
         "minimum_share_reserves",
         "minimum_transaction_amount",
+        "circuit_breaker_delta",
         "time_stretch",
     ]
     for key in dict_pool_config:
@@ -184,6 +185,7 @@ def fixedpoint_to_pool_config(
         "initialVaultSharePrice",
         "minimumShareReserves",
         "minimumTransactionAmount",
+        "circuitBreakerDelta",
         "timeStretch",
     ]
     for key in dict_pool_config:
@@ -204,6 +206,7 @@ def fixedpoint_to_pool_config(
         initialVaultSharePrice=dict_pool_config["initialVaultSharePrice"],
         minimumShareReserves=dict_pool_config["minimumShareReserves"],
         minimumTransactionAmount=dict_pool_config["minimumTransactionAmount"],
+        circuitBreakerDelta=dict_pool_config["circuitBreakerDelta"],
         positionDuration=dict_pool_config["positionDuration"],
         checkpointDuration=dict_pool_config["checkpointDuration"],
         timeStretch=dict_pool_config["timeStretch"],
