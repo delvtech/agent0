@@ -250,23 +250,27 @@ def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> No
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
     existing_checkpoint_info = get_checkpoint_info(session, checkpoint_info.checkpoint_time, coerce_float=False)
     if len(existing_checkpoint_info) == 0:
-        session.add(checkpoint_info)
-        try:
-            session.commit()
-        except exc.DataError as err:
-            session.rollback()
-            logging.error("Error adding checkpoint info: %s", err)
-            raise err
+        # Adding new entry, no checks needed
+        pass
     elif len(existing_checkpoint_info) == 1:
         # Verify checkpoint info
-        for key in CheckpointInfo.__annotations__.keys():
-            new_value = getattr(checkpoint_info, key)
-            old_value = existing_checkpoint_info.loc[0, key]
-            if new_value != old_value:
-                raise ValueError(f"Adding checkpoint info field: key {key} doesn't match ({new_value=}, {old_value=})")
+        if (checkpoint_info.checkpoint_time != existing_checkpoint_info.loc[0, "checkpoint_time"]) or (
+            checkpoint_info.vault_share_price != existing_checkpoint_info.loc[0, "vault_share_price"]
+        ):
+            raise ValueError("Incoming checkpoint info doesn't match vault_share_price.")
     else:
         # Should never get here, checkpoint time is primary_key, which is unique
         raise ValueError
+
+    # This merge adds the row if not exist (keyed by checkpoint_time),
+    # otherwise will overwrite with this entry
+    session.merge(checkpoint_info, load=True)
+    try:
+        session.commit()
+    except exc.DataError as err:
+        session.rollback()
+        logging.error("Error adding checkpoint info: %s", err)
+        raise err
 
 
 def add_wallet_deltas(wallet_deltas: list[WalletDelta], session: Session) -> None:
@@ -410,6 +414,8 @@ def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, co
 
     This includes
     - `checkpoint_time`: The time index of the checkpoint.
+    - `weighted_spot_price`: The time weighted spot price aggregated over the checkpoint.
+    - `last_weighted_spot_price_update_time`: The last time the weighted spot price was updated.
     - `vault_share_price`: The share price of the first transaction in the checkpoint.
 
     Arguments

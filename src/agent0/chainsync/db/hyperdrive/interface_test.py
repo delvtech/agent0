@@ -133,24 +133,43 @@ class TestCheckpointInterface:
     @pytest.mark.docker
     def test_checkpoint_time_verify(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
-        checkpoint_1 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.1"))
+        checkpoint_1 = CheckpointInfo(
+            checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("4.1")
+        )
         add_checkpoint_info(checkpoint_1, db_session)
         checkpoint_df_1 = get_checkpoint_info(db_session, coerce_float=False)
         assert len(checkpoint_df_1) == 1
         assert checkpoint_df_1.loc[0, "vault_share_price"] == Decimal("3.1")
+        assert checkpoint_df_1.loc[0, "weighted_spot_price"] == Decimal("4.1")
 
         # Nothing should happen if we give the same checkpoint info
-        checkpoint_2 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.1"))
+        checkpoint_2 = CheckpointInfo(
+            checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("4.1")
+        )
         add_checkpoint_info(checkpoint_2, db_session)
         checkpoint_df_2 = get_checkpoint_info(db_session, coerce_float=False)
         assert len(checkpoint_df_2) == 1
         assert checkpoint_df_2.loc[0, "vault_share_price"] == Decimal("3.1")
+        assert checkpoint_df_2.loc[0, "weighted_spot_price"] == Decimal("4.1")
 
-        # Adding a checkpoint info with the same checkpoint time with a different value
+        # Adding a checkpoint info with the same checkpoint time with a different vault share price
         # should throw a value error
-        checkpoint_3 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.4"))
+        checkpoint_3 = CheckpointInfo(
+            checkpoint_time=100, vault_share_price=Decimal("3.4"), weighted_spot_price=Decimal("5.1")
+        )
         with pytest.raises(ValueError):
             add_checkpoint_info(checkpoint_3, db_session)
+
+        # Adding a checkpoint info with the same checkpoint time and vault share price should
+        # update the value
+        checkpoint_4 = CheckpointInfo(
+            checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("5.1")
+        )
+        add_checkpoint_info(checkpoint_4, db_session)
+        checkpoint_df_4 = get_checkpoint_info(db_session, coerce_float=False)
+        assert len(checkpoint_df_4) == 1
+        assert checkpoint_df_4.loc[0, "vault_share_price"] == Decimal("3.1")
+        assert checkpoint_df_4.loc[0, "weighted_spot_price"] == Decimal("5.1")
 
 
 class TestPoolConfigInterface:

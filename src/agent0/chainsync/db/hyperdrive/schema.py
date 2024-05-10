@@ -59,6 +59,8 @@ class CheckpointInfo(Base):
     __tablename__ = "checkpoint_info"
 
     checkpoint_time: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    weighted_spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    last_weighted_spot_price_update_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # TODO we'd like to add the checkpoint id here as a field as well
 

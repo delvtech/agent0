@@ -102,7 +102,9 @@ def checkpoint_to_fixedpoint(
         A dataclass containing the checkpoint vault_share_price and exposure fields converted to FixedPoint.
     """
     return CheckpointFP(
-        **{camel_to_snake(key): FixedPoint(scaled_value=value) for key, value in asdict(hypertypes_checkpoint).items()}
+        weighted_spot_price=FixedPoint(scaled_value=hypertypes_checkpoint.weightedSpotPrice),
+        last_weighted_spot_price_update_time=hypertypes_checkpoint.lastWeightedSpotPriceUpdateTime,
+        vault_share_price=FixedPoint(scaled_value=hypertypes_checkpoint.vaultSharePrice),
     )
 
 
