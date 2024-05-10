@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Type
 
 import pandas as pd
 from sqlalchemy import exc
@@ -12,12 +11,12 @@ from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.base import (
     AddrToUsername,
-    Base,
     UsernameToUser,
     get_addr_to_username,
     get_username_to_user,
     initialize_session,
 )
+from agent0.chainsync.df_to_db import df_to_db
 
 from .interface import (
     get_checkpoint_info,
@@ -39,11 +38,10 @@ from .schema import (
     PoolConfig,
     PoolInfo,
     Ticker,
+    TradeEvent,
     WalletDelta,
     WalletPNL,
 )
-
-MAX_BATCH_SIZE = 10000
 
 
 def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool = False) -> None:
@@ -162,6 +160,7 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
     if drop:
         db_session.query(AddrToUsername).delete()
         db_session.query(UsernameToUser).delete()
+        db_session.query(TradeEvent).delete()
         db_session.query(PoolConfig).delete()
         db_session.query(CheckpointInfo).delete()
         db_session.query(PoolInfo).delete()
@@ -179,40 +178,15 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
             raise err
 
     out = import_to_pandas(in_dir)
-    _df_to_db(out["addr_to_username"], AddrToUsername, db_session)
-    _df_to_db(out["username_to_user"], UsernameToUser, db_session)
-    _df_to_db(out["pool_config"], PoolConfig, db_session)
-    _df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
-    _df_to_db(out["pool_info"], PoolInfo, db_session)
-    _df_to_db(out["wallet_delta"], WalletDelta, db_session)
-    _df_to_db(out["transactions"], HyperdriveTransaction, db_session)
-    _df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
-    _df_to_db(out["current_wallet"], CurrentWallet, db_session)
-    _df_to_db(out["ticker"], Ticker, db_session)
-    _df_to_db(out["wallet_pnl"], WalletPNL, db_session)
-
-
-def _df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
-    """Helper function to add a dataframe to a database"""
-    table_name = schema_obj.__tablename__
-
-    # dataframe to_sql needs data types from the schema object
-    dtype = {c.name: c.type for c in schema_obj.__table__.columns}
-    # Pandas doesn't play nice with types
-    insert_df.to_sql(
-        table_name,
-        con=session.connection(),
-        method="multi",
-        # if_exists=if_exists_method,
-        if_exists="append",
-        index=False,
-        dtype=dtype,  # type: ignore
-        chunksize=MAX_BATCH_SIZE,
-    )
-    # commit the transaction
-    try:
-        session.commit()
-    except exc.DataError as err:
-        session.rollback()
-        logging.error("Error on adding %s: %s", table_name, err)
-        raise err
+    df_to_db(out["addr_to_username"], AddrToUsername, db_session)
+    df_to_db(out["username_to_user"], UsernameToUser, db_session)
+    df_to_db(out["trade_event"], TradeEvent, db_session)
+    df_to_db(out["pool_config"], PoolConfig, db_session)
+    df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
+    df_to_db(out["pool_info"], PoolInfo, db_session)
+    df_to_db(out["wallet_delta"], WalletDelta, db_session)
+    df_to_db(out["transactions"], HyperdriveTransaction, db_session)
+    df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
+    df_to_db(out["current_wallet"], CurrentWallet, db_session)
+    df_to_db(out["ticker"], Ticker, db_session)
+    df_to_db(out["wallet_pnl"], WalletPNL, db_session)
