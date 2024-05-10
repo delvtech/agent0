@@ -5,7 +5,6 @@ from decimal import Decimal
 from typing import Any, Union
 
 from sqlalchemy import ARRAY, BigInteger, Boolean, DateTime, Integer, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent0.chainsync.db.base import Base
@@ -152,8 +151,6 @@ class TradeEvent(Base):
     """
     The change in base tokens for the event with respect to the wallet address.
     """
-    event_json: Mapped[Union[dict[str, Any], None]] = mapped_column(JSONB, default=None)
-    """The raw event data is stored here in a json format."""
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta
