@@ -61,10 +61,10 @@ class TestHyperdriveReadInterface:
         time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
         pool_info = hyperdrive_read_interface_fixture.current_pool_state.pool_info
-        share_reserves: FixedPoint = pool_info.share_reserves
+        effective_share_reserves: FixedPoint = hyperdrive_read_interface_fixture.calc_effective_share_reserves()
         bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
-        spot_price = ((init_vault_share_price * share_reserves) / bond_reserves) ** time_stretch
+        spot_price = ((init_vault_share_price * effective_share_reserves) / bond_reserves) ** time_stretch
         assert abs(spot_price - hyperdrive_read_interface_fixture.calc_spot_price()) <= FixedPoint(1e-18)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
