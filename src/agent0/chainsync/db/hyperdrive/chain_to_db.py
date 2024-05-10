@@ -13,7 +13,7 @@ from web3.types import BlockData, EventData
 
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.base import fetch_contract_transactions_for_block
-from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, decode_asset_id
 
 from .convert_data import (
     convert_checkpoint_info,
@@ -227,22 +227,64 @@ def trade_events_to_db(
     # Each transaction made through hyperdrive has two rows for each transaction,
     # one TransferSingle and one for the trade.
     # Any transactions without a corresponding trade is a wallet to wallet transfer.
-    # We detect this case and throw an error if we find this.
-    # TODO handle transfer events
 
     # Look for any transfer events not associated with a trade
     unique_events_per_transaction = events_df.groupby("transactionHash")["event"].agg(["unique", "nunique"])
-    if (unique_events_per_transaction["nunique"] < 2).any():
-        raise ValueError(
-            "Found less than 2 unique events for transaction, likely due to "
-            "a transfer event not associated with a trade. This is not supported yet. "
-            f"{unique_events_per_transaction[unique_events_per_transaction['nunique'] < 2]['unique']}"
-        )
+    # Sanity check
     if (unique_events_per_transaction["nunique"] > 2).any():
         raise ValueError(
             "Found more than 2 unique events for transaction."
             f"{unique_events_per_transaction[unique_events_per_transaction['nunique'] > 2]['unique']}"
         )
+
+    # Find any transfer events that are not associated with a trade.
+    # This happens when e.g., a wallet to wallet transfer happens, or
+    # if this wallet is the initializer of the pool.
+    # TODO we have a test for initializer of the pool, but we need to implement
+    # wallet to wallet transfers of tokens in the interactive interface for a full test
+    transfer_events_trx_hash = (
+        (unique_events_per_transaction["nunique"] < 2).to_frame().reset_index()["transactionHash"]
+    )
+    transfer_events_df = events_df[events_df["transactionHash"].isin(transfer_events_trx_hash)].copy()
+    if len(transfer_events_df) > 0:
+        # Expand the args dict without losing the args dict field
+        # json_normalize works on series, but typing doesn't support it.
+        args_columns = pd.json_normalize(transfer_events_df["args"])  # type: ignore
+        transfer_events_df = pd.concat([transfer_events_df, args_columns], axis=1)
+        # We apply the decode function to each element, then expand the resulting
+        # tuple to multiple columns
+        transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
+            *transfer_events_df["id"].apply(decode_asset_id)
+        )
+        # Convert token_type enum to name
+        transfer_events_df["token_type"] = transfer_events_df["token_type"].apply(lambda x: AssetIdPrefix(x).name)
+        # Convert maturity times of 0 to nan to match other events
+        transfer_events_df.loc[transfer_events_df["maturityTime"] == 0, "maturityTime"] = np.nan
+        # Set token id, default is to set it to the token type
+        transfer_events_df["token_id"] = transfer_events_df["token_type"]
+        # Append the maturity time for longs and shorts
+        long_or_short_idx = transfer_events_df["token_type"].isin(["LONG", "SHORT"])
+        transfer_events_df.loc[long_or_short_idx, "token_id"] = (
+            transfer_events_df.loc[long_or_short_idx, "token_type"]
+            + "-"
+            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
+        )
+
+        # Set the trader of this transfer
+        transfer_events_df["trader"] = wallet_addr
+
+        # See if it's a receive or send of tokens
+        send_idx = transfer_events_df["from"] == wallet_addr
+        receive_idx = transfer_events_df["to"] == wallet_addr
+        # Set the token delta based on send or receive
+        transfer_events_df.loc[send_idx, "token_delta"] = -transfer_events_df.loc[send_idx, "value"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        transfer_events_df.loc[receive_idx, "token_delta"] = transfer_events_df.loc[receive_idx, "value"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        # Base delta is always 0
+        transfer_events_df["base_delta"] = Decimal(0)
 
     # Drop all transfer single events
     events_df = events_df[events_df["event"] != "TransferSingle"].reset_index(drop=True)
@@ -371,6 +413,9 @@ def trade_events_to_db(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
+    # Add solo transfer events to events_df
+    events_df = pd.concat([events_df, transfer_events_df], axis=0)
+
     # We select the subset of columns we need and rename to match db schema
     rename_dict = {
         "address": "hyperdrive_address",
@@ -386,5 +431,6 @@ def trade_events_to_db(
     }
 
     events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
+
     # Add to db
     df_to_db(events_df, TradeEvent, db_session)
