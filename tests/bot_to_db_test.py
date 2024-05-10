@@ -109,7 +109,7 @@ class TestBotToDb:
         base_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.base_token_contract.address
         vault_shares_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.vault_shares_token_contract.address
         expected_pool_config = {
-            "contract_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
+            "hyperdrive_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
             "base_token": base_token_addr,
             "vault_shares_token": vault_shares_token_addr,
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),

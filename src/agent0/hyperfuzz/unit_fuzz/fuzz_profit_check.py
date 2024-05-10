@@ -90,7 +90,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
 
     # Generate funded trading agent
     long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
-    long_agent_initial_balance = long_agent.wallet.balance.amount
+    long_agent_initial_balance = long_agent.get_positions().balance.amount
 
     # Advance time to be right after a checkpoint boundary
     logging.info("Advance time...")
@@ -134,7 +134,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     # the short trade amount is in bonds, but we know we will need much less base
     # we can play it safe by initializing with that much base
     short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
-    short_agent_initial_balance = short_agent.wallet.balance.amount
+    short_agent_initial_balance = short_agent.get_positions().balance.amount
 
     # Advance time to be right after a checkpoint boundary
     logging.info("Advance time...")
@@ -165,10 +165,10 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     check_data = {
         "long_trade_amount": long_trade_amount,
         "long_agent_initial_balance": long_agent_initial_balance,
-        "long_agent_final_balance": long_agent.wallet.balance.amount,
+        "long_agent_final_balance": long_agent.get_positions().balance.amount,
         "long_events": {"open": open_long_event, "close": close_long_event},
         "short_trade_amount": short_trade_amount,
-        "short_agent_final_balance": short_agent.wallet.balance.amount,
+        "short_agent_final_balance": short_agent.get_positions().balance.amount,
         "short_agent_initial_balance": short_agent_initial_balance,
         "short_events": {"open": open_short_event, "close": close_short_event},
     }

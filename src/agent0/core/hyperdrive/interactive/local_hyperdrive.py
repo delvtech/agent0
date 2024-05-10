@@ -18,6 +18,7 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from IPython.display import IFrame
 from sqlalchemy_utils.functions import drop_database
 from web3._utils.threads import Timeout
@@ -38,15 +39,20 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
+    get_positions_from_db,
     get_ticker,
     get_total_wallet_pnl_over_time,
+    get_trade_events,
     get_wallet_deltas,
     get_wallet_pnl,
+    trade_events_to_db,
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
+from agent0.core.base import Quantity, TokenType
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, HyperdriveWallet, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
+from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
@@ -1081,12 +1087,58 @@ class LocalHyperdrive(Hyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
-        # TODO add sync from db
-        super()._sync_wallet(agent)
-        # Ensure db is up to date
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
+        # Update the db with this wallet
+        # TODO this function can be optimized to cache.
+        trade_events_to_db([self.interface], agent.checksum_address, self.db_session)
+
+    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+        self._sync_events(agent)
+
+        # Query for the wallet object from the db
+        wallet_positions = get_positions_from_db(
+            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
+        )
+        # Convert to hyperdrive wallet object
+        long_obj: dict[int, Long] = {}
+        short_obj: dict[int, Short] = {}
+        lp_balance: FixedPoint = FixedPoint(0)
+        withdrawal_shares_balance: FixedPoint = FixedPoint(0)
+        for _, row in wallet_positions.iterrows():
+            # Sanity checks
+            assert row["hyperdrive_address"] == self.interface.hyperdrive_address
+            assert row["wallet_address"] == agent.checksum_address
+            if row["token_id"] == "LP":
+                lp_balance = FixedPoint(row["balance"])
+            elif row["token_id"] == "WITHDRAWAL_SHARE":
+                withdrawal_shares_balance = FixedPoint(row["balance"])
+            elif "LONG" in row["token_id"]:
+                maturity_time = int(row["token_id"].split("-")[1])
+                long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+            elif "SHORT" in row["token_id"]:
+                maturity_time = int(row["token_id"].split("-")[1])
+                short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+
+        # We do a balance of call to get base balance.
+        base_balance = FixedPoint(
+            scaled_value=self.interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
+        )
+
+        return HyperdriveWallet(
+            address=HexBytes(agent.checksum_address),
+            balance=Quantity(
+                amount=base_balance,
+                unit=TokenType.BASE,
+            ),
+            lp_tokens=lp_balance,
+            withdraw_shares=withdrawal_shares_balance,
+            longs=long_obj,
+            shorts=short_obj,
+        )
+
+    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
+        self._sync_events(agent)
+        return get_trade_events(self.db_session, agent.checksum_address)
 
     def _add_funds(
         self,
