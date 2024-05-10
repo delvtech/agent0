@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
@@ -316,6 +317,9 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_id"] = "LP"
         # The wallet here is the "provider" column, we remap it to "trader"
         events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # We explicitly add a maturity time here to ensure this column exists
+        # if there were no longs in this event set.
+        events_df.loc[events_idx, "maturityTime"] = np.nan
 
     events_idx = events_df["event"] == "AddLiquidity"
     if events_idx.any():
@@ -354,6 +358,9 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_id"] = "WITHDRAWAL_SHARE"
         # The wallet here is the "provider" column, we remap it to "trader"
         events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # We explicitly add a maturity time here to ensure this column exists
+        # if there were no longs in this event set.
+        events_df.loc[events_idx, "maturityTime"] = np.nan
         # Pandas apply doesn't play nice with types
         events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "withdrawalShareAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
