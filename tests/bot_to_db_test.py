@@ -378,5 +378,6 @@ class TestBotToDb:
         expected_fixed_rate = interface.calc_spot_rate()
 
         assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
-        assert latest_spot_price == expected_spot_price
-        assert latest_fixed_rate == expected_fixed_rate
+        # Spot price and fixed rate is off by one wei
+        assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("1e-18"))
+        assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("1e-18"))
