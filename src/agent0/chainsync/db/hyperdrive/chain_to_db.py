@@ -242,9 +242,9 @@ def trade_events_to_db(
     # if this wallet is the initializer of the pool.
     # TODO we have a test for initializer of the pool, but we need to implement
     # wallet to wallet transfers of tokens in the interactive interface for a full test
-    transfer_events_trx_hash = (
-        (unique_events_per_transaction["nunique"] < 2).to_frame().reset_index()["transactionHash"]
-    )
+    transfer_events_trx_hash = unique_events_per_transaction[
+        unique_events_per_transaction["nunique"] < 2
+    ].reset_index()["transactionHash"]
     transfer_events_df = events_df[events_df["transactionHash"].isin(transfer_events_trx_hash)].copy()
     if len(transfer_events_df) > 0:
         # Expand the args dict without losing the args dict field
@@ -254,7 +254,7 @@ def trade_events_to_db(
         # We apply the decode function to each element, then expand the resulting
         # tuple to multiple columns
         transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
-            *transfer_events_df["id"].apply(decode_asset_id)
+            *transfer_events_df["id"].astype(int).apply(decode_asset_id)
         )
         # Convert token_type enum to name
         transfer_events_df["token_type"] = transfer_events_df["token_type"].apply(lambda x: AssetIdPrefix(x).name)
