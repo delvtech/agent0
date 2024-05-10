@@ -119,6 +119,13 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
     out = dict(in_val)
     # The args field is also an attribute dict, change to dict
     out["args"] = dict(in_val["args"])
+    # There are issues with storing very large integers
+    # in the database, so we convert the assetId to a string
+    if "assetId" in out["args"]:
+        out["args"]["assetId"] = str(in_val["args"]["assetId"])
+    if "id" in out["args"]:
+        out["args"]["id"] = str(in_val["args"]["id"])
+
     # Convert transaction hash to string
     out["transactionHash"] = in_val["transactionHash"].to_0x_hex()
     # Get token id field from args.
