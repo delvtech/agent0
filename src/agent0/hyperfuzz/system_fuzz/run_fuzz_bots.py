@@ -112,7 +112,7 @@ R = TypeVar("R")
 
 
 # TODO move this to somewhere that's more general
-async def _async_runner(
+async def async_runner(
     return_exceptions: bool,
     funcs: list[Callable[P, R]],
     *args: P.args,
@@ -271,7 +271,7 @@ def run_fuzz_bots(
     logging.info("Funding bots...")
     if run_async:
         asyncio.run(
-            _async_runner(
+            async_runner(
                 return_exceptions=True,
                 funcs=[agent.add_funds for agent in agents],
                 base=base_budget_per_bot,
@@ -284,7 +284,7 @@ def run_fuzz_bots(
     logging.info("Setting max approval...")
     if run_async:
         asyncio.run(
-            _async_runner(
+            async_runner(
                 return_exceptions=True,
                 funcs=[agent.set_max_approval for agent in agents],
             )
@@ -304,7 +304,7 @@ def run_fuzz_bots(
         try:
             if run_async:
                 trades = asyncio.run(
-                    _async_runner(
+                    async_runner(
                         return_exceptions=True,
                         funcs=[agent.execute_policy_action for agent in agents],
                     )
@@ -342,7 +342,7 @@ def run_fuzz_bots(
             logging.info("Refunding agents...")
             if run_async:
                 asyncio.run(
-                    _async_runner(
+                    async_runner(
                         return_exceptions=True,
                         funcs=[agent.add_funds for agent in agents],
                         base=base_budget_per_bot,
