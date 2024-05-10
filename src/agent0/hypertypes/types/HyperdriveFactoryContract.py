@@ -49,7 +49,7 @@ from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventDat
 
 from .HyperdriveFactoryTypes import FactoryConfig
 from .IHyperdriveTypes import Fees, Options, PoolDeployConfig
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {
     "Fees": Fees,
@@ -6777,7 +6777,7 @@ class HyperdriveFactoryContract(Contract):
     """A web3.py Contract class for the HyperdriveFactory contract."""
 
     abi: ABI = hyperdrivefactory_abi
-    bytecode: bytes = HexBytes(hyperdrivefactory_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(hyperdrivefactory_bytecode, "hyperdrivefactory")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

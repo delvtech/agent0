@@ -45,7 +45,7 @@ from web3.contract.contract import (
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
-from .utilities import dataclass_to_tuple, rename_returned_types
+from .utilities import dataclass_to_tuple, rename_returned_types, try_bytecode_hexbytes
 
 structs = {}
 
@@ -2334,7 +2334,7 @@ class ERC20MintableContract(Contract):
     """A web3.py Contract class for the ERC20Mintable contract."""
 
     abi: ABI = erc20mintable_abi
-    bytecode: bytes = HexBytes(erc20mintable_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(erc20mintable_bytecode, "erc20mintable")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

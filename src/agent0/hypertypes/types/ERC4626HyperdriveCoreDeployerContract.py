@@ -30,7 +30,6 @@ from typing import Any, Type, cast
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
-from hexbytes import HexBytes
 from typing_extensions import Self
 from web3 import Web3
 from web3.contract.contract import Contract, ContractConstructor, ContractFunction, ContractFunctions
@@ -38,7 +37,7 @@ from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, TxParams
 
 from .IHyperdriveTypes import Fees, PoolConfig
-from .utilities import dataclass_to_tuple, rename_returned_types
+from .utilities import dataclass_to_tuple, rename_returned_types, try_bytecode_hexbytes
 
 structs = {
     "Fees": Fees,
@@ -165,7 +164,9 @@ class ERC4626HyperdriveCoreDeployerContract(Contract):
     """A web3.py Contract class for the ERC4626HyperdriveCoreDeployer contract."""
 
     abi: ABI = erc4626hyperdrivecoredeployer_abi
-    bytecode: bytes = HexBytes(erc4626hyperdrivecoredeployer_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(
+        erc4626hyperdrivecoredeployer_bytecode, "erc4626hyperdrivecoredeployer"
+    )
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

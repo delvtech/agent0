@@ -45,7 +45,7 @@ from web3.contract.contract import (
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
 
-from .utilities import dataclass_to_tuple, rename_returned_types
+from .utilities import dataclass_to_tuple, rename_returned_types, try_bytecode_hexbytes
 
 structs = {}
 
@@ -3444,7 +3444,7 @@ class MockERC4626Contract(Contract):
     """A web3.py Contract class for the MockERC4626 contract."""
 
     abi: ABI = mockerc4626_abi
-    bytecode: bytes = HexBytes(mockerc4626_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(mockerc4626_bytecode, "mockerc4626")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

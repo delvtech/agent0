@@ -48,7 +48,7 @@ from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
 from .IHyperdriveTypes import Checkpoint, Fees, MarketState, Options, PoolConfig, PoolInfo, WithdrawPool
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {
     "Options": Options,
@@ -6712,7 +6712,7 @@ class IHyperdriveContract(Contract):
     """A web3.py Contract class for the IHyperdrive contract."""
 
     abi: ABI = ihyperdrive_abi
-    bytecode: bytes = HexBytes(ihyperdrive_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(ihyperdrive_bytecode, "ihyperdrive")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

@@ -40,7 +40,7 @@ from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, TxParams
 
 from .LPMathTypes import DistributeExcessIdleParams, PresentValueParams
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {
     "PresentValueParams": PresentValueParams,
@@ -688,7 +688,7 @@ class LPMathContract(Contract):
     """A web3.py Contract class for the LPMath contract."""
 
     abi: ABI = lpmath_abi
-    bytecode: bytes = HexBytes(lpmath_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(lpmath_bytecode, "lpmath")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

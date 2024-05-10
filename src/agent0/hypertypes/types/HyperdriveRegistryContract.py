@@ -47,7 +47,7 @@ from web3.contract.contract import (
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {}
 
@@ -619,7 +619,7 @@ class HyperdriveRegistryContract(Contract):
     """A web3.py Contract class for the HyperdriveRegistry contract."""
 
     abi: ABI = hyperdriveregistry_abi
-    bytecode: bytes = HexBytes(hyperdriveregistry_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(hyperdriveregistry_bytecode, "hyperdriveregistry")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

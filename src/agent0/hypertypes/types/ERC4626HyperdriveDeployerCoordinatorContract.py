@@ -41,7 +41,7 @@ from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, TxParams
 
 from .HyperdriveDeployerCoordinatorTypes import Deployment
 from .IHyperdriveTypes import Fees, Options, PoolDeployConfig
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {
     "Fees": Fees,
@@ -2306,7 +2306,9 @@ class ERC4626HyperdriveDeployerCoordinatorContract(Contract):
     """A web3.py Contract class for the ERC4626HyperdriveDeployerCoordinator contract."""
 
     abi: ABI = erc4626hyperdrivedeployercoordinator_abi
-    bytecode: bytes = HexBytes(erc4626hyperdrivedeployercoordinator_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(
+        erc4626hyperdrivedeployercoordinator_bytecode, "erc4626hyperdrivedeployercoordinator"
+    )
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
