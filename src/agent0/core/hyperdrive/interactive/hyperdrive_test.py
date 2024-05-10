@@ -166,6 +166,12 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
     assert remove_liquidity_event.withdrawal_share_amount > 0
 
+    # Add liquidity back to ensure we can close positions
+    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
+    assert add_liquidity_event.base_amount == FixedPoint(111_111)
+    assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
+    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+
     # Open short
     open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(333))
     assert open_short_event.bond_amount == FixedPoint(333)
