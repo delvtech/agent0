@@ -75,7 +75,7 @@ class Hyperdrive:
         When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False.
         """
         preview_before_trade: bool = False
-        """Whether to preview the position before executing a trade. Defaults to True."""
+        """Whether to preview the position before executing a trade. Defaults to False."""
         rng_seed: int | None = None
         """The seed for the random number generator. Defaults to None."""
         rng: Generator | None = None
