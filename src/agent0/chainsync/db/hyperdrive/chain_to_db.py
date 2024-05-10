@@ -151,7 +151,8 @@ def trade_events_to_db(
     # Get the earliest block to get events from
     # TODO can narrow this down to the last block we checked
     # For now, keep this as the latest entry of this wallet.
-    latest_db_block_entry = get_latest_block_number_from_trade_event(db_session, wallet_addr)
+    # + 1 since the queries are inclusive
+    from_block = get_latest_block_number_from_trade_event(db_session, wallet_addr) + 1
 
     # Gather all events we care about here
     # Transfers to and from wallet address
@@ -161,57 +162,57 @@ def trade_events_to_db(
 
     for interface in interfaces:
         events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"to": wallet_addr},
         )
         # Change events from attribute dict to dictionary
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"from": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         # Hyperdrive events
         events = interface.hyperdrive_contract.events.OpenLong.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"trader": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.CloseLong.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"trader": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.OpenShort.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"trader": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.CloseShort.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"trader": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.AddLiquidity.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"provider": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.RemoveLiquidity.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"provider": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.RedeemWithdrawalShares.get_logs(
-            fromBlock=latest_db_block_entry,
+            fromBlock=from_block,
             argument_filters={"provider": wallet_addr},
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
