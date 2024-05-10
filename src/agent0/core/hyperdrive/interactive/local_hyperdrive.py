@@ -1086,9 +1086,15 @@ class LocalHyperdrive(Hyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
         # Update the db with this wallet
+        # TODO this function can be optimized to cache.
         trade_events_to_db([self.interface], agent.checksum_address, self.db_session)
+
+    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+
+        self._sync_events(agent)
+
         # Query for the wallet object from the db
         wallet_positions = get_positions_from_db(self.db_session, agent.checksum_address)
         # Convert to hyperdrive wallet object
