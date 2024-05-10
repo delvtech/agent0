@@ -66,6 +66,36 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str)
     return int(query)
 
 
+def get_positions_from_db(session: Session, wallet_addr: str) -> pd.DataFrame:
+    """Gets all positions for a given wallet address.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized db session object.
+    wallet_addr: str
+        The wallet address to filter the results on.
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool info data
+    """
+    # TODO also accept and filter by hyperdrive address here
+    # when we move to multi-pool db support
+    query = (
+        session.query(
+            TradeEvent.hyperdrive_address,
+            TradeEvent.wallet_address,
+            TradeEvent.token_id,
+            func.sum(TradeEvent.token_delta).label("balance"),
+        ).filter(TradeEvent.wallet_address == wallet_addr)
+    ).group_by(TradeEvent.hyperdrive_address, TradeEvent.wallet_address, TradeEvent.token_id)
+    out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=False)
+    # Filter out zero balances
+    return out_df[out_df["balance"] != 0]
+
+
 # Chain To Data Ingestion Interface
 
 

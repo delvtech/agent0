@@ -63,17 +63,6 @@ class HyperdriveAgent:
         self.agent = self._pool._init_agent(policy, policy_config, private_key)
 
     @property
-    def wallet(self) -> HyperdriveWallet:
-        """Returns the agent's current wallet.
-
-        Returns
-        -------
-        HyperdriveWallet
-            The agent's current wallet.
-        """
-        return self.agent.wallet
-
-    @property
     def checksum_address(self) -> ChecksumAddress:
         """Return the checksum address of the account."""
         return self.agent.checksum_address
@@ -249,6 +238,18 @@ class HyperdriveAgent:
 
         """
         self._pool._set_max_approval(self.agent)
+
+    def get_positions(self) -> HyperdriveWallet:
+        """Returns the agent's current wallet.
+
+        Returns
+        -------
+        HyperdriveWallet
+            The agent's current wallet.
+        """
+
+        # Update the db with this wallet
+        return self._pool._get_positions(self.agent)
 
     def sync_wallet_from_chain(self) -> None:
         """Explicitly syncs the wallet to the current state of the chain.

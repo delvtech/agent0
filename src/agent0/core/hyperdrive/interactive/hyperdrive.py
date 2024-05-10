@@ -16,7 +16,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 from web3 import Web3
 
-from agent0.core.hyperdrive import HyperdriveActionType, HyperdrivePolicyAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import (
+    HyperdriveActionType,
+    HyperdrivePolicyAgent,
+    HyperdriveWallet,
+    TradeResult,
+    TradeStatus,
+)
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     build_wallet_positions_from_chain,
@@ -234,7 +240,6 @@ class Hyperdrive:
 
         agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
 
-        self._sync_wallet(agent)
         return agent
 
     def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
@@ -246,9 +251,10 @@ class Hyperdrive:
             str(self.interface.hyperdrive_contract.address),
         )
 
-    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
-        # TODO add sync from db
-        agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
+    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+        # TODO move the db to the chain class and use it here
+        # to get wallets
+        return build_wallet_positions_from_chain(agent, self.interface)
 
     def _add_funds(
         self,
