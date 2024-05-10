@@ -15,6 +15,8 @@ from .ERC4626HyperdriveDeployerCoordinatorContract import *
 from .HyperdriveDeployerCoordinatorTypes import *
 from .HyperdriveFactoryContract import *
 from .HyperdriveFactoryTypes import *
+from .LPMathContract import *
+from .LPMathTypes import *
 from .ERC4626Target3DeployerContract import *
 from .HyperdriveRegistryContract import *
 from .HyperdriveRegistryTypes import *
