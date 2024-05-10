@@ -97,7 +97,7 @@ class HyperdriveReadInterface:
         hyperdrive_address: ChecksumAddress
             This is a contract address for a deployed hyperdrive.
         rpc_uri: str, optional
-            The URI for the web3 provider. If not provided, will use the provided web3 object.
+            The URI to initialize the web3 provider. Not used if web3 is provided.
         web3: Web3, optional
             web3 provider object, optional
             If not given, a web3 object is constructed using the `rpc_uri` as the http provider.
