@@ -107,7 +107,7 @@ class TestPoolConfigTable:
         db_session.add(pool_config)
         db_session.commit()
 
-        retrieved_pool_config = db_session.query(PoolConfig).filter_by(contract_address="0").first()
+        retrieved_pool_config = db_session.query(PoolConfig).filter_by(hyperdrive_address="0").first()
         assert retrieved_pool_config is not None
         assert float(retrieved_pool_config.initial_vault_share_price) == 3.2
 
@@ -121,7 +121,7 @@ class TestPoolConfigTable:
         db_session.delete(pool_config)
         db_session.commit()
 
-        deleted_pool_config = db_session.query(PoolConfig).filter_by(contract_address="0").first()
+        deleted_pool_config = db_session.query(PoolConfig).filter_by(hyperdrive_address="0").first()
         assert deleted_pool_config is None
 
 
