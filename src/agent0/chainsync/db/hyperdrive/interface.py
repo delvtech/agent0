@@ -54,6 +54,7 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str)
         The initialized session object.
     wallet_addr: str
         The wallet address to filter the results on.
+
     Returns
     -------
     int
@@ -66,15 +67,24 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str)
     return int(query)
 
 
-def get_trade_events(session: Session):
+def get_trade_events(session: Session, wallet_addr: str | None = None) -> pd.DataFrame:
     """Get all trade events and returns as a pandas dataframe.
 
     Arguments
     ---------
     session: Session
         The initialized db session object.
+    wallet_addr: str | None, optional
+        The wallet address to filter the results on. Return all if None
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried trade events data
     """
     query = session.query(TradeEvent)
+    if wallet_addr is not None:
+        query = query.filter(TradeEvent.wallet_address == wallet_addr)
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=False)
 
 

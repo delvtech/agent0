@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pandas as pd
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -250,3 +251,15 @@ class HyperdriveAgent:
 
         # Update the db with this wallet
         return self._pool._get_positions(self.agent)
+
+    def get_trade_events(self) -> pd.DataFrame:
+        """Returns the agent's current wallet.
+
+        Returns
+        -------
+        HyperdriveWallet
+            The agent's current wallet.
+        """
+
+        # Update the db with this wallet
+        return self._pool._get_trade_events(self.agent)

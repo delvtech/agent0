@@ -42,6 +42,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_positions_from_db,
     get_ticker,
     get_total_wallet_pnl_over_time,
+    get_trade_events,
     get_wallet_deltas,
     get_wallet_pnl,
     trade_events_to_db,
@@ -1092,7 +1093,6 @@ class LocalHyperdrive(Hyperdrive):
         trade_events_to_db([self.interface], agent.checksum_address, self.db_session)
 
     def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
-
         self._sync_events(agent)
 
         # Query for the wallet object from the db
@@ -1135,6 +1135,10 @@ class LocalHyperdrive(Hyperdrive):
             longs=long_obj,
             shorts=short_obj,
         )
+
+    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
+        self._sync_events(agent)
+        return get_trade_events(self.db_session, agent.checksum_address)
 
     def _add_funds(
         self,

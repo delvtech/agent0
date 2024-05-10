@@ -9,6 +9,7 @@ from typing import Any, Literal, Type, overload
 
 import nest_asyncio
 import numpy as np
+import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -255,6 +256,10 @@ class Hyperdrive:
         # TODO move the db to the chain class and use it here
         # to get wallets
         return build_wallet_positions_from_chain(agent, self.interface)
+
+    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
+        # TODO move the db to the chain class and use it here to get events
+        raise NotImplementedError
 
     def _add_funds(
         self,
