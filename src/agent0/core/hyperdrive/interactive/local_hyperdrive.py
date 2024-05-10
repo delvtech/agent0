@@ -1096,7 +1096,9 @@ class LocalHyperdrive(Hyperdrive):
         self._sync_events(agent)
 
         # Query for the wallet object from the db
-        wallet_positions = get_positions_from_db(self.db_session, agent.checksum_address)
+        wallet_positions = get_positions_from_db(
+            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
+        )
         # Convert to hyperdrive wallet object
         long_obj: dict[int, Long] = {}
         short_obj: dict[int, Short] = {}

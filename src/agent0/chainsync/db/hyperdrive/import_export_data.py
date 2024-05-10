@@ -26,6 +26,7 @@ from .interface import (
     get_pool_config,
     get_pool_info,
     get_ticker,
+    get_trade_events,
     get_transactions,
     get_wallet_deltas,
     get_wallet_pnl,
@@ -76,6 +77,9 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool
     get_username_to_user(db_session).to_parquet(
         os.path.join(out_dir, "username_to_user.parquet"), index=False, engine="pyarrow"
     )
+
+    # Agent event tables
+    get_trade_events(db_session).to_parquet(os.path.join(out_dir, "trade_event.parquet"), index=False, engine="pyarrow")
 
     # Hyperdrive tables
     get_pool_config(db_session, coerce_float=False).to_parquet(
@@ -128,6 +132,7 @@ def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
 
     out["addr_to_username"] = pd.read_parquet(os.path.join(in_dir, "addr_to_username.parquet"), engine="pyarrow")
     out["username_to_user"] = pd.read_parquet(os.path.join(in_dir, "username_to_user.parquet"), engine="pyarrow")
+    out["trade_event"] = pd.read_parquet(os.path.join(in_dir, "trade_event.parquet"), engine="pyarrow")
     out["pool_config"] = pd.read_parquet(os.path.join(in_dir, "pool_config.parquet"), engine="pyarrow")
     out["checkpoint_info"] = pd.read_parquet(os.path.join(in_dir, "checkpoint_info.parquet"), engine="pyarrow")
     out["pool_info"] = pd.read_parquet(os.path.join(in_dir, "pool_info.parquet"), engine="pyarrow")

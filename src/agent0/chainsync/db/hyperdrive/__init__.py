@@ -27,6 +27,7 @@ from .interface import (
     get_positions_from_db,
     get_ticker,
     get_total_wallet_pnl_over_time,
+    get_trade_events,
     get_transactions,
     get_wallet_deltas,
     get_wallet_pnl,
