@@ -39,8 +39,8 @@ class LocalChain(Chain):
     # However, `load_state` is just a function stub that needs to throw `NotImplementedError` if called.
     # pylint: disable=abstract-method
 
-    @dataclass
-    class Config:
+    @dataclass(kw_only=True)
+    class Config(Chain.Config):
         """The configuration for the local chain object."""
 
         block_time: int | None = None
@@ -110,7 +110,7 @@ class LocalChain(Chain):
         if fork_uri is not None:
             time.sleep(2)
 
-        super().__init__(f"http://127.0.0.1:{str(config.chain_port)}")
+        super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
 
         # Remove protocol and replace . and : with dashes
         self.chain_id = self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")

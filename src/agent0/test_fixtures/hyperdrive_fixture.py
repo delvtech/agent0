@@ -35,6 +35,8 @@ def launch_hyperdrive(in_chain: LocalChain) -> LocalHyperdrive:
         # instead of changing the default here
         position_duration=60 * 60 * 24 * 365,  # 1 year
         flat_fee=FixedPoint("0.0005"),
+        # Always preview before trade in tests
+        preview_before_trade=True,
     )
     return LocalHyperdrive(in_chain, config)
 

@@ -315,9 +315,9 @@ class LocalHyperdrive(Hyperdrive):
             kwargs={
                 "start_block": start_block,
                 "lookback_block_limit": 10000,
-                "eth_config": self.eth_config,
-                "postgres_config": self.postgres_config,
+                "rpc_uri": self.chain.rpc_uri,
                 "hyperdrive_address": self.interface.hyperdrive_address,
+                "postgres_config": self.postgres_config,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -327,9 +327,9 @@ class LocalHyperdrive(Hyperdrive):
             target=data_analysis,
             kwargs={
                 "start_block": start_block,
-                "eth_config": self.eth_config,
-                "postgres_config": self.postgres_config,
+                "rpc_uri": self.chain.rpc_uri,
                 "hyperdrive_address": self.interface.hyperdrive_address,
+                "postgres_config": self.postgres_config,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,

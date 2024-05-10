@@ -23,11 +23,14 @@ class TestPipelineWithRandom:
         All arguments are fixtures.
         """
         agent = fast_hyperdrive_fixture.init_agent(
-            base=FixedPoint(10_000_000),
+            base=FixedPoint(1_000_000),
             eth=FixedPoint(100),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(slippage_tolerance=None),
         )
+
+        # Add liquidity to avoid insufficient liquidity error
+        agent.add_liquidity(FixedPoint(500_000))
 
         # Do a handful of trades
         for _ in range(3):
