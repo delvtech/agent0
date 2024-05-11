@@ -74,7 +74,7 @@ def _calc_bonds_given_shares_and_rate(
         target_shares = _calc_effective_share_reserves(pool_state)
     return FixedPoint(
         scaled_value=int(
-            hyperdrivepy.calculate_initial_bond_reserves(
+            hyperdrivepy.calculate_bonds_given_effective_shares_and_rate(
                 str(target_shares.scaled_value),
                 str(pool_state.pool_config.initial_vault_share_price.scaled_value),
                 str(target_rate.scaled_value),
