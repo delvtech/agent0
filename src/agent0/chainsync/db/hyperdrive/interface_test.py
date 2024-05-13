@@ -161,7 +161,7 @@ class TestCheckpointInterface:
             add_checkpoint_info(checkpoint_3, db_session)
 
         # Adding a checkpoint info with the same checkpoint time and vault share price should
-        # update the value
+        # update the other values
         checkpoint_4 = CheckpointInfo(
             checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("5.1")
         )
