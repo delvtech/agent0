@@ -140,7 +140,7 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(interfaces, interfaces[0].get_block(block_number), db_session)
+            data_chain_to_db(interfaces, block_number, db_session)
         curr_write_block = latest_mined_block + 1
 
     # Clean up resources on clean exit
