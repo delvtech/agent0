@@ -8,6 +8,7 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -25,14 +26,18 @@ from agent0.hypertypes import (
     ERC4626Target1DeployerContract,
     ERC4626Target2DeployerContract,
     ERC4626Target3DeployerContract,
-    ERC4626Target4DeployerContract,
     FactoryConfig,
     HyperdriveFactoryContract,
     IHyperdriveContract,
+    LPMathContract,
     MockERC4626Contract,
     Options,
     PoolDeployConfig,
 )
+from agent0.hypertypes.types.ERC4626Target0DeployerContract import erc4626target0deployer_bytecode
+from agent0.hypertypes.types.ERC4626Target1DeployerContract import erc4626target1deployer_bytecode
+from agent0.hypertypes.types.ERC4626Target2DeployerContract import erc4626target2deployer_bytecode
+from agent0.hypertypes.types.ERC4626Target3DeployerContract import erc4626target3deployer_bytecode
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -230,12 +235,32 @@ def _deploy_hyperdrive_factory(
         account=deploy_account_addr,
         constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
     )
+
+    lp_math_contract = LPMathContract.deploy(w3=web3, account=deploy_account_addr)
+    # Deploying the target deployer contracts requires linking to the LPMath contract.
+    # We do this by replacing the `linked_str` pattern with address of lp_math_contract.
+    # The `linked_str` pattern is the identifier of the LP Math contract for
+    # "contracts/src/libraries/LPMath.sol"
+    linked_str = "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__"
+    linked_contract_addr = lp_math_contract.address[2:].lower()
+    ERC4626Target0DeployerContract.bytecode = HexBytes(
+        str(erc4626target0deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
+    ERC4626Target1DeployerContract.bytecode = HexBytes(
+        str(erc4626target1deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
+    ERC4626Target2DeployerContract.bytecode = HexBytes(
+        str(erc4626target2deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
+    ERC4626Target3DeployerContract.bytecode = HexBytes(
+        str(erc4626target3deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
+
     core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target0_contract = ERC4626Target0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target1_contract = ERC4626Target1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target2_contract = ERC4626Target2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target3_contract = ERC4626Target3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target4_contract = ERC4626Target4DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     deployer_contract = ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
@@ -246,7 +271,6 @@ def _deploy_hyperdrive_factory(
             target1Deployer=target1_contract.address,
             target2Deployer=target2_contract.address,
             target3Deployer=target3_contract.address,
-            target4Deployer=target4_contract.address,
         ),
     )
     add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(deployer_contract.address)
@@ -421,8 +445,8 @@ def _deploy_and_initialize_hyperdrive_pool(
             f"{min_checkpoint_duration=} and {max_checkpoint_duration=}"
         )
 
-    # There are 5 contracts to deploy, we call deployTarget on all of them
-    for target_index in range(5):
+    # There are 4 contracts to deploy, we call deployTarget on all of them
+    for target_index in range(4):
         deploy_target_function = factory_contract.functions.deployTarget(
             deploymentId=deployment_id,
             deployerCoordinator=deployer_coordinator_address,

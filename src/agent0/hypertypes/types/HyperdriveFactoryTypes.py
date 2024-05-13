@@ -39,6 +39,8 @@ class FactoryConfig:
     maxCheckpointDuration: int
     minPositionDuration: int
     maxPositionDuration: int
+    minCircuitBreakerDelta: int
+    maxCircuitBreakerDelta: int
     minFixedAPR: int
     maxFixedAPR: int
     minTimeStretchAPR: int
@@ -151,6 +153,15 @@ MaxCheckpointDurationUpdated = ABIEvent(
     type="event",
 )
 
+MaxCircuitBreakerDeltaUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMaxCircuitBreakerDelta", type="uint256"),
+    ],
+    name="MaxCircuitBreakerDeltaUpdated",
+    type="event",
+)
+
 MaxFeesUpdated = ABIEvent(
     anonymous=False,
     inputs=[
@@ -193,6 +204,15 @@ MinCheckpointDurationUpdated = ABIEvent(
         ABIEventParams(indexed=False, name="newMinCheckpointDuration", type="uint256"),
     ],
     name="MinCheckpointDurationUpdated",
+    type="event",
+)
+
+MinCircuitBreakerDeltaUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=False, name="newMinCircuitBreakerDelta", type="uint256"),
+    ],
+    name="MinCircuitBreakerDeltaUpdated",
     type="event",
 )
 
@@ -303,6 +323,13 @@ InvalidCheckpointDurationResolutionError = ErrorInfo(
     signature="InvalidCheckpointDurationResolution()",
 )
 
+InvalidCircuitBreakerDeltaError = ErrorInfo(
+    inputs=[],
+    name="InvalidCircuitBreakerDelta",
+    selector="0xef9bc65f",
+    signature="InvalidCircuitBreakerDelta()",
+)
+
 InvalidDeployConfigError = ErrorInfo(
     inputs=[],
     name="InvalidDeployConfig",
@@ -345,6 +372,13 @@ InvalidMaxCheckpointDurationError = ErrorInfo(
     signature="InvalidMaxCheckpointDuration()",
 )
 
+InvalidMaxCircuitBreakerDeltaError = ErrorInfo(
+    inputs=[],
+    name="InvalidMaxCircuitBreakerDelta",
+    selector="0xfdb80c26",
+    signature="InvalidMaxCircuitBreakerDelta()",
+)
+
 InvalidMaxFeesError = ErrorInfo(
     inputs=[],
     name="InvalidMaxFees",
@@ -378,6 +412,13 @@ InvalidMinCheckpointDurationError = ErrorInfo(
     name="InvalidMinCheckpointDuration",
     selector="0x0433acc6",
     signature="InvalidMinCheckpointDuration()",
+)
+
+InvalidMinCircuitBreakerDeltaError = ErrorInfo(
+    inputs=[],
+    name="InvalidMinCircuitBreakerDelta",
+    selector="0x28a2d9a9",
+    signature="InvalidMinCircuitBreakerDelta()",
 )
 
 InvalidMinFeesError = ErrorInfo(

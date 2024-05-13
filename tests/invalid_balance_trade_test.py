@@ -117,7 +117,7 @@ class InvalidOpenShort(HyperdriveBasePolicy):
         # pylint: disable=unused-argument
         action_list = []
         # Opening a short for bonds for more than what I have
-        action_list.append(open_short_trade(FixedPoint(500)))
+        action_list.append(open_short_trade(FixedPoint(50)))
         return action_list, True
 
 

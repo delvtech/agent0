@@ -80,13 +80,14 @@ class TestBotToDb:
         # 2. openLong of 22_222 base
         # 3. openShort of 333 bonds
         # 4. removeLiquidity of all LP tokens
-        # 5. closeLong on long from trade 2
-        # 6. closeShort on short from trade 3
-        # 7. redeemWithdrawalShares of all withdrawal tokens from trade 4
+        # 5. addLiquidity of 111_111 base
+        # 6. closeLong on long from trade 2
+        # 7. closeShort on short from trade 3
+        # 8. redeemWithdrawalShares of all withdrawal tokens from trade 4
         # The bot then runs again, this time for 3 trades:
-        # 8. addLiquidity of 111_111 base
-        # 9. openLong of 22_222 base
-        # 10. openShort of 333 bonds
+        # 9. addLiquidity of 111_111 base
+        # 10. openLong of 22_222 base
+        # 11. openShort of 333 bonds
 
         # Test db entries are what we expect
         # We don't coerce to float because we want exact values in decimal
@@ -115,6 +116,7 @@ class TestBotToDb:
             "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
             "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
             "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
+            "circuit_breaker_delta": _to_unscaled_decimal(FixedPoint("2")),
             "position_duration": 60 * 60 * 24 * 365,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch,
@@ -183,8 +185,8 @@ class TestBotToDb:
         db_wallet_delta: pd.DataFrame = get_wallet_deltas(fast_hyperdrive_fixture.db_session, coerce_float=False)
 
         # Ensure trades exist in database
-        # Should be 10 total transactions
-        expected_number_of_transactions = 10
+        # Should be 11 total transactions
+        expected_number_of_transactions = 11
         assert len(db_transaction_info) == expected_number_of_transactions
         np.testing.assert_array_equal(
             db_transaction_info["input_method"],
@@ -193,6 +195,7 @@ class TestBotToDb:
                 "openLong",
                 "openShort",
                 "removeLiquidity",
+                "addLiquidity",
                 "closeLong",
                 "closeShort",
                 "redeemWithdrawalShares",
@@ -204,7 +207,7 @@ class TestBotToDb:
 
         # 10 total trades in wallet deltas
         assert db_wallet_delta["block_number"].nunique() == expected_number_of_transactions
-        # 21 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
+        # 23 different wallet deltas (2 token deltas per trade except for withdraw shares, which is 3)
         assert len(db_wallet_delta) == 2 * expected_number_of_transactions + 1
 
         actual_num_longs = Decimal("nan")
@@ -216,7 +219,7 @@ class TestBotToDb:
         # or they're comparing values after the lossy conversion
         expected_number_of_deltas = 2
         for _, txn in db_transaction_info.iterrows():
-            # TODO differentiate between the first and second addLiquidity
+            # TODO differentiate between the first, second, and third addLiquidity
             block_number = txn["block_number"]
             if txn["input_method"] == "addLiquidity":
                 assert txn["input_params_contribution"] == Decimal(111_111)
@@ -375,6 +378,6 @@ class TestBotToDb:
         expected_fixed_rate = interface.calc_spot_rate()
 
         assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
-        # Spot price and fixed rate is off by one wei
-        assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("1e-18"))
-        assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("1e-18"))
+        # Spot price and fixed rate is off by two wei
+        assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("2e-18"))
+        assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("2e-18"))

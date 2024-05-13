@@ -16,9 +16,9 @@ from agent0.core.hyperdrive.policies import PolicyZoo
 # pylint: disable=redefined-outer-name
 
 TRADE_AMOUNTS = [0.003, 1e7]  # 0.003 is three times the minimum transaction amount of local test deploy
-# We hit the target rate to the 5th decimal of precision.
-# That means 0.050001324091154488 is close enough to a target rate of 0.05.
-PRECISION = FixedPoint(1e-5)
+# We hit the target rate to the 4th decimal of precision.
+# That means 0.05001324091154488 is close enough to a target rate of 0.05.
+PRECISION = FixedPoint(1e-4)
 YEAR_IN_SECONDS = 31_536_000
 
 # pylint: disable=missing-function-docstring,too-many-statements,logging-fstring-interpolation,missing-return-type-doc

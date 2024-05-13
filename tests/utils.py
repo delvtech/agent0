@@ -72,7 +72,7 @@ def run_with_non_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[Hype
         The policy that we expect to fail.
     """
     agent = in_hyperdrive.init_agent(
-        base=FixedPoint(10),
+        base=FixedPoint(0.001),
         eth=FixedPoint(100),
         policy=in_policy,
         policy_config=in_policy.Config(),

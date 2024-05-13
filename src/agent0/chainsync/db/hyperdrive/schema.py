@@ -39,6 +39,7 @@ class PoolConfig(Base):
     initial_vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     minimum_transaction_amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    circuit_breaker_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     position_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     checkpoint_duration: Mapped[Union[int, None]] = mapped_column(Integer, default=None)
     time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -58,6 +59,8 @@ class CheckpointInfo(Base):
     __tablename__ = "checkpoint_info"
 
     checkpoint_time: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    weighted_spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    last_weighted_spot_price_update_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # TODO we'd like to add the checkpoint id here as a field as well
 

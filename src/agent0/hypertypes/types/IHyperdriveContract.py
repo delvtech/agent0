@@ -48,7 +48,7 @@ from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
 from .IHyperdriveTypes import Checkpoint, Fees, MarketState, Options, PoolConfig, PoolInfo, WithdrawPool
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {
     "Options": Options,
@@ -1303,33 +1303,6 @@ class IHyperdriveTarget3ContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class IHyperdriveTarget4ContractFunction(ContractFunction):
-    """ContractFunction for the target4 method."""
-
-    def __call__(self) -> IHyperdriveTarget4ContractFunction:  # type: ignore
-        clone = super().__call__()
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> str:
-        """returns str."""
-        # Define the expected return types from the smart contract call
-
-        return_types = str
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(structs, return_types, raw_values))
-
-
 class IHyperdriveTotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
@@ -1553,8 +1526,6 @@ class IHyperdriveContractFunctions(ContractFunctions):
     target2: IHyperdriveTarget2ContractFunction
 
     target3: IHyperdriveTarget3ContractFunction
-
-    target4: IHyperdriveTarget4ContractFunction
 
     totalSupply: IHyperdriveTotalSupplyContractFunction
 
@@ -1925,14 +1896,6 @@ class IHyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="target3",
-        )
-        self.target4 = IHyperdriveTarget4ContractFunction.factory(
-            "target4",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="target4",
         )
         self.totalSupply = IHyperdriveTotalSupplyContractFunction.factory(
             "totalSupply",
@@ -3698,6 +3661,63 @@ class IHyperdriveBelowMinimumContributionContractError:
         return decoded
 
 
+class IHyperdriveCircuitBreakerTriggeredContractError:
+    """ContractError for CircuitBreakerTriggered."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IHyperdriveCircuitBreakerTriggeredContractError",
+    ) -> None:
+        self.selector = "0x2a958098"
+        self.signature = "CircuitBreakerTriggered()"
+
+    def decode_error_data(  # type: ignore
+        self: "IHyperdriveCircuitBreakerTriggeredContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ihyperdrive_abi
+                if item.get("name") == "CircuitBreakerTriggered" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IHyperdriveCircuitBreakerTriggeredContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ihyperdrive_abi
+                if item.get("name") == "CircuitBreakerTriggered" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
 class IHyperdriveDecreasedPresentValueWhenAddingLiquidityContractError:
     """ContractError for DecreasedPresentValueWhenAddingLiquidity."""
 
@@ -4191,6 +4211,63 @@ class IHyperdriveInvalidERC20BridgeContractError:
                 item
                 for item in ihyperdrive_abi
                 if item.get("name") == "InvalidERC20Bridge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class IHyperdriveInvalidEffectiveShareReservesContractError:
+    """ContractError for InvalidEffectiveShareReserves."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "IHyperdriveInvalidEffectiveShareReservesContractError",
+    ) -> None:
+        self.selector = "0x85bd2ac4"
+        self.signature = "InvalidEffectiveShareReserves()"
+
+    def decode_error_data(  # type: ignore
+        self: "IHyperdriveInvalidEffectiveShareReservesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ihyperdrive_abi
+                if item.get("name") == "InvalidEffectiveShareReserves" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["IHyperdriveInvalidEffectiveShareReservesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in ihyperdrive_abi
+                if item.get("name") == "InvalidEffectiveShareReserves" and item.get("type") == "error"
             ][0],
         )
         types = get_abi_input_types(error_abi)
@@ -5575,6 +5652,8 @@ class IHyperdriveContractErrors:
 
     BelowMinimumContribution: IHyperdriveBelowMinimumContributionContractError
 
+    CircuitBreakerTriggered: IHyperdriveCircuitBreakerTriggeredContractError
+
     DecreasedPresentValueWhenAddingLiquidity: IHyperdriveDecreasedPresentValueWhenAddingLiquidityContractError
 
     DistributeExcessIdleFailed: IHyperdriveDistributeExcessIdleFailedContractError
@@ -5592,6 +5671,8 @@ class IHyperdriveContractErrors:
     InvalidCheckpointTime: IHyperdriveInvalidCheckpointTimeContractError
 
     InvalidERC20Bridge: IHyperdriveInvalidERC20BridgeContractError
+
+    InvalidEffectiveShareReserves: IHyperdriveInvalidEffectiveShareReservesContractError
 
     InvalidFeeDestination: IHyperdriveInvalidFeeDestinationContractError
 
@@ -5648,6 +5729,7 @@ class IHyperdriveContractErrors:
     ) -> None:
         self.BatchInputLengthMismatch = IHyperdriveBatchInputLengthMismatchContractError()
         self.BelowMinimumContribution = IHyperdriveBelowMinimumContributionContractError()
+        self.CircuitBreakerTriggered = IHyperdriveCircuitBreakerTriggeredContractError()
         self.DecreasedPresentValueWhenAddingLiquidity = (
             IHyperdriveDecreasedPresentValueWhenAddingLiquidityContractError()
         )
@@ -5659,6 +5741,7 @@ class IHyperdriveContractErrors:
         self.InvalidApr = IHyperdriveInvalidAprContractError()
         self.InvalidCheckpointTime = IHyperdriveInvalidCheckpointTimeContractError()
         self.InvalidERC20Bridge = IHyperdriveInvalidERC20BridgeContractError()
+        self.InvalidEffectiveShareReserves = IHyperdriveInvalidEffectiveShareReservesContractError()
         self.InvalidFeeDestination = IHyperdriveInvalidFeeDestinationContractError()
         self.InvalidInitialVaultSharePrice = IHyperdriveInvalidInitialVaultSharePriceContractError()
         self.InvalidLPSharePrice = IHyperdriveInvalidLPSharePriceContractError()
@@ -5688,6 +5771,7 @@ class IHyperdriveContractErrors:
         self._all = [
             self.BatchInputLengthMismatch,
             self.BelowMinimumContribution,
+            self.CircuitBreakerTriggered,
             self.DecreasedPresentValueWhenAddingLiquidity,
             self.DistributeExcessIdleFailed,
             self.ExpInvalidExponent,
@@ -5697,6 +5781,7 @@ class IHyperdriveContractErrors:
             self.InvalidApr,
             self.InvalidCheckpointTime,
             self.InvalidERC20Bridge,
+            self.InvalidEffectiveShareReserves,
             self.InvalidFeeDestination,
             self.InvalidInitialVaultSharePrice,
             self.InvalidLPSharePrice,
@@ -5888,7 +5973,11 @@ ihyperdrive_abi: ABI = cast(
                     "name": "",
                     "type": "tuple",
                     "internalType": "struct IHyperdrive.Checkpoint",
-                    "components": [{"name": "vaultSharePrice", "type": "uint128", "internalType": "uint128"}],
+                    "components": [
+                        {"name": "weightedSpotPrice", "type": "uint128", "internalType": "uint128"},
+                        {"name": "lastWeightedSpotPriceUpdateTime", "type": "uint128", "internalType": "uint128"},
+                        {"name": "vaultSharePrice", "type": "uint128", "internalType": "uint128"},
+                    ],
                 }
             ],
             "stateMutability": "view",
@@ -5944,6 +6033,7 @@ ihyperdrive_abi: ABI = cast(
                         {"name": "initialVaultSharePrice", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumShareReserves", "type": "uint256", "internalType": "uint256"},
                         {"name": "minimumTransactionAmount", "type": "uint256", "internalType": "uint256"},
+                        {"name": "circuitBreakerDelta", "type": "uint256", "internalType": "uint256"},
                         {"name": "positionDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "checkpointDuration", "type": "uint256", "internalType": "uint256"},
                         {"name": "timeStretch", "type": "uint256", "internalType": "uint256"},
@@ -6320,13 +6410,6 @@ ihyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "target4",
-            "inputs": [],
-            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
-            "stateMutability": "view",
-        },
-        {
-            "type": "function",
             "name": "totalSupply",
             "inputs": [{"name": "tokenId", "type": "uint256", "internalType": "uint256"}],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
@@ -6583,6 +6666,7 @@ ihyperdrive_abi: ABI = cast(
         },
         {"type": "error", "name": "BatchInputLengthMismatch", "inputs": []},
         {"type": "error", "name": "BelowMinimumContribution", "inputs": []},
+        {"type": "error", "name": "CircuitBreakerTriggered", "inputs": []},
         {"type": "error", "name": "DecreasedPresentValueWhenAddingLiquidity", "inputs": []},
         {"type": "error", "name": "DistributeExcessIdleFailed", "inputs": []},
         {"type": "error", "name": "ExpInvalidExponent", "inputs": []},
@@ -6592,6 +6676,7 @@ ihyperdrive_abi: ABI = cast(
         {"type": "error", "name": "InvalidApr", "inputs": []},
         {"type": "error", "name": "InvalidCheckpointTime", "inputs": []},
         {"type": "error", "name": "InvalidERC20Bridge", "inputs": []},
+        {"type": "error", "name": "InvalidEffectiveShareReserves", "inputs": []},
         {"type": "error", "name": "InvalidFeeDestination", "inputs": []},
         {"type": "error", "name": "InvalidInitialVaultSharePrice", "inputs": []},
         {"type": "error", "name": "InvalidLPSharePrice", "inputs": []},
@@ -6627,7 +6712,7 @@ class IHyperdriveContract(Contract):
     """A web3.py Contract class for the IHyperdrive contract."""
 
     abi: ABI = ihyperdrive_abi
-    bytecode: bytes = HexBytes(ihyperdrive_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(ihyperdrive_bytecode, "ihyperdrive")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

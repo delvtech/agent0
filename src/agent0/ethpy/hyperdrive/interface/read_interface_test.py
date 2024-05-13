@@ -61,10 +61,10 @@ class TestHyperdriveReadInterface:
         time_stretch: FixedPoint = pool_config.time_stretch
         # get pool info variables
         pool_info = hyperdrive_read_interface_fixture.current_pool_state.pool_info
-        share_reserves: FixedPoint = pool_info.share_reserves
+        effective_share_reserves: FixedPoint = hyperdrive_read_interface_fixture.calc_effective_share_reserves()
         bond_reserves: FixedPoint = pool_info.bond_reserves
         # test spot price
-        spot_price = ((init_vault_share_price * share_reserves) / bond_reserves) ** time_stretch
+        spot_price = ((init_vault_share_price * effective_share_reserves) / bond_reserves) ** time_stretch
         assert abs(spot_price - hyperdrive_read_interface_fixture.calc_spot_price()) <= FixedPoint(1e-18)
         # test fixed rate (rounding issues can cause it to be off by 1e-18)
         # TODO: This should be exact up to 1e-18, but is not
@@ -156,23 +156,35 @@ class TestHyperdriveReadInterface:
     def test_bonds_given_shares_and_rate(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
         # get pool state so we can modify them to run what-if scenarios
-        pool_state = deepcopy(hyperdrive_read_interface_fixture.current_pool_state)
-        pool_info = pool_state.pool_info
+        initial_pool_state = hyperdrive_read_interface_fixture.current_pool_state
+        initial_pool_info = initial_pool_state.pool_info
+        mut_pool_state = deepcopy(hyperdrive_read_interface_fixture.current_pool_state)
+
+        # Use current pool_state to compare against existing bonds
+        test_bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=hyperdrive_read_interface_fixture.calc_spot_rate(initial_pool_state),
+            pool_state=initial_pool_state,
+        )
+        assert abs(initial_pool_info.bond_reserves - test_bond_reserves) <= FixedPoint(1e-13)
 
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
-        pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
-            target_rate=target_apr
+        new_bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=target_apr,
+            pool_state=initial_pool_state,
         )
-        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
+
+        mut_pool_state.pool_info.bond_reserves = new_bond_reserves
+        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=mut_pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
-        pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
-            target_rate=target_apr
+        mut_pool_state.pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=target_apr,
+            pool_state=initial_pool_state,
         )
-        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
+        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=mut_pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
     def test_deployed_values(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
@@ -194,6 +206,7 @@ class TestHyperdriveReadInterface:
             "initial_vault_share_price": FixedPoint("1"),
             "minimum_share_reserves": FixedPoint("10"),
             "minimum_transaction_amount": FixedPoint("0.001"),
+            "circuit_breaker_delta": FixedPoint("2"),
             "position_duration": 60 * 60 * 24 * 365,  # 1 year
             "checkpoint_duration": 3600,  # 1 hour
             "time_stretch": expected_timestretch_fp,
