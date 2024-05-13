@@ -203,7 +203,7 @@ def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     actual_delta_user_bonds = list(agent.agent.wallet.longs.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     # TODO fix tolerance
-    #
+    # https://github.com/delvtech/agent0/issues/1357
     assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-2"))
 
     bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
