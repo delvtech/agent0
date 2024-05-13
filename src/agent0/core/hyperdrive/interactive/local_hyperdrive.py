@@ -18,20 +18,12 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 from IPython.display import IFrame
-from sqlalchemy_utils.functions import drop_database
 from web3._utils.threads import Timeout
 from web3.exceptions import TimeExhausted
 
-from agent0.chainsync import PostgresConfig
 from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import (
-    add_addr_to_username,
-    get_addr_to_username,
-    get_username_to_user,
-    initialize_session,
-)
+from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
 from agent0.chainsync.db.hyperdrive import get_checkpoint_info
 from agent0.chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from agent0.chainsync.db.hyperdrive import (
@@ -39,20 +31,15 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
-    get_positions_from_db,
     get_ticker,
     get_total_wallet_pnl_over_time,
-    get_trade_events,
     get_wallet_deltas,
-    get_wallet_pnl,
-    trade_events_to_db,
+    get_wallet_pnl
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
-from agent0.core.base import Quantity, TokenType
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, HyperdriveWallet, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
-from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
@@ -61,7 +48,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
-    encode_asset_id,
+    encode_asset_id
 )
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -73,7 +60,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity,
+    RemoveLiquidity
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
@@ -257,16 +244,6 @@ class LocalHyperdrive(Hyperdrive):
         # for the data pipeline
         self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
 
-        # Make a copy of the dataclass to avoid changing the base class
-        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
-        # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
-
-        # Store the db_id here for later reference
-        self._db_name = self.postgres_config.POSTGRES_DB
-
-        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
-
         # Keep track of how much base have been minted per agent
         self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
 
@@ -440,26 +417,14 @@ class LocalHyperdrive(Hyperdrive):
         if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
 
-        self.db_session.close()
-
-        # We drop the database attached to this pool on cleanup
-        if drop_data:
-            drop_database(self.postgres_config.create_url_obj())
+        super()._cleanup(drop_data)
 
         if self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
             self.dashboard_subprocess = None
 
-    def __del__(self):
-        # Attempt to close the session
-        # These functions will raise errors if the session is already closed
-        try:
-            self._cleanup()
-        # Never throw exception in destructor
-        except Exception:  # pylint: disable=broad-except
-            pass
-
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
+    # This is used to allow chain's `advance_time` function to return this object as a key.
     def __hash__(self):
         """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
         return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
@@ -1101,57 +1066,19 @@ class LocalHyperdrive(Hyperdrive):
         return agent
 
     def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
-        # Update the db with this wallet
+        # Update the db
+        # Note that local hyperdrive always updates events with all wallets
         # TODO this function can be optimized to cache.
-        trade_events_to_db([self.interface], agent.checksum_address, self.db_session)
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
-        self._sync_events(agent)
-
-        # Query for the wallet object from the db
-        wallet_positions = get_positions_from_db(
-            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
-        )
-        # Convert to hyperdrive wallet object
-        long_obj: dict[int, Long] = {}
-        short_obj: dict[int, Short] = {}
-        lp_balance: FixedPoint = FixedPoint(0)
-        withdrawal_shares_balance: FixedPoint = FixedPoint(0)
-        for _, row in wallet_positions.iterrows():
-            # Sanity checks
-            assert row["hyperdrive_address"] == self.interface.hyperdrive_address
-            assert row["wallet_address"] == agent.checksum_address
-            if row["token_id"] == "LP":
-                lp_balance = FixedPoint(row["balance"])
-            elif row["token_id"] == "WITHDRAWAL_SHARE":
-                withdrawal_shares_balance = FixedPoint(row["balance"])
-            elif "LONG" in row["token_id"]:
-                maturity_time = int(row["token_id"].split("-")[1])
-                long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
-            elif "SHORT" in row["token_id"]:
-                maturity_time = int(row["token_id"].split("-")[1])
-                short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
-
-        # We do a balance of call to get base balance.
-        base_balance = FixedPoint(
-            scaled_value=self.interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
-        )
-
-        return HyperdriveWallet(
-            address=HexBytes(agent.checksum_address),
-            balance=Quantity(
-                amount=base_balance,
-                unit=TokenType.BASE,
-            ),
-            lp_tokens=lp_balance,
-            withdraw_shares=withdrawal_shares_balance,
-            longs=long_obj,
-            shorts=short_obj,
-        )
-
-    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
-        self._sync_events(agent)
-        return get_trade_events(self.db_session, agent.checksum_address)
+        # NOTE the way we sync the events table is by either looking at (1) the latest
+        # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
+        # table, based on if we're updating the table with all wallets or just a single wallet.
+        # This means we can't swap back and forth, as we can miss events if we e.g.,
+        # sync on all wallets then sync on a single wallet. Hence, we add a bookeeping variable
+        # to ensure that once we call syncing on all wallets (set in local_hyperdrive's _sync_events),
+        # we can't sync on individual wallets anymore.
+        self._sync_events_on_all_wallets = True
+        super()._sync_events(agent)
 
     def _add_funds(
         self,

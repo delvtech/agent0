@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, Literal, Type, overload
 
 import nest_asyncio
@@ -14,9 +14,15 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from numpy.random._generator import Generator
+from sqlalchemy_utils.functions import drop_database
 from web3 import Web3
 
+from agent0.chainsync import PostgresConfig
+from agent0.chainsync.db.base import initialize_session
+from agent0.chainsync.db.hyperdrive import get_positions_from_db, get_trade_events, trade_events_to_db
+from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
     HyperdriveActionType,
     HyperdrivePolicyAgent,
@@ -26,7 +32,6 @@ from agent0.core.hyperdrive import (
 )
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
-    build_wallet_positions_from_chain,
     close_long_trade,
     close_short_trade,
     open_long_trade,
@@ -34,6 +39,7 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
+from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
@@ -187,6 +193,32 @@ class Hyperdrive:
 
         self.chain = chain
 
+        # Set up postgres connection
+
+        # Make a copy of the dataclass to avoid changing the base class
+        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
+        # Update the database field to use a unique name for this pool using the hyperdrive contract address
+        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
+        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
+        self._db_name = self.postgres_config.POSTGRES_DB
+
+        self._sync_events_on_all_wallets = False
+
+    def _cleanup(self, drop_data: bool = False):
+        self.db_session.close()
+        # We drop the database attached to this pool on cleanup
+        if drop_data:
+            drop_database(self.postgres_config.create_url_obj())
+
+    def __del__(self):
+        # Attempt to close the session
+        # These functions will raise errors if the session is already closed
+        try:
+            self._cleanup()
+        # Never throw exception in destructor
+        except Exception:  # pylint: disable=broad-except
+            pass
+
     def init_agent(
         self,
         private_key: str,
@@ -252,14 +284,69 @@ class Hyperdrive:
             str(self.interface.hyperdrive_contract.address),
         )
 
+    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
+        # Update the db with this wallet
+        # Note that remote hyperdrive only updates the wallet wrt the agent itself.
+        # TODO this function can be optimized to cache.
+
+        # NOTE the way we sync the events table is by either looking at (1) the latest
+        # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
+        # table, based on if we're updating the table with all wallets or just a single wallet.
+        # This means we can't swap back and forth, as we can miss events if we e.g.,
+        # sync on all wallets then sync on a single wallet. Hence, we add a bookeeping variable
+        # to ensure that once we call syncing on all wallets (set in local_hyperdrive's _sync_events),
+        # we can't sync on individual wallets anymore.
+        if self._sync_events_on_all_wallets:
+            trade_events_to_db([self.interface], wallet_addr=None, db_session=self.db_session)
+        else:
+            trade_events_to_db([self.interface], wallet_addr=agent.checksum_address, db_session=self.db_session)
+
     def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
-        # TODO move the db to the chain class and use it here
-        # to get wallets
-        return build_wallet_positions_from_chain(agent, self.interface)
+        self._sync_events(agent)
+        # Query for the wallet object from the db
+        wallet_positions = get_positions_from_db(
+            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
+        )
+        # Convert to hyperdrive wallet object
+        long_obj: dict[int, Long] = {}
+        short_obj: dict[int, Short] = {}
+        lp_balance: FixedPoint = FixedPoint(0)
+        withdrawal_shares_balance: FixedPoint = FixedPoint(0)
+        for _, row in wallet_positions.iterrows():
+            # Sanity checks
+            assert row["hyperdrive_address"] == self.interface.hyperdrive_address
+            assert row["wallet_address"] == agent.checksum_address
+            if row["token_id"] == "LP":
+                lp_balance = FixedPoint(row["balance"])
+            elif row["token_id"] == "WITHDRAWAL_SHARE":
+                withdrawal_shares_balance = FixedPoint(row["balance"])
+            elif "LONG" in row["token_id"]:
+                maturity_time = int(row["token_id"].split("-")[1])
+                long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+            elif "SHORT" in row["token_id"]:
+                maturity_time = int(row["token_id"].split("-")[1])
+                short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+
+        # We do a balance of call to get base balance.
+        base_balance = FixedPoint(
+            scaled_value=self.interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
+        )
+
+        return HyperdriveWallet(
+            address=HexBytes(agent.checksum_address),
+            balance=Quantity(
+                amount=base_balance,
+                unit=TokenType.BASE,
+            ),
+            lp_tokens=lp_balance,
+            withdraw_shares=withdrawal_shares_balance,
+            longs=long_obj,
+            shorts=short_obj,
+        )
 
     def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
-        # TODO move the db to the chain class and use it here to get events
-        raise NotImplementedError
+        self._sync_events(agent)
+        return get_trade_events(self.db_session, agent.checksum_address)
 
     def _add_funds(
         self,

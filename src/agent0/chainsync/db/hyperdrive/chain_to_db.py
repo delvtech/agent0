@@ -1,5 +1,7 @@
 """Functions for gathering data from the chain and adding it to the db"""
 
+from __future__ import annotations
+
 from dataclasses import asdict
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -9,7 +11,7 @@ import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
-from web3.types import BlockData, EventData
+from web3.types import EventData
 
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.base import fetch_contract_transactions_for_block
@@ -139,7 +141,7 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
 # pylint: disable=too-many-locals
 def trade_events_to_db(
     interfaces: list[HyperdriveReadInterface],
-    wallet_addr: str,
+    wallet_addr: str | None,
     db_session: Session,
 ) -> None:
     """Function to query trade events from all pools and add them to the db.
@@ -148,8 +150,8 @@ def trade_events_to_db(
     ---------
     interfaces: list[HyperdriveReadInterface]
         A collection of Hyperdrive interface objects, each connected to a pool.
-    wallet_addr: str
-        The wallet address to query.
+    wallet_addr: str | None
+        The wallet address to query. If None, will not filter events by wallet addr.
     db_session: Session
         The database session.
     """
@@ -165,59 +167,75 @@ def trade_events_to_db(
     all_events = []
 
     for interface in interfaces:
-        events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-            fromBlock=from_block,
-            argument_filters={"to": wallet_addr},
-        )
-        # Change events from attribute dict to dictionary
-        all_events.extend([_event_data_to_dict(event) for event in events])
+        # Look for transfer single events in both directions if wallet_addr is set
+        if wallet_addr is not None:
+            events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
+                fromBlock=from_block,
+                argument_filters={"to": wallet_addr},
+            )
+            # Change events from attribute dict to dictionary
+            all_events.extend([_event_data_to_dict(event) for event in events])
 
-        events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-            fromBlock=from_block,
-            argument_filters={"from": wallet_addr},
-        )
-        all_events.extend([_event_data_to_dict(event) for event in events])
+            events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
+                fromBlock=from_block,
+                argument_filters={"from": wallet_addr},
+            )
+            all_events.extend([_event_data_to_dict(event) for event in events])
+        # Otherwise, don't filter by wallet
+        else:
+            events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
+                fromBlock=from_block,
+            )
+            # Change events from attribute dict to dictionary
+            all_events.extend([_event_data_to_dict(event) for event in events])
+
+        if wallet_addr is not None:
+            trader_arg_filter = {"trader": wallet_addr}
+            provider_arg_filter = {"provider": wallet_addr}
+        else:
+            trader_arg_filter = None
+            provider_arg_filter = None
 
         # Hyperdrive events
         events = interface.hyperdrive_contract.events.OpenLong.get_logs(
             fromBlock=from_block,
-            argument_filters={"trader": wallet_addr},
+            argument_filters=trader_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.CloseLong.get_logs(
             fromBlock=from_block,
-            argument_filters={"trader": wallet_addr},
+            argument_filters=trader_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.OpenShort.get_logs(
             fromBlock=from_block,
-            argument_filters={"trader": wallet_addr},
+            argument_filters=trader_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.CloseShort.get_logs(
             fromBlock=from_block,
-            argument_filters={"trader": wallet_addr},
+            argument_filters=trader_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.AddLiquidity.get_logs(
             fromBlock=from_block,
-            argument_filters={"provider": wallet_addr},
+            argument_filters=provider_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.RemoveLiquidity.get_logs(
             fromBlock=from_block,
-            argument_filters={"provider": wallet_addr},
+            argument_filters=provider_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
         events = interface.hyperdrive_contract.events.RedeemWithdrawalShares.get_logs(
             fromBlock=from_block,
-            argument_filters={"provider": wallet_addr},
+            argument_filters=provider_arg_filter,
         )
         all_events.extend([_event_data_to_dict(event) for event in events])
 
@@ -273,8 +291,27 @@ def trade_events_to_db(
             + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
         )
 
-        # Set the trader of this transfer
-        transfer_events_df["trader"] = wallet_addr
+        # If the wallet address is set, set the event wrt the trader
+        if wallet_addr is not None:
+            # Set the trader of this transfer
+            transfer_events_df["trader"] = wallet_addr
+
+            # See if it's a receive or send of tokens
+            send_idx = transfer_events_df["from"] == wallet_addr
+            receive_idx = transfer_events_df["to"] == wallet_addr
+            # Set the token delta based on send or receive
+            transfer_events_df.loc[send_idx, "token_delta"] = -transfer_events_df.loc[send_idx, "value"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+            transfer_events_df.loc[receive_idx, "token_delta"] = transfer_events_df.loc[receive_idx, "value"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+        # If the wallet address is not set, ensure it's not a mint or burn, then add two rows
+        # wrt both traders
+        else:
+            # TODO need to implement transfers to test this case
+            # We raise not implemented for now
+            raise NotImplementedError("Not implemented for wallet_addr=None")
 
         # See if it's a receive or send of tokens
         send_idx = transfer_events_df["from"] == wallet_addr
