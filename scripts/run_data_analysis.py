@@ -22,5 +22,5 @@ if __name__ == "__main__":
         # TODO ideally would gather this from the deployer
         start_block=48,
         rpc_uri=rpc_uri,
-        hyperdrive_address=hyperdrive_addr,
+        hyperdrive_addresses=[hyperdrive_addr],
     )

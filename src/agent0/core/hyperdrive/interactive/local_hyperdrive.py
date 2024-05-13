@@ -421,14 +421,14 @@ class LocalHyperdrive(Hyperdrive):
 
         acquire_data(
             start_block=start_block,  # Start block is the block hyperdrive was deployed
-            interface=self.interface,
+            interfaces=[self.interface],
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
         )
         data_analysis(
             start_block=start_block,
-            interface=self.interface,
+            interfaces=[self.interface],
             db_session=self.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,

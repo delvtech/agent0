@@ -29,9 +29,9 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-branches
 def data_analysis(
     start_block: int = 0,
-    interface: HyperdriveReadInterface | None = None,
+    interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
-    hyperdrive_address: ChecksumAddress | None = None,
+    hyperdrive_addresses: list[ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
     exit_on_catch_up: bool = False,
@@ -45,15 +45,15 @@ def data_analysis(
     ---------
     start_block: int
         The starting block to filter the query on
-    interface: HyperdriveReadInterface | None, optional
-        An initialized HyperdriveReadInterface object. If not set, will initialize one based on
-        rpc_uri and hyperdrive_address.
+    interfaces: list[HyperdriveReadInterface] | None, optional
+        A collection of Hyperdrive interface objects, each connected to a pool.
+        If not set, will initialize one based on rpc_uri and hyperdrive_address.
     rpc_uri: str, optional
         The URI for the web3 provider to initialize the interface with. Not used if an interface
         is provided.
-    hyperdrive_address: ChecksumAddress | None, optional
-        The address of the hyperdrive contract to initialize the interface with. Not used if
-        an interface is provided.
+    hyperdrive_addresses: list[ChecksumAddress] | None, optional
+        A collection of Hyperdrive address, each pointing to an initialized pool.
+        Not used if a list of interfaces is provided.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres.env.
@@ -73,10 +73,14 @@ def data_analysis(
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization
-    if interface is None:
-        if hyperdrive_address is None or rpc_uri is None:
+    if interfaces is None:
+        if hyperdrive_addresses is None or rpc_uri is None:
+            # TODO when we start deploying the registry, this case should look for existing
+            # pools in the registry and use those.
             raise ValueError("hyperdrive_address and rpc_uri must be provided if not providing interface")
-        interface = HyperdriveReadInterface(hyperdrive_address, rpc_uri)
+        interfaces = [
+            HyperdriveReadInterface(hyperdrive_address, rpc_uri) for hyperdrive_address in hyperdrive_addresses
+        ]
 
     # postgres session
     db_session_init = False
@@ -128,7 +132,7 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, interface, calc_pnl)
+        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, interfaces, calc_pnl)
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
