@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from agent0.chainsync.db.hyperdrive import (
     CurrentWallet,
     PoolAnalysis,
+    PositionSnapshot,
     Ticker,
-    WalletPNL,
     get_checkpoint_info,
     get_current_wallet,
     get_pool_info,
@@ -188,7 +188,7 @@ def data_to_analysis(
             # TODO do scaling tests to see the limit of this
             wallet_pnl["pnl"] = pnl_df
             # Add wallet_pnl to the database
-            df_to_db(wallet_pnl, WalletPNL, db_session)
+            df_to_db(wallet_pnl, PositionSnapshot, db_session)
 
             # Build ticker from wallet delta
             transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)

@@ -18,7 +18,7 @@ from hexbytes import HexBytes
 from numpy.random._generator import Generator
 from web3 import Web3
 
-from agent0.chainsync.db.hyperdrive import get_positions_from_db, get_trade_events, trade_events_to_db
+from agent0.chainsync.db.hyperdrive import get_current_positions, get_trade_events, trade_events_to_db
 from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
     HyperdriveActionType,
@@ -286,7 +286,7 @@ class Hyperdrive:
     def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)
         # Query for the wallet object from the db
-        wallet_positions = get_positions_from_db(
+        wallet_positions = get_current_positions(
             self.chain.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
         )
         # Convert to hyperdrive wallet object

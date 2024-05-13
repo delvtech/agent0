@@ -1062,12 +1062,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
-            db_balances = chainsync_get_current_wallet(
-                self.chain.db_session, wallet_address=[agent.checksum_address], coerce_float=False
-            )
-            agent.agent.wallet = build_wallet_positions_from_db(
-                agent.checksum_address, db_balances, self.interface.base_token_contract
-            )
+            agent.agent.wallet = self._get_positions(agent.agent)
 
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         """Saves the policy state to file.

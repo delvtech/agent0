@@ -14,8 +14,8 @@ from .interface import (
     add_current_wallet,
     add_pool_config,
     add_pool_infos,
+    add_trade_events,
     add_transactions,
-    add_transfer_events,
     add_wallet_deltas,
     get_all_traders,
     get_checkpoint_info,
@@ -431,14 +431,14 @@ class TestHyperdriveEventsInterface:
     def test_latest_block_number(self, db_session):
         """Testing retrieval of wallet info via interface"""
         transfer_event = TradeEvent(block_number=1, hyperdrive_address="a", transaction_hash="a", wallet_address="a")
-        add_transfer_events([transfer_event], db_session)
+        add_trade_events([transfer_event], db_session)
 
         latest_block_number = get_latest_block_number_from_trade_event(db_session, "a")
         assert latest_block_number == 1
 
         transfer_event_1 = TradeEvent(block_number=2, hyperdrive_address="a", transaction_hash="a", wallet_address="a")
         transfer_event_2 = TradeEvent(block_number=3, hyperdrive_address="a", transaction_hash="a", wallet_address="b")
-        add_transfer_events([transfer_event_1, transfer_event_2], db_session)
+        add_trade_events([transfer_event_1, transfer_event_2], db_session)
         latest_block_number = get_latest_block_number_from_trade_event(db_session, "a")
         assert latest_block_number == 2
         latest_block_number = get_latest_block_number_from_trade_event(db_session, "b")

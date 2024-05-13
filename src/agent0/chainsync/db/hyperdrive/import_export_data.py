@@ -37,10 +37,10 @@ from .schema import (
     PoolAnalysis,
     PoolConfig,
     PoolInfo,
+    PositionSnapshot,
     Ticker,
     TradeEvent,
     WalletDelta,
-    WalletPNL,
 )
 
 
@@ -169,7 +169,7 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
         db_session.query(PoolAnalysis).delete()
         db_session.query(CurrentWallet).delete()
         db_session.query(Ticker).delete()
-        db_session.query(WalletPNL).delete()
+        db_session.query(PositionSnapshot).delete()
         try:
             db_session.commit()
         except exc.DataError as err:
@@ -189,4 +189,4 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
     df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
     df_to_db(out["current_wallet"], CurrentWallet, db_session)
     df_to_db(out["ticker"], Ticker, db_session)
-    df_to_db(out["wallet_pnl"], WalletPNL, db_session)
+    df_to_db(out["wallet_pnl"], PositionSnapshot, db_session)
