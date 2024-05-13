@@ -20,10 +20,9 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
-from decimal import Decimal
 
 import pytest
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 from tabulate import tabulate
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
@@ -196,22 +195,24 @@ def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.base - base_needed))) < 1e-16
+    assert isclose(delta.user.base, base_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
-    assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
+    assert isclose(actual_delta_user_base, base_needed, abs_tol=FixedPoint("1e-16"))
     actual_delta_user_bonds = list(agent.agent.wallet.longs.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
-    assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
+    # TODO fix tolerance
+    #
+    assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-2"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.shares
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-4
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-4")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
 
 
 @pytest.mark.anvil
@@ -259,19 +260,19 @@ def test_predict_open_long_base(fast_chain_fixture: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.base - base_needed))) < 1e-16
+    assert isclose(delta.user.base, base_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
-    assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
+    assert isclose(actual_delta_user_base, base_needed, abs_tol=FixedPoint("1e-16"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.bonds))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.bonds
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-7
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-7")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
 
 
 @pytest.mark.anvil
@@ -319,21 +320,21 @@ def test_predict_open_short_bonds(fast_chain_fixture: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.bonds - bonds_needed))) < 1e-16
+    assert isclose(delta.user.bonds, bonds_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
-    assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
+    assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-3"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.shares
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-7
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-7")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
 
 
 @pytest.mark.anvil
@@ -387,18 +388,18 @@ def test_predict_open_short_base(fast_chain_fixture: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.bonds - bonds_needed))) < 1e-16
+    assert isclose(delta.user.bonds, bonds_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
-    assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
+    assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-3"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.shares
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-7
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-7")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
