@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import logging
 import os
 import subprocess
 import time
@@ -13,14 +12,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dill
-import docker
-from docker.errors import NotFound
-from docker.models.containers import Container
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from web3.types import RPCEndpoint
 
-from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 
@@ -51,13 +46,6 @@ class LocalChain(Chain):
         """The port to bind for the anvil chain. Will fail if this port is being used."""
         transaction_block_keeper: int = 10_000
         """The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here."""
-        db_port: int = 5433
-        """
-        The port to bind for the postgres container. Will fail if this port is being used.
-        Defaults to 5433.
-        """
-        remove_existing_db_container: bool = True
-        """Whether to remove the existing container if it exists on container launch. Defaults to True."""
         snapshot_dir: str = ".interactive_state/snapshot/"
         """The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`."""
         saved_state_dir: str = ".interactive_state/"
@@ -112,14 +100,6 @@ class LocalChain(Chain):
 
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
 
-        # Remove protocol and replace . and : with dashes
-        self.chain_id = self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
-        db_container_name = f"postgres-interactive-hyperdrive-{self.chain_id}"
-        self.postgres_config, self.postgres_container = self._initialize_postgres_container(
-            db_container_name, config.db_port, config.remove_existing_db_container
-        )
-        assert isinstance(self.postgres_container, Container)
-
         # Snapshot bookkeeping
         # TODO snapshot dir will be clobbered if you run multiple chains simultaneously
         self._snapshot_dir = config.snapshot_dir
@@ -142,10 +122,6 @@ class LocalChain(Chain):
         # Runs cleanup on all deployed pools
         for pool in self._deployed_hyperdrive_pools:
             pool._cleanup()  # pylint: disable=protected-access
-        try:
-            self.postgres_container.kill()
-        except Exception:  # pylint: disable=broad-except
-            pass
         self.anvil_process.kill()
         super().cleanup()
 
@@ -455,70 +431,6 @@ class LocalChain(Chain):
             pool._load_policy_state(self._snapshot_dir)  # pylint: disable=protected-access
 
         self.save_snapshot()
-
-    def _initialize_postgres_container(
-        self, container_name: str, db_port: int, remove_existing_db_container: bool
-    ) -> tuple[PostgresConfig, Container]:
-        # Attempt to use the default socket if it exists
-        try:
-            client = docker.from_env()
-        except Exception:  # pylint: disable=broad-exception-caught
-            home_dir = os.path.expanduser("~")
-            socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
-            if socket_path.exists():
-                logging.debug("Docker not found at default socket, using %s..", socket_path)
-                client = docker.DockerClient(base_url=f"unix://{socket_path}")
-            else:
-                logging.debug("Docker not found.")
-                client = docker.from_env()
-
-        postgres_config = PostgresConfig(
-            POSTGRES_USER="admin",
-            POSTGRES_PASSWORD="password",
-            POSTGRES_DB="",  # Filled in by the pool as needed
-            POSTGRES_HOST="127.0.0.1",
-            POSTGRES_PORT=db_port,
-        )
-
-        # Kill the test container if it already exists
-        try:
-            existing_container = client.containers.get(container_name)
-            assert isinstance(existing_container, Container)
-        except NotFound:
-            # Container doesn't exist, ignore
-            existing_container = None
-
-        # There's a race condition here where the container gets removed between
-        # checking the container and attempting to remove it.
-        # Hence, we ignore any errors from attempting to remove
-
-        if existing_container is not None and remove_existing_db_container:
-            exception = None
-            for _ in range(5):
-                try:
-                    existing_container.remove(v=True, force=True)
-                    break
-                except Exception as e:  # pylint: disable=broad-except
-                    exception = e
-            if exception is not None:
-                logging.warning("Failed to remove existing container: %s", repr(exception))
-
-        # TODO ensure this container auto removes by itself
-        container = client.containers.run(
-            image="postgres",
-            auto_remove=True,
-            environment={
-                "POSTGRES_USER": postgres_config.POSTGRES_USER,
-                "POSTGRES_PASSWORD": postgres_config.POSTGRES_PASSWORD,
-            },
-            name=container_name,
-            ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
-            detach=True,
-            remove=True,
-        )
-        assert isinstance(container, Container)
-
-        return postgres_config, container
 
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         self._deployed_hyperdrive_pools.append(pool)
