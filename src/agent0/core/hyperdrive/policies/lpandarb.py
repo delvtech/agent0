@@ -270,9 +270,7 @@ def calc_delta_reserves_for_target_rate(
     """
     divisor = FixedPoint(2)
     trade_delta_bonds = FixedPoint(0)
-    target_bonds = interface.calc_bonds_given_shares_and_rate(
-        target_rate=target_rate, target_shares=pool_state.pool_info.share_reserves, pool_state=pool_state
-    )
+    target_bonds = interface.calc_bonds_given_shares_and_rate(target_rate=target_rate, pool_state=pool_state)
     avoid_negative_share_reserves = False
     # We want to take as large of a step as possible while avoiding negative share reserves.
     # So we loop through, increasing the divisor until the share reserves are no longer negative.
