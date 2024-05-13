@@ -186,7 +186,6 @@ class TestHyperdriveReadInterface:
         )
         fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=mut_pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
-        pass
 
     def test_deployed_values(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Test the hyperdrive interface versus expected values."""
