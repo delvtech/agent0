@@ -445,7 +445,7 @@ def _deploy_and_initialize_hyperdrive_pool(
             f"{min_checkpoint_duration=} and {max_checkpoint_duration=}"
         )
 
-    # There are 5 contracts to deploy, we call deployTarget on all of them
+    # There are 4 contracts to deploy, we call deployTarget on all of them
     for target_index in range(4):
         deploy_target_function = factory_contract.functions.deployTarget(
             deploymentId=deployment_id,

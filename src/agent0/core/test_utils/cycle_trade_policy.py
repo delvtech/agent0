@@ -86,7 +86,7 @@ class CycleTradesPolicy(HyperdriveBasePolicy):
             # Remove All Liquidity
             action_list.append(remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 4:
-            # Readd liquidity to allow for closing positions
+            # Re-add liquidity to allow for closing positions
             action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == 5:
             # Close All Longs
