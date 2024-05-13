@@ -50,8 +50,6 @@ class LocalChain(Chain):
         """The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`."""
         saved_state_dir: str = ".interactive_state/"
         """The directory where the saved state will be stored. Defaults to `.interactive_state/`."""
-        experimental_data_threading: bool = False
-        """Flag for running the data pipeline in a separate thread. Defaults to False."""
 
     def __init__(self, config: Config | None = None, fork_uri: str | None = None, fork_block_number: int | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -106,7 +104,6 @@ class LocalChain(Chain):
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
-        self.experimental_data_threading = config.experimental_data_threading
 
         # Ensure snapshot dir exists
         os.makedirs(self._snapshot_dir, exist_ok=True)
@@ -219,17 +216,14 @@ class LocalChain(Chain):
         # or there are no deployed pools
         if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
             self._advance_chain_time(time_delta)
-            # Advancing time mines a block, so we update data pipeline here
-            if not self.experimental_data_threading:
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+            for pool in self._deployed_hyperdrive_pools:
+                pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         else:
             # Creating checkpoints mines blocks very fast, which then makes the data pipeline not be able to keep up.
             # We avoid this by skipping all the intermediate blocks in the database when advancing time.
-            if self.experimental_data_threading:
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._ensure_data_caught_up()  # pylint: disable=protected-access
-                    pool._stop_data_pipeline()  # pylint: disable=protected-access
+            for pool in self._deployed_hyperdrive_pools:
+                pool._ensure_data_caught_up()  # pylint: disable=protected-access
+                pool._stop_data_pipeline()  # pylint: disable=protected-access
 
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
@@ -282,13 +276,8 @@ class LocalChain(Chain):
                 self._advance_chain_time(last_advance_time - offset)
 
             curr_block = self._web3.eth.get_block_number()
-            if self.experimental_data_threading:
-                # Restart the data pipeline on the current block time.
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._launch_data_pipeline(curr_block)  # pylint: disable=protected-access
-            else:
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
+            for pool in self._deployed_hyperdrive_pools:
+                pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
 
         return out_dict
 
@@ -441,22 +430,11 @@ class LocalChain(Chain):
 
     def _dump_db(self, save_dir: str):
         # TODO parameterize the save path
-        for pool in self._deployed_hyperdrive_pools:
-            if self.experimental_data_threading:
-                # Need to ensure data has caught up before snapshot
-                pool._ensure_data_caught_up()  # pylint: disable=protected-access
         export_path = str(Path(save_dir))  # pylint: disable=protected-access
         os.makedirs(export_path, exist_ok=True)
         export_db_to_file(export_path, self.db_session, raw=True)
 
     def _load_db(self, load_dir: str):
         # TODO parameterize the load path
-        for pool in self._deployed_hyperdrive_pools:
-            if self.experimental_data_threading:
-                # We need to stop the underlying data pipeline before updating the underlying database
-                pool._stop_data_pipeline()  # pylint: disable=protected-access
         import_path = str(Path(load_dir))  # pylint: disable=protected-access
         import_to_db(self.db_session, import_path, drop=True)
-        for pool in self._deployed_hyperdrive_pools:
-            if self.experimental_data_threading:
-                pool._launch_data_pipeline()  # pylint: disable=protected-access

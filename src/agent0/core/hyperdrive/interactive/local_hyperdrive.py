@@ -261,10 +261,7 @@ class LocalHyperdrive(Hyperdrive):
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        if self.chain.experimental_data_threading:
-            self._launch_data_pipeline()
-        else:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
 
         self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[LocalHyperdriveAgent] = []
@@ -280,113 +277,7 @@ class LocalHyperdrive(Hyperdrive):
         # pylint: disable=protected-access
         return self._deployed_hyperdrive.hyperdrive_contract.address
 
-    def _launch_data_pipeline(self, start_block: int | None = None):
-        """Launches the data pipeline in background threads.
-
-        Arguments
-        ---------
-        start_block: int | None, optional
-            The starting block to gather data. If None, will use the pool's deployed block.
-        """
-        # Sanity check, callers are responsible for determining experimental mode for clarity,
-        # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
-
-        if start_block is None:
-            start_block = self._deploy_block_number
-
-        # Run the data pipeline in background threads
-        # Ensure the stop flag is set to false
-        # This ensures no other threads are running when launching data pipeline
-        if self._data_thread is not None or self._analysis_thread is not None:
-            raise ValueError("Data pipeline already running")
-
-        self._stop_threads = False
-        # We need to create new threads every launch, since start can be called at most once per thread object
-        self._data_thread = Thread(
-            target=acquire_data,
-            kwargs={
-                "start_block": start_block,
-                "lookback_block_limit": 10000,
-                "rpc_uri": self.chain.rpc_uri,
-                "hyperdrive_address": self.interface.hyperdrive_address,
-                "postgres_config": self.chain.postgres_config,
-                "exit_on_catch_up": False,
-                "exit_callback_fn": lambda: self._stop_threads,
-                "suppress_logs": True,
-            },
-        )
-        self._analysis_thread = Thread(
-            target=data_analysis,
-            kwargs={
-                "start_block": start_block,
-                "rpc_uri": self.chain.rpc_uri,
-                "hyperdrive_address": self.interface.hyperdrive_address,
-                "postgres_config": self.chain.postgres_config,
-                "exit_on_catch_up": False,
-                "exit_callback_fn": lambda: self._stop_threads,
-                "suppress_logs": True,
-            },
-        )
-        self._data_thread.start()
-        self._analysis_thread.start()
-
-        # Pool config should exist before returning
-        pool_config = None
-        for _ in range(10):
-            try:
-                pool_config = self.get_pool_config()
-                break
-            except ValueError:
-                time.sleep(1)
-        if pool_config is None:
-            raise ValueError("Pool config doesn't exist in the db after launching data pipeline.")
-
-    def _stop_data_pipeline(self):
-        # Sanity check, callers are responsible for determining experimental mode for clarity,
-        # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
-
-        if self._data_thread is None or self._analysis_thread is None:
-            raise ValueError("Data pipeline not running")
-
-        # This lets the underlying threads know to stop at the next opportunity
-        self._stop_threads = True
-        # These wait for the threads to finally stop
-        self._data_thread.join()
-        self._analysis_thread.join()
-        # Dereference thread variables
-        self._data_thread = None
-        self._analysis_thread = None
-
-    def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
-        # Sanity check, callers are responsible for determining experimental mode,
-        # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
-
-        latest_mined_block: BlockNumber | None = None
-        analysis_latest_block_number: int | None = None
-
-        try:
-            with Timeout(self.data_pipeline_timeout) as _timeout:
-                while True:
-                    latest_mined_block = self.interface.web3.eth.get_block_number()
-                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.chain.db_session)
-                    if latest_mined_block > analysis_latest_block_number:
-                        _timeout.sleep(polling_interval)
-                    else:
-                        break
-        except Timeout as exc:
-            raise TimeExhausted(
-                f"Data pipeline didn't catch up after {self.data_pipeline_timeout} seconds",
-                f"{latest_mined_block=}, {analysis_latest_block_number=}",
-            ) from exc
-
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
-        # Sanity check, callers are responsible for determining experimental mode for clarity,
-        # but we add a catch here to make sure
-        assert not self.chain.experimental_data_threading
-
         # TODO these functions are not thread safe, need to fix if we expose async functions
         # Runs the data pipeline synchronously
 
@@ -415,9 +306,6 @@ class LocalHyperdrive(Hyperdrive):
 
     def _cleanup(self):
         """Cleans up resources used by this object."""
-        if self.chain.experimental_data_threading:
-            self._stop_data_pipeline()
-
         super()._cleanup()
 
         if self.dashboard_subprocess is not None:
@@ -500,8 +388,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         self.interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
 
     def _create_checkpoint(
         self, checkpoint_time: int | None = None, check_if_exists: bool = True
@@ -635,10 +522,6 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A pandas dataframe that consists of the pool info per block.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-
         pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float)
         pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float, return_timestamp=False)
         pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
@@ -658,8 +541,6 @@ class LocalHyperdrive(Hyperdrive):
             A pandas dataframe that consists of previous checkpoints made.
         """
         # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
         return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
@@ -716,10 +597,6 @@ class LocalHyperdrive(Hyperdrive):
             latest_block_update: int
                 The last block number that the position was updated.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
         # https://github.com/delvtech/agent0/issues/1106
@@ -772,9 +649,6 @@ class LocalHyperdrive(Hyperdrive):
             token_diffs: list[str]
                 A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
         out = get_ticker(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
@@ -822,9 +696,6 @@ class LocalHyperdrive(Hyperdrive):
             transaction_hash: str
                 The transaction hash that resulted in the deltas.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
         # We gather all deltas and calculate the current positions here
         # If computing this is too slow, we can get current positions from
         # the wallet_pnl table and left merge with the deltas
@@ -875,9 +746,6 @@ class LocalHyperdrive(Hyperdrive):
             pnl: Decimal | float
                 The total pnl of the agent at the specified block number.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
         out = get_total_wallet_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
@@ -1102,8 +970,7 @@ class LocalHyperdrive(Hyperdrive):
                 self._initial_funds[agent.address] = base
 
         # Adding funds mines a block, so we run data pipeline here
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
 
     @overload
     def _handle_trade_result(
@@ -1137,78 +1004,51 @@ class LocalHyperdrive(Hyperdrive):
 
     def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         out = super()._open_long(agent, base)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
         out = super()._close_long(agent, maturity_time, bonds)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
         out = super()._open_short(agent, bonds)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
         out = super()._close_short(agent, maturity_time, bonds)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
         out = super()._add_liquidity(agent, base)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
         out = super()._remove_liquidity(agent, shares)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
         out = super()._redeem_withdraw_share(agent, shares)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _execute_policy_action(
         self, agent: HyperdrivePolicyAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         out = super()._execute_policy_action(agent)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _liquidate(
         self, agent: HyperdrivePolicyAgent, randomize: bool
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         out = super()._liquidate(agent, randomize)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _reinit_state_after_load_snapshot(self) -> None:
