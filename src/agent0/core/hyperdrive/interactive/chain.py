@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import docker
@@ -14,6 +14,7 @@ from docker.models.containers import Container
 from web3.types import BlockData, Timestamp
 
 from agent0.chainsync import PostgresConfig
+from agent0.chainsync.db.base import initialize_session
 from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.hyperlogs import setup_logging
 
@@ -90,6 +91,10 @@ class Chain:
         )
         assert isinstance(self.postgres_container, Container)
 
+        # Update the database field to use a unique name for this pool using the hyperdrive contract address
+        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
+        self._db_name = self.postgres_config.POSTGRES_DB
+
     def _initialize_postgres_container(
         self, container_name: str, db_port: int, remove_existing_db_container: bool
     ) -> tuple[PostgresConfig, Container]:
@@ -109,7 +114,7 @@ class Chain:
         postgres_config = PostgresConfig(
             POSTGRES_USER="admin",
             POSTGRES_PASSWORD="password",
-            POSTGRES_DB="",  # Filled in by the pool as needed
+            POSTGRES_DB="interactive_hyperdrive",
             POSTGRES_HOST="127.0.0.1",
             POSTGRES_PORT=db_port,
         )
@@ -156,6 +161,7 @@ class Chain:
 
     def cleanup(self):
         """General cleanup of resources of interactive hyperdrive."""
+        self.db_session.close()
         try:
             self.postgres_container.kill()
         except Exception:  # pylint: disable=broad-except

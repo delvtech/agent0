@@ -34,7 +34,8 @@ from agent0.chainsync.db.hyperdrive import (
     get_ticker,
     get_total_wallet_pnl_over_time,
     get_wallet_deltas,
-    get_wallet_pnl
+    get_wallet_pnl,
+    trade_events_to_db,
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
 from agent0.core.base.make_key import make_private_key
@@ -48,7 +49,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
-    encode_asset_id
+    encode_asset_id,
 )
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -60,7 +61,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity
+    RemoveLiquidity,
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
@@ -224,6 +225,10 @@ class LocalHyperdrive(Hyperdrive):
             The configuration for the initial pool configuration
         """
 
+        # We don't call super's init since we do specific type checking
+        # in Hyperdrive's init. Instead, we call _initialize
+        # pylint: disable=super-init-not-called
+
         if config is None:
             self.config = self.Config()
         else:
@@ -234,11 +239,7 @@ class LocalHyperdrive(Hyperdrive):
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
 
-        super().__init__(
-            chain,
-            self.get_hyperdrive_address(),
-            config,
-        )
+        self._initialize(chain, self.get_hyperdrive_address())
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
@@ -309,7 +310,7 @@ class LocalHyperdrive(Hyperdrive):
                 "lookback_block_limit": 10000,
                 "rpc_uri": self.chain.rpc_uri,
                 "hyperdrive_address": self.interface.hyperdrive_address,
-                "postgres_config": self.postgres_config,
+                "postgres_config": self.chain.postgres_config,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -321,7 +322,7 @@ class LocalHyperdrive(Hyperdrive):
                 "start_block": start_block,
                 "rpc_uri": self.chain.rpc_uri,
                 "hyperdrive_address": self.interface.hyperdrive_address,
-                "postgres_config": self.postgres_config,
+                "postgres_config": self.chain.postgres_config,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -370,7 +371,7 @@ class LocalHyperdrive(Hyperdrive):
             with Timeout(self.data_pipeline_timeout) as _timeout:
                 while True:
                     latest_mined_block = self.interface.web3.eth.get_block_number()
-                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
+                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.chain.db_session)
                     if latest_mined_block > analysis_latest_block_number:
                         _timeout.sleep(polling_interval)
                     else:
@@ -399,25 +400,25 @@ class LocalHyperdrive(Hyperdrive):
         acquire_data(
             start_block=start_block,  # Start block is the block hyperdrive was deployed
             interfaces=[self.interface],
-            db_session=self.db_session,
+            db_session=self.chain.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
         )
         data_analysis(
             start_block=start_block,
             interfaces=[self.interface],
-            db_session=self.db_session,
+            db_session=self.chain.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
             calc_pnl=self.calc_pnl,
         )
 
-    def _cleanup(self, drop_data: bool = False):
+    def _cleanup(self):
         """Cleans up resources used by this object."""
         if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
 
-        super()._cleanup(drop_data)
+        super()._cleanup()
 
         if self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
@@ -616,7 +617,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Underlying function returns a dataframe, but this is assuming there's a single
         # pool config for this object.
-        pool_config = get_pool_config(self.db_session, coerce_float=coerce_float)
+        pool_config = get_pool_config(self.chain.db_session, coerce_float=coerce_float)
         if len(pool_config) == 0:
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
@@ -638,8 +639,8 @@ class LocalHyperdrive(Hyperdrive):
         if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
 
-        pool_info = get_pool_info(self.db_session, coerce_float=coerce_float)
-        pool_analysis = get_pool_analysis(self.db_session, coerce_float=coerce_float, return_timestamp=False)
+        pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float)
+        pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float, return_timestamp=False)
         pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
         return pool_info
 
@@ -659,11 +660,11 @@ class LocalHyperdrive(Hyperdrive):
         # DB read calls ensures data pipeline is caught up before returning
         if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
-        return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
+        return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        addr_to_username = get_addr_to_username(self.db_session)
-        username_to_user = get_username_to_user(self.db_session)
+        addr_to_username = get_addr_to_username(self.chain.db_session)
+        username_to_user = get_username_to_user(self.chain.db_session)
 
         # Get corresponding usernames
         usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
@@ -722,7 +723,7 @@ class LocalHyperdrive(Hyperdrive):
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
         # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_pnl(self.db_session, start_block=-1, coerce_float=coerce_float)
+        out = get_wallet_pnl(self.chain.db_session, start_block=-1, coerce_float=coerce_float)
         # DB only stores final delta for base, we calculate actual base based on how much funds
         # were added in all
         out = self._adjust_base_positions(out, "value", coerce_float)
@@ -774,7 +775,7 @@ class LocalHyperdrive(Hyperdrive):
         # DB read calls ensures data pipeline is caught up before returning
         if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
-        out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
+        out = get_ticker(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
             [
@@ -827,7 +828,7 @@ class LocalHyperdrive(Hyperdrive):
         # We gather all deltas and calculate the current positions here
         # If computing this is too slow, we can get current positions from
         # the wallet_pnl table and left merge with the deltas
-        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
+        out = get_wallet_deltas(self.chain.db_session, coerce_float=coerce_float)
         out["position"] = out.groupby(["wallet_address", "token_type"])["delta"].transform(pd.Series.cumsum)
 
         # DB only stores final delta for base, we calculate actual base based on how much funds
@@ -877,7 +878,7 @@ class LocalHyperdrive(Hyperdrive):
         # DB read calls ensures data pipeline is caught up before returning
         if self.chain.experimental_data_threading:
             self._ensure_data_caught_up()
-        out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+        out = get_total_wallet_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
             [
@@ -947,7 +948,7 @@ class LocalHyperdrive(Hyperdrive):
                 "localhost",
             ]
         )
-        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+        env = {key: str(val) for key, val in asdict(self.chain.postgres_config).items()}
 
         assert self.dashboard_subprocess is None
         # Since dashboard is a non-terminating process, we need to manually control its lifecycle
@@ -995,7 +996,7 @@ class LocalHyperdrive(Hyperdrive):
                 "localhost",
             ]
         )
-        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+        env = {key: str(val) for key, val in asdict(self.chain.postgres_config).items()}
         self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
             dashboard_run_command,
             env=env,
@@ -1062,23 +1063,16 @@ class LocalHyperdrive(Hyperdrive):
 
         # Register the username if it was provided
         if name is not None:
-            add_addr_to_username(name, [agent.address], self.db_session)
+            add_addr_to_username(name, [agent.address], self.chain.db_session)
         return agent
 
     def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
-        # Update the db
-        # Note that local hyperdrive always updates events with all wallets
-        # TODO this function can be optimized to cache.
-
         # NOTE the way we sync the events table is by either looking at (1) the latest
         # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
         # table, based on if we're updating the table with all wallets or just a single wallet.
-        # This means we can't swap back and forth, as we can miss events if we e.g.,
-        # sync on all wallets then sync on a single wallet. Hence, we add a bookeeping variable
-        # to ensure that once we call syncing on all wallets (set in local_hyperdrive's _sync_events),
-        # we can't sync on individual wallets anymore.
-        self._sync_events_on_all_wallets = True
-        super()._sync_events(agent)
+
+        # Local hyperdrive stack syncs all events regardless of wallets
+        trade_events_to_db([self.interface], wallet_addr=None, db_session=self.chain.db_session)
 
     def _add_funds(
         self,
@@ -1229,7 +1223,7 @@ class LocalHyperdrive(Hyperdrive):
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
             db_balances = chainsync_get_current_wallet(
-                self.db_session, wallet_address=[agent.checksum_address], coerce_float=False
+                self.chain.db_session, wallet_address=[agent.checksum_address], coerce_float=False
             )
             agent.agent.wallet = build_wallet_positions_from_db(
                 agent.checksum_address, db_balances, self.interface.base_token_contract

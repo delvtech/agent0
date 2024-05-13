@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any, Literal, Type, overload
 
 import nest_asyncio
@@ -16,11 +16,8 @@ from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from numpy.random._generator import Generator
-from sqlalchemy_utils.functions import drop_database
 from web3 import Web3
 
-from agent0.chainsync import PostgresConfig
-from agent0.chainsync.db.base import initialize_session
 from agent0.chainsync.db.hyperdrive import get_positions_from_db, get_trade_events, trade_events_to_db
 from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
@@ -162,6 +159,16 @@ class Hyperdrive:
         # pylint: disable=protected-access
         return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
+    def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress):
+        self.interface = HyperdriveReadWriteInterface(
+            hyperdrive_address,
+            rpc_uri=chain.rpc_uri,
+            web3=chain._web3,  # pylint: disable=protected-access
+            txn_receipt_timeout=self.config.txn_receipt_timeout,
+        )
+
+        self.chain = chain
+
     def __init__(
         self,
         chain: Chain,
@@ -184,40 +191,20 @@ class Hyperdrive:
         else:
             self.config = config
 
-        self.interface = HyperdriveReadWriteInterface(
-            hyperdrive_address,
-            rpc_uri=chain.rpc_uri,
-            web3=chain._web3,
-            txn_receipt_timeout=self.config.txn_receipt_timeout,
-        )
+        # Since the hyperdrive objects manage data ingestion into the singular database
+        # held by the chain object, we want to ensure that we dont mix and match
+        # local vs non-local hyperdrive objects. Hence, we ensure that any hyperdrive
+        # objects must come from a base Chain object and not a LocalChain.
+        # We use `type` instead of `isinstance` to explicitly check for
+        # the base Chain type instead of any subclass.
+        # pylint: disable=unidiomatic-typecheck
+        if type(chain) != Chain:
+            raise TypeError("The chain parameter must be a Chain object, not a LocalChain.")
 
-        self.chain = chain
+        self._initialize(chain, hyperdrive_address)
 
-        # Set up postgres connection
-
-        # Make a copy of the dataclass to avoid changing the base class
-        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
-        # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
-        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
-        self._db_name = self.postgres_config.POSTGRES_DB
-
-        self._sync_events_on_all_wallets = False
-
-    def _cleanup(self, drop_data: bool = False):
-        self.db_session.close()
-        # We drop the database attached to this pool on cleanup
-        if drop_data:
-            drop_database(self.postgres_config.create_url_obj())
-
-    def __del__(self):
-        # Attempt to close the session
-        # These functions will raise errors if the session is already closed
-        try:
-            self._cleanup()
-        # Never throw exception in destructor
-        except Exception:  # pylint: disable=broad-except
-            pass
+    def _cleanup(self):
+        """Cleans up resources used by this object."""
 
     def init_agent(
         self,
@@ -292,20 +279,15 @@ class Hyperdrive:
         # NOTE the way we sync the events table is by either looking at (1) the latest
         # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
         # table, based on if we're updating the table with all wallets or just a single wallet.
-        # This means we can't swap back and forth, as we can miss events if we e.g.,
-        # sync on all wallets then sync on a single wallet. Hence, we add a bookeeping variable
-        # to ensure that once we call syncing on all wallets (set in local_hyperdrive's _sync_events),
-        # we can't sync on individual wallets anymore.
-        if self._sync_events_on_all_wallets:
-            trade_events_to_db([self.interface], wallet_addr=None, db_session=self.db_session)
-        else:
-            trade_events_to_db([self.interface], wallet_addr=agent.checksum_address, db_session=self.db_session)
+
+        # Remote hyperdrive stack syncs only the agent's wallet
+        trade_events_to_db([self.interface], wallet_addr=agent.checksum_address, db_session=self.chain.db_session)
 
     def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)
         # Query for the wallet object from the db
         wallet_positions = get_positions_from_db(
-            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
+            self.chain.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
         )
         # Convert to hyperdrive wallet object
         long_obj: dict[int, Long] = {}
@@ -346,7 +328,7 @@ class Hyperdrive:
 
     def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
         self._sync_events(agent)
-        return get_trade_events(self.db_session, agent.checksum_address)
+        return get_trade_events(self.chain.db_session, agent.checksum_address)
 
     def _add_funds(
         self,

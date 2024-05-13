@@ -352,15 +352,18 @@ class LocalChain(Chain):
         """
         raise NotImplementedError
 
+    def _anvil_save_snapshot(self) -> None:
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+        self._saved_snapshot_id = response["result"]
+
     def save_snapshot(self) -> None:
         """Saves a snapshot using the `evm_snapshot` RPC call.
         The chain can store one snapshot at a time, saving another snapshot overwrites the previous snapshot.
         Saving/loading snapshot only persist on the same chain, not across chains.
         """
-        response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
-        if "result" not in response:
-            raise KeyError("Response did not have a result.")
-        self._saved_snapshot_id = response["result"]
+        self._anvil_save_snapshot()
 
         # Save the db state
         self._dump_db(self._snapshot_dir)
@@ -409,7 +412,7 @@ class LocalChain(Chain):
             p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() not in hyperdrive_pools
         ]
         for pool in invalid_pools:
-            pool._cleanup(drop_data=True)  # pylint: disable=protected-access
+            pool._cleanup()  # pylint: disable=protected-access
 
         # Given the current list of deployed hyperdrive pools, we throw away any pools deployed
         # after the snapshot
@@ -430,7 +433,8 @@ class LocalChain(Chain):
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
             pool._load_policy_state(self._snapshot_dir)  # pylint: disable=protected-access
 
-        self.save_snapshot()
+        # Save another anvil snapshot since reverting consumes the snapshot
+        self._anvil_save_snapshot()
 
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         self._deployed_hyperdrive_pools.append(pool)
@@ -441,9 +445,9 @@ class LocalChain(Chain):
             if self.experimental_data_threading:
                 # Need to ensure data has caught up before snapshot
                 pool._ensure_data_caught_up()  # pylint: disable=protected-access
-            export_path = str(Path(save_dir) / pool._db_name)  # pylint: disable=protected-access
-            os.makedirs(export_path, exist_ok=True)
-            export_db_to_file(export_path, pool.db_session, raw=True)
+        export_path = str(Path(save_dir))  # pylint: disable=protected-access
+        os.makedirs(export_path, exist_ok=True)
+        export_db_to_file(export_path, self.db_session, raw=True)
 
     def _load_db(self, load_dir: str):
         # TODO parameterize the load path
@@ -451,7 +455,8 @@ class LocalChain(Chain):
             if self.experimental_data_threading:
                 # We need to stop the underlying data pipeline before updating the underlying database
                 pool._stop_data_pipeline()  # pylint: disable=protected-access
-            import_path = str(Path(load_dir) / pool._db_name)  # pylint: disable=protected-access
-            import_to_db(pool.db_session, import_path, drop=True)
+        import_path = str(Path(load_dir))  # pylint: disable=protected-access
+        import_to_db(self.db_session, import_path, drop=True)
+        for pool in self._deployed_hyperdrive_pools:
             if self.experimental_data_threading:
                 pool._launch_data_pipeline()  # pylint: disable=protected-access

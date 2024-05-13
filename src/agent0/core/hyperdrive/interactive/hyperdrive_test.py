@@ -64,6 +64,25 @@ def _ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: Hyperdr
         assert short_amount.balance == FixedPoint(scaled_value=short_from_chain)
 
 
+@pytest.mark.anvil
+def test_hyperdrive_from_local_chain_not_allowed(fast_chain_fixture: LocalChain):
+    # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
+    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
+    initial_pool_config = LocalHyperdrive.Config(
+        initial_liquidity=FixedPoint(1_000),
+        initial_fixed_apr=FixedPoint("0.05"),
+        position_duration=60 * 60 * 24 * 365,  # 1 year
+    )
+    # Launches a local hyperdrive pool
+    # This deploys the pool
+    interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+
+    # Gather relevant objects from the local hyperdrive
+    hyperdrive_address = interactive_local_hyperdrive.get_hyperdrive_address()
+    with pytest.raises(TypeError):
+        _ = Hyperdrive(fast_chain_fixture, hyperdrive_address)
+
+
 # Lots of things to test
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
@@ -84,14 +103,14 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
-    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
+    hyperdrive_address = interactive_local_hyperdrive.get_hyperdrive_address()
 
     # Connect to the local chain using the remote hyperdrive interface
     if check_remote_chain:
         remote_chain = Chain(fast_chain_fixture.rpc_uri)
-        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
+        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_address)
     else:
-        interactive_remote_hyperdrive = Hyperdrive(fast_chain_fixture, hyperdrive_addresses)
+        interactive_remote_hyperdrive = Hyperdrive(fast_chain_fixture, hyperdrive_address)
 
     # Generate trading agents from the interactive object
     hyperdrive_agent0 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
