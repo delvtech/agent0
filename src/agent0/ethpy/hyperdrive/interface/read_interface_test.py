@@ -156,24 +156,37 @@ class TestHyperdriveReadInterface:
     def test_bonds_given_shares_and_rate(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Check that the bonds calculated actually hit the target rate."""
         # get pool state so we can modify them to run what-if scenarios
-        pool_state = deepcopy(hyperdrive_read_interface_fixture.current_pool_state)
-        pool_info = pool_state.pool_info
+        initial_pool_state = hyperdrive_read_interface_fixture.current_pool_state
+        initial_pool_info = initial_pool_state.pool_info
+        mut_pool_state = deepcopy(hyperdrive_read_interface_fixture.current_pool_state)
+
+        # Use current pool_state to compare against existing bonds
+        test_bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=hyperdrive_read_interface_fixture.calc_spot_rate(initial_pool_state),
+            pool_state=initial_pool_state,
+        )
+        assert abs(initial_pool_info.bond_reserves - test_bond_reserves) <= FixedPoint(1e-13)
 
         # test hitting target of 10%
         target_apr = FixedPoint("0.10")
-        pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
-            target_rate=target_apr
+        new_bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=target_apr,
+            pool_state=initial_pool_state,
         )
-        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
+
+        mut_pool_state.pool_info.bond_reserves = new_bond_reserves
+        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=mut_pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
 
         # test hitting target of 1%
         target_apr = FixedPoint("0.01")
-        pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
-            target_rate=target_apr
+        mut_pool_state.pool_info.bond_reserves = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(
+            target_rate=target_apr,
+            pool_state=initial_pool_state,
         )
-        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=pool_state)
+        fixed_rate = hyperdrive_read_interface_fixture.calc_spot_rate(pool_state=mut_pool_state)
         assert abs(fixed_rate - target_apr) <= FixedPoint(1e-16)
+        pass
 
     def test_deployed_values(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Test the hyperdrive interface versus expected values."""
