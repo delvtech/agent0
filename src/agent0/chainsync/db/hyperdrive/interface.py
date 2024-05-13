@@ -150,14 +150,14 @@ def add_transactions(transactions: list[HyperdriveTransaction], session: Session
         raise err
 
 
-def get_pool_config(session: Session, contract_address: str | None = None, coerce_float=True) -> pd.DataFrame:
+def get_pool_config(session: Session, hyperdrive_address: str | None = None, coerce_float=True) -> pd.DataFrame:
     """Get all pool config and returns a pandas dataframe.
 
     Arguments
     ---------
     session: Session
         The initialized session object.
-    contract_address: str | None, optional
+    hyperdrive_address: str | None, optional
         The contract_address to filter the results on. Return all if None.
     coerce_float: bool
         If True, will coerce all numeric columns to float.
@@ -168,8 +168,8 @@ def get_pool_config(session: Session, contract_address: str | None = None, coerc
         A DataFrame that consists of the queried pool config data.
     """
     query = session.query(PoolConfig)
-    if contract_address is not None:
-        query = query.filter(PoolConfig.hyperdrive_address == contract_address)
+    if hyperdrive_address is not None:
+        query = query.filter(PoolConfig.hyperdrive_address == hyperdrive_address)
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
@@ -190,7 +190,9 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_pool_config = get_pool_config(session, contract_address=pool_config.hyperdrive_address, coerce_float=False)
+    existing_pool_config = get_pool_config(
+        session, hyperdrive_address=pool_config.hyperdrive_address, coerce_float=False
+    )
     if len(existing_pool_config) == 0:
         session.add(pool_config)
         try:

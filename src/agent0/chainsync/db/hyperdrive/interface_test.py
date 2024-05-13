@@ -198,11 +198,11 @@ class TestPoolConfigInterface:
         pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
-        pool_config_df_1 = get_pool_config(db_session, contract_address="0")
+        pool_config_df_1 = get_pool_config(db_session, hyperdrive_address="0")
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initial_vault_share_price"] == 3.2
 
-        pool_config_df_2 = get_pool_config(db_session, contract_address="1")
+        pool_config_df_2 = get_pool_config(db_session, hyperdrive_address="1")
         assert len(pool_config_df_2) == 0
 
     @pytest.mark.docker

@@ -59,12 +59,13 @@ class CheckpointInfo(Base):
     __tablename__ = "checkpoint_info"
 
     checkpoint_time: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
     weighted_spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     last_weighted_spot_price_update_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # TODO we'd like to add the checkpoint id here as a field as well
 
 
+# TODO change this table to allow for missing data in block time.
 class PoolInfo(Base):
     """Table/dataclass schema for pool info.
 
@@ -73,8 +74,16 @@ class PoolInfo(Base):
 
     __tablename__ = "pool_info"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # Indices
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+
+    # Time
     timestamp: Mapped[datetime] = mapped_column(DateTime)
+    epoch_timestamp: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+
+    # Pool Info Fields
     share_reserves: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     share_adjustment: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     zombie_base_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -90,8 +99,8 @@ class PoolInfo(Base):
     withdrawal_shares_proceeds: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     long_exposure: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+
     # Added fields from pool_state
-    epoch_timestamp: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     total_supply_withdrawal_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     gov_fees_accrued: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     hyperdrive_base_balance: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -313,25 +322,32 @@ class PoolAnalysis(Base):
 
     __tablename__ = "pool_analysis"
 
-    block_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # Indices
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
 
+    # Analysis values
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     base_buffer: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     # TODO add gov fees accrued, vault shares
 
 
+# TODO this table and WalletPNL should likely get merged
 class CurrentWallet(Base):
     """Table/dataclass schema for current wallet positions."""
 
     __tablename__ = "current_wallet"
 
-    # Default table primary key
+    # Indices
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+
     # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
-    base_token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    base_token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     # token_type is the base_token_type appended with "-<maturity_time>" for LONG and SHORT
     token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
@@ -349,6 +365,7 @@ class Ticker(Base):
 
     id: Mapped[int] = mapped_column(BigInteger(), primary_key=True, init=False, autoincrement=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     trade_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
@@ -365,12 +382,14 @@ class WalletPNL(Base):
 
     __tablename__ = "wallet_pnl"
 
-    # Default table primary key
+    # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
     block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
     wallet_address: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+
     # base_token_type can be BASE, LONG, SHORT, LP, or WITHDRAWAL_SHARE
-    base_token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
+    base_token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     # token_type is the base_token_type appended with "-<maturity_time>" for LONG and SHORT
     token_type: Mapped[Union[str, None]] = mapped_column(String, default=None)
     value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
