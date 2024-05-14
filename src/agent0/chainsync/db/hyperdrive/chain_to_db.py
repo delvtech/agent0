@@ -60,6 +60,7 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     block = interfaces[0].get_block(block_number)
 
     for interface in interfaces:
+        hyperdrive_address = interface.hyperdrive_address
         pool_state = interface.get_hyperdrive_state(block)
 
         # TODO there's a race condition here, if this script gets interrupted between
@@ -69,6 +70,7 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
         ## Query and add block_checkpoint_info
         checkpoint_dict = asdict(pool_state.checkpoint)
         checkpoint_dict["checkpoint_time"] = pool_state.checkpoint_time
+        checkpoint_dict["hyperdrive_address"] = hyperdrive_address
         block_checkpoint_info = convert_checkpoint_info(checkpoint_dict)
         # When the contract call fails due to missing checkpoint, solidity returns 0
         # Hence, we detect that here and don't add the checkpoint info if that happens
@@ -78,6 +80,7 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
         ## Query and add block_pool_info
         # Adding this last as pool info is what we use to determine if this block is in the db for analysis
         pool_info_dict = asdict(pool_state.pool_info)
+        pool_info_dict["hyperdrive_address"] = hyperdrive_address
         pool_info_dict["block_number"] = int(pool_state.block_number)
         pool_info_dict["timestamp"] = datetime.fromtimestamp(pool_state.block_time, timezone.utc)
 
@@ -124,26 +127,27 @@ def trade_events_to_db(
     for interface in interfaces:
         # Look for transfer single events in both directions if wallet_addr is set
         if wallet_addr is not None:
-            events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-                fromBlock=from_block,
-                argument_filters={"to": wallet_addr},
+            all_events.extend(
+                interface.hyperdrive_contract.events.TransferSingle.get_logs(
+                    fromBlock=from_block,
+                    argument_filters={"to": wallet_addr},
+                )
             )
-            # Change events from attribute dict to dictionary
-            all_events.extend(events)
-
-            events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-                fromBlock=from_block,
-                argument_filters={"from": wallet_addr},
+            all_events.extend(
+                interface.hyperdrive_contract.events.TransferSingle.get_logs(
+                    fromBlock=from_block,
+                    argument_filters={"from": wallet_addr},
+                )
             )
-            all_events.extend(events)
         # Otherwise, don't filter by wallet
         else:
-            events = interface.hyperdrive_contract.events.TransferSingle.get_logs(
-                fromBlock=from_block,
+            all_events.extend(
+                interface.hyperdrive_contract.events.TransferSingle.get_logs(
+                    fromBlock=from_block,
+                )
             )
-            # Change events from attribute dict to dictionary
-            all_events.extend(events)
 
+        # Hyperdrive events
         if wallet_addr is not None:
             trader_arg_filter = {"trader": wallet_addr}
             provider_arg_filter = {"provider": wallet_addr}
@@ -151,48 +155,54 @@ def trade_events_to_db(
             trader_arg_filter = None
             provider_arg_filter = None
 
-        # Hyperdrive events
-        events = interface.hyperdrive_contract.events.OpenLong.get_logs(
-            fromBlock=from_block,
-            argument_filters=trader_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.Initialize.get_logs(
+                fromBlock=from_block,
+                argument_filters=trader_arg_filter,
+            )
         )
-        all_events.extend(events)
-
-        events = interface.hyperdrive_contract.events.CloseLong.get_logs(
-            fromBlock=from_block,
-            argument_filters=trader_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.OpenLong.get_logs(
+                fromBlock=from_block,
+                argument_filters=trader_arg_filter,
+            )
         )
-        all_events.extend(events)
-
-        events = interface.hyperdrive_contract.events.OpenShort.get_logs(
-            fromBlock=from_block,
-            argument_filters=trader_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.CloseLong.get_logs(
+                fromBlock=from_block,
+                argument_filters=trader_arg_filter,
+            )
         )
-        all_events.extend(events)
-
-        events = interface.hyperdrive_contract.events.CloseShort.get_logs(
-            fromBlock=from_block,
-            argument_filters=trader_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.OpenShort.get_logs(
+                fromBlock=from_block,
+                argument_filters=trader_arg_filter,
+            )
         )
-        all_events.extend(events)
-
-        events = interface.hyperdrive_contract.events.AddLiquidity.get_logs(
-            fromBlock=from_block,
-            argument_filters=provider_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.CloseShort.get_logs(
+                fromBlock=from_block,
+                argument_filters=trader_arg_filter,
+            )
         )
-        all_events.extend(events)
-
-        events = interface.hyperdrive_contract.events.RemoveLiquidity.get_logs(
-            fromBlock=from_block,
-            argument_filters=provider_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.AddLiquidity.get_logs(
+                fromBlock=from_block,
+                argument_filters=provider_arg_filter,
+            )
         )
-        all_events.extend(events)
-
-        events = interface.hyperdrive_contract.events.RedeemWithdrawalShares.get_logs(
-            fromBlock=from_block,
-            argument_filters=provider_arg_filter,
+        all_events.extend(
+            interface.hyperdrive_contract.events.RemoveLiquidity.get_logs(
+                fromBlock=from_block,
+                argument_filters=provider_arg_filter,
+            )
         )
-        all_events.extend(events)
+        all_events.extend(
+            interface.hyperdrive_contract.events.RedeemWithdrawalShares.get_logs(
+                fromBlock=from_block,
+                argument_filters=provider_arg_filter,
+            )
+        )
 
     events_df = convert_events(all_events, wallet_addr)
 

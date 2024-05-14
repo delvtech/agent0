@@ -142,8 +142,8 @@ class TradeEvent(Base):
     event_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     """
     The underlying event type for the entry. Can be one of the following:
-    `OpenLong`, `OpenShort`, `CloseLong`, `CloseShort`, `AddLiquidity`, 
-    `RemoveLiquidity`, `RedeemWithdrawalShares`, or `TransferSingle`.
+    `Initialize`, `AddLiquidity`, `RemoveLiquidity`, `RedeemWithdrawalShares`, 
+    `OpenLong`, `OpenShort`, `CloseLong`, `CloseShort`, or `TransferSingle`.
     """
     token_type: Mapped[Union[str, None]] = mapped_column(String, index=True, default=None)
     """
@@ -238,13 +238,18 @@ class PositionSnapshot(Base):
     The id for the token itself, which consists of the `token_type`, appended 
     with `maturity_time` for LONG and SHORT. For example, `LONG-1715126400`.
     """
-    amount: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    balance: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
-    The absolute amount of the position.
+    The absolute balance of the position.
     """
     value_in_base: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
     The value of the position in units of base.
+    """
+    value_spent_in_base: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """
+    The value spent for the position in units of base.
+    NOTE: this doesn't take into account any transfers of tokens outside of hyperdrive trades.
     """
     pnl: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """

@@ -183,6 +183,82 @@ def convert_events(events: list[EventData], wallet_addr: str | None) -> pd.DataF
     events_df = pd.concat([events_df, args_columns], axis=1)
 
     # Convert fields to db schema
+    # LP
+    events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity", "Initialize"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "LP"
+        events_df.loc[events_idx, "token_id"] = "LP"
+        # The wallet here is the "provider" column, we remap it to "trader"
+        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # We explicitly add a maturity time here to ensure this column exists
+        # if there were no longs in this event set.
+        events_df.loc[events_idx, "maturityTime"] = np.nan
+
+    # Add liquidity and initialize are identical
+    events_idx = events_df["event"].isin(["AddLiquidity", "Initialize"])
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "lpAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "RemoveLiquidity"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "lpAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        # We need to also add any withdrawal shares as additional rows
+        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] > 0)
+        if withdrawal_shares_idx.any():
+            withdrawal_rows = events_df[withdrawal_shares_idx].copy()
+            withdrawal_rows["token_type"] = "WITHDRAWAL_SHARE"
+            withdrawal_rows["token_id"] = "WITHDRAWAL_SHARE"
+            withdrawal_rows["token_delta"] = withdrawal_rows["withdrawalShareAmount"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+            withdrawal_rows["base_delta"] = Decimal(0)
+            withdrawal_rows["vault_share_delta"] = Decimal(0)
+            events_df = pd.concat([events_df, withdrawal_rows], axis=0)
+
+    events_idx = events_df["event"] == "RedeemWithdrawalShares"
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "WITHDRAWAL_SHARE"
+        events_df.loc[events_idx, "token_id"] = "WITHDRAWAL_SHARE"
+        # The wallet here is the "provider" column, we remap it to "trader"
+        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # We explicitly add a maturity time here to ensure this column exists
+        # if there were no longs in this event set.
+        events_df.loc[events_idx, "maturityTime"] = np.nan
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "withdrawalShareAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
     # Longs
     events_idx = events_df["event"].isin(["OpenLong", "CloseLong"])
     if events_idx.any():
@@ -248,81 +324,6 @@ def convert_events(events: list[EventData], wallet_addr: str | None) -> pd.DataF
     if events_idx.any():
         # Pandas apply doesn't play nice with types
         events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        as_base_idx = events_df["asBase"] & events_idx
-        as_shares_idx = ~events_df["asBase"] & events_idx
-        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-
-    # LP
-    events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity"])
-    if events_idx.any():
-        events_df.loc[events_idx, "token_type"] = "LP"
-        events_df.loc[events_idx, "token_id"] = "LP"
-        # The wallet here is the "provider" column, we remap it to "trader"
-        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
-        # We explicitly add a maturity time here to ensure this column exists
-        # if there were no longs in this event set.
-        events_df.loc[events_idx, "maturityTime"] = np.nan
-
-    events_idx = events_df["event"] == "AddLiquidity"
-    if events_idx.any():
-        # Pandas apply doesn't play nice with types
-        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "lpAmount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        as_base_idx = events_df["asBase"] & events_idx
-        as_shares_idx = ~events_df["asBase"] & events_idx
-        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-
-    events_idx = events_df["event"] == "RemoveLiquidity"
-    if events_idx.any():
-        # Pandas apply doesn't play nice with types
-        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "lpAmount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        as_base_idx = events_df["asBase"] & events_idx
-        as_shares_idx = ~events_df["asBase"] & events_idx
-        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
-            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-        )
-        # We need to also add any withdrawal shares as additional rows
-        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] > 0)
-        if withdrawal_shares_idx.any():
-            withdrawal_rows = events_df[withdrawal_shares_idx].copy()
-            withdrawal_rows["token_type"] = "WITHDRAWAL_SHARE"
-            withdrawal_rows["token_id"] = "WITHDRAWAL_SHARE"
-            withdrawal_rows["token_delta"] = withdrawal_rows["withdrawalShareAmount"].apply(
-                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
-            )
-            withdrawal_rows["base_delta"] = Decimal(0)
-            withdrawal_rows["vault_share_delta"] = Decimal(0)
-            events_df = pd.concat([events_df, withdrawal_rows], axis=0)
-
-    events_idx = events_df["event"] == "RedeemWithdrawalShares"
-    if events_idx.any():
-        events_df.loc[events_idx, "token_type"] = "WITHDRAWAL_SHARE"
-        events_df.loc[events_idx, "token_id"] = "WITHDRAWAL_SHARE"
-        # The wallet here is the "provider" column, we remap it to "trader"
-        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
-        # We explicitly add a maturity time here to ensure this column exists
-        # if there were no longs in this event set.
-        events_df.loc[events_idx, "maturityTime"] = np.nan
-        # Pandas apply doesn't play nice with types
-        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "withdrawalShareAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
         as_base_idx = events_df["asBase"] & events_idx
@@ -407,6 +408,9 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
     """
     args_dict = {}
     for key in PoolInfo.__annotations__:
+        # Ignore id field
+        if key == "id":
+            continue
         if key not in pool_info_dict:
             logging.warning("Missing %s from pool info", key)
             value = None
@@ -434,6 +438,10 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointI
     """
     args_dict = {}
     for key in CheckpointInfo.__annotations__:
+        # Ignore id field
+        if key == "id":
+            continue
+
         # Keys must match
         if key not in checkpoint_info_dict:
             logging.warning("Missing %s from checkpoint info", key)
