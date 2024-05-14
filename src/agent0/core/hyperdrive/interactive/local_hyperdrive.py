@@ -26,7 +26,6 @@ from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
 from agent0.chainsync.db.hyperdrive import (
     get_checkpoint_info,
-    get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
@@ -38,7 +37,6 @@ from agent0.chainsync.db.hyperdrive import (
 from agent0.chainsync.exec import acquire_data, data_analysis
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
-from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
