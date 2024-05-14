@@ -19,10 +19,10 @@ class OpenLong:
     """The encoded asset id for this long."""
     maturity_time: int
     """The maturity time for the opened long."""
-    base_amount: FixedPoint
-    """The amount of longs opened in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount of longs opened in units of shares."""
+    amount: FixedPoint
+    """The amount of longs opened, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
     bond_amount: FixedPoint
@@ -44,10 +44,10 @@ class CloseLong:
     """The encoded asset id for this long."""
     maturity_time: int
     """The maturity time for the closed long."""
-    base_amount: FixedPoint
-    """The amount of longs closed in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount of longs closed in units of shares."""
+    amount: FixedPoint
+    """The amount of longs closed, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
     bond_amount: FixedPoint
@@ -67,10 +67,10 @@ class OpenShort:
     """The encoded asset id for this short."""
     maturity_time: int
     """The maturity time for the opened short."""
-    base_amount: FixedPoint
-    """The amount spent from opening the short, in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount spent from opening the short, in units of shares."""
+    amount: FixedPoint
+    """The amount spent from opening the short, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
     base_proceeds: FixedPoint
@@ -94,10 +94,10 @@ class CloseShort:
     """The encoded asset id for this short."""
     maturity_time: int
     """The maturity time for the closed short."""
-    base_amount: FixedPoint
-    """The amount retrieved from closing the short, in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount retrieved from closing the short, in units of shares."""
+    amount: FixedPoint
+    """The amount spent from closing the short, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
     base_payment: FixedPoint
@@ -117,6 +117,13 @@ class AddLiquidity:
     """The address of the lp provider."""
     lp_amount: FixedPoint
     """The amount of liquidity added in units of lp."""
+
+    # TODO v1.0.7 fixes add lp event to below
+    # amount: FixedPoint
+    # """The amount of liquidity added, units dependent on `as_base` flag."""
+    # vault_share_price: FixedPoint
+    # """The share price at the time of this trade."""
+
     base_amount: FixedPoint
     """The amount of liquidity added, in units of base."""
     vault_share_amount: FixedPoint
@@ -140,10 +147,10 @@ class RemoveLiquidity:
     """The address that receives the proceeds of the trade."""
     lp_amount: FixedPoint
     """The amount of liquidity removed in units of lp."""
-    base_amount: FixedPoint
-    """The amount of liquidity removed, in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount of liquidity removed, in units of shares."""
+    amount: FixedPoint
+    """The amount of liquidity removed, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
     withdrawal_share_amount: FixedPoint
@@ -165,10 +172,10 @@ class RedeemWithdrawalShares:
     """The address that receives the proceeds of the trade."""
     withdrawal_share_amount: FixedPoint
     """The amount of withdrawal shares redeemed, in units of withdrawal shares."""
-    base_amount: FixedPoint
-    """The amount of withdrawal shares redeemed, in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount of withdrawal shares redeemed, in units of shares."""
+    amount: FixedPoint
+    """The amount of withdrawal shares redeemed, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
 
