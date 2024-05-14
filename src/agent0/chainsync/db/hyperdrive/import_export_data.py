@@ -23,9 +23,9 @@ from .interface import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
+    get_position_snapshot,
     get_ticker,
     get_trade_events,
-    get_wallet_pnl,
 )
 from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
@@ -94,7 +94,7 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool
     get_ticker(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "ticker.parquet"), index=False, engine="pyarrow"
     )
-    get_wallet_pnl(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
+    get_position_snapshot(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
         os.path.join(out_dir, "wallet_pnl.parquet"), index=False, engine="pyarrow"
     )
 

@@ -14,9 +14,9 @@ from agent0.chainsync.dashboard import build_ticker, build_user_mapping, map_add
 from agent0.chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
 from agent0.chainsync.db.hyperdrive import (
     get_all_traders,
+    get_position_snapshot,
     get_ticker,
-    get_total_wallet_pnl_over_time,
-    get_wallet_pnl,
+    get_total_pnl_over_time,
     get_wallet_positions_over_time,
 )
 from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
@@ -63,7 +63,9 @@ ticker = get_ticker(session, max_rows=MAX_ROWS, coerce_float=False, wallet_addre
 display_ticker = build_ticker(ticker, user_map)
 
 # Get latest wallet pnls for selected addresses
-latest_wallet_pnl = get_wallet_pnl(session, start_block=-1, coerce_float=False, wallet_address=selected_addresses)
+latest_wallet_pnl = get_position_snapshot(
+    session, start_block=-1, coerce_float=False, wallet_address=selected_addresses
+)
 # Do lookup of addresses and (1) add username column, and (2) replace wallet_address with abbr address
 mapped = map_addresses(latest_wallet_pnl["wallet_address"], user_map)
 latest_wallet_pnl["username"] = mapped["username"]
@@ -89,7 +91,7 @@ st.write("Transactions")
 st.dataframe(display_ticker, height=500, use_container_width=True)
 
 # Get PNL over time
-pnl_over_time = get_total_wallet_pnl_over_time(
+pnl_over_time = get_total_pnl_over_time(
     session, start_block=-MAX_PLOT_BLOCKS, coerce_float=False, wallet_address=selected_addresses
 )
 # Add username

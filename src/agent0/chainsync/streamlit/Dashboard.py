@@ -27,7 +27,13 @@ from agent0.chainsync.dashboard import (
     plot_rates,
 )
 from agent0.chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
-from agent0.chainsync.db.hyperdrive import get_all_traders, get_pool_analysis, get_pool_info, get_ticker, get_wallet_pnl
+from agent0.chainsync.db.hyperdrive import (
+    get_all_traders,
+    get_pool_analysis,
+    get_pool_info,
+    get_position_snapshot,
+    get_ticker,
+)
 
 # pylint: disable=invalid-name
 
@@ -79,7 +85,7 @@ while True:
 
     # get wallet pnl and calculate leaderboard
     # Get the latest updated block
-    latest_wallet_pnl = get_wallet_pnl(session, start_block=-1, coerce_float=False)
+    latest_wallet_pnl = get_position_snapshot(session, start_block=-1, coerce_float=False)
     comb_rank, ind_rank = build_leaderboard(latest_wallet_pnl, user_map)
 
     # build ohlcv and volume

@@ -30,9 +30,9 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
+    get_position_snapshot,
     get_ticker,
-    get_total_wallet_pnl_over_time,
-    get_wallet_pnl,
+    get_total_pnl_over_time,
     trade_events_to_db,
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
@@ -598,7 +598,7 @@ class LocalHyperdrive(Hyperdrive):
         # TODO potential improvement is to pivot the table so that columns are the token type
         # Makes this data easier to work with
         # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_pnl(self.chain.db_session, start_block=-1, coerce_float=coerce_float)
+        out = get_position_snapshot(self.chain.db_session, start_block=-1, coerce_float=coerce_float)
         # DB only stores final delta for base, we calculate actual base based on how much funds
         # were added in all
         out = self._adjust_base_positions(out, "value", coerce_float)
@@ -744,7 +744,7 @@ class LocalHyperdrive(Hyperdrive):
             pnl: Decimal | float
                 The total pnl of the agent at the specified block number.
         """
-        out = get_total_wallet_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
+        out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = out[
             [

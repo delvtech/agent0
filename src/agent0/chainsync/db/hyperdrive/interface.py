@@ -283,7 +283,11 @@ def get_latest_block_number_from_analysis_table(session: Session) -> int:
 
 
 def get_pool_info(
-    session: Session, start_block: int | None = None, end_block: int | None = None, coerce_float=True
+    session: Session,
+    hyperdrive_address: str | None = None,
+    start_block: int | None = None,
+    end_block: int | None = None,
+    coerce_float=True,
 ) -> pd.DataFrame:
     """Get all pool info and returns a pandas dataframe.
 
@@ -291,6 +295,8 @@ def get_pool_info(
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive address to filter the query on. Return all if None.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
@@ -306,6 +312,9 @@ def get_pool_info(
         A DataFrame that consists of the queried pool info data.
     """
     query = session.query(PoolInfo)
+
+    if hyperdrive_address is not None:
+        query = query.filter(PoolInfo.hyperdrive_address == hyperdrive_address)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -365,13 +374,15 @@ def get_checkpoint_info(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_all_traders(session: Session) -> pd.Series:
+def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> pd.Series:
     """Get the list of all traders from the TradeEvent table.
 
     Arguments
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive pool address to filter the query on. Defaults to returning all traders.
 
     Returns
     -------
@@ -379,6 +390,8 @@ def get_all_traders(session: Session) -> pd.Series:
         A list of addresses that have made a trade.
     """
     query = session.query(TradeEvent.wallet_address)
+    if hyperdrive_address is not None:
+        query = query.filter(CheckpointInfo.hyperdrive_address == hyperdrive_address)
     if query is None:
         return pd.Series([])
     query = query.distinct()
@@ -393,6 +406,7 @@ def get_all_traders(session: Session) -> pd.Series:
 
 def get_pool_analysis(
     session: Session,
+    hyperdrive_address: str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
     return_timestamp: bool = True,
@@ -404,6 +418,8 @@ def get_pool_analysis(
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive pool address to filter the query on. Defaults to returning all pool analysis.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
@@ -424,6 +440,9 @@ def get_pool_analysis(
         query = session.query(PoolInfo.timestamp, PoolAnalysis)
     else:
         query = session.query(PoolAnalysis)
+
+    if hyperdrive_address is not None:
+        query = query.filter(PoolAnalysis.hyperdrive_address == hyperdrive_address)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -448,6 +467,7 @@ def get_pool_analysis(
 
 def get_ticker(
     session: Session,
+    hyperdrive_address: str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_addresses: list[str] | None = None,
@@ -460,6 +480,8 @@ def get_ticker(
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive pool address to filter the query on. Defaults to returning all pool analysis.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
@@ -480,6 +502,9 @@ def get_ticker(
     """
     # pylint: disable=too-many-arguments
     query = session.query(TradeEvent)
+
+    if hyperdrive_address is not None:
+        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -506,20 +531,23 @@ def get_ticker(
 
 # Lots of arguments, most are defaults
 # pylint: disable=too-many-arguments
-def get_wallet_pnl(
+def get_position_snapshot(
     session: Session,
+    hyperdrive_address: str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | None = None,
     return_timestamp: bool = True,
     coerce_float=True,
 ) -> pd.DataFrame:
-    """Get all wallet pnl and returns a pandas dataframe.
+    """Get all position snapshot data and returns a pandas dataframe.
 
     Arguments
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive pool address to filter the query on. Defaults to returning all position snapshots.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
@@ -542,6 +570,9 @@ def get_wallet_pnl(
         query = session.query(PoolInfo.timestamp, PositionSnapshot)
     else:
         query = session.query(PositionSnapshot)
+
+    if hyperdrive_address is not None:
+        query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
 
     latest_block = get_latest_block_number_from_table(PositionSnapshot, session)
     if start_block is None:
@@ -570,14 +601,14 @@ def get_wallet_pnl(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_total_wallet_pnl_over_time(
+def get_total_pnl_over_time(
     session: Session,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | None = None,
     coerce_float=True,
 ) -> pd.DataFrame:
-    """Get total pnl across wallets over time and returns a pandas dataframe.
+    """Aggregate pnl over time over all positions a wallet has.
 
     Arguments
     ---------
@@ -634,6 +665,7 @@ def get_total_wallet_pnl_over_time(
 
 def get_wallet_positions_over_time(
     session: Session,
+    hyperdrive_address: str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | None = None,
@@ -645,6 +677,8 @@ def get_wallet_positions_over_time(
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive address to filter the query on. Returns all if None.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
@@ -668,6 +702,9 @@ def get_wallet_positions_over_time(
         PositionSnapshot.token_type,
         func.sum(PositionSnapshot.amount).label("value"),  # pylint: disable=not-callable
     )
+
+    if hyperdrive_address is not None:
+        subquery = subquery.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
