@@ -9,9 +9,8 @@ from sqlalchemy import exc, func
 from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.base import get_latest_block_number_from_table
-from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
-from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, Ticker, TradeEvent
+from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 # Event Data Ingestion Interface
 
@@ -224,7 +223,9 @@ def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> No
     # This function is being called by acquire_data.py, which should only have one
     # instance per db, so no need to worry about it here
     # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_checkpoint_info = get_checkpoint_info(session, checkpoint_info.checkpoint_time, coerce_float=False)
+    existing_checkpoint_info = get_checkpoint_info(
+        session, checkpoint_info.hyperdrive_address, checkpoint_info.checkpoint_time, coerce_float=False
+    )
     if len(existing_checkpoint_info) == 0:
         # Adding new entry, no checks needed
         pass
@@ -323,7 +324,9 @@ def get_pool_info(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, coerce_float=True) -> pd.DataFrame:
+def get_checkpoint_info(
+    session: Session, hyperdrive_address: str | None = None, checkpoint_time: int | None = None, coerce_float=True
+) -> pd.DataFrame:
     """Get all info associated with a given checkpoint.
 
     This includes
@@ -336,6 +339,8 @@ def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, co
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None, optional
+        The hyperdrive pool address to filter the query on. Defaults to returning all checkpoint infos.
     checkpoint_time: int | None, optional
         The checkpoint time to filter the query on. Defaults to returning all checkpoint infos.
     coerce_float: bool
@@ -347,6 +352,9 @@ def get_checkpoint_info(session: Session, checkpoint_time: int | None = None, co
         A DataFrame that consists of the queried checkpoint info.
     """
     query = session.query(CheckpointInfo)
+
+    if hyperdrive_address is not None:
+        query = query.filter(CheckpointInfo.hyperdrive_address == hyperdrive_address)
 
     if checkpoint_time is not None:
         query = query.filter(CheckpointInfo.checkpoint_time == checkpoint_time)

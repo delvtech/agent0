@@ -10,14 +10,7 @@ import pandas as pd
 import pytest
 from fixedpointmath import FixedPoint, isclose
 
-from agent0.chainsync.db.hyperdrive.interface import (
-    get_current_wallet,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
-)
+from agent0.chainsync.db.hyperdrive.interface import get_pool_analysis, get_pool_config, get_pool_info
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.test_utils import CycleTradesPolicy

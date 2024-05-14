@@ -11,81 +11,21 @@ from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 from .interface import (
     add_checkpoint_info,
-    add_current_wallet,
     add_pool_config,
     add_pool_infos,
     add_trade_events,
-    add_transactions,
-    add_wallet_deltas,
     get_all_traders,
     get_checkpoint_info,
-    get_current_wallet,
     get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_table,
     get_latest_block_number_from_trade_event,
     get_pool_config,
     get_pool_info,
-    get_transactions,
-    get_wallet_deltas,
 )
-from .schema import CheckpointInfo, CurrentWallet, HyperdriveTransaction, PoolConfig, PoolInfo, TradeEvent, WalletDelta
+from .schema import CheckpointInfo, PoolConfig, PoolInfo, TradeEvent
 
 
 # These tests are using fixtures defined in conftest.py
-class TestTransactionInterface:
-    """Testing postgres interface for transaction table"""
-
-    @pytest.mark.docker
-    def test_latest_block_number(self, db_session):
-        """Testing retrieval of transaction via interface"""
-        transaction_1 = HyperdriveTransaction(block_number=1, transaction_hash="a", event_value=Decimal("3.0"))
-        add_transactions([transaction_1], db_session)
-
-        latest_block_number = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
-        assert latest_block_number == 1
-
-        transaction_2 = HyperdriveTransaction(block_number=2, transaction_hash="b", event_value=Decimal("3.2"))
-        transaction_3 = HyperdriveTransaction(block_number=3, transaction_hash="c", event_value=Decimal("3.4"))
-        add_transactions([transaction_2, transaction_3], db_session)
-
-        latest_block_number = get_latest_block_number_from_table(HyperdriveTransaction, db_session)
-        assert latest_block_number == 3
-
-    @pytest.mark.docker
-    def test_get_transactions(self, db_session):
-        """Testing retrieval of transactions via interface"""
-        transaction_1 = HyperdriveTransaction(block_number=0, transaction_hash="a", event_value=Decimal("3.1"))
-        transaction_2 = HyperdriveTransaction(block_number=1, transaction_hash="b", event_value=Decimal("3.2"))
-        transaction_3 = HyperdriveTransaction(block_number=2, transaction_hash="c", event_value=Decimal("3.3"))
-        add_transactions([transaction_1, transaction_2, transaction_3], db_session)
-
-        transactions_df = get_transactions(db_session)
-        np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2, 3.3])
-
-    @pytest.mark.docker
-    def test_block_query_transactions(self, db_session):
-        """Testing querying by block number of transactions via interface"""
-        transaction_1 = HyperdriveTransaction(block_number=0, transaction_hash="a", event_value=Decimal("3.1"))
-        transaction_2 = HyperdriveTransaction(block_number=1, transaction_hash="b", event_value=Decimal("3.2"))
-        transaction_3 = HyperdriveTransaction(block_number=2, transaction_hash="c", event_value=Decimal("3.3"))
-        add_transactions([transaction_1, transaction_2, transaction_3], db_session)
-
-        transactions_df = get_transactions(db_session, start_block=1)
-        np.testing.assert_array_equal(transactions_df["event_value"], [3.2, 3.3])
-
-        transactions_df = get_transactions(db_session, start_block=-1)
-        np.testing.assert_array_equal(transactions_df["event_value"], [3.3])
-
-        transactions_df = get_transactions(db_session, end_block=1)
-        np.testing.assert_array_equal(transactions_df["event_value"], [3.1])
-
-        transactions_df = get_transactions(db_session, end_block=-1)
-        np.testing.assert_array_equal(transactions_df["event_value"], [3.1, 3.2])
-
-        transactions_df = get_transactions(db_session, start_block=1, end_block=-1)
-        np.testing.assert_array_equal(transactions_df["event_value"], [3.2])
-
-
 class TestCheckpointInterface:
     """Testing postgres interface for checkpoint table"""
 
@@ -95,9 +35,9 @@ class TestCheckpointInterface:
         checkpoint_time_1 = 100
         checkpoint_time_2 = 1000
         checkpoint_time_3 = 10000
-        checkpoint_1 = CheckpointInfo(checkpoint_time=checkpoint_time_1)
-        checkpoint_2 = CheckpointInfo(checkpoint_time=checkpoint_time_2)
-        checkpoint_3 = CheckpointInfo(checkpoint_time=checkpoint_time_3)
+        checkpoint_1 = CheckpointInfo(checkpoint_time=checkpoint_time_1, hyperdrive_address="a")
+        checkpoint_2 = CheckpointInfo(checkpoint_time=checkpoint_time_2, hyperdrive_address="a")
+        checkpoint_3 = CheckpointInfo(checkpoint_time=checkpoint_time_3, hyperdrive_address="a")
         add_checkpoint_info(checkpoint_1, db_session)
         add_checkpoint_info(checkpoint_2, db_session)
         add_checkpoint_info(checkpoint_3, db_session)
@@ -111,9 +51,9 @@ class TestCheckpointInterface:
     @pytest.mark.docker
     def test_checkpoint_time_query_checkpoints(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
-        checkpoint_1 = CheckpointInfo(checkpoint_time=100, vault_share_price=Decimal("3.1"))
-        checkpoint_2 = CheckpointInfo(checkpoint_time=1000, vault_share_price=Decimal("3.2"))
-        checkpoint_3 = CheckpointInfo(checkpoint_time=10000, vault_share_price=Decimal("3.3"))
+        checkpoint_1 = CheckpointInfo(checkpoint_time=100, hyperdrive_address="a", vault_share_price=Decimal("3.1"))
+        checkpoint_2 = CheckpointInfo(checkpoint_time=1000, hyperdrive_address="a", vault_share_price=Decimal("3.2"))
+        checkpoint_3 = CheckpointInfo(checkpoint_time=10000, hyperdrive_address="a", vault_share_price=Decimal("3.3"))
         add_checkpoint_info(checkpoint_1, db_session)
         add_checkpoint_info(checkpoint_2, db_session)
         add_checkpoint_info(checkpoint_3, db_session)
@@ -134,20 +74,26 @@ class TestCheckpointInterface:
     def test_checkpoint_time_verify(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
         checkpoint_1 = CheckpointInfo(
-            checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("4.1")
+            checkpoint_time=100,
+            hyperdrive_address="a",
+            vault_share_price=Decimal("3.1"),
+            weighted_spot_price=Decimal("4.1"),
         )
         add_checkpoint_info(checkpoint_1, db_session)
-        checkpoint_df_1 = get_checkpoint_info(db_session, coerce_float=False)
+        checkpoint_df_1 = get_checkpoint_info(db_session, hyperdrive_address="a", coerce_float=False)
         assert len(checkpoint_df_1) == 1
         assert checkpoint_df_1.loc[0, "vault_share_price"] == Decimal("3.1")
         assert checkpoint_df_1.loc[0, "weighted_spot_price"] == Decimal("4.1")
 
         # Nothing should happen if we give the same checkpoint info
         checkpoint_2 = CheckpointInfo(
-            checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("4.1")
+            checkpoint_time=100,
+            hyperdrive_address="a",
+            vault_share_price=Decimal("3.1"),
+            weighted_spot_price=Decimal("4.1"),
         )
         add_checkpoint_info(checkpoint_2, db_session)
-        checkpoint_df_2 = get_checkpoint_info(db_session, coerce_float=False)
+        checkpoint_df_2 = get_checkpoint_info(db_session, hyperdrive_address="a", coerce_float=False)
         assert len(checkpoint_df_2) == 1
         assert checkpoint_df_2.loc[0, "vault_share_price"] == Decimal("3.1")
         assert checkpoint_df_2.loc[0, "weighted_spot_price"] == Decimal("4.1")
@@ -155,7 +101,10 @@ class TestCheckpointInterface:
         # Adding a checkpoint info with the same checkpoint time with a different vault share price
         # should throw a value error
         checkpoint_3 = CheckpointInfo(
-            checkpoint_time=100, vault_share_price=Decimal("3.4"), weighted_spot_price=Decimal("5.1")
+            checkpoint_time=100,
+            hyperdrive_address="a",
+            vault_share_price=Decimal("3.4"),
+            weighted_spot_price=Decimal("4.4"),
         )
         with pytest.raises(ValueError):
             add_checkpoint_info(checkpoint_3, db_session)
@@ -163,13 +112,68 @@ class TestCheckpointInterface:
         # Adding a checkpoint info with the same checkpoint time and vault share price should
         # update the other values
         checkpoint_4 = CheckpointInfo(
-            checkpoint_time=100, vault_share_price=Decimal("3.1"), weighted_spot_price=Decimal("5.1")
+            checkpoint_time=100,
+            hyperdrive_address="a",
+            vault_share_price=Decimal("3.1"),
+            weighted_spot_price=Decimal("4.4"),
+        )
+        add_checkpoint_info(checkpoint_4, db_session)
+        checkpoint_df_4 = get_checkpoint_info(db_session, hyperdrive_address="a", coerce_float=False)
+        assert len(checkpoint_df_4) == 1
+        assert checkpoint_df_4.loc[0, "vault_share_price"] == Decimal("3.1")
+        assert checkpoint_df_4.loc[0, "weighted_spot_price"] == Decimal("4.4")
+
+        # Repeat the same test with a different hyperdrive address
+        # and different values
+        checkpoint_1 = CheckpointInfo(
+            checkpoint_time=100,
+            hyperdrive_address="b",
+            vault_share_price=Decimal("5.1"),
+            weighted_spot_price=Decimal("6.1"),
+        )
+        add_checkpoint_info(checkpoint_1, db_session)
+        checkpoint_df_1 = get_checkpoint_info(db_session, hyperdrive_address="b", coerce_float=False)
+        assert len(checkpoint_df_1) == 1
+        assert checkpoint_df_1.loc[0, "vault_share_price"] == Decimal("5.1")
+        assert checkpoint_df_1.loc[0, "weighted_spot_price"] == Decimal("6.1")
+
+        # Nothing should happen if we give the same checkpoint info
+        checkpoint_2 = CheckpointInfo(
+            checkpoint_time=100,
+            hyperdrive_address="b",
+            vault_share_price=Decimal("5.1"),
+            weighted_spot_price=Decimal("6.1"),
+        )
+        add_checkpoint_info(checkpoint_2, db_session)
+        checkpoint_df_2 = get_checkpoint_info(db_session, hyperdrive_address="b", coerce_float=False)
+        assert len(checkpoint_df_2) == 1
+        assert checkpoint_df_2.loc[0, "vault_share_price"] == Decimal("5.1")
+        assert checkpoint_df_2.loc[0, "weighted_spot_price"] == Decimal("6.1")
+
+        # Adding a checkpoint info with the same checkpoint time with a different vault share price
+        # should throw a value error
+        checkpoint_3 = CheckpointInfo(
+            checkpoint_time=100,
+            hyperdrive_address="b",
+            vault_share_price=Decimal("5.4"),
+            weighted_spot_price=Decimal("6.4"),
+        )
+        with pytest.raises(ValueError):
+            add_checkpoint_info(checkpoint_3, db_session)
+
+        # Adding a checkpoint info with the same checkpoint time and vault share price should
+        # update the other values
+        checkpoint_4 = CheckpointInfo(
+            checkpoint_time=100,
+            hyperdrive_address="b",
+            vault_share_price=Decimal("5.1"),
+            weighted_spot_price=Decimal("6.4"),
         )
         add_checkpoint_info(checkpoint_4, db_session)
         checkpoint_df_4 = get_checkpoint_info(db_session, coerce_float=False)
         assert len(checkpoint_df_4) == 1
-        assert checkpoint_df_4.loc[0, "vault_share_price"] == Decimal("3.1")
-        assert checkpoint_df_4.loc[0, "weighted_spot_price"] == Decimal("5.1")
+        assert checkpoint_df_4.loc[0, "vault_share_price"] == Decimal("5.1")
+        assert checkpoint_df_4.loc[0, "weighted_spot_price"] == Decimal("6.4")
 
 
 class TestPoolConfigInterface:

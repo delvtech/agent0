@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
+from .schema import CheckpointInfo, PoolConfig, PoolInfo
 
 # These tests are using fixtures defined in conftest.py
 

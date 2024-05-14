@@ -20,28 +20,14 @@ from agent0.chainsync.df_to_db import df_to_db
 
 from .interface import (
     get_checkpoint_info,
-    get_current_wallet,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_ticker,
     get_trade_events,
-    get_transactions,
-    get_wallet_deltas,
     get_wallet_pnl,
 )
-from .schema import (
-    CheckpointInfo,
-    CurrentWallet,
-    HyperdriveTransaction,
-    PoolAnalysis,
-    PoolConfig,
-    PoolInfo,
-    PositionSnapshot,
-    Ticker,
-    TradeEvent,
-    WalletDelta,
-)
+from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 
 def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool = False) -> None:

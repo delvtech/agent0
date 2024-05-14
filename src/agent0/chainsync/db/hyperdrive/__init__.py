@@ -13,12 +13,9 @@ from .interface import (
     add_pool_config,
     add_pool_infos,
     add_trade_events,
-    add_transactions,
-    add_wallet_deltas,
     get_all_traders,
     get_checkpoint_info,
     get_current_positions,
-    get_current_wallet,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_table,
@@ -28,19 +25,7 @@ from .interface import (
     get_ticker,
     get_total_wallet_pnl_over_time,
     get_trade_events,
-    get_transactions,
-    get_wallet_deltas,
     get_wallet_pnl,
     get_wallet_positions_over_time,
 )
-from .schema import (
-    CheckpointInfo,
-    CurrentWallet,
-    HyperdriveTransaction,
-    PoolAnalysis,
-    PoolConfig,
-    PoolInfo,
-    PositionSnapshot,
-    Ticker,
-    WalletDelta,
-)
+from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot

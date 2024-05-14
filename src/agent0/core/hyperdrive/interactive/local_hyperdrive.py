@@ -24,16 +24,14 @@ from web3.exceptions import TimeExhausted
 
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
-from agent0.chainsync.db.hyperdrive import get_checkpoint_info
-from agent0.chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
 from agent0.chainsync.db.hyperdrive import (
+    get_checkpoint_info,
     get_latest_block_number_from_analysis_table,
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_ticker,
     get_total_wallet_pnl_over_time,
-    get_wallet_deltas,
     get_wallet_pnl,
     trade_events_to_db,
 )

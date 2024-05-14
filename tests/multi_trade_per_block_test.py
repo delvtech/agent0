@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
+from agent0.chainsync.db.hyperdrive.interface import get_ticker
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade

@@ -16,7 +16,7 @@ from agent0.ethpy.base import get_transaction_logs
 from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
-from .schema import CheckpointInfo, HyperdriveTransaction, PoolConfig, PoolInfo, WalletDelta
+from .schema import CheckpointInfo, PoolConfig, PoolInfo
 
 
 def convert_hyperdrive_transactions_for_block(

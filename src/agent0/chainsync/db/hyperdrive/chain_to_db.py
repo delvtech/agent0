@@ -23,14 +23,7 @@ from .convert_data import (
     convert_pool_config,
     convert_pool_info,
 )
-from .interface import (
-    add_checkpoint_info,
-    add_pool_config,
-    add_pool_infos,
-    add_transactions,
-    add_wallet_deltas,
-    get_latest_block_number_from_trade_event,
-)
+from .interface import add_checkpoint_info, add_pool_config, add_pool_infos, get_latest_block_number_from_trade_event
 from .schema import TradeEvent
 
 
