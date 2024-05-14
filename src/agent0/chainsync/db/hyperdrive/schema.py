@@ -154,6 +154,18 @@ class TradeEvent(Base):
     """
     The change in base tokens for the event with respect to the wallet address.
     """
+    vault_share_delta: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """
+    The change in vault share tokens for the event with respect to the wallet address.
+    """
+    as_base: Mapped[Union[bool, None]] = mapped_column(Boolean, default=None)
+    """
+    A flag defining if the trade was made in units of base or vault shares.
+    """
+    vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """
+    The vault share price at the time of the emitted event.
+    """
 
 
 # TODO: either make a more general TokenDelta, or rename this to HyperdriveDelta

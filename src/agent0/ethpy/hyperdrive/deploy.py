@@ -115,6 +115,7 @@ def deploy_hyperdrive_from_factory(
 
     # Update various configs with the deploy account address
     factory_deploy_config.governance = deploy_account_addr
+    factory_deploy_config.deployerCoordinatorManager = deploy_account_addr
     factory_deploy_config.hyperdriveGovernance = deploy_account_addr
     factory_deploy_config.feeCollector = deploy_account_addr
     factory_deploy_config.sweepCollector = deploy_account_addr

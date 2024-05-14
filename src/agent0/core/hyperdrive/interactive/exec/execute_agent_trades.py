@@ -312,9 +312,14 @@ async def _async_match_contract_call_to_trade(
                 nonce=nonce,
                 preview_before_trade=preview_before_trade,
             )
+            # No need to check if unit is in base,
+            # as we use the yield token itself as
+            # the base token. The switch happens when making
+            # trades.
+            # This will get reworked when we support multiple pools.
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=-trade_result.base_amount,
+                    amount=-trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 longs={
@@ -338,7 +343,7 @@ async def _async_match_contract_call_to_trade(
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=trade_result.base_amount,
+                    amount=trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 longs={
@@ -359,7 +364,7 @@ async def _async_match_contract_call_to_trade(
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=-trade_result.base_amount,
+                    amount=-trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 shorts={
@@ -383,7 +388,7 @@ async def _async_match_contract_call_to_trade(
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=trade_result.base_amount,
+                    amount=trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 shorts={
@@ -410,7 +415,7 @@ async def _async_match_contract_call_to_trade(
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=-trade_result.base_amount,
+                    amount=-trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 lp_tokens=trade_result.lp_amount,
@@ -426,7 +431,7 @@ async def _async_match_contract_call_to_trade(
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=trade_result.base_amount,
+                    amount=trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 lp_tokens=-trade_result.lp_amount,
@@ -443,7 +448,7 @@ async def _async_match_contract_call_to_trade(
             )
             wallet_deltas = HyperdriveWalletDeltas(
                 balance=Quantity(
-                    amount=trade_result.base_amount,
+                    amount=trade_result.amount,
                     unit=TokenType.BASE,
                 ),
                 withdraw_shares=-trade_result.withdrawal_share_amount,

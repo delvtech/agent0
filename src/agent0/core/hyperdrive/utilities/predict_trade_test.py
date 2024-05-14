@@ -64,6 +64,7 @@ def _log_event(
     base_needed: FixedPoint,
     event: OpenLong | OpenShort,
 ):
+    assert event.as_base
     logging.info(
         "opened %s with input %s=%s, output Δbonds= %s%s, Δbase= %s%s",
         trade_type,
@@ -71,8 +72,8 @@ def _log_event(
         base_needed,
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
 
 
