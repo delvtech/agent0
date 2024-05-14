@@ -6,13 +6,19 @@ import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from agent0.chainsync.db.hyperdrive import PoolAnalysis, PositionSnapshot, get_checkpoint_info, get_pool_info
+from agent0.chainsync.db.hyperdrive import (
+    PoolAnalysis,
+    PositionSnapshot,
+    get_checkpoint_info,
+    get_current_positions,
+    get_pool_info
+)
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
-from .calc_pnl import calc_closeout_pnl
+from .calc_pnl import calc_closeout_value
 from .calc_spot_price import calc_spot_price
 from .calc_ticker import calc_ticker
 
@@ -113,7 +119,7 @@ def _pd_decimal_to_str_scaled_value(in_pd: pd.Series):
 def data_to_analysis(
     start_block: int,
     end_block: int,
-    pool_config: pd.Series,
+    pool_config_df: pd.DataFrame,
     db_session: Session,
     interfaces: list[HyperdriveReadInterface],
     calc_pnl: bool = True,
@@ -127,8 +133,8 @@ def data_to_analysis(
         The block to start analysis on.
     end_block: int
         The block to end analysis on.
-    pool_config: pd.Series
-        The pool config data.
+    pool_config_df: pd.DataFrame
+        The pool config data for all pools.
     db_session: Session
         The initialized db session.
     interfaces: list[HyperdriveReadInterface] | None, optional
@@ -138,53 +144,25 @@ def data_to_analysis(
     """
     # Get data
     for interface in interfaces:
-        pool_info = get_pool_info(db_session, start_block, end_block, coerce_float=False)
+        hyperdrive_address = interface.hyperdrive_address
+        pool_config = pool_config_df[pool_config_df["hyperdrive_address"] == hyperdrive_address]
+        assert len(pool_config) == 1
+        pool_config = pool_config.iloc[0]
+        # Note end block here is not inclusive
+        pool_info = get_pool_info(db_session, hyperdrive_address, start_block, end_block, coerce_float=False)
 
-        # TODO calculate current wallet positions for this block
-        # This should be done from the deltas, not queries from chain
-        wallet_deltas_df = get_wallet_deltas(db_session, start_block, end_block, coerce_float=False)
-        # Explicit check for empty wallet_deltas here
-        if len(wallet_deltas_df) > 0:
-            # Get current wallet of previous timestamp here
-            # If it doesn't exist, should be an empty dataframe
-            latest_wallet = get_current_wallet(db_session, end_block=start_block, coerce_float=False)
-            current_wallet_df = calc_current_wallet(wallet_deltas_df, latest_wallet)
-            df_to_db(current_wallet_df, CurrentWallet, db_session)
-
-            # calculate pnl through closeout pnl
-            # TODO this function might be slow due to contract call on chain
-            # and calculating for every position, wallet, and block
-            # This will get better when we have the rust implementation of `smart_contract_preview_transaction`.
-            # Alternatively, set sample rate so we don't calculate this every block
-            # We can set a sample rate by doing batch processing on this function
-            # since we only get the current wallet for the end_block
-            wallet_pnl = get_current_wallet(db_session, end_block=end_block, coerce_float=False)
+        # Calculate all open positions for the end block
+        current_pool_positions = get_current_positions(
+            db_session, hyperdrive_address=hyperdrive_address, query_block=end_block, coerce_float=False
+        )
+        if len(current_pool_positions) > 0:
+            # Calculate pnl for these positions if flag is set
             if calc_pnl:
                 checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
-                pnl_df = calc_closeout_pnl(wallet_pnl, checkpoint_info, interface)
-            else:
-                pnl_df = np.nan
-
-            # This sets the pnl to the current wallet dataframe, but there may be scaling issues here.
-            # This is because the `CurrentWallet` table has one entry per change in wallet position,
-            # and the `get_current_wallet` function handles getting all current positions at a block.
-            # If we add this current_wallet (plus pnl) to the database here, the final size in the db is
-            # number_of_blocks * number_of_addresses * number_of_open_positions, which is not scalable.
-            # We alleviate this by sampling periodically, and not calculate this for every block
-            # TODO implement sampling by setting the start + end block parameters in the caller of this function
-            # TODO If sampling, might want to move this to be a separate function, with the caller controlling
-            # the sampling rate. Otherwise, the e.g., ticker updates will also be on the sampling rate (won't miss data,
-            # just lower frequency updates)
-            # TODO do scaling tests to see the limit of this
-            wallet_pnl["pnl"] = pnl_df
+                pnl_df = calc_closeout_value(current_pool_positions, checkpoint_info, interface)
+                current_pool_positions["pnl"] = pnl_df
             # Add wallet_pnl to the database
-            df_to_db(wallet_pnl, PositionSnapshot, db_session)
-
-            # Build ticker from wallet delta
-            transactions = get_transactions(db_session, start_block, end_block, coerce_float=False)
-            ticker_df = calc_ticker(wallet_deltas_df, transactions, pool_info)
-            # TODO add ticker to database
-            df_to_db(ticker_df, Ticker, db_session)
+            df_to_db(current_pool_positions, PositionSnapshot, db_session)
 
         # We add pool analysis last since this table is what's being used to determine how far the data pipeline is.
         # Calculate spot price
@@ -209,4 +187,5 @@ def data_to_analysis(
 
         pool_analysis_df = pd.concat([pool_info["block_number"], spot_price, fixed_rate, base_buffer], axis=1)
         pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
+        pool_analysis_df["hyperdrive_address"] = hyperdrive_address
         df_to_db(pool_analysis_df, PoolAnalysis, db_session)

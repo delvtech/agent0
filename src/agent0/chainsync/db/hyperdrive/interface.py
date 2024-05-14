@@ -83,7 +83,13 @@ def get_trade_events(session: Session, wallet_addr: str | None = None) -> pd.Dat
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=False)
 
 
-def get_current_positions(session: Session, wallet_addr: str, hyperdrive_address: str | None = None) -> pd.DataFrame:
+def get_current_positions(
+    session: Session,
+    wallet_addr: str | None = None,
+    hyperdrive_address: str | None = None,
+    query_block: int | None = None,
+    coerce_float=False,
+) -> pd.DataFrame:
     """Gets all positions for a given wallet address.
 
     Arguments
@@ -94,6 +100,11 @@ def get_current_positions(session: Session, wallet_addr: str, hyperdrive_address
         The wallet address to filter the results on.
     hyperdrive_address: str | None, optional
         The hyperdrive address to filter the results on. Returns all if None.
+    query_block: int | None, optional
+        The block to get positions for. query_block integers
+        matches python slicing notation, e.g., list[:3], list[:-3].
+    coerce_float: bool
+        If True, will coerce all numeric columns to float.
 
     Returns
     -------
@@ -106,16 +117,31 @@ def get_current_positions(session: Session, wallet_addr: str, hyperdrive_address
         TradeEvent.hyperdrive_address,
         TradeEvent.wallet_address,
         TradeEvent.token_id,
+        # We use max in lieu of a "first" or "last" function in sqlalchemy
+        func.max(TradeEvent.token_type).label("token_type"),
+        func.max(TradeEvent.maturity_time).label("maturity_time"),
         func.sum(TradeEvent.token_delta).label("balance"),
+        # Convert to base here
+        func.sum(TradeEvent.base_delta + (TradeEvent.vault_share_delta * TradeEvent.vault_share_price)).label(
+            "value_spent_in_base"
+        ),
+        func.max(TradeEvent.block_number).label("latest_block_update"),
     )
-    if hyperdrive_address is not None:
-        query = query.filter(
-            TradeEvent.wallet_address == wallet_addr, TradeEvent.hyperdrive_address == hyperdrive_address
-        )
-    else:
+
+    if (query_block is not None) and (query_block < 0):
+        query_block = get_latest_block_number_from_table(TradeEvent, session) + query_block + 1
+
+    if query_block is not None:
+        query = query.filter(PoolInfo.block_number < query_block)
+
+    if wallet_addr is not None:
         query = query.filter(TradeEvent.wallet_address == wallet_addr)
+
+    if hyperdrive_address is not None:
+        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+
     query = query.group_by(TradeEvent.hyperdrive_address, TradeEvent.wallet_address, TradeEvent.token_id)
-    out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=False)
+    out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
     return out_df[out_df["balance"] != 0]
 
@@ -235,6 +261,9 @@ def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> No
             checkpoint_info.vault_share_price != existing_checkpoint_info.loc[0, "vault_share_price"]
         ):
             raise ValueError("Incoming checkpoint info doesn't match vault_share_price.")
+        # Set the id to be the same as existing checkpoint info
+        # Pandas doesn't play nice with types
+        checkpoint_info.id = int(existing_checkpoint_info.loc[0, "id"])  # type: ignore
     else:
         # Should never get here, checkpoint time is primary_key, which is unique
         raise ValueError

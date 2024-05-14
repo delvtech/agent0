@@ -103,7 +103,7 @@ def calc_single_closeout(
     return out_pnl
 
 
-def calc_closeout_pnl(
+def calc_closeout_value(
     current_wallet: pd.DataFrame, checkpoint_info: pd.DataFrame, interface: HyperdriveReadInterface
 ) -> pd.Series:
     """Calculate closeout value of agent positions.

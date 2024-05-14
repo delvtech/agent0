@@ -107,8 +107,6 @@ def data_analysis(
             break
     if pool_config_df is None:
         raise ValueError("Error in getting pool config from db")
-    assert len(pool_config_df) == 1
-    pool_config = pool_config_df.iloc[0]
 
     # Main data loop
     # monitor for new blocks & add pool info per block
@@ -132,7 +130,7 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config, db_session, interfaces, calc_pnl)
+        data_to_analysis(analysis_start_block, analysis_end_block, pool_config_df, db_session, interfaces, calc_pnl)
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit
