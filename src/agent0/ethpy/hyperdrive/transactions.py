@@ -139,13 +139,11 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
     values = ["trader", "destination", "provider", "assetId", "checkpointTime", "asBase"]
     fixedpoint_values = [
         "amount",
-        "baseAmount",  # TODO remove this field once v1.0.7 is released
         "bondAmount",
         "lpAmount",
         "withdrawalShareAmount",
         "vaultSharePrice",
         "checkpointVaultSharePrice",
-        "vaultShareAmount",  # TODO remove this field once v1.0.7 is released
         "baseProceeds",
         "basePayment",
         "lpSharePrice",

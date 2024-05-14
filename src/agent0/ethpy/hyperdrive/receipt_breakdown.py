@@ -19,13 +19,11 @@ class ReceiptBreakdown:
     asset_id: int = 0
     maturity_time_seconds: int = 0
     amount: FixedPoint = FixedPoint(0)
-    base_amount: FixedPoint = FixedPoint(0)  # TODO: remove this field once v1.0.7 is released.
     bond_amount: FixedPoint = FixedPoint(0)
     lp_amount: FixedPoint = FixedPoint(0)
     withdrawal_share_amount: FixedPoint = FixedPoint(0)
     vault_share_price: FixedPoint = FixedPoint(0)
     checkpoint_vault_share_price: FixedPoint = FixedPoint(0)
-    vault_share_amount: FixedPoint = FixedPoint(0)  # TODO: remove this field once v1.0.7 is released.
     base_proceeds: FixedPoint = FixedPoint(0)
     base_payment: FixedPoint = FixedPoint(0)
     as_base: bool = False
@@ -39,15 +37,13 @@ class ReceiptBreakdown:
         # lots of attributes to check
         # pylint: disable=too-many-boolean-expressions
         if (
-            self.base_amount < 0
-            or self.amount < 0
+            self.amount < 0
             or self.bond_amount < 0
             or self.maturity_time_seconds < 0
             or self.lp_amount < 0
             or self.withdrawal_share_amount < 0
             or self.vault_share_price < 0
             or self.checkpoint_vault_share_price < 0
-            or self.vault_share_amount < 0
             or self.base_proceeds < 0
             or self.lp_share_price < 0
             or self.checkpoint_time < 0

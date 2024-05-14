@@ -596,18 +596,11 @@ class Hyperdrive:
                 )
 
             case HyperdriveActionType.ADD_LIQUIDITY:
-                # TODO v1.0.7
                 return AddLiquidity(
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
-                    # TODO v1.0.6 has a bug where these fields were not renamed
-                    # but actually represent amount and vault share price.
-                    # We fix as a temp patch here until v1.0.7 is released.
-                    amount=tx_receipt.base_amount,
-                    vault_share_price=tx_receipt.vault_share_amount,
-                    # TODO use below once v1.0.7 is released
-                    # amount=tx_receipt.amount,
-                    # vault_share_price=tx_receipt.vault_share_price,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
