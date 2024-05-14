@@ -474,6 +474,7 @@ class LocalHyperdrive(Hyperdrive):
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
+            deployerCoordinatorManager="",  # will be determined in the deploy function
             hyperdriveGovernance="",  # will be determined in the deploy function
             defaultPausers=[],  # We don't support pausers when we deploy
             feeCollector="",  # will be determined in the deploy function
