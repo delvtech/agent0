@@ -280,8 +280,13 @@ def trade_events_to_db(
         transfer_events_df.loc[receive_idx, "token_delta"] = transfer_events_df.loc[receive_idx, "value"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        # Base delta is always 0
+        # Base and vault share delta is always 0
         transfer_events_df["base_delta"] = Decimal(0)
+        transfer_events_df["vault_share_delta"] = Decimal(0)
+        # asBase and vaultSharePrice doesn't make sense here, we keep as nan
+        # We use camel case to match the other event fields before rename
+        transfer_events_df["asBase"] = np.nan
+        transfer_events_df["vaultSharePrice"] = np.nan
 
     # Drop all transfer single events
     events_df = events_df[events_df["event"] != "TransferSingle"].reset_index(drop=True)
@@ -310,7 +315,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "bondAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = -events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
@@ -320,7 +330,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
@@ -338,7 +353,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "bondAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = -events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
@@ -348,7 +368,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
@@ -369,7 +394,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "lpAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = -events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
@@ -379,7 +409,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "lpAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
         # We need to also add any withdrawal shares as additional rows
@@ -392,6 +427,7 @@ def trade_events_to_db(
                 lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
             )
             withdrawal_rows["base_delta"] = Decimal(0)
+            withdrawal_rows["vault_share_delta"] = Decimal(0)
             events_df = pd.concat([events_df, withdrawal_rows], axis=0)
 
     events_idx = events_df["event"] == "RedeemWithdrawalShares"
@@ -407,7 +443,12 @@ def trade_events_to_db(
         events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "withdrawalShareAmount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
-        events_df.loc[events_idx, "base_delta"] = events_df.loc[events_idx, "baseAmount"].apply(
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
             lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
         )
 
@@ -426,9 +467,19 @@ def trade_events_to_db(
         "token_id": "token_id",
         "token_delta": "token_delta",
         "base_delta": "base_delta",
+        "vault_share_delta": "vault_share_delta",
+        "asBase": "as_base",
+        "vaultSharePrice": "vault_share_price",
     }
 
     events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
+
+    # Token deltas should always be a number
+    assert (~events_df["token_delta"].isnull()).all()
+    # Replace any nans in deltas with 0
+    # pandas doesn't play nice with types and decimals
+    events_df["base_delta"] = events_df["base_delta"].fillna(Decimal(0))  # type: ignore
+    events_df["vault_share_delta"] = events_df["vault_share_delta"].fillna(Decimal(0))  # type: ignore
 
     # Add to db
     df_to_db(events_df, TradeEvent, db_session)
