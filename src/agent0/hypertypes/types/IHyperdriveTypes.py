@@ -144,8 +144,8 @@ AddLiquidity = ABIEvent(
     inputs=[
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="vaultShareAmount", type="uint256"),
+        ABIEventParams(indexed=False, name="amount", type="uint256"),
+        ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="asBase", type="bool"),
         ABIEventParams(indexed=False, name="lpSharePrice", type="uint256"),
     ],
@@ -257,7 +257,7 @@ Initialize = ABIEvent(
     inputs=[
         ABIEventParams(indexed=True, name="provider", type="address"),
         ABIEventParams(indexed=False, name="lpAmount", type="uint256"),
-        ABIEventParams(indexed=False, name="baseAmount", type="uint256"),
+        ABIEventParams(indexed=False, name="amount", type="uint256"),
         ABIEventParams(indexed=False, name="vaultSharePrice", type="uint256"),
         ABIEventParams(indexed=False, name="asBase", type="bool"),
         ABIEventParams(indexed=False, name="apr", type="uint256"),
