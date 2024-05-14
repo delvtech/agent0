@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
-from sqlalchemy import exc, func
+from sqlalchemy import cast, exc, func
 from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.base import get_latest_block_number_from_table
 
-from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
+from .schema import FIXED_NUMERIC, CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 # Event Data Ingestion Interface
 
@@ -122,9 +122,12 @@ def get_current_positions(
         func.max(TradeEvent.maturity_time).label("maturity_time"),
         func.sum(TradeEvent.token_delta).label("balance"),
         # Convert to base here
-        func.sum(TradeEvent.base_delta + (TradeEvent.vault_share_delta * TradeEvent.vault_share_price)).label(
-            "value_spent_in_base"
-        ),
+        # Underlying deltas are negative, so We flip signs here to conform to "value spent in base"
+        # We explicitly cast to our defined numeric type to truncate to 18 decimal places.
+        -cast(
+            func.sum(TradeEvent.base_delta + (TradeEvent.vault_share_delta * TradeEvent.vault_share_price)),
+            FIXED_NUMERIC,
+        ).label("value_spent_in_base"),
         func.max(TradeEvent.block_number).label("latest_block_update"),
     )
 
@@ -132,7 +135,7 @@ def get_current_positions(
         query_block = get_latest_block_number_from_table(TradeEvent, session) + query_block + 1
 
     if query_block is not None:
-        query = query.filter(PoolInfo.block_number < query_block)
+        query = query.filter(TradeEvent.block_number < query_block)
 
     if wallet_addr is not None:
         query = query.filter(TradeEvent.wallet_address == wallet_addr)

@@ -59,13 +59,22 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     # Block data should be the same for all interfaces
     block = interfaces[0].get_block(block_number)
 
+    # No race conditions here if this script gets interrupted between
+    # intermediate results and pool info.
+    # Trade events table handles not duplicating rows.
+    # Checkpoint info table handles duplicate entries with unique constraint on
+    # checkpoint id and vault share price (although if pipeline goes down, there might be
+    # missing data TODO)
+    # Pool info table drives which blocks gets queried.
+
+    # Add all trade events to the table
+    # TODO there may be time and memory concerns here if we're spinning up from
+    # scratch and there's lots of trades/pools.
+    trade_events_to_db(interfaces, wallet_addr=None, db_session=session)
+
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
         pool_state = interface.get_hyperdrive_state(block)
-
-        # TODO there's a race condition here, if this script gets interrupted between
-        # intermediate results and pool info, there will be duplicate rows for e.g.,
-        # add_checkpoint_infos, wallet_deltas, etc.
 
         ## Query and add block_checkpoint_info
         checkpoint_dict = asdict(pool_state.checkpoint)

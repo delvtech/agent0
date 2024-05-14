@@ -302,11 +302,11 @@ class Hyperdrive:
                 lp_balance = FixedPoint(row["balance"])
             elif row["token_id"] == "WITHDRAWAL_SHARE":
                 withdrawal_shares_balance = FixedPoint(row["balance"])
-            elif "LONG" in row["token_id"]:
-                maturity_time = int(row["token_id"].split("-")[1])
+            elif row["token_type"] == "LONG":
+                maturity_time = int(row["maturity_time"])
                 long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
-            elif "SHORT" in row["token_id"]:
-                maturity_time = int(row["token_id"].split("-")[1])
+            elif row["token_type"] == "SHORT":
+                maturity_time = int(row["maturity_time"])
                 short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
 
         # We do a balance of call to get base balance.

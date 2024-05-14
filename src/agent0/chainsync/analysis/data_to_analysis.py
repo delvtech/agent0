@@ -11,16 +11,15 @@ from agent0.chainsync.db.hyperdrive import (
     PositionSnapshot,
     get_checkpoint_info,
     get_current_positions,
-    get_pool_info
+    get_pool_info,
 )
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .calc_base_buffer import calc_base_buffer
 from .calc_fixed_rate import calc_fixed_rate
-from .calc_pnl import calc_closeout_value
+from .calc_position_value import calc_closeout_value
 from .calc_spot_price import calc_spot_price
-from .calc_ticker import calc_ticker
 
 pd.set_option("display.max_columns", None)
 
@@ -156,11 +155,23 @@ def data_to_analysis(
             db_session, hyperdrive_address=hyperdrive_address, query_block=end_block, coerce_float=False
         )
         if len(current_pool_positions) > 0:
+            # end_block is not inclusive
+            block_number = end_block - 1
+            # Add missing columns
+            current_pool_positions["block_number"] = block_number
             # Calculate pnl for these positions if flag is set
             if calc_pnl:
                 checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
-                pnl_df = calc_closeout_value(current_pool_positions, checkpoint_info, interface)
-                current_pool_positions["pnl"] = pnl_df
+                values_df = calc_closeout_value(
+                    current_pool_positions,
+                    checkpoint_info,
+                    interface,
+                    block_number,
+                )
+                current_pool_positions["value_in_base"] = values_df
+                current_pool_positions["pnl"] = (
+                    current_pool_positions["value_in_base"] - current_pool_positions["value_spent_in_base"]
+                )
             # Add wallet_pnl to the database
             df_to_db(current_pool_positions, PositionSnapshot, db_session)
 

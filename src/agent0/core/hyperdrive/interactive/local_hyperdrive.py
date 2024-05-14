@@ -931,12 +931,8 @@ class LocalHyperdrive(Hyperdrive):
         return agent
 
     def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
-        # NOTE the way we sync the events table is by either looking at (1) the latest
-        # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
-        # table, based on if we're updating the table with all wallets or just a single wallet.
-
-        # Local hyperdrive stack syncs all events regardless of wallets
-        trade_events_to_db([self.interface], wallet_addr=None, db_session=self.chain.db_session)
+        # No need to sync in local hyperdrive, we sync when we run the data pipeline
+        pass
 
     def _add_funds(
         self,
