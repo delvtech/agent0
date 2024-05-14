@@ -30,6 +30,7 @@ class FactoryConfig:
     """FactoryConfig struct."""
 
     governance: str
+    deployerCoordinatorManager: str
     hyperdriveGovernance: str
     defaultPausers: list[str]
     feeCollector: str
@@ -87,6 +88,15 @@ DeployerCoordinatorAdded = ABIEvent(
         ABIEventParams(indexed=True, name="deployerCoordinator", type="address"),
     ],
     name="DeployerCoordinatorAdded",
+    type="event",
+)
+
+DeployerCoordinatorManagerUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="deployerCoordinatorManager", type="address"),
+    ],
+    name="DeployerCoordinatorManagerUpdated",
     type="event",
 )
 
