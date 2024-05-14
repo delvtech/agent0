@@ -130,13 +130,15 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     # Test trades
     # Add liquidity to 111_111 total
     add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event.base_amount == FixedPoint(111_111)
+    assert add_liquidity_event.as_base
+    assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.get_positions())
 
     # Open long
     open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
-    assert open_long_event.base_amount == FixedPoint(22_222)
+    assert open_long_event.as_base
+    assert open_long_event.amount == FixedPoint(22_222)
     agent0_longs = list(hyperdrive_agent0.get_positions().longs.values())
     assert len(agent0_longs) == 1
     assert agent0_longs[0].balance == open_long_event.bond_amount
@@ -155,7 +157,8 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
 
     # Add liquidity back to ensure we can close positions
     add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event.base_amount == FixedPoint(111_111)
+    assert add_liquidity_event.as_base
+    assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
     _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0.get_positions())
 

@@ -305,7 +305,8 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        actual_long_base_amount = close_trade_event.base_amount
+        assert close_trade_event.as_base
+        actual_long_base_amount = close_trade_event.amount
         expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
         # assert with close event bond amount
@@ -344,7 +345,8 @@ def invariant_check(
             - share_reserves_delta_plus_flat_fee
         )
 
-        actual_short_base_amount = close_trade_event.base_amount
+        assert close_trade_event.as_base
+        actual_short_base_amount = close_trade_event.amount
         if not isclose(
             actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(short_maturity_vals_epsilon))
         ):

@@ -184,28 +184,30 @@ def test_close_long(
     pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
     block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
-    d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
+    d_shares = pool_shares_after - pool_shares_before  # instead of event.amount
     d_time = block_time_after - block_time_before
     logging.info("Andy opened long %s base.", 3 * trade_amount)
     logging.info("Δtime=%s", d_time)
     logging.info(
         " pool  Δbonds= %s%s, Δbase= %s%s", "+" if d_bonds > 0 else "", d_bonds, "+" if d_shares > 0 else "", d_shares
     )
+    assert event.as_base
     logging.info(
         " event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
     # undo this trade manually
-    manual_agent.open_short(bonds=FixedPoint(event.bond_amount * FixedPoint(1.006075)))
+    event = manual_agent.open_short(bonds=FixedPoint(event.bond_amount * FixedPoint(1.006075)))
+    assert event.as_base
     logging.info(
         "manually opened short. event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
 
     # report fixed rate
@@ -213,12 +215,13 @@ def test_close_long(
 
     # change the fixed rate
     event = manual_agent.open_long(base=FixedPoint(trade_amount))
+    assert event.as_base
     logging.info(
         "manually opened short. event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
     # report fixed rate
     logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
@@ -235,8 +238,9 @@ def test_close_long(
     pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
     block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
-    d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
+    d_shares = pool_shares_after - pool_shares_before  # instead of event.amount
     d_time = block_time_after - block_time_before
+    assert event.as_base
     logging.info("Andy closed long; amount determined by policy.")
     logging.info("Δtime=%s", d_time)
     logging.info(
@@ -246,8 +250,8 @@ def test_close_long(
         " event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
 
     # report results

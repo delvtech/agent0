@@ -129,13 +129,15 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
 
     # Test trades
     add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event.base_amount == FixedPoint(111_111)
+    assert add_liquidity_event.as_base
+    assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
     _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
 
     # Open long
     open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
-    assert open_long_event.base_amount == FixedPoint(22_222)
+    assert open_long_event.as_base
+    assert open_long_event.amount == FixedPoint(22_222)
     agent0_longs = list(hyperdrive_agent0.get_positions().longs.values())
     assert len(agent0_longs) == 1
     assert agent0_longs[0].balance == open_long_event.bond_amount
@@ -149,7 +151,8 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     hyperdrive_agent2.set_max_approval()
     open_long_event_2 = hyperdrive_agent2.open_long(base=FixedPoint(333))
 
-    assert open_long_event_2.base_amount == FixedPoint(333)
+    assert open_long_event_2.as_base
+    assert open_long_event_2.amount == FixedPoint(333)
     agent2_longs = list(hyperdrive_agent2.get_positions().longs.values())
     assert len(agent2_longs) == 1
     assert agent2_longs[0].balance == open_long_event_2.bond_amount
@@ -168,7 +171,8 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
 
     # Add liquidity back to ensure we can close positions
     add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event.base_amount == FixedPoint(111_111)
+    assert add_liquidity_event.as_base
+    assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
     _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
 

@@ -552,8 +552,8 @@ class Hyperdrive:
                     trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
@@ -564,8 +564,8 @@ class Hyperdrive:
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
@@ -575,8 +575,8 @@ class Hyperdrive:
                     trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     base_proceeds=tx_receipt.base_proceeds,
                     bond_amount=tx_receipt.bond_amount,
@@ -588,19 +588,26 @@ class Hyperdrive:
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     base_payment=tx_receipt.base_payment,
                     bond_amount=tx_receipt.bond_amount,
                 )
 
             case HyperdriveActionType.ADD_LIQUIDITY:
+                # TODO v1.0.7
                 return AddLiquidity(
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    # TODO v1.0.6 has a bug where these fields were not renamed
+                    # but actually represent amount and vault share price.
+                    # We fix as a temp patch here until v1.0.7 is released.
+                    amount=tx_receipt.base_amount,
+                    vault_share_price=tx_receipt.vault_share_amount,
+                    # TODO use below once v1.0.7 is released
+                    # amount=tx_receipt.amount,
+                    # vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
@@ -610,8 +617,8 @@ class Hyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     lp_amount=tx_receipt.lp_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     lp_share_price=tx_receipt.lp_share_price,
@@ -622,8 +629,8 @@ class Hyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                 )
 

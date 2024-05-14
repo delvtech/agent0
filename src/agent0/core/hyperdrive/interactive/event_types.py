@@ -117,17 +117,10 @@ class AddLiquidity:
     """The address of the lp provider."""
     lp_amount: FixedPoint
     """The amount of liquidity added in units of lp."""
-
-    # TODO v1.0.7 fixes add lp event to below
-    # amount: FixedPoint
-    # """The amount of liquidity added, units dependent on `as_base` flag."""
-    # vault_share_price: FixedPoint
-    # """The share price at the time of this trade."""
-
-    base_amount: FixedPoint
-    """The amount of liquidity added, in units of base."""
-    vault_share_amount: FixedPoint
-    """The amount of liquidity added, in units of shares."""
+    amount: FixedPoint
+    """The amount of liquidity added, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
     as_base: bool
     """If the input amount for the trade was in base or shares."""
     lp_share_price: FixedPoint
