@@ -6,60 +6,16 @@ import logging
 from decimal import Decimal
 from typing import Any
 
+import numpy as np
+import pandas as pd
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from web3 import Web3
-from web3.contract.contract import Contract
-from web3.types import TxData
+from web3.types import EventData
 
-from agent0.ethpy.base import get_transaction_logs
-from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, decode_asset_id
+from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 from .schema import CheckpointInfo, PoolConfig, PoolInfo
-
-
-def convert_hyperdrive_transactions_for_block(
-    web3: Web3, hyperdrive_contract: Contract, transactions: list[TxData]
-) -> tuple[list[HyperdriveTransaction], list[WalletDelta]]:
-    """Fetch transactions related to the contract.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    hyperdrive_contract: Contract
-        The contract to query the transactions from
-    transactions: TxData
-        A list of hyperdrive transactions for a given block.
-
-    Returns
-    -------
-    tuple[list[HyperdriveTransaction], list[WalletDelta]]
-        A list of HyperdriveTransaction objects ready to be inserted into Postgres, and
-        a list of wallet delta objects ready to be inserted into Postgres
-    """
-    out_transactions: list[HyperdriveTransaction] = []
-    out_wallet_deltas: list[WalletDelta] = []
-    for transaction in transactions:
-        transaction_dict = dict(transaction)
-        # Convert the HexBytes fields to their hex representation
-        tx_hash = transaction.get("hash") or HexBytes("")
-        transaction_dict["hash"] = tx_hash.hex()
-        # Decode the transaction input
-        try:
-            # although input may not be a required key, we catch this case
-            method, params = hyperdrive_contract.decode_function_input(transaction["input"])  # type: ignore
-            transaction_dict["input"] = {"method": method.fn_name, "params": params}
-        except ValueError:  # if the input is not meant for the contract, ignore it
-            continue
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)
-        logs = get_transaction_logs(hyperdrive_contract, tx_receipt)
-        receipt: dict[str, Any] = _convert_object_hexbytes_to_strings(tx_receipt)  # type: ignore
-        out_transactions.append(_build_hyperdrive_transaction_object(transaction_dict, logs, receipt))
-        # Build wallet deltas based on transaction logs
-        out_wallet_deltas.extend(_build_wallet_deltas(logs, transaction_dict["hash"], transaction_dict["blockNumber"]))
-    return out_transactions, out_wallet_deltas
 
 
 def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
@@ -88,25 +44,325 @@ def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
     return obj
 
 
-def _convert_scaled_value_to_decimal(input_val: int | None) -> Decimal | None:
-    """Given a scaled value int, converts it to a Decimal, while supporting Nones
+def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
+    out = dict(in_val)
+    # The args field is also an attribute dict, change to dict
+    out["args"] = dict(in_val["args"])
+
+    # Convert transaction hash to string
+    out["transactionHash"] = in_val["transactionHash"].to_0x_hex()
+    # Get token id field from args.
+    # This field is `assetId` for open/close long/short
+    return out
+
+
+# TODO cleanup
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-statements
+# pylint: disable=too-many-locals
+def convert_events(events: list[EventData], wallet_addr: str | None) -> pd.DataFrame:
+    """Convert hyperdrive trade events to database schema objects.
 
     Arguments
     ---------
-    input_val: int | None
-        The scaled integer value to unscale and convert to Decimal
+    events: list[EventData]
+        A list of web3 EventData objects from `get_logs` to insert into postgres.
+    wallet_addr: str | None
+        The wallet address that events are associated with for transfer events.
+        If None, will assume we want all events to the database.
 
     Returns
     -------
-    Decimal | None
-        The unscaled Decimal value
+    DataFrame
+        A DataFrame that matches the db schema of trade events.
     """
-    if input_val is not None:
-        # TODO add this cast within fixedpoint
-        fp_val = FixedPoint(scaled_value=input_val)
-        str_val = str(fp_val)
-        return Decimal(str_val)
-    return None
+
+    # Convert attribute dictionary event data to dictionary to allow conversion to dataframe
+    events_df = pd.DataFrame([_event_data_to_dict(event) for event in events])
+
+    # If no events, we just return
+    if len(events_df) == 0:
+        return events_df
+
+    # Each transaction made through hyperdrive has two rows,
+    # one TransferSingle and one for the trade.
+    # Any transactions without a corresponding trade is a wallet to wallet transfer.
+
+    # Look for any transfer events not associated with a trade
+    unique_events_per_transaction = events_df.groupby("transactionHash")["event"].agg(["unique", "nunique"])
+    # Sanity check
+    if (unique_events_per_transaction["nunique"] > 2).any():
+        raise ValueError(
+            "Found more than 2 unique events for transaction."
+            f"{unique_events_per_transaction[unique_events_per_transaction['nunique'] > 2]['unique']}"
+        )
+
+    # Find any transfer events that are not associated with a trade.
+    # This happens when e.g., a wallet to wallet transfer happens, or
+    # if this wallet is the initializer of the pool.
+    # TODO we have a test for initializer of the pool, but we need to implement
+    # wallet to wallet transfers of tokens in the interactive interface for a full test
+    transfer_events_trx_hash = unique_events_per_transaction[
+        unique_events_per_transaction["nunique"] < 2
+    ].reset_index()["transactionHash"]
+    transfer_events_df = events_df[events_df["transactionHash"].isin(transfer_events_trx_hash)].copy()
+    if len(transfer_events_df) > 0:
+        # Expand the args dict without losing the args dict field
+        # json_normalize works on series, but typing doesn't support it.
+        args_columns = pd.json_normalize(transfer_events_df["args"])  # type: ignore
+        transfer_events_df = pd.concat([transfer_events_df, args_columns], axis=1)
+        # We apply the decode function to each element, then expand the resulting
+        # tuple to multiple columns
+        transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
+            *transfer_events_df["id"].astype(int).apply(decode_asset_id)
+        )
+        # Convert token_type enum to name
+        transfer_events_df["token_type"] = transfer_events_df["token_type"].apply(lambda x: AssetIdPrefix(x).name)
+        # Convert maturity times of 0 to nan to match other events
+        transfer_events_df.loc[transfer_events_df["maturityTime"] == 0, "maturityTime"] = np.nan
+        # Set token id, default is to set it to the token type
+        transfer_events_df["token_id"] = transfer_events_df["token_type"]
+        # Append the maturity time for longs and shorts
+        long_or_short_idx = transfer_events_df["token_type"].isin(["LONG", "SHORT"])
+        transfer_events_df.loc[long_or_short_idx, "token_id"] = (
+            transfer_events_df.loc[long_or_short_idx, "token_type"]
+            + "-"
+            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
+        )
+
+        # If the wallet address is set, set the event wrt the trader
+        if wallet_addr is not None:
+            # Set the trader of this transfer
+            transfer_events_df["trader"] = wallet_addr
+
+            # See if it's a receive or send of tokens
+            send_idx = transfer_events_df["from"] == wallet_addr
+            receive_idx = transfer_events_df["to"] == wallet_addr
+            # Set the token delta based on send or receive
+            transfer_events_df.loc[send_idx, "token_delta"] = -transfer_events_df.loc[send_idx, "value"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+            transfer_events_df.loc[receive_idx, "token_delta"] = transfer_events_df.loc[receive_idx, "value"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+        # If the wallet address is not set, ensure it's not a mint or burn, then add two rows
+        # wrt both traders
+        else:
+            # TODO need to implement transfers to test this case
+            # We raise not implemented for now
+            raise NotImplementedError("Not implemented for wallet_addr=None")
+
+        # See if it's a receive or send of tokens
+        send_idx = transfer_events_df["from"] == wallet_addr
+        receive_idx = transfer_events_df["to"] == wallet_addr
+        # Set the token delta based on send or receive
+        transfer_events_df.loc[send_idx, "token_delta"] = -transfer_events_df.loc[send_idx, "value"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        transfer_events_df.loc[receive_idx, "token_delta"] = transfer_events_df.loc[receive_idx, "value"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        # Base and vault share delta is always 0
+        transfer_events_df["base_delta"] = Decimal(0)
+        transfer_events_df["vault_share_delta"] = Decimal(0)
+        # asBase and vaultSharePrice doesn't make sense here, we keep as nan
+        # We use camel case to match the other event fields before rename
+        transfer_events_df["asBase"] = np.nan
+        transfer_events_df["vaultSharePrice"] = np.nan
+
+    # Drop all transfer single events
+    events_df = events_df[events_df["event"] != "TransferSingle"].reset_index(drop=True)
+
+    # Sanity check, one hyperdrive event per transaction hash
+    if events_df.groupby("transactionHash")["event"].nunique().all() != 1:
+        raise ValueError("Found more than one event per transaction hash.")
+
+    # Expand the args dict without losing the args dict field
+    # json_normalize works on series, but typing doesn't support it.
+    args_columns = pd.json_normalize(events_df["args"])  # type: ignore
+    events_df = pd.concat([events_df, args_columns], axis=1)
+
+    # Convert fields to db schema
+    # Longs
+    events_idx = events_df["event"].isin(["OpenLong", "CloseLong"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "LONG"
+        events_df.loc[events_idx, "token_id"] = "LONG-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
+            str
+        )
+
+    events_idx = events_df["event"] == "OpenLong"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "CloseLong"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    # Shorts
+    events_idx = events_df["event"].isin(["OpenShort", "CloseShort"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "SHORT"
+        events_df.loc[events_idx, "token_id"] = "SHORT-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
+            str
+        )
+
+    events_idx = events_df["event"] == "OpenShort"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "CloseShort"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "bondAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    # LP
+    events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity"])
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "LP"
+        events_df.loc[events_idx, "token_id"] = "LP"
+        # The wallet here is the "provider" column, we remap it to "trader"
+        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # We explicitly add a maturity time here to ensure this column exists
+        # if there were no longs in this event set.
+        events_df.loc[events_idx, "maturityTime"] = np.nan
+
+    events_idx = events_df["event"] == "AddLiquidity"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = events_df.loc[events_idx, "lpAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = -events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = -events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    events_idx = events_df["event"] == "RemoveLiquidity"
+    if events_idx.any():
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "lpAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        # We need to also add any withdrawal shares as additional rows
+        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] > 0)
+        if withdrawal_shares_idx.any():
+            withdrawal_rows = events_df[withdrawal_shares_idx].copy()
+            withdrawal_rows["token_type"] = "WITHDRAWAL_SHARE"
+            withdrawal_rows["token_id"] = "WITHDRAWAL_SHARE"
+            withdrawal_rows["token_delta"] = withdrawal_rows["withdrawalShareAmount"].apply(
+                lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+            )
+            withdrawal_rows["base_delta"] = Decimal(0)
+            withdrawal_rows["vault_share_delta"] = Decimal(0)
+            events_df = pd.concat([events_df, withdrawal_rows], axis=0)
+
+    events_idx = events_df["event"] == "RedeemWithdrawalShares"
+    if events_idx.any():
+        events_df.loc[events_idx, "token_type"] = "WITHDRAWAL_SHARE"
+        events_df.loc[events_idx, "token_id"] = "WITHDRAWAL_SHARE"
+        # The wallet here is the "provider" column, we remap it to "trader"
+        events_df.loc[events_idx, "trader"] = events_df.loc[events_idx, "provider"]
+        # We explicitly add a maturity time here to ensure this column exists
+        # if there were no longs in this event set.
+        events_df.loc[events_idx, "maturityTime"] = np.nan
+        # Pandas apply doesn't play nice with types
+        events_df.loc[events_idx, "token_delta"] = -events_df.loc[events_idx, "withdrawalShareAmount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        as_base_idx = events_df["asBase"] & events_idx
+        as_shares_idx = ~events_df["asBase"] & events_idx
+        events_df.loc[as_base_idx, "base_delta"] = events_df.loc[as_base_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+        events_df.loc[as_shares_idx, "vault_share_delta"] = events_df.loc[as_shares_idx, "amount"].apply(
+            lambda x: Decimal(x) / Decimal(1e18)  # type: ignore
+        )
+
+    # Add solo transfer events to events_df
+    events_df = pd.concat([events_df, transfer_events_df], axis=0)
+
+    # We select the subset of columns we need and rename to match db schema
+    rename_dict = {
+        "address": "hyperdrive_address",
+        "transactionHash": "transaction_hash",
+        "blockNumber": "block_number",
+        "trader": "wallet_address",
+        "event": "event_type",
+        "token_type": "token_type",
+        "maturityTime": "maturity_time",
+        "token_id": "token_id",
+        "token_delta": "token_delta",
+        "base_delta": "base_delta",
+        "vault_share_delta": "vault_share_delta",
+        "asBase": "as_base",
+        "vaultSharePrice": "vault_share_price",
+    }
+
+    events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
+
+    # Token deltas should always be a number
+    assert (~events_df["token_delta"].isnull()).all()
+    # Replace any nans in deltas with 0
+    # pandas doesn't play nice with types and decimals
+    events_df["base_delta"] = events_df["base_delta"].fillna(Decimal(0))  # type: ignore
+    events_df["vault_share_delta"] = events_df["vault_share_delta"].fillna(Decimal(0))  # type: ignore
+    return events_df
 
 
 def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
@@ -189,323 +445,3 @@ def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointI
         args_dict[camel_to_snake(key)] = value
     block_checkpoint_info = CheckpointInfo(**args_dict)
     return block_checkpoint_info
-
-
-# TODO this function likely should be decoupled from postgres and added into
-# hyperdrive interface returning a list of dictionaries, with a conversion function to translate
-# into postgres
-def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[WalletDelta]:
-    """From decoded transaction logs, we look at the log that contains the trade summary
-
-    Arguments
-    ---------
-    logs: list[dict]
-        The list of dictionaries that was decoded from `get_transaction_logs`
-    tx_hash: str
-        The transaction hash that resulted in this wallet delta
-    block_number: BlockNumber
-        The current block number of the log
-
-    Returns
-    -------
-    list[HyperdriveTransaction]
-        A list of HyperdriveTransaction objects ready to be inserted into Postgres
-    """
-    wallet_deltas = []
-    # We iterate through the logs looking for specific events that describe the transaction
-    # We then create a WalletDelta object with their corresponding token and base deltas for
-    # each action
-    for log in logs:
-        if log["event"] == "AddLiquidity":
-            wallet_addr = log["args"]["provider"]
-            token_delta = _convert_scaled_value_to_decimal(log["args"]["lpAmount"])
-            base_delta = _convert_scaled_value_to_decimal(-log["args"]["amount"])
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="LP",
-                        token_type="LP",
-                        delta=token_delta,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-
-        elif log["event"] == "OpenLong":
-            wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value_to_decimal(log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(-log["args"]["amount"])
-            maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="LONG",
-                        token_type="LONG-" + str(maturity_time),
-                        delta=token_delta,
-                        maturity_time=maturity_time,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-
-        elif log["event"] == "OpenShort":
-            wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value_to_decimal(log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(-log["args"]["amount"])
-            maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="SHORT",
-                        token_type="SHORT-" + str(maturity_time),
-                        delta=token_delta,
-                        maturity_time=maturity_time,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-
-        elif log["event"] == "RemoveLiquidity":
-            wallet_addr = log["args"]["provider"]
-            # Two deltas, one for withdrawal shares, one for lp tokens
-            lp_delta = _convert_scaled_value_to_decimal(-log["args"]["lpAmount"])
-            withdrawal_delta = _convert_scaled_value_to_decimal(log["args"]["withdrawalShareAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="LP",
-                        token_type="LP",
-                        delta=lp_delta,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="WITHDRAWAL_SHARE",
-                        token_type="WITHDRAWAL_SHARE",
-                        delta=withdrawal_delta,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-
-        elif log["event"] == "CloseLong":
-            wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
-            maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="LONG",
-                        token_type="LONG-" + str(maturity_time),
-                        delta=token_delta,
-                        maturity_time=maturity_time,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-
-        elif log["event"] == "CloseShort":
-            wallet_addr = log["args"]["trader"]
-            token_delta = _convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
-            maturity_time = log["args"]["maturityTime"]
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="SHORT",
-                        token_type="SHORT-" + str(maturity_time),
-                        delta=token_delta,
-                        maturity_time=maturity_time,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-
-        elif log["event"] == "RedeemWithdrawalShares":
-            wallet_addr = log["args"]["provider"]
-            maturity_time = None
-            token_delta = _convert_scaled_value_to_decimal(-log["args"]["withdrawalShareAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
-            wallet_deltas.extend(
-                [
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type="WITHDRAWAL_SHARE",
-                        token_type="WITHDRAWAL_SHARE",
-                        delta=token_delta,
-                        maturity_time=maturity_time,
-                    ),
-                    WalletDelta(
-                        transaction_hash=tx_hash,
-                        block_number=block_number,
-                        wallet_address=wallet_addr,
-                        base_token_type=BASE_TOKEN_SYMBOL,
-                        token_type=BASE_TOKEN_SYMBOL,
-                        delta=base_delta,
-                    ),
-                ]
-            )
-    # Every log should have either 0 (no op), 2(two deltas per transaction), or 3(in the case of remove liquidity)
-    # entries in the wallet delta
-    assert len(wallet_deltas) in (0, 2, 3)
-    return wallet_deltas
-
-
-def _build_hyperdrive_transaction_object(
-    transaction_dict: dict[str, Any],
-    logs: list[dict[str, Any]],
-    receipt: dict[str, Any],
-) -> HyperdriveTransaction:
-    """Conversion function to translate output of chain queries to the HyperdriveTransaction object.
-
-    Arguments
-    ---------
-    transaction_dict: dict[str, Any]
-        A dictionary representing the decoded transactions from the query
-    logs: list[str, Any]
-        A dictionary representing the decoded logs from the query
-    receipt: dict[str, Any]
-        A dictionary representing the transaction receipt from the query
-
-    Returns
-    -------
-    HyperdriveTransaction
-        A transaction object to be inserted into postgres
-    """
-    # Build output obj dict incrementally to be passed into HyperdriveTransaction
-    # i.e., HyperdriveTransaction(**out_dict)
-    # Base transaction fields
-    out_dict: dict[str, Any] = {
-        "block_number": transaction_dict["blockNumber"],
-        "transaction_index": transaction_dict["transactionIndex"],
-        "nonce": transaction_dict["nonce"],
-        "transaction_hash": transaction_dict["hash"],
-        "txn_to": transaction_dict["to"],
-        "txn_from": transaction_dict["from"],
-        "gas_used": _convert_scaled_value_to_decimal(receipt["gasUsed"]),
-    }
-    # Input solidity methods and parameters
-    # TODO can the input field ever be empty or not exist?
-    out_dict["input_method"] = transaction_dict["input"]["method"]
-    input_params = transaction_dict["input"]["params"]
-    out_dict["input_params_contribution"] = _convert_scaled_value_to_decimal(input_params.get("_contribution", None))
-    out_dict["input_params_apr"] = _convert_scaled_value_to_decimal(input_params.get("_apr", None))
-    out_dict["input_params_amount"] = _convert_scaled_value_to_decimal(input_params.get("_amount", None))
-    out_dict["input_params_min_output"] = _convert_scaled_value_to_decimal(input_params.get("_minOutput", None))
-    out_dict["input_params_min_vault_share_price"] = _convert_scaled_value_to_decimal(
-        input_params.get("_minVaultSharePrice", None)
-    )
-    out_dict["input_params_bond_amount"] = _convert_scaled_value_to_decimal(input_params.get("_bondAmount", None))
-    out_dict["input_params_max_deposit"] = _convert_scaled_value_to_decimal(input_params.get("_maxDeposit", None))
-    out_dict["input_params_maturity_time"] = input_params.get("_maturityTime", None)
-    out_dict["input_params_min_lp_share_price"] = _convert_scaled_value_to_decimal(
-        input_params.get("_minLpSharePrice", None)
-    )
-    out_dict["input_params_min_apr"] = _convert_scaled_value_to_decimal(input_params.get("_minApr", None))
-    out_dict["input_params_max_apr"] = _convert_scaled_value_to_decimal(input_params.get("_maxApr", None))
-    out_dict["input_params_lp_shares"] = _convert_scaled_value_to_decimal(input_params.get("_lpShares", None))
-    out_dict["input_params_min_output_per_share"] = _convert_scaled_value_to_decimal(
-        input_params.get("_minOutputPerShare", None)
-    )
-    out_dict["input_params_withdrawal_shares"] = _convert_scaled_value_to_decimal(
-        input_params.get("_withdrawalShares", None)
-    )
-
-    input_params_options = input_params.get("_options", None)
-    if input_params_options is not None:
-        out_dict["input_params_options_destination"] = input_params_options.get("_destination", None)
-        out_dict["input_params_options_as_base"] = input_params_options.get("_asBase", None)
-    else:
-        out_dict["input_params_options_destination"] = None
-        out_dict["input_params_options_as_base"] = None
-
-    # Assuming one TransferSingle per transfer
-    # TODO Fix this below eventually
-    # There can be two transfer singles
-    # Currently grab first transfer single (e.g., Minting hyperdrive long, so address 0 to agent)
-    # Eventually need grabbing second transfer single (e.g., DAI from agent to hyperdrive)
-    event_logs = [log for log in logs if log["event"] == "TransferSingle"]
-    if len(event_logs) == 0:
-        event_args: dict[str, Any] = {}
-        # Set args as None
-    elif len(event_logs) == 1:
-        event_args: dict[str, Any] = event_logs[0]["args"]
-    else:
-        event_args: dict[str, Any] = event_logs[0]["args"]
-    out_dict["event_value"] = _convert_object_hexbytes_to_strings(event_args.get("value", None))
-    out_dict["event_from"] = event_args.get("from", None)
-    out_dict["event_to"] = event_args.get("to", None)
-    out_dict["event_operator"] = event_args.get("operator", None)
-    out_dict["event_id"] = event_args.get("id", None)
-    # Decode logs here
-    if out_dict["event_id"] is not None:
-        event_prefix, event_maturity_time = decode_asset_id(out_dict["event_id"])
-        out_dict["event_prefix"] = event_prefix
-        out_dict["event_maturity_time"] = event_maturity_time
-    transaction = HyperdriveTransaction(**out_dict)
-    return transaction
