@@ -227,7 +227,7 @@ def snapshot_positions_to_db(
             wallet_addr=wallet_addr,
             hyperdrive_address=hyperdrive_address,
             query_block=query_block_number + 1,  # Query block numbers are not inclusive
-            filter_zero_balance=False,
+            show_zero_balance=True,
             coerce_float=False,
         )
         if len(current_pool_positions) > 0:
