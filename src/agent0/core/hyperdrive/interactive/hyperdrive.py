@@ -330,7 +330,7 @@ class Hyperdrive:
             calc_pnl=self.config.calc_pnl,
         )
 
-    def _get_all_positions(
+    def _get_positions(
         self, agent: HyperdrivePolicyAgent, filter_zero_balance: bool, coerce_float: bool
     ) -> pd.DataFrame:
         # Sync all events, then sync snapshots for pnl and value calculation
@@ -349,7 +349,7 @@ class Hyperdrive:
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+    def _get_wallet(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)
         # Query current positions from the events table
         positions = get_current_positions(

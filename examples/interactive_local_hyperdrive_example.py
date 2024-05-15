@@ -96,8 +96,7 @@ pool_config = hyperdrive.get_pool_config()
 # The underlying data is in Decimal format, which is lossless. We don't care about precision
 # here, and pandas need a numerical float for plotting, so we coerce decimals to floats here
 pool_state = hyperdrive.get_pool_state(coerce_float=True)
-# TODO checkpoint info doesn't play nice with advancing time.
-# This is because we don't create checkpoints when we advance time.
+
 checkpoint_info = hyperdrive.get_checkpoint_info()
 
 # Change this to get wallet

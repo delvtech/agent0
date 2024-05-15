@@ -260,15 +260,13 @@ class HyperdriveAgent:
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
-        return self._pool._get_all_positions(
-            self.agent, filter_zero_balance=filter_zero_balance, coerce_float=coerce_float
-        )
+        return self._pool._get_positions(self.agent, filter_zero_balance=filter_zero_balance, coerce_float=coerce_float)
 
     def get_wallet(self) -> HyperdriveWallet:
-        """Returns all of the agent's positions for the given hyperdrive pool.
+        """Returns the wallet object for the agent for the given hyperdrive pool.
 
         TODO this function will eventually use the active pool or take a pool as an argument
-        once agent gets detatched from the pool.
+        once agent gets detached from the pool.
 
         Returns
         -------
@@ -277,7 +275,7 @@ class HyperdriveAgent:
         """
 
         # Update the db with this wallet
-        return self._pool._get_positions(self.agent)
+        return self._pool._get_wallet(self.agent)
 
     def get_trade_events(self, all_token_deltas: bool = False) -> pd.DataFrame:
         """Returns the agent's current wallet.

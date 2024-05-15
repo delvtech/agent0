@@ -920,7 +920,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
-            agent.agent.wallet = self._get_positions(agent.agent)
+            agent.agent.wallet = self._get_wallet(agent.agent)
 
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         """Saves the policy state to file.
