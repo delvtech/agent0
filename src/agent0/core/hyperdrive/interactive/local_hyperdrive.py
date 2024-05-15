@@ -556,7 +556,7 @@ class LocalHyperdrive(Hyperdrive):
             coerce_float=coerce_float,
         ).drop("id", axis=1)
         if not show_zero_balance:
-            position_snapshot = position_snapshot[position_snapshot["balance"] != 0]
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0]
         # Add usernames
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out

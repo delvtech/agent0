@@ -238,7 +238,7 @@ class PositionSnapshot(Base):
     The id for the token itself, which consists of the `token_type`, appended 
     with `maturity_time` for LONG and SHORT. For example, `LONG-1715126400`.
     """
-    balance: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    token_balance: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
     The absolute balance of the position.
     """

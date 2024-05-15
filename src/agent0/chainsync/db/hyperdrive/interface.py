@@ -178,7 +178,7 @@ def get_current_positions(
         # We use max in lieu of a "first" or "last" function in sqlalchemy
         func.max(TradeEvent.token_type).label("token_type"),
         func.max(TradeEvent.maturity_time).label("maturity_time"),
-        func.sum(TradeEvent.token_delta).label("balance"),
+        func.sum(TradeEvent.token_delta).label("token_balance"),
         # Convert to base here
         # We explicitly cast to our defined numeric type to truncate to 18 decimal places.
         cast(
@@ -204,7 +204,7 @@ def get_current_positions(
     out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
     if not show_zero_balance:
-        out_df = out_df[out_df["balance"] != 0].copy()
+        out_df = out_df[out_df["token_balance"] != 0].copy()
     return out_df
 
 

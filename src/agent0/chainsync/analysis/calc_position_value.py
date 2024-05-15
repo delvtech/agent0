@@ -37,9 +37,9 @@ def calc_single_closeout(
         The closeout position value
     """
     # If no balance, value is 0
-    if position["balance"] == 0:
+    if position["token_balance"] == 0:
         return Decimal(0)
-    amount = FixedPoint(f"{position['balance']:f}")
+    amount = FixedPoint(f"{position['token_balance']:f}")
     token_type = position["token_type"]
     maturity = 0
     position_duration = hyperdrive_state.pool_config.position_duration

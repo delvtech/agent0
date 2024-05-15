@@ -342,7 +342,7 @@ class Hyperdrive:
             coerce_float=coerce_float,
         ).drop("id", axis=1)
         if not show_zero_balance:
-            position_snapshot = position_snapshot[position_snapshot["balance"] != 0]
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0]
         # Add usernames
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out
@@ -367,15 +367,15 @@ class Hyperdrive:
             assert row["hyperdrive_address"] == self.interface.hyperdrive_address
             assert row["wallet_address"] == agent.checksum_address
             if row["token_id"] == "LP":
-                lp_balance = FixedPoint(row["balance"])
+                lp_balance = FixedPoint(row["token_balance"])
             elif row["token_id"] == "WITHDRAWAL_SHARE":
-                withdrawal_shares_balance = FixedPoint(row["balance"])
+                withdrawal_shares_balance = FixedPoint(row["token_balance"])
             elif row["token_type"] == "LONG":
                 maturity_time = int(row["maturity_time"])
-                long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+                long_obj[maturity_time] = Long(balance=FixedPoint(row["token_balance"]), maturity_time=maturity_time)
             elif row["token_type"] == "SHORT":
                 maturity_time = int(row["maturity_time"])
-                short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+                short_obj[maturity_time] = Short(balance=FixedPoint(row["token_balance"]), maturity_time=maturity_time)
 
         # We do a balance of call to get base balance.
         base_balance = FixedPoint(

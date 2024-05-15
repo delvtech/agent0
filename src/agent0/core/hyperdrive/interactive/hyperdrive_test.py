@@ -35,7 +35,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
     if len(lp_wallet_df) == 0:
         check_value = FixedPoint(0)
     elif len(lp_wallet_df) == 1:
-        check_value = FixedPoint(lp_wallet_df.iloc[0]["balance"])
+        check_value = FixedPoint(lp_wallet_df.iloc[0]["token_balance"])
     else:
         assert False
     assert check_value == agent_wallet.lp_tokens
@@ -48,7 +48,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
     if len(withdrawal_wallet_df) == 0:
         check_value = FixedPoint(0)
     elif len(withdrawal_wallet_df) == 1:
-        check_value = FixedPoint(withdrawal_wallet_df.iloc[0]["balance"])
+        check_value = FixedPoint(withdrawal_wallet_df.iloc[0]["token_balance"])
     else:
         assert False
     assert check_value == agent_wallet.withdraw_shares
@@ -63,10 +63,10 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
     for _, long_df in long_wallet_df.iterrows():
         maturity_time = int(long_df["maturity_time"])
         assert maturity_time in agent_wallet.longs
-        assert agent_wallet.longs[maturity_time].balance == long_df["balance"]
+        assert agent_wallet.longs[maturity_time].balance == long_df["token_balance"]
         asset_id = encode_asset_id(AssetIdPrefix.LONG, maturity_time)
         long_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
-        assert FixedPoint(scaled_value=long_from_chain) == FixedPoint(long_df["balance"])
+        assert FixedPoint(scaled_value=long_from_chain) == FixedPoint(long_df["token_balance"])
 
     # Check shorts
     short_wallet_df = positions_df[positions_df["token_type"] == "SHORT"]
@@ -74,10 +74,10 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
     for _, short_df in short_wallet_df.iterrows():
         maturity_time = int(short_df["maturity_time"])
         assert maturity_time in agent_wallet.shorts
-        assert agent_wallet.shorts[maturity_time].balance == short_df["balance"]
+        assert agent_wallet.shorts[maturity_time].balance == short_df["token_balance"]
         asset_id = encode_asset_id(AssetIdPrefix.SHORT, maturity_time)
         short_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
-        assert FixedPoint(scaled_value=short_from_chain) == FixedPoint(short_df["balance"])
+        assert FixedPoint(scaled_value=short_from_chain) == FixedPoint(short_df["token_balance"])
 
 
 @pytest.mark.anvil
