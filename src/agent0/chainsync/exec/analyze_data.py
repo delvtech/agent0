@@ -10,7 +10,7 @@ from eth_typing import ChecksumAddress
 from sqlalchemy.orm import Session
 
 from agent0.chainsync import PostgresConfig
-from agent0.chainsync.analysis import data_to_analysis
+from agent0.chainsync.analysis import db_to_analysis
 from agent0.chainsync.db.base import initialize_session
 from agent0.chainsync.db.hyperdrive import (
     PoolInfo,
@@ -27,7 +27,7 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-branches
-def data_analysis(
+def analyze_data(
     start_block: int = 0,
     interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
@@ -130,7 +130,7 @@ def data_analysis(
         analysis_end_block = latest_data_block_number + 1
         if not suppress_logs:
             logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        data_to_analysis(analysis_start_block, analysis_end_block, pool_config_df, db_session, interfaces, calc_pnl)
+        db_to_analysis(analysis_start_block, analysis_end_block, pool_config_df, db_session, interfaces, calc_pnl)
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit

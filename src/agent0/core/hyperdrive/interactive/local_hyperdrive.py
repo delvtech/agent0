@@ -8,7 +8,6 @@ import pathlib
 import subprocess
 import time
 from dataclasses import asdict, dataclass
-from decimal import Decimal
 from threading import Thread
 from typing import Literal, Type, overload
 
@@ -19,8 +18,6 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
-from web3._utils.threads import Timeout
-from web3.exceptions import TimeExhausted
 
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
@@ -32,15 +29,13 @@ from agent0.chainsync.db.hyperdrive import (
     get_position_snapshot,
     get_ticker,
     get_total_pnl_over_time,
-    trade_events_to_db,
 )
-from agent0.chainsync.exec import acquire_data, data_analysis
+from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
-    BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
     DeployedHyperdrivePool,
     ReceiptBreakdown,
@@ -90,9 +85,6 @@ class LocalHyperdrive(Hyperdrive):
         If False, will use the existing RNG state before load.
         Defaults to False.
         """
-        # Data pipeline parameters
-        calc_pnl: bool = True
-        """Whether to calculate pnl. Defaults to True."""
 
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -241,9 +233,6 @@ class LocalHyperdrive(Hyperdrive):
         # for the data pipeline
         self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
 
-        # Keep track of how much base have been minted per agent
-        self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
-
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
@@ -291,7 +280,7 @@ class LocalHyperdrive(Hyperdrive):
             exit_on_catch_up=True,
             suppress_logs=True,
         )
-        data_analysis(
+        analyze_data(
             start_block=start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
@@ -549,19 +538,8 @@ class LocalHyperdrive(Hyperdrive):
         df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
         return df
 
-    def _adjust_base_positions(self, in_df: pd.DataFrame, value_column: str, coerce_float: bool):
-        out_df = in_df.copy()
-        for address, initial_balance in self._initial_funds.items():
-            row_idxs = (out_df["wallet_address"] == address) & (out_df["base_token_type"] == BASE_TOKEN_SYMBOL)
-            if coerce_float:
-                out_df.loc[row_idxs, value_column] += float(initial_balance)
-            else:
-                # Pandas is smart enough to handle "+=" for "Series[Unknown]" and "Decimal"
-                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
-        return out_df
-
-    def get_current_wallet(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Gets the current wallet positions of all agents and their corresponding pnl
+    def get_all_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the history of all positions over time and their corresponding pnl
         and returns as a pandas dataframe.
 
         Arguments
@@ -572,8 +550,6 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
             block_number: int
                 The block number of the entry.
             username: str
@@ -581,42 +557,40 @@ class LocalHyperdrive(Hyperdrive):
             wallet_address: str
                 The wallet address of the entry.
             token_type: str
-                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            position: Decimal | float
-                The current value of the token of the agent at the specified block number.
-            pnl: Decimal | float
-                The current pnl of the token of the agent at the specified block number.
-            base_token_type: str
                 A string specifying the type of the token.
             maturity_time: Decimal | float
                 The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
-            latest_block_update: int
-                The last block number that the position was updated.
+            token_id: str
+                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
+            balance: Decimal | float
+                The current balance of the position of the agent at the specified block number.
+            value_in_base: Decimal | float
+                The value in base of the position.
+            value_spent_in_base: Decimal | float
+                The value spent in base for the position.
+            pnl: Decimal | float
+                The pnl of the position at the specified block number.
+            last_balance_update_block: int
+                The last block number that the balance of the position was updated.
         """
-        # TODO potential improvement is to pivot the table so that columns are the token type
-        # Makes this data easier to work with
-        # https://github.com/delvtech/agent0/issues/1106
-        out = get_position_snapshot(self.chain.db_session, start_block=-1, coerce_float=coerce_float)
-        # DB only stores final delta for base, we calculate actual base based on how much funds
-        # were added in all
-        out = self._adjust_base_positions(out, "value", coerce_float)
-        # Rename column to match get_wallet_positions
-        out = out.rename(columns={"value": "position"})
+        # TODO add timestamp back in
+        position_snapshot = get_position_snapshot(self.chain.db_session, coerce_float=coerce_float)
         # Add usernames
-        out = self._add_username_to_dataframe(out, "wallet_address")
+        out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         # Filter and order columns
         out = out[
             [
-                "timestamp",
                 "block_number",
                 "username",
                 "wallet_address",
                 "token_type",
-                "position",
-                "pnl",
-                "base_token_type",
                 "maturity_time",
-                "latest_block_update",
+                "token_id",
+                "balance",
+                "value_in_base",
+                "value_spent_in_base",
+                "pnl",
+                "last_balance_update_block",
             ]
         ]
         return out
@@ -934,6 +908,10 @@ class LocalHyperdrive(Hyperdrive):
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass
 
+    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
+        # No need to sync in local hyperdrive, we sync when we run the data pipeline
+        pass
+
     def _add_funds(
         self,
         agent: HyperdrivePolicyAgent,
@@ -953,13 +931,6 @@ class LocalHyperdrive(Hyperdrive):
             signer_account = self._deployed_hyperdrive.deploy_account
 
         super()._add_funds(agent, base, eth, signer_account=signer_account)
-
-        if base > FixedPoint(0):
-            # Keep track of how much base has been minted for each agent
-            if agent.address in self._initial_funds:
-                self._initial_funds[agent.address] += base
-            else:
-                self._initial_funds[agent.address] = base
 
         # Adding funds mines a block, so we run data pipeline here
         self._run_blocking_data_pipeline()
@@ -1054,7 +1025,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
-            agent.agent.wallet = self._get_positions(agent.agent)
+            agent.agent.wallet = self._get_pool_positions(agent.agent)
 
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         """Saves the policy state to file.

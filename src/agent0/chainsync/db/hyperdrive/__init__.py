@@ -13,6 +13,7 @@ from .interface import (
     get_current_positions,
     get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_pool_info_table,
+    get_latest_block_number_from_positions_snapshot_table,
     get_latest_block_number_from_table,
     get_pool_analysis,
     get_pool_config,

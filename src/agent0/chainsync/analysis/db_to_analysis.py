@@ -1,6 +1,6 @@
 """Functions to gather data from postgres, do analysis, and add back into postgres"""
 
-from decimal import Decimal
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,7 @@ from agent0.chainsync.db.hyperdrive import (
     PositionSnapshot,
     get_checkpoint_info,
     get_current_positions,
+    get_latest_block_number_from_positions_snapshot_table,
     get_pool_info,
 )
 from agent0.chainsync.df_to_db import df_to_db
@@ -103,19 +104,9 @@ def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFr
     return wallet_deltas_df
 
 
-def _decimal_to_str_scaled_value(in_val: Decimal):
-    return str(int(in_val * 10**18))
-
-
-def _pd_decimal_to_str_scaled_value(in_pd: pd.Series):
-    return (in_pd * 10**18).astype(int).astype(str)
-
-
-# TODO this function shouldn't need hyperdrive_contract eventually
-# instead, should call rust implementation
 # TODO clean up this function
-# pylint: disable=too-many-locals, too-many-arguments
-def data_to_analysis(
+# pylint: disable=too-many-arguments
+def db_to_analysis(
     start_block: int,
     end_block: int,
     pool_config_df: pd.DataFrame,
@@ -141,45 +132,33 @@ def data_to_analysis(
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
     """
+
+    # Snapshot wallet to table.
+    # This function takes care of not adding duplicate entries.
+    # TODO there may be time and memory concerns here if we're spinning up from
+    # scratch and there's lots of trades/pools.
+    snapshot_positions_to_db(
+        interfaces,
+        wallet_addr=None,
+        calc_pnl=calc_pnl,
+        db_session=db_session,
+    )
+
     # Get data
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
-        pool_config = pool_config_df[pool_config_df["hyperdrive_address"] == hyperdrive_address]
-        assert len(pool_config) == 1
-        pool_config = pool_config.iloc[0]
-        # Note end block here is not inclusive
-        pool_info = get_pool_info(db_session, hyperdrive_address, start_block, end_block, coerce_float=False)
-
-        # Calculate all open positions for the end block
-        current_pool_positions = get_current_positions(
-            db_session, hyperdrive_address=hyperdrive_address, query_block=end_block, coerce_float=False
-        )
-        if len(current_pool_positions) > 0:
-            # end_block is not inclusive
-            block_number = end_block - 1
-            # Add missing columns
-            current_pool_positions["block_number"] = block_number
-            # Calculate pnl for these positions if flag is set
-            if calc_pnl:
-                checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
-                values_df = calc_closeout_value(
-                    current_pool_positions,
-                    checkpoint_info,
-                    interface,
-                    block_number,
-                )
-                current_pool_positions["value_in_base"] = values_df
-                current_pool_positions["pnl"] = (
-                    current_pool_positions["value_in_base"] - current_pool_positions["value_spent_in_base"]
-                )
-            # Add wallet_pnl to the database
-            df_to_db(current_pool_positions, PositionSnapshot, db_session)
 
         # We add pool analysis last since this table is what's being used to determine how far the data pipeline is.
         # Calculate spot price
         # TODO ideally we would call hyperdrive interface directly to get the spot price and fixed rate.
         # However, we need to be able to query e.g., pool_info for a specific block. Hence here, we use the
         # pool info from the db and directly call hyperdrivepy to get the spot price.
+        pool_config = pool_config_df[pool_config_df["hyperdrive_address"] == hyperdrive_address]
+        assert len(pool_config) == 1
+        pool_config = pool_config.iloc[0]
+        # Note end block here is not inclusive
+        pool_info = get_pool_info(db_session, hyperdrive_address, start_block, end_block, coerce_float=False)
+
         spot_price = calc_spot_price(
             pool_info["share_reserves"],
             pool_info["share_adjustment"],
@@ -200,3 +179,61 @@ def data_to_analysis(
         pool_analysis_df.columns = ["block_number", "spot_price", "fixed_rate", "base_buffer"]
         pool_analysis_df["hyperdrive_address"] = hyperdrive_address
         df_to_db(pool_analysis_df, PoolAnalysis, db_session)
+
+
+def snapshot_positions_to_db(
+    interfaces: list[HyperdriveReadInterface], wallet_addr: str | None, calc_pnl: bool, db_session: Session
+):
+    """Function to query the trade events table and takes a snapshot
+    of the current positions and pnl.
+
+    Arguments
+    ---------
+    interfaces: list[HyperdriveReadInterface]
+        A collection of Hyperdrive interface objects, each connected to a pool.
+    wallet_addr: str | None
+        The wallet address to query. If None, will not filter events by wallet addr.
+    db_session: Session
+        The database session.
+    calc_pnl: bool
+        Whether to calculate pnl.
+    """
+    assert len(interfaces) > 0
+    query_block_number = interfaces[0].get_block_number(interfaces[0].get_block("latest"))
+    last_snapshot_block = get_latest_block_number_from_positions_snapshot_table(db_session, wallet_addr)
+    if query_block_number <= last_snapshot_block:
+        return
+
+    all_pool_positions = []
+    for interface in interfaces:
+        hyperdrive_address = interface.hyperdrive_address
+        # Calculate all open positions for the end block
+        current_pool_positions = get_current_positions(
+            db_session,
+            wallet_addr=wallet_addr,
+            hyperdrive_address=hyperdrive_address,
+            query_block=query_block_number,
+            coerce_float=False,
+        )
+        if len(current_pool_positions) > 0:
+            # Add missing columns
+            current_pool_positions["block_number"] = query_block_number
+            # Calculate pnl for these positions if flag is set
+            if calc_pnl:
+                checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
+                values_df = calc_closeout_value(
+                    current_pool_positions,
+                    checkpoint_info,
+                    interface,
+                    query_block_number,
+                )
+                current_pool_positions["value_in_base"] = values_df
+                current_pool_positions["pnl"] = (
+                    current_pool_positions["value_in_base"] - current_pool_positions["value_spent_in_base"]
+                )
+            all_pool_positions.extend(current_pool_positions)
+
+    if len(all_pool_positions) > 0:
+        all_pool_positions = pd.concat(all_pool_positions, axis=0)
+        # Add wallet_pnl to the database
+        df_to_db(all_pool_positions, PositionSnapshot, db_session)

@@ -255,7 +255,7 @@ class PositionSnapshot(Base):
     """
     The pnl of the position in units of base.
     """
-    latest_block_update: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    last_balance_update_block: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     """
-    The last block number that this position's amount was changed.
+    The last block number that this position's balance was updated.
     """

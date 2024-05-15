@@ -345,7 +345,7 @@ class FullHyperdriveEnv(gym.Env):
 
                 if open_order:
                     # If the wallet has enough money
-                    if volume_adjusted <= self.rl_bot.get_positions().balance.amount:
+                    if volume_adjusted <= self.rl_bot.get_pool_positions().balance.amount:
                         try:
                             if trade_type == TradeTypes.LONG:
                                 self.rl_bot.open_long(base=volume_adjusted)
@@ -382,12 +382,12 @@ class FullHyperdriveEnv(gym.Env):
         try:
             if add_lp:
                 self.rl_bot.add_liquidity(add_lp_volume)
-            if remove_lp and remove_lp_volume <= self.rl_bot.get_positions().lp_tokens:
+            if remove_lp and remove_lp_volume <= self.rl_bot.get_pool_positions().lp_tokens:
                 self.rl_bot.remove_liquidity(remove_lp_volume)
             # Always try and remove withdrawal shares
-            if self.rl_bot.get_positions().withdraw_shares > 0:
+            if self.rl_bot.get_pool_positions().withdraw_shares > 0:
                 # TODO error handling or check when withdrawal shares are not withdrawable
-                self.rl_bot.redeem_withdraw_share(self.rl_bot.get_positions().withdraw_shares)
+                self.rl_bot.redeem_withdraw_share(self.rl_bot.get_pool_positions().withdraw_shares)
         except Exception as err:  # pylint: disable=broad-except
             # TODO use logging here
             print(f"Warning: Failed to LP: {err=}")

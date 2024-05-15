@@ -62,6 +62,33 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str 
     return int(query)
 
 
+def get_latest_block_number_from_positions_snapshot_table(session: Session, wallet_addr: str | None) -> int:
+    """Get the latest block number based on the positions snapshot table in the db.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object.
+    wallet_addr: str | None
+        The wallet address to filter the results on. Can be None to return latest block number
+        regardless of wallet.
+
+    Returns
+    -------
+    int
+        The latest block number in the hyperdrive_events table.
+    """
+
+    query = session.query(func.max(PositionSnapshot.block_number))
+    if wallet_addr is not None:
+        query = query.filter(PositionSnapshot.wallet_address == wallet_addr)
+    query = query.scalar()
+
+    if query is None:
+        return 0
+    return int(query)
+
+
 def get_trade_events(session: Session, wallet_addr: str | None = None) -> pd.DataFrame:
     """Get all trade events and returns a pandas dataframe.
 
@@ -128,7 +155,7 @@ def get_current_positions(
             func.sum(TradeEvent.base_delta + (TradeEvent.vault_share_delta * TradeEvent.vault_share_price)),
             FIXED_NUMERIC,
         ).label("value_spent_in_base"),
-        func.max(TradeEvent.block_number).label("latest_block_update"),
+        func.max(TradeEvent.block_number).label("last_balance_update_block"),
     )
 
     if (query_block is not None) and (query_block < 0):
@@ -569,7 +596,6 @@ def get_position_snapshot(
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | None = None,
-    return_timestamp: bool = True,
     coerce_float=True,
 ) -> pd.DataFrame:
     """Get all position snapshot data and returns a pandas dataframe.
@@ -588,8 +614,6 @@ def get_position_snapshot(
         matches python slicing notation, e.g., list[:3], list[:-3].
     wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on. Returns all if None.
-    return_timestamp: bool, optional
-        Returns the timestamp from the pool info table if True. Defaults to True.
     coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
 
@@ -598,10 +622,7 @@ def get_position_snapshot(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
-    if return_timestamp:
-        query = session.query(PoolInfo.timestamp, PositionSnapshot)
-    else:
-        query = session.query(PositionSnapshot)
+    query = session.query(PositionSnapshot)
 
     if hyperdrive_address is not None:
         query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)

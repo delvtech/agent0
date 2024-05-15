@@ -250,7 +250,7 @@ class SimpleHyperdriveEnv(gym.Env):
         assert self._current_position is not None
         terminated = False
 
-        agent_wallet = self.rl_bot.get_positions()
+        agent_wallet = self.rl_bot.get_pool_positions()
 
         self._current_position = self._current_position.opposite()
         if self._current_position == CurrentPosition.LONG:
