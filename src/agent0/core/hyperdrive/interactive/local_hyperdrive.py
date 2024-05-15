@@ -570,7 +570,7 @@ class LocalHyperdrive(Hyperdrive):
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out
 
-    def get_positions_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_all_positions_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the history of all positions over time and their corresponding pnl
         and returns as a pandas dataframe.
 
