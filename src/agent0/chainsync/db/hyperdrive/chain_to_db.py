@@ -167,7 +167,7 @@ def trade_events_to_db(
         all_events.extend(
             interface.hyperdrive_contract.events.Initialize.get_logs(
                 fromBlock=from_block,
-                argument_filters=trader_arg_filter,
+                argument_filters=provider_arg_filter,
             )
         )
         all_events.extend(
