@@ -162,7 +162,7 @@ async def async_runner(
     return out_result
 
 
-def run_fuzz_bots(
+def run_local_fuzz_bots(
     hyperdrive_pool: LocalHyperdrive,
     check_invariance: bool,
     num_random_agents: int | None = None,
@@ -245,7 +245,8 @@ def run_fuzz_bots(
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
-            eth=FixedPoint(10),  # Need to give eth for setting max approval
+            base=base_budget_per_bot,
+            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
@@ -259,7 +260,8 @@ def run_fuzz_bots(
 
     for _ in range(num_random_hold_agents):
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
-            eth=FixedPoint(10),  # Neet to give eth for setting max approval
+            base=base_budget_per_bot,
+            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
@@ -271,30 +273,6 @@ def run_fuzz_bots(
             ),
         )
         agents.append(agent)
-
-    logging.info("Funding bots...")
-    if run_async:
-        asyncio.run(
-            async_runner(
-                return_exceptions=True,
-                funcs=[agent.add_funds for agent in agents],
-                base=base_budget_per_bot,
-                eth=eth_budget_per_bot,
-            )
-        )
-    else:
-        _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
-
-    logging.info("Setting max approval...")
-    if run_async:
-        asyncio.run(
-            async_runner(
-                return_exceptions=True,
-                funcs=[agent.set_max_approval for agent in agents],
-            )
-        )
-    else:
-        _ = [agent.set_max_approval() for agent in agents]
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
