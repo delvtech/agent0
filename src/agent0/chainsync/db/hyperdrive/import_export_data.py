@@ -101,12 +101,8 @@ def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
     out["pool_config"] = pd.read_parquet(os.path.join(in_dir, "pool_config.parquet"), engine="pyarrow")
     out["checkpoint_info"] = pd.read_parquet(os.path.join(in_dir, "checkpoint_info.parquet"), engine="pyarrow")
     out["pool_info"] = pd.read_parquet(os.path.join(in_dir, "pool_info.parquet"), engine="pyarrow")
-    out["wallet_delta"] = pd.read_parquet(os.path.join(in_dir, "wallet_delta.parquet"), engine="pyarrow")
-    out["transactions"] = pd.read_parquet(os.path.join(in_dir, "transactions.parquet"), engine="pyarrow")
     out["pool_analysis"] = pd.read_parquet(os.path.join(in_dir, "pool_analysis.parquet"), engine="pyarrow")
-    out["current_wallet"] = pd.read_parquet(os.path.join(in_dir, "current_wallet.parquet"), engine="pyarrow")
-    out["ticker"] = pd.read_parquet(os.path.join(in_dir, "ticker.parquet"), engine="pyarrow")
-    out["position_snapshot"] = pd.read_parquet(os.path.join(in_dir, "wallet_pnl.parquet"), engine="pyarrow")
+    out["position_snapshot"] = pd.read_parquet(os.path.join(in_dir, "position_snapshot.parquet"), engine="pyarrow")
     return out
 
 
@@ -148,4 +144,4 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
     df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
     df_to_db(out["pool_info"], PoolInfo, db_session)
     df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
-    df_to_db(out["wallet_pnl"], PositionSnapshot, db_session)
+    df_to_db(out["position_snapshot"], PositionSnapshot, db_session)

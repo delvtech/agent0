@@ -496,7 +496,6 @@ def get_pool_analysis(
     hyperdrive_address: str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
-    return_timestamp: bool = True,
     coerce_float=True,
 ) -> pd.DataFrame:
     """Get all pool analysis and returns a pandas dataframe.
@@ -513,8 +512,6 @@ def get_pool_analysis(
     end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
-    return_timestamp: bool, optional
-        Gets timestamps when looking at pool analysis. Defaults to True.
     coerce_float: bool
         If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
 
@@ -523,10 +520,8 @@ def get_pool_analysis(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
-    if return_timestamp:
-        query = session.query(PoolInfo.timestamp, PoolAnalysis)
-    else:
-        query = session.query(PoolAnalysis)
+    # TODO add back in timestamp
+    query = session.query(PoolAnalysis)
 
     if hyperdrive_address is not None:
         query = query.filter(PoolAnalysis.hyperdrive_address == hyperdrive_address)
@@ -541,10 +536,6 @@ def get_pool_analysis(
         query = query.filter(PoolAnalysis.block_number >= start_block)
     if end_block is not None:
         query = query.filter(PoolAnalysis.block_number < end_block)
-
-    if return_timestamp:
-        # query from PoolInfo the timestamp
-        query = query.join(PoolInfo, PoolAnalysis.block_number == PoolInfo.block_number)
 
     # Always sort by block in order
     query = query.order_by(PoolAnalysis.block_number)

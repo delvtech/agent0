@@ -426,7 +426,7 @@ class LocalChain(Chain):
         # TODO parameterize the save path
         export_path = str(Path(save_dir))  # pylint: disable=protected-access
         os.makedirs(export_path, exist_ok=True)
-        export_db_to_file(export_path, self.db_session, raw=True)
+        export_db_to_file(export_path, self.db_session)
 
     def _load_db(self, load_dir: str):
         # TODO parameterize the load path
