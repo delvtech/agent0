@@ -40,6 +40,7 @@ class HyperdriveAgent:
 
     def __init__(
         self,
+        name: str | None,
         pool: Hyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
@@ -51,6 +52,8 @@ class HyperdriveAgent:
 
         Arguments
         ---------
+        name: str | None
+            The name of the agent. Defaults to the wallet address.
         pool: Hyperdrive
             The pool object that this agent belongs to.
         policy: Type[HyperdriveBasePolicy] | None
@@ -61,7 +64,7 @@ class HyperdriveAgent:
             The private key of the associated account. Default is auto-generated.
         """
         self._pool = pool
-        self.agent = self._pool._init_agent(policy, policy_config, private_key)
+        self.agent = self._pool._init_agent(name, policy, policy_config, private_key)
 
     @property
     def checksum_address(self) -> ChecksumAddress:

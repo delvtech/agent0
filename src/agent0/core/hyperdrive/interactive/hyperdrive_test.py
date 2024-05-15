@@ -4,11 +4,11 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdriveWallet
-from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
+from agent0.ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 
 from .chain import Chain
 from .hyperdrive import Hyperdrive
+from .hyperdrive_agent import HyperdriveAgent
 from .local_chain import LocalChain
 from .local_hyperdrive import LocalHyperdrive
 
@@ -19,49 +19,65 @@ from .local_hyperdrive import LocalHyperdrive
 # pylint: disable=logging-fstring-interpolation
 
 
-def _ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveReadInterface) -> None:
-    """Check that the agent's wallet matches what's reported from the chain.
+def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, agent: HyperdriveAgent):
+    # NOTE this function is assuming only one agent is making trades
+    interface = in_hyperdrive.interface
 
-    Will assert that balances match.
+    # Test against db
+    positions_df = agent.get_all_positions(coerce_float=False)
+    # Filter for wallet
+    positions_df = positions_df[positions_df["wallet_address"] == agent.checksum_address]
 
-    Arguments
-    ---------
-    wallet: HyperdriveWallet
-        The HyperdriveWallet object to check against the chain
-    interface: HyperdriveReadInterface
-        The Hyperdrive API interface object
-    """
-    # Check base
-    base_from_chain = interface.base_token_contract.functions.balanceOf(
-        interface.web3.to_checksum_address(wallet.address.hex())
-    ).call()
-    assert wallet.balance.amount == FixedPoint(scaled_value=base_from_chain)
+    agent_wallet = agent.get_positions()
 
-    # Check lp positions
+    # Check lp
+    lp_wallet_df = positions_df[positions_df["token_type"] == "LP"]
+    if len(lp_wallet_df) == 0:
+        check_value = FixedPoint(0)
+    elif len(lp_wallet_df) == 1:
+        check_value = FixedPoint(lp_wallet_df.iloc[0]["balance"])
+    else:
+        assert False
+    assert check_value == agent_wallet.lp_tokens
     asset_id = encode_asset_id(AssetIdPrefix.LP, 0)
-    address = interface.web3.to_checksum_address(wallet.address.hex())
-    lp_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
-    assert wallet.lp_tokens == FixedPoint(scaled_value=lp_from_chain)
+    lp_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+    assert check_value == FixedPoint(scaled_value=lp_from_chain)
 
-    # Check withdrawal positions
+    # Check withdrawal_shares
+    withdrawal_wallet_df = positions_df[positions_df["token_type"] == "WITHDRAWAL_SHARE"]
+    if len(withdrawal_wallet_df) == 0:
+        check_value = FixedPoint(0)
+    elif len(withdrawal_wallet_df) == 1:
+        check_value = FixedPoint(withdrawal_wallet_df.iloc[0]["balance"])
+    else:
+        assert False
+    assert check_value == agent_wallet.withdraw_shares
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    address = interface.web3.to_checksum_address(wallet.address.hex())
-    withdrawal_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
-    assert wallet.withdraw_shares == FixedPoint(scaled_value=withdrawal_from_chain)
+    withdrawal_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+    assert check_value == FixedPoint(scaled_value=withdrawal_from_chain)
 
-    # Check long positions
-    for long_time, long_amount in wallet.longs.items():
-        asset_id = encode_asset_id(AssetIdPrefix.LONG, long_time)
-        address = interface.web3.to_checksum_address(wallet.address.hex())
-        long_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
-        assert long_amount.balance == FixedPoint(scaled_value=long_from_chain)
+    # Check longs
+    # Longs still show up in positions even if they're 0, since they also keep track of values
+    long_wallet_df = positions_df[positions_df["token_type"] == "LONG"]
+    assert len(long_wallet_df) == len(agent_wallet.longs)
+    for _, long_df in long_wallet_df.iterrows():
+        maturity_time = int(long_df["maturity_time"])
+        assert maturity_time in agent_wallet.longs
+        assert agent_wallet.longs[maturity_time].balance == long_df["balance"]
+        asset_id = encode_asset_id(AssetIdPrefix.LONG, maturity_time)
+        long_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+        assert FixedPoint(scaled_value=long_from_chain) == FixedPoint(long_df["balance"])
 
-    # Check short positions
-    for short_time, short_amount in wallet.shorts.items():
-        asset_id = encode_asset_id(AssetIdPrefix.SHORT, short_time)
-        address = interface.web3.to_checksum_address(wallet.address.hex())
-        short_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, address).call()
-        assert short_amount.balance == FixedPoint(scaled_value=short_from_chain)
+    # Check shorts
+    short_wallet_df = positions_df[positions_df["token_type"] == "SHORT"]
+    assert len(short_wallet_df) == len(agent_wallet.shorts)
+    for _, short_df in short_wallet_df.iterrows():
+        maturity_time = int(short_df["maturity_time"])
+        assert maturity_time in agent_wallet.shorts
+        assert agent_wallet.shorts[maturity_time].balance == short_df["balance"]
+        asset_id = encode_asset_id(AssetIdPrefix.SHORT, maturity_time)
+        short_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+        assert FixedPoint(scaled_value=short_from_chain) == FixedPoint(short_df["balance"])
 
 
 @pytest.mark.anvil
@@ -151,7 +167,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert add_liquidity_event.as_base
     assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Open long
     open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
@@ -161,7 +177,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert len(agent0_longs) == 1
     assert agent0_longs[0].balance == open_long_event.bond_amount
     assert agent0_longs[0].maturity_time == open_long_event.maturity_time
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Testing adding another agent to the pool after trades have been made, making a trade,
     # then checking wallet
@@ -176,14 +192,14 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert len(agent2_longs) == 1
     assert agent2_longs[0].balance == open_long_event_2.bond_amount
     assert agent2_longs[0].maturity_time == open_long_event_2.maturity_time
-    _ensure_agent_wallet_is_correct(hyperdrive_agent2.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Remove liquidity
     remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
     assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
     assert hyperdrive_agent0.get_positions().lp_tokens == FixedPoint(0)
     assert hyperdrive_agent0.get_positions().withdraw_shares == remove_liquidity_event.withdrawal_share_amount
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
     assert remove_liquidity_event.withdrawal_share_amount > 0
@@ -193,7 +209,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert add_liquidity_event.as_base
     assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Open short
     open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(333))
@@ -202,7 +218,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert len(agent0_shorts) == 1
     assert agent0_shorts[0].balance == open_short_event.bond_amount
     assert agent0_shorts[0].maturity_time == open_short_event.maturity_time
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Close long
     close_long_event = hyperdrive_agent0.close_long(
@@ -211,7 +227,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert open_long_event.bond_amount == close_long_event.bond_amount
     assert open_long_event.maturity_time == close_long_event.maturity_time
     assert len(hyperdrive_agent0.get_positions().longs) == 0
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Close short
     close_short_event = hyperdrive_agent0.close_short(
@@ -220,7 +236,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     assert open_short_event.bond_amount == close_short_event.bond_amount
     assert open_short_event.maturity_time == close_short_event.maturity_time
     assert len(hyperdrive_agent0.get_positions().shorts) == 0
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
     # Redeem withdrawal shares
     # Note that redeeming withdrawal shares for more than available in the pool
@@ -230,7 +246,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
         hyperdrive_agent0.get_positions().withdraw_shares
         == remove_liquidity_event.withdrawal_share_amount - redeem_event.withdrawal_share_amount
     )
-    _ensure_agent_wallet_is_correct(hyperdrive_agent0.get_positions(), interactive_remote_hyperdrive.interface)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
 
 @pytest.mark.anvil

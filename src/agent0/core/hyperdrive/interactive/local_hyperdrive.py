@@ -19,8 +19,7 @@ from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from IPython.display import IFrame
 
-from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
+from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     get_checkpoint_info,
     get_pool_analysis,
@@ -28,7 +27,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_info,
     get_position_snapshot,
     get_total_pnl_over_time,
-    get_trade_events,
+    get_trade_events
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
@@ -40,7 +39,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
-    encode_asset_id,
+    encode_asset_id
 )
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -52,7 +51,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity,
+    RemoveLiquidity
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
@@ -528,19 +527,11 @@ class LocalHyperdrive(Hyperdrive):
         # DB read calls ensures data pipeline is caught up before returning
         return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
 
-    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        addr_to_username = get_addr_to_username(self.chain.db_session)
-        username_to_user = get_username_to_user(self.chain.db_session)
-
-        # Get corresponding usernames
-        usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
-        # Weird pandas type error
-        df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
-        return df
-
     def get_all_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
         """Gets all positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
+        This function only exists in local hyperdrive as only sim pool keeps track
+        of all positions of all wallets.
 
         Arguments
         ---------

@@ -19,11 +19,13 @@ from numpy.random._generator import Generator
 from web3 import Web3
 
 from agent0.chainsync.analysis import snapshot_positions_to_db
+from agent0.chainsync.dashboard.usernames import build_user_mapping
+from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
 from agent0.chainsync.db.hyperdrive import (
     get_current_positions,
     get_position_snapshot,
     get_trade_events,
-    trade_events_to_db
+    trade_events_to_db,
 )
 from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
@@ -31,7 +33,7 @@ from agent0.core.hyperdrive import (
     HyperdrivePolicyAgent,
     HyperdriveWallet,
     TradeResult,
-    TradeStatus
+    TradeStatus,
 )
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
@@ -40,7 +42,7 @@ from agent0.core.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
     redeem_withdraw_shares_trade,
-    remove_liquidity_trade
+    remove_liquidity_trade,
 )
 from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
@@ -51,7 +53,7 @@ from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     get_hyperdrive_addresses_from_artifacts,
-    get_hyperdrive_addresses_from_registry
+    get_hyperdrive_addresses_from_registry,
 )
 
 from .chain import Chain
@@ -62,7 +64,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity
+    RemoveLiquidity,
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 from .hyperdrive_agent import HyperdriveAgent
@@ -226,6 +228,7 @@ class Hyperdrive:
         private_key: str,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
+        name: str | None = None,
     ) -> HyperdriveAgent:
         """Initialize an agent object given a private key.
 
@@ -240,6 +243,8 @@ class Hyperdrive:
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
+        name: str, optional
+            The name of the agent. Defaults to the wallet address.
 
         Returns
         -------
@@ -250,6 +255,7 @@ class Hyperdrive:
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
         out_agent = HyperdriveAgent(
+            name=name,
             pool=self,
             policy=policy,
             policy_config=policy_config,
@@ -259,6 +265,7 @@ class Hyperdrive:
 
     def _init_agent(
         self,
+        name: str | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
@@ -275,7 +282,21 @@ class Hyperdrive:
 
         agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
 
+        # Register the username if it was provided
+        if name is not None:
+            add_addr_to_username(name, [agent.address], self.chain.db_session)
+
         return agent
+
+    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        addr_to_username = get_addr_to_username(self.chain.db_session)
+        username_to_user = get_username_to_user(self.chain.db_session)
+
+        # Get corresponding usernames
+        usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
+        # Weird pandas type error
+        df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
+        return df
 
     def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
         # Establish max approval for the hyperdrive contract
@@ -324,7 +345,9 @@ class Hyperdrive:
         ).drop("id", axis=1)
         if filter_zero_balance:
             position_snapshot = position_snapshot[position_snapshot["balance"] != 0]
-        return position_snapshot
+        # Add usernames
+        out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        return out
 
     def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)

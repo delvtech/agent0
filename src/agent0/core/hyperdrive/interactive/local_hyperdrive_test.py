@@ -27,16 +27,24 @@ YEAR_IN_SECONDS = 31_536_000
 # pylint: disable=logging-fstring-interpolation
 
 
-def _ensure_db_wallet_matches_agent_wallet(in_hyperdrive: LocalHyperdrive, agent: LocalHyperdriveAgent):
+def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdrive, agent: LocalHyperdriveAgent):
     # NOTE this function is assuming only one agent is making trades
     interface = in_hyperdrive.interface
 
-    # Test against db
+    # Test against pool positions
     positions_df = in_hyperdrive.get_all_positions(coerce_float=False)
     # Filter for wallet
     positions_df = positions_df[positions_df["wallet_address"] == agent.checksum_address]
 
+    # Check against agent positions
+    agent_positions = agent.get_all_positions(coerce_float=False)
+    assert positions_df.equals(agent_positions)
+
     agent_wallet = agent.get_positions()
+
+    # Check base
+    base_from_chain = interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
+    assert agent_wallet.balance.amount == FixedPoint(scaled_value=base_from_chain)
 
     # Check lp
     lp_wallet_df = positions_df[positions_df["token_type"] == "LP"]
@@ -150,7 +158,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     assert add_liquidity_event.as_base
     assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # Open long
     open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
@@ -160,14 +168,14 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     assert len(agent0_longs) == 1
     assert agent0_longs[0].balance == open_long_event.bond_amount
     assert agent0_longs[0].maturity_time == open_long_event.maturity_time
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # Remove liquidity
     remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
     assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
     assert hyperdrive_agent0.get_positions().lp_tokens == FixedPoint(0)
     assert hyperdrive_agent0.get_positions().withdraw_shares == remove_liquidity_event.withdrawal_share_amount
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
     assert remove_liquidity_event.withdrawal_share_amount > 0
@@ -177,7 +185,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     assert add_liquidity_event.as_base
     assert add_liquidity_event.amount == FixedPoint(111_111)
     assert hyperdrive_agent0.get_positions().lp_tokens == add_liquidity_event.lp_amount
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # Open short
     open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(333))
@@ -186,7 +194,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     assert len(agent0_shorts) == 1
     assert agent0_shorts[0].balance == open_short_event.bond_amount
     assert agent0_shorts[0].maturity_time == open_short_event.maturity_time
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # Close long
     close_long_event = hyperdrive_agent0.close_long(
@@ -195,7 +203,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     assert open_long_event.bond_amount == close_long_event.bond_amount
     assert open_long_event.maturity_time == close_long_event.maturity_time
     assert len(hyperdrive_agent0.get_positions().longs) == 0
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # Close short
     close_short_event = hyperdrive_agent0.close_short(
@@ -204,13 +212,13 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     assert open_short_event.bond_amount == close_short_event.bond_amount
     assert open_short_event.maturity_time == close_short_event.maturity_time
     assert len(hyperdrive_agent0.get_positions().shorts) == 0
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
     # Redeem withdrawal shares
     redeem_event = hyperdrive_agent0.redeem_withdraw_share(shares=remove_liquidity_event.withdrawal_share_amount)
     assert redeem_event.withdrawal_share_amount == remove_liquidity_event.withdrawal_share_amount
     assert hyperdrive_agent0.get_positions().withdraw_shares == FixedPoint(0)
-    _ensure_db_wallet_matches_agent_wallet(interactive_hyperdrive, hyperdrive_agent0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
 
 @pytest.mark.anvil
