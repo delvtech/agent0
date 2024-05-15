@@ -127,6 +127,8 @@ exclude = [".venv", ".vscode", "docs"]
 [tool.isort]
 line_length = 120
 multi_line_output=3
+include_trailing_comma=true
+split_on_trailing_comma=true
 
 [tool.ruff]
 line-length = 120
