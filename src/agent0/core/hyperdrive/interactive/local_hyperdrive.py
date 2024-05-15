@@ -830,13 +830,6 @@ class LocalHyperdrive(Hyperdrive):
         eth: FixedPoint,
         signer_account: LocalAccount | None = None,
     ) -> None:
-
-        # TODO this can be fixed by getting actual base values from the chain.
-        # TODO this will no longer be an issue once we refactor
-        # wallets to be from events + db
-        if base > 0 and eth > 0 and self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            logging.warning("Adding funds to to an agent after saving a snapshot. This may make pnl values incorrect.")
-
         # Adding funds default to the deploy account
         if signer_account is None:
             signer_account = self._deployed_hyperdrive.deploy_account
