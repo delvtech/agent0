@@ -242,18 +242,19 @@ class PositionSnapshot(Base):
     """
     The absolute balance of the position.
     """
-    value_in_base: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    unrealized_value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
-    The value of the position in units of base.
+    The unrealized value of the tokens in units of base, calculated if the position is closed at this block.
     """
-    value_spent_in_base: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    realized_value: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
-    The value spent for the position in units of base.
+    The total change in base for opening/closing this position.
     NOTE: this doesn't take into account any transfers of tokens outside of hyperdrive trades.
     """
     pnl: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     """
     The pnl of the position in units of base.
+    `unrealized_value` + `realized_value` = `pnl`.
     """
     last_balance_update_block: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
     """

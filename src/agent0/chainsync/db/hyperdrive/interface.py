@@ -141,6 +141,7 @@ def get_current_positions(
     wallet_addr: str | None = None,
     hyperdrive_address: str | None = None,
     query_block: int | None = None,
+    filter_zero_balance: bool = True,
     coerce_float=False,
 ) -> pd.DataFrame:
     """Gets all positions for a given wallet address.
@@ -175,12 +176,11 @@ def get_current_positions(
         func.max(TradeEvent.maturity_time).label("maturity_time"),
         func.sum(TradeEvent.token_delta).label("balance"),
         # Convert to base here
-        # Underlying deltas are negative, so We flip signs here to conform to "value spent in base"
         # We explicitly cast to our defined numeric type to truncate to 18 decimal places.
-        -cast(
+        cast(
             func.sum(TradeEvent.base_delta + (TradeEvent.vault_share_delta * TradeEvent.vault_share_price)),
             FIXED_NUMERIC,
-        ).label("value_spent_in_base"),
+        ).label("realized_value"),
         func.max(TradeEvent.block_number).label("last_balance_update_block"),
     )
 
@@ -199,7 +199,9 @@ def get_current_positions(
     query = query.group_by(TradeEvent.hyperdrive_address, TradeEvent.wallet_address, TradeEvent.token_id)
     out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
-    return out_df[out_df["balance"] != 0].copy()
+    if filter_zero_balance:
+        out_df = out_df[out_df["balance"] != 0].copy()
+    return out_df
 
 
 # Chain To Data Ingestion Interface

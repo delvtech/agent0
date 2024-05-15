@@ -270,8 +270,17 @@ class HyperdriveAgent:
         # Update the db with this wallet
         return self._pool._get_positions(self.agent)
 
-    def get_trade_events(self) -> pd.DataFrame:
+    def get_trade_events(self, all_token_deltas: bool = False) -> pd.DataFrame:
         """Returns the agent's current wallet.
+
+        Arguments
+        ---------
+        all_token_deltas: bool, optional
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
 
         Returns
         -------
@@ -280,4 +289,4 @@ class HyperdriveAgent:
         """
 
         # Update the db with this wallet
-        return self._pool._get_trade_events(self.agent)
+        return self._pool._get_trade_events(self.agent, all_token_deltas)

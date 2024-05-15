@@ -187,6 +187,16 @@ def snapshot_positions_to_db(
     """Function to query the trade events table and takes a snapshot
     of the current positions and pnl.
 
+    ..note:: This function does not scale well in simulation mode, as this table grows
+    for all wallets, for all positions, for every snapshot period (currently set to every block).
+
+    We can try to alleviate this by (1) increasing the snapshot period, and (2) removing
+    duplicate entries of closed positions (since their `realized_value` never changes).
+
+    This shouldn't be a problem for remote mode, as we limit this table to (1) only
+    agents managed by agent0, and (2) only adds an entry for every explicit "get_all_positions"
+    call.
+
     Arguments
     ---------
     interfaces: list[HyperdriveReadInterface]
@@ -208,15 +218,16 @@ def snapshot_positions_to_db(
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
 
-        # TODO the code below only tracks open positions.
-        # We need to add pnls from closing positions as well.
-
         # Calculate all open positions for the end block
+        # We need to keep zero balances to keep track of
+        # the pnl after close, and to keep a record for
+        # this snapshot.
         current_pool_positions = get_current_positions(
             db_session,
             wallet_addr=wallet_addr,
             hyperdrive_address=hyperdrive_address,
-            query_block=query_block_number,
+            query_block=query_block_number + 1,  # Query block numbers are not inclusive
+            filter_zero_balance=False,
             coerce_float=False,
         )
         if len(current_pool_positions) > 0:
@@ -233,9 +244,9 @@ def snapshot_positions_to_db(
                     interface,
                     query_block_number,
                 )
-                current_pool_positions["value_in_base"] = values_df
+                current_pool_positions["unrealized_value"] = values_df
                 current_pool_positions["pnl"] = (
-                    current_pool_positions["value_in_base"] - current_pool_positions["value_spent_in_base"]
+                    current_pool_positions["unrealized_value"] + current_pool_positions["realized_value"]
                 )
             all_pool_positions.append(current_pool_positions)
 

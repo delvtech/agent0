@@ -103,6 +103,7 @@ pool_state = hyperdrive.get_pool_state(coerce_float=True)
 checkpoint_info = hyperdrive.get_checkpoint_info()
 
 agent_positions = hyperdrive_agent0.get_all_positions()
+agent_trade_events = hyperdrive_agent0.get_trade_events()
 
 pool_positions = hyperdrive.get_positions()
 trade_events = hyperdrive.get_trade_events()
