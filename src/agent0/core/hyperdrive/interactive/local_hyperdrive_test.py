@@ -32,7 +32,7 @@ def _ensure_db_wallet_matches_agent_wallet(in_hyperdrive: LocalHyperdrive, agent
     interface = in_hyperdrive.interface
 
     # Test against db
-    positions_df = in_hyperdrive.get_positions(coerce_float=False)
+    positions_df = in_hyperdrive.get_all_positions(coerce_float=False)
     # Filter for wallet
     positions_df = positions_df[positions_df["wallet_address"] == agent.checksum_address]
 
@@ -66,7 +66,7 @@ def _ensure_db_wallet_matches_agent_wallet(in_hyperdrive: LocalHyperdrive, agent
 
     # Check longs
     # Longs still show up in positions even if they're 0, since they also keep track of values
-    long_wallet_df = positions_df[(positions_df["token_type"] == "LONG") & (positions_df["balance"] > 0)]
+    long_wallet_df = positions_df[positions_df["token_type"] == "LONG"]
     assert len(long_wallet_df) == len(agent_wallet.longs)
     for _, long_df in long_wallet_df.iterrows():
         maturity_time = int(long_df["maturity_time"])
@@ -77,7 +77,7 @@ def _ensure_db_wallet_matches_agent_wallet(in_hyperdrive: LocalHyperdrive, agent
         assert FixedPoint(scaled_value=long_from_chain) == FixedPoint(long_df["balance"])
 
     # Check shorts
-    short_wallet_df = positions_df[(positions_df["token_type"] == "SHORT") & (positions_df["balance"] > 0)]
+    short_wallet_df = positions_df[positions_df["token_type"] == "SHORT"]
     assert len(short_wallet_df) == len(agent_wallet.shorts)
     for _, short_df in short_wallet_df.iterrows():
         maturity_time = int(short_df["maturity_time"])
@@ -336,7 +336,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     # Check base balance on the chain
     init_eth_on_chain, init_base_on_chain = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     init_agent_wallet = hyperdrive_agent.get_positions().copy()
-    init_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False).copy()
+    init_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False).copy()
     init_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     init_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -351,7 +351,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
         check_base_on_chain,
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.get_positions()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -370,7 +370,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
         check_base_on_chain,
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.get_positions()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -394,7 +394,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
         check_base_on_chain,
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.get_positions()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -413,7 +413,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
         check_base_on_chain,
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.get_positions()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -437,7 +437,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
         check_base_on_chain,
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.get_positions()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -456,7 +456,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
         check_base_on_chain,
     ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.agent)
     check_agent_wallet = hyperdrive_agent.get_positions()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_db_wallet = interactive_hyperdrive.get_all_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
     check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
 
@@ -579,11 +579,11 @@ def test_liquidate(fast_chain_fixture: LocalChain):
     alice.open_long(base=FixedPoint(100))
     alice.open_short(bonds=FixedPoint(100))
     alice.add_liquidity(base=FixedPoint(100))
-    current_wallet = interactive_hyperdrive.get_positions()
-    assert current_wallet.shape[0] == 4  # we have 4 open positions, including base
+    current_wallet = alice.get_all_positions()
+    assert current_wallet.shape[0] == 3  # we have 3 open positions
     alice.liquidate()
-    current_wallet = interactive_hyperdrive.get_positions()
-    assert current_wallet.shape[0] == 1  # we have 1 open position, including base
+    current_wallet = alice.get_all_positions()
+    assert current_wallet.shape[0] == 0  # we have 0 open position
 
 
 @pytest.mark.anvil
@@ -601,14 +601,14 @@ def test_random_liquidate(fast_chain_fixture: LocalChain):
         alice.open_long(base=FixedPoint(100))
         alice.open_short(bonds=FixedPoint(100))
         alice.add_liquidity(base=FixedPoint(100))
-        current_wallet = interactive_hyperdrive.get_positions()
+        current_wallet = interactive_hyperdrive.get_all_positions()
         assert current_wallet.shape[0] == 4  # we have 4 open positions, including base
         liquidate_events = alice.liquidate(randomize=True)
         # We run liquidate here twice, as there's a chance the trades result in gaining withdrawal shares
         # TODO write loop within liquidate to call this multiple times
         # and also account for when no withdrawal shares are available to withdraw.
         liquidate_events.extend(alice.liquidate(randomize=True))
-        current_wallet = interactive_hyperdrive.get_positions()
+        current_wallet = interactive_hyperdrive.get_all_positions()
         all_liquidate_events.append(liquidate_events)
         assert current_wallet.shape[0] == 1  # we have 1 open position, including base
     assert len(all_liquidate_events) == 5

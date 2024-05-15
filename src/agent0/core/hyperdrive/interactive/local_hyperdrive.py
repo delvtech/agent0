@@ -508,7 +508,7 @@ class LocalHyperdrive(Hyperdrive):
             A pandas dataframe that consists of the pool info per block.
         """
         pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float)
-        pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float, return_timestamp=False)
+        pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float)
         pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
         return pool_info
 
@@ -538,14 +538,18 @@ class LocalHyperdrive(Hyperdrive):
         df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
         return df
 
-    def get_positions(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Gets the currently open positions of this pool and their corresponding pnl
+    def get_all_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets all positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
 
         Arguments
         ---------
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
+        filter_zero_balance: bool
+            Whether to filter out positions with zero balance.
+            When True, will only return currently open positions. Useful for gathering currently open positions.
+            When False, will also return any closed positions. Useful for calculating overall pnl of all positions.
 
         Returns
         -------
@@ -560,6 +564,8 @@ class LocalHyperdrive(Hyperdrive):
             start_block=-1,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
+        if filter_zero_balance:
+            position_snapshot = position_snapshot[position_snapshot["balance"] != 0]
         # Add usernames
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out

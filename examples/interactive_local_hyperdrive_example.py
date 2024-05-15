@@ -105,7 +105,7 @@ checkpoint_info = hyperdrive.get_checkpoint_info()
 agent_positions = hyperdrive_agent0.get_all_positions()
 agent_trade_events = hyperdrive_agent0.get_trade_events()
 
-pool_positions = hyperdrive.get_positions()
+pool_positions = hyperdrive.get_all_positions()
 trade_events = hyperdrive.get_trade_events()
 pool_positions_over_time = hyperdrive.get_positions_over_time()
 total_wallet_pnl_over_time = hyperdrive.get_total_pnl_over_time(coerce_float=True)

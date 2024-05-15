@@ -23,7 +23,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_current_positions,
     get_position_snapshot,
     get_trade_events,
-    trade_events_to_db,
+    trade_events_to_db
 )
 from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
@@ -31,7 +31,7 @@ from agent0.core.hyperdrive import (
     HyperdrivePolicyAgent,
     HyperdriveWallet,
     TradeResult,
-    TradeStatus,
+    TradeStatus
 )
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
@@ -40,7 +40,7 @@ from agent0.core.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
     redeem_withdraw_shares_trade,
-    remove_liquidity_trade,
+    remove_liquidity_trade
 )
 from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
@@ -51,7 +51,7 @@ from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     get_hyperdrive_addresses_from_artifacts,
-    get_hyperdrive_addresses_from_registry,
+    get_hyperdrive_addresses_from_registry
 )
 
 from .chain import Chain
@@ -62,7 +62,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity,
+    RemoveLiquidity
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 from .hyperdrive_agent import HyperdriveAgent
@@ -309,17 +309,22 @@ class Hyperdrive:
             calc_pnl=self.config.calc_pnl,
         )
 
-    def _get_all_positions(self, agent: HyperdrivePolicyAgent, coerce_float: bool) -> pd.DataFrame:
+    def _get_all_positions(
+        self, agent: HyperdrivePolicyAgent, filter_zero_balance: bool, coerce_float: bool
+    ) -> pd.DataFrame:
         # Sync all events, then sync snapshots for pnl and value calculation
         self._sync_events(agent)
         self._sync_snapshot(agent)
         # Query the snapshot for the most recent positions.
-        return get_position_snapshot(
+        position_snapshot = get_position_snapshot(
             session=self.chain.db_session,
             start_block=-1,
             wallet_address=agent.address,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
+        if filter_zero_balance:
+            position_snapshot = position_snapshot[position_snapshot["balance"] != 0]
+        return position_snapshot
 
     def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)
@@ -328,6 +333,7 @@ class Hyperdrive:
             self.chain.db_session,
             agent.checksum_address,
             hyperdrive_address=self.interface.hyperdrive_address,
+            filter_zero_balance=True,
             coerce_float=False,
         )
         # Convert to hyperdrive wallet object

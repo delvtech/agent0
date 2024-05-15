@@ -240,11 +240,15 @@ class HyperdriveAgent:
         """
         self._pool._set_max_approval(self.agent)
 
-    def get_all_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_all_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
         """Returns all of the agent's positions across all hyperdrive pools.
 
         Arguments
         ---------
+        filter_zero_balance: bool, optional
+            Whether to filter out positions with zero balance.
+            When True, will only return currently open positions. Useful for gathering currently open positions.
+            When False, will also return any closed positions. Useful for calculating overall pnl of all positions.
         coerce_float: bool, optional
             Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
 
@@ -253,7 +257,9 @@ class HyperdriveAgent:
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
-        return self._pool._get_all_positions(self.agent, coerce_float=coerce_float)
+        return self._pool._get_all_positions(
+            self.agent, filter_zero_balance=filter_zero_balance, coerce_float=coerce_float
+        )
 
     def get_positions(self) -> HyperdriveWallet:
         """Returns all of the agent's positions for the given hyperdrive pool.
