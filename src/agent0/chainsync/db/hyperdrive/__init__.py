@@ -21,6 +21,5 @@ from .interface import (
     get_position_snapshot,
     get_total_pnl_over_time,
     get_trade_events,
-    get_wallet_positions_over_time,
 )
 from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot
