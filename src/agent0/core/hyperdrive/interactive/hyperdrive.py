@@ -18,14 +18,20 @@ from hexbytes import HexBytes
 from numpy.random._generator import Generator
 from web3 import Web3
 
-from agent0.chainsync.db.hyperdrive import get_current_positions, get_trade_events, trade_events_to_db
+from agent0.chainsync.analysis import snapshot_positions_to_db
+from agent0.chainsync.db.hyperdrive import (
+    get_current_positions,
+    get_position_snapshot,
+    get_trade_events,
+    trade_events_to_db
+)
 from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
     HyperdriveActionType,
     HyperdrivePolicyAgent,
     HyperdriveWallet,
     TradeResult,
-    TradeStatus,
+    TradeStatus
 )
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
@@ -34,7 +40,7 @@ from agent0.core.hyperdrive.agent import (
     open_long_trade,
     open_short_trade,
     redeem_withdraw_shares_trade,
-    remove_liquidity_trade,
+    remove_liquidity_trade
 )
 from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
@@ -45,7 +51,7 @@ from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
     get_hyperdrive_addresses_from_artifacts,
-    get_hyperdrive_addresses_from_registry,
+    get_hyperdrive_addresses_from_registry
 )
 
 from .chain import Chain
@@ -56,7 +62,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity,
+    RemoveLiquidity
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 from .hyperdrive_agent import HyperdriveAgent
@@ -78,6 +84,7 @@ class Hyperdrive:
     class Config:
         """The configuration for the interactive hyperdrive class."""
 
+        # Execution config
         exception_on_policy_error: bool = True
         """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
         exception_on_policy_slippage: bool = False
@@ -86,6 +93,10 @@ class Hyperdrive:
         """
         preview_before_trade: bool = False
         """Whether to preview the position before executing a trade. Defaults to False."""
+        txn_receipt_timeout: float | None = None
+        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
+
+        # RNG config
         rng_seed: int | None = None
         """The seed for the random number generator. Defaults to None."""
         rng: Generator | None = None
@@ -93,6 +104,8 @@ class Hyperdrive:
         The experiment's stateful random number generator. Defaults to creating a generator from
         the provided random seed if not set.
         """
+
+        # Logging and crash reporting
         log_to_rollbar: bool = False
         """Whether to log crash reports to rollbar. Defaults to False."""
         rollbar_log_prefix: str | None = None
@@ -108,8 +121,10 @@ class Hyperdrive:
         If False, the policy `post_action` function will only be called after `execute_policy_action`.
         Defaults to False.
         """
-        txn_receipt_timeout: float | None = None
-        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
+
+        # Data pipeline parameters
+        calc_pnl: bool = True
+        """Whether to calculate pnl. Defaults to True."""
 
         def __post_init__(self):
             """Create the random number generator if not set."""
@@ -283,18 +298,44 @@ class Hyperdrive:
         # Remote hyperdrive stack syncs only the agent's wallet
         trade_events_to_db([self.interface], wallet_addr=agent.checksum_address, db_session=self.chain.db_session)
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
+        # Update the db with a snapshot of the wallet
+
+        # Note that remote hyperdrive only updates snapshots wrt the agent itself.
+        snapshot_positions_to_db(
+            [self.interface],
+            wallet_addr=agent.checksum_address,
+            db_session=self.chain.db_session,
+            calc_pnl=self.config.calc_pnl,
+        )
+
+    def _get_positions(self, agent: HyperdrivePolicyAgent, coerce_float: bool) -> pd.DataFrame:
+        self._sync_events(agent)
+        self._sync_snapshot(agent)
+        # TODO sync this with the address' logical name
+        return get_position_snapshot(
+            session=self.chain.db_session,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            start_block=-1,
+            wallet_address=agent.address,
+            coerce_float=coerce_float,
+        )
+
+    def _get_pool_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)
         # Query for the wallet object from the db
-        wallet_positions = get_current_positions(
-            self.chain.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
+        positions = get_current_positions(
+            self.chain.db_session,
+            agent.checksum_address,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            coerce_float=False,
         )
         # Convert to hyperdrive wallet object
         long_obj: dict[int, Long] = {}
         short_obj: dict[int, Short] = {}
         lp_balance: FixedPoint = FixedPoint(0)
         withdrawal_shares_balance: FixedPoint = FixedPoint(0)
-        for _, row in wallet_positions.iterrows():
+        for _, row in positions.iterrows():
             # Sanity checks
             assert row["hyperdrive_address"] == self.interface.hyperdrive_address
             assert row["wallet_address"] == agent.checksum_address

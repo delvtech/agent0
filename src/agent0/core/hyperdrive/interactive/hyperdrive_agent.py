@@ -240,8 +240,9 @@ class HyperdriveAgent:
         """
         self._pool._set_max_approval(self.agent)
 
-    def get_positions(self) -> HyperdriveWallet:
-        """Returns the agent's current wallet.
+    def get_pool_positions(self) -> HyperdriveWallet:
+        """Returns the agent's positions in the pool.
+        TODO this should take a pool argument, or have an active pool.
 
         Returns
         -------
@@ -250,7 +251,43 @@ class HyperdriveAgent:
         """
 
         # Update the db with this wallet
-        return self._pool._get_positions(self.agent)
+        return self._pool._get_pool_positions(self.agent)
+
+    def get_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Returns all of the agent's positions in all hyperdrive pools.
+
+        Arguments
+        ---------
+        coerce_float: bool, optional
+            Whether to coerce underlying Decimal values to float. Defaults to False.
+
+        Returns
+        -------
+        pd.Dataframe
+            block_number: int
+                The block number of the entry.
+            hyperdrive_address: str
+                The hyperdrive address of the position.
+            token_type: str
+                A string specifying the type of the token.
+            maturity_time: Decimal | float
+                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
+            token_id: str
+                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
+            balance: Decimal | float
+                The current balance of the position of the agent at the specified block number.
+            value_in_base: Decimal | float
+                The value in base of the position.
+            value_spent_in_base: Decimal | float
+                The value spent in base for the position.
+            pnl: Decimal | float
+                The pnl of the position at the specified block number.
+            last_balance_update_block: int
+                The last block number that the balance of the position was updated.
+        """
+
+        # Update the db with this wallet
+        return self._pool._get_positions(self.agent, coerce_float)
 
     def get_trade_events(self) -> pd.DataFrame:
         """Returns the agent's current wallet.
