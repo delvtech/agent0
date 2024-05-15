@@ -9,7 +9,7 @@ from typing import Callable, ParamSpec, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0 import Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
+from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
@@ -162,8 +162,8 @@ async def async_runner(
     return out_result
 
 
-def run_fuzz_bots(
-    hyperdrive_pool: Hyperdrive,
+def run_local_fuzz_bots(
+    hyperdrive_pool: LocalHyperdrive,
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -245,6 +245,8 @@ def run_fuzz_bots(
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+            base=base_budget_per_bot,
+            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
@@ -258,6 +260,8 @@ def run_fuzz_bots(
 
     for _ in range(num_random_hold_agents):
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+            base=base_budget_per_bot,
+            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
@@ -269,30 +273,6 @@ def run_fuzz_bots(
             ),
         )
         agents.append(agent)
-
-    logging.info("Funding bots...")
-    if run_async:
-        asyncio.run(
-            async_runner(
-                return_exceptions=True,
-                funcs=[agent.add_funds for agent in agents],
-                base=base_budget_per_bot,
-                eth=eth_budget_per_bot,
-            )
-        )
-    else:
-        _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
-
-    logging.info("Setting max approval...")
-    if run_async:
-        asyncio.run(
-            async_runner(
-                return_exceptions=True,
-                funcs=[agent.set_max_approval for agent in agents],
-            )
-        )
-    else:
-        _ = [agent.set_max_approval() for agent in agents]
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")

@@ -19,7 +19,7 @@ from agent0 import Chain, Hyperdrive
 from agent0.core.base import PolicyAgent
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
-from agent0.hyperfuzz.system_fuzz.run_fuzz_bots import async_runner
+from agent0.hyperfuzz.system_fuzz.run_local_fuzz_bots import async_runner
 from agent0.hypertypes import IHyperdriveContract
 
 # Checkpoint bot has a lot going on
