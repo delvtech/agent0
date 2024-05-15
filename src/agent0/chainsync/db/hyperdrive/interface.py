@@ -89,7 +89,13 @@ def get_latest_block_number_from_positions_snapshot_table(session: Session, wall
     return int(query)
 
 
-def get_trade_events(session: Session, wallet_addr: str | None = None) -> pd.DataFrame:
+def get_trade_events(
+    session: Session,
+    wallet_addr: str | None = None,
+    hyperdrive_address: str | None = None,
+    all_token_deltas: bool = True,
+    coerce_float=False,
+) -> pd.DataFrame:
     """Get all trade events and returns a pandas dataframe.
 
     Arguments
@@ -98,6 +104,16 @@ def get_trade_events(session: Session, wallet_addr: str | None = None) -> pd.Dat
         The initialized db session object.
     wallet_addr: str | None, optional
         The wallet address to filter the results on. Return all if None.
+    hyperdrive_address: str | None, optional
+        The hyperdrive address to filter the results on. Returns all if None.
+    all_token_deltas: bool
+        When removing liquidity that results in withdrawal shares, the events table returns
+        two entries for this transaction to keep track of token deltas (one for lp tokens and
+        one for withdrawal shares). If this flag is true, will return all entries in the table,
+        which is useful for calculating token positions. If false, will drop the duplicate
+        withdrawal share entry (useful for returning a ticker).
+    coerce_float: bool
+        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
 
     Returns
     -------
@@ -107,7 +123,17 @@ def get_trade_events(session: Session, wallet_addr: str | None = None) -> pd.Dat
     query = session.query(TradeEvent)
     if wallet_addr is not None:
         query = query.filter(TradeEvent.wallet_address == wallet_addr)
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=False)
+    if hyperdrive_address is not None:
+        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+    if not all_token_deltas:
+        # Drop the duplicate events
+        query = query.filter(
+            ~((TradeEvent.event_type == "removeLiquidity") & (TradeEvent.token_id == "WITHDRAWAL_SHARE"))
+        )
+
+    # Always sort by block in order
+    query = query.order_by(TradeEvent.block_number)
+    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 def get_current_positions(
@@ -524,70 +550,6 @@ def get_pool_analysis(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_ticker(
-    session: Session,
-    hyperdrive_address: str | None = None,
-    start_block: int | None = None,
-    end_block: int | None = None,
-    wallet_addresses: list[str] | None = None,
-    max_rows: int | None = None,
-    coerce_float=True,
-) -> pd.DataFrame:
-    """Get all pool analysis and returns a pandas dataframe.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object.
-    hyperdrive_address: str | None, optional
-        The hyperdrive pool address to filter the query on. Defaults to returning all pool analysis.
-    start_block: int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3].
-    end_block: int | None, optional
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3].
-    wallet_address: list[str] | None, optional
-        The wallet addresses to filter the query on.
-    max_rows: int | None
-        The number of rows to return. If None, will return all rows.
-    coerce_float: bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried pool info data.
-    """
-    # pylint: disable=too-many-arguments
-    query = session.query(TradeEvent)
-
-    if hyperdrive_address is not None:
-        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
-
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(TradeEvent, session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(TradeEvent, session) + end_block + 1
-
-    if start_block is not None:
-        query = query.filter(TradeEvent.block_number >= start_block)
-    if end_block is not None:
-        query = query.filter(TradeEvent.block_number < end_block)
-
-    if wallet_addresses is not None:
-        query = query.filter(TradeEvent.wallet_address.in_(wallet_addresses))
-
-    # Always sort by block in order
-    query = query.order_by(TradeEvent.block_number.desc())
-
-    if max_rows is not None:
-        query = query.limit(max_rows)
-
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
-
-
 # Lots of arguments, most are defaults
 # pylint: disable=too-many-arguments
 def get_position_snapshot(
@@ -595,7 +557,7 @@ def get_position_snapshot(
     hyperdrive_address: str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
-    wallet_address: list[str] | None = None,
+    wallet_address: list[str] | str | None = None,
     coerce_float=True,
 ) -> pd.DataFrame:
     """Get all position snapshot data and returns a pandas dataframe.
@@ -641,12 +603,10 @@ def get_position_snapshot(
 
     query = query.filter(PositionSnapshot.block_number >= start_block)
     query = query.filter(PositionSnapshot.block_number < end_block)
-    if wallet_address is not None:
+    if isinstance(wallet_address, list):
         query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
-
-    if return_timestamp:
-        # query from PoolInfo the timestamp
-        query = query.join(PoolInfo, PositionSnapshot.block_number == PoolInfo.block_number)
+    elif wallet_address is not None:
+        query = query.filter(PositionSnapshot.wallet_address == wallet_address)
 
     # Always sort by block in order
     query = query.order_by(PositionSnapshot.block_number)
@@ -683,12 +643,11 @@ def get_total_pnl_over_time(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
-    # Do a subquery that groups wallet pnl by address and block
-    # Not sure why func.sum is not callable, but it is
-    subquery = session.query(
+    # TODO do we want to keep pools seperate?
+    query = session.query(
         PositionSnapshot.wallet_address,
         PositionSnapshot.block_number,
-        func.sum(PositionSnapshot.value_in_base).label("pnl"),  # pylint: disable=not-callable
+        func.sum(PositionSnapshot.pnl).label("pnl"),
     )
 
     # Support for negative indices
@@ -698,20 +657,18 @@ def get_total_pnl_over_time(
         end_block = get_latest_block_number_from_table(PositionSnapshot, session) + end_block + 1
 
     if start_block is not None:
-        subquery = subquery.filter(PositionSnapshot.block_number >= start_block)
+        query = query.filter(PositionSnapshot.block_number >= start_block)
     if end_block is not None:
-        subquery = subquery.filter(PositionSnapshot.block_number < end_block)
+        query = query.filter(PositionSnapshot.block_number < end_block)
     if wallet_address is not None:
-        subquery = subquery.filter(PositionSnapshot.wallet_address.in_(wallet_address))
+        query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
 
-    subquery = subquery.group_by(PositionSnapshot.wallet_address, PositionSnapshot.block_number)
+    query = query.group_by(PositionSnapshot.wallet_address, PositionSnapshot.block_number)
 
     # Always sort by block in order
-    subquery = subquery.order_by(PositionSnapshot.block_number).subquery()
+    query = query.order_by(PositionSnapshot.block_number)
 
-    # Additional query to join timestamp to block number
-    query = session.query(PoolInfo.timestamp, subquery)
-    query = query.join(PoolInfo, subquery.c.block_number == PoolInfo.block_number)
+    # TODO add timestamp back in
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 

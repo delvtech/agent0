@@ -207,6 +207,10 @@ def snapshot_positions_to_db(
     all_pool_positions: list[pd.DataFrame] = []
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
+
+        # TODO the code below only tracks open positions.
+        # We need to add pnls from closing positions as well.
+
         # Calculate all open positions for the end block
         current_pool_positions = get_current_positions(
             db_session,

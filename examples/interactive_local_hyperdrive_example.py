@@ -58,7 +58,7 @@ open_long_event_1  # pyright: ignore
 open_long_event_2 = hyperdrive_agent0.open_long(FixedPoint(22222))
 
 # View current wallet
-print(hyperdrive_agent0.get_pool_positions())
+print(hyperdrive_agent0.get_positions())
 
 
 # NOTE these calls are chainwide calls, so all pools connected to this chain gets affected.
@@ -73,7 +73,7 @@ close_long_event_1 = hyperdrive_agent0.close_long(
     maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.bond_amount
 )
 
-agent0_longs = list(hyperdrive_agent0.get_pool_positions().longs.values())
+agent0_longs = list(hyperdrive_agent0.get_positions().longs.values())
 close_long_event_2 = hyperdrive_agent0.close_long(
     maturity_time=agent0_longs[0].maturity_time, bonds=agent0_longs[0].balance
 )
@@ -86,7 +86,7 @@ close_short_event = hyperdrive_agent1.close_short(
 
 # LP
 add_lp_event = hyperdrive_agent2.add_liquidity(base=FixedPoint(44444))
-remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.get_pool_positions().lp_tokens)
+remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.get_positions().lp_tokens)
 
 # The above trades doesn't result in withdraw shares, but the function below allows you
 # to withdrawal shares from the pool.
@@ -102,20 +102,13 @@ pool_state = hyperdrive.get_pool_state(coerce_float=True)
 # This is because we don't create checkpoints when we advance time.
 checkpoint_info = hyperdrive.get_checkpoint_info()
 
-current_wallet = hyperdrive.get_current_wallet()
-ticker = hyperdrive.get_ticker()
-wallet_positions = hyperdrive.get_wallet_positions()
-total_wallet_pnl_over_time = hyperdrive.get_total_wallet_pnl_over_time(coerce_float=True)
+agent_positions = hyperdrive_agent0.get_all_positions()
 
-# %%
-print(pool_state)
-# %%
-ticker  # pyright: ignore
-# %%
-wallet_positions  # pyright: ignore
-# %%
-total_wallet_pnl_over_time  # pyright: ignore
-# %%
+pool_positions = hyperdrive.get_positions()
+trade_events = hyperdrive.get_trade_events()
+pool_positions_over_time = hyperdrive.get_positions_over_time()
+total_wallet_pnl_over_time = hyperdrive.get_total_pnl_over_time(coerce_float=True)
+pass
 
 
 # Plot pretty plots

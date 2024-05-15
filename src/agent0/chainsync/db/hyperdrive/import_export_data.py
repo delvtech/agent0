@@ -24,13 +24,12 @@ from .interface import (
     get_pool_config,
     get_pool_info,
     get_position_snapshot,
-    get_ticker,
     get_trade_events,
 )
 from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 
-def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool = False) -> None:
+def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     """Export all tables from the database and write as parquet files, one per table.
     We use parquet since it's type aware, so all original types (including Decimals) are preserved
     when read
@@ -48,12 +47,6 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool
         # postgres session
         db_session = initialize_session()
 
-    # TODO there might be a way to make this all programmatic by reading the schema
-    if raw:
-        return_timestamps = False
-    else:
-        return_timestamps = True
-
     # Base tables
     get_addr_to_username(db_session).to_parquet(
         os.path.join(out_dir, "addr_to_username.parquet"), index=False, engine="pyarrow"
@@ -63,7 +56,9 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool
     )
 
     # Agent event tables
-    get_trade_events(db_session).to_parquet(os.path.join(out_dir, "trade_event.parquet"), index=False, engine="pyarrow")
+    get_trade_events(db_session, all_token_deltas=True).to_parquet(
+        os.path.join(out_dir, "trade_event.parquet"), index=False, engine="pyarrow"
+    )
 
     # Hyperdrive tables
     get_pool_config(db_session, coerce_float=False).to_parquet(
@@ -77,10 +72,10 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None, raw: bool
     )
 
     ## Analysis tables
-    get_pool_analysis(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
+    get_pool_analysis(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "pool_analysis.parquet"), index=False, engine="pyarrow"
     )
-    get_position_snapshot(db_session, coerce_float=False, return_timestamp=return_timestamps).to_parquet(
+    get_position_snapshot(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "position_snapshot.parquet"), index=False, engine="pyarrow"
     )
 

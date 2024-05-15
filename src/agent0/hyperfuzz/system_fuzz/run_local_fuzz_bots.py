@@ -318,9 +318,7 @@ def run_local_fuzz_bots(
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
-        average_agent_base = sum(agent.get_pool_positions().balance.amount for agent in agents) / FixedPoint(
-            len(agents)
-        )
+        average_agent_base = sum(agent.get_positions().balance.amount for agent in agents) / FixedPoint(len(agents))
         # Update agent funds
         if average_agent_base < minimum_avg_agent_base:
             logging.info("Refunding agents...")

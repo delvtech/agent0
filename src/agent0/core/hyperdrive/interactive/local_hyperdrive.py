@@ -27,9 +27,8 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_config,
     get_pool_info,
     get_position_snapshot,
-    get_ticker,
     get_total_pnl_over_time,
-    get_trade_events,
+    get_trade_events
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
@@ -41,7 +40,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
-    encode_asset_id,
+    encode_asset_id
 )
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -53,7 +52,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity,
+    RemoveLiquidity
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
@@ -539,7 +538,33 @@ class LocalHyperdrive(Hyperdrive):
         df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
         return df
 
-    def get_all_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the currently open positions of this pool and their corresponding pnl
+        and returns as a pandas dataframe.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe consisting of currently open positions and their corresponding pnl.
+        """
+        # TODO add timestamp back in
+        # TODO add logical name for pool
+        position_snapshot = get_position_snapshot(
+            self.chain.db_session,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            start_block=-1,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        # Add usernames
+        out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        return out
+
+    def get_positions_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the history of all positions over time and their corresponding pnl
         and returns as a pandas dataframe.
 
@@ -551,90 +576,48 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            token_type: str
-                A string specifying the type of the token.
-            maturity_time: Decimal | float
-                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
-            token_id: str
-                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            balance: Decimal | float
-                The current balance of the position of the agent at the specified block number.
-            value_in_base: Decimal | float
-                The value in base of the position.
-            value_spent_in_base: Decimal | float
-                The value spent in base for the position.
-            pnl: Decimal | float
-                The pnl of the position at the specified block number.
-            last_balance_update_block: int
-                The last block number that the balance of the position was updated.
+            A dataframe consisting of positions over time and their corresponding pnl.
         """
         # TODO add timestamp back in
-        position_snapshot = get_position_snapshot(self.chain.db_session, coerce_float=coerce_float)
+        # TODO add logical name for pool
+        position_snapshot = get_position_snapshot(
+            self.chain.db_session, hyperdrive_address=self.interface.hyperdrive_address, coerce_float=coerce_float
+        ).drop("id", axis=1)
         # Add usernames
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        # Filter and order columns
-        out = out[
-            [
-                "block_number",
-                "username",
-                "wallet_address",
-                "token_type",
-                "maturity_time",
-                "token_id",
-                "balance",
-                "value_in_base",
-                "value_spent_in_base",
-                "pnl",
-                "last_balance_update_block",
-            ]
-        ]
         return out
 
-    def get_ticker(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the ticker history of all trades and the corresponding token deltas for each trade.
 
         Arguments
         ---------
+        all_token_deltas: bool
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
         pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            trade_type: str
-                The trade that the agent made.
-            token_diffs: list[str]
-                A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
+            A dataframe of trade events.
         """
-        out = get_ticker(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
+        # TODO add timestamp back in
+        out = get_trade_events(
+            self.chain.db_session,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            all_token_deltas=all_token_deltas,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        # TODO add pool name
         out = self._add_username_to_dataframe(out, "wallet_address")
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "trade_type",
-                "token_diffs",
-            ]
-        ]
         return out
 
-    def get_total_wallet_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_total_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets total pnl for each wallet for each block, aggregated across all open positions.
 
         Arguments
@@ -645,28 +628,10 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            pnl: Decimal | float
-                The total pnl of the agent at the specified block number.
+            A dataframe of aggregated wallet pnl per block
         """
         out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "pnl",
-            ]
-        ]
         return out
 
     def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
@@ -895,9 +860,9 @@ class LocalHyperdrive(Hyperdrive):
             trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
             if self.config.crash_log_ticker:
                 if trade_result.additional_info is None:
-                    trade_result.additional_info = {"ticker": self.get_ticker()}
+                    trade_result.additional_info = {"trade_events": self.get_trade_events()}
                 else:
-                    trade_result.additional_info["ticker"] = self.get_ticker()
+                    trade_result.additional_info["trade_events"] = self.get_trade_events()
 
         # This check is necessary for subclass overloading and typing,
         # as types are narrowed based on the literal `always_throw_exception`

@@ -150,7 +150,7 @@ def fuzz_path_independence(
     # In case all paths failed, we keep track of all tickers and crash reports for all paths
 
     trade_paths = []
-    ticker_paths = []
+    trade_event_paths = []
     for iteration in range(num_paths_checked):
         print(f"{iteration=}")
         logging.info("iteration %s out of %s", iteration, num_paths_checked - 1)
@@ -184,7 +184,7 @@ def fuzz_path_independence(
             # These trades get logged as info
             # We track the ticker for each failed path here. This bookkeeping is only
             # used if all paths fail
-            ticker_paths.append(interactive_hyperdrive.get_ticker())
+            trade_event_paths.append(interactive_hyperdrive.get_trade_events())
             continue
 
         ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
@@ -211,7 +211,7 @@ def fuzz_path_independence(
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             check_data["curr_checkpoint_id"] = ending_checkpoint_id
             first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
-            first_run_ticker = interactive_hyperdrive.get_ticker()
+            first_run_ticker = interactive_hyperdrive.get_trade_events()
 
         # On subsequent run, check against the saved final state
         else:
@@ -235,7 +235,7 @@ def fuzz_path_independence(
                     "first_run_state_dump_dir": first_run_state_dump_dir,
                     "dump_state_dir": dump_state_dir,
                     "first_run_trade_ticker": first_run_ticker,
-                    "trade_ticker": interactive_hyperdrive.get_ticker(),
+                    "trade_events": interactive_hyperdrive.get_trade_events(),
                 }
                 additional_info.update(error.exception_data)
 
@@ -267,7 +267,7 @@ def fuzz_path_independence(
         rollbar_data = {
             "fuzz_random_seed": random_seed,
             "close_random_paths": [[trade for _, trade in path] for path in trade_paths],
-            "ticker_paths": ticker_paths,
+            "trade_event_paths": trade_event_paths,
         }
         rollbar.report_message(
             warning_message,

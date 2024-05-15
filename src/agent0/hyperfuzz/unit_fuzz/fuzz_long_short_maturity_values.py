@@ -152,7 +152,7 @@ def fuzz_long_short_maturity_values(
             additional_info = {
                 "fuzz_random_seed": random_seed,
                 "dump_state_dir": dump_state_dir,
-                "trade_ticker": interactive_hyperdrive.get_ticker(),
+                "trade_events": interactive_hyperdrive.get_trade_events(),
             }
             additional_info.update(error.exception_data)
 
