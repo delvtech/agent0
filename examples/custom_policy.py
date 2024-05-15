@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
+
 from agent0 import (
     HyperdriveBasePolicy,
     add_liquidity_trade,
@@ -15,7 +17,6 @@ from agent0 import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
-from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
