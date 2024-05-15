@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 import docker
@@ -83,9 +83,12 @@ class Chain:
         self._web3 = initialize_web3_with_http_provider(self.rpc_uri, reset_provider=False)
 
         # Set up db connections
-        # Remove protocol and replace . and : with dashes
-        self.chain_id = self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
-        db_container_name = f"postgres-interactive-hyperdrive-{self.chain_id}"
+        # We use the db port as the container name
+        # TODO we may want to use the actual chain id for this when we start
+        # caching the db specific to the chain id
+        self.chain_id = str(config.db_port)
+        obj_name = type(self).__name__.lower()
+        db_container_name = f"agent0-{obj_name}-{self.chain_id}"
         self.postgres_config, self.postgres_container = self._initialize_postgres_container(
             db_container_name, config.db_port, config.remove_existing_db_container
         )

@@ -82,8 +82,6 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
 
 @pytest.mark.anvil
 def test_hyperdrive_from_local_chain_not_allowed(fast_chain_fixture: LocalChain):
-    # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
-    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = LocalHyperdrive.Config(
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
@@ -93,9 +91,9 @@ def test_hyperdrive_from_local_chain_not_allowed(fast_chain_fixture: LocalChain)
     # This deploys the pool
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
-    # Gather relevant objects from the local hyperdrive
     hyperdrive_address = interactive_local_hyperdrive.get_hyperdrive_address()
     with pytest.raises(TypeError):
+        # We ensure we can't initialize a remote hyperdrive object from a local chain.
         _ = Hyperdrive(fast_chain_fixture, hyperdrive_address)
 
 
@@ -104,8 +102,7 @@ def test_hyperdrive_from_local_chain_not_allowed(fast_chain_fixture: LocalChain)
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-@pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_chain: bool):
+def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     """Deploy a local chain and point the remote interface to the local chain."""
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
@@ -122,11 +119,10 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     hyperdrive_address = interactive_local_hyperdrive.get_hyperdrive_address()
 
     # Connect to the local chain using the remote hyperdrive interface
-    if check_remote_chain:
-        remote_chain = Chain(fast_chain_fixture.rpc_uri)
-        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_address)
-    else:
-        interactive_remote_hyperdrive = Hyperdrive(fast_chain_fixture, hyperdrive_address)
+    # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
+    # we use a separate chain port here
+    remote_chain = Chain(fast_chain_fixture.rpc_uri, Chain.Config(db_port=40000))
+    interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_address)
 
     # Generate trading agents from the interactive object
     hyperdrive_agent0 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
@@ -248,23 +244,25 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain, check_remote_
     )
     _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_remote_hyperdrive, hyperdrive_agent0)
 
+    remote_chain.cleanup()
+
 
 @pytest.mark.anvil
-@pytest.mark.parametrize("check_remote_chain", [True, False])
-def test_no_policy_call(fast_chain_fixture: LocalChain, check_remote_chain: bool):
+def test_no_policy_call(fast_chain_fixture: LocalChain):
     """Deploy a local chain and point the remote interface to the local chain."""
     initial_pool_config = LocalHyperdrive.Config()
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
     # Connect to the local chain using the remote hyperdrive interface
-    if check_remote_chain:
-        remote_chain = Chain(fast_chain_fixture.rpc_uri)
-        interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
-    else:
-        interactive_remote_hyperdrive = Hyperdrive(fast_chain_fixture, hyperdrive_addresses)
+    # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
+    # we use a separate chain port here
+    remote_chain = Chain(fast_chain_fixture.rpc_uri, Chain.Config(db_port=40000))
+    interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
 
     # Create agent without policy passed in
     hyperdrive_agent = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
     # Attempt to execute agent policy, should throw value error
     with pytest.raises(ValueError):
         hyperdrive_agent.execute_policy_action()
+
+    remote_chain.cleanup()
