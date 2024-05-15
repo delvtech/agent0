@@ -12,9 +12,14 @@ from web3.types import EventData
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
-from .convert_data import convert_checkpoint_info, convert_events, convert_pool_config, convert_pool_info
-from .interface import add_checkpoint_info, add_pool_config, add_pool_infos, get_latest_block_number_from_trade_event
-from .schema import TradeEvent
+from .convert_data import convert_checkpoint_events, convert_pool_config, convert_pool_info, convert_trade_events
+from .interface import (
+    add_pool_config,
+    add_pool_infos,
+    get_latest_block_number_from_checkpoint_info_table,
+    get_latest_block_number_from_trade_event,
+)
+from .schema import CheckpointInfo, TradeEvent
 
 
 def init_data_chain_to_db(
@@ -72,19 +77,12 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     # scratch and there's lots of trades/pools.
     trade_events_to_db(interfaces, wallet_addr=None, db_session=session)
 
+    # Add all checkpoint events to the table
+    checkpoint_events_to_db(interfaces, db_session=session)
+
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
         pool_state = interface.get_hyperdrive_state(block)
-
-        ## Query and add block_checkpoint_info
-        checkpoint_dict = asdict(pool_state.checkpoint)
-        checkpoint_dict["checkpoint_time"] = pool_state.checkpoint_time
-        checkpoint_dict["hyperdrive_address"] = hyperdrive_address
-        block_checkpoint_info = convert_checkpoint_info(checkpoint_dict)
-        # When the contract call fails due to missing checkpoint, solidity returns 0
-        # Hence, we detect that here and don't add the checkpoint info if that happens
-        if block_checkpoint_info.vault_share_price != 0:
-            add_checkpoint_info(block_checkpoint_info, session)
 
         ## Query and add block_pool_info
         # Adding this last as pool info is what we use to determine if this block is in the db for analysis
@@ -104,6 +102,44 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
 
         block_pool_info = convert_pool_info(pool_info_dict)
         add_pool_infos([block_pool_info], session)
+
+
+def checkpoint_events_to_db(
+    interfaces: list[HyperdriveReadInterface],
+    db_session: Session,
+) -> None:
+    """Function to query checkpoint events from all pools and add them to the db.
+
+    Arguments
+    ---------
+    interfaces: list[HyperdriveReadInterface]
+        A collection of Hyperdrive interface objects, each connected to a pool.
+    db_session: Session
+        The database session.
+    """
+    assert len(interfaces) > 0
+
+    # Get the earliest block to get events from
+    # TODO can narrow this down to the last block we checked
+    # For now, keep this as the latest entry of this wallet.
+    # + 1 since the queries are inclusive
+    from_block = get_latest_block_number_from_checkpoint_info_table(db_session) + 1
+
+    # Gather all events we care about here
+    all_events: list[EventData] = []
+
+    for interface in interfaces:
+        all_events.extend(
+            interface.hyperdrive_contract.events.CreateCheckpoint.get_logs(
+                fromBlock=from_block,
+            )
+        )
+
+    events_df = convert_checkpoint_events(all_events)
+
+    # Add to db
+    if len(events_df) > 0:
+        df_to_db(events_df, CheckpointInfo, db_session)
 
 
 def trade_events_to_db(
@@ -213,7 +249,7 @@ def trade_events_to_db(
             )
         )
 
-    events_df = convert_events(all_events, wallet_addr)
+    events_df = convert_trade_events(all_events, wallet_addr)
 
     # Add to db
     if len(events_df) > 0:

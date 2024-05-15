@@ -56,11 +56,61 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
     return out
 
 
+def convert_checkpoint_events(events: list[EventData]) -> pd.DataFrame:
+    """Convert hyperdrive trade events to database schema objects.
+
+    Arguments
+    ---------
+    events: list[EventData]
+        A list of web3 EventData objects from `get_logs` to insert into postgres.
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that matches the db schema of checkpoint events.
+    """
+    # Convert attribute dictionary event data to dictionary to allow conversion to dataframe
+    events_df = pd.DataFrame([_event_data_to_dict(event) for event in events])
+
+    # If no events, we just return
+    if len(events_df) == 0:
+        return events_df
+
+    # Expand the args dict without losing the args dict field
+    # json_normalize works on series, but typing doesn't support it.
+    args_columns = pd.json_normalize(events_df["args"])  # type: ignore
+    events_df = pd.concat([events_df, args_columns], axis=1)
+    # Select subset of columns we need and rename them
+    rename_dict = {
+        "address": "hyperdrive_address",
+        "blockNumber": "block_number",
+        "checkpointTime": "checkpoint_time",
+        "checkpointVaultSharePrice": "checkpoint_vault_share_price",
+        "vaultSharePrice": "vault_share_price",
+        "maturedShorts": "matured_shorts",
+        "maturedLongs": "matured_longs",
+        "lpSharePrice": "lp_share_price",
+    }
+
+    events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
+    # Convert values to fixed point decimals
+    fixed_point_columns = [
+        "checkpoint_vault_share_price",
+        "vault_share_price",
+        "matured_shorts",
+        "matured_longs",
+        "lp_share_price",
+    ]
+    for column in fixed_point_columns:
+        events_df[column] = events_df[column].apply(lambda x: Decimal(x) / Decimal(1e18))  # type: ignore
+    return events_df
+
+
 # TODO cleanup
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-locals
-def convert_events(events: list[EventData], wallet_addr: str | None) -> pd.DataFrame:
+def convert_trade_events(events: list[EventData], wallet_addr: str | None) -> pd.DataFrame:
     """Convert hyperdrive trade events to database schema objects.
 
     Arguments
@@ -426,35 +476,3 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
         args_dict[camel_to_snake(key)] = value
     block_pool_info = PoolInfo(**args_dict)
     return block_pool_info
-
-
-def convert_checkpoint_info(checkpoint_info_dict: dict[str, Any]) -> CheckpointInfo:
-    """Converts a checkpoint_info_dict from a call in hyperdrive interface to the postgres data type
-
-    Arguments
-    ---------
-    checkpoint_info_dict: dict[str, Any]
-        The dictionary returned from hyperdrive_instance.get_hyperdrive_checkpoint_info
-
-    Returns
-    -------
-    CheckpointInfo
-        The db object for checkpoints
-    """
-    args_dict = {}
-    for key in CheckpointInfo.__annotations__:
-        # Ignore id field
-        if key == "id":
-            continue
-
-        # Keys must match
-        if key not in checkpoint_info_dict:
-            logging.warning("Missing %s from checkpoint info", key)
-            value = None
-        else:
-            value = checkpoint_info_dict[key]
-            if isinstance(value, FixedPoint):
-                value = Decimal(str(value))
-        args_dict[camel_to_snake(key)] = value
-    block_checkpoint_info = CheckpointInfo(**args_dict)
-    return block_checkpoint_info

@@ -54,19 +54,31 @@ class PoolConfig(Base):
 
 
 class CheckpointInfo(Base):
-    """Table/dataclass schema for checkpoint information"""
+    """Table/dataclass schema for checkpoint information."""
 
     __tablename__ = "checkpoint_info"
 
     # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
+    """The unique identifier for the entry to the table."""
     hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
+    """The hyperdrive address for the entry."""
+    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    """The block number on which the event was emitted."""
     checkpoint_time: Mapped[int] = mapped_column(BigInteger, index=True)
+    """The seconds epoch time index for this checkpoint."""
 
     # Fields
-    weighted_spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    last_weighted_spot_price_update_time: Mapped[Union[int, None]] = mapped_column(BigInteger, default=None)
+    checkpoint_vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """The share price that was checkpointed in this checkpoint."""
     vault_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """The vault share price at the time of checkpoint creation."""
+    matured_shorts: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """The amount of shorts that matured within this checkpoint."""
+    matured_longs: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """The amount of longs that matured within this checkpoint."""
+    lp_share_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    """The lp share price at the checkpoint."""
 
 
 # TODO change this table to allow for missing data in block time.

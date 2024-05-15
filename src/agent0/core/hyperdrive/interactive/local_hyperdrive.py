@@ -524,7 +524,6 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A pandas dataframe that consists of previous checkpoints made.
         """
-        # DB read calls ensures data pipeline is caught up before returning
         return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
 
     def get_positions(self, show_zero_balance: bool = False, coerce_float: bool = False) -> pd.DataFrame:

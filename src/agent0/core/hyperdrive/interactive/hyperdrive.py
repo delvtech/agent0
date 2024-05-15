@@ -22,6 +22,7 @@ from agent0.chainsync.analysis import snapshot_positions_to_db
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
 from agent0.chainsync.db.hyperdrive import (
+    checkpoint_events_to_db,
     get_current_positions,
     get_position_snapshot,
     get_trade_events,
@@ -318,6 +319,8 @@ class Hyperdrive:
 
         # Remote hyperdrive stack syncs only the agent's wallet
         trade_events_to_db([self.interface], wallet_addr=agent.checksum_address, db_session=self.chain.db_session)
+        # We sync checkpoint events as well
+        checkpoint_events_to_db([self.interface], db_session=self.chain.db_session)
 
     def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
         # Update the db with a snapshot of the wallet

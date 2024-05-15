@@ -18,6 +18,9 @@ from .schema import FIXED_NUMERIC, CheckpointInfo, PoolAnalysis, PoolConfig, Poo
 def add_trade_events(transfer_events: list[TradeEvent], session: Session) -> None:
     """Add transfer events to the transfer events table.
 
+    This function is only used for injecting rows into the db.
+    The actual ingestion happens via `trade_events_to_db` using dataframes.
+
     Arguments
     ---------
     transfer_events: list[HyperdriveTransferEvent]
@@ -299,6 +302,9 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
 def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> None:
     """Add checkpoint info to the checkpointinfo table if it doesn't exist.
 
+    This function is only used for injecting rows into the db.
+    The actual ingestion happens via `checkpoint_events_to_db` using dataframes.
+
     Arguments
     ---------
     checkpoint_info: CheckpointInfo
@@ -306,38 +312,13 @@ def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> No
     session: Session
         The initialized session object.
     """
-    # NOTE the logic below is not thread safe, i.e., a race condition can exists
-    # if multiple threads try to add checkpoint info at the same time
-    # This function is being called by acquire_data.py, which should only have one
-    # instance per db, so no need to worry about it here
-    # Since we're doing a direct equality comparison, we don't want to coerce into floats here
-    existing_checkpoint_info = get_checkpoint_info(
-        session, checkpoint_info.hyperdrive_address, checkpoint_info.checkpoint_time, coerce_float=False
-    )
-    if len(existing_checkpoint_info) == 0:
-        # Adding new entry, no checks needed
-        pass
-    elif len(existing_checkpoint_info) == 1:
-        # Verify checkpoint info
-        if (checkpoint_info.checkpoint_time != existing_checkpoint_info.loc[0, "checkpoint_time"]) or (
-            checkpoint_info.vault_share_price != existing_checkpoint_info.loc[0, "vault_share_price"]
-        ):
-            raise ValueError("Incoming checkpoint info doesn't match vault_share_price.")
-        # Set the id to be the same as existing checkpoint info
-        # Pandas doesn't play nice with types
-        checkpoint_info.id = int(existing_checkpoint_info.loc[0, "id"])  # type: ignore
-    else:
-        # Should never get here, checkpoint time is primary_key, which is unique
-        raise ValueError
 
-    # This merge adds the row if not exist (keyed by checkpoint_time),
-    # otherwise will overwrite with this entry
-    session.merge(checkpoint_info, load=True)
+    session.add(checkpoint_info)
     try:
         session.commit()
     except exc.DataError as err:
         session.rollback()
-        logging.error("Error adding checkpoint info: %s", err)
+        logging.error("Error adding transaction: %s", err)
         raise err
 
 
@@ -424,16 +405,26 @@ def get_pool_info(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
+def get_latest_block_number_from_checkpoint_info_table(session: Session) -> int:
+    """Get the latest block number based on the pool info table in the db.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object.
+
+    Returns
+    -------
+    int
+        The latest block number in the poolinfo table.
+    """
+    return get_latest_block_number_from_table(CheckpointInfo, session)
+
+
 def get_checkpoint_info(
     session: Session, hyperdrive_address: str | None = None, checkpoint_time: int | None = None, coerce_float=True
 ) -> pd.DataFrame:
     """Get all info associated with a given checkpoint.
-
-    This includes
-    - `checkpoint_time`: The time index of the checkpoint.
-    - `weighted_spot_price`: The time weighted spot price aggregated over the checkpoint.
-    - `last_weighted_spot_price_update_time`: The last time the weighted spot price was updated.
-    - `vault_share_price`: The share price of the first transaction in the checkpoint.
 
     Arguments
     ---------
