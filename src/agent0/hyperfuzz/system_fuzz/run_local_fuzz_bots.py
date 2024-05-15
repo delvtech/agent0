@@ -9,7 +9,7 @@ from typing import Callable, ParamSpec, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0 import Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
+from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
