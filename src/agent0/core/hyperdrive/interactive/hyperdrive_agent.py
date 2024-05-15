@@ -243,7 +243,7 @@ class HyperdriveAgent:
         """
         self._pool._set_max_approval(self.agent)
 
-    def get_all_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
+    def get_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
         """Returns all of the agent's positions across all hyperdrive pools.
 
         Arguments
@@ -264,7 +264,7 @@ class HyperdriveAgent:
             self.agent, filter_zero_balance=filter_zero_balance, coerce_float=coerce_float
         )
 
-    def get_positions(self) -> HyperdriveWallet:
+    def get_wallet(self) -> HyperdriveWallet:
         """Returns all of the agent's positions for the given hyperdrive pool.
 
         TODO this function will eventually use the active pool or take a pool as an argument

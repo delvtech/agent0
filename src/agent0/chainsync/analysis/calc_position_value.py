@@ -60,6 +60,9 @@ def calc_single_closeout(
     elif token_type == "SHORT":
         # Get the open share price from the checkpoint lookup
         open_checkpoint_time = maturity - position_duration
+        # TODO checkpoint db doesn't exist for remote chains, fix
+        # Use checkpoint event to fill database, following the same
+        # event gathering logic as position events.
         assert (
             open_checkpoint_time in checkpoint_share_prices.index
         ), "Chainsync: open short checkpoint not found for position."

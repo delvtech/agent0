@@ -27,7 +27,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_info,
     get_position_snapshot,
     get_total_pnl_over_time,
-    get_trade_events
+    get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
@@ -39,7 +39,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
-    encode_asset_id
+    encode_asset_id,
 )
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -51,7 +51,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity
+    RemoveLiquidity,
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
@@ -527,8 +527,8 @@ class LocalHyperdrive(Hyperdrive):
         # DB read calls ensures data pipeline is caught up before returning
         return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
 
-    def get_all_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
-        """Gets all positions of this pool and their corresponding pnl
+    def get_positions(self, filter_zero_balance: bool = True, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets all current positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
         This function only exists in local hyperdrive as only sim pool keeps track
         of all positions of all wallets.
@@ -561,7 +561,7 @@ class LocalHyperdrive(Hyperdrive):
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out
 
-    def get_all_positions_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the history of all positions over time and their corresponding pnl
         and returns as a pandas dataframe.
 
@@ -614,7 +614,7 @@ class LocalHyperdrive(Hyperdrive):
         out = self._add_username_to_dataframe(out, "wallet_address")
         return out
 
-    def get_total_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets total pnl for each wallet for each block, aggregated across all open positions.
 
         Arguments
