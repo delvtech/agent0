@@ -183,6 +183,11 @@ def convert_events(events: list[EventData], wallet_addr: str | None) -> pd.DataF
     events_df = pd.concat([events_df, args_columns], axis=1)
 
     # Convert fields to db schema
+    # All events should have vaultSharePrice. We convert to non-scaled value.
+    events_df["vaultSharePrice"] = (
+        events_df["vaultSharePrice"].astype(int).apply(lambda x: Decimal(x) / Decimal(1e18))  # type: ignore
+    )
+
     # LP
     events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity", "Initialize"])
     if events_idx.any():

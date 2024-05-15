@@ -173,7 +173,7 @@ def get_current_positions(
     query = query.group_by(TradeEvent.hyperdrive_address, TradeEvent.wallet_address, TradeEvent.token_id)
     out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
-    return out_df[out_df["balance"] != 0]
+    return out_df[out_df["balance"] != 0].copy()
 
 
 # Chain To Data Ingestion Interface

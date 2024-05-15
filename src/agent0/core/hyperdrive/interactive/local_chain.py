@@ -219,12 +219,6 @@ class LocalChain(Chain):
             for pool in self._deployed_hyperdrive_pools:
                 pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         else:
-            # Creating checkpoints mines blocks very fast, which then makes the data pipeline not be able to keep up.
-            # We avoid this by skipping all the intermediate blocks in the database when advancing time.
-            for pool in self._deployed_hyperdrive_pools:
-                pool._ensure_data_caught_up()  # pylint: disable=protected-access
-                pool._stop_data_pipeline()  # pylint: disable=protected-access
-
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
             # TODO support multiple pools with different checkpoint durations

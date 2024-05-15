@@ -204,7 +204,7 @@ def snapshot_positions_to_db(
     if query_block_number <= last_snapshot_block:
         return
 
-    all_pool_positions = []
+    all_pool_positions: list[pd.DataFrame] = []
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
         # Calculate all open positions for the end block
@@ -220,7 +220,9 @@ def snapshot_positions_to_db(
             current_pool_positions["block_number"] = query_block_number
             # Calculate pnl for these positions if flag is set
             if calc_pnl:
-                checkpoint_info = get_checkpoint_info(db_session, coerce_float=False)
+                checkpoint_info = get_checkpoint_info(
+                    db_session, hyperdrive_address=hyperdrive_address, coerce_float=False
+                )
                 values_df = calc_closeout_value(
                     current_pool_positions,
                     checkpoint_info,
@@ -231,9 +233,8 @@ def snapshot_positions_to_db(
                 current_pool_positions["pnl"] = (
                     current_pool_positions["value_in_base"] - current_pool_positions["value_spent_in_base"]
                 )
-            all_pool_positions.extend(current_pool_positions)
+            all_pool_positions.append(current_pool_positions)
 
     if len(all_pool_positions) > 0:
-        all_pool_positions = pd.concat(all_pool_positions, axis=0)
         # Add wallet_pnl to the database
-        df_to_db(all_pool_positions, PositionSnapshot, db_session)
+        df_to_db(pd.concat(all_pool_positions, axis=0), PositionSnapshot, db_session)

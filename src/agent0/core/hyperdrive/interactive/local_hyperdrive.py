@@ -29,6 +29,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_position_snapshot,
     get_ticker,
     get_total_pnl_over_time,
+    get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
@@ -629,67 +630,6 @@ class LocalHyperdrive(Hyperdrive):
                 "wallet_address",
                 "trade_type",
                 "token_diffs",
-            ]
-        ]
-        return out
-
-    def get_wallet_positions(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Get a dataframe summarizing all wallet deltas and positions
-        and returns as a pandas dataframe.
-
-        Arguments
-        ---------
-        coerce_float: bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            token_type: str
-                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            position: Decimal | float
-                The current value of the token of the agent at the specified block number.
-            delta: Decimal | float
-                The change in value of the token of the agent at the specified block number.
-            base_token_type: str
-                A string specifying the type of the token.
-            maturity_time: Decimal | float
-                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
-            transaction_hash: str
-                The transaction hash that resulted in the deltas.
-        """
-        # We gather all deltas and calculate the current positions here
-        # If computing this is too slow, we can get current positions from
-        # the wallet_pnl table and left merge with the deltas
-        out = get_wallet_deltas(self.chain.db_session, coerce_float=coerce_float)
-        out["position"] = out.groupby(["wallet_address", "token_type"])["delta"].transform(pd.Series.cumsum)
-
-        # DB only stores final delta for base, we calculate actual base based on how much funds
-        # were added in all
-        out = self._adjust_base_positions(out, "position", coerce_float)
-        # Add usernames
-        out = self._add_username_to_dataframe(out, "wallet_address")
-        # Filter and order columns
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "token_type",
-                "position",
-                "delta",
-                "base_token_type",
-                "maturity_time",
-                "transaction_hash",
             ]
         ]
         return out
