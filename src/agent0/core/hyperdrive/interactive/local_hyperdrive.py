@@ -28,7 +28,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_info,
     get_position_snapshot,
     get_total_pnl_over_time,
-    get_trade_events
+    get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
@@ -40,7 +40,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdrivePool,
     ReceiptBreakdown,
     deploy_hyperdrive_from_factory,
-    encode_asset_id
+    encode_asset_id,
 )
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -52,7 +52,7 @@ from .event_types import (
     OpenLong,
     OpenShort,
     RedeemWithdrawalShares,
-    RemoveLiquidity
+    RemoveLiquidity,
 )
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
@@ -930,7 +930,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
-            agent.agent.wallet = self._get_pool_positions(agent.agent)
+            agent.agent.wallet = self._get_positions(agent.agent)
 
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         """Saves the policy state to file.
