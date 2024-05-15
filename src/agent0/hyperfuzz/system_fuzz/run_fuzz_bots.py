@@ -163,7 +163,7 @@ async def async_runner(
 
 
 def run_fuzz_bots(
-    hyperdrive_pool: Hyperdrive,
+    hyperdrive_pool: LocalHyperdrive,
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -245,6 +245,7 @@ def run_fuzz_bots(
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+            eth=FixedPoint(10),  # Need to give eth for setting max approval
             private_key=make_private_key(),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
@@ -258,6 +259,7 @@ def run_fuzz_bots(
 
     for _ in range(num_random_hold_agents):
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+            eth=FixedPoint(10),  # Neet to give eth for setting max approval
             private_key=make_private_key(),
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
