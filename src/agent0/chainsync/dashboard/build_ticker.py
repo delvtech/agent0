@@ -45,4 +45,6 @@ def build_ticker(trade_events: pd.DataFrame, user_map: pd.DataFrame, block_to_ti
 
     # Shorten wallet address string
     trade_events["Wallet"] = mapped_addrs["abbr_address"]
-    return trade_events
+
+    # Sort latest first
+    return trade_events.sort_values("Block Number", ascending=False)

@@ -53,9 +53,15 @@ def build_dashboard_dfs(
     out_dfs["display_ticker"] = build_ticker(trade_events, user_map, block_to_timestamp)
 
     # get wallet pnl and calculate leaderboard
-    # Get the latest updated block
+    # We use an exact query block since the position snapshot table
+    # could be getting updated under the hood.
+    query_block = int(out_dfs["display_ticker"]["Block Number"].iloc[0])
     latest_wallet_pnl = get_position_snapshot(
-        session, hyperdrive_address=hyperdrive_address, start_block=-1, coerce_float=False
+        session,
+        hyperdrive_address=hyperdrive_address,
+        start_block=query_block,
+        end_block=query_block + 1,
+        coerce_float=False,
     )
     out_dfs["leaderboard"] = build_leaderboard(latest_wallet_pnl, user_map)
 
