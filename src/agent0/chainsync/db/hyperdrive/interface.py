@@ -532,7 +532,7 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
     """
     query = session.query(TradeEvent.wallet_address)
     if hyperdrive_address is not None:
-        query = query.filter(CheckpointInfo.hyperdrive_address == hyperdrive_address)
+        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
     if query is None:
         return pd.Series([])
     query = query.distinct()
