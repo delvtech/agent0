@@ -11,16 +11,14 @@ from .interface import (
     get_all_traders,
     get_checkpoint_info,
     get_current_positions,
-    get_latest_block_number_from_analysis_table,
     get_latest_block_number_from_checkpoint_info_table,
     get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_positions_snapshot_table,
     get_latest_block_number_from_table,
-    get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_position_snapshot,
     get_total_pnl_over_time,
     get_trade_events,
 )
-from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot
+from .schema import CheckpointInfo, PoolConfig, PoolInfo, PositionSnapshot

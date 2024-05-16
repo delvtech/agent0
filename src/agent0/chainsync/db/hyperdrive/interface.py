@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.base import get_latest_block_number_from_table
 
-from .schema import FIXED_NUMERIC, CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
+from .schema import FIXED_NUMERIC, CheckpointInfo, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 # Event Data Ingestion Interface
 
@@ -338,22 +338,6 @@ def get_latest_block_number_from_pool_info_table(session: Session) -> int:
     return get_latest_block_number_from_table(PoolInfo, session)
 
 
-def get_latest_block_number_from_analysis_table(session: Session) -> int:
-    """Get the latest block number based on the pool info table in the db.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object.
-
-    Returns
-    -------
-    int
-        The latest block number in the poolinfo table.
-    """
-    return get_latest_block_number_from_table(PoolAnalysis, session)
-
-
 def get_pool_info(
     session: Session,
     hyperdrive_address: str | None = None,
@@ -484,58 +468,6 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
 
 
 # Analysis schema interfaces
-
-
-def get_pool_analysis(
-    session: Session,
-    hyperdrive_address: str | None = None,
-    start_block: int | None = None,
-    end_block: int | None = None,
-    coerce_float=True,
-) -> pd.DataFrame:
-    """Get all pool analysis and returns a pandas dataframe.
-
-    Arguments
-    ---------
-    session: Session
-        The initialized session object.
-    hyperdrive_address: str | None, optional
-        The hyperdrive pool address to filter the query on. Defaults to returning all pool analysis.
-    start_block: int | None, optional
-        The starting block to filter the query on. start_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3].
-    end_block: int | None, optional
-        The ending block to filter the query on. end_block integers
-        matches python slicing notation, e.g., list[:3], list[:-3].
-    coerce_float: bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
-
-    Returns
-    -------
-    DataFrame
-        A DataFrame that consists of the queried pool info data.
-    """
-    # TODO add back in timestamp
-    query = session.query(PoolAnalysis)
-
-    if hyperdrive_address is not None:
-        query = query.filter(PoolAnalysis.hyperdrive_address == hyperdrive_address)
-
-    # Support for negative indices
-    if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(PoolAnalysis, session) + start_block + 1
-    if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(PoolAnalysis, session) + end_block + 1
-
-    if start_block is not None:
-        query = query.filter(PoolAnalysis.block_number >= start_block)
-    if end_block is not None:
-        query = query.filter(PoolAnalysis.block_number < end_block)
-
-    # Always sort by block in order
-    query = query.order_by(PoolAnalysis.block_number)
-
-    return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
 # Lots of arguments, most are defaults

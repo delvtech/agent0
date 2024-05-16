@@ -12,12 +12,7 @@ from sqlalchemy.orm import Session
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.analysis import db_to_analysis
 from agent0.chainsync.db.base import initialize_session
-from agent0.chainsync.db.hyperdrive import (
-    PoolInfo,
-    get_latest_block_number_from_analysis_table,
-    get_latest_block_number_from_table,
-    get_pool_config,
-)
+from agent0.chainsync.db.hyperdrive import PoolInfo, get_latest_block_number_from_table, get_pool_config
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 _SLEEP_AMOUNT = 1
@@ -88,26 +83,7 @@ def analyze_data(
         db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
-    ## Get starting point for restarts
-    analysis_latest_block_number = get_latest_block_number_from_analysis_table(db_session)
-
-    # Using max of latest block in database or specified start block
-    curr_start_write_block = max(start_block, analysis_latest_block_number + 1)
-
-    # Get pool config
-    # TODO this likely should return a pd.Series, not dataframe
-    pool_config_df = None
-    # Wait for pool config on queries to db to exist to ensure acquire_data is up and running
-    for _ in range(10):
-        pool_config_df = get_pool_config(db_session, coerce_float=False)
-        pool_config_len = len(pool_config_df)
-        if pool_config_len == 0:
-            time.sleep(_SLEEP_AMOUNT)
-        else:
-            break
-    if pool_config_df is None:
-        raise ValueError("Error in getting pool config from db")
-
+    curr_start_write_block = start_block
     # Main data loop
     # monitor for new blocks & add pool info per block
     if not suppress_logs:
@@ -123,14 +99,8 @@ def analyze_data(
                 break
             time.sleep(_SLEEP_AMOUNT)
             continue
-        # Does batch analysis on range(analysis_start_block, latest_data_block_number) blocks
-        # i.e., [start_block, end_block)
-        # TODO do regular batching to sample for wallet information
-        analysis_start_block = curr_start_write_block
-        analysis_end_block = latest_data_block_number + 1
-        if not suppress_logs:
-            logging.info("Running batch %s to %s", analysis_start_block, analysis_end_block)
-        db_to_analysis(analysis_start_block, analysis_end_block, pool_config_df, db_session, interfaces, calc_pnl)
+        # Each table handles keeping track of appending to tables
+        db_to_analysis(db_session, interfaces, calc_pnl)
         curr_start_write_block = latest_data_block_number + 1
 
     # Clean up resources on clean exit

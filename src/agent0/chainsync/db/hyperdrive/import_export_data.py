@@ -18,15 +18,8 @@ from agent0.chainsync.db.base import (
 )
 from agent0.chainsync.df_to_db import df_to_db
 
-from .interface import (
-    get_checkpoint_info,
-    get_pool_analysis,
-    get_pool_config,
-    get_pool_info,
-    get_position_snapshot,
-    get_trade_events,
-)
-from .schema import CheckpointInfo, PoolAnalysis, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
+from .interface import get_checkpoint_info, get_pool_config, get_pool_info, get_position_snapshot, get_trade_events
+from .schema import CheckpointInfo, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 
 def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
@@ -72,9 +65,6 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     )
 
     ## Analysis tables
-    get_pool_analysis(db_session, coerce_float=False).to_parquet(
-        os.path.join(out_dir, "pool_analysis.parquet"), index=False, engine="pyarrow"
-    )
     get_position_snapshot(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "position_snapshot.parquet"), index=False, engine="pyarrow"
     )
@@ -101,7 +91,6 @@ def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
     out["pool_config"] = pd.read_parquet(os.path.join(in_dir, "pool_config.parquet"), engine="pyarrow")
     out["checkpoint_info"] = pd.read_parquet(os.path.join(in_dir, "checkpoint_info.parquet"), engine="pyarrow")
     out["pool_info"] = pd.read_parquet(os.path.join(in_dir, "pool_info.parquet"), engine="pyarrow")
-    out["pool_analysis"] = pd.read_parquet(os.path.join(in_dir, "pool_analysis.parquet"), engine="pyarrow")
     out["position_snapshot"] = pd.read_parquet(os.path.join(in_dir, "position_snapshot.parquet"), engine="pyarrow")
     return out
 
@@ -127,7 +116,6 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
         db_session.query(PoolConfig).delete()
         db_session.query(CheckpointInfo).delete()
         db_session.query(PoolInfo).delete()
-        db_session.query(PoolAnalysis).delete()
         db_session.query(PositionSnapshot).delete()
         try:
             db_session.commit()
@@ -143,5 +131,4 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
     df_to_db(out["pool_config"], PoolConfig, db_session)
     df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
     df_to_db(out["pool_info"], PoolInfo, db_session)
-    df_to_db(out["pool_analysis"], PoolAnalysis, db_session)
     df_to_db(out["position_snapshot"], PositionSnapshot, db_session)

@@ -99,6 +99,8 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
         pool_info_dict["hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
         pool_info_dict["variable_rate"] = pool_state.variable_rate
         pool_info_dict["vault_shares"] = pool_state.vault_shares
+        pool_info_dict["spot_price"] = interface.calc_spot_price(pool_state)
+        pool_info_dict["spot_rate"] = interface.calc_spot_rate(pool_state)
 
         block_pool_info = convert_pool_info(pool_info_dict)
         add_pool_infos([block_pool_info], session)

@@ -123,6 +123,8 @@ class PoolInfo(Base):
     hyperdrive_eth_balance: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     variable_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     vault_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    spot_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class TradeEvent(Base):
@@ -194,26 +196,6 @@ class TradeEvent(Base):
 
 
 ## Analysis schemas
-
-
-class PoolAnalysis(Base):
-    """Table/dataclass schema for pool info analysis.
-
-    Mapped class that is a data class on the python side, and an declarative base on the sql side.
-    """
-
-    __tablename__ = "pool_analysis"
-
-    # Indices
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
-    hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
-    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
-
-    # Analysis values
-    spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    base_buffer: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    # TODO add gov fees accrued, vault shares
 
 
 class PositionSnapshot(Base):
