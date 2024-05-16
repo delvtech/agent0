@@ -7,6 +7,7 @@ from fixedpointmath import FixedPoint
 
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 
+# Initialization
 local_chain_config = LocalChain.Config()
 chain = LocalChain(local_chain_config)
 
@@ -36,14 +37,15 @@ agent1 = hyperdrive1.init_agent(
     policy_config=PolicyZoo.random.Config(rng_seed=345),
 )
 
+# Run the dashboard in a subprocess.
+# This command should automatically open a web browser that connects.
 chain.run_dashboard(blocking=False)
 
-for i in range(100):
-    # NOTE Since a policy can execute multiple trades per action, the output events is a list
-    trade_events: list = agent0.execute_policy_action()
-    # NOTE Since a policy can execute multiple trades per action, the output events is a list
-    trade_events: list = agent1.execute_policy_action()
-    # Slow down execution to see dashboard better
+# Make trades slowly
+for _ in range(100):
+    agent0.execute_policy_action()
+    agent1.execute_policy_action()
     time.sleep(1)
 
+# Clean up resources
 chain.cleanup()
