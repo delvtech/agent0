@@ -398,11 +398,13 @@ class Hyperdrive:
             shorts=short_obj,
         )
 
-    def _get_trade_events(self, agent: HyperdrivePolicyAgent, all_token_deltas: bool) -> pd.DataFrame:
+    def _get_trade_events(
+        self, agent: HyperdrivePolicyAgent, all_token_deltas: bool, coerce_float: bool
+    ) -> pd.DataFrame:
         self._sync_events(agent)
-        return get_trade_events(self.chain.db_session, agent.checksum_address, all_token_deltas=all_token_deltas).drop(
-            "id", axis=1
-        )
+        return get_trade_events(
+            self.chain.db_session, agent.checksum_address, all_token_deltas=all_token_deltas, coerce_float=coerce_float
+        ).drop("id", axis=1)
 
     def _add_funds(
         self,

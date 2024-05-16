@@ -277,7 +277,7 @@ class HyperdriveAgent:
         # Update the db with this wallet
         return self._pool._get_wallet(self.agent)
 
-    def get_trade_events(self, all_token_deltas: bool = False) -> pd.DataFrame:
+    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Returns the agent's current wallet.
 
         Arguments
@@ -288,6 +288,8 @@ class HyperdriveAgent:
             one for withdrawal shares). If this flag is true, will return all entries in the table,
             which is useful for calculating token positions. If false, will drop the duplicate
             withdrawal share entry (useful for returning a ticker).
+        coerce_float: bool, optional
+            If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
@@ -296,4 +298,4 @@ class HyperdriveAgent:
         """
 
         # Update the db with this wallet
-        return self._pool._get_trade_events(self.agent, all_token_deltas)
+        return self._pool._get_trade_events(self.agent, all_token_deltas, coerce_float=coerce_float)

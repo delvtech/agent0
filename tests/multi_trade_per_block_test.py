@@ -100,7 +100,7 @@ class TestMultiTradePerBlock:
 
         expected_number_of_transactions = 4
 
-        trade_events: pd.DataFrame = fast_hyperdrive_fixture.get_trade_events(coerce_float=False)
+        trade_events: pd.DataFrame = agent.get_trade_events(coerce_float=False)
         assert len(trade_events == expected_number_of_transactions)
         assert "AddLiquidity" == trade_events["event_type"].iloc[0]
         ticker_ops = trade_events["event_type"].iloc[1:].to_list()
