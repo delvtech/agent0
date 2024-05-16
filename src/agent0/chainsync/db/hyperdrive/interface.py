@@ -10,7 +10,82 @@ from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.base import get_latest_block_number_from_table
 
-from .schema import FIXED_NUMERIC, CheckpointInfo, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
+from .schema import (
+    FIXED_NUMERIC,
+    CheckpointInfo,
+    HyperdriveAddrToName,
+    PoolConfig,
+    PoolInfo,
+    PositionSnapshot,
+    TradeEvent,
+)
+
+
+# Pool Addr Mapping Name
+def add_hyperdrive_addr_to_name(
+    name: str, hyperdrive_address: str, session: Session, force_update: bool = False
+) -> None:
+    """Add username mapping to postgres during agent initialization.
+
+    Arguments
+    ---------
+    name: str
+        The logical name to attach to the wallet address.
+    addresses: str
+        A hyperdrive address to map to the name.
+    session: Session
+        The initialized session object.
+    user_suffix: str
+        An optional suffix to add to the username mapping.
+    force_update: bool
+        If true and an existing mapping is found, will overwrite.
+    """
+    # Below is a best effort check against the database to see if the address is registered to another name.
+    # This is best effort because there's a race condition here, e.g.,
+    # I read (address_1, name_1), someone else writes (address_1, name_2), I write (address_1, name_1)
+    # Because the call below is a `merge`, the final entry in the db is (address_1, name_1).
+    existing_map = get_hyperdrive_addr_to_name(session, hyperdrive_address)
+    if len(existing_map) == 0:
+        # Address doesn't exist, all good
+        pass
+    elif len(existing_map) == 1:
+        existing_name = existing_map.iloc[0]["name"]
+        if existing_name != name and not force_update:
+            raise ValueError(f"Address {hyperdrive_address=} already registered to {existing_name}")
+    else:
+        # Should never be more than one address in table
+        raise ValueError("Fatal error: postgres returning multiple entries for primary key")
+
+    # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
+    session.merge(HyperdriveAddrToName(hyperdrive_address=hyperdrive_address, name=name))
+
+    try:
+        session.commit()
+    except exc.DataError as err:
+        logging.error("DB Error adding user: %s", err)
+        raise err
+
+
+def get_hyperdrive_addr_to_name(session: Session, hyperdrive_address: str | None = None) -> pd.DataFrame:
+    """Get all usermapping and returns as a pandas dataframe.
+
+    Arguments
+    ---------
+    session: Session
+        The initialized session object
+    hyperdrive_address: str | None, optional
+        The hyperdrive address to filter the results on. Return all if None
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame that consists of the queried pool config data
+    """
+    query = session.query(HyperdriveAddrToName)
+    if hyperdrive_address is not None:
+        query = query.filter(HyperdriveAddrToName.hyperdrive_address == hyperdrive_address)
+    return pd.read_sql(query.statement, con=session.connection())
+
 
 # Event Data Ingestion Interface
 

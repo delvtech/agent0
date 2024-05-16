@@ -8,17 +8,118 @@ import pytest
 
 from .interface import (
     add_checkpoint_info,
+    add_hyperdrive_addr_to_name,
     add_pool_config,
     add_pool_infos,
     add_trade_events,
     get_all_traders,
     get_checkpoint_info,
+    get_hyperdrive_addr_to_name,
     get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_trade_event,
     get_pool_config,
     get_pool_info,
 )
 from .schema import CheckpointInfo, PoolConfig, PoolInfo, TradeEvent
+
+
+class TestHyperdriveAddrToName:
+    """Testing postgres interface for usermap table"""
+
+    @pytest.mark.docker
+    def test_get_addr_to_username(self, db_session):
+        """Testing retrieval of usernames via interface"""
+        name_1 = "a"
+        address_1 = "1"
+        add_hyperdrive_addr_to_name(name=name_1, hyperdrive_address=address_1, session=db_session)
+        name_2 = "b"
+        address_2 = "2"
+        add_hyperdrive_addr_to_name(name=name_2, hyperdrive_address=address_2, session=db_session)
+        name_3 = "c"
+        address_3 = "3"
+        add_hyperdrive_addr_to_name(name=name_3, hyperdrive_address=address_3, session=db_session)
+
+        map_df = get_hyperdrive_addr_to_name(db_session)
+        assert len(map_df) == 3
+        # Sort by usernames, then address to ensure order
+        map_df = map_df.sort_values(["name", "hyperdrive_address"], axis=0)
+        np.testing.assert_array_equal(map_df["name"], ["a", "b", "c"])
+        np.testing.assert_array_equal(map_df["hyperdrive_address"], ["1", "2", "3"])
+
+    @pytest.mark.docker
+    def test_get_query_address(self, db_session):
+        """Testing querying by address of addr_to_username via interface"""
+        name_1 = "a"
+        address_1 = "1"
+        add_hyperdrive_addr_to_name(name=name_1, hyperdrive_address=address_1, session=db_session)
+        name_2 = "b"
+        address_2 = "2"
+        add_hyperdrive_addr_to_name(name=name_2, hyperdrive_address=address_2, session=db_session)
+        name_3 = "c"
+        address_3 = "3"
+        add_hyperdrive_addr_to_name(name=name_3, hyperdrive_address=address_3, session=db_session)
+
+        user_map_df = get_hyperdrive_addr_to_name(db_session, hyperdrive_address="1")
+        np.testing.assert_array_equal(user_map_df["name"], ["a"])
+        user_map_df = get_hyperdrive_addr_to_name(db_session, hyperdrive_address="2")
+        np.testing.assert_array_equal(user_map_df["name"], ["b"])
+        user_map_df = get_hyperdrive_addr_to_name(db_session, hyperdrive_address="3")
+        np.testing.assert_array_equal(user_map_df["name"], ["c"])
+
+    @pytest.mark.docker
+    def test_addr_to_username_insertion_error(self, db_session):
+        """Testing insertion conflicts of addr_to_username via interface"""
+        name_1 = "a"
+        address_1 = "1"
+        add_hyperdrive_addr_to_name(name=name_1, hyperdrive_address=address_1, session=db_session)
+
+        # Adding the same addresses with the same username should pass
+        name_2 = "a"
+        address_2 = "1"
+        add_hyperdrive_addr_to_name(name=name_2, hyperdrive_address=address_2, session=db_session)
+
+        map_df = get_hyperdrive_addr_to_name(db_session)
+        assert len(map_df) == 1
+
+        # Sort by usernames, then address to ensure order
+        map_df = map_df.sort_values(["name", "hyperdrive_address"], axis=0)
+        np.testing.assert_array_equal(map_df["name"], ["a"])
+        np.testing.assert_array_equal(map_df["hyperdrive_address"], ["1"])
+
+        # Adding the same addresses with different username should fail
+        # The add_addr_to_username is all or nothing, so if one fails, all fails
+        name_3 = "b"
+        address_3 = "1"
+        with pytest.raises(ValueError):
+            add_hyperdrive_addr_to_name(name=name_3, hyperdrive_address=address_3, session=db_session)
+
+        # Final db values shouldn't change
+        map_df = get_hyperdrive_addr_to_name(db_session)
+        assert len(map_df) == 1
+        # Sort by usernames, then address to ensure order
+        map_df = map_df.sort_values(["name", "hyperdrive_address"], axis=0)
+        np.testing.assert_array_equal(map_df["name"], ["a"])
+        np.testing.assert_array_equal(map_df["hyperdrive_address"], ["1"])
+
+    @pytest.mark.docker
+    def test_addr_to_username_force_insertion(self, db_session):
+        """Testing force insertion of addr_to_username via interface"""
+        name_1 = "a"
+        address_1 = "1"
+        add_hyperdrive_addr_to_name(name=name_1, hyperdrive_address=address_1, session=db_session)
+
+        # Force update
+        name_2 = "b"
+        address_2 = "1"
+        add_hyperdrive_addr_to_name(name=name_2, hyperdrive_address=address_2, session=db_session, force_update=True)
+
+        map_df = get_hyperdrive_addr_to_name(db_session)
+        assert len(map_df) == 1
+
+        # Sort by usernames, then address to ensure order
+        map_df = map_df.sort_values(["name", "hyperdrive_address"], axis=0)
+        np.testing.assert_array_equal(map_df["name"], ["b"])
+        np.testing.assert_array_equal(map_df["hyperdrive_address"], ["1"])
 
 
 # These tests are using fixtures defined in conftest.py

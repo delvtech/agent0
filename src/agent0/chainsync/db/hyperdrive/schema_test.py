@@ -6,9 +6,50 @@ from decimal import Decimal
 import pytest
 from sqlalchemy.orm import Session
 
-from .schema import CheckpointInfo, PoolConfig, PoolInfo
+from .schema import CheckpointInfo, HyperdriveAddrToName, PoolConfig, PoolInfo
 
 # These tests are using fixtures defined in conftest.py
+
+
+class TestHyperdriveAddrToNameTable:
+    """CRUD tests for HyperdriveAddrToName table"""
+
+    @pytest.mark.docker
+    def test_create_hyperdrive_addr_to_name(self, db_session):
+        """Create and entry"""
+        addr_map = HyperdriveAddrToName(hyperdrive_address="1", name="a")
+        db_session.add(addr_map)
+        db_session.commit()
+
+        retrieved_map = db_session.query(HyperdriveAddrToName).filter_by(hyperdrive_address="1").first()
+        assert retrieved_map is not None
+        assert retrieved_map.name == "a"
+
+    @pytest.mark.docker
+    def test_update_hyperdrive_addr_to_name(self, db_session):
+        """Update an entry"""
+        addr_map = HyperdriveAddrToName(hyperdrive_address="1", name="a")
+        db_session.add(addr_map)
+        db_session.commit()
+
+        addr_map.name = "b"
+        db_session.commit()
+
+        updated_map = db_session.query(HyperdriveAddrToName).filter_by(hyperdrive_address="1").first()
+        assert updated_map.name == "b"
+
+    @pytest.mark.docker
+    def test_delete_addr_to_username(self, db_session):
+        """Delete an entry"""
+        addr_map = HyperdriveAddrToName(hyperdrive_address="1", name="a")
+        db_session.add(addr_map)
+        db_session.commit()
+
+        db_session.delete(addr_map)
+        db_session.commit()
+
+        deleted_map = db_session.query(HyperdriveAddrToName).filter_by(hyperdrive_address="1").first()
+        assert deleted_map is None
 
 
 class TestCheckpointTable:

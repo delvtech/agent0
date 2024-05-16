@@ -200,15 +200,17 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: LocalChain, config: Config | None = None):
+    def __init__(self, chain: LocalChain, config: Config | None = None, name: str | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
         chain: LocalChain
-            The local chain object to launch hyperdrive on
+            The local chain object to launch hyperdrive on.
         config: Config | None
-            The configuration for the initial pool configuration
+            The configuration for the initial pool configuration.
+        name: str | None, optional
+            The logical name of the pool.
         """
 
         # We don't call super's init since we do specific type checking
@@ -225,7 +227,7 @@ class LocalHyperdrive(Hyperdrive):
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
 
-        self._initialize(chain, self.get_hyperdrive_address())
+        self._initialize(chain, self._deployed_hyperdrive.hyperdrive_contract.address, name)
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
@@ -235,12 +237,6 @@ class LocalHyperdrive(Hyperdrive):
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
 
-        # We use this variable to control underlying threads when to exit.
-        # When this varible is set to true, the underlying threads will exit.
-        self._stop_threads = False
-        self._data_thread: Thread | None = None
-        self._analysis_thread: Thread | None = None
-
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
@@ -248,17 +244,6 @@ class LocalHyperdrive(Hyperdrive):
 
         self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[LocalHyperdriveAgent] = []
-
-    def get_hyperdrive_address(self) -> ChecksumAddress:
-        """Returns the hyperdrive addresses for this pool.
-
-        Returns
-        -------
-        ChecksumAddress
-            The hyperdrive addresses for this pool
-        """
-        # pylint: disable=protected-access
-        return self._deployed_hyperdrive.hyperdrive_contract.address
 
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
         # TODO these functions are not thread safe, need to fix if we expose async functions

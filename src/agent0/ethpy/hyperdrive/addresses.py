@@ -138,7 +138,7 @@ def get_hyperdrive_addresses_from_registry(
     addresses = {}
     if generate_name:
         for address, index in unnamed_addresses_dict.items():
-            name = _generate_name_for_hyperdrive(address, web3)
+            name = generate_name_for_hyperdrive(address, web3)
             if name in addresses:
                 # If the name isn't unique, we append the index to the name
                 name = name + "_" + str(index)
@@ -151,7 +151,22 @@ def get_hyperdrive_addresses_from_registry(
     return addresses
 
 
-def _generate_name_for_hyperdrive(hyperdrive_address: ChecksumAddress, web3: Web3) -> str:
+def generate_name_for_hyperdrive(hyperdrive_address: ChecksumAddress, web3: Web3) -> str:
+    """Generates a name for a given hyperdrive address. The address generated is of the form
+    <vault_shares_token_symbol>_<position_duration>_day.
+
+    Arguments
+    ---------
+    hyperdrive_address: ChecksumAddress
+        The address of a hyperdrive pool.
+    web3: Web3
+        The instantiated Web3 instance that's connect to a chain to use.
+
+    Returns
+    -------
+    str
+        The generated name of the hyperdrive pool.
+    """
     # TODO ideally we would use the HyperdriveReadInterface here, but that creates a circular
     # dependency. Hence, we get the things we need here without the interface.
 

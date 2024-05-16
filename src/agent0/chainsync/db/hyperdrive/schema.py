@@ -23,6 +23,17 @@ FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 # TODO add column for timestamp in seconds in db
 
 
+class HyperdriveAddrToName(Base):
+    """Maps a hyperdrive address to a logical name."""
+
+    __tablename__ = "hyperdrive_addr_to_name"
+
+    hyperdrive_address: Mapped[str] = mapped_column(String, primary_key=True)
+    """The hyperdrive address"""
+    name: Mapped[str] = mapped_column(String, index=True)
+    """The logical name of the hyperdrive address."""
+
+
 class PoolConfig(Base):
     """Table/dataclass schema for pool config."""
 

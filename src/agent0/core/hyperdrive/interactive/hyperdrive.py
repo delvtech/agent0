@@ -22,6 +22,7 @@ from agent0.chainsync.analysis import snapshot_positions_to_db
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
+    add_hyperdrive_addr_to_name,
     checkpoint_events_to_db,
     get_current_positions,
     get_position_snapshot,
@@ -53,6 +54,7 @@ from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
+    generate_name_for_hyperdrive,
     get_hyperdrive_addresses_from_artifacts,
     get_hyperdrive_addresses_from_registry,
 )
@@ -177,7 +179,7 @@ class Hyperdrive:
         # pylint: disable=protected-access
         return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
-    def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress):
+    def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress, name: str | None):
         self.interface = HyperdriveReadWriteInterface(
             hyperdrive_address,
             rpc_uri=chain.rpc_uri,
@@ -186,12 +188,22 @@ class Hyperdrive:
         )
 
         self.chain = chain
+        # Register the username if it was provided
+        if name is None:
+            # Build the name in this case
+            name = generate_name_for_hyperdrive(
+                self.hyperdrive_address,
+                self.chain._web3,  # pylint: disable=protected-access
+            )
+
+        add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
 
     def __init__(
         self,
         chain: Chain,
         hyperdrive_address: ChecksumAddress,
         config: Config | None = None,
+        name: str | None = None,
     ):
         """Initialize the interactive hyperdrive class.
 
@@ -203,6 +215,8 @@ class Hyperdrive:
             The address of the hyperdrive contract
         config: Config | None
             The configuration for the interactive hyperdrive class
+        name: str | None, optional
+            The logical name of the pool.
         """
         if config is None:
             self.config = self.Config()
@@ -219,7 +233,19 @@ class Hyperdrive:
         if type(chain) != Chain:
             raise TypeError("The chain parameter must be a Chain object, not a LocalChain.")
 
-        self._initialize(chain, hyperdrive_address)
+        self._initialize(chain, hyperdrive_address, name)
+
+    @property
+    def hyperdrive_address(self) -> ChecksumAddress:
+        """Returns the hyperdrive addresses for this pool.
+
+        Returns
+        -------
+        ChecksumAddress
+            The hyperdrive addresses for this pool
+        """
+        # pylint: disable=protected-access
+        return self.interface.hyperdrive_address
 
     def _cleanup(self):
         """Cleans up resources used by this object."""

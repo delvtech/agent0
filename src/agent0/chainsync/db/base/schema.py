@@ -21,7 +21,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 
 class AddrToUsername(Base):
-    """Maps an address to a username. This mapping should be many addresses to one username."""
+    """Maps an address to a username."""
 
     __tablename__ = "addr_to_username"
 

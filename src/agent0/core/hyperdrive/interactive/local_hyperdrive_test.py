@@ -298,7 +298,7 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
     base_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.base_token_contract.address
     vault_shares_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.vault_shares_token_contract.address
     expected_pool_config = {
-        "hyperdrive_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
+        "hyperdrive_address": fast_hyperdrive_fixture.hyperdrive_address,
         "base_token": base_token_addr,
         "vault_shares_token": vault_shares_token_addr,
         "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
@@ -341,7 +341,7 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
     pool_state = fast_hyperdrive_fixture.interface.current_pool_state
     expected_pool_info = {
         # Expected indices
-        "hyperdrive_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
+        "hyperdrive_address": fast_hyperdrive_fixture.hyperdrive_address,
         "block_number": pool_state.block_number,
         # Pandas converts timestamp to pd.Timestamp, so we do the same here
         "timestamp": pd.Timestamp(pool_state.block_time, unit="s"),

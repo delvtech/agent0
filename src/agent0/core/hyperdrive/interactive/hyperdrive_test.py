@@ -91,7 +91,7 @@ def test_hyperdrive_from_local_chain_not_allowed(fast_chain_fixture: LocalChain)
     # This deploys the pool
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
-    hyperdrive_address = interactive_local_hyperdrive.get_hyperdrive_address()
+    hyperdrive_address = interactive_local_hyperdrive.hyperdrive_address
     with pytest.raises(TypeError):
         # We ensure we can't initialize a remote hyperdrive object from a local chain.
         _ = Hyperdrive(fast_chain_fixture, hyperdrive_address)
@@ -116,7 +116,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
     # Gather relevant objects from the local hyperdrive
-    hyperdrive_address = interactive_local_hyperdrive.get_hyperdrive_address()
+    hyperdrive_address = interactive_local_hyperdrive.hyperdrive_address
 
     # Connect to the local chain using the remote hyperdrive interface
     # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
@@ -252,7 +252,7 @@ def test_no_policy_call(fast_chain_fixture: LocalChain):
     """Deploy a local chain and point the remote interface to the local chain."""
     initial_pool_config = LocalHyperdrive.Config()
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
-    hyperdrive_addresses = interactive_local_hyperdrive.get_hyperdrive_address()
+    hyperdrive_addresses = interactive_local_hyperdrive.hyperdrive_address
     # Connect to the local chain using the remote hyperdrive interface
     # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
     # we use a separate chain port here

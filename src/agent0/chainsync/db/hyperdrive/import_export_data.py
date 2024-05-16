@@ -12,8 +12,15 @@ from sqlalchemy.orm import Session
 from agent0.chainsync.db.base import AddrToUsername, get_addr_to_username, initialize_session
 from agent0.chainsync.df_to_db import df_to_db
 
-from .interface import get_checkpoint_info, get_pool_config, get_pool_info, get_position_snapshot, get_trade_events
-from .schema import CheckpointInfo, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
+from .interface import (
+    get_checkpoint_info,
+    get_hyperdrive_addr_to_name,
+    get_pool_config,
+    get_pool_info,
+    get_position_snapshot,
+    get_trade_events,
+)
+from .schema import CheckpointInfo, HyperdriveAddrToName, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 
 def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
@@ -39,12 +46,13 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
         os.path.join(out_dir, "addr_to_username.parquet"), index=False, engine="pyarrow"
     )
 
-    # Agent event tables
+    # Hyperdrive tables
+    get_hyperdrive_addr_to_name(db_session).to_parquet(
+        os.path.join(out_dir, "hyperdrive_addr_to_name.parquet"), index=False, engine="pyarrow"
+    )
     get_trade_events(db_session, all_token_deltas=True).to_parquet(
         os.path.join(out_dir, "trade_event.parquet"), index=False, engine="pyarrow"
     )
-
-    # Hyperdrive tables
     get_pool_config(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "pool_config.parquet"), index=False, engine="pyarrow"
     )
@@ -54,8 +62,6 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
     get_pool_info(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "pool_info.parquet"), index=False, engine="pyarrow"
     )
-
-    ## Analysis tables
     get_position_snapshot(db_session, coerce_float=False).to_parquet(
         os.path.join(out_dir, "position_snapshot.parquet"), index=False, engine="pyarrow"
     )
@@ -77,6 +83,9 @@ def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
     out = {}
 
     out["addr_to_username"] = pd.read_parquet(os.path.join(in_dir, "addr_to_username.parquet"), engine="pyarrow")
+    out["hyperdrive_addr_to_name"] = pd.read_parquet(
+        os.path.join(in_dir, "hyperdrive_addr_to_name.parquet"), engine="pyarrow"
+    )
     out["trade_event"] = pd.read_parquet(os.path.join(in_dir, "trade_event.parquet"), engine="pyarrow")
     out["pool_config"] = pd.read_parquet(os.path.join(in_dir, "pool_config.parquet"), engine="pyarrow")
     out["checkpoint_info"] = pd.read_parquet(os.path.join(in_dir, "checkpoint_info.parquet"), engine="pyarrow")
@@ -101,6 +110,7 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
 
     if drop:
         db_session.query(AddrToUsername).delete()
+        db_session.query(HyperdriveAddrToName).delete()
         db_session.query(TradeEvent).delete()
         db_session.query(PoolConfig).delete()
         db_session.query(CheckpointInfo).delete()
@@ -115,6 +125,7 @@ def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
 
     out = import_to_pandas(in_dir)
     df_to_db(out["addr_to_username"], AddrToUsername, db_session)
+    df_to_db(out["hyperdrive_addr_to_name"], HyperdriveAddrToName, db_session)
     df_to_db(out["trade_event"], TradeEvent, db_session)
     df_to_db(out["pool_config"], PoolConfig, db_session)
     df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)

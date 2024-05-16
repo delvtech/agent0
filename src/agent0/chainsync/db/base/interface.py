@@ -192,15 +192,15 @@ def add_addr_to_username(
     Arguments
     ---------
     username: str
-        The logical username to attach to the wallet address
+        The logical username to attach to the wallet address.
     addresses: list[str] | str
-        A single or list of wallet addresses to map to the username
+        A single or list of wallet addresses to map to the username.
     session: Session
-        The initialized session object
+        The initialized session object.
     user_suffix: str
-        An optional suffix to add to the username mapping
+        An optional suffix to add to the username mapping.
     force_update: bool
-        If true and an existing username is found, will overwrite
+        If true and an existing mapping is found, will overwrite.
     """
     if isinstance(addresses, str):
         addresses = [addresses]
