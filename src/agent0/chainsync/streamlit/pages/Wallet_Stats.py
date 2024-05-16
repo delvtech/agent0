@@ -12,13 +12,7 @@ import streamlit as st
 
 from agent0.chainsync.dashboard import build_ticker, build_user_mapping, map_addresses, reduce_plot_data
 from agent0.chainsync.db.base import get_addr_to_username, get_username_to_user, initialize_session
-from agent0.chainsync.db.hyperdrive import (
-    get_all_traders,
-    get_position_snapshot,
-    get_ticker,
-    get_total_pnl_over_time,
-    get_wallet_positions_over_time,
-)
+from agent0.chainsync.db.hyperdrive import get_all_traders, get_position_snapshot, get_total_pnl_over_time
 from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL
 
 plt.close("all")
@@ -53,7 +47,7 @@ user_map = build_user_mapping(trader_addrs, addr_to_username, username_to_user)
 
 # TODO does this take series? Or do I need to cast this as a list
 # TODO there is a case that format_name is not unique, where we should use the wallet addresses
-selected = st.multiselect("Wallet Addresses", user_map["format_name"])
+selected = st.selectbox("Wallet Addresses", user_map["format_name"])
 
 # Map selected_addrs back to actual addresses
 selected_addresses = map_addresses(selected, user_map, "format_name")["address"].to_list()

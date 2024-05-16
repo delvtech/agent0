@@ -1,5 +1,6 @@
 """Dashboard utilities"""
 
+from .build_dashboard_dfs import build_dashboard_dfs
 from .build_fixed_rate import build_fixed_rate
 from .build_leaderboard import build_leaderboard
 from .build_ohlcv import build_ohlcv

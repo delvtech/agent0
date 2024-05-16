@@ -11,6 +11,7 @@ import pytest
 from fixedpointmath import FixedPoint, isclose
 from pandas import Series
 
+from agent0.chainsync.dashboard import build_dashboard_dfs
 from agent0.core.base import Trade
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
@@ -726,6 +727,34 @@ def test_set_variable_rate(fast_chain_fixture: LocalChain):
 
     assert pool_state_df["variable_rate"].iloc[0] == Decimal("0.05")
     assert pool_state_df["variable_rate"].iloc[-1] == Decimal("0.10")
+
+
+@pytest.mark.anvil
+def test_dashboard_dfs(fast_hyperdrive_fixture: LocalHyperdrive):
+    """Tests building of dashboard dataframes."""
+
+    # Build an agent and make random trades
+    hyperdrive_random_agent = fast_hyperdrive_fixture.init_agent(
+        base=FixedPoint(1_000_000),
+        eth=FixedPoint(100),
+        name="random_bot",
+        # The underlying policy to attach to this agent
+        policy=PolicyZoo.random,
+        # The configuration for the underlying policy
+        policy_config=PolicyZoo.random.Config(rng_seed=123),
+    )
+
+    # Add liquidity to avoid insufficient liquidity error
+    hyperdrive_random_agent.add_liquidity(base=FixedPoint(800_000))
+
+    random_trade_events = []
+    for _ in range(10):
+        # NOTE Since a policy can execute multiple trades per action, the output events is a list
+        trade_events: list = hyperdrive_random_agent.execute_policy_action()
+        random_trade_events.extend(trade_events)
+
+    # Ensure dataframes can be built
+    build_dashboard_dfs(fast_hyperdrive_fixture.hyperdrive_address, fast_hyperdrive_fixture.chain.db_session)
 
 
 @pytest.mark.anvil
