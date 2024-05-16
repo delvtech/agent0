@@ -7,6 +7,8 @@ from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
+from .chain_fixture import launch_chain
+
 # Fixtures defined in the same file
 # pylint: disable=redefined-outer-name
 
@@ -60,21 +62,22 @@ def hyperdrive_fixture(chain_fixture: LocalChain) -> LocalHyperdrive:
 
 
 @pytest.fixture(scope="session")
-def init_hyperdrive(init_chain: LocalChain) -> LocalHyperdrive:
+def init_hyperdrive() -> Iterator[LocalHyperdrive]:
     """Local hyperdrive pool test fixture.
-    This fixture launches a chain from scratch in a session scope.
+    This fixture launches a hyperdrive pool from scratch in a session scope.
 
-    Arguments
-    ---------
-    init_chain: LocalChain
-        Session scoped chain fixture.
-
-    Returns
+    Yield
     -----
     LocalHyperdrive
         The deployed hyperdrive object.
     """
-    return launch_hyperdrive(init_chain)
+    # Need to launch seperate chain with different port here since
+    # the pool itself is going to snapshot.
+    # This avoids collisions with the chain fixture.
+    _chain = launch_chain(50000)
+    yield launch_hyperdrive(_chain)
+    _chain.cleanup()
+    del _chain
 
 
 @pytest.fixture(scope="function")

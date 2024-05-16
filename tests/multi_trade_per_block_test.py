@@ -102,8 +102,8 @@ class TestMultiTradePerBlock:
 
         trade_events: pd.DataFrame = fast_hyperdrive_fixture.get_trade_events(coerce_float=False)
         assert len(trade_events == expected_number_of_transactions)
-        assert "addLiquidity" == trade_events["trade_type"].iloc[0]
-        ticker_ops = trade_events["trade_type"].iloc[1:].to_list()
-        assert "addLiquidity" in ticker_ops
-        assert "openLong" in ticker_ops
-        assert "openShort" in ticker_ops
+        assert "AddLiquidity" == trade_events["event_type"].iloc[0]
+        ticker_ops = trade_events["event_type"].iloc[1:].to_list()
+        assert "AddLiquidity" in ticker_ops
+        assert "OpenLong" in ticker_ops
+        assert "OpenShort" in ticker_ops
