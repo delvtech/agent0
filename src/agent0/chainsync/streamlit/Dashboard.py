@@ -7,29 +7,20 @@
 from __future__ import annotations
 
 import gc
-import time
 
 import matplotlib.pyplot as plt
 import mplfinance as mpf
-import pandas as pd
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh
 
 from agent0.chainsync.dashboard import (
     abbreviate_address,
-    build_dashboard_dfs,
+    build_pool_dashboard,
     plot_ohlcv,
     plot_outstanding_positions,
     plot_rates,
 )
-from agent0.chainsync.db.base import get_addr_to_username, initialize_session
-from agent0.chainsync.db.hyperdrive import (
-    get_all_traders,
-    get_hyperdrive_addr_to_name,
-    get_pool_info,
-    get_position_snapshot,
-    get_trade_events,
-)
+from agent0.chainsync.db.base import initialize_session
+from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
 
 # pylint: disable=invalid-name
 
@@ -69,7 +60,7 @@ while True:
         hyperdrive_address = hyperdrive_addr_mapping[
             hyperdrive_addr_mapping["print_name"] == selected_hyperdrive_address
         ].iloc[0]["hyperdrive_address"]
-        data_dfs = build_dashboard_dfs(hyperdrive_address, session)
+        data_dfs = build_pool_dashboard(hyperdrive_address, session)
 
         with ticker_placeholder.container():
             st.header("Ticker")

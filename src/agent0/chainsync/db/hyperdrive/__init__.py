@@ -20,6 +20,8 @@ from .interface import (
     get_pool_config,
     get_pool_info,
     get_position_snapshot,
+    get_positions_over_time,
+    get_realized_value_over_time,
     get_total_pnl_over_time,
     get_trade_events,
 )

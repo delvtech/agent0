@@ -11,7 +11,7 @@ import pytest
 from fixedpointmath import FixedPoint, isclose
 from pandas import Series
 
-from agent0.chainsync.dashboard import build_dashboard_dfs
+from agent0.chainsync.dashboard import build_pool_dashboard, build_wallet_dashboard
 from agent0.core.base import Trade
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
@@ -734,27 +734,36 @@ def test_dashboard_dfs(fast_hyperdrive_fixture: LocalHyperdrive):
     """Tests building of dashboard dataframes."""
 
     # Build an agent and make random trades
-    hyperdrive_random_agent = fast_hyperdrive_fixture.init_agent(
+    agent0 = fast_hyperdrive_fixture.init_agent(
         base=FixedPoint(1_000_000),
         eth=FixedPoint(100),
-        name="random_bot",
+        name="random_bot_0",
         # The underlying policy to attach to this agent
         policy=PolicyZoo.random,
         # The configuration for the underlying policy
         policy_config=PolicyZoo.random.Config(rng_seed=123),
     )
+    agent1 = fast_hyperdrive_fixture.init_agent(
+        base=FixedPoint(1_000_000),
+        eth=FixedPoint(100),
+        name="random_bot_1",
+        # The underlying policy to attach to this agent
+        policy=PolicyZoo.random,
+        # The configuration for the underlying policy
+        policy_config=PolicyZoo.random.Config(rng_seed=456),
+    )
 
     # Add liquidity to avoid insufficient liquidity error
-    hyperdrive_random_agent.add_liquidity(base=FixedPoint(800_000))
+    agent0.add_liquidity(base=FixedPoint(800_000))
 
-    random_trade_events = []
     for _ in range(10):
         # NOTE Since a policy can execute multiple trades per action, the output events is a list
-        trade_events: list = hyperdrive_random_agent.execute_policy_action()
-        random_trade_events.extend(trade_events)
+        agent0.execute_policy_action()
+        agent1.execute_policy_action()
 
     # Ensure dataframes can be built
-    build_dashboard_dfs(fast_hyperdrive_fixture.hyperdrive_address, fast_hyperdrive_fixture.chain.db_session)
+    build_pool_dashboard(fast_hyperdrive_fixture.hyperdrive_address, fast_hyperdrive_fixture.chain.db_session)
+    build_wallet_dashboard([agent0.checksum_address, agent1.checksum_address], fast_hyperdrive_fixture.chain.db_session)
 
 
 @pytest.mark.anvil
