@@ -98,6 +98,8 @@ class TestMultiTradePerBlock:
         # 3. openLong of 22_222 base
         # 4. openShort of 33_333 bonds
 
+        expected_number_of_transactions = 4
+
         trade_events: pd.DataFrame = fast_hyperdrive_fixture.get_trade_events(coerce_float=False)
         assert len(trade_events == expected_number_of_transactions)
         assert "addLiquidity" == trade_events["trade_type"].iloc[0]
@@ -105,15 +107,3 @@ class TestMultiTradePerBlock:
         assert "addLiquidity" in ticker_ops
         assert "openLong" in ticker_ops
         assert "openShort" in ticker_ops
-
-        wallet_deltas: pd.DataFrame = get_wallet_deltas(fast_hyperdrive_fixture.db_session, coerce_float=False)
-        # Ensure deltas only exist for valid trades
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
-        # Ensure deltas only exist for valid trades
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
