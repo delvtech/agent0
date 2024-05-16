@@ -25,6 +25,7 @@ from agent0.chainsync.db.hyperdrive import (
     add_hyperdrive_addr_to_name,
     checkpoint_events_to_db,
     get_current_positions,
+    get_hyperdrive_addr_to_name,
     get_position_snapshot,
     get_trade_events,
     trade_events_to_db,
@@ -325,6 +326,20 @@ class Hyperdrive:
         out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
         return out
 
+    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.chain.db_session)
+
+        # Do lookup from address to name
+        hyperdrive_name = (
+            df[addr_column]
+            .to_frame()
+            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
+        )["name"]
+        # Weird pandas type error
+        out = df.copy()
+        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
+        return out
+
     def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
         # Establish max approval for the hyperdrive contract
         set_max_approval(
@@ -373,8 +388,9 @@ class Hyperdrive:
         if not show_zero_balance:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
-        out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        return out
+        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
 
     def _get_wallet(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
         self._sync_events(agent)

@@ -530,8 +530,6 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A dataframe consisting of currently open positions and their corresponding pnl.
         """
-        # TODO add timestamp back in
-        # TODO add logical name for pool
         position_snapshot = get_position_snapshot(
             self.chain.db_session,
             hyperdrive_address=self.interface.hyperdrive_address,
@@ -541,8 +539,10 @@ class LocalHyperdrive(Hyperdrive):
         if not show_zero_balance:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
-        out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        return out
+        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        # Add logical name for pool
+        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
 
     def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the history of all positions over time and their corresponding pnl
@@ -558,14 +558,14 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A dataframe consisting of positions over time and their corresponding pnl.
         """
-        # TODO add timestamp back in
         # TODO add logical name for pool
         position_snapshot = get_position_snapshot(
             self.chain.db_session, hyperdrive_address=self.interface.hyperdrive_address, coerce_float=coerce_float
         ).drop("id", axis=1)
         # Add usernames
-        out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        return out
+        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
 
     def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the ticker history of all trades and the corresponding token deltas for each trade.
@@ -593,8 +593,8 @@ class LocalHyperdrive(Hyperdrive):
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
-        # TODO add pool name
         out = self._add_username_to_dataframe(out, "wallet_address")
+        out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
 
     def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -612,6 +612,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
+        out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
 
     def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
