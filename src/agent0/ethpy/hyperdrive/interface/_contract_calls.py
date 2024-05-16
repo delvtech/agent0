@@ -654,6 +654,7 @@ async def _async_redeem_withdraw_shares(
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
+    preview_before_trade: bool = False,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
@@ -679,20 +680,20 @@ async def _async_redeem_withdraw_shares(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     current_block = interface.current_pool_state.block_number
-    preview_result = smart_contract_preview_transaction(
-        interface.hyperdrive_contract,
-        agent_checksum_address,
-        "redeemWithdrawalShares",
-        *fn_args,
-        block_number=current_block,
-        read_retry_count=interface.read_retry_count,
-    )
-    # Here, a preview call of redeem withdrawal shares will still be successful without logs if
-    # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
-    # here with a useful error message, so we check that explicitly here
-
-    if preview_result["withdrawalSharesRedeemed"] == 0 and trade_amount > 0:
-        raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
+    if preview_before_trade is True:
+        preview_result = smart_contract_preview_transaction(
+            interface.hyperdrive_contract,
+            agent_checksum_address,
+            "redeemWithdrawalShares",
+            *fn_args,
+            block_number=current_block,
+            read_retry_count=interface.read_retry_count,
+        )
+        # Here, a preview call of redeem withdrawal shares will still be successful without logs if
+        # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
+        # here with a useful error message, so we check that explicitly here
+        if preview_result["withdrawalSharesRedeemed"] == 0 and trade_amount > 0:
+            raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
     try:
         tx_receipt = await async_smart_contract_transact(

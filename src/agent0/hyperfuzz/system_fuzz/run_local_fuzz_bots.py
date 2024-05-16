@@ -9,7 +9,7 @@ from typing import Callable, ParamSpec, TypeVar
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0 import Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
+from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
@@ -25,6 +25,7 @@ INITIAL_LIQUIDITY_RANGE: tuple[float, float] = (10, 100_000)
 INITIAL_VAULT_SHARE_PRICE_RANGE: tuple[float, float] = (0.5, 2.5)
 MINIMUM_SHARE_RESERVES_RANGE: tuple[float, float] = (0.1, 1)
 MINIMUM_TRANSACTION_AMOUNT_RANGE: tuple[float, float] = (0.1, 10)
+CIRCUIT_BREAKER_DELTA_RANGE: tuple[float, float] = (0.15, 2)
 
 # Position and checkpoint duration are in units of hours, as
 # the `factory_checkpoint_duration_resolution` is 1 hour
@@ -97,6 +98,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
         initial_variable_rate=FixedPoint(rng.uniform(*VARIABLE_RATE_RANGE)),
         minimum_share_reserves=FixedPoint(rng.uniform(*MINIMUM_SHARE_RESERVES_RANGE)),
         minimum_transaction_amount=FixedPoint(rng.uniform(*MINIMUM_TRANSACTION_AMOUNT_RANGE)),
+        circuit_breaker_delta=FixedPoint(rng.uniform(*CIRCUIT_BREAKER_DELTA_RANGE)),
         position_duration=position_duration,
         checkpoint_duration=checkpoint_duration,
         curve_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
@@ -112,7 +114,7 @@ R = TypeVar("R")
 
 
 # TODO move this to somewhere that's more general
-async def _async_runner(
+async def async_runner(
     return_exceptions: bool,
     funcs: list[Callable[P, R]],
     *args: P.args,
@@ -160,8 +162,8 @@ async def _async_runner(
     return out_result
 
 
-def run_fuzz_bots(
-    hyperdrive_pool: Hyperdrive,
+def run_local_fuzz_bots(
+    hyperdrive_pool: LocalHyperdrive,
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -243,6 +245,8 @@ def run_fuzz_bots(
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+            base=base_budget_per_bot,
+            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
@@ -256,6 +260,8 @@ def run_fuzz_bots(
 
     for _ in range(num_random_hold_agents):
         agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+            base=base_budget_per_bot,
+            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
@@ -267,30 +273,6 @@ def run_fuzz_bots(
             ),
         )
         agents.append(agent)
-
-    logging.info("Funding bots...")
-    if run_async:
-        asyncio.run(
-            _async_runner(
-                return_exceptions=True,
-                funcs=[agent.add_funds for agent in agents],
-                base=base_budget_per_bot,
-                eth=eth_budget_per_bot,
-            )
-        )
-    else:
-        _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
-
-    logging.info("Setting max approval...")
-    if run_async:
-        asyncio.run(
-            _async_runner(
-                return_exceptions=True,
-                funcs=[agent.set_max_approval for agent in agents],
-            )
-        )
-    else:
-        _ = [agent.set_max_approval() for agent in agents]
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
@@ -304,7 +286,7 @@ def run_fuzz_bots(
         try:
             if run_async:
                 trades = asyncio.run(
-                    _async_runner(
+                    async_runner(
                         return_exceptions=True,
                         funcs=[agent.execute_policy_action for agent in agents],
                     )
@@ -336,13 +318,13 @@ def run_fuzz_bots(
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
-        average_agent_base = sum(agent.wallet.balance.amount for agent in agents) / FixedPoint(len(agents))
+        average_agent_base = sum(agent.get_positions().balance.amount for agent in agents) / FixedPoint(len(agents))
         # Update agent funds
         if average_agent_base < minimum_avg_agent_base:
             logging.info("Refunding agents...")
             if run_async:
                 asyncio.run(
-                    _async_runner(
+                    async_runner(
                         return_exceptions=True,
                         funcs=[agent.add_funds for agent in agents],
                         base=base_budget_per_bot,

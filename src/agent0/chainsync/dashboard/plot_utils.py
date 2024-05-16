@@ -33,7 +33,9 @@ def reduce_plot_data(data: pd.DataFrame, x_column_name: str, y_column_name: str)
     # We always keep the first and last rows
     # Diff always puts the first row as nan,
     # we explicitly set the last row as nan
-    plot_data_diff.iloc[-1] = float("nan")
+    if len(plot_data_diff) > 0:
+        # pandas doesn't play nice with types
+        plot_data_diff.iloc[-1] = float("nan")  # type: ignore
 
     # Filter out intermediate rows with no difference
     # Note that nans will always not equal 0

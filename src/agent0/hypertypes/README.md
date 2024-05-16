@@ -36,10 +36,10 @@ ERC4626Target0Deployer.sol
 ERC4626Target1deployer.sol
 ERC4626Target2Deployer.sol
 ERC4626Target3Deployer.sol
-ERC4626Target4Deployer.sol
 HyperdriveFactory.sol
 HyperdriveRegistry.sol
 IHyperdrive.sol
+LPMath.sol
 MockERC4626.sol
 ```
 

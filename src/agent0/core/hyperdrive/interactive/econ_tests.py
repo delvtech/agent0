@@ -26,7 +26,7 @@ YEAR_IN_SECONDS = 31_536_000
 
 
 @pytest.mark.anvil
-def test_symmetry(chain: LocalChain):
+def test_symmetry(fast_chain_fixture: LocalChain):
     """Check wether in equals out.
 
     One may be under the impression swaps between x and y have the same result, irrespective of direction.
@@ -38,7 +38,7 @@ def test_symmetry(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     interface = interactive_hyperdrive.interface
     shares_out = interface.calc_shares_out_given_bonds_in_down(FixedPoint(100_000))
     shares_in = interface.calc_shares_in_given_bonds_out_down(FixedPoint(100_000))

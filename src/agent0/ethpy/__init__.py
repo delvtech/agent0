@@ -1,3 +1,1 @@
-"""Loads config"""
-
-from .eth_config import EthConfig, build_eth_config
+"""Ethpy is a library for interacting with a hyperdrive contract on a blockchain."""

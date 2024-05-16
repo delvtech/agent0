@@ -19,8 +19,7 @@ from agent0 import Chain, Hyperdrive
 from agent0.core.base import PolicyAgent
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
-from agent0.hyperfuzz.system_fuzz.run_fuzz_bots import _async_runner
-from agent0.hyperlogs import setup_logging
+from agent0.hyperfuzz.system_fuzz.run_local_fuzz_bots import async_runner
 from agent0.hypertypes import IHyperdriveContract
 
 # Checkpoint bot has a lot going on
@@ -99,7 +98,7 @@ def run_checkpoint_bot(
 
     while True:
         # Check if we've reached the block to exit
-        if block_to_exit is not None and chain.curr_block_number() >= block_to_exit:
+        if block_to_exit is not None and chain.block_number() >= block_to_exit:
             logging.info("Exiting checkpoint bot...")
             break
 
@@ -107,7 +106,7 @@ def run_checkpoint_bot(
         # be minted. This bot waits for a portion of the checkpoint to reduce
         # the probability of needing a checkpoint. After the waiting period,
         # the bot will attempt to mint a checkpoint.
-        latest_block = chain.curr_block_data()
+        latest_block = chain.block_data()
         timestamp = latest_block.get("timestamp", None)
         if timestamp is None:
             raise AssertionError(f"{latest_block=} has no timestamp")
@@ -158,7 +157,7 @@ def run_checkpoint_bot(
             if check_checkpoint:
                 # TODO: Add crash report
                 assert receipt["status"] == 1, "Checkpoint failed."
-                latest_block = chain.curr_block_data()
+                latest_block = chain.block_data()
                 timestamp = latest_block.get("timestamp", None)
                 if timestamp is None:
                     raise AssertionError(f"{latest_block=} has no timestamp")
@@ -200,11 +199,6 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     parsed_args = parse_arguments(argv)
 
-    # Setup logging
-    setup_logging(
-        log_stdout=True,
-    )
-
     # Initialize
     chain = Chain(parsed_args.rpc_uri)
 
@@ -217,7 +211,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     while True:
         logging.info("Checking for new pools...")
         # Reset hyperdrive objs
-        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, parsed_args.registry_addr)
 
         logging.info("Running for all pools...")
 
@@ -232,12 +226,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Run checkpoint bots
         # We set return_exceptions to False to crash immediately if a thread fails
         asyncio.run(
-            _async_runner(
+            async_runner(
                 return_exceptions=False,
                 funcs=partials,
                 chain=chain,
                 sender=sender,
-                block_to_exit=chain.curr_block_number() + pool_check_num_blocks,
+                block_to_exit=chain.block_number() + pool_check_num_blocks,
             )
         )
 

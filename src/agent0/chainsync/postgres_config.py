@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
+from sqlalchemy import URL
 
 
 @dataclass
@@ -30,6 +31,23 @@ class PostgresConfig:
     """The port to connect to."""
     POSTGRES_VERSION: str | None = None
     """The postgres version."""
+
+    def create_url_obj(self) -> URL:
+        """Creates an SQLAlchemy URL object from the config.
+
+        Returns
+        -------
+        URL
+            An SQLAlchemy URL object.
+        """
+        return URL.create(
+            drivername="postgresql+psycopg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            database=self.POSTGRES_DB,
+        )
 
 
 def build_postgres_config() -> PostgresConfig:

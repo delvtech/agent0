@@ -7,8 +7,7 @@ import random
 import numpy as np
 
 from agent0 import LocalChain, LocalHyperdrive
-from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
-from agent0.hyperlogs import setup_logging
+from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_local_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
@@ -17,9 +16,6 @@ def main() -> None:
     # TODO consolidate setup into single function
 
     log_to_rollbar = initialize_rollbar("localfuzzbots")
-    setup_logging(
-        log_stdout=True,
-    )
 
     rng_seed = random.randint(0, 10000000)
     rng = np.random.default_rng(rng_seed)
@@ -37,7 +33,7 @@ def main() -> None:
         hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
 
         # TODO submit multiple transactions per block
-        run_fuzz_bots(
+        run_local_fuzz_bots(
             hyperdrive_pool,
             check_invariance=True,
             raise_error_on_failed_invariance_checks=False,

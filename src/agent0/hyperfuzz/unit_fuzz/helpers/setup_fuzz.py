@@ -9,13 +9,10 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.hyperlogs import setup_logging
 
 
 def setup_fuzz(
-    log_filename: str,
     chain_config: LocalChain.Config | None = None,
-    log_to_stdout: bool = False,
     log_to_rollbar: bool = True,
     crash_log_level: int | None = None,
     fuzz_test_name: str | None = None,
@@ -29,14 +26,8 @@ def setup_fuzz(
 
     Arguments
     ---------
-    log_filename: str
-        Output location for the logging file,
-        which will include state information if the test fails.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
-    log_to_stdout: bool, optional
-        If True, log to stdout in addition to a file.
-        Defaults to False.
     log_to_rollbar: bool, optional
         If True, log errors rollbar. Defaults to True.
     crash_log_level: int | None, optional
@@ -70,11 +61,6 @@ def setup_fuzz(
     """
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
-    setup_logging(
-        log_filename=log_filename,
-        delete_previous_logs=False,
-        log_stdout=log_to_stdout,
-    )
 
     # Setup local chain
     config = chain_config if chain_config else LocalChain.Config()

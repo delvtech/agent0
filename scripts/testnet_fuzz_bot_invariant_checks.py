@@ -19,7 +19,6 @@ from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs import setup_logging
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
@@ -38,9 +37,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
     rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
-    setup_logging(
-        log_stdout=True,
-    )
 
     # We calculate how many blocks we should wait before checking for a new pool
     pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12
@@ -53,7 +49,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Run the loop forever
     while True:
         # Check for new pools
-        latest_block = chain.curr_block_data()
+        latest_block = chain.block_data()
         latest_block_number = latest_block.get("number", None)
         if latest_block_number is None:
             raise AssertionError("Block has no number.")
@@ -63,7 +59,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             # Reset hyperdrive objs
             hyperdrive_objs: dict[str, Hyperdrive] = {}
             # First iteration, get list of deployed pools
-            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(parsed_args.registry_addr, chain)
+            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, parsed_args.registry_addr)
             for name, addr in deployed_pools.items():
                 logging.info("Adding pool %s", name)
                 hyperdrive_objs[name] = Hyperdrive(chain, addr)

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from dataclasses import dataclass
 from typing import Any, Literal, Type, overload
 
 import nest_asyncio
 import numpy as np
+import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -17,7 +17,13 @@ from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 from web3 import Web3
 
-from agent0.core.hyperdrive import HyperdriveActionType, HyperdrivePolicyAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import (
+    HyperdriveActionType,
+    HyperdrivePolicyAgent,
+    HyperdriveWallet,
+    TradeResult,
+    TradeStatus,
+)
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     build_wallet_positions_from_chain,
@@ -31,7 +37,6 @@ from agent0.core.hyperdrive.agent import (
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
-from agent0.ethpy import EthConfig
 from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
@@ -70,6 +75,12 @@ class Hyperdrive:
     class Config:
         """The configuration for the interactive hyperdrive class."""
 
+        exception_on_policy_error: bool = True
+        """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
+        exception_on_policy_slippage: bool = False
+        """
+        When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False.
+        """
         preview_before_trade: bool = False
         """Whether to preview the position before executing a trade. Defaults to False."""
         rng_seed: int | None = None
@@ -125,17 +136,17 @@ class Hyperdrive:
     @classmethod
     def get_hyperdrive_addresses_from_registry(
         cls,
-        registry_contract_addr: str,
         chain: Chain,
+        registry_contract_addr: str,
     ) -> dict[str, ChecksumAddress]:
         """Gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
-        registry_contract_addr: str
-            The address of the Hyperdrive factory contract.
         chain: Chain
             The Chain object connected to a chain.
+        registry_contract_addr: str
+            The address of the Hyperdrive factory contract.
 
         Returns
         -------
@@ -167,23 +178,9 @@ class Hyperdrive:
         else:
             self.config = config
 
-        # Define agent0 configs with this setup
-        # TODO use hypertypes abis here
-        # https://github.com/delvtech/agent0/issues/1125
-        full_path = os.path.realpath(__file__)
-        current_file_dir, _ = os.path.split(full_path)
-        abi_dir = os.path.join(current_file_dir, "..", "..", "..", "..", "..", "packages", "hyperdrive", "src", "abis")
-
-        self.eth_config = EthConfig(
-            artifacts_uri="not_used",
-            rpc_uri=chain.rpc_uri,
-            abi_dir=abi_dir,
-            preview_before_trade=self.config.preview_before_trade,
-        )
-
         self.interface = HyperdriveReadWriteInterface(
-            self.eth_config,
             hyperdrive_address,
+            rpc_uri=chain.rpc_uri,
             web3=chain._web3,
             txn_receipt_timeout=self.config.txn_receipt_timeout,
         )
@@ -244,11 +241,6 @@ class Hyperdrive:
 
         agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
 
-        # Add the public address to the chain object to avoid multiple objects
-        # with the same underlying account
-        self.chain._ensure_no_duplicate_addrs(agent.checksum_address)  # pylint: disable=protected-access
-
-        self._sync_wallet(agent)
         return agent
 
     def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
@@ -260,9 +252,14 @@ class Hyperdrive:
             str(self.interface.hyperdrive_contract.address),
         )
 
-    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
-        # TODO add sync from db
-        agent.wallet = build_wallet_positions_from_chain(agent, self.interface)
+    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+        # TODO move the db to the chain class and use it here
+        # to get wallets
+        return build_wallet_positions_from_chain(agent, self.interface)
+
+    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
+        # TODO move the db to the chain class and use it here to get events
+        raise NotImplementedError
 
     def _add_funds(
         self,
@@ -300,10 +297,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
     def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
@@ -312,10 +313,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
     def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
@@ -323,10 +328,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
     def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
@@ -334,10 +343,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
     def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
@@ -345,10 +358,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
     def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
@@ -356,10 +373,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result)
+        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
     def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
@@ -367,10 +388,14 @@ class Hyperdrive:
         # TODO expose async here to the caller eventually
         trade_results: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self.interface, agent, trade_object, self.config.always_execute_policy_post_action
+                self.interface,
+                agent,
+                trade_object,
+                self.config.always_execute_policy_post_action,
+                self.config.preview_before_trade,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_results)
+        tx_receipt = self._handle_trade_result(trade_results, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def _execute_policy_action(
@@ -383,15 +408,22 @@ class Hyperdrive:
             raise ValueError("Must pass in a policy in the constructor to execute policy action.")
 
         trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(self.interface, agent, liquidate=False, interactive_mode=True)
+            async_execute_agent_trades(
+                self.interface,
+                agent,
+                preview_before_trade=self.config.preview_before_trade,
+                liquidate=False,
+                interactive_mode=True,
+            )
         )
         out_events = []
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result)
-            assert trade_result.trade_object is not None
-            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
+            tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=False)
+            if tx_receipt is not None:
+                assert trade_result.trade_object is not None
+                action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
+                out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
         # Build event from tx_receipt
         return out_events
 
@@ -402,6 +434,7 @@ class Hyperdrive:
             async_execute_agent_trades(
                 self.interface,
                 agent,
+                preview_before_trade=self.config.preview_before_trade,
                 liquidate=True,
                 randomize_liquidation=randomize,
                 interactive_mode=True,
@@ -411,14 +444,25 @@ class Hyperdrive:
 
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result)
-            assert trade_result.trade_object is not None
-            action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-            out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
+            tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=False)
+            if tx_receipt is not None:
+                assert trade_result.trade_object is not None
+                action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
+                out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
         # Build event from tx_receipt
         return out_events
 
-    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+    ) -> ReceiptBreakdown: ...
+
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+    ) -> ReceiptBreakdown | None: ...
+
+    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
         if trade_result.status == TradeStatus.FAIL:
             # Defaults to CRITICAL
             assert trade_result.exception is not None
@@ -431,11 +475,18 @@ class Hyperdrive:
                 rollbar_log_prefix=self.config.rollbar_log_prefix,
                 additional_info=self.config.crash_report_additional_info,
             )
-            # TODO likely want to expose a "crash if slippage" flag and only
-            # raise if we want to check slippage.
-            raise trade_result.exception
 
-        assert trade_result.status == TradeStatus.SUCCESS
+            if self.config.exception_on_policy_error:
+                # Check for slippage and if we want to throw an exception on slippage
+                if (
+                    always_throw_exception
+                    or (not trade_result.is_slippage)
+                    or (trade_result.is_slippage and self.config.exception_on_policy_slippage)
+                ):
+                    raise trade_result.exception
+
+        if trade_result.status != TradeStatus.SUCCESS:
+            return None
         tx_receipt = trade_result.tx_receipt
         assert tx_receipt is not None
         return tx_receipt
@@ -501,8 +552,8 @@ class Hyperdrive:
                     trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
@@ -513,8 +564,8 @@ class Hyperdrive:
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     bond_amount=tx_receipt.bond_amount,
                 )
@@ -524,8 +575,8 @@ class Hyperdrive:
                     trader=Web3.to_checksum_address(tx_receipt.trader),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     base_proceeds=tx_receipt.base_proceeds,
                     bond_amount=tx_receipt.bond_amount,
@@ -537,8 +588,8 @@ class Hyperdrive:
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     asset_id=tx_receipt.asset_id,
                     maturity_time=tx_receipt.maturity_time_seconds,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     base_payment=tx_receipt.base_payment,
                     bond_amount=tx_receipt.bond_amount,
@@ -548,8 +599,8 @@ class Hyperdrive:
                 return AddLiquidity(
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     lp_amount=tx_receipt.lp_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     lp_share_price=tx_receipt.lp_share_price,
                 )
@@ -559,8 +610,8 @@ class Hyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     lp_amount=tx_receipt.lp_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
                     lp_share_price=tx_receipt.lp_share_price,
@@ -571,8 +622,8 @@ class Hyperdrive:
                     provider=Web3.to_checksum_address(tx_receipt.provider),
                     destination=Web3.to_checksum_address(tx_receipt.destination),
                     withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-                    base_amount=tx_receipt.base_amount,
-                    vault_share_amount=tx_receipt.vault_share_amount,
+                    amount=tx_receipt.amount,
+                    vault_share_price=tx_receipt.vault_share_price,
                     as_base=tx_receipt.as_base,
                 )
 

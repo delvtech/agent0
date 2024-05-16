@@ -53,25 +53,19 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdout: bool = False):
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
     ----------
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
-    log_to_stdout: bool, optional
-        If True, log to stdout in addition to a file.
-        Defaults to False.
     """
     # pylint: disable=too-many-statements
 
     # Setup the environment
-    log_filename = ".logging/fuzz_profit_check.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename,
         chain_config,
-        log_to_stdout,
         fuzz_test_name="fuzz_profit_check",
         flat_fee=FixedPoint(0),
         curve_fee=FixedPoint(0.001),  # 0.1%
@@ -96,7 +90,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
 
     # Generate funded trading agent
     long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
-    long_agent_initial_balance = long_agent.wallet.balance.amount
+    long_agent_initial_balance = long_agent.get_positions().balance.amount
 
     # Advance time to be right after a checkpoint boundary
     logging.info("Advance time...")
@@ -140,7 +134,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     # the short trade amount is in bonds, but we know we will need much less base
     # we can play it safe by initializing with that much base
     short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
-    short_agent_initial_balance = short_agent.wallet.balance.amount
+    short_agent_initial_balance = short_agent.get_positions().balance.amount
 
     # Advance time to be right after a checkpoint boundary
     logging.info("Advance time...")
@@ -171,10 +165,10 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, log_to_stdo
     check_data = {
         "long_trade_amount": long_trade_amount,
         "long_agent_initial_balance": long_agent_initial_balance,
-        "long_agent_final_balance": long_agent.wallet.balance.amount,
+        "long_agent_final_balance": long_agent.get_positions().balance.amount,
         "long_events": {"open": open_long_event, "close": close_long_event},
         "short_trade_amount": short_trade_amount,
-        "short_agent_final_balance": short_agent.wallet.balance.amount,
+        "short_agent_final_balance": short_agent.get_positions().balance.amount,
         "short_agent_initial_balance": short_agent_initial_balance,
         "short_events": {"open": open_short_event, "close": close_short_event},
     }
@@ -224,7 +218,6 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     chain_config: LocalChain.Config
-    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -241,8 +234,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
-        log_to_stdout=namespace.log_to_stdout,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port, log_to_stdout=namespace.log_to_stdout),
     )
 
 

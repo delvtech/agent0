@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import pathlib
 import subprocess
@@ -9,7 +10,7 @@ import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from threading import Thread
-from typing import Type
+from typing import Literal, Type, overload
 
 import dill
 import pandas as pd
@@ -17,7 +18,9 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from IPython.display import IFrame
+from sqlalchemy_utils.functions import drop_database
 from web3._utils.threads import Timeout
 from web3.exceptions import TimeExhausted
 
@@ -36,15 +39,20 @@ from agent0.chainsync.db.hyperdrive import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
+    get_positions_from_db,
     get_ticker,
     get_total_wallet_pnl_over_time,
+    get_trade_events,
     get_wallet_deltas,
     get_wallet_pnl,
+    trade_events_to_db,
 )
 from agent0.chainsync.exec import acquire_data, data_analysis
+from agent0.core.base import Quantity, TokenType
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, HyperdriveWallet, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
+from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
@@ -125,6 +133,10 @@ class LocalHyperdrive(Hyperdrive):
         """The factory's minimum position duration."""
         factory_max_position_duration: int = 60 * 60 * 24 * 365 * 10  # 10 year
         """The factory's maximum position duration."""
+        factory_min_circuit_breaker_delta: FixedPoint = FixedPoint("0.15")
+        """The factory's minimum circuit breaker delta."""
+        factory_max_circuit_breaker_delta: FixedPoint = FixedPoint("2")
+        """The factory's maximum circuit breaker delta."""
         factory_min_fixed_apr: FixedPoint = FixedPoint("0.01")  # 1%
         """The factory's minimum fixed APR."""
         factory_max_fixed_apr: FixedPoint = FixedPoint("0.5")  # 50%
@@ -155,6 +167,11 @@ class LocalHyperdrive(Hyperdrive):
         """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         """The minimum amount of tokens that a position can be opened or closed with."""
+        circuit_breaker_delta: FixedPoint = FixedPoint(2)
+        """
+        The circuit breaker delta defines the maximum delta between the last checkpoint's
+        weighted spot rate and the current spot rate to allow an LP to add liquidity.
+        """
         position_duration: int = 604_800  # 1 week
         """The duration of a position prior to maturity (in seconds)."""
         checkpoint_duration: int = 3_600  # 1 hour
@@ -243,7 +260,7 @@ class LocalHyperdrive(Hyperdrive):
         # Make a copy of the dataclass to avoid changing the base class
         self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive-hyperdrive-" + str(self.interface.hyperdrive_contract.address)
+        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
 
         # Store the db_id here for later reference
         self._db_name = self.postgres_config.POSTGRES_DB
@@ -313,9 +330,9 @@ class LocalHyperdrive(Hyperdrive):
             kwargs={
                 "start_block": start_block,
                 "lookback_block_limit": 10000,
-                "eth_config": self.eth_config,
-                "postgres_config": self.postgres_config,
+                "rpc_uri": self.chain.rpc_uri,
                 "hyperdrive_address": self.interface.hyperdrive_address,
+                "postgres_config": self.postgres_config,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -325,9 +342,9 @@ class LocalHyperdrive(Hyperdrive):
             target=data_analysis,
             kwargs={
                 "start_block": start_block,
-                "eth_config": self.eth_config,
-                "postgres_config": self.postgres_config,
+                "rpc_uri": self.chain.rpc_uri,
                 "hyperdrive_address": self.interface.hyperdrive_address,
+                "postgres_config": self.postgres_config,
                 "exit_on_catch_up": False,
                 "exit_callback_fn": lambda: self._stop_threads,
                 "suppress_logs": True,
@@ -418,11 +435,17 @@ class LocalHyperdrive(Hyperdrive):
             calc_pnl=self.calc_pnl,
         )
 
-    def _cleanup(self):
+    def _cleanup(self, drop_data: bool = False):
         """Cleans up resources used by this object."""
         if self.chain.experimental_data_threading:
             self._stop_data_pipeline()
+
         self.db_session.close()
+
+        # We drop the database attached to this pool on cleanup
+        if drop_data:
+            drop_database(self.postgres_config.create_url_obj())
+
         if self.dashboard_subprocess is not None:
             self.dashboard_subprocess.kill()
             self.dashboard_subprocess = None
@@ -451,6 +474,7 @@ class LocalHyperdrive(Hyperdrive):
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
+            deployerCoordinatorManager="",  # will be determined in the deploy function
             hyperdriveGovernance="",  # will be determined in the deploy function
             defaultPausers=[],  # We don't support pausers when we deploy
             feeCollector="",  # will be determined in the deploy function
@@ -460,6 +484,8 @@ class LocalHyperdrive(Hyperdrive):
             maxCheckpointDuration=config.factory_max_checkpoint_duration,
             minPositionDuration=config.factory_min_position_duration,
             maxPositionDuration=config.factory_max_position_duration,
+            minCircuitBreakerDelta=config.factory_min_circuit_breaker_delta.scaled_value,
+            maxCircuitBreakerDelta=config.factory_max_circuit_breaker_delta.scaled_value,
             minFixedAPR=config.factory_min_fixed_apr.scaled_value,
             maxFixedAPR=config.factory_max_fixed_apr.scaled_value,
             minTimeStretchAPR=config.factory_min_time_stretch_apr.scaled_value,
@@ -477,6 +503,7 @@ class LocalHyperdrive(Hyperdrive):
             linkerCodeHash=bytes(),  # will be determined in the deploy function
             minimumShareReserves=config.minimum_share_reserves.scaled_value,
             minimumTransactionAmount=config.minimum_transaction_amount.scaled_value,
+            circuitBreakerDelta=config.circuit_breaker_delta.scaled_value,
             positionDuration=config.position_duration,
             checkpointDuration=config.checkpoint_duration,
             timeStretch=0,
@@ -566,11 +593,11 @@ class LocalHyperdrive(Hyperdrive):
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
-        base: FixedPoint, optional
+        base: FixedPoint | None, optional
             The amount of base to fund the agent with. Defaults to 0.
             If a private key is provided then the base amount is added to their previous balance.
-        eth: FixedPoint, optional
-            The amount of ETH to fund the agent with. Defaults to 10.
+        eth: FixedPoint | None, optional
+            The amount of ETH to fund the agent with. Defaults to 0.
             If a private key is provided then the eth amount is added to their previous balance.
         name: str, optional
             The name of the agent. Defaults to the wallet address.
@@ -582,11 +609,14 @@ class LocalHyperdrive(Hyperdrive):
         """
         # pylint: disable=too-many-arguments
         if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            raise ValueError("Cannot add a new agent after saving a snapshot")
+            logging.warning(
+                "Adding new agent with existing snapshot. "
+                "This object will no longer be valid if the snapshot is loaded."
+            )
         if base is None:
             base = FixedPoint(0)
         if eth is None:
-            eth = FixedPoint(10)
+            eth = FixedPoint(0)
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
@@ -1070,12 +1100,58 @@ class LocalHyperdrive(Hyperdrive):
             add_addr_to_username(name, [agent.address], self.db_session)
         return agent
 
-    def _sync_wallet(self, agent: HyperdrivePolicyAgent) -> None:
-        # TODO add sync from db
-        super()._sync_wallet(agent)
-        # Ensure db is up to date
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
+        # Update the db with this wallet
+        # TODO this function can be optimized to cache.
+        trade_events_to_db([self.interface], agent.checksum_address, self.db_session)
+
+    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+        self._sync_events(agent)
+
+        # Query for the wallet object from the db
+        wallet_positions = get_positions_from_db(
+            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
+        )
+        # Convert to hyperdrive wallet object
+        long_obj: dict[int, Long] = {}
+        short_obj: dict[int, Short] = {}
+        lp_balance: FixedPoint = FixedPoint(0)
+        withdrawal_shares_balance: FixedPoint = FixedPoint(0)
+        for _, row in wallet_positions.iterrows():
+            # Sanity checks
+            assert row["hyperdrive_address"] == self.interface.hyperdrive_address
+            assert row["wallet_address"] == agent.checksum_address
+            if row["token_id"] == "LP":
+                lp_balance = FixedPoint(row["balance"])
+            elif row["token_id"] == "WITHDRAWAL_SHARE":
+                withdrawal_shares_balance = FixedPoint(row["balance"])
+            elif "LONG" in row["token_id"]:
+                maturity_time = int(row["token_id"].split("-")[1])
+                long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+            elif "SHORT" in row["token_id"]:
+                maturity_time = int(row["token_id"].split("-")[1])
+                short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
+
+        # We do a balance of call to get base balance.
+        base_balance = FixedPoint(
+            scaled_value=self.interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
+        )
+
+        return HyperdriveWallet(
+            address=HexBytes(agent.checksum_address),
+            balance=Quantity(
+                amount=base_balance,
+                unit=TokenType.BASE,
+            ),
+            lp_tokens=lp_balance,
+            withdraw_shares=withdrawal_shares_balance,
+            longs=long_obj,
+            shorts=short_obj,
+        )
+
+    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
+        self._sync_events(agent)
+        return get_trade_events(self.db_session, agent.checksum_address)
 
     def _add_funds(
         self,
@@ -1084,9 +1160,12 @@ class LocalHyperdrive(Hyperdrive):
         eth: FixedPoint,
         signer_account: LocalAccount | None = None,
     ) -> None:
+
         # TODO this can be fixed by getting actual base values from the chain.
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            raise ValueError("Cannot add funds to an agent after saving a snapshot")
+        # TODO this will no longer be an issue once we refactor
+        # wallets to be from events + db
+        if base > 0 and eth > 0 and self.chain._has_saved_snapshot:  # pylint: disable=protected-access
+            logging.warning("Adding funds to to an agent after saving a snapshot. This may make pnl values incorrect.")
 
         # Adding funds default to the deploy account
         if signer_account is None:
@@ -1105,7 +1184,17 @@ class LocalHyperdrive(Hyperdrive):
         if not self.chain.experimental_data_threading:
             self._run_blocking_data_pipeline()
 
-    def _handle_trade_result(self, trade_result: TradeResult) -> ReceiptBreakdown:
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+    ) -> ReceiptBreakdown: ...
+
+    @overload
+    def _handle_trade_result(
+        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+    ) -> ReceiptBreakdown | None: ...
+
+    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
         # We add specific data to the trade result from interactive hyperdrive
         if trade_result.status == TradeStatus.FAIL:
             assert trade_result.exception is not None
@@ -1119,7 +1208,11 @@ class LocalHyperdrive(Hyperdrive):
                 else:
                     trade_result.additional_info["ticker"] = self.get_ticker()
 
-        return super()._handle_trade_result(trade_result)
+        # This check is necessary for subclass overloading and typing,
+        # as types are narrowed based on the literal `always_throw_exception`
+        if always_throw_exception:
+            return super()._handle_trade_result(trade_result, always_throw_exception)
+        return super()._handle_trade_result(trade_result, always_throw_exception)
 
     def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         out = super()._open_long(agent, base)
@@ -1215,6 +1308,20 @@ class LocalHyperdrive(Hyperdrive):
                 agent.checksum_address, db_balances, self.interface.base_token_contract
             )
 
+    def _save_agent_bookkeeping(self, save_dir: str) -> None:
+        """Saves the policy state to file.
+
+        Arguments
+        ---------
+        save_dir: str
+            The directory to save the state to.
+        """
+        policy_file = save_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
+        agents = [agent.checksum_address for agent in self._pool_agents]
+        with open(policy_file, "wb") as file:
+            # We use dill, as pickle can't store local objects
+            dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
+
     def _save_policy_state(self, save_dir: str) -> None:
         """Saves the policy state to file.
 
@@ -1230,6 +1337,22 @@ class LocalHyperdrive(Hyperdrive):
             with open(policy_file, "wb") as file:
                 # We use dill, as pickle can't store local objects
                 dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
+
+    def _load_agent_bookkeeping(self, load_dir: str) -> None:
+        """Loads the list of agents from file.
+
+        Arguments
+        ---------
+        load_dir: str
+            The directory to load the state from.
+        """
+        policy_file = load_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
+        with open(policy_file, "rb") as file:
+            # We use dill, as pickle can't store local objects
+            load_agents = dill.load(file)
+        # Remove references of all agents added after snapshot
+        # NOTE: existing agent objects initialized after snapshot will no longer be valid.
+        self._pool_agents = [agent for agent in self._pool_agents if agent.checksum_address in load_agents]
 
     def _load_policy_state(self, load_dir: str) -> None:
         """Loads the policy state from file.

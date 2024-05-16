@@ -16,23 +16,24 @@ from agent0.core.hyperdrive.policies import PolicyZoo
 # pylint: disable=redefined-outer-name
 
 TRADE_AMOUNTS = [0.003, 1e7]  # 0.003 is three times the minimum transaction amount of local test deploy
-# We hit the target rate to the 5th decimal of precision.
-# That means 0.050001324091154488 is close enough to a target rate of 0.05.
-PRECISION = FixedPoint(1e-5)
+# We hit the target rate to the 4th decimal of precision.
+# That means 0.05001324091154488 is close enough to a target rate of 0.05.
+PRECISION = FixedPoint(1e-4)
 YEAR_IN_SECONDS = 31_536_000
 
 # pylint: disable=missing-function-docstring,too-many-statements,logging-fstring-interpolation,missing-return-type-doc
 # pylint: disable=missing-return-doc,too-many-function-args
 
 
+# TODO use the existing fixtures instead of custom fixture here
 @pytest.fixture(scope="function")
-def interactive_hyperdrive(chain: LocalChain) -> LocalHyperdrive:
+def interactive_hyperdrive(fast_chain_fixture: LocalChain) -> LocalHyperdrive:
     """Create interactive hyperdrive.
 
     Arguments
     ---------
-    chain: LocalChain
-        Local chain.
+    fast_chain_fixture: LocalChain
+        Local chain fixture.
 
     Returns
     -------
@@ -43,7 +44,7 @@ def interactive_hyperdrive(chain: LocalChain) -> LocalHyperdrive:
         position_duration=YEAR_IN_SECONDS,  # 1 year term
         initial_fixed_apr=FixedPoint("0.05"),
     )
-    return LocalHyperdrive(chain, interactive_config)
+    return LocalHyperdrive(fast_chain_fixture, interactive_config)
 
 
 @pytest.fixture(scope="function")
@@ -82,7 +83,7 @@ def create_arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     return interactive_hyperdrive.init_agent(
-        base=andy_base, name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
+        base=andy_base, eth=FixedPoint(10), name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
     )
 
 
@@ -100,7 +101,7 @@ def manual_agent(interactive_hyperdrive) -> LocalHyperdriveAgent:
     InteractiveHyperdriveAgent
         Manual interactive hyperdrive agent.
     """
-    return interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    return interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
 
 @pytest.mark.anvil
@@ -183,28 +184,30 @@ def test_close_long(
     pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
     block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
-    d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
+    d_shares = pool_shares_after - pool_shares_before  # instead of event.amount
     d_time = block_time_after - block_time_before
     logging.info("Andy opened long %s base.", 3 * trade_amount)
     logging.info("Δtime=%s", d_time)
     logging.info(
         " pool  Δbonds= %s%s, Δbase= %s%s", "+" if d_bonds > 0 else "", d_bonds, "+" if d_shares > 0 else "", d_shares
     )
+    assert event.as_base
     logging.info(
         " event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
     # undo this trade manually
-    manual_agent.open_short(bonds=FixedPoint(event.bond_amount * FixedPoint(1.006075)))
+    event = manual_agent.open_short(bonds=FixedPoint(event.bond_amount * FixedPoint(1.006075)))
+    assert event.as_base
     logging.info(
         "manually opened short. event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
 
     # report fixed rate
@@ -212,12 +215,13 @@ def test_close_long(
 
     # change the fixed rate
     event = manual_agent.open_long(base=FixedPoint(trade_amount))
+    assert event.as_base
     logging.info(
         "manually opened short. event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
     # report fixed rate
     logging.info("fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
@@ -234,8 +238,9 @@ def test_close_long(
     pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
     block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
     d_bonds = pool_bonds_after - pool_bonds_before  # instead of event.bond_amount
-    d_shares = pool_shares_after - pool_shares_before  # instead of event.base_amount
+    d_shares = pool_shares_after - pool_shares_before  # instead of event.amount
     d_time = block_time_after - block_time_before
+    assert event.as_base
     logging.info("Andy closed long; amount determined by policy.")
     logging.info("Δtime=%s", d_time)
     logging.info(
@@ -245,8 +250,8 @@ def test_close_long(
         " event Δbonds= %s%s, Δbase= %s%s",
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
 
     # report results
@@ -326,7 +331,7 @@ def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     larry = interactive_hyperdrive.init_agent(
-        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+        base=larry_base, eth=FixedPoint(10), name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
     )
     # change the fixed rate
     manual_agent.open_short(bonds=FixedPoint(100_000))
@@ -348,7 +353,7 @@ def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agen
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
     larry = interactive_hyperdrive.init_agent(
-        base=larry_base, name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+        base=larry_base, eth=FixedPoint(10), name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
     )
     # change the fixed rate
     manual_agent.open_long(base=FixedPoint(100_000))

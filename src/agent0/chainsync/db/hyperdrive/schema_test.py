@@ -103,25 +103,25 @@ class TestPoolConfigTable:
     @pytest.mark.docker
     def test_create_pool_config(self, db_session):
         """Create and entry"""
-        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
-        retrieved_pool_config = db_session.query(PoolConfig).filter_by(contract_address="0").first()
+        retrieved_pool_config = db_session.query(PoolConfig).filter_by(hyperdrive_address="0").first()
         assert retrieved_pool_config is not None
         assert float(retrieved_pool_config.initial_vault_share_price) == 3.2
 
     @pytest.mark.docker
     def test_delete_pool_config(self, db_session):
         """Delete an entry"""
-        pool_config = PoolConfig(contract_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         db_session.add(pool_config)
         db_session.commit()
 
         db_session.delete(pool_config)
         db_session.commit()
 
-        deleted_pool_config = db_session.query(PoolConfig).filter_by(contract_address="0").first()
+        deleted_pool_config = db_session.query(PoolConfig).filter_by(hyperdrive_address="0").first()
         assert deleted_pool_config is None
 
 

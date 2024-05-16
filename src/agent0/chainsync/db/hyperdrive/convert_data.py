@@ -219,7 +219,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
         if log["event"] == "AddLiquidity":
             wallet_addr = log["args"]["provider"]
             token_delta = _convert_scaled_value_to_decimal(log["args"]["lpAmount"])
-            base_delta = _convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(-log["args"]["amount"])
             wallet_deltas.extend(
                 [
                     WalletDelta(
@@ -244,7 +244,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
         elif log["event"] == "OpenLong":
             wallet_addr = log["args"]["trader"]
             token_delta = _convert_scaled_value_to_decimal(log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(-log["args"]["amount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -271,7 +271,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
         elif log["event"] == "OpenShort":
             wallet_addr = log["args"]["trader"]
             token_delta = _convert_scaled_value_to_decimal(log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(-log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(-log["args"]["amount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -300,7 +300,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             # Two deltas, one for withdrawal shares, one for lp tokens
             lp_delta = _convert_scaled_value_to_decimal(-log["args"]["lpAmount"])
             withdrawal_delta = _convert_scaled_value_to_decimal(log["args"]["withdrawalShareAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
             wallet_deltas.extend(
                 [
                     WalletDelta(
@@ -333,7 +333,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
         elif log["event"] == "CloseLong":
             wallet_addr = log["args"]["trader"]
             token_delta = _convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -360,7 +360,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
         elif log["event"] == "CloseShort":
             wallet_addr = log["args"]["trader"]
             token_delta = _convert_scaled_value_to_decimal(-log["args"]["bondAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
             maturity_time = log["args"]["maturityTime"]
             wallet_deltas.extend(
                 [
@@ -388,7 +388,7 @@ def _build_wallet_deltas(logs: list[dict], tx_hash: str, block_number) -> list[W
             wallet_addr = log["args"]["provider"]
             maturity_time = None
             token_delta = _convert_scaled_value_to_decimal(-log["args"]["withdrawalShareAmount"])
-            base_delta = _convert_scaled_value_to_decimal(log["args"]["baseAmount"])
+            base_delta = _convert_scaled_value_to_decimal(log["args"]["amount"])
             wallet_deltas.extend(
                 [
                     WalletDelta(

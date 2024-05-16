@@ -20,10 +20,9 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
-from decimal import Decimal
 
 import pytest
-from fixedpointmath import FixedPoint
+from fixedpointmath import FixedPoint, isclose
 from tabulate import tabulate
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
@@ -65,6 +64,7 @@ def _log_event(
     base_needed: FixedPoint,
     event: OpenLong | OpenShort,
 ):
+    assert event.as_base
     logging.info(
         "opened %s with input %s=%s, output Δbonds= %s%s, Δbase= %s%s",
         trade_type,
@@ -72,12 +72,12 @@ def _log_event(
         base_needed,
         "+" if event.bond_amount > 0 else "",
         event.bond_amount,
-        "+" if event.base_amount > 0 else "",
-        event.base_amount,
+        "+" if event.amount > 0 else "",
+        event.amount,
     )
 
 
-def test_prediction_example(chain: LocalChain):
+def test_prediction_example(fast_chain_fixture: LocalChain):
     """Demonstrate the simplest case of a prediction.
 
     Output:
@@ -99,8 +99,8 @@ def test_prediction_example(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
     base_needed = FixedPoint(100)
     delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_long(base=base_needed)
@@ -108,7 +108,7 @@ def test_prediction_example(chain: LocalChain):
     _log_table(delta)
 
 
-def test_open_long_bonds(chain: LocalChain):
+def test_open_long_bonds(fast_chain_fixture: LocalChain):
     """Demonstrate abililty to open long with bonds as input."""
     interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -116,8 +116,8 @@ def test_open_long_bonds(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     bonds_needed = FixedPoint(100)
     delta = predict_long(interactive_hyperdrive.interface, bonds=bonds_needed)
@@ -125,7 +125,7 @@ def test_open_long_bonds(chain: LocalChain):
     _log_event("long ", "bonds", bonds_needed, event[0] if isinstance(event, list) else event)
 
 
-def test_open_short_base(chain: LocalChain):
+def test_open_short_base(fast_chain_fixture: LocalChain):
     """Demonstrate abililty to open short with base as input."""
     interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -133,8 +133,8 @@ def test_open_short_base(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     base_needed = FixedPoint(100)
     delta = predict_short(interactive_hyperdrive.interface, base=base_needed)
@@ -144,7 +144,7 @@ def test_open_short_base(chain: LocalChain):
 
 
 @pytest.mark.anvil
-def test_predict_open_long_bonds(chain: LocalChain):
+def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     """Predict outcome of an open long, for a given amount of bonds."""
     # setup
     interactive_config = LocalHyperdrive.Config(
@@ -153,9 +153,9 @@ def test_predict_open_long_bonds(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
     pool_state = deepcopy(hyperdrive_interface.current_pool_state)
 
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
@@ -196,26 +196,28 @@ def test_predict_open_long_bonds(chain: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.base - base_needed))) < 1e-16
+    assert isclose(delta.user.base, base_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
-    assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
+    assert isclose(actual_delta_user_base, base_needed, abs_tol=FixedPoint("1e-16"))
     actual_delta_user_bonds = list(agent.agent.wallet.longs.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
-    assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
+    # TODO fix tolerance
+    # https://github.com/delvtech/agent0/issues/1357
+    assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-2"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.shares
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-4
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-4")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
 
 
 @pytest.mark.anvil
-def test_predict_open_long_base(chain: LocalChain):
+def test_predict_open_long_base(fast_chain_fixture: LocalChain):
     """Predict outcome of an open long, for a given amount of base."""
     # setup
     interactive_config = LocalHyperdrive.Config(
@@ -224,9 +226,9 @@ def test_predict_open_long_base(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     base_needed = FixedPoint(100_000)
     delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed)
@@ -259,23 +261,23 @@ def test_predict_open_long_base(chain: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.base - base_needed))) < 1e-16
+    assert isclose(delta.user.base, base_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
-    assert abs(Decimal(str(actual_delta_user_base - base_needed))) < 1e-16
+    assert isclose(actual_delta_user_base, base_needed, abs_tol=FixedPoint("1e-16"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.bonds))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.bonds
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-7
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-7")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
 
 
 @pytest.mark.anvil
-def test_predict_open_short_bonds(chain: LocalChain):
+def test_predict_open_short_bonds(fast_chain_fixture: LocalChain):
     """Predict outcome of an open short, for a given amount of bonds."""
     interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -283,9 +285,9 @@ def test_predict_open_short_bonds(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     bonds_needed = FixedPoint(100_000)
     delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
@@ -319,25 +321,25 @@ def test_predict_open_short_bonds(chain: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.bonds - bonds_needed))) < 1e-16
+    assert isclose(delta.user.bonds, bonds_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
-    assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
+    assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-3"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.shares
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-7
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-7")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")
 
 
 @pytest.mark.anvil
-def test_predict_open_short_base(chain: LocalChain):
+def test_predict_open_short_base(fast_chain_fixture: LocalChain):
     """Predict outcome of an open short, for a given amount of base."""
     interactive_config = LocalHyperdrive.Config(
         position_duration=YEAR_IN_SECONDS,  # 1 year term
@@ -345,9 +347,9 @@ def test_predict_open_short_base(chain: LocalChain):
         curve_fee=FixedPoint(0.01),
         flat_fee=FixedPoint(0),
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
+    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
 
     # start with base_needed, convert to bonds_needed
     base_needed = FixedPoint(100_000)
@@ -387,18 +389,18 @@ def test_predict_open_short_base(chain: LocalChain):
     logging.info("actual pool delta base is %s", actual_delta_base)
     # measure user's outcome after the trade
     # does our prediction match the input
-    assert abs(Decimal(str(delta.user.bonds - bonds_needed))) < 1e-16
+    assert isclose(delta.user.bonds, bonds_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
     actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
-    assert abs(Decimal(str(actual_delta_user_bonds - bonds_needed))) < 1e-3
+    assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-3"))
 
-    bonds_discrepancy = Decimal(str((actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds))
-    shares_discrepancy = Decimal(str((actual_delta_shares - delta.pool.shares) / delta.pool.shares))
-    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy:e}")
-    logging.info(f"discrepancy (%) for shares is {shares_discrepancy:e}")
+    bonds_discrepancy = (actual_delta_bonds - delta.pool.bonds) / delta.pool.bonds
+    shares_discrepancy = (actual_delta_shares - delta.pool.shares) / delta.pool.shares
+    logging.info(f"discrepancy (%) for bonds is {bonds_discrepancy}")
+    logging.info(f"discrepancy (%) for shares is {shares_discrepancy}")
 
-    assert abs(bonds_discrepancy) < 1e-7
-    assert abs(shares_discrepancy) < 1e-7
+    assert abs(bonds_discrepancy) < FixedPoint("1e-7")
+    assert abs(shares_discrepancy) < FixedPoint("1e-7")

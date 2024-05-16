@@ -72,7 +72,6 @@ def fuzz_path_independence(
     effective_share_reserves_epsilon: float,
     present_value_epsilon: float,
     chain_config: LocalChain.Config,
-    log_to_stdout: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
@@ -90,9 +89,6 @@ def fuzz_path_independence(
         The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
-    log_to_stdout: bool, optional
-        If True, log to stdout in addition to a file.
-        Defaults to False.
     """
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
@@ -102,11 +98,8 @@ def fuzz_path_independence(
     if perm(num_trades) < 2 * num_paths_checked:
         raise AssertionError("Need more trades to check {num_paths_checked} paths.")
 
-    log_filename = ".logging/fuzz_path_independence.log"
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        log_filename,
         chain_config,
-        log_to_stdout,
         # Trade crashes in this file have expected failures, hence we log interactive
         # hyperdrive crashes as info instead of critical.
         crash_log_level=logging.INFO,
@@ -300,7 +293,6 @@ class Args(NamedTuple):
     effective_share_reserves_epsilon: float
     present_value_epsilon: float
     chain_config: LocalChain.Config
-    log_to_stdout: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -322,8 +314,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         lp_share_price_epsilon=namespace.lp_share_price_epsilon,
         effective_share_reserves_epsilon=namespace.effective_share_reserves_epsilon,
         present_value_epsilon=namespace.present_value_epsilon,
-        chain_config=LocalChain.Config(chain_port=namespace.chain_port),
-        log_to_stdout=namespace.log_to_stdout,
+        chain_config=LocalChain.Config(chain_port=namespace.chain_port, log_to_stdout=namespace.log_to_stdout),
     )
 
 

@@ -39,7 +39,7 @@ from web3.contract.contract import Contract, ContractConstructor, ContractFuncti
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, TxParams
 
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {}
 
@@ -345,7 +345,7 @@ class ERC20ForwarderFactoryContract(Contract):
     """A web3.py Contract class for the ERC20ForwarderFactory contract."""
 
     abi: ABI = erc20forwarderfactory_abi
-    bytecode: bytes = HexBytes(erc20forwarderfactory_bytecode)
+    bytecode: bytes | None = try_bytecode_hexbytes(erc20forwarderfactory_bytecode, "erc20forwarderfactory")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:

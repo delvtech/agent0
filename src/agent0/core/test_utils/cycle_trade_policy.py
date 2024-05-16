@@ -86,16 +86,19 @@ class CycleTradesPolicy(HyperdriveBasePolicy):
             # Remove All Liquidity
             action_list.append(remove_liquidity_trade(wallet.lp_tokens))
         elif self.counter == 4:
+            # Re-add liquidity to allow for closing positions
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
+        elif self.counter == 5:
             # Close All Longs
             assert len(wallet.longs) == 1
             for long_time, long in wallet.longs.items():
                 action_list.append(close_long_trade(long.balance, long_time, self.slippage_tolerance))
-        elif self.counter == 5:
+        elif self.counter == 6:
             # Close All Shorts
             assert len(wallet.shorts) == 1
             for short_time, short in wallet.shorts.items():
                 action_list.append(close_short_trade(short.balance, short_time, self.slippage_tolerance))
-        elif self.counter == 6:
+        elif self.counter == 7:
             # Redeem all withdrawal shares
             action_list.append(redeem_withdraw_shares_trade(wallet.withdraw_shares))
         else:

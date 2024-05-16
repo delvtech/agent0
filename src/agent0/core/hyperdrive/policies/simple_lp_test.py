@@ -14,7 +14,7 @@ from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, RemoveL
 
 
 @pytest.mark.anvil
-def test_simple_lp_policy(chain: LocalChain):
+def test_simple_lp_policy(fast_chain_fixture: LocalChain):
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = LocalHyperdrive.Config(
@@ -30,7 +30,7 @@ def test_simple_lp_policy(chain: LocalChain):
         # This test requires the non-policy actions to be passed into the policy's post trade stage.
         always_execute_policy_post_action=True,
     )
-    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
     # Deploy LP agent & add base liquidity
     pnl_target = FixedPoint("8.0")
@@ -58,7 +58,7 @@ def test_simple_lp_policy(chain: LocalChain):
         trade_amount = FixedPoint("1_000")
         hyperdrive_agent0.add_funds(base=trade_amount)
         open_event = hyperdrive_agent0.open_short(trade_amount)
-        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+        fast_chain_fixture.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         hyperdrive_agent0.close_short(open_event.maturity_time, open_event.bond_amount)
         trade_event_list = lp_agent.execute_policy_action()
 
@@ -82,7 +82,7 @@ def test_simple_lp_policy(chain: LocalChain):
         hyperdrive_agent1.add_funds(base=trade_amount)
         interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))  # LP gets no extra earnings from variable
         open_event = hyperdrive_agent1.open_long(trade_amount)
-        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+        fast_chain_fixture.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         hyperdrive_agent1.close_long(open_event.maturity_time, open_event.bond_amount)
 
         trade_event_list = lp_agent.execute_policy_action()

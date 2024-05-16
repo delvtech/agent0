@@ -1,6 +1,6 @@
 """Hyperdrive database utilities."""
 
-from .chain_to_db import data_chain_to_db, init_data_chain_to_db
+from .chain_to_db import data_chain_to_db, init_data_chain_to_db, trade_events_to_db
 from .convert_data import (
     convert_checkpoint_info,
     convert_hyperdrive_transactions_for_block,
@@ -13,6 +13,7 @@ from .interface import (
     add_pool_config,
     add_pool_infos,
     add_transactions,
+    add_transfer_events,
     add_wallet_deltas,
     get_all_traders,
     get_checkpoint_info,
@@ -23,8 +24,10 @@ from .interface import (
     get_pool_analysis,
     get_pool_config,
     get_pool_info,
+    get_positions_from_db,
     get_ticker,
     get_total_wallet_pnl_over_time,
+    get_trade_events,
     get_transactions,
     get_wallet_deltas,
     get_wallet_pnl,

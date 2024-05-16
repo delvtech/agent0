@@ -2,18 +2,11 @@
 
 from __future__ import annotations
 
-import logging
-import os
-from typing import cast
-
 import pytest
-from eth_typing import URI
 from fixedpointmath import FixedPoint
-from web3 import HTTPProvider
+from utils import run_with_funded_bot
 
-from agent0.core import build_account_key_config_from_agent_config
 from agent0.core.base import Trade
-from agent0.core.base.config import AgentConfig, EnvironmentConfig
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
@@ -24,11 +17,9 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
+from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.core.hyperdrive.utilities.run_bots import setup_and_run_agent_loop
-from agent0.ethpy import EthConfig
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
-from agent0.ethpy.test_fixtures import DeployedHyperdrivePool
 
 
 def ensure_agent_wallet_is_correct(wallet: HyperdriveWallet, interface: HyperdriveReadInterface) -> None:
@@ -83,10 +74,11 @@ class WalletTestAgainstChainPolicy(HyperdriveBasePolicy):
     COUNTER_OPEN_LONG = 1
     COUNTER_OPEN_SHORT = 2
     COUNTER_REMOVE_LIQUIDITY = 3
-    COUNTER_CLOSE_LONGS = 4
-    COUNTER_CLOSE_SHORTS = 5
-    COUNTER_REDEEM_WITHDRAW_SHARES = 6
-    COUNTER_CHECK = 7
+    COUNTER_READD_LIQUIDITY = 4
+    COUNTER_CLOSE_LONGS = 5
+    COUNTER_CLOSE_SHORTS = 6
+    COUNTER_REDEEM_WITHDRAW_SHARES = 7
+    COUNTER_CHECK = 8
 
     counter = 0
 
@@ -126,6 +118,9 @@ class WalletTestAgainstChainPolicy(HyperdriveBasePolicy):
         elif self.counter == self.COUNTER_REMOVE_LIQUIDITY:
             # Remove All Liquidity
             action_list.append(remove_liquidity_trade(wallet.lp_tokens))
+        if self.counter == self.COUNTER_READD_LIQUIDITY:
+            # Add liquidity
+            action_list.append(add_liquidity_trade(trade_amount=FixedPoint(111_111)))
         elif self.counter == self.COUNTER_CLOSE_LONGS:
             # Close All Longs
             assert len(wallet.longs) == 1
@@ -159,58 +154,8 @@ class TestWalletAgainstChain:
     @pytest.mark.anvil
     def test_wallet_against_chain(
         self,
-        local_hyperdrive_pool: DeployedHyperdrivePool,
+        fast_hyperdrive_fixture: LocalHyperdrive,
     ):
         """Runs the entire pipeline and checks the database at the end. All arguments are fixtures."""
-        # Run this test with develop mode on
-        os.environ["DEVELOP"] = "true"
 
-        # Get hyperdrive chain info
-        uri: URI | None = cast(HTTPProvider, local_hyperdrive_pool.web3.provider).endpoint_uri
-        rpc_uri = uri if uri else URI("http://localhost:8545")
-        hyperdrive_contract_address = local_hyperdrive_pool.hyperdrive_contract.address
-
-        # Build environment config
-        env_config = EnvironmentConfig(
-            delete_previous_logs=False,
-            halt_on_errors=True,
-            log_filename="system_test",
-            log_level=logging.INFO,
-            log_stdout=True,
-            global_random_seed=1234,
-            username="test",
-        )
-
-        # Build agent config
-        agent_config: list[AgentConfig] = [
-            AgentConfig(
-                policy=WalletTestAgainstChainPolicy,
-                number_of_agents=1,
-                base_budget_wei=FixedPoint("10_000_000").scaled_value,  # 10 million base
-                eth_budget_wei=FixedPoint("100").scaled_value,  # 100 base
-                policy_config=WalletTestAgainstChainPolicy.Config(
-                    slippage_tolerance=FixedPoint("0.0001"),
-                ),
-            ),
-        ]
-
-        # No need for random seed, this bot is deterministic
-        account_key_config = build_account_key_config_from_agent_config(agent_config)
-
-        # Build custom eth config pointing to local test chain
-        eth_config = EthConfig(
-            # Artifacts_uri isn't used here, as we explicitly set addresses and passed to run_bots
-            artifacts_uri="not_used",
-            rpc_uri=rpc_uri,
-            database_api_uri="not_used",
-            # Using default abi dir
-        )
-
-        setup_and_run_agent_loop(
-            env_config,
-            agent_config,
-            account_key_config,
-            eth_config=eth_config,
-            hyperdrive_address=hyperdrive_contract_address,
-            load_wallet_state=False,
-        )
+        run_with_funded_bot(fast_hyperdrive_fixture, WalletTestAgainstChainPolicy)

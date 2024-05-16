@@ -24,7 +24,7 @@ chain = Chain(rpc_uri)
 # This is the registry address deployed on sepolia.
 registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
 
-hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(registry_address, chain)["sdai_14_day"]
+hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
 hyperdrive_config = Hyperdrive.Config()
 hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 

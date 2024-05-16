@@ -195,6 +195,7 @@ def predict_short(
         # we need to calculate bonds_needed
         base_needed = base
         # this is the wrong direction for the swap, but we don't have the function in the other direction
+        # tracked in issue https://github.com/delvtech/agent0/issues/1010
         bonds_needed = hyperdrive_interface.calc_bonds_out_given_shares_in_down(base_needed / share_price)
         # scale down output to account for fees
         if for_pool is False:

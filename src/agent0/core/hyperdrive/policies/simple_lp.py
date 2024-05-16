@@ -167,6 +167,6 @@ class SimpleLP(HyperdriveBasePolicy):
                 and trade_results[-1].tx_receipt is not None
             ):
                 if trade_results[-1].trade_object.market_action.action_type.name == "ADD_LIQUIDITY":
-                    self.total_base_spent += trade_results[-1].tx_receipt.base_amount
+                    self.total_base_spent += trade_results[-1].tx_receipt.amount
                 elif trade_results[-1].trade_object.market_action.action_type.name == "REMOVE_LIQUIDITY":
-                    self.total_base_spent -= trade_results[-1].tx_receipt.base_amount
+                    self.total_base_spent -= trade_results[-1].tx_receipt.amount

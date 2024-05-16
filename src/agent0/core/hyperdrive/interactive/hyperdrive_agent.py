@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pandas as pd
 from fixedpointmath import FixedPoint
 
 if TYPE_CHECKING:
@@ -63,20 +64,14 @@ class HyperdriveAgent:
         self.agent = self._pool._init_agent(policy, policy_config, private_key)
 
     @property
-    def wallet(self) -> HyperdriveWallet:
-        """Returns the agent's current wallet.
-
-        Returns
-        -------
-        HyperdriveWallet
-            The agent's current wallet.
-        """
-        return self.agent.wallet
-
-    @property
     def checksum_address(self) -> ChecksumAddress:
         """Return the checksum address of the account."""
         return self.agent.checksum_address
+
+    @property
+    def policy_done_trading(self) -> bool:
+        """Return whether the agent's policy is done trading."""
+        return self.agent.done_trading
 
     def open_long(self, base: FixedPoint) -> OpenLong:
         """Opens a long for this agent.
@@ -245,11 +240,26 @@ class HyperdriveAgent:
         """
         self._pool._set_max_approval(self.agent)
 
-    def sync_wallet_from_chain(self) -> None:
-        """Explicitly syncs the wallet to the current state of the chain.
+    def get_positions(self) -> HyperdriveWallet:
+        """Returns the agent's current wallet.
 
-        Uses on chain events to generate current wallet positions.
-
-        .. note:: This function can be slow, use it sparingly.
+        Returns
+        -------
+        HyperdriveWallet
+            The agent's current wallet.
         """
-        self._pool._sync_wallet(self.agent)
+
+        # Update the db with this wallet
+        return self._pool._get_positions(self.agent)
+
+    def get_trade_events(self) -> pd.DataFrame:
+        """Returns the agent's current wallet.
+
+        Returns
+        -------
+        HyperdriveWallet
+            The agent's current wallet.
+        """
+
+        # Update the db with this wallet
+        return self._pool._get_trade_events(self.agent)
