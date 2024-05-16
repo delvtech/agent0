@@ -416,9 +416,9 @@ class LocalHyperdrive(Hyperdrive):
         private_key: str | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
+        name: str | None = None,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
-        name: str | None = None,
     ) -> LocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
@@ -493,11 +493,13 @@ class LocalHyperdrive(Hyperdrive):
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
 
-    def get_pool_state(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_pool_info(self, add_analysis_columns: bool = True, coerce_float: bool = False) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 
         Arguments
         ---------
+        add_analysis_columns: bool
+            If True, will add additional analysis columns to the output dataframe.
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
@@ -506,9 +508,10 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A pandas dataframe that consists of the pool info per block.
         """
-        pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float)
-        pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float)
-        pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
+        pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
+        if add_analysis_columns:
+            pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
+            pool_info = pool_info.merge(pool_analysis, how="left", on=["hyperdrive_address", "block_number"])
         return pool_info
 
     def get_checkpoint_info(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -555,7 +558,7 @@ class LocalHyperdrive(Hyperdrive):
             coerce_float=coerce_float,
         ).drop("id", axis=1)
         if not show_zero_balance:
-            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0]
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out

@@ -206,8 +206,8 @@ class PoolAnalysis(Base):
 
     # Indices
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False, autoincrement=True)
-    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
     hyperdrive_address: Mapped[str] = mapped_column(String, index=True)
+    block_number: Mapped[int] = mapped_column(BigInteger, index=True)
 
     # Analysis values
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)

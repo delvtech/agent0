@@ -196,7 +196,7 @@ def fuzz_path_independence(
             continue
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-        pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
+        pool_state_df = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
         # On first run, save final state
         if check_data is None:

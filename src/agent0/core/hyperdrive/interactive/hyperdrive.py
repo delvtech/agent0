@@ -295,9 +295,10 @@ class Hyperdrive:
 
         # Get corresponding usernames
         usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
+        out = df.copy()
         # Weird pandas type error
-        df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
-        return df
+        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
+        return out
 
     def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
         # Establish max approval for the hyperdrive contract
@@ -345,7 +346,7 @@ class Hyperdrive:
             coerce_float=coerce_float,
         ).drop("id", axis=1)
         if not show_zero_balance:
-            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0]
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
         out = self._add_username_to_dataframe(position_snapshot, "wallet_address")
         return out

@@ -95,7 +95,7 @@ remove_lp_event = hyperdrive_agent2.remove_liquidity(shares=hyperdrive_agent2.ge
 pool_config = hyperdrive.get_pool_config()
 # The underlying data is in Decimal format, which is lossless. We don't care about precision
 # here, and pandas need a numerical float for plotting, so we coerce decimals to floats here
-pool_state = hyperdrive.get_pool_state(coerce_float=True)
+pool_state = hyperdrive.get_pool_info(coerce_float=True)
 
 checkpoint_info = hyperdrive.get_checkpoint_info()
 

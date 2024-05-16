@@ -3,15 +3,19 @@
 import datetime
 import logging
 from decimal import Decimal
+from typing import Type
 
 import numpy as np
+import pandas as pd
 import pytest
 from fixedpointmath import FixedPoint, isclose
 from pandas import Series
 
 from agent0.core.base import Trade
+from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
+from agent0.core.test_utils import CycleTradesPolicy
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 
 from .local_chain import LocalChain
@@ -221,6 +225,251 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
 
 
+def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
+    return Decimal(str(fp_val))
+
+
+@pytest.mark.anvil
+def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy: Type[CycleTradesPolicy]):
+    # Initialize agent
+    private_key = make_private_key()
+    agent = fast_hyperdrive_fixture.init_agent(
+        private_key=private_key,
+        base=FixedPoint(1_000_000),
+        eth=FixedPoint(100),
+        policy=cycle_trade_policy,
+        policy_config=cycle_trade_policy.Config(
+            slippage_tolerance=FixedPoint("0.0001"),
+        ),
+    )
+
+    # Run trades
+    while not agent.policy_done_trading:
+        agent.execute_policy_action()
+
+    # Run bots again, but this time only for 3 trades
+    # TODO agent rework will allow us to separate policy from agent
+    # but for now, we need to reinitialize another agent with the same
+    # key to run the policy from scratch again
+    agent = fast_hyperdrive_fixture.init_agent(
+        private_key=private_key,
+        # We don't add funds here again, as the agent already has funds
+        policy=cycle_trade_policy,
+        policy_config=cycle_trade_policy.Config(
+            slippage_tolerance=FixedPoint("0.0001"),
+            max_trades=3,
+        ),
+    )
+
+    while not agent.policy_done_trading:
+        agent.execute_policy_action()
+
+    # This bot does the following known trades in sequence:
+    # 1. addLiquidity of 111_111 base
+    # 2. openLong of 22_222 base
+    # 3. openShort of 333 bonds
+    # 4. removeLiquidity of all LP tokens
+    # 5. addLiquidity of 111_111 base
+    # 6. closeLong on long from trade 2
+    # 7. closeShort on short from trade 3
+    # 8. redeemWithdrawalShares of all withdrawal tokens from trade 4
+    # The bot then runs again, this time for 3 trades:
+    # 9. addLiquidity of 111_111 base
+    # 10. openLong of 22_222 base
+    # 11. openShort of 333 bonds
+
+    # Test db entries are what we expect
+    # We don't coerce to float because we want exact values in decimal
+
+    db_pool_config: pd.Series = fast_hyperdrive_fixture.get_pool_config()
+
+    # TODO these expected values are defined in src/agent0/ethpy/test_fixtures/deploy_hyperdrive.py
+    # Eventually, we want to parameterize these values to pass into deploying hyperdrive
+    initial_fixed_rate = FixedPoint("0.05")
+    # This expected time stretch is only true for 1 year position duration
+    expected_timestretch_fp = FixedPoint(1) / (
+        FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
+    )
+    expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
+    expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
+    deployer_address = fast_hyperdrive_fixture.chain.get_deployer_account_address()
+    # pylint: disable=protected-access
+    base_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.base_token_contract.address
+    vault_shares_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.vault_shares_token_contract.address
+    expected_pool_config = {
+        "hyperdrive_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
+        "base_token": base_token_addr,
+        "vault_shares_token": vault_shares_token_addr,
+        "initial_vault_share_price": _to_unscaled_decimal(FixedPoint("1")),
+        "minimum_share_reserves": _to_unscaled_decimal(FixedPoint("10")),
+        "minimum_transaction_amount": _to_unscaled_decimal(FixedPoint("0.001")),
+        "circuit_breaker_delta": _to_unscaled_decimal(FixedPoint("2")),
+        "position_duration": 60 * 60 * 24 * 365,  # 1 year
+        "checkpoint_duration": 3600,  # 1 hour
+        "time_stretch": expected_timestretch,
+        "governance": deployer_address,
+        "fee_collector": deployer_address,
+        "sweep_collector": deployer_address,
+        "curve_fee": _to_unscaled_decimal(FixedPoint("0.01")),  # 1%
+        "flat_fee": _to_unscaled_decimal(FixedPoint("0.0005")),  # 0.05% APR
+        "governance_lp_fee": _to_unscaled_decimal(FixedPoint("0.15")),  # 15%
+        "governance_zombie_fee": _to_unscaled_decimal(FixedPoint("0.03")),  # 3%
+        "inv_time_stretch": expected_inv_timestretch,
+    }
+
+    # We don't care about linker
+    db_pool_config = db_pool_config.drop("linker_factory")
+
+    # Ensure keys match
+    # Converting to sets and compare
+    db_keys = set(db_pool_config.index)
+    expected_keys = set(expected_pool_config.keys())
+    assert db_keys == expected_keys, "Keys in db do not match expected"
+
+    # Value comparison
+    for key, expected_value in expected_pool_config.items():
+        assert_val = db_pool_config[key] == expected_value
+        assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
+
+    # Pool info comparison
+    db_pool_info: pd.DataFrame = fast_hyperdrive_fixture.get_pool_info(add_analysis_columns=True)
+    expected_pool_info_keys = [
+        # Expected indices
+        "hyperdrive_address",
+        "block_number",
+        "timestamp",
+        "epoch_timestamp",
+        # Pool Info
+        "share_reserves",
+        "share_adjustment",
+        "zombie_base_proceeds",
+        "zombie_share_reserves",
+        "bond_reserves",
+        "lp_total_supply",
+        "vault_share_price",
+        "longs_outstanding",
+        "long_average_maturity_time",
+        "shorts_outstanding",
+        "short_average_maturity_time",
+        "withdrawal_shares_ready_to_withdraw",
+        "withdrawal_shares_proceeds",
+        "lp_share_price",
+        "long_exposure",
+        # Ethpy Interface Added keys
+        "total_supply_withdrawal_shares",
+        "gov_fees_accrued",
+        "hyperdrive_base_balance",
+        "hyperdrive_eth_balance",
+        "variable_rate",
+        "vault_shares",
+        # Pool analysis keys
+        "spot_price",
+        "fixed_rate",
+        "base_buffer",
+    ]
+    # Convert to sets and compare
+    assert set(db_pool_info.columns) == set(expected_pool_info_keys)
+
+    # TODO compare the rest of these values to the interface
+    # TODO remove pool analysis table in favor of just adding into pool info
+
+    # Compare computed analysis columns vs interface
+    # Get the latest entry, then get the relevant columns
+    latest_pool_analysis = db_pool_info.iloc[-1][["block_number", "spot_price", "fixed_rate", "base_buffer"]]
+
+    # Compare last value to what hyperdrive interface is reporting
+    interface = fast_hyperdrive_fixture.interface
+    assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
+
+    latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
+    expected_spot_price = interface.calc_spot_price()
+
+    latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
+    expected_fixed_rate = interface.calc_spot_rate()
+
+    # Spot price and fixed rate is off by two wei
+    assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("2e-18"))
+    assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("2e-18"))
+
+    latest_pool_analysis = db_pool_info.iloc[-1]
+
+    latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
+    expected_spot_price = interface.calc_spot_price()
+
+    latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
+    expected_fixed_rate = interface.calc_spot_rate()
+
+    assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
+    # Spot price and fixed rate is off by two wei
+    assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("2e-18"))
+    assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("2e-18"))
+
+    # Compare events in table
+    trade_events = agent.get_trade_events(all_token_deltas=False)
+    # Ensure trades exist in database
+    # Should be 11 total transactions
+    expected_number_of_transactions = 11
+    assert len(trade_events) == expected_number_of_transactions
+    np.testing.assert_array_equal(
+        trade_events["event_type"],
+        [
+            "AddLiquidity",
+            "OpenLong",
+            "OpenShort",
+            "RemoveLiquidity",
+            "AddLiquidity",
+            "CloseLong",
+            "CloseShort",
+            "RedeemWithdrawalShares",
+            "AddLiquidity",
+            "OpenLong",
+            "OpenShort",
+        ],
+    )
+
+    # Get token deltas
+    token_deltas = agent.get_trade_events(all_token_deltas=True)
+    assert token_deltas["block_number"].nunique() == expected_number_of_transactions
+    # 12 different wallet deltas (1 additional since the `RemoveLiquidity` above should be repeated)
+    np.testing.assert_array_equal(
+        token_deltas["event_type"],
+        [
+            "AddLiquidity",
+            "OpenLong",
+            "OpenShort",
+            "RemoveLiquidity",
+            "RemoveLiquidity",  # This one is duplicated to account for withdrawal shares
+            "AddLiquidity",
+            "CloseLong",
+            "CloseShort",
+            "RedeemWithdrawalShares",
+            "AddLiquidity",
+            "OpenLong",
+            "OpenShort",
+        ],
+    )
+    np.testing.assert_array_equal(
+        token_deltas["token_type"],
+        [
+            "LP",
+            "LONG",
+            "SHORT",
+            "LP",
+            "WITHDRAWAL_SHARE",
+            "LP",
+            "LONG",
+            "SHORT",
+            "WITHDRAWAL_SHARE",
+            "LP",
+            "LONG",
+            "SHORT",
+        ],
+    )
+
+    # No need to check for token delta correctness,
+    # test_funding_and_trades will check for wallet and delta correctness.
+
+
 @pytest.mark.anvil
 def test_block_timestamp_interval(fast_chain_fixture: LocalChain):
     """Ensure block timestamp interval is set correctly."""
@@ -346,7 +595,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     init_agent_wallet = hyperdrive_agent.get_wallet().copy()
     init_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False).copy()
     init_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    init_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    init_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     # Make a few trades to change the state
     hyperdrive_agent.close_long(bonds=FixedPoint(222), maturity_time=open_long_event.maturity_time)
@@ -361,7 +610,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     check_agent_wallet = hyperdrive_agent.get_wallet()
     check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert check_eth_on_chain != init_eth_on_chain
     assert check_base_on_chain != init_base_on_chain
@@ -380,7 +629,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     check_agent_wallet = hyperdrive_agent.get_wallet()
     check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert check_eth_on_chain == init_eth_on_chain
     assert check_base_on_chain == init_base_on_chain
@@ -404,7 +653,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     check_agent_wallet = hyperdrive_agent.get_wallet()
     check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert check_eth_on_chain != init_eth_on_chain
     assert check_base_on_chain != init_base_on_chain
@@ -423,7 +672,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     check_agent_wallet = hyperdrive_agent.get_wallet()
     check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert check_eth_on_chain == init_eth_on_chain
     assert check_base_on_chain == init_base_on_chain
@@ -447,7 +696,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     check_agent_wallet = hyperdrive_agent.get_wallet()
     check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert check_eth_on_chain != init_eth_on_chain
     assert check_base_on_chain != init_base_on_chain
@@ -466,7 +715,7 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     check_agent_wallet = hyperdrive_agent.get_wallet()
     check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
     check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert check_eth_on_chain == init_eth_on_chain
     assert check_base_on_chain == init_base_on_chain
@@ -491,7 +740,7 @@ def test_set_variable_rate(fast_chain_fixture: LocalChain):
     interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
 
     # Ensure variable rate has changed
-    pool_state_df = interactive_hyperdrive.get_pool_state(coerce_float=False)
+    pool_state_df = interactive_hyperdrive.get_pool_info(coerce_float=False)
 
     assert pool_state_df["variable_rate"].iloc[0] == Decimal("0.05")
     assert pool_state_df["variable_rate"].iloc[-1] == Decimal("0.10")

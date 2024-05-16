@@ -176,7 +176,7 @@ class FullHyperdriveEnv(gym.Env):
         # Here, orders_i is a direct mapping to agent.wallet
         # Note normalize_time_to_maturity will always be 0 for LP positions
         # Removing timestamp and block number from pool state
-        self.num_pool_features = len(self.interactive_hyperdrive.get_pool_state(coerce_float=True).columns) - 2
+        self.num_pool_features = len(self.interactive_hyperdrive.get_pool_info(coerce_float=True).columns) - 2
         inf = 1e10
         self.observation_space = spaces.Dict(
             {
@@ -459,14 +459,14 @@ class FullHyperdriveEnv(gym.Env):
         return {}
 
     def _get_rl_wallet_positions(self, coerce_float: bool) -> pd.DataFrame:
-        current_wallet = self.interactive_hyperdrive.get_current_wallet(coerce_float=coerce_float)
+        current_wallet = self.interactive_hyperdrive.get_positions(coerce_float=coerce_float)
         # Filter for rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
         return rl_bot_wallet
 
     def _get_observation(self) -> dict[str, np.ndarray]:
         # Get the latest pool state feature from the db
-        pool_state_df = self.interactive_hyperdrive.get_pool_state(coerce_float=True)
+        pool_state_df = self.interactive_hyperdrive.get_pool_info(coerce_float=True)
         pool_state_columns = [c for c in pool_state_df.columns if c not in ("timestamp", "block_number")]
         pool_state_df = pool_state_df[pool_state_columns].iloc[-1].astype(float)
 
@@ -515,7 +515,7 @@ class FullHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         # The total delta for this episode
 
-        current_wallet = self.interactive_hyperdrive.get_current_wallet()
+        current_wallet = self.interactive_hyperdrive.get_positions()
         # Filter by rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
         # The rl_bot_wallet shows the pnl of all positions

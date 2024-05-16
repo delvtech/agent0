@@ -131,7 +131,7 @@ def get_trade_events(
     if not all_token_deltas:
         # Drop the duplicate events
         query = query.filter(
-            ~((TradeEvent.event_type == "removeLiquidity") & (TradeEvent.token_id == "WITHDRAWAL_SHARE"))
+            ~((TradeEvent.event_type == "RemoveLiquidity") & (TradeEvent.token_id == "WITHDRAWAL_SHARE"))
         )
 
     # Always sort by block in order
@@ -207,7 +207,7 @@ def get_current_positions(
     out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
     if not show_zero_balance:
-        out_df = out_df[out_df["token_balance"] != 0].copy()
+        out_df = out_df[out_df["token_balance"] != 0].reset_index(drop=True).copy()
     return out_df
 
 

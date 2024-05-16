@@ -18,7 +18,9 @@ class TestCheckpointTable:
     def test_create_checkpoint(self, db_session: Session):
         """Create and entry"""
         vault_share_price = Decimal("1.1")
-        checkpoint = CheckpointInfo(checkpoint_time=1, hyperdrive_address="a", vault_share_price=vault_share_price)
+        checkpoint = CheckpointInfo(
+            checkpoint_time=1, hyperdrive_address="a", block_number=1, vault_share_price=vault_share_price
+        )
         db_session.add(checkpoint)
         db_session.commit()
 
@@ -30,7 +32,9 @@ class TestCheckpointTable:
     def test_update_checkpoint(self, db_session: Session):
         """Update an entry"""
         vault_share_price = Decimal("1.1")
-        checkpoint = CheckpointInfo(checkpoint_time=1, hyperdrive_address="a", vault_share_price=vault_share_price)
+        checkpoint = CheckpointInfo(
+            checkpoint_time=1, hyperdrive_address="a", block_number=1, vault_share_price=vault_share_price
+        )
         db_session.add(checkpoint)
         db_session.commit()
 
@@ -45,7 +49,9 @@ class TestCheckpointTable:
     def test_delete_checkpoint(self, db_session: Session):
         """Delete an entry"""
         vault_share_price = Decimal("1.1")
-        checkpoint = CheckpointInfo(checkpoint_time=1, hyperdrive_address="a", vault_share_price=vault_share_price)
+        checkpoint = CheckpointInfo(
+            checkpoint_time=1, hyperdrive_address="a", block_number=1, vault_share_price=vault_share_price
+        )
         db_session.add(checkpoint)
         db_session.commit()
 

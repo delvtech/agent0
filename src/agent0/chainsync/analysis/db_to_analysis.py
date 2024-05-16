@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
 
@@ -23,85 +22,6 @@ from .calc_position_value import calc_closeout_value
 from .calc_spot_price import calc_spot_price
 
 pd.set_option("display.max_columns", None)
-
-
-def calc_total_wallet_delta(wallet_deltas: pd.DataFrame) -> pd.DataFrame:
-    """Calculates total wallet deltas from wallet_delta for every wallet type and position.
-
-    Arguments
-    ---------
-    wallet_deltas: pd.DataFrame
-        The dataframe of wallet deltas, from the output of `get_wallet_deltas`.
-
-    Returns
-    -------
-    pd.DataFrame
-        A dataframe of the total wallet deltas.
-
-    """
-    return wallet_deltas.groupby(["wallet_address", "token_type"]).agg(
-        {"delta": "sum", "base_token_type": "first", "maturity_time": "first"}
-    )
-
-
-def calc_current_wallet(wallet_deltas_df: pd.DataFrame, latest_wallet: pd.DataFrame) -> pd.DataFrame:
-    """Calculates the current wallet positions given the wallet deltas
-    This function takes a batch of wallet deltas and calculates the current wallet position for each
-    sample of delta using cumsum. Positions are then added to the latest wallet positions (if they exist)
-
-    Arguments
-    ---------
-    wallet_deltas_df: pd.DataFrame
-        The dataframe of wallet deltas, following the schema of WalletDelta
-    latest_wallet: pd.DataFrame
-        The dataframe of the latest wallet positions, following the schema of CurrentWallet
-
-    Returns
-    -------
-    pd.DataFrame
-        A dataframe of the current wallet positions, following the schema of CurrentWallet
-    """
-    # There's a chance multiple wallet deltas can happen from the same address at the same block
-    # Hence, we group all deltas into a single delta for cumsum
-    wallet_deltas_df = (
-        wallet_deltas_df.groupby(["wallet_address", "token_type", "block_number"])
-        .agg(
-            {
-                "base_token_type": "first",
-                "maturity_time": "first",
-                "delta": "sum",
-            }
-        )
-        .reset_index()
-    )
-
-    # Ensure wallet_deltas are sorted by block_number
-    wallet_deltas_df = wallet_deltas_df.sort_values("block_number")
-    # Using np.cumsum because of decimal objects in dataframe
-    wallet_delta_by_block = wallet_deltas_df.groupby(["wallet_address", "token_type"])["delta"].apply(np.cumsum)
-    # Use only the index of the original df
-    wallet_delta_by_block.index = wallet_delta_by_block.index.get_level_values(2)
-    # Add column
-    wallet_deltas_df["value"] = wallet_delta_by_block
-    # Drop unnecessary columns to match schema
-    wallet_deltas_df = wallet_deltas_df.drop(["delta"], axis=1)
-
-    # If there was a initial wallet, add deltas to initial wallet to calculate current positions
-    if len(latest_wallet) > 0:
-        wallet_deltas_df = wallet_deltas_df.set_index(["wallet_address", "token_type", "block_number"])
-        latest_wallet = latest_wallet.set_index(["wallet_address", "token_type"])
-
-        # Add the latest wallet to each wallet delta position to calculate most current positions
-        # We broadcast latest wallet across all block_numbers. If a position does not exist in latest_wallet,
-        # it will treat it as 0 (based on fill_value)
-        wallet_deltas_df["value"] = wallet_deltas_df["value"].add(latest_wallet["value"], fill_value=0)
-        # In the case where latest_wallet has positions not in wallet_deltas, we can ignore them
-        # since if they're not in wallet_deltas, there's no change in positions
-        wallet_deltas_df = wallet_deltas_df.reset_index()
-
-    # Need to keep zero positions in the db since a delta could have made the current wallet 0
-    # We can filter zero positions after the query of current positions
-    return wallet_deltas_df
 
 
 # TODO clean up this function
