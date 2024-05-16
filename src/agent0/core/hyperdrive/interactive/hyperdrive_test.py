@@ -20,6 +20,8 @@ from .local_hyperdrive import LocalHyperdrive
 
 
 def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, agent: HyperdriveAgent):
+    # pylint: disable=too-many-locals
+
     # NOTE this function is assuming only one agent is making trades
     interface = in_hyperdrive.interface
 

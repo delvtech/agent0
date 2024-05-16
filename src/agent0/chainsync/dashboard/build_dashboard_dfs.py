@@ -1,3 +1,5 @@
+"""Builds the dataframes used by the streamlit dashboard."""
+
 from __future__ import annotations
 
 import pandas as pd
@@ -33,6 +35,24 @@ from .usernames import build_user_mapping
 def build_pool_dashboard(
     hyperdrive_address: str, session: Session, max_live_blocks: int = 5000, max_ticker_rows=1000
 ) -> dict[str, pd.DataFrame]:
+    """Builds the dataframes for the main dashboard page that focuses on pools.
+
+    Arguments
+    ---------
+    hyperdrive_address: str
+        The hyperdrive address to filter the results on.
+    session: Session
+        The initialized sqlalchemy db session object.
+    max_live_blocks: int, optional
+        The maximum number of blocks to look in the past for. Defaults to 5000.
+    max_ticker_rows: int, optional
+        The maximum number of ticker rows to show. Defaults to 1000.
+
+    Returns
+    -------
+    dict[str, DataFrame]
+        A collection of dataframes ready to be shown in the dashboard.
+    """
 
     out_dfs: dict[str, pd.DataFrame] = {}
 
@@ -106,6 +126,28 @@ def build_wallet_dashboard(
     max_plot_blocks: int = 5000,
     max_ticker_rows=1000,
 ) -> dict[str, pd.DataFrame]:
+    """Builds the dataframes for the main dashboard page that focuses on pools.
+
+    Arguments
+    ---------
+    wallet_addresses: list[str]
+        The list of wallet addresses to filter the results on.
+    session: Session
+        The initialized sqlalchemy db session object.
+    user_map: pd.DataFrame | None, optional
+        The mapping of wallet addresses to usernames. Will build from db if None.
+    max_plot_blocks: int, optional
+        The maximum number of blocks to look in the past for plotting. Defaults to 5000.
+    max_ticker_rows: int, optional
+        The maximum number of ticker rows to show. Defaults to 1000.
+
+    Returns
+    -------
+    dict[str, DataFrame]
+        A collection of dataframes ready to be shown in the dashboard.
+    """
+
+    # pylint: disable=too-many-locals
 
     if user_map is None:
         trader_addrs = get_all_traders(session)

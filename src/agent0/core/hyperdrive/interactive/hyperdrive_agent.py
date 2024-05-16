@@ -63,6 +63,7 @@ class HyperdriveAgent:
         private_key: str | None, optional
             The private key of the associated account. Default is auto-generated.
         """
+        # pylint: disable=too-many-arguments
         self._pool = pool
         self.agent = self._pool._init_agent(name, policy, policy_config, private_key)
 

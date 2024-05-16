@@ -1,4 +1,4 @@
-"""Builds the variable rate dataframe to be plotted"""
+"""Builds the variable rate dataframe to be plotted."""
 
 import pandas as pd
 

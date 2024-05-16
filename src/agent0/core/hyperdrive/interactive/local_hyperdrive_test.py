@@ -31,8 +31,13 @@ YEAR_IN_SECONDS = 31_536_000
 # allow non-lazy logging
 # pylint: disable=logging-fstring-interpolation
 
+# Long test file
+# pylint: disable=too-many-lines
+
 
 def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdrive, agent: LocalHyperdriveAgent):
+    # pylint: disable=too-many-locals
+
     # NOTE this function is assuming only one agent is making trades
     interface = in_hyperdrive.interface
 

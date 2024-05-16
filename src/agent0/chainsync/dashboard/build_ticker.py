@@ -15,13 +15,14 @@ def build_pool_ticker(
     trade_events: pd.DataFrame
         The dataframe resulting from `get_trade_events`.
     user_map: pd.DataFrame
-        A dataframe with 4 columns (address, abbr_address, username, format_name).
-        This is the output of :meth:`chainsync.dashboard.build_user_mapping`.
+        A dataframe containing the mapping of wallet addresses to usernames.
+    block_to_timestamp: pd.DataFrame
+        A dataframe containing the mapping of block number to timestamp.
 
     Returns
     -------
     pd.DataFrame
-        The filtered transaction data based on what we want to view in the ticker.
+        The filtered transaction data based on what we want to view in the ticker for a specific pool.
     """
     # Gather other information from other tables
     mapped_addrs = map_addresses(trade_events["wallet_address"], user_map)
@@ -64,14 +65,17 @@ def build_wallet_ticker(
     ---------
     trade_events: pd.DataFrame
         The dataframe resulting from `get_trade_events`.
+    user_map: pd.DataFrame
+        A dataframe containing the mapping of wallet addresses to usernames.
     hyperdrive_addr_map: pd.DataFrame
-        A dataframe with 2 columns (address, abbr_address, username, format_name).
-        This is the output of :meth:`chainsync.dashboard.build_user_mapping`.
+        A dataframe containing the mapping of hyperdrive addresses to hyperdrive names.
+    block_to_timestamp: pd.DataFrame
+        A dataframe containing the mapping of block number to timestamp.
 
     Returns
     -------
     pd.DataFrame
-        The filtered transaction data based on what we want to view in the ticker.
+        The filtered transaction data based on what we want to view in the ticker for a specific wallet.
     """
 
     mapped_addrs = map_addresses(trade_events["wallet_address"], user_map)

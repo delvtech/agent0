@@ -465,8 +465,6 @@ class LocalHyperdrive(Hyperdrive):
 
         Arguments
         ---------
-        add_analysis_columns: bool
-            If True, will add additional analysis columns to the output dataframe.
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 

@@ -34,8 +34,6 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
         The directory to write the parquet files to. It's assumed this directory already exists.
     db_session: Session | None, optional
         The initialized session object. If none, will read credentials from `postgres.env`
-    raw: bool, optional
-        If true, won't add any additional columns to the output. Used for save/load state in db.
     """
     if db_session is None:
         # postgres session

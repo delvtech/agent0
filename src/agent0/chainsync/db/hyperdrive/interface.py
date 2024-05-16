@@ -31,12 +31,10 @@ def add_hyperdrive_addr_to_name(
     ---------
     name: str
         The logical name to attach to the wallet address.
-    addresses: str
+    hyperdrive_address: str
         A hyperdrive address to map to the name.
     session: Session
         The initialized session object.
-    user_suffix: str
-        An optional suffix to add to the username mapping.
     force_update: bool
         If true and an existing mapping is found, will overwrite.
     """
@@ -182,7 +180,7 @@ def get_trade_events(
     ---------
     session: Session
         The initialized db session object.
-    wallet_addr: str | list[str] | None, optional
+    wallet_address: str | list[str] | None, optional
         The wallet address(es) to filter the results on. Return all if None.
     hyperdrive_address: str | None, optional
         The hyperdrive address to filter the results on. Returns all if None.
@@ -204,6 +202,8 @@ def get_trade_events(
     DataFrame
         A DataFrame that consists of the queried trade events data.
     """
+    # pylint: disable=too-many-arguments
+
     query = session.query(TradeEvent)
 
     if isinstance(wallet_address, list):
@@ -264,8 +264,8 @@ def get_current_positions(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
-    # TODO also accept and filter by hyperdrive address here
-    # when we move to multi-pool db support
+    # pylint: disable=too-many-arguments
+
     query = session.query(
         TradeEvent.hyperdrive_address,
         TradeEvent.wallet_address,

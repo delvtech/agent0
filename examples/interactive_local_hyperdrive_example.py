@@ -111,9 +111,6 @@ pool_positions_over_time = hyperdrive.get_historical_positions()
 total_wallet_pnl_over_time = hyperdrive.get_historical_pnl(coerce_float=True)
 
 # %%
-pass
-
-
 # Plot pretty plots
 # TODO these should be in a notebook for plotting
 pool_state.plot(x="block_number", y="longs_outstanding", kind="line")

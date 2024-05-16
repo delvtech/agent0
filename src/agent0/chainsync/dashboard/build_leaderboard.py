@@ -6,12 +6,13 @@ from .usernames import map_addresses
 
 
 def build_total_leaderboard(position_snapshot: pd.DataFrame, user_map: pd.DataFrame) -> pd.DataFrame:
-    """Rank users by PNL, individually and bomined across their accounts.
+    """Takes the position snapshot and aggregates pnl across all pools and positions,
+    then ranks to show the leaderboard.
 
     Arguments
     ---------
-    wallet_pnl: pd.DataFrame
-        The dataframe resulting from get_wallet_pnl.
+    position_snapshot: pd.DataFrame
+        The dataframe resulting from get_position_snapshot that contains the latest positions.
     user_map: pd.DataFrame
         A dataframe with 4 columns (address, abbr_address, username, format_name).
         This is the output of :meth:`chainsync.dashboard.build_user_mapping`.
@@ -42,15 +43,17 @@ def build_total_leaderboard(position_snapshot: pd.DataFrame, user_map: pd.DataFr
 def build_per_pool_leaderboard(
     position_snapshot: pd.DataFrame, user_map: pd.DataFrame, hyperdrive_addr_map: pd.DataFrame
 ) -> pd.DataFrame:
-    """Rank users by PNL, individually and bomined across their accounts.
+    """Takes the position snapshot and aggregates pnl across positions in individual pools,
+    then ranks to show the leaderboard.
 
     Arguments
     ---------
-    wallet_pnl: pd.DataFrame
-        The dataframe resulting from get_wallet_pnl.
+    position_snapshot: pd.DataFrame
+        The dataframe resulting from get_position_snapshot that contains the latest positions.
     user_map: pd.DataFrame
-        A dataframe with 4 columns (address, abbr_address, username, format_name).
-        This is the output of :meth:`chainsync.dashboard.build_user_mapping`.
+        A dataframe containing the wallet address to name mapping.
+    hyperdrive_addr_map: pd.DataFrame
+        A dataframe containing the hyperdrive address to name mapping.
 
     Returns
     -------
