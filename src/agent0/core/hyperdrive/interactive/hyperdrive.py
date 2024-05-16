@@ -248,9 +248,6 @@ class Hyperdrive:
         # pylint: disable=protected-access
         return self.interface.hyperdrive_address
 
-    def _cleanup(self):
-        """Cleans up resources used by this object."""
-
     def init_agent(
         self,
         private_key: str,

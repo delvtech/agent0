@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import contextlib
 import os
+import pathlib
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -14,6 +15,7 @@ from typing import TYPE_CHECKING
 import dill
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
+from IPython.display import IFrame
 from web3.types import RPCEndpoint
 
 from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
@@ -38,6 +40,8 @@ class LocalChain(Chain):
     class Config(Chain.Config):
         """The configuration for the local chain object."""
 
+        dashboard_port: int = 7777
+        """The URL port for the deployed dashboard."""
         block_time: int | None = None
         """If None, mines per transaction. Otherwise mines every `block_time` seconds."""
         block_timestamp_interval: int | None = 12
@@ -111,15 +115,21 @@ class LocalChain(Chain):
         if config.block_timestamp_interval is not None:
             self._set_block_timestamp_interval(config.block_timestamp_interval)
 
+        self.config = config
+        self.dashboard_subprocess: subprocess.Popen | None = None
+
         # TODO hack, wait for chain to init
         time.sleep(1)
 
     def cleanup(self):
         """Kills the subprocess in this class' destructor."""
         # Runs cleanup on all deployed pools
-        for pool in self._deployed_hyperdrive_pools:
-            pool._cleanup()  # pylint: disable=protected-access
         self.anvil_process.kill()
+
+        if self.dashboard_subprocess is not None:
+            self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
+
         super().cleanup()
 
     def __del__(self):
@@ -390,11 +400,6 @@ class LocalChain(Chain):
         with open(pool_filename, "rb") as file:
             hyperdrive_pools: list[str] = dill.load(file)
 
-        # Run cleanup on any invalid pools on load snapshot
-        invalid_pools = [p for p in self._deployed_hyperdrive_pools if p.hyperdrive_address not in hyperdrive_pools]
-        for pool in invalid_pools:
-            pool._cleanup()  # pylint: disable=protected-access
-
         # Given the current list of deployed hyperdrive pools, we throw away any pools deployed
         # after the snapshot
         self._deployed_hyperdrive_pools = [
@@ -416,6 +421,124 @@ class LocalChain(Chain):
 
         # Save another anvil snapshot since reverting consumes the snapshot
         self._anvil_save_snapshot()
+
+    def get_dashboard_iframe(self, width: int = 1000, height: int = 800) -> IFrame:
+        """Embeds the streamlit dashboard into a Jupyter notebook as an IFrame.
+
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
+            streamlit server. Passing ``blocking=True`` will block execution of the main
+            script in this function until a keypress is registered.
+
+        Arguments
+        ---------
+        width: int
+            Width, in pixels, of the IFrame.
+            Defaults to 1000.
+        height: int
+            Height, in pixels, of the IFrame.
+            Defaults to 800.
+
+        Returns
+        -------
+        IFrame
+            An dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
+        """
+        dashboard_run_command = self._get_dashboard_run_command(
+            flags=[
+                "--server.headless",
+                "true",
+                "--server.port",
+                str(self.config.dashboard_port),
+                "--server.address",
+                "localhost",
+            ]
+        )
+        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+            dashboard_run_command,
+            env=env,
+            # stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        network_url = f"http://localhost:{self.config.dashboard_port}"
+
+        dashboard_iframe = IFrame(src=network_url, width=width, height=height)
+        time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
+        return dashboard_iframe
+
+    def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
+        """Returns the run command for launching a Streamlit dashboard.
+
+        Arguments
+        ---------
+        flags: list[str] | None, optional
+            List of streamlit flags to be added to the run command.
+            Commands and arguments should be separate entries, for example: ["--server.headless", "true"]
+            Defaults to an empty list, which passes no flags.
+
+        Returns
+        -------
+        str
+            The streamlit run command string.
+        """
+        if flags is None:
+            flags = []
+        # In order to support this command in both notebooks and scripts, we reference
+        # the path to the virtual environment relative to this file.
+        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
+        venv_dir = pathlib.Path(os.environ["VIRTUAL_ENV"])
+        streamlit_path = str(venv_dir / "bin" / "streamlit")
+        dashboard_path = str(base_dir / "src" / "agent0" / "chainsync" / "streamlit" / "Dashboard.py")
+        dashboard_run_command = (
+            [streamlit_path, "run"]
+            + flags
+            + [
+                dashboard_path,
+            ]
+        )
+        return dashboard_run_command
+
+    def run_dashboard(self, blocking: bool = False) -> None:
+        """Runs the streamlit dashboard in a subprocess connected to interactive hyperdrive.
+
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
+            streamlit server. Passing ``blocking=True`` will block execution of the main
+            script in this function until a keypress is registered.
+
+        Arguments
+        ---------
+        blocking: bool
+            If True, will block execution of the main script in this function until a keypress is registered.
+            When in blocking mode, the server will be killed upon return of control to caller.
+            If False, will clean up subprocess in cleanup.
+        """
+
+        dashboard_run_command = self._get_dashboard_run_command(
+            flags=[
+                "--server.port",
+                str(self.config.dashboard_port),
+                "--server.address",
+                "localhost",
+            ]
+        )
+        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+
+        assert self.dashboard_subprocess is None
+        # Since dashboard is a non-terminating process, we need to manually control its lifecycle
+        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+            dashboard_run_command,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
+        if blocking:
+            input("Press any key to kill dashboard server.")
+            self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
 
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         self._deployed_hyperdrive_pools.append(pool)

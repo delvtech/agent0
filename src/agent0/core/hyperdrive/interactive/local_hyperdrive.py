@@ -3,21 +3,16 @@
 from __future__ import annotations
 
 import logging
-import os
-import pathlib
 import subprocess
-import time
-from dataclasses import asdict, dataclass
-from threading import Thread
+from dataclasses import dataclass
 from typing import Literal, Type, overload
 
 import dill
 import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber, ChecksumAddress
+from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
-from IPython.display import IFrame
 
 from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
@@ -74,8 +69,6 @@ class LocalHyperdrive(Hyperdrive):
         """The timeout for the data pipeline. Defaults to 60 seconds."""
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
-        dashboard_port: int = 7777
-        """The URL port for the deployed dashboard."""
         load_rng_on_snapshot: bool = True
         """
         If True, loading a snapshot also loads the RNG state of the underlying policy.
@@ -242,7 +235,6 @@ class LocalHyperdrive(Hyperdrive):
 
         self._run_blocking_data_pipeline()
 
-        self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[LocalHyperdriveAgent] = []
 
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
@@ -272,24 +264,16 @@ class LocalHyperdrive(Hyperdrive):
             calc_pnl=self.calc_pnl,
         )
 
-    def _cleanup(self):
-        """Cleans up resources used by this object."""
-        super()._cleanup()
-
-        if self.dashboard_subprocess is not None:
-            self.dashboard_subprocess.kill()
-            self.dashboard_subprocess = None
-
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
     # This is used to allow chain's `advance_time` function to return this object as a key.
     def __hash__(self):
         """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
-        return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
+        return hash((self.chain.rpc_uri, self.hyperdrive_address))
 
-    def __eq__(self, other):
+    def __eq__(self, other: LocalHyperdrive):
         return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
             other.chain.rpc_uri,
-            other._deployed_hyperdrive.hyperdrive_contract.address,
+            other.hyperdrive_address,
         )
 
     def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
@@ -614,124 +598,6 @@ class LocalHyperdrive(Hyperdrive):
         out = self._add_username_to_dataframe(out, "wallet_address")
         out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
-
-    def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
-        """Returns the run command for launching a Streamlit dashboard.
-
-        Arguments
-        ---------
-        flags: list[str] | None, optional
-            List of streamlit flags to be added to the run command.
-            Commands and arguments should be seperate entries, for example: ["--server.headless", "true"]
-            Defaults to an empty list, which passes no flags.
-
-        Returns
-        -------
-        str
-            The streamlit run command string.
-        """
-        if flags is None:
-            flags = []
-        # In order to support this command in both notebooks and scripts, we reference
-        # the path to the virtual environment relative to this file.
-        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
-        venv_dir = pathlib.Path(os.environ["VIRTUAL_ENV"])
-        streamlit_path = str(venv_dir / "bin" / "streamlit")
-        dashboard_path = str(base_dir / "src" / "agent0" / "chainsync" / "streamlit" / "Dashboard.py")
-        dashboard_run_command = (
-            [streamlit_path, "run"]
-            + flags
-            + [
-                dashboard_path,
-            ]
-        )
-        return dashboard_run_command
-
-    def run_dashboard(self, blocking: bool = False) -> None:
-        """Runs the streamlit dashboard in a subprocess connected to interactive hyperdrive.
-
-        .. note::
-            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
-            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
-            streamlit server. Passing ``blocking=True`` will block execution of the main
-            script in this function until a keypress is registered.
-
-        Arguments
-        ---------
-        blocking: bool
-            If True, will block execution of the main script in this function until a keypress is registered.
-            When in blocking mode, the server will be killed upon return of control to caller.
-            If False, will clean up subprocess in cleanup.
-        """
-
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
-            ]
-        )
-        env = {key: str(val) for key, val in asdict(self.chain.postgres_config).items()}
-
-        assert self.dashboard_subprocess is None
-        # Since dashboard is a non-terminating process, we need to manually control its lifecycle
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-        )
-        if blocking:
-            input("Press any key to kill dashboard server.")
-            self.dashboard_subprocess.kill()
-            self.dashboard_subprocess = None
-
-    def get_dashboard_iframe(self, width: int = 1000, height: int = 800) -> IFrame:
-        """Embeds the streamlit dashboard into a Jupyter notebook as an IFrame.
-
-        .. note::
-            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
-            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
-            streamlit server. Passing ``blocking=True`` will block execution of the main
-            script in this function until a keypress is registered.
-
-        Arguments
-        ---------
-        width: int
-            Width, in pixels, of the IFrame.
-            Defaults to 1000.
-        height: int
-            Height, in pixels, of the IFrame.
-            Defaults to 800.
-
-        Returns
-        -------
-        IFrame
-            An dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
-        """
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.headless",
-                "true",
-                "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
-            ]
-        )
-        env = {key: str(val) for key, val in asdict(self.chain.postgres_config).items()}
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            # stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        network_url = f"http://localhost:{self.config.dashboard_port}"
-
-        dashboard_iframe = IFrame(src=network_url, width=width, height=height)
-        time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
-        return dashboard_iframe
 
     ### Private agent methods ###
 
