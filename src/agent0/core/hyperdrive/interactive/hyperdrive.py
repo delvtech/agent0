@@ -20,7 +20,7 @@ from web3 import Web3
 
 from agent0.chainsync.analysis import snapshot_positions_to_db
 from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username, get_username_to_user
+from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     checkpoint_events_to_db,
     get_current_positions,
@@ -291,10 +291,9 @@ class Hyperdrive:
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
         addr_to_username = get_addr_to_username(self.chain.db_session)
-        username_to_user = get_username_to_user(self.chain.db_session)
 
         # Get corresponding usernames
-        usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
+        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
         out = df.copy()
         # Weird pandas type error
         out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore

@@ -15,7 +15,7 @@ from web3.types import EventData
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
-from .schema import CheckpointInfo, PoolConfig, PoolInfo
+from .schema import PoolConfig, PoolInfo
 
 
 def _convert_object_hexbytes_to_strings(obj: Any) -> Any:

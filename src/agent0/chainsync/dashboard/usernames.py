@@ -7,16 +7,13 @@ from typing import overload
 import pandas as pd
 
 
-def build_user_mapping(
-    addresses: pd.Series, addr_to_username: pd.DataFrame, username_to_user: pd.DataFrame
-) -> pd.DataFrame:
+def build_user_mapping(addresses: pd.Series, addr_to_username: pd.DataFrame) -> pd.DataFrame:
     """Given a pd.Series of wallet addresses, we build a corresponding dataframe that contains
     the mapping between that wallet address and any additional aliases that address may have.
     Specifically, the output dataframe contains the following columns:
         address: The original wallet address
         abbr_address: The wallet address abbreviated (e.g., 0x0000...0000)
         username: The one-to-one mapped username for that address gathered from the `addr_to_username` postgres table
-        user: The many username to one user gathered from the `username_to_user` postgres table
         format_name: A formatted name for labels combining username with abbr_address
 
     If the address doesn't exist in the lookup, the username and user will reflect the abbr_address.
@@ -27,13 +24,11 @@ def build_user_mapping(
         The list of addresses to build the user map for.
     addr_to_username: pd.DataFrame
         The mapping of addresses to username returned from `get_addr_to_username`.
-    username_to_user: pd.DataFrame
-        The mapping of usernames to user returned from `get_username_to_user`.
 
     Returns
     -------
     pd.Dataframe
-        A dataframe with 5 columns (address, abbr_address, username, user, format_name)
+        A dataframe with 5 columns (address, abbr_address, username, format_name)
     """
     # Create dataframe from input
     out = addresses.to_frame().copy()
@@ -41,10 +36,8 @@ def build_user_mapping(
     out["abbr_address"] = abbreviate_address(out["address"])
 
     out = out.merge(addr_to_username, how="left", left_on="address", right_on="address")
-    out = out.merge(username_to_user, how="left", left_on="username", right_on="username")
     # Fill user/username with abbr_username if address doesn't exist in the lookup
     out["username"] = out["username"].fillna(out["abbr_address"])
-    out["user"] = out["user"].fillna(out["username"])
 
     # Generate formatted name
     # TODO there is a case where the format name is not unique

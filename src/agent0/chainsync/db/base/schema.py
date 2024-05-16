@@ -29,17 +29,3 @@ class AddrToUsername(Base):
     """The wallet address"""
     username: Mapped[str] = mapped_column(String, index=True)
     """The logical username"""
-
-
-class UsernameToUser(Base):
-    """Maps a per wallet username to a user. This mapping should be many usernames to one user.
-    The primary usecase is to map multiple usernames to one user,
-    e.g., Sheng Lundquist (click) and slundquist (bots) -> Sheng Lundquist
-    """
-
-    __tablename__ = "username_to_user"
-
-    username: Mapped[str] = mapped_column(String, primary_key=True)
-    """The logical username."""
-    user: Mapped[str] = mapped_column(String, index=True)
-    """The user."""
