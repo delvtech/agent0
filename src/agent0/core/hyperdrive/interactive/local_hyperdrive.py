@@ -269,7 +269,7 @@ class LocalHyperdrive(Hyperdrive):
         """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
         return hash((self.chain.rpc_uri, self.hyperdrive_address))
 
-    def __eq__(self, other: LocalHyperdrive):
+    def __eq__(self, other):
         return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
             other.chain.rpc_uri,
             other.hyperdrive_address,

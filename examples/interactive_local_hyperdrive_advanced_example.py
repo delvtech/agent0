@@ -73,7 +73,7 @@ interactive_hyperdrive.set_variable_rate(FixedPoint("0.10"))
 
 # %%
 # Runs the dashboard in blocking mode, which waits for a keyboard press to exit the dashboard
-print(interactive_hyperdrive.run_dashboard(blocking=True))
+print(chain.run_dashboard(blocking=True))
 
 # %%
 # cleanup resources
