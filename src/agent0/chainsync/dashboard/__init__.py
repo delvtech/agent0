@@ -1,12 +1,6 @@
 """Dashboard utilities"""
 
 from .build_dashboard_dfs import build_pool_dashboard, build_wallet_dashboard
-from .build_fixed_rate import build_fixed_rate
-from .build_leaderboard import build_total_leaderboard
-from .build_ohlcv import build_ohlcv
-from .build_outstanding_positions import build_outstanding_positions
-from .build_ticker import build_pool_ticker
-from .build_variable_rate import build_variable_rate
 from .plot_fixed_rate import plot_rates
 from .plot_ohlcv import plot_ohlcv
 from .plot_outstanding_positions import plot_outstanding_positions
