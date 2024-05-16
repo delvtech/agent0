@@ -348,6 +348,9 @@ def _check_lp_share_price(
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
 
+        # FIXME raising error for pausing
+        raise RuntimeError
+
     return InvariantCheckResults(failed, exception_message, exception_data)
 
 

@@ -10,6 +10,8 @@ from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_local_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
+import time
+
 
 def main() -> None:
     """Runs local fuzz bots."""
@@ -20,7 +22,7 @@ def main() -> None:
     rng_seed = random.randint(0, 10000000)
     rng = np.random.default_rng(rng_seed)
 
-    local_chain_config = LocalChain.Config(chain_port=11111, db_port=22222, block_timestamp_interval=12)
+    local_chain_config = LocalChain.Config(chain_port=8545, db_port=22222, block_timestamp_interval=12)
 
     while True:
         # Build interactive local hyperdrive
@@ -33,17 +35,23 @@ def main() -> None:
         hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
 
         # TODO submit multiple transactions per block
-        run_local_fuzz_bots(
-            hyperdrive_pool,
-            check_invariance=True,
-            raise_error_on_failed_invariance_checks=False,
-            raise_error_on_crash=False,
-            log_to_rollbar=log_to_rollbar,
-            run_async=False,
-            random_advance_time=True,
-            random_variable_rate=True,
-            num_iterations=3000,
-        )
+        try:
+            run_local_fuzz_bots(
+                hyperdrive_pool,
+                check_invariance=True,
+                raise_error_on_failed_invariance_checks=False,
+                raise_error_on_crash=False,
+                log_to_rollbar=log_to_rollbar,
+                run_async=False,
+                random_advance_time=True,
+                random_variable_rate=True,
+                invariance_test_epsilon = 1e-3,
+                num_iterations=3000,
+            )
+        except RuntimeError:
+            print("Sleeping")
+            time.sleep(100000000)
+
 
         chain.cleanup()
 
