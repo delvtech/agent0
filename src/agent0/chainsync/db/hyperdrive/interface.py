@@ -306,7 +306,7 @@ def get_current_positions(
 # Chain To Data Ingestion Interface
 
 
-def get_pool_config(session: Session, hyperdrive_address: str | None = None, coerce_float=True) -> pd.DataFrame:
+def get_pool_config(session: Session, hyperdrive_address: str | None = None, coerce_float=False) -> pd.DataFrame:
     """Get all pool config and returns a pandas dataframe.
 
     Arguments
