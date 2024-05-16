@@ -278,6 +278,8 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     check_data: dict[str, Any]
         The trade data to check.
     """
+    # pylint: disable=too-many-statements
+
     failed = False
     exception_message: list[str] = ["Fuzz Profit Check Invariant Check"]
     exception_data: dict[str, Any] = {}
