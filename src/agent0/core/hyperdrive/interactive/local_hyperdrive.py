@@ -22,7 +22,6 @@ from IPython.display import IFrame
 from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     get_checkpoint_info,
-    get_pool_analysis,
     get_pool_config,
     get_pool_info,
     get_position_snapshot,
@@ -493,7 +492,7 @@ class LocalHyperdrive(Hyperdrive):
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
 
-    def get_pool_info(self, add_analysis_columns: bool = True, coerce_float: bool = False) -> pd.DataFrame:
+    def get_pool_info(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 
         Arguments
@@ -509,9 +508,6 @@ class LocalHyperdrive(Hyperdrive):
             A pandas dataframe that consists of the pool info per block.
         """
         pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
-        if add_analysis_columns:
-            pool_analysis = get_pool_analysis(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
-            pool_info = pool_info.merge(pool_analysis, how="left", on=["hyperdrive_address", "block_number"])
         return pool_info
 
     def get_checkpoint_info(self, coerce_float: bool = False) -> pd.DataFrame:

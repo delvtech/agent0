@@ -124,7 +124,7 @@ class PoolInfo(Base):
     variable_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     vault_shares: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
     spot_price: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
-    spot_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
+    fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
 class TradeEvent(Base):

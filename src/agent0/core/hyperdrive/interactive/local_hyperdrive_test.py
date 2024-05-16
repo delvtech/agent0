@@ -1,7 +1,7 @@
 """Tests interactive hyperdrive end to end."""
 
-import datetime
 import logging
+from datetime import timedelta
 from decimal import Decimal
 from typing import Type
 
@@ -38,7 +38,8 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
     # Test against pool positions
     positions_df = in_hyperdrive.get_positions(coerce_float=False)
     # Filter for wallet
-    positions_df = positions_df[positions_df["wallet_address"] == agent.checksum_address]
+    # We reset indices here to match indices with agent positions
+    positions_df = positions_df[positions_df["wallet_address"] == agent.checksum_address].reset_index(drop=True)
 
     # Check against agent positions
     agent_positions = agent.get_positions(coerce_float=False)
@@ -324,85 +325,66 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
     # Converting to sets and compare
     db_keys = set(db_pool_config.index)
     expected_keys = set(expected_pool_config.keys())
-    assert db_keys == expected_keys, "Keys in db do not match expected"
+    assert db_keys == expected_keys, "Keys for pool config in db do not match expected"
 
     # Value comparison
     for key, expected_value in expected_pool_config.items():
         assert_val = db_pool_config[key] == expected_value
-        assert assert_val, f"Values do not match for {key} ({db_pool_config[key]} != {expected_value})"
+        assert assert_val, f"Values in pool config do not match for {key} ({db_pool_config[key]} != {expected_value})"
 
     # Pool info comparison
-    db_pool_info: pd.DataFrame = fast_hyperdrive_fixture.get_pool_info(add_analysis_columns=True)
-    expected_pool_info_keys = [
-        # Expected indices
-        "hyperdrive_address",
-        "block_number",
-        "timestamp",
-        "epoch_timestamp",
-        # Pool Info
-        "share_reserves",
-        "share_adjustment",
-        "zombie_base_proceeds",
-        "zombie_share_reserves",
-        "bond_reserves",
-        "lp_total_supply",
-        "vault_share_price",
-        "longs_outstanding",
-        "long_average_maturity_time",
-        "shorts_outstanding",
-        "short_average_maturity_time",
-        "withdrawal_shares_ready_to_withdraw",
-        "withdrawal_shares_proceeds",
-        "lp_share_price",
-        "long_exposure",
-        # Ethpy Interface Added keys
-        "total_supply_withdrawal_shares",
-        "gov_fees_accrued",
-        "hyperdrive_base_balance",
-        "hyperdrive_eth_balance",
-        "variable_rate",
-        "vault_shares",
-        # Pool analysis keys
-        "spot_price",
-        "fixed_rate",
-        "base_buffer",
-    ]
-    # Convert to sets and compare
-    assert set(db_pool_info.columns) == set(expected_pool_info_keys)
-
-    # TODO compare the rest of these values to the interface
-    # TODO remove pool analysis table in favor of just adding into pool info
-
+    db_pool_info: pd.DataFrame = fast_hyperdrive_fixture.get_pool_info()
     # Compare computed analysis columns vs interface
     # Get the latest entry, then get the relevant columns
-    latest_pool_analysis = db_pool_info.iloc[-1][["block_number", "spot_price", "fixed_rate", "base_buffer"]]
+    db_latest_pool_info = db_pool_info.iloc[-1]
 
-    # Compare last value to what hyperdrive interface is reporting
-    interface = fast_hyperdrive_fixture.interface
-    assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
+    pool_state = fast_hyperdrive_fixture.interface.current_pool_state
+    expected_pool_info = {
+        # Expected indices
+        "hyperdrive_address": fast_hyperdrive_fixture.get_hyperdrive_address(),
+        "block_number": pool_state.block_number,
+        # Pandas converts timestamp to pd.Timestamp, so we do the same here
+        "timestamp": pd.Timestamp(pool_state.block_time, unit="s"),
+        "epoch_timestamp": pool_state.block_time,
+        # Pool Info
+        "share_reserves": pool_state.pool_info.share_reserves,
+        "share_adjustment": pool_state.pool_info.share_adjustment,
+        "zombie_base_proceeds": pool_state.pool_info.zombie_base_proceeds,
+        "zombie_share_reserves": pool_state.pool_info.zombie_share_reserves,
+        "bond_reserves": pool_state.pool_info.bond_reserves,
+        "lp_total_supply": pool_state.pool_info.lp_total_supply,
+        "vault_share_price": pool_state.pool_info.vault_share_price,
+        "longs_outstanding": pool_state.pool_info.longs_outstanding,
+        "long_average_maturity_time": pool_state.pool_info.long_average_maturity_time,
+        "shorts_outstanding": pool_state.pool_info.shorts_outstanding,
+        "short_average_maturity_time": pool_state.pool_info.short_average_maturity_time,
+        "withdrawal_shares_ready_to_withdraw": pool_state.pool_info.withdrawal_shares_ready_to_withdraw,
+        "withdrawal_shares_proceeds": pool_state.pool_info.withdrawal_shares_proceeds,
+        "lp_share_price": pool_state.pool_info.lp_share_price,
+        "long_exposure": pool_state.pool_info.long_exposure,
+        # Ethpy Interface Added keys
+        "total_supply_withdrawal_shares": pool_state.total_supply_withdrawal_shares,
+        "gov_fees_accrued": pool_state.gov_fees_accrued,
+        "hyperdrive_base_balance": pool_state.hyperdrive_base_balance,
+        "hyperdrive_eth_balance": pool_state.hyperdrive_eth_balance,
+        "variable_rate": pool_state.variable_rate,
+        "vault_shares": pool_state.vault_shares,
+        # Pool analysis keys
+        "spot_price": fast_hyperdrive_fixture.interface.calc_spot_price(pool_state),
+        "fixed_rate": fast_hyperdrive_fixture.interface.calc_spot_rate(pool_state),
+    }
+    # Ensure keys match
+    # Converting to sets and compare
+    db_keys = set(db_latest_pool_info.index)
+    expected_keys = set(expected_pool_info.keys())
+    assert db_keys == expected_keys, "Keys for pool info in db do not match expected"
 
-    latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
-    expected_spot_price = interface.calc_spot_price()
-
-    latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-    expected_fixed_rate = interface.calc_spot_rate()
-
-    # Spot price and fixed rate is off by two wei
-    assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("2e-18"))
-    assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("2e-18"))
-
-    latest_pool_analysis = db_pool_info.iloc[-1]
-
-    latest_spot_price = FixedPoint(str(latest_pool_analysis["spot_price"]))
-    expected_spot_price = interface.calc_spot_price()
-
-    latest_fixed_rate = FixedPoint(str(latest_pool_analysis["fixed_rate"]))
-    expected_fixed_rate = interface.calc_spot_rate()
-
-    assert latest_pool_analysis["block_number"] == interface.current_pool_state.block_number
-    # Spot price and fixed rate is off by two wei
-    assert isclose(latest_spot_price, expected_spot_price, abs_tol=FixedPoint("2e-18"))
-    assert isclose(latest_fixed_rate, expected_fixed_rate, abs_tol=FixedPoint("2e-18"))
+    # Value comparison
+    for key, expected_value in expected_pool_info.items():
+        assert_val = db_latest_pool_info[key] == expected_value
+        assert (
+            assert_val
+        ), f"Values in pool info do not match for {key} ({db_latest_pool_info[key]} != {expected_value})"
 
     # Compare events in table
     trade_events = agent.get_trade_events(all_token_deltas=False)
@@ -502,7 +484,7 @@ def test_advance_time(fast_chain_fixture: LocalChain):
     fast_chain_fixture.advance_time(3600, create_checkpoints=False)
     current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Testing passing in timedelta
-    fast_chain_fixture.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+    fast_chain_fixture.advance_time(timedelta(weeks=1), create_checkpoints=False)
     current_time_3 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
 
     assert current_time_2 - current_time_1 == 3600
@@ -547,7 +529,7 @@ def test_advance_time_with_checkpoints(fast_chain_fixture: LocalChain):
 
     # Advance time with multiple checkpoints
     pre_time = post_time
-    checkpoint_events = fast_chain_fixture.advance_time(datetime.timedelta(hours=3), create_checkpoints=True)
+    checkpoint_events = fast_chain_fixture.advance_time(timedelta(hours=3), create_checkpoints=True)
     post_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
     # Advancing time equal to checkpoint duration results in time being off by few second
     assert abs(post_time - pre_time - 3600 * 3) <= min_time_error
@@ -1107,7 +1089,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(fast_chain_fixture
         hyperdrive_interface.get_standardized_variable_rate(time_range=604800)  # Get var rate for 1 week
 
     # Advance time by 8 days, past time_range
-    fast_chain_fixture.advance_time(datetime.timedelta(days=8), create_checkpoints=True)
+    fast_chain_fixture.advance_time(timedelta(days=8), create_checkpoints=True)
 
     standardized_variable_rate = hyperdrive_interface.get_standardized_variable_rate(time_range=604800)
 
