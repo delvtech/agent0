@@ -35,6 +35,8 @@ def run_invariant_checks(
     - the expected total shares equals the hyperdrive balance in the vault contract
     - the pool has more than the minimum share reserves
     - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
+    - present value is greater than idle shares
+    - the lp share price doesn't exceed an amount from block to block
     - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
     - initializer's lp pnl should always be at or above the variable rate.
 
