@@ -28,7 +28,7 @@ def build_user_mapping(addresses: pd.Series, addr_to_username: pd.DataFrame) -> 
     Returns
     -------
     pd.Dataframe
-        A dataframe with 5 columns (address, abbr_address, username, format_name)
+        A dataframe with 4 columns (address, abbr_address, username, format_name)
     """
     # Create dataframe from input
     out = addresses.to_frame().copy()
