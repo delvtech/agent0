@@ -88,3 +88,8 @@ for i in range(10):
 
 agent_positions = agent0.get_positions()
 agent_trade_events = agent0.get_trade_events()
+
+# %%
+# cleanup
+local_chain.cleanup()
+chain.cleanup()
