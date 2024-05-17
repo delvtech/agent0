@@ -36,25 +36,29 @@ from ._mock_contract import (
     _calc_bonds_given_shares_and_rate,
     _calc_bonds_out_given_shares_in_down,
     _calc_checkpoint_id,
+    _calc_checkpoint_timestamp,
     _calc_close_long,
     _calc_close_short,
     _calc_effective_share_reserves,
-    _calc_fees_out_given_bonds_in,
-    _calc_fees_out_given_shares_in,
+    _calc_idle_share_reserves_in_base,
     _calc_max_long,
     _calc_max_short,
+    _calc_max_spot_price,
     _calc_open_long,
     _calc_open_short,
+    _calc_pool_deltas_after_open_long,
     _calc_pool_deltas_after_open_short,
     _calc_position_duration_in_years,
     _calc_present_value,
     _calc_shares_in_given_bonds_out_down,
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
+    _calc_solvency,
     _calc_spot_price,
     _calc_spot_price_after_long,
     _calc_spot_price_after_short,
     _calc_spot_rate,
+    _calc_spot_rate_after_long,
     _calc_targeted_long,
     _calc_time_stretch,
 )
@@ -517,7 +521,7 @@ class HyperdriveReadInterface:
         """Return the pool config position duration as a fraction of a year.
 
         This "annualized" time value is used in some calculations, such as the Fixed APR.
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -552,12 +556,27 @@ class HyperdriveReadInterface:
         """
         return _calc_time_stretch(target_rate, target_position_duration)
 
+    def calc_checkpoint_timestamp(self, time: int | Timestamp) -> Timestamp:
+        """Converts a timestamp to the checkpoint timestamp that it corresponds to.
+
+        Arguments
+        ---------
+        time: int | Timestamp
+            Any timestamp (in seconds) before or at the present.
+
+        Returns
+        -------
+        Timestamp
+            The checkpoint timestamp.
+        """
+        return _calc_checkpoint_timestamp(int(time))
+
     def calc_checkpoint_id(
         self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None
     ) -> Timestamp:
         """Calculate the Checkpoint ID for a given timestamp.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -585,7 +604,7 @@ class HyperdriveReadInterface:
     def calc_spot_rate(self, pool_state: PoolState | None = None) -> FixedPoint:
         r"""Calculate the spot fixed rate for a given pool state.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs. The simulation follows the formula:
 
         .. math::
@@ -609,7 +628,7 @@ class HyperdriveReadInterface:
     def calc_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -627,10 +646,28 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_spot_price(pool_state)
 
+    def calc_max_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
+        """Get the pool's max spot price.
+
+        Arguments
+        ---------
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The pool's maximum achievable spot price.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_max_spot_price(pool_state)
+
     def calc_effective_share_reserves(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the adjusted share reserves for a given Hyperdrive pool.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -648,12 +685,30 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_effective_share_reserves(pool_state)
 
+    def calc_idle_share_reserves_in_base(self, pool_state: PoolState) -> FixedPoint:
+        """Calculates the idle share reserves in base of the pool.
+
+        Arguments
+        ---------
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The pool's idle share reserves in base.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_idle_share_reserves_in_base(pool_state)
+
     def calc_bonds_given_shares_and_rate(
         self, target_rate: FixedPoint, target_shares: FixedPoint | None = None, pool_state: PoolState | None = None
     ) -> FixedPoint:
         r"""Return the bond reserves for the market share reserves and a given fixed rate.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs. The calculation is based on the formula:
 
         .. math::
@@ -687,7 +742,7 @@ class HyperdriveReadInterface:
     def calc_open_long(self, base_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the long amount that will be opened for a given base amount after fees.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -707,12 +762,34 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_open_long(pool_state, base_amount)
 
+    def calc_pool_deltas_after_open_long(
+        self, base_amount: FixedPoint, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the bond deltas to be applied to the pool after opening a long.
+
+        Arguments
+        ---------
+        base_amount: FixedPoint
+            The amount of base used to open a long.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The amount of bonds to remove from the pool reserves.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_pool_deltas_after_open_long(pool_state, base_amount)
+
     def calc_spot_price_after_long(
         self, base_amount: FixedPoint, bond_amount: FixedPoint | None = None, pool_state: PoolState | None = None
     ) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool after a long is opened for `base_amount`.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -735,10 +812,38 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_spot_price_after_long(pool_state, base_amount, bond_amount)
 
+    def calc_spot_rate_after_long(
+        self, base_amount: FixedPoint, bond_amount: FixedPoint | None = None, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the spot rate for a given Hyperdrive pool after a long is opened for `base_amount`.
+
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
+        to simulate the contract outputs.
+
+        Arguments
+        ---------
+        base_amount: FixedPoint
+            The amount of base provided for the long.
+        bond_amount: FixedPoint | None, optional
+            The amount of bonds that would be purchased by the long.
+            The default is to use whatever is returned by `calc_open_long(base_amount)`.
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            The spot rate for the Hyperdrive pool state.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_spot_rate_after_long(pool_state, base_amount, bond_amount)
+
     def calc_max_long(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable long for the given Hyperdrive pool and agent budget.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -820,7 +925,7 @@ class HyperdriveReadInterface:
     def calc_open_short(self, bond_amount: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the amount of base the trader will need to deposit for a short of a given size, after fees.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -867,7 +972,7 @@ class HyperdriveReadInterface:
     ) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool after a short is opened for `base_amount`.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -893,7 +998,7 @@ class HyperdriveReadInterface:
     def calc_max_short(self, budget: FixedPoint, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the maximum allowable short for the given Hyperdrive pool and agent budget.
 
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -968,13 +1073,31 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_present_value(pool_state, pool_state.block_time)
 
+    def calc_solvency(self, pool_state: PoolState | None = None) -> FixedPoint:
+        """Calculate the pool's solvency.
+
+        Arguments
+        ---------
+        pool_state: PoolState, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            solvency = share_reserves - long_exposure / vault_share_price - minimum_share_reserves
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_solvency(pool_state, pool_state.block_time)
+
     def calc_bonds_out_given_shares_in_down(
         self, amount_in: FixedPoint, pool_state: PoolState | None = None
     ) -> FixedPoint:
         """Calculate the amount of bonds a user will receive from the pool by providing a specified amount of shares.
 
         We underestimate the amount of bonds. The amount returned is before fees are applied.
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -1000,7 +1123,7 @@ class HyperdriveReadInterface:
         """Calculate the amount of shares a user must provide the pool to receive a specified amount of bonds.
 
         We overestimate the amount of shares in. The amount returned is before fees are applied.
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -1026,7 +1149,7 @@ class HyperdriveReadInterface:
         """Calculate the amount of shares a user must provide the pool to receive a specified amount of bonds.
 
         We underestimate the amount of shares in. The amount returned is before fees are applied.
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -1052,7 +1175,7 @@ class HyperdriveReadInterface:
         """Calculate the amount of shares a user will receive from the pool by providing a specified amount of bonds.
 
         We underestimate the amount of shares out. The amount returned is before fees are applied.
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
+        The function does not perform contract calls, but instead relies on the Hyperdrive-rust api
         to simulate the contract outputs.
 
         Arguments
@@ -1071,81 +1194,3 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_shares_out_given_bonds_in_down(pool_state, amount_in)
-
-    def calc_fees_out_given_bonds_in(
-        self, bonds_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
-    ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        r"""Calculate the fees that would be deducted for an amount of bonds entering the pool.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs. It implements the formula:
-
-        .. math::
-            \begin{align*}
-                &\text{curve_fee} = \frac{(1 - p) * \phi_{\text{curve}} * d_y * t}{c}
-                &\text{gov_fee} = \text{curve_fee} * \phi_{\text{gov}}
-                &\text{flat_fee} = \frac{d_y * (1 - t) * \phi_{\text{flat}}}{c}
-            \end{align*}
-
-        Arguments
-        ---------
-        bonds_in: FixedPoint
-            The amount of bonds being added to the pool.
-        maturity_time: int, optional
-            The maturity timestamp of the open position, in epoch seconds.
-        pool_state: PoolState, optional
-            The state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
-        Returns
-        -------
-        tuple[FixedPoint, FixedPoint, FixedPoint]
-            curve_fee: FixedPoint
-                Curve fee, in shares.
-            flat_fee: FixedPoint
-                Flat fee, in shares.
-            gov_fee: FixedPoint
-                Governance fee, in shares.
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_fees_out_given_bonds_in(pool_state, bonds_in, maturity_time)
-
-    def calc_fees_out_given_shares_in(
-        self, shares_in: FixedPoint, maturity_time: int | None = None, pool_state: PoolState | None = None
-    ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
-        r"""Calculate the fees that go to the LPs and governance.
-
-        The function does not perform contract calls, but instead relies on the Hyperdrive-rust sdk
-        to simulate the contract outputs. It implements the formula:
-
-        .. math::
-            \begin{align*}
-                &\text{curve_fee} = ((1 / p) - 1) * \phi_{\text{curve}} * c * dz
-                &\text{gov_fee} = \text{shares} * \phi_{\text{gov}}
-                &\text{flat_fee} = \frac{d_y * (1 - t) * \phi_{\text{flat}}}{c}
-            \end{align*}
-
-        Arguments
-        ---------
-        shares_in: FixedPoint
-            The amount of shares being added to the pool.
-        maturity_time: int, optional
-            The maturity timestamp of the open position, in epoch seconds.
-        pool_state: PoolState, optional
-            The state of the pool, which includes block details, pool config, and pool info.
-            If not given, use the current pool state.
-
-        Returns
-        -------
-        tuple[FixedPoint, FixedPoint, FixedPoint]
-            curve_fee: FixedPoint
-                Curve fee, in shares.
-            flat_fee: FixedPoint
-                Flat fee, in shares.
-            gov_fee: FixedPoint
-                Governance fee, in shares.
-        """
-        if pool_state is None:
-            pool_state = self.current_pool_state
-        return _calc_fees_out_given_shares_in(pool_state, shares_in, maturity_time)
