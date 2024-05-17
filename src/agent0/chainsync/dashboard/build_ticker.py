@@ -42,7 +42,7 @@ def build_pool_ticker(
         "token_id": "Token",
         "token_delta": "Token Change",
         "base_delta": "Base Change",
-        "as_base": "As Base",
+        "vault_share_delta": "Vault Share Change",
     }
     trade_events = trade_events[list(rename_dict.keys())].rename(columns=rename_dict)
 
@@ -105,7 +105,7 @@ def build_wallet_ticker(
         "token_id": "Token",
         "token_delta": "Token Change",
         "base_delta": "Base Change",
-        "as_base": "As Base",
+        "vault_share_delta": "Vault Share Change",
     }
     trade_events = trade_events[list(rename_dict.keys())].rename(columns=rename_dict)
 
