@@ -172,13 +172,13 @@ class Chain:
         try:
             if self.db_session is not None:
                 self.db_session.close()
-        except Exception as e:  # pylint: disable=broad-except
-            print("Error in cleanup: %s" % repr(e))
+        except Exception:  # pylint: disable=broad-except
+            pass
 
         try:
             self.postgres_container.kill()
-        except Exception as e:  # pylint: disable=broad-except
-            print("Error in cleanup: %s" % repr(e))
+        except Exception:  # pylint: disable=broad-except
+            pass
 
     # def __del__(self):
     #    """General cleanup of resources of interactive hyperdrive."""

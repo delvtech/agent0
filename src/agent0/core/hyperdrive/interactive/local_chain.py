@@ -126,15 +126,15 @@ class LocalChain(Chain):
         try:
             if self.anvil_process is not None:
                 self.anvil_process.kill()
-        except Exception as e:  # pylint: disable=broad-except
-            print("Error in cleanup: %s" % repr(e))
+        except Exception:  # pylint: disable=broad-except
+            pass
 
         try:
             if self.dashboard_subprocess is not None:
                 self.dashboard_subprocess.kill()
                 self.dashboard_subprocess = None
-        except Exception as e:  # pylint: disable=broad-except
-            print("Error in cleanup: %s" % repr(e))
+        except Exception:  # pylint: disable=broad-except
+            pass
 
         super().cleanup()
 
