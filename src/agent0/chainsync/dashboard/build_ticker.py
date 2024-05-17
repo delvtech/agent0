@@ -5,10 +5,10 @@ import pandas as pd
 from .usernames import abbreviate_address, map_addresses
 
 
-def build_pool_ticker(
+def build_ticker_for_pool_page(
     trade_events: pd.DataFrame, user_map: pd.DataFrame, block_to_timestamp: pd.DataFrame
 ) -> pd.DataFrame:
-    """Show recent trades wrt a pool.
+    """Builds the ticker dataframe for the pool page.
 
     Arguments
     ---------
@@ -48,18 +48,16 @@ def build_pool_ticker(
 
     # Shorten wallet address string
     trade_events["Wallet"] = mapped_addrs["abbr_address"]
-
-    # Sort latest first
     return trade_events
 
 
-def build_wallet_ticker(
+def build_ticker_for_wallet_page(
     trade_events: pd.DataFrame,
     user_map: pd.DataFrame,
     hyperdrive_addr_map: pd.DataFrame,
     block_to_timestamp: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Show recent trades wrt a wallet.
+    """Builds the ticker dataframe for the wallet page.
 
     Arguments
     ---------

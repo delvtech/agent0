@@ -10,7 +10,7 @@ def build_wallet_positions(
     user_map: pd.DataFrame,
     hyperdrive_addr_map: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Show recent trades wrt a wallet.
+    """Builds the positions dataframe for the wallet page.
 
     Arguments
     ---------
@@ -54,7 +54,6 @@ def build_wallet_positions(
     positions_snapshot["Wallet"] = mapped_addrs["abbr_address"]
     positions_snapshot["Hyperdrive Address"] = abbreviate_address(positions_snapshot["Hyperdrive Address"])
 
-    # Sort latest first
     return positions_snapshot
 
 

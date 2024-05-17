@@ -1,4 +1,4 @@
-"""Example script showing example dashboard hyperdrive."""
+"""Example script to deploy a hyperdrive dashboard."""
 
 # pylint: disable=pointless-statement
 import time

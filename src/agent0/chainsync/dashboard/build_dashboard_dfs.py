@@ -21,7 +21,7 @@ from .build_fixed_rate import build_fixed_rate
 from .build_leaderboard import build_per_pool_leaderboard, build_total_leaderboard
 from .build_ohlcv import build_ohlcv
 from .build_outstanding_positions import build_outstanding_positions
-from .build_ticker import build_pool_ticker, build_wallet_ticker
+from .build_ticker import build_ticker_for_pool_page, build_ticker_for_wallet_page
 from .build_variable_rate import build_variable_rate
 from .build_wallet_positions import (
     build_pnl_over_time,
@@ -87,12 +87,12 @@ def build_pool_dashboard(
         session,
         hyperdrive_address=hyperdrive_address,
         all_token_deltas=False,
-        sort_ascending=False,
+        sort_ascending=False,  # We want the latest first in a ticker
         query_limit=max_ticker_rows,
         coerce_float=False,
     )
     # Adds user lookup to the ticker
-    out_dfs["display_ticker"] = build_pool_ticker(trade_events, user_map, block_to_timestamp)
+    out_dfs["display_ticker"] = build_ticker_for_pool_page(trade_events, user_map, block_to_timestamp)
 
     # get wallet pnl and calculate leaderboard
     # We use an exact query block since the position snapshot table
@@ -176,7 +176,9 @@ def build_wallet_dashboard(
         coerce_float=False,
     )
     # Adds user lookup to the ticker
-    out_dfs["display_ticker"] = build_wallet_ticker(trade_events, user_map, hyperdrive_addr_mapping, block_to_timestamp)
+    out_dfs["display_ticker"] = build_ticker_for_wallet_page(
+        trade_events, user_map, hyperdrive_addr_mapping, block_to_timestamp
+    )
 
     # get wallet pnl and calculate leaderboard
     # We use an exact query block since the position snapshot table

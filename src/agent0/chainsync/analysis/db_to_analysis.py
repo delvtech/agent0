@@ -31,9 +31,9 @@ def db_to_analysis(
     ---------
     db_session: Session
         The initialized db session.
-    interfaces: list[HyperdriveReadInterface] | None, optional
+    interfaces: list[HyperdriveReadInterface]
         A collection of Hyperdrive interface objects, each connected to a pool.
-    calc_pnl: bool
+    calc_pnl: bool, optional
         Whether to calculate pnl. Defaults to True.
     """
 

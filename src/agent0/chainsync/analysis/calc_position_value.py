@@ -18,23 +18,23 @@ def calc_single_closeout(
     hyperdrive_state: PoolState,
     checkpoint_share_prices: pd.Series,
 ) -> Decimal:
-    """Calculate the closeout pnl for a single position.
+    """Calculate the closeout value for a single position.
 
     Arguments
     ---------
     position: pd.DataFrame
-        The position to calculate the closeout pnl for (one row in current_wallet)
+        The position to calculate the closeout value for (one row in current_wallet).
     interface: HyperdriveReadInterface
-        The hyperdrive read interface
+        The hyperdrive read interface.
     hyperdrive_state: PoolState
-        The hyperdrive pool state
+        The hyperdrive pool state.
     checkpoint_share_prices: pd.Series
-        A series with the index as checkpoint time and the value as the share prices
+        A series with the index as checkpoint time and the value as the share prices.
 
     Returns
     -------
     Decimal
-        The closeout position value
+        The closeout position value.
     """
     # If no balance, value is 0
     if position["token_balance"] == 0:
@@ -118,14 +118,14 @@ def calc_closeout_value(
     checkpoint_info: pd.DataFrame
         A dataframe resulting from `get_checkpoint_info` that describes all checkpoints.
     interface: HyperdriveReadInterface
-        The hyperdrive read interface
+        The hyperdrive read interface.
     block_number: int
-        The block number to calculate closeout value on
+        The block number to calculate closeout value on.
 
     Returns
     -------
     pd.Series
-        A series matching the current_wallet input that contains the values of each position
+        A series matching the current_wallet input that contains the values of each position.
     """
 
     # Sanity check, the block number across all current wallets should be identical
