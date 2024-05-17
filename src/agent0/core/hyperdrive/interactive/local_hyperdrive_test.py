@@ -114,6 +114,8 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
 @pytest.mark.anvil
 def test_funding_and_trades(fast_chain_fixture: LocalChain):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
+    # TODO DRY this up, e.g., doing the same calls while swapping the agent.
+
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = LocalHyperdrive.Config(
@@ -122,114 +124,176 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
         position_duration=60 * 60 * 24 * 365,  # 1 year
     )
     # Launches 2 pools on the same local chain
-    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
-    interactive_hyperdrive_2 = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+    interactive_hyperdrive_0 = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+    interactive_hyperdrive_1 = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
     # Generate funded trading agents from the interactive object
     # Names are reflected on output data frames and plots later
-    hyperdrive_agent0 = interactive_hyperdrive.init_agent(base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice")
-    hyperdrive_agent1 = interactive_hyperdrive_2.init_agent(base=FixedPoint(222_222), eth=FixedPoint(222), name="bob")
+    hyperdrive_agent_0 = interactive_hyperdrive_0.init_agent(
+        base=FixedPoint(1_111_111), eth=FixedPoint(111), name="alice"
+    )
+    hyperdrive_agent_1 = interactive_hyperdrive_1.init_agent(base=FixedPoint(222_222), eth=FixedPoint(222), name="bob")
     # Omission of name defaults to wallet address
-    hyperdrive_agent2 = interactive_hyperdrive.init_agent(eth=FixedPoint(10))
+    hyperdrive_agent_2 = interactive_hyperdrive_0.init_agent(eth=FixedPoint(10))
 
     # Add funds to an agent
-    hyperdrive_agent2.add_funds(base=FixedPoint(333_333), eth=FixedPoint(333))
+    hyperdrive_agent_2.add_funds(base=FixedPoint(333_333), eth=FixedPoint(333))
 
     # Ensure agent wallet have expected balances
-    assert (hyperdrive_agent0.get_wallet().balance.amount) == FixedPoint(1_111_111)
-    assert (hyperdrive_agent1.get_wallet().balance.amount) == FixedPoint(222_222)
-    assert (hyperdrive_agent2.get_wallet().balance.amount) == FixedPoint(333_333)
+    assert (hyperdrive_agent_0.get_wallet().balance.amount) == FixedPoint(1_111_111)
+    assert (hyperdrive_agent_1.get_wallet().balance.amount) == FixedPoint(222_222)
+    assert (hyperdrive_agent_2.get_wallet().balance.amount) == FixedPoint(333_333)
     # Ensure chain balances are as expected
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.agent)
+    ) = interactive_hyperdrive_0.interface.get_eth_base_balances(hyperdrive_agent_0.agent)
     assert chain_base_balance == FixedPoint(1_111_111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(111) - chain_eth_balance) < FixedPoint("0.0001")
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_hyperdrive_2.interface.get_eth_base_balances(hyperdrive_agent1.agent)
+    ) = interactive_hyperdrive_1.interface.get_eth_base_balances(hyperdrive_agent_1.agent)
     assert chain_base_balance == FixedPoint(222_222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0001")
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent2.agent)
+    ) = interactive_hyperdrive_0.interface.get_eth_base_balances(hyperdrive_agent_2.agent)
     assert chain_base_balance == FixedPoint(333_333)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     # Since we initialized without parameters, and the default is 10 eth. We then added 333 eth.
     assert (FixedPoint(343) - chain_eth_balance) < FixedPoint("0.0001")
 
     # Test trades
+    # We swap back and forth between the two pools, but do comparisons
+    # between both pools to ensure bookkeeping is correct on both pools.
+
     # Add liquidity to 111_111 total
-    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event.as_base
-    assert add_liquidity_event.amount == FixedPoint(111_111)
-    assert hyperdrive_agent0.get_wallet().lp_tokens == add_liquidity_event.lp_amount
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    add_liquidity_event_0 = hyperdrive_agent_0.add_liquidity(base=FixedPoint(111_111))
+    assert add_liquidity_event_0.as_base
+    assert add_liquidity_event_0.amount == FixedPoint(111_111)
+    assert hyperdrive_agent_0.get_wallet().lp_tokens == add_liquidity_event_0.lp_amount
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+    # TODO run this test once hyperdrive_agent0 gets decoupled from the pool
+    # _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent0)
+
+    add_liquidity_event_1 = hyperdrive_agent_1.add_liquidity(base=FixedPoint(111_111))
+    assert add_liquidity_event_1.as_base
+    assert add_liquidity_event_1.amount == FixedPoint(111_111)
+    assert hyperdrive_agent_1.get_wallet().lp_tokens == add_liquidity_event_1.lp_amount
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # Open long
-    open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(22_222))
-    assert open_long_event.as_base
-    assert open_long_event.amount == FixedPoint(22_222)
-    agent0_longs = list(hyperdrive_agent0.get_wallet().longs.values())
-    assert len(agent0_longs) == 1
-    assert agent0_longs[0].balance == open_long_event.bond_amount
-    assert agent0_longs[0].maturity_time == open_long_event.maturity_time
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    open_long_event_0 = hyperdrive_agent_0.open_long(base=FixedPoint(22_222))
+    assert open_long_event_0.as_base
+    assert open_long_event_0.amount == FixedPoint(22_222)
+    agent_0_longs = list(hyperdrive_agent_0.get_wallet().longs.values())
+    assert len(agent_0_longs) == 1
+    assert agent_0_longs[0].balance == open_long_event_0.bond_amount
+    assert agent_0_longs[0].maturity_time == open_long_event_0.maturity_time
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    open_long_event_1 = hyperdrive_agent_1.open_long(base=FixedPoint(22_222))
+    assert open_long_event_1.as_base
+    assert open_long_event_1.amount == FixedPoint(22_222)
+    agent_1_longs = list(hyperdrive_agent_1.get_wallet().longs.values())
+    assert len(agent_1_longs) == 1
+    assert agent_1_longs[0].balance == open_long_event_1.bond_amount
+    assert agent_1_longs[0].maturity_time == open_long_event_1.maturity_time
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # Remove liquidity
-    remove_liquidity_event = hyperdrive_agent0.remove_liquidity(shares=add_liquidity_event.lp_amount)
-    assert add_liquidity_event.lp_amount == remove_liquidity_event.lp_amount
-    assert hyperdrive_agent0.get_wallet().lp_tokens == FixedPoint(0)
-    assert hyperdrive_agent0.get_wallet().withdraw_shares == remove_liquidity_event.withdrawal_share_amount
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    remove_liquidity_event_0 = hyperdrive_agent_0.remove_liquidity(shares=add_liquidity_event_0.lp_amount)
+    assert add_liquidity_event_0.lp_amount == remove_liquidity_event_0.lp_amount
+    assert hyperdrive_agent_0.get_wallet().lp_tokens == FixedPoint(0)
+    assert hyperdrive_agent_0.get_wallet().withdraw_shares == remove_liquidity_event_0.withdrawal_share_amount
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    remove_liquidity_event_1 = hyperdrive_agent_1.remove_liquidity(shares=add_liquidity_event_1.lp_amount)
+    assert add_liquidity_event_1.lp_amount == remove_liquidity_event_1.lp_amount
+    assert hyperdrive_agent_1.get_wallet().lp_tokens == FixedPoint(0)
+    assert hyperdrive_agent_1.get_wallet().withdraw_shares == remove_liquidity_event_1.withdrawal_share_amount
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
-    assert remove_liquidity_event.withdrawal_share_amount > 0
+    assert remove_liquidity_event_0.withdrawal_share_amount > 0
+    assert remove_liquidity_event_1.withdrawal_share_amount > 0
 
     # Add liquidity back to ensure we can close positions
-    add_liquidity_event = hyperdrive_agent0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event.as_base
-    assert add_liquidity_event.amount == FixedPoint(111_111)
-    assert hyperdrive_agent0.get_wallet().lp_tokens == add_liquidity_event.lp_amount
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    _ = hyperdrive_agent_0.add_liquidity(base=FixedPoint(111_111))
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    _ = hyperdrive_agent_1.add_liquidity(base=FixedPoint(111_111))
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # Open short
-    open_short_event = hyperdrive_agent0.open_short(bonds=FixedPoint(333))
-    assert open_short_event.bond_amount == FixedPoint(333)
-    agent0_shorts = list(hyperdrive_agent0.get_wallet().shorts.values())
-    assert len(agent0_shorts) == 1
-    assert agent0_shorts[0].balance == open_short_event.bond_amount
-    assert agent0_shorts[0].maturity_time == open_short_event.maturity_time
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    open_short_event_0 = hyperdrive_agent_0.open_short(bonds=FixedPoint(333))
+    assert open_short_event_0.bond_amount == FixedPoint(333)
+    agent_0_shorts = list(hyperdrive_agent_0.get_wallet().shorts.values())
+    assert len(agent_0_shorts) == 1
+    assert agent_0_shorts[0].balance == open_short_event_0.bond_amount
+    assert agent_0_shorts[0].maturity_time == open_short_event_0.maturity_time
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    # Open short
+    open_short_event_1 = hyperdrive_agent_1.open_short(bonds=FixedPoint(333))
+    assert open_short_event_1.bond_amount == FixedPoint(333)
+    agent_1_shorts = list(hyperdrive_agent_1.get_wallet().shorts.values())
+    assert len(agent_1_shorts) == 1
+    assert agent_1_shorts[0].balance == open_short_event_1.bond_amount
+    assert agent_1_shorts[0].maturity_time == open_short_event_1.maturity_time
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # Close long
-    close_long_event = hyperdrive_agent0.close_long(
-        maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+    close_long_event_0 = hyperdrive_agent_0.close_long(
+        maturity_time=open_long_event_0.maturity_time, bonds=open_long_event_0.bond_amount
     )
-    assert open_long_event.bond_amount == close_long_event.bond_amount
-    assert open_long_event.maturity_time == close_long_event.maturity_time
-    assert len(hyperdrive_agent0.get_wallet().longs) == 0
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    assert open_long_event_0.bond_amount == close_long_event_0.bond_amount
+    assert open_long_event_0.maturity_time == close_long_event_0.maturity_time
+    assert len(hyperdrive_agent_0.get_wallet().longs) == 0
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    # Close long
+    close_long_event_1 = hyperdrive_agent_1.close_long(
+        maturity_time=open_long_event_1.maturity_time, bonds=open_long_event_1.bond_amount
+    )
+    assert open_long_event_1.bond_amount == close_long_event_1.bond_amount
+    assert open_long_event_1.maturity_time == close_long_event_1.maturity_time
+    assert len(hyperdrive_agent_1.get_wallet().longs) == 0
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # Close short
-    close_short_event = hyperdrive_agent0.close_short(
-        maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
+    close_short_event_0 = hyperdrive_agent_0.close_short(
+        maturity_time=open_short_event_0.maturity_time, bonds=open_short_event_0.bond_amount
     )
-    assert open_short_event.bond_amount == close_short_event.bond_amount
-    assert open_short_event.maturity_time == close_short_event.maturity_time
-    assert len(hyperdrive_agent0.get_wallet().shorts) == 0
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    assert open_short_event_0.bond_amount == close_short_event_0.bond_amount
+    assert open_short_event_0.maturity_time == close_short_event_0.maturity_time
+    assert len(hyperdrive_agent_0.get_wallet().shorts) == 0
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    # Close short
+    close_short_event_1 = hyperdrive_agent_1.close_short(
+        maturity_time=open_short_event_1.maturity_time, bonds=open_short_event_1.bond_amount
+    )
+    assert open_short_event_1.bond_amount == close_short_event_1.bond_amount
+    assert open_short_event_1.maturity_time == close_short_event_1.maturity_time
+    assert len(hyperdrive_agent_1.get_wallet().shorts) == 0
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
     # Redeem withdrawal shares
-    redeem_event = hyperdrive_agent0.redeem_withdraw_share(shares=remove_liquidity_event.withdrawal_share_amount)
-    assert redeem_event.withdrawal_share_amount == remove_liquidity_event.withdrawal_share_amount
-    assert hyperdrive_agent0.get_wallet().withdraw_shares == FixedPoint(0)
-    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive, hyperdrive_agent0)
+    redeem_event_0 = hyperdrive_agent_0.redeem_withdraw_share(shares=remove_liquidity_event_0.withdrawal_share_amount)
+    assert redeem_event_0.withdrawal_share_amount == remove_liquidity_event_0.withdrawal_share_amount
+    assert hyperdrive_agent_0.get_wallet().withdraw_shares == FixedPoint(0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_0, hyperdrive_agent_0)
+
+    # Redeem withdrawal shares
+    redeem_event_1 = hyperdrive_agent_1.redeem_withdraw_share(shares=remove_liquidity_event_1.withdrawal_share_amount)
+    assert redeem_event_1.withdrawal_share_amount == remove_liquidity_event_1.withdrawal_share_amount
+    assert hyperdrive_agent_1.get_wallet().withdraw_shares == FixedPoint(0)
+    _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent_1)
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
