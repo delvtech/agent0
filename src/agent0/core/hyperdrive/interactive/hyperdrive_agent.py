@@ -40,6 +40,7 @@ class HyperdriveAgent:
 
     def __init__(
         self,
+        name: str | None,
         pool: Hyperdrive,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
@@ -51,6 +52,8 @@ class HyperdriveAgent:
 
         Arguments
         ---------
+        name: str | None
+            The name of the agent. Defaults to the wallet address.
         pool: Hyperdrive
             The pool object that this agent belongs to.
         policy: Type[HyperdriveBasePolicy] | None
@@ -60,8 +63,9 @@ class HyperdriveAgent:
         private_key: str | None, optional
             The private key of the associated account. Default is auto-generated.
         """
+        # pylint: disable=too-many-arguments
         self._pool = pool
-        self.agent = self._pool._init_agent(policy, policy_config, private_key)
+        self.agent = self._pool._init_agent(name, policy, policy_config, private_key)
 
     @property
     def checksum_address(self) -> ChecksumAddress:
@@ -240,8 +244,55 @@ class HyperdriveAgent:
         """
         self._pool._set_max_approval(self.agent)
 
-    def get_positions(self) -> HyperdriveWallet:
+    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+        """Returns all of the agent's positions across all hyperdrive pools.
+
+        Arguments
+        ---------
+        show_closed_positions: bool, optional
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+        coerce_float: bool, optional
+            Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
+
+        Returns
+        -------
+        pd.DataFrame
+            The agent's positions across all hyperdrive pools.
+        """
+        return self._pool._get_positions(
+            self.agent, show_closed_positions=show_closed_positions, coerce_float=coerce_float
+        )
+
+    def get_wallet(self) -> HyperdriveWallet:
+        """Returns the wallet object for the agent for the given hyperdrive pool.
+
+        TODO this function will eventually use the active pool or take a pool as an argument
+        once agent gets detached from the pool.
+
+        Returns
+        -------
+        HyperdriveWallet
+            Returns the HyperdriveWallet object for the given pool.
+        """
+
+        # Update the db with this wallet
+        return self._pool._get_wallet(self.agent)
+
+    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Returns the agent's current wallet.
+
+        Arguments
+        ---------
+        all_token_deltas: bool, optional
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
+        coerce_float: bool, optional
+            If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
@@ -250,16 +301,4 @@ class HyperdriveAgent:
         """
 
         # Update the db with this wallet
-        return self._pool._get_positions(self.agent)
-
-    def get_trade_events(self) -> pd.DataFrame:
-        """Returns the agent's current wallet.
-
-        Returns
-        -------
-        HyperdriveWallet
-            The agent's current wallet.
-        """
-
-        # Update the db with this wallet
-        return self._pool._get_trade_events(self.agent)
+        return self._pool._get_trade_events(self.agent, all_token_deltas, coerce_float=coerce_float)

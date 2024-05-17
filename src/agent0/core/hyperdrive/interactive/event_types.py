@@ -181,11 +181,11 @@ class CreateCheckpoint:
     """Dataclass mirroring CreateCheckpoint event in Hyperdrive."""
 
     checkpoint_time: int
-    """The seconds epoch time for this checkpoint."""
+    """The seconds epoch time index for this checkpoint."""
     vault_share_price: FixedPoint
     """The current vault share price."""
     checkpoint_vault_share_price: FixedPoint
-    """The share price at the checkpoint."""
+    """The share price that was checkpointed in this checkpoint."""
     matured_shorts: FixedPoint
     """The amount of shorts that matured within this checkpoint."""
     matured_longs: FixedPoint

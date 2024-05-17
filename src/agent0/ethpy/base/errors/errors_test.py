@@ -1,6 +1,7 @@
 """Tests for errors.py"""
 
 from __future__ import annotations
+
 import pytest
 
 from .errors import decode_error_selector_for_contract

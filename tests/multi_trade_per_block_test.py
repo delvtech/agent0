@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 from fixedpointmath import FixedPoint
 
-from agent0.chainsync.db.hyperdrive.interface import get_ticker, get_transactions, get_wallet_deltas
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import add_liquidity_trade, open_long_trade, open_short_trade
@@ -99,33 +98,12 @@ class TestMultiTradePerBlock:
         # 3. openLong of 22_222 base
         # 4. openShort of 33_333 bonds
 
-        db_transaction_info: pd.DataFrame = get_transactions(fast_hyperdrive_fixture.db_session, coerce_float=False)
         expected_number_of_transactions = 4
-        assert len(db_transaction_info == expected_number_of_transactions)
-        # Checking first add liquidity
-        assert "addLiquidity" == db_transaction_info["input_method"].iloc[0]
-        # Checking without order
-        trxs = db_transaction_info["input_method"].iloc[1:].to_list()
-        assert "addLiquidity" in trxs
-        assert "openLong" in trxs
-        assert "openShort" in trxs
 
-        db_ticker: pd.DataFrame = get_ticker(fast_hyperdrive_fixture.db_session, coerce_float=False)
-        assert len(db_ticker == expected_number_of_transactions)
-        assert "addLiquidity" == db_ticker["trade_type"].iloc[0]
-        ticker_ops = db_ticker["trade_type"].iloc[1:].to_list()
-        assert "addLiquidity" in ticker_ops
-        assert "openLong" in ticker_ops
-        assert "openShort" in ticker_ops
-
-        wallet_deltas: pd.DataFrame = get_wallet_deltas(fast_hyperdrive_fixture.db_session, coerce_float=False)
-        # Ensure deltas only exist for valid trades
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
-        # Ensure deltas only exist for valid trades
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
-        # 2 for each trade
-        assert len(wallet_deltas) == 2 * expected_number_of_transactions
+        trade_events: pd.DataFrame = agent.get_trade_events(coerce_float=False)
+        assert len(trade_events == expected_number_of_transactions)
+        assert "AddLiquidity" == trade_events["event_type"].iloc[0]
+        ticker_ops = trade_events["event_type"].iloc[1:].to_list()
+        assert "AddLiquidity" in ticker_ops
+        assert "OpenLong" in ticker_ops
+        assert "OpenShort" in ticker_ops

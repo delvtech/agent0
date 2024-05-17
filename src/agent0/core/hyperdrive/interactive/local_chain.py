@@ -2,25 +2,21 @@
 
 from __future__ import annotations
 
-import contextlib
-import logging
 import os
+import pathlib
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dill
-import docker
-from docker.errors import NotFound
-from docker.models.containers import Container
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
+from IPython.display import IFrame
 from web3.types import RPCEndpoint
 
-from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 
@@ -43,6 +39,8 @@ class LocalChain(Chain):
     class Config(Chain.Config):
         """The configuration for the local chain object."""
 
+        dashboard_port: int = 7777
+        """The URL port for the deployed dashboard."""
         block_time: int | None = None
         """If None, mines per transaction. Otherwise mines every `block_time` seconds."""
         block_timestamp_interval: int | None = 12
@@ -51,19 +49,10 @@ class LocalChain(Chain):
         """The port to bind for the anvil chain. Will fail if this port is being used."""
         transaction_block_keeper: int = 10_000
         """The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here."""
-        db_port: int = 5433
-        """
-        The port to bind for the postgres container. Will fail if this port is being used.
-        Defaults to 5433.
-        """
-        remove_existing_db_container: bool = True
-        """Whether to remove the existing container if it exists on container launch. Defaults to True."""
         snapshot_dir: str = ".interactive_state/snapshot/"
         """The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`."""
         saved_state_dir: str = ".interactive_state/"
         """The directory where the saved state will be stored. Defaults to `.interactive_state/`."""
-        experimental_data_threading: bool = False
-        """Flag for running the data pipeline in a separate thread. Defaults to False."""
 
     def __init__(self, config: Config | None = None, fork_uri: str | None = None, fork_block_number: int | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -112,21 +101,12 @@ class LocalChain(Chain):
 
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
 
-        # Remove protocol and replace . and : with dashes
-        self.chain_id = self.rpc_uri.replace("http://", "").replace("https://", "").replace(".", "-").replace(":", "-")
-        db_container_name = f"postgres-interactive-hyperdrive-{self.chain_id}"
-        self.postgres_config, self.postgres_container = self._initialize_postgres_container(
-            db_container_name, config.db_port, config.remove_existing_db_container
-        )
-        assert isinstance(self.postgres_container, Container)
-
         # Snapshot bookkeeping
         # TODO snapshot dir will be clobbered if you run multiple chains simultaneously
         self._snapshot_dir = config.snapshot_dir
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
-        self.experimental_data_threading = config.experimental_data_threading
 
         # Ensure snapshot dir exists
         os.makedirs(self._snapshot_dir, exist_ok=True)
@@ -134,26 +114,35 @@ class LocalChain(Chain):
         if config.block_timestamp_interval is not None:
             self._set_block_timestamp_interval(config.block_timestamp_interval)
 
+        self.config = config
+        self.dashboard_subprocess: subprocess.Popen | None = None
+
         # TODO hack, wait for chain to init
         time.sleep(1)
 
     def cleanup(self):
         """Kills the subprocess in this class' destructor."""
         # Runs cleanup on all deployed pools
-        for pool in self._deployed_hyperdrive_pools:
-            pool._cleanup()  # pylint: disable=protected-access
         try:
-            self.postgres_container.kill()
+            if self.anvil_process is not None:
+                self.anvil_process.kill()
         except Exception:  # pylint: disable=broad-except
             pass
-        self.anvil_process.kill()
+
+        try:
+            if self.dashboard_subprocess is not None:
+                self.dashboard_subprocess.kill()
+                self.dashboard_subprocess = None
+        except Exception:  # pylint: disable=broad-except
+            pass
+
         super().cleanup()
 
-    def __del__(self):
-        """Kill subprocess in this class' destructor."""
-        with contextlib.suppress(Exception):
-            self.cleanup()
-        super().__del__()
+    # def __del__(self):
+    #    """Kill subprocess in this class' destructor."""
+    #    with contextlib.suppress(Exception):
+    #        self.cleanup()
+    #    super().__del__()
 
     def get_deployer_account_private_key(self) -> str:
         """Get the private key of the deployer account.
@@ -243,18 +232,9 @@ class LocalChain(Chain):
         # or there are no deployed pools
         if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
             self._advance_chain_time(time_delta)
-            # Advancing time mines a block, so we update data pipeline here
-            if not self.experimental_data_threading:
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+            for pool in self._deployed_hyperdrive_pools:
+                pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         else:
-            # Creating checkpoints mines blocks very fast, which then makes the data pipeline not be able to keep up.
-            # We avoid this by skipping all the intermediate blocks in the database when advancing time.
-            if self.experimental_data_threading:
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._ensure_data_caught_up()  # pylint: disable=protected-access
-                    pool._stop_data_pipeline()  # pylint: disable=protected-access
-
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
             # TODO support multiple pools with different checkpoint durations
@@ -306,13 +286,8 @@ class LocalChain(Chain):
                 self._advance_chain_time(last_advance_time - offset)
 
             curr_block = self._web3.eth.get_block_number()
-            if self.experimental_data_threading:
-                # Restart the data pipeline on the current block time.
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._launch_data_pipeline(curr_block)  # pylint: disable=protected-access
-            else:
-                for pool in self._deployed_hyperdrive_pools:
-                    pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
+            for pool in self._deployed_hyperdrive_pools:
+                pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
 
         return out_dict
 
@@ -376,15 +351,18 @@ class LocalChain(Chain):
         """
         raise NotImplementedError
 
+    def _anvil_save_snapshot(self) -> None:
+        response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+        self._saved_snapshot_id = response["result"]
+
     def save_snapshot(self) -> None:
         """Saves a snapshot using the `evm_snapshot` RPC call.
         The chain can store one snapshot at a time, saving another snapshot overwrites the previous snapshot.
         Saving/loading snapshot only persist on the same chain, not across chains.
         """
-        response = self._web3.provider.make_request(method=RPCEndpoint("evm_snapshot"), params=[])
-        if "result" not in response:
-            raise KeyError("Response did not have a result.")
-        self._saved_snapshot_id = response["result"]
+        self._anvil_save_snapshot()
 
         # Save the db state
         self._dump_db(self._snapshot_dir)
@@ -392,7 +370,7 @@ class LocalChain(Chain):
         # Save bookkeeping of deployed pools
         # We save the addresses of deployed pools for loading
         pool_filename = self._snapshot_dir + "/" + self.chain_id + "-pools.pkl"
-        pool_addr_list = [pool.get_hyperdrive_address() for pool in self._deployed_hyperdrive_pools]
+        pool_addr_list = [pool.hyperdrive_address for pool in self._deployed_hyperdrive_pools]
         with open(pool_filename, "wb") as file:
             dill.dump(pool_addr_list, file, dill.HIGHEST_PROTOCOL)
 
@@ -428,17 +406,10 @@ class LocalChain(Chain):
         with open(pool_filename, "rb") as file:
             hyperdrive_pools: list[str] = dill.load(file)
 
-        # Run cleanup on any invalid pools on load snapshot
-        invalid_pools = [
-            p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() not in hyperdrive_pools
-        ]
-        for pool in invalid_pools:
-            pool._cleanup(drop_data=True)  # pylint: disable=protected-access
-
         # Given the current list of deployed hyperdrive pools, we throw away any pools deployed
         # after the snapshot
         self._deployed_hyperdrive_pools = [
-            p for p in self._deployed_hyperdrive_pools if p.get_hyperdrive_address() in hyperdrive_pools
+            p for p in self._deployed_hyperdrive_pools if p.hyperdrive_address in hyperdrive_pools
         ]
         # NOTE: existing pool objects initialized after snapshot will no longer be valid.
 
@@ -454,92 +425,137 @@ class LocalChain(Chain):
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
             pool._load_policy_state(self._snapshot_dir)  # pylint: disable=protected-access
 
-        self.save_snapshot()
+        # Save another anvil snapshot since reverting consumes the snapshot
+        self._anvil_save_snapshot()
 
-    def _initialize_postgres_container(
-        self, container_name: str, db_port: int, remove_existing_db_container: bool
-    ) -> tuple[PostgresConfig, Container]:
-        # Attempt to use the default socket if it exists
-        try:
-            client = docker.from_env()
-        except Exception:  # pylint: disable=broad-exception-caught
-            home_dir = os.path.expanduser("~")
-            socket_path = Path(f"{home_dir}") / ".docker" / "desktop" / "docker.sock"
-            if socket_path.exists():
-                logging.debug("Docker not found at default socket, using %s..", socket_path)
-                client = docker.DockerClient(base_url=f"unix://{socket_path}")
-            else:
-                logging.debug("Docker not found.")
-                client = docker.from_env()
+    def get_dashboard_iframe(self, width: int = 1000, height: int = 800) -> IFrame:
+        """Embeds the streamlit dashboard into a Jupyter notebook as an IFrame.
 
-        postgres_config = PostgresConfig(
-            POSTGRES_USER="admin",
-            POSTGRES_PASSWORD="password",
-            POSTGRES_DB="",  # Filled in by the pool as needed
-            POSTGRES_HOST="127.0.0.1",
-            POSTGRES_PORT=db_port,
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
+            streamlit server. Passing ``blocking=True`` will block execution of the main
+            script in this function until a keypress is registered.
+
+        Arguments
+        ---------
+        width: int
+            Width, in pixels, of the IFrame.
+            Defaults to 1000.
+        height: int
+            Height, in pixels, of the IFrame.
+            Defaults to 800.
+
+        Returns
+        -------
+        IFrame
+            A dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
+        """
+        dashboard_run_command = self._get_dashboard_run_command(
+            flags=[
+                "--server.headless",
+                "true",
+                "--server.port",
+                str(self.config.dashboard_port),
+                "--server.address",
+                "localhost",
+            ]
         )
-
-        # Kill the test container if it already exists
-        try:
-            existing_container = client.containers.get(container_name)
-            assert isinstance(existing_container, Container)
-        except NotFound:
-            # Container doesn't exist, ignore
-            existing_container = None
-
-        # There's a race condition here where the container gets removed between
-        # checking the container and attempting to remove it.
-        # Hence, we ignore any errors from attempting to remove
-
-        if existing_container is not None and remove_existing_db_container:
-            exception = None
-            for _ in range(5):
-                try:
-                    existing_container.remove(v=True, force=True)
-                    break
-                except Exception as e:  # pylint: disable=broad-except
-                    exception = e
-            if exception is not None:
-                logging.warning("Failed to remove existing container: %s", repr(exception))
-
-        # TODO ensure this container auto removes by itself
-        container = client.containers.run(
-            image="postgres",
-            auto_remove=True,
-            environment={
-                "POSTGRES_USER": postgres_config.POSTGRES_USER,
-                "POSTGRES_PASSWORD": postgres_config.POSTGRES_PASSWORD,
-            },
-            name=container_name,
-            ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
-            detach=True,
-            remove=True,
+        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+            dashboard_run_command,
+            env=env,
+            # stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
-        assert isinstance(container, Container)
+        network_url = f"http://localhost:{self.config.dashboard_port}"
 
-        return postgres_config, container
+        dashboard_iframe = IFrame(src=network_url, width=width, height=height)
+        time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
+        return dashboard_iframe
+
+    def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
+        """Returns the run command for launching a Streamlit dashboard.
+
+        Arguments
+        ---------
+        flags: list[str] | None, optional
+            List of streamlit flags to be added to the run command.
+            Commands and arguments should be separate entries, for example: ["--server.headless", "true"]
+            Defaults to an empty list, which passes no flags.
+
+        Returns
+        -------
+        str
+            The streamlit run command string.
+        """
+        if flags is None:
+            flags = []
+        # In order to support this command in both notebooks and scripts, we reference
+        # the path to the virtual environment relative to this file.
+        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
+        venv_dir = pathlib.Path(os.environ["VIRTUAL_ENV"])
+        streamlit_path = str(venv_dir / "bin" / "streamlit")
+        dashboard_path = str(base_dir / "src" / "agent0" / "chainsync" / "streamlit" / "Dashboard.py")
+        dashboard_run_command = (
+            [streamlit_path, "run"]
+            + flags
+            + [
+                dashboard_path,
+            ]
+        )
+        return dashboard_run_command
+
+    def run_dashboard(self, blocking: bool = False) -> None:
+        """Runs the streamlit dashboard in a subprocess connected to interactive hyperdrive.
+
+        .. note::
+            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
+            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
+            streamlit server. Passing ``blocking=True`` will block execution of the main
+            script in this function until a keypress is registered.
+
+        Arguments
+        ---------
+        blocking: bool
+            If True, will block execution of the main script in this function until a keypress is registered.
+            When in blocking mode, the server will be killed upon return of control to caller.
+            If False, will clean up subprocess in cleanup.
+        """
+
+        dashboard_run_command = self._get_dashboard_run_command(
+            flags=[
+                "--server.port",
+                str(self.config.dashboard_port),
+                "--server.address",
+                "localhost",
+            ]
+        )
+        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
+
+        assert self.dashboard_subprocess is None
+        # Since dashboard is a non-terminating process, we need to manually control its lifecycle
+        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+            dashboard_run_command,
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
+        if blocking:
+            input("Press any key to kill dashboard server.")
+            self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
 
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         self._deployed_hyperdrive_pools.append(pool)
 
     def _dump_db(self, save_dir: str):
         # TODO parameterize the save path
-        for pool in self._deployed_hyperdrive_pools:
-            if self.experimental_data_threading:
-                # Need to ensure data has caught up before snapshot
-                pool._ensure_data_caught_up()  # pylint: disable=protected-access
-            export_path = str(Path(save_dir) / pool._db_name)  # pylint: disable=protected-access
-            os.makedirs(export_path, exist_ok=True)
-            export_db_to_file(export_path, pool.db_session, raw=True)
+        export_path = str(Path(save_dir))  # pylint: disable=protected-access
+        os.makedirs(export_path, exist_ok=True)
+        export_db_to_file(export_path, self.db_session)
 
     def _load_db(self, load_dir: str):
         # TODO parameterize the load path
-        for pool in self._deployed_hyperdrive_pools:
-            if self.experimental_data_threading:
-                # We need to stop the underlying data pipeline before updating the underlying database
-                pool._stop_data_pipeline()  # pylint: disable=protected-access
-            import_path = str(Path(load_dir) / pool._db_name)  # pylint: disable=protected-access
-            import_to_db(pool.db_session, import_path, drop=True)
-            if self.experimental_data_threading:
-                pool._launch_data_pipeline()  # pylint: disable=protected-access
+        import_path = str(Path(load_dir))  # pylint: disable=protected-access
+        import_to_db(self.db_session, import_path, drop=True)

@@ -250,7 +250,7 @@ class SimpleHyperdriveEnv(gym.Env):
         assert self._current_position is not None
         terminated = False
 
-        agent_wallet = self.rl_bot.get_positions()
+        agent_wallet = self.rl_bot.get_wallet()
 
         self._current_position = self._current_position.opposite()
         if self._current_position == CurrentPosition.LONG:
@@ -376,7 +376,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
     def _get_observation(self) -> np.ndarray:
         # Get the spot price and share price of hyperdrive
-        pool_state_df = self.interactive_hyperdrive.get_pool_state(coerce_float=True)
+        pool_state_df = self.interactive_hyperdrive.get_pool_info(coerce_float=True)
         self._obs_buffer = (
             pool_state_df[["lp_share_price", "spot_price"]].iloc[-self.gym_config.window_size :].to_numpy()
         )
@@ -393,7 +393,7 @@ class SimpleHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         # The total delta for this episode
 
-        current_wallet = self.interactive_hyperdrive.get_current_wallet()
+        current_wallet = self.interactive_hyperdrive.get_positions()
         # Filter by rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
         # The rl_bot_wallet shows the pnl of all positions

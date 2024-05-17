@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from agent0.chainsync.exec import data_analysis
+from agent0.chainsync.exec import analyze_data
 from agent0.ethpy.hyperdrive.addresses import get_hyperdrive_addresses_from_artifacts
 from agent0.hyperlogs import setup_logging
 
@@ -16,11 +16,11 @@ if __name__ == "__main__":
     artifacts_uri = os.getenv("ARTIFACTS_URI", "http://localhost:8080")
     hyperdrive_addr = get_hyperdrive_addresses_from_artifacts(artifacts_uri)["erc4626_hyperdrive"]
 
-    data_analysis(
+    analyze_data(
         # This is the start block needed based on the devnet image, which corresponds
         # to the block that the contract was deployed.
         # TODO ideally would gather this from the deployer
         start_block=48,
         rpc_uri=rpc_uri,
-        hyperdrive_address=hyperdrive_addr,
+        hyperdrive_addresses=[hyperdrive_addr],
     )

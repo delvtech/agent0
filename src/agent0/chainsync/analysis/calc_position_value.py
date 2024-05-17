@@ -8,7 +8,7 @@ from decimal import Decimal
 import pandas as pd
 from fixedpointmath import FixedPoint
 
-from agent0.ethpy.hyperdrive import BASE_TOKEN_SYMBOL, HyperdriveReadInterface
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state import PoolState
 
 
@@ -18,51 +18,51 @@ def calc_single_closeout(
     hyperdrive_state: PoolState,
     checkpoint_share_prices: pd.Series,
 ) -> Decimal:
-    """Calculate the closeout pnl for a single position.
+    """Calculate the closeout value for a single position.
 
     Arguments
     ---------
     position: pd.DataFrame
-        The position to calculate the closeout pnl for (one row in current_wallet)
+        The position to calculate the closeout value for (one row in current_wallet).
     interface: HyperdriveReadInterface
-        The hyperdrive read interface
+        The hyperdrive read interface.
     hyperdrive_state: PoolState
-        The hyperdrive pool state
+        The hyperdrive pool state.
     checkpoint_share_prices: pd.Series
-        A series with the index as checkpoint time and the value as the share prices
+        A series with the index as checkpoint time and the value as the share prices.
 
     Returns
     -------
     Decimal
-        The closeout pnl
+        The closeout position value.
     """
-    # pnl is itself
-    if position["base_token_type"] == BASE_TOKEN_SYMBOL:
-        return position["value"]
-    # If no value, pnl is 0
-    if position["value"] == 0:
+    # If no balance, value is 0
+    if position["token_balance"] == 0:
         return Decimal(0)
-    amount = FixedPoint(f"{position['value']:f}")
-    tokentype = position["base_token_type"]
+    amount = FixedPoint(f"{position['token_balance']:f}")
+    token_type = position["token_type"]
     maturity = 0
     position_duration = hyperdrive_state.pool_config.position_duration
 
-    if tokentype in ["LONG", "SHORT"]:
+    if token_type in ["LONG", "SHORT"]:
         maturity = int(position["maturity_time"])
 
-    out_pnl = Decimal("nan")
-    if tokentype == "LONG":
+    out_value = Decimal("nan")
+    if token_type == "LONG":
         try:
-            out_pnl = interface.calc_close_long(amount, maturity, hyperdrive_state)
+            out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.warning("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
         # FixedPoint to Decimal
-        out_pnl = Decimal(str(out_pnl))
+        out_value = Decimal(str(out_value))
 
-    elif tokentype == "SHORT":
+    elif token_type == "SHORT":
         # Get the open share price from the checkpoint lookup
         open_checkpoint_time = maturity - position_duration
+        # TODO checkpoint db doesn't exist for remote chains, fix
+        # Use checkpoint event to fill database, following the same
+        # event gathering logic as position events.
         assert (
             open_checkpoint_time in checkpoint_share_prices.index
         ), "Chainsync: open short checkpoint not found for position."
@@ -79,7 +79,7 @@ def calc_single_closeout(
             close_share_price = hyperdrive_state.pool_info.vault_share_price
 
         try:
-            out_pnl = interface.calc_close_short(
+            out_value = interface.calc_close_short(
                 amount,
                 open_vault_share_price=open_share_price,
                 close_vault_share_price=close_share_price,
@@ -89,53 +89,58 @@ def calc_single_closeout(
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.warning("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
-        out_pnl = Decimal(str(out_pnl))
+        out_value = Decimal(str(out_value))
 
     # For PNL, we assume all withdrawal shares are redeemable
     # even if there are no withdrawal shares available to withdraw
     # Hence, we don't use preview transaction here
-    elif tokentype in ["LP", "WITHDRAWAL_SHARE"]:
-        out_pnl = amount * hyperdrive_state.pool_info.lp_share_price
-        out_pnl = Decimal(str(out_pnl))
+    elif token_type in ["LP", "WITHDRAWAL_SHARE"]:
+        out_value = amount * hyperdrive_state.pool_info.lp_share_price
+        out_value = Decimal(str(out_value))
     else:
         # Should never get here
-        raise ValueError(f"Unexpected token type: {tokentype}")
-    return out_pnl
+        raise ValueError(f"Unexpected token type: {token_type}")
+    return out_value
 
 
-def calc_closeout_pnl(
-    current_wallet: pd.DataFrame, checkpoint_info: pd.DataFrame, interface: HyperdriveReadInterface
+def calc_closeout_value(
+    current_positions: pd.DataFrame,
+    checkpoint_info: pd.DataFrame,
+    interface: HyperdriveReadInterface,
+    block_number: int,
 ) -> pd.Series:
     """Calculate closeout value of agent positions.
 
     Arguments
     ---------
-    current_wallet: pd.DataFrame
+    current_positions: pd.DataFrame
         A dataframe resulting from `get_current_wallet` that describes the current wallet position.
     checkpoint_info: pd.DataFrame
         A dataframe resulting from `get_checkpoint_info` that describes all checkpoints.
     interface: HyperdriveReadInterface
-        The hyperdrive read interface
+        The hyperdrive read interface.
+    block_number: int
+        The block number to calculate closeout value on.
 
     Returns
     -------
     pd.Series
-        A series matching the current_wallet input that contains the values of each position
+        A series matching the current_wallet input that contains the values of each position.
     """
 
     # Sanity check, the block number across all current wallets should be identical
-    assert len(current_wallet) > 0
-    assert current_wallet["block_number"].nunique() == 1
+    assert len(current_positions) > 0
+    assert current_positions["block_number"].nunique() == 1
 
     # Get the pool state at this position
-    block_number = int(current_wallet["block_number"].iloc[0])
+    block_number = int(current_positions["block_number"].iloc[0])
     hyperdrive_state = interface.get_hyperdrive_state(interface.get_block(block_number))
 
     # Prepare the checkpoint info dataframe for lookups based on checkpoint time
-    checkpoint_share_prices = checkpoint_info.set_index("checkpoint_time")["vault_share_price"]
+    checkpoint_share_prices = checkpoint_info.set_index("checkpoint_time")["checkpoint_vault_share_price"]
 
-    # Calculate pnl per row of dataframe
-    return current_wallet.apply(
+    # Calculate closeout value per row of dataframe
+    return current_positions.apply(
         calc_single_closeout,  # type: ignore
         interface=interface,
         hyperdrive_state=hyperdrive_state,

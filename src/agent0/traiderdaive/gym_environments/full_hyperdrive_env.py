@@ -176,7 +176,7 @@ class FullHyperdriveEnv(gym.Env):
         # Here, orders_i is a direct mapping to agent.wallet
         # Note normalize_time_to_maturity will always be 0 for LP positions
         # Removing timestamp and block number from pool state
-        self.num_pool_features = len(self.interactive_hyperdrive.get_pool_state(coerce_float=True).columns) - 2
+        self.num_pool_features = len(self.interactive_hyperdrive.get_pool_info(coerce_float=True).columns) - 2
         inf = 1e10
         self.observation_space = spaces.Dict(
             {
@@ -345,7 +345,7 @@ class FullHyperdriveEnv(gym.Env):
 
                 if open_order:
                     # If the wallet has enough money
-                    if volume_adjusted <= self.rl_bot.get_positions().balance.amount:
+                    if volume_adjusted <= self.rl_bot.get_wallet().balance.amount:
                         try:
                             if trade_type == TradeTypes.LONG:
                                 self.rl_bot.open_long(base=volume_adjusted)
@@ -382,12 +382,12 @@ class FullHyperdriveEnv(gym.Env):
         try:
             if add_lp:
                 self.rl_bot.add_liquidity(add_lp_volume)
-            if remove_lp and remove_lp_volume <= self.rl_bot.get_positions().lp_tokens:
+            if remove_lp and remove_lp_volume <= self.rl_bot.get_wallet().lp_tokens:
                 self.rl_bot.remove_liquidity(remove_lp_volume)
             # Always try and remove withdrawal shares
-            if self.rl_bot.get_positions().withdraw_shares > 0:
+            if self.rl_bot.get_wallet().withdraw_shares > 0:
                 # TODO error handling or check when withdrawal shares are not withdrawable
-                self.rl_bot.redeem_withdraw_share(self.rl_bot.get_positions().withdraw_shares)
+                self.rl_bot.redeem_withdraw_share(self.rl_bot.get_wallet().withdraw_shares)
         except Exception as err:  # pylint: disable=broad-except
             # TODO use logging here
             print(f"Warning: Failed to LP: {err=}")
@@ -459,14 +459,14 @@ class FullHyperdriveEnv(gym.Env):
         return {}
 
     def _get_rl_wallet_positions(self, coerce_float: bool) -> pd.DataFrame:
-        current_wallet = self.interactive_hyperdrive.get_current_wallet(coerce_float=coerce_float)
+        current_wallet = self.interactive_hyperdrive.get_positions(coerce_float=coerce_float)
         # Filter for rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
         return rl_bot_wallet
 
     def _get_observation(self) -> dict[str, np.ndarray]:
         # Get the latest pool state feature from the db
-        pool_state_df = self.interactive_hyperdrive.get_pool_state(coerce_float=True)
+        pool_state_df = self.interactive_hyperdrive.get_pool_info(coerce_float=True)
         pool_state_columns = [c for c in pool_state_df.columns if c not in ("timestamp", "block_number")]
         pool_state_df = pool_state_df[pool_state_columns].iloc[-1].astype(float)
 
@@ -515,7 +515,7 @@ class FullHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         # The total delta for this episode
 
-        current_wallet = self.interactive_hyperdrive.get_current_wallet()
+        current_wallet = self.interactive_hyperdrive.get_positions()
         # Filter by rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
         # The rl_bot_wallet shows the pnl of all positions

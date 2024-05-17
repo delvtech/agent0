@@ -21,7 +21,7 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 
 class AddrToUsername(Base):
-    """Maps an address to a username. This mapping should be many addresses to one username."""
+    """Maps an address to a username."""
 
     __tablename__ = "addr_to_username"
 
@@ -29,17 +29,3 @@ class AddrToUsername(Base):
     """The wallet address"""
     username: Mapped[str] = mapped_column(String, index=True)
     """The logical username"""
-
-
-class UsernameToUser(Base):
-    """Maps a per wallet username to a user. This mapping should be many usernames to one user.
-    The primary usecase is to map multiple usernames to one user,
-    e.g., Sheng Lundquist (click) and slundquist (bots) -> Sheng Lundquist
-    """
-
-    __tablename__ = "username_to_user"
-
-    username: Mapped[str] = mapped_column(String, primary_key=True)
-    """The logical username."""
-    user: Mapped[str] = mapped_column(String, index=True)
-    """The user."""

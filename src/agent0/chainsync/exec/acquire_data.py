@@ -28,9 +28,9 @@ _SLEEP_AMOUNT = 1
 def acquire_data(
     start_block: int = 0,
     lookback_block_limit: int = 1000,
-    interface: HyperdriveReadInterface | None = None,
+    interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
-    hyperdrive_address: ChecksumAddress | None = None,
+    hyperdrive_addresses: list[ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
     exit_on_catch_up: bool = False,
@@ -45,15 +45,15 @@ def acquire_data(
         The starting block to filter the query on
     lookback_block_limit: int
         The maximum number of blocks to look back when filling in missing data
-    interface: HyperdriveReadInterface | None, optional
-        An initialized HyperdriveReadInterface object. If not set, will initialize one based on
-        rpc_uri and hyperdrive_address.
+    interfaces: list[HyperdriveReadInterface] | None, optional
+        A collection of Hyperdrive interface objects, each connected to a pool.
+        If not set, will initialize one based on rpc_uri and hyperdrive_address.
     rpc_uri: str, optional
         The URI for the web3 provider to initialize the interface with. Not used if an interface
         is provided.
-    hyperdrive_address: ChecksumAddress | None, optional
-        The address of the hyperdrive contract to initialize the interface with. Not used if
-        an interface is provided.
+    hyperdrive_addresses: list[ChecksumAddress] | None, optional
+        A collection of Hyperdrive address, each pointing to an initialized pool.
+        Not used if a list of interfaces is provided.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres_config.
@@ -71,10 +71,17 @@ def acquire_data(
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization
-    if interface is None:
-        if hyperdrive_address is None or rpc_uri is None:
+    if interfaces is None:
+        if hyperdrive_addresses is None or rpc_uri is None:
+            # TODO when we start deploying the registry, this case should look for existing
+            # pools in the registry and use those.
             raise ValueError("hyperdrive_address and rpc_uri must be provided if not providing interface")
-        interface = HyperdriveReadInterface(hyperdrive_address, rpc_uri)
+        interfaces = [
+            HyperdriveReadInterface(hyperdrive_address, rpc_uri) for hyperdrive_address in hyperdrive_addresses
+        ]
+
+    if len(interfaces) == 0:
+        raise ValueError("Must run data on at least one pool.")
 
     # postgres session
     db_session_init = False
@@ -88,7 +95,7 @@ def acquire_data(
     # Using max of latest block in database or specified start block
     curr_write_block = max(start_block, data_latest_block_number + 1)
 
-    latest_mined_block = int(interface.get_block_number(interface.get_current_block()))
+    latest_mined_block = int(interfaces[0].get_block_number(interfaces[0].get_current_block()))
     if (latest_mined_block - curr_write_block) > lookback_block_limit:
         curr_write_block = latest_mined_block - lookback_block_limit
         logging.warning(
@@ -97,14 +104,14 @@ def acquire_data(
         )
 
     ## Collect initial data
-    init_data_chain_to_db(interface, db_session)
+    init_data_chain_to_db(interfaces, db_session)
 
     # Main data loop
     # monitor for new blocks & add pool info per block
     if not suppress_logs:
         logging.info("Monitoring for pool info updates...")
     while True:
-        latest_mined_block = interface.web3.eth.get_block_number()
+        latest_mined_block = interfaces[0].web3.eth.get_block_number()
         # Only execute if we are on a new block
         if latest_mined_block < curr_write_block:
             exit_callable = False
@@ -133,7 +140,7 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(interface, interface.get_block(block_number), db_session)
+            data_chain_to_db(interfaces, block_number, db_session)
         curr_write_block = latest_mined_block + 1
 
     # Clean up resources on clean exit

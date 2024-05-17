@@ -1,6 +1,5 @@
 """Account and wallet with Hyperdrive specific parts"""
 
-from .build_wallet_positions import build_wallet_positions_from_chain, build_wallet_positions_from_db
 from .hyperdrive_actions import (
     HyperdriveActionType,
     HyperdriveMarketAction,

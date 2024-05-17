@@ -3,60 +3,31 @@
 from __future__ import annotations
 
 import logging
-import os
-import pathlib
-import subprocess
-import time
-from dataclasses import asdict, dataclass
-from decimal import Decimal
-from threading import Thread
+from dataclasses import dataclass
 from typing import Literal, Type, overload
 
 import dill
 import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber, ChecksumAddress
+from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
-from IPython.display import IFrame
-from sqlalchemy_utils.functions import drop_database
-from web3._utils.threads import Timeout
-from web3.exceptions import TimeExhausted
 
-from agent0.chainsync import PostgresConfig
-from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import (
-    add_addr_to_username,
-    get_addr_to_username,
-    get_username_to_user,
-    initialize_session,
-)
-from agent0.chainsync.db.hyperdrive import get_checkpoint_info
-from agent0.chainsync.db.hyperdrive import get_current_wallet as chainsync_get_current_wallet
+from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
-    get_latest_block_number_from_analysis_table,
-    get_pool_analysis,
+    get_checkpoint_info,
     get_pool_config,
     get_pool_info,
-    get_positions_from_db,
-    get_ticker,
-    get_total_wallet_pnl_over_time,
+    get_position_snapshot,
+    get_total_pnl_over_time,
     get_trade_events,
-    get_wallet_deltas,
-    get_wallet_pnl,
-    trade_events_to_db,
 )
-from agent0.chainsync.exec import acquire_data, data_analysis
-from agent0.core.base import Quantity, TokenType
+from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, HyperdriveWallet, TradeResult, TradeStatus
-from agent0.core.hyperdrive.agent import build_wallet_positions_from_db
-from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
+from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
-    BASE_TOKEN_SYMBOL,
     AssetIdPrefix,
     DeployedHyperdrivePool,
     ReceiptBreakdown,
@@ -97,8 +68,6 @@ class LocalHyperdrive(Hyperdrive):
         """The timeout for the data pipeline. Defaults to 60 seconds."""
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
-        dashboard_port: int = 7777
-        """The URL port for the deployed dashboard."""
         load_rng_on_snapshot: bool = True
         """
         If True, loading a snapshot also loads the RNG state of the underlying policy.
@@ -106,9 +75,6 @@ class LocalHyperdrive(Hyperdrive):
         If False, will use the existing RNG state before load.
         Defaults to False.
         """
-        # Data pipeline parameters
-        calc_pnl: bool = True
-        """Whether to calculate pnl. Defaults to True."""
 
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -226,16 +192,22 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: LocalChain, config: Config | None = None):
+    def __init__(self, chain: LocalChain, config: Config | None = None, name: str | None = None):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
         chain: LocalChain
-            The local chain object to launch hyperdrive on
+            The local chain object to launch hyperdrive on.
         config: Config | None
-            The configuration for the initial pool configuration
+            The configuration for the initial pool configuration.
+        name: str | None, optional
+            The logical name of the pool.
         """
+
+        # We don't call super's init since we do specific type checking
+        # in Hyperdrive's init. Instead, we call _initialize
+        # pylint: disable=super-init-not-called
 
         if config is None:
             self.config = self.Config()
@@ -247,168 +219,24 @@ class LocalHyperdrive(Hyperdrive):
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
 
-        super().__init__(
-            chain,
-            self.get_hyperdrive_address(),
-            config,
-        )
+        self._initialize(chain, self._deployed_hyperdrive.hyperdrive_contract.address, name)
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
         self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
 
-        # Make a copy of the dataclass to avoid changing the base class
-        self.postgres_config = PostgresConfig(**asdict(chain.postgres_config))
-        # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.postgres_config.POSTGRES_DB = "interactive_hyperdrive_" + str(self.interface.hyperdrive_contract.address)
-
-        # Store the db_id here for later reference
-        self._db_name = self.postgres_config.POSTGRES_DB
-
-        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
-
-        # Keep track of how much base have been minted per agent
-        self._initial_funds: dict[ChecksumAddress, FixedPoint] = {}
-
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
 
-        # We use this variable to control underlying threads when to exit.
-        # When this varible is set to true, the underlying threads will exit.
-        self._stop_threads = False
-        self._data_thread: Thread | None = None
-        self._analysis_thread: Thread | None = None
-
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        if self.chain.experimental_data_threading:
-            self._launch_data_pipeline()
-        else:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
 
-        self.dashboard_subprocess: subprocess.Popen | None = None
         self._pool_agents: list[LocalHyperdriveAgent] = []
 
-    def get_hyperdrive_address(self) -> ChecksumAddress:
-        """Returns the hyperdrive addresses for this pool.
-
-        Returns
-        -------
-        ChecksumAddress
-            The hyperdrive addresses for this pool
-        """
-        # pylint: disable=protected-access
-        return self._deployed_hyperdrive.hyperdrive_contract.address
-
-    def _launch_data_pipeline(self, start_block: int | None = None):
-        """Launches the data pipeline in background threads.
-
-        Arguments
-        ---------
-        start_block: int | None, optional
-            The starting block to gather data. If None, will use the pool's deployed block.
-        """
-        # Sanity check, callers are responsible for determining experimental mode for clarity,
-        # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
-
-        if start_block is None:
-            start_block = self._deploy_block_number
-
-        # Run the data pipeline in background threads
-        # Ensure the stop flag is set to false
-        # This ensures no other threads are running when launching data pipeline
-        if self._data_thread is not None or self._analysis_thread is not None:
-            raise ValueError("Data pipeline already running")
-
-        self._stop_threads = False
-        # We need to create new threads every launch, since start can be called at most once per thread object
-        self._data_thread = Thread(
-            target=acquire_data,
-            kwargs={
-                "start_block": start_block,
-                "lookback_block_limit": 10000,
-                "rpc_uri": self.chain.rpc_uri,
-                "hyperdrive_address": self.interface.hyperdrive_address,
-                "postgres_config": self.postgres_config,
-                "exit_on_catch_up": False,
-                "exit_callback_fn": lambda: self._stop_threads,
-                "suppress_logs": True,
-            },
-        )
-        self._analysis_thread = Thread(
-            target=data_analysis,
-            kwargs={
-                "start_block": start_block,
-                "rpc_uri": self.chain.rpc_uri,
-                "hyperdrive_address": self.interface.hyperdrive_address,
-                "postgres_config": self.postgres_config,
-                "exit_on_catch_up": False,
-                "exit_callback_fn": lambda: self._stop_threads,
-                "suppress_logs": True,
-            },
-        )
-        self._data_thread.start()
-        self._analysis_thread.start()
-
-        # Pool config should exist before returning
-        pool_config = None
-        for _ in range(10):
-            try:
-                pool_config = self.get_pool_config()
-                break
-            except ValueError:
-                time.sleep(1)
-        if pool_config is None:
-            raise ValueError("Pool config doesn't exist in the db after launching data pipeline.")
-
-    def _stop_data_pipeline(self):
-        # Sanity check, callers are responsible for determining experimental mode for clarity,
-        # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
-
-        if self._data_thread is None or self._analysis_thread is None:
-            raise ValueError("Data pipeline not running")
-
-        # This lets the underlying threads know to stop at the next opportunity
-        self._stop_threads = True
-        # These wait for the threads to finally stop
-        self._data_thread.join()
-        self._analysis_thread.join()
-        # Dereference thread variables
-        self._data_thread = None
-        self._analysis_thread = None
-
-    def _ensure_data_caught_up(self, polling_interval: int = 1) -> None:
-        # Sanity check, callers are responsible for determining experimental mode,
-        # but we add a catch here to make sure
-        assert self.chain.experimental_data_threading
-
-        latest_mined_block: BlockNumber | None = None
-        analysis_latest_block_number: int | None = None
-
-        try:
-            with Timeout(self.data_pipeline_timeout) as _timeout:
-                while True:
-                    latest_mined_block = self.interface.web3.eth.get_block_number()
-                    analysis_latest_block_number = get_latest_block_number_from_analysis_table(self.db_session)
-                    if latest_mined_block > analysis_latest_block_number:
-                        _timeout.sleep(polling_interval)
-                    else:
-                        break
-        except Timeout as exc:
-            raise TimeExhausted(
-                f"Data pipeline didn't catch up after {self.data_pipeline_timeout} seconds",
-                f"{latest_mined_block=}, {analysis_latest_block_number=}",
-            ) from exc
-
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
-        # Sanity check, callers are responsible for determining experimental mode for clarity,
-        # but we add a catch here to make sure
-        assert not self.chain.experimental_data_threading
-
         # TODO these functions are not thread safe, need to fix if we expose async functions
         # Runs the data pipeline synchronously
 
@@ -421,53 +249,30 @@ class LocalHyperdrive(Hyperdrive):
 
         acquire_data(
             start_block=start_block,  # Start block is the block hyperdrive was deployed
-            interface=self.interface,
-            db_session=self.db_session,
+            interfaces=[self.interface],
+            db_session=self.chain.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
         )
-        data_analysis(
+        analyze_data(
             start_block=start_block,
-            interface=self.interface,
-            db_session=self.db_session,
+            interfaces=[self.interface],
+            db_session=self.chain.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
             calc_pnl=self.calc_pnl,
         )
 
-    def _cleanup(self, drop_data: bool = False):
-        """Cleans up resources used by this object."""
-        if self.chain.experimental_data_threading:
-            self._stop_data_pipeline()
-
-        self.db_session.close()
-
-        # We drop the database attached to this pool on cleanup
-        if drop_data:
-            drop_database(self.postgres_config.create_url_obj())
-
-        if self.dashboard_subprocess is not None:
-            self.dashboard_subprocess.kill()
-            self.dashboard_subprocess = None
-
-    def __del__(self):
-        # Attempt to close the session
-        # These functions will raise errors if the session is already closed
-        try:
-            self._cleanup()
-        # Never throw exception in destructor
-        except Exception:  # pylint: disable=broad-except
-            pass
-
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
+    # This is used to allow chain's `advance_time` function to return this object as a key.
     def __hash__(self):
         """We use a combination of the chain's rpc uri and the hyperdrive contract address as the hash."""
-        return hash((self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address))
+        return hash((self.chain.rpc_uri, self.hyperdrive_address))
 
     def __eq__(self, other):
         return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
             other.chain.rpc_uri,
-            other._deployed_hyperdrive.hyperdrive_contract.address,
+            other.hyperdrive_address,
         )
 
     def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
@@ -534,8 +339,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         self.interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
 
     def _create_checkpoint(
         self, checkpoint_time: int | None = None, check_if_exists: bool = True
@@ -579,9 +383,9 @@ class LocalHyperdrive(Hyperdrive):
         private_key: str | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
+        name: str | None = None,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
-        name: str | None = None,
     ) -> LocalHyperdriveAgent:
         """Initializes an agent with initial funding and a logical name.
 
@@ -651,12 +455,12 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Underlying function returns a dataframe, but this is assuming there's a single
         # pool config for this object.
-        pool_config = get_pool_config(self.db_session, coerce_float=coerce_float)
+        pool_config = get_pool_config(self.chain.db_session, coerce_float=coerce_float)
         if len(pool_config) == 0:
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
 
-    def get_pool_state(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_pool_info(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 
         Arguments
@@ -669,13 +473,7 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A pandas dataframe that consists of the pool info per block.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-
-        pool_info = get_pool_info(self.db_session, coerce_float=coerce_float)
-        pool_analysis = get_pool_analysis(self.db_session, coerce_float=coerce_float, return_timestamp=False)
-        pool_info = pool_info.merge(pool_analysis, how="left", on="block_number")
+        pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
         return pool_info
 
     def get_checkpoint_info(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -689,36 +487,51 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of previous checkpoints made.
+            A pandas dataframe that consists of previous checkpoints made on this pool.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-        return get_checkpoint_info(self.db_session, coerce_float=coerce_float)
+        return get_checkpoint_info(
+            self.chain.db_session, hyperdrive_address=self.hyperdrive_address, coerce_float=coerce_float
+        )
 
-    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        addr_to_username = get_addr_to_username(self.db_session)
-        username_to_user = get_username_to_user(self.db_session)
+    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets all current positions of this pool and their corresponding pnl
+        and returns as a pandas dataframe.
 
-        # Get corresponding usernames
-        usernames = build_user_mapping(df[addr_column], addr_to_username, username_to_user)["username"]
-        # Weird pandas type error
-        df.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
-        return df
+        This function only exists in local hyperdrive as only sim pool keeps track
+        of all positions of all wallets.
 
-    def _adjust_base_positions(self, in_df: pd.DataFrame, value_column: str, coerce_float: bool):
-        out_df = in_df.copy()
-        for address, initial_balance in self._initial_funds.items():
-            row_idxs = (out_df["wallet_address"] == address) & (out_df["base_token_type"] == BASE_TOKEN_SYMBOL)
-            if coerce_float:
-                out_df.loc[row_idxs, value_column] += float(initial_balance)
-            else:
-                # Pandas is smart enough to handle "+=" for "Series[Unknown]" and "Decimal"
-                out_df.loc[row_idxs, value_column] += Decimal(str(initial_balance))  # type: ignore
-        return out_df
+        Arguments
+        ---------
+        show_closed_positions: bool, optional
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+            Defaults to False.
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+            Defaults to False.
 
-    def get_current_wallet(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Gets the current wallet positions of all agents and their corresponding pnl
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe consisting of currently open positions and their corresponding pnl.
+        """
+        position_snapshot = get_position_snapshot(
+            self.chain.db_session,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            start_block=-1,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        if not show_closed_positions:
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
+        # Add usernames
+        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        # Add logical name for pool
+        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
+
+    def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the history of all positions over time and their corresponding pnl
         and returns as a pandas dataframe.
 
         Arguments
@@ -729,165 +542,48 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            token_type: str
-                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            position: Decimal | float
-                The current value of the token of the agent at the specified block number.
-            pnl: Decimal | float
-                The current pnl of the token of the agent at the specified block number.
-            base_token_type: str
-                A string specifying the type of the token.
-            maturity_time: Decimal | float
-                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
-            latest_block_update: int
-                The last block number that the position was updated.
+            A dataframe consisting of positions over time and their corresponding pnl.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-
-        # TODO potential improvement is to pivot the table so that columns are the token type
-        # Makes this data easier to work with
-        # https://github.com/delvtech/agent0/issues/1106
-        out = get_wallet_pnl(self.db_session, start_block=-1, coerce_float=coerce_float)
-        # DB only stores final delta for base, we calculate actual base based on how much funds
-        # were added in all
-        out = self._adjust_base_positions(out, "value", coerce_float)
-        # Rename column to match get_wallet_positions
-        out = out.rename(columns={"value": "position"})
+        # TODO add logical name for pool
+        position_snapshot = get_position_snapshot(
+            self.chain.db_session, hyperdrive_address=self.interface.hyperdrive_address, coerce_float=coerce_float
+        ).drop("id", axis=1)
         # Add usernames
-        out = self._add_username_to_dataframe(out, "wallet_address")
-        # Filter and order columns
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "token_type",
-                "position",
-                "pnl",
-                "base_token_type",
-                "maturity_time",
-                "latest_block_update",
-            ]
-        ]
-        return out
+        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
 
-    def get_ticker(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the ticker history of all trades and the corresponding token deltas for each trade.
 
         Arguments
         ---------
+        all_token_deltas: bool
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
 
         Returns
         -------
         pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            trade_type: str
-                The trade that the agent made.
-            token_diffs: list[str]
-                A list of token diffs for each trade. Each token diff is encoded as "<base_token_type>: <amount>"
+            A dataframe of trade events.
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-        out = get_ticker(self.db_session, coerce_float=coerce_float).drop("id", axis=1)
+        # TODO add timestamp back in
+        out = get_trade_events(
+            self.chain.db_session,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            all_token_deltas=all_token_deltas,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
         out = self._add_username_to_dataframe(out, "wallet_address")
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "trade_type",
-                "token_diffs",
-            ]
-        ]
+        out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
 
-    def get_wallet_positions(self, coerce_float: bool = False) -> pd.DataFrame:
-        """Get a dataframe summarizing all wallet deltas and positions
-        and returns as a pandas dataframe.
-
-        Arguments
-        ---------
-        coerce_float: bool
-            If True, will coerce underlying Decimals to floats.
-
-        Returns
-        -------
-        pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            token_type: str
-                A string specifying the token type. Longs and shorts are encoded as `LONG-{maturity_time}`.
-            position: Decimal | float
-                The current value of the token of the agent at the specified block number.
-            delta: Decimal | float
-                The change in value of the token of the agent at the specified block number.
-            base_token_type: str
-                A string specifying the type of the token.
-            maturity_time: Decimal | float
-                The maturity time of the token in epoch seconds. Can be NaN to denote not applicable.
-            transaction_hash: str
-                The transaction hash that resulted in the deltas.
-        """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-        # We gather all deltas and calculate the current positions here
-        # If computing this is too slow, we can get current positions from
-        # the wallet_pnl table and left merge with the deltas
-        out = get_wallet_deltas(self.db_session, coerce_float=coerce_float)
-        out["position"] = out.groupby(["wallet_address", "token_type"])["delta"].transform(pd.Series.cumsum)
-
-        # DB only stores final delta for base, we calculate actual base based on how much funds
-        # were added in all
-        out = self._adjust_base_positions(out, "position", coerce_float)
-        # Add usernames
-        out = self._add_username_to_dataframe(out, "wallet_address")
-        # Filter and order columns
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "token_type",
-                "position",
-                "delta",
-                "base_token_type",
-                "maturity_time",
-                "transaction_hash",
-            ]
-        ]
-        return out
-
-    def get_total_wallet_pnl_over_time(self, coerce_float: bool = False) -> pd.DataFrame:
+    def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets total pnl for each wallet for each block, aggregated across all open positions.
 
         Arguments
@@ -898,150 +594,11 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            timestamp: pd.Timestamp
-                The block timestamp of the entry.
-            block_number: int
-                The block number of the entry.
-            username: str
-                The username of the entry.
-            wallet_address: str
-                The wallet address of the entry.
-            pnl: Decimal | float
-                The total pnl of the agent at the specified block number.
+            A dataframe of aggregated wallet pnl per block
         """
-        # DB read calls ensures data pipeline is caught up before returning
-        if self.chain.experimental_data_threading:
-            self._ensure_data_caught_up()
-        out = get_total_wallet_pnl_over_time(self.db_session, coerce_float=coerce_float)
+        out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
-        out = out[
-            [
-                "timestamp",
-                "block_number",
-                "username",
-                "wallet_address",
-                "pnl",
-            ]
-        ]
         return out
-
-    def _get_dashboard_run_command(self, flags: list[str] | None = None) -> list[str]:
-        """Returns the run command for launching a Streamlit dashboard.
-
-        Arguments
-        ---------
-        flags: list[str] | None, optional
-            List of streamlit flags to be added to the run command.
-            Commands and arguments should be seperate entries, for example: ["--server.headless", "true"]
-            Defaults to an empty list, which passes no flags.
-
-        Returns
-        -------
-        str
-            The streamlit run command string.
-        """
-        if flags is None:
-            flags = []
-        # In order to support this command in both notebooks and scripts, we reference
-        # the path to the virtual environment relative to this file.
-        base_dir = pathlib.Path(__file__).parent.parent.parent.parent.parent.parent.resolve()
-        venv_dir = pathlib.Path(os.environ["VIRTUAL_ENV"])
-        streamlit_path = str(venv_dir / "bin" / "streamlit")
-        dashboard_path = str(base_dir / "src" / "agent0" / "chainsync" / "streamlit" / "Dashboard.py")
-        dashboard_run_command = (
-            [streamlit_path, "run"]
-            + flags
-            + [
-                dashboard_path,
-            ]
-        )
-        return dashboard_run_command
-
-    def run_dashboard(self, blocking: bool = False) -> None:
-        """Runs the streamlit dashboard in a subprocess connected to interactive hyperdrive.
-
-        .. note::
-            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
-            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
-            streamlit server. Passing ``blocking=True`` will block execution of the main
-            script in this function until a keypress is registered.
-
-        Arguments
-        ---------
-        blocking: bool
-            If True, will block execution of the main script in this function until a keypress is registered.
-            When in blocking mode, the server will be killed upon return of control to caller.
-            If False, will clean up subprocess in cleanup.
-        """
-
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
-            ]
-        )
-        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
-
-        assert self.dashboard_subprocess is None
-        # Since dashboard is a non-terminating process, we need to manually control its lifecycle
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-        )
-        if blocking:
-            input("Press any key to kill dashboard server.")
-            self.dashboard_subprocess.kill()
-            self.dashboard_subprocess = None
-
-    def get_dashboard_iframe(self, width: int = 1000, height: int = 800) -> IFrame:
-        """Embeds the streamlit dashboard into a Jupyter notebook as an IFrame.
-
-        .. note::
-            The interactive hyperdrive script must be in a paused state (before cleanup) for the dashboard to
-            connect with the underlying database, otherwise `cleanup` and/or the main thread executed will kill the
-            streamlit server. Passing ``blocking=True`` will block execution of the main
-            script in this function until a keypress is registered.
-
-        Arguments
-        ---------
-        width: int
-            Width, in pixels, of the IFrame.
-            Defaults to 1000.
-        height: int
-            Height, in pixels, of the IFrame.
-            Defaults to 800.
-
-        Returns
-        -------
-        IFrame
-            An dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
-        """
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.headless",
-                "true",
-                "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
-            ]
-        )
-        env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            # stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        network_url = f"http://localhost:{self.config.dashboard_port}"
-
-        dashboard_iframe = IFrame(src=network_url, width=width, height=height)
-        time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
-        return dashboard_iframe
 
     ### Private agent methods ###
 
@@ -1097,61 +654,16 @@ class LocalHyperdrive(Hyperdrive):
 
         # Register the username if it was provided
         if name is not None:
-            add_addr_to_username(name, [agent.address], self.db_session)
+            add_addr_to_username(name, [agent.address], self.chain.db_session)
         return agent
 
     def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
-        # Update the db with this wallet
-        # TODO this function can be optimized to cache.
-        trade_events_to_db([self.interface], agent.checksum_address, self.db_session)
+        # No need to sync in local hyperdrive, we sync when we run the data pipeline
+        pass
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
-        self._sync_events(agent)
-
-        # Query for the wallet object from the db
-        wallet_positions = get_positions_from_db(
-            self.db_session, agent.checksum_address, hyperdrive_address=self.interface.hyperdrive_address
-        )
-        # Convert to hyperdrive wallet object
-        long_obj: dict[int, Long] = {}
-        short_obj: dict[int, Short] = {}
-        lp_balance: FixedPoint = FixedPoint(0)
-        withdrawal_shares_balance: FixedPoint = FixedPoint(0)
-        for _, row in wallet_positions.iterrows():
-            # Sanity checks
-            assert row["hyperdrive_address"] == self.interface.hyperdrive_address
-            assert row["wallet_address"] == agent.checksum_address
-            if row["token_id"] == "LP":
-                lp_balance = FixedPoint(row["balance"])
-            elif row["token_id"] == "WITHDRAWAL_SHARE":
-                withdrawal_shares_balance = FixedPoint(row["balance"])
-            elif "LONG" in row["token_id"]:
-                maturity_time = int(row["token_id"].split("-")[1])
-                long_obj[maturity_time] = Long(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
-            elif "SHORT" in row["token_id"]:
-                maturity_time = int(row["token_id"].split("-")[1])
-                short_obj[maturity_time] = Short(balance=FixedPoint(row["balance"]), maturity_time=maturity_time)
-
-        # We do a balance of call to get base balance.
-        base_balance = FixedPoint(
-            scaled_value=self.interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
-        )
-
-        return HyperdriveWallet(
-            address=HexBytes(agent.checksum_address),
-            balance=Quantity(
-                amount=base_balance,
-                unit=TokenType.BASE,
-            ),
-            lp_tokens=lp_balance,
-            withdraw_shares=withdrawal_shares_balance,
-            longs=long_obj,
-            shorts=short_obj,
-        )
-
-    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
-        self._sync_events(agent)
-        return get_trade_events(self.db_session, agent.checksum_address)
+    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
+        # No need to sync in local hyperdrive, we sync when we run the data pipeline
+        pass
 
     def _add_funds(
         self,
@@ -1160,29 +672,14 @@ class LocalHyperdrive(Hyperdrive):
         eth: FixedPoint,
         signer_account: LocalAccount | None = None,
     ) -> None:
-
-        # TODO this can be fixed by getting actual base values from the chain.
-        # TODO this will no longer be an issue once we refactor
-        # wallets to be from events + db
-        if base > 0 and eth > 0 and self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            logging.warning("Adding funds to to an agent after saving a snapshot. This may make pnl values incorrect.")
-
         # Adding funds default to the deploy account
         if signer_account is None:
             signer_account = self._deployed_hyperdrive.deploy_account
 
         super()._add_funds(agent, base, eth, signer_account=signer_account)
 
-        if base > FixedPoint(0):
-            # Keep track of how much base has been minted for each agent
-            if agent.address in self._initial_funds:
-                self._initial_funds[agent.address] += base
-            else:
-                self._initial_funds[agent.address] = base
-
         # Adding funds mines a block, so we run data pipeline here
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
 
     @overload
     def _handle_trade_result(
@@ -1204,9 +701,9 @@ class LocalHyperdrive(Hyperdrive):
             trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
             if self.config.crash_log_ticker:
                 if trade_result.additional_info is None:
-                    trade_result.additional_info = {"ticker": self.get_ticker()}
+                    trade_result.additional_info = {"trade_events": self.get_trade_events()}
                 else:
-                    trade_result.additional_info["ticker"] = self.get_ticker()
+                    trade_result.additional_info["trade_events"] = self.get_trade_events()
 
         # This check is necessary for subclass overloading and typing,
         # as types are narrowed based on the literal `always_throw_exception`
@@ -1216,78 +713,51 @@ class LocalHyperdrive(Hyperdrive):
 
     def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
         out = super()._open_long(agent, base)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
         out = super()._close_long(agent, maturity_time, bonds)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
         out = super()._open_short(agent, bonds)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
         out = super()._close_short(agent, maturity_time, bonds)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
         out = super()._add_liquidity(agent, base)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
         out = super()._remove_liquidity(agent, shares)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
         out = super()._redeem_withdraw_share(agent, shares)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _execute_policy_action(
         self, agent: HyperdrivePolicyAgent
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         out = super()._execute_policy_action(agent)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _liquidate(
         self, agent: HyperdrivePolicyAgent, randomize: bool
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         out = super()._liquidate(agent, randomize)
-        # Experimental changes runs data pipeline in thread
-        # Turn that off here to run in slow, but won't crash mode
-        if not self.chain.experimental_data_threading:
-            self._run_blocking_data_pipeline()
+        self._run_blocking_data_pipeline()
         return out
 
     def _reinit_state_after_load_snapshot(self) -> None:
@@ -1301,12 +771,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
-            db_balances = chainsync_get_current_wallet(
-                self.db_session, wallet_address=[agent.checksum_address], coerce_float=False
-            )
-            agent.agent.wallet = build_wallet_positions_from_db(
-                agent.checksum_address, db_balances, self.interface.base_token_contract
-            )
+            agent.agent.wallet = self._get_wallet(agent.agent)
 
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         """Saves the policy state to file.

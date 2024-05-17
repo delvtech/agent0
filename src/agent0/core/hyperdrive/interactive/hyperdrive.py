@@ -14,9 +14,23 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
+from hexbytes import HexBytes
 from numpy.random._generator import Generator
 from web3 import Web3
 
+from agent0.chainsync.analysis import snapshot_positions_to_db
+from agent0.chainsync.dashboard.usernames import build_user_mapping
+from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username
+from agent0.chainsync.db.hyperdrive import (
+    add_hyperdrive_addr_to_name,
+    checkpoint_events_to_db,
+    get_current_positions,
+    get_hyperdrive_addr_to_name,
+    get_position_snapshot,
+    get_trade_events,
+    trade_events_to_db,
+)
+from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive import (
     HyperdriveActionType,
     HyperdrivePolicyAgent,
@@ -26,7 +40,6 @@ from agent0.core.hyperdrive import (
 )
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
-    build_wallet_positions_from_chain,
     close_long_trade,
     close_short_trade,
     open_long_trade,
@@ -34,6 +47,7 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
+from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
@@ -41,6 +55,7 @@ from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     ReceiptBreakdown,
+    generate_name_for_hyperdrive,
     get_hyperdrive_addresses_from_artifacts,
     get_hyperdrive_addresses_from_registry,
 )
@@ -75,6 +90,7 @@ class Hyperdrive:
     class Config:
         """The configuration for the interactive hyperdrive class."""
 
+        # Execution config
         exception_on_policy_error: bool = True
         """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
         exception_on_policy_slippage: bool = False
@@ -83,6 +99,10 @@ class Hyperdrive:
         """
         preview_before_trade: bool = False
         """Whether to preview the position before executing a trade. Defaults to False."""
+        txn_receipt_timeout: float | None = None
+        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
+
+        # RNG config
         rng_seed: int | None = None
         """The seed for the random number generator. Defaults to None."""
         rng: Generator | None = None
@@ -90,6 +110,8 @@ class Hyperdrive:
         The experiment's stateful random number generator. Defaults to creating a generator from
         the provided random seed if not set.
         """
+
+        # Logging and crash reporting
         log_to_rollbar: bool = False
         """Whether to log crash reports to rollbar. Defaults to False."""
         rollbar_log_prefix: str | None = None
@@ -105,8 +127,10 @@ class Hyperdrive:
         If False, the policy `post_action` function will only be called after `execute_policy_action`.
         Defaults to False.
         """
-        txn_receipt_timeout: float | None = None
-        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
+
+        # Data pipeline parameters
+        calc_pnl: bool = True
+        """Whether to calculate pnl. Defaults to True."""
 
         def __post_init__(self):
             """Create the random number generator if not set."""
@@ -156,11 +180,31 @@ class Hyperdrive:
         # pylint: disable=protected-access
         return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
+    def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress, name: str | None):
+        self.interface = HyperdriveReadWriteInterface(
+            hyperdrive_address,
+            rpc_uri=chain.rpc_uri,
+            web3=chain._web3,  # pylint: disable=protected-access
+            txn_receipt_timeout=self.config.txn_receipt_timeout,
+        )
+
+        self.chain = chain
+        # Register the username if it was provided
+        if name is None:
+            # Build the name in this case
+            name = generate_name_for_hyperdrive(
+                self.hyperdrive_address,
+                self.chain._web3,  # pylint: disable=protected-access
+            )
+
+        add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
+
     def __init__(
         self,
         chain: Chain,
         hyperdrive_address: ChecksumAddress,
         config: Config | None = None,
+        name: str | None = None,
     ):
         """Initialize the interactive hyperdrive class.
 
@@ -172,26 +216,132 @@ class Hyperdrive:
             The address of the hyperdrive contract
         config: Config | None
             The configuration for the interactive hyperdrive class
+        name: str | None, optional
+            The logical name of the pool.
         """
         if config is None:
             self.config = self.Config()
         else:
             self.config = config
 
-        self.interface = HyperdriveReadWriteInterface(
-            hyperdrive_address,
-            rpc_uri=chain.rpc_uri,
-            web3=chain._web3,
-            txn_receipt_timeout=self.config.txn_receipt_timeout,
-        )
+        # Since the hyperdrive objects manage data ingestion into the singular database
+        # held by the chain object, we want to ensure that we dont mix and match
+        # local vs non-local hyperdrive objects. Hence, we ensure that any hyperdrive
+        # objects must come from a base Chain object and not a LocalChain.
+        # We use `type` instead of `isinstance` to explicitly check for
+        # the base Chain type instead of any subclass.
+        # pylint: disable=unidiomatic-typecheck
+        if type(chain) != Chain:
+            raise TypeError("The chain parameter must be a Chain object, not a LocalChain.")
 
-        self.chain = chain
+        self._initialize(chain, hyperdrive_address, name)
+
+    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets all current positions of this pool and their corresponding pnl
+        and returns as a pandas dataframe.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+        show_closed_positions: bool
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe consisting of currently open positions and their corresponding pnl.
+        """
+        raise NotImplementedError
+
+    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the ticker history of all trades and the corresponding token deltas for each trade.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        all_token_deltas: bool
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe of trade events.
+        """
+        raise NotImplementedError
+
+    def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the history of all positions over time and their corresponding pnl
+        and returns as a pandas dataframe.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe consisting of positions over time and their corresponding pnl.
+        """
+        raise NotImplementedError
+
+    def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets total pnl for each wallet for each block, aggregated across all open positions.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe of aggregated wallet pnl per block
+        """
+        raise NotImplementedError
+
+    @property
+    def hyperdrive_address(self) -> ChecksumAddress:
+        """Returns the hyperdrive addresses for this pool.
+
+        Returns
+        -------
+        ChecksumAddress
+            The hyperdrive addresses for this pool
+        """
+        # pylint: disable=protected-access
+        return self.interface.hyperdrive_address
 
     def init_agent(
         self,
         private_key: str,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
+        name: str | None = None,
     ) -> HyperdriveAgent:
         """Initialize an agent object given a private key.
 
@@ -206,6 +356,8 @@ class Hyperdrive:
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
+        name: str, optional
+            The name of the agent. Defaults to the wallet address.
 
         Returns
         -------
@@ -216,6 +368,7 @@ class Hyperdrive:
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
         out_agent = HyperdriveAgent(
+            name=name,
             pool=self,
             policy=policy,
             policy_config=policy_config,
@@ -225,6 +378,7 @@ class Hyperdrive:
 
     def _init_agent(
         self,
+        name: str | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
@@ -241,7 +395,35 @@ class Hyperdrive:
 
         agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
 
+        # Register the username if it was provided
+        if name is not None:
+            add_addr_to_username(name, [agent.address], self.chain.db_session)
+
         return agent
+
+    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        addr_to_username = get_addr_to_username(self.chain.db_session)
+
+        # Get corresponding usernames
+        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
+        out = df.copy()
+        # Weird pandas type error
+        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
+        return out
+
+    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.chain.db_session)
+
+        # Do lookup from address to name
+        hyperdrive_name = (
+            df[addr_column]
+            .to_frame()
+            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
+        )["name"]
+        # Weird pandas type error
+        out = df.copy()
+        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
+        return out
 
     def _set_max_approval(self, agent: HyperdrivePolicyAgent) -> None:
         # Establish max approval for the hyperdrive contract
@@ -252,14 +434,105 @@ class Hyperdrive:
             str(self.interface.hyperdrive_contract.address),
         )
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
-        # TODO move the db to the chain class and use it here
-        # to get wallets
-        return build_wallet_positions_from_chain(agent, self.interface)
+    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
+        # Update the db with this wallet
+        # Note that remote hyperdrive only updates the wallet wrt the agent itself.
+        # TODO this function can be optimized to cache.
 
-    def _get_trade_events(self, agent: HyperdrivePolicyAgent) -> pd.DataFrame:
-        # TODO move the db to the chain class and use it here to get events
-        raise NotImplementedError
+        # NOTE the way we sync the events table is by either looking at (1) the latest
+        # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
+        # table, based on if we're updating the table with all wallets or just a single wallet.
+
+        # Remote hyperdrive stack syncs only the agent's wallet
+        trade_events_to_db([self.interface], wallet_addr=agent.checksum_address, db_session=self.chain.db_session)
+        # We sync checkpoint events as well
+        checkpoint_events_to_db([self.interface], db_session=self.chain.db_session)
+
+    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
+        # Update the db with a snapshot of the wallet
+
+        # Note that remote hyperdrive only updates snapshots wrt the agent itself.
+        snapshot_positions_to_db(
+            [self.interface],
+            wallet_addr=agent.checksum_address,
+            db_session=self.chain.db_session,
+            calc_pnl=self.config.calc_pnl,
+        )
+
+    def _get_positions(
+        self, agent: HyperdrivePolicyAgent, show_closed_positions: bool, coerce_float: bool
+    ) -> pd.DataFrame:
+        # Sync all events, then sync snapshots for pnl and value calculation
+        self._sync_events(agent)
+        self._sync_snapshot(agent)
+        # Query the snapshot for the most recent positions.
+        position_snapshot = get_position_snapshot(
+            session=self.chain.db_session,
+            start_block=-1,
+            wallet_address=agent.address,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        if not show_closed_positions:
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
+        # Add usernames
+        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
+
+    def _get_wallet(self, agent: HyperdrivePolicyAgent) -> HyperdriveWallet:
+        self._sync_events(agent)
+        # Query current positions from the events table
+        positions = get_current_positions(
+            self.chain.db_session,
+            agent.checksum_address,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            show_closed_positions=False,
+            coerce_float=False,
+        )
+        # Convert to hyperdrive wallet object
+        long_obj: dict[int, Long] = {}
+        short_obj: dict[int, Short] = {}
+        lp_balance: FixedPoint = FixedPoint(0)
+        withdrawal_shares_balance: FixedPoint = FixedPoint(0)
+        for _, row in positions.iterrows():
+            # Sanity checks
+            assert row["hyperdrive_address"] == self.interface.hyperdrive_address
+            assert row["wallet_address"] == agent.checksum_address
+            if row["token_id"] == "LP":
+                lp_balance = FixedPoint(row["token_balance"])
+            elif row["token_id"] == "WITHDRAWAL_SHARE":
+                withdrawal_shares_balance = FixedPoint(row["token_balance"])
+            elif row["token_type"] == "LONG":
+                maturity_time = int(row["maturity_time"])
+                long_obj[maturity_time] = Long(balance=FixedPoint(row["token_balance"]), maturity_time=maturity_time)
+            elif row["token_type"] == "SHORT":
+                maturity_time = int(row["maturity_time"])
+                short_obj[maturity_time] = Short(balance=FixedPoint(row["token_balance"]), maturity_time=maturity_time)
+
+        # We do a balance of call to get base balance.
+        base_balance = FixedPoint(
+            scaled_value=self.interface.base_token_contract.functions.balanceOf(agent.checksum_address).call()
+        )
+
+        return HyperdriveWallet(
+            address=HexBytes(agent.checksum_address),
+            balance=Quantity(
+                amount=base_balance,
+                unit=TokenType.BASE,
+            ),
+            lp_tokens=lp_balance,
+            withdraw_shares=withdrawal_shares_balance,
+            longs=long_obj,
+            shorts=short_obj,
+        )
+
+    def _get_trade_events(
+        self, agent: HyperdrivePolicyAgent, all_token_deltas: bool, coerce_float: bool
+    ) -> pd.DataFrame:
+        self._sync_events(agent)
+        return get_trade_events(
+            self.chain.db_session, agent.checksum_address, all_token_deltas=all_token_deltas, coerce_float=coerce_float
+        ).drop("id", axis=1)
 
     def _add_funds(
         self,
