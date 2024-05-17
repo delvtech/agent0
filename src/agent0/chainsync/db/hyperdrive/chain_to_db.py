@@ -176,7 +176,12 @@ def trade_events_to_db(
         # TODO can narrow this down to the last block we checked
         # For now, keep this as the latest entry of this wallet.
         # + 1 since the queries are inclusive
-        from_block = get_latest_block_number_from_trade_event(db_session, wallet_addr, interface.hyperdrive_address) + 1
+        from_block = (
+            get_latest_block_number_from_trade_event(
+                db_session, wallet_address=wallet_addr, hyperdrive_address=interface.hyperdrive_address
+            )
+            + 1
+        )
 
         # Look for transfer single events in both directions if wallet_addr is set
         if wallet_addr is not None:

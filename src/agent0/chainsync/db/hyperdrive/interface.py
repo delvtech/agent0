@@ -113,8 +113,8 @@ def add_trade_events(transfer_events: list[TradeEvent], session: Session) -> Non
 
 def get_latest_block_number_from_trade_event(
     session: Session,
-    wallet_addr: str | None,
     hyperdrive_address: str | None,
+    wallet_address: str | None,
 ) -> int:
     """Get the latest block number based on the hyperdrive events table in the db.
 
@@ -122,12 +122,12 @@ def get_latest_block_number_from_trade_event(
     ---------
     session: Session
         The initialized session object.
-    wallet_addr: str | None
-        The wallet address to filter the results on. Can be None to return latest block number
-        regardless of wallet.
     hyperdrive_address: str | None
         The hyperdrive address to filter the results on. Can be None to return latest block number
         regardless of pool.
+    wallet_address: str | None
+        The wallet address to filter the results on. Can be None to return latest block number
+        regardless of wallet.
 
     Returns
     -------
@@ -136,8 +136,8 @@ def get_latest_block_number_from_trade_event(
     """
 
     query = session.query(func.max(TradeEvent.block_number))
-    if wallet_addr is not None:
-        query = query.filter(TradeEvent.wallet_address == wallet_addr)
+    if wallet_address is not None:
+        query = query.filter(TradeEvent.wallet_address == wallet_address)
     if hyperdrive_address is not None:
         query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
     query = query.scalar()

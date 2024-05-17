@@ -304,21 +304,50 @@ class TestHyperdriveEventsInterface:
     """Testing postgres interface for walletinfo table"""
 
     @pytest.mark.docker
-    def test_latest_block_number(self, db_session):
+    def test_latest_block_number_on_wallet(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        transfer_event = TradeEvent(block_number=1, hyperdrive_address="a", transaction_hash="a", wallet_address="a")
+        transfer_event = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
         add_trade_events([transfer_event], db_session)
 
-        latest_block_number = get_latest_block_number_from_trade_event(db_session, "a")
+        latest_block_number = get_latest_block_number_from_trade_event(
+            db_session, hyperdrive_address=None, wallet_address="1"
+        )
         assert latest_block_number == 1
 
-        transfer_event_1 = TradeEvent(block_number=2, hyperdrive_address="a", transaction_hash="a", wallet_address="a")
-        transfer_event_2 = TradeEvent(block_number=3, hyperdrive_address="a", transaction_hash="a", wallet_address="b")
+        transfer_event_1 = TradeEvent(block_number=2, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
+        transfer_event_2 = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="2")
         add_trade_events([transfer_event_1, transfer_event_2], db_session)
-        latest_block_number = get_latest_block_number_from_trade_event(db_session, "a")
+        latest_block_number = get_latest_block_number_from_trade_event(
+            db_session, hyperdrive_address=None, wallet_address="1"
+        )
         assert latest_block_number == 2
-        latest_block_number = get_latest_block_number_from_trade_event(db_session, "b")
-        assert latest_block_number == 3
+        latest_block_number = get_latest_block_number_from_trade_event(
+            db_session, hyperdrive_address=None, wallet_address="2"
+        )
+        assert latest_block_number == 1
+
+    @pytest.mark.docker
+    def test_latest_block_number_on_hyperdrive_address(self, db_session):
+        """Testing retrieval of wallet info via interface"""
+        transfer_event = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
+        add_trade_events([transfer_event], db_session)
+
+        latest_block_number = get_latest_block_number_from_trade_event(
+            db_session, hyperdrive_address="a", wallet_address=None
+        )
+        assert latest_block_number == 1
+
+        transfer_event_1 = TradeEvent(block_number=2, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
+        transfer_event_2 = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="b", wallet_address="1")
+        add_trade_events([transfer_event_1, transfer_event_2], db_session)
+        latest_block_number = get_latest_block_number_from_trade_event(
+            db_session, hyperdrive_address="a", wallet_address=None
+        )
+        assert latest_block_number == 2
+        latest_block_number = get_latest_block_number_from_trade_event(
+            db_session, hyperdrive_address="b", wallet_address=None
+        )
+        assert latest_block_number == 1
 
     @pytest.mark.docker
     def test_get_agents(self, db_session):
