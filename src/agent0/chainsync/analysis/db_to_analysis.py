@@ -78,12 +78,16 @@ def snapshot_positions_to_db(
     """
     assert len(interfaces) > 0
     query_block_number = interfaces[0].get_block_number(interfaces[0].get_block("latest"))
-    last_snapshot_block = get_latest_block_number_from_positions_snapshot_table(db_session, wallet_addr)
-    if query_block_number <= last_snapshot_block:
-        return
 
     all_pool_positions: list[pd.DataFrame] = []
     for interface in interfaces:
+        # TODO filter by hyperdrive address here
+        last_snapshot_block = get_latest_block_number_from_positions_snapshot_table(
+            db_session, wallet_addr, hyperdrive_address=interface.hyperdrive_address
+        )
+        if query_block_number <= last_snapshot_block:
+            continue
+
         hyperdrive_address = interface.hyperdrive_address
 
         # Calculate all open positions for the end block

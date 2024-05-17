@@ -121,16 +121,19 @@ def checkpoint_events_to_db(
     """
     assert len(interfaces) > 0
 
-    # Get the earliest block to get events from
-    # TODO can narrow this down to the last block we checked
-    # For now, keep this as the latest entry of this wallet.
-    # + 1 since the queries are inclusive
-    from_block = get_latest_block_number_from_checkpoint_info_table(db_session) + 1
-
     # Gather all events we care about here
     all_events: list[EventData] = []
 
     for interface in interfaces:
+        # Get the earliest block to get events from.
+        # We need the latest block number for a given hyperdrive pool,
+        # as we call this function per pool.
+
+        # TODO can narrow this down to the last block we checked
+        # For now, keep this as the latest entry of this wallet.
+
+        # + 1 since the queries are inclusive
+        from_block = get_latest_block_number_from_checkpoint_info_table(db_session, interface.hyperdrive_address) + 1
         all_events.extend(
             interface.hyperdrive_contract.events.CreateCheckpoint.get_logs(
                 fromBlock=from_block,
@@ -162,16 +165,19 @@ def trade_events_to_db(
     """
     assert len(interfaces) > 0
 
-    # Get the earliest block to get events from
-    # TODO can narrow this down to the last block we checked
-    # For now, keep this as the latest entry of this wallet.
-    # + 1 since the queries are inclusive
-    from_block = get_latest_block_number_from_trade_event(db_session, wallet_addr) + 1
-
     # Gather all events we care about here
     all_events: list[EventData] = []
 
     for interface in interfaces:
+        # Get the earliest block to get events from
+        # We need the latest block number for a given hyperdrive pool,
+        # as we call this function per pool.
+
+        # TODO can narrow this down to the last block we checked
+        # For now, keep this as the latest entry of this wallet.
+        # + 1 since the queries are inclusive
+        from_block = get_latest_block_number_from_trade_event(db_session, wallet_addr, interface.hyperdrive_address) + 1
+
         # Look for transfer single events in both directions if wallet_addr is set
         if wallet_addr is not None:
             all_events.extend(

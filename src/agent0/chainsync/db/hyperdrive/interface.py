@@ -111,7 +111,11 @@ def add_trade_events(transfer_events: list[TradeEvent], session: Session) -> Non
         raise err
 
 
-def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str | None) -> int:
+def get_latest_block_number_from_trade_event(
+    session: Session,
+    wallet_addr: str | None,
+    hyperdrive_address: str | None,
+) -> int:
     """Get the latest block number based on the hyperdrive events table in the db.
 
     Arguments
@@ -121,6 +125,9 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str 
     wallet_addr: str | None
         The wallet address to filter the results on. Can be None to return latest block number
         regardless of wallet.
+    hyperdrive_address: str | None
+        The hyperdrive address to filter the results on. Can be None to return latest block number
+        regardless of pool.
 
     Returns
     -------
@@ -131,6 +138,8 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str 
     query = session.query(func.max(TradeEvent.block_number))
     if wallet_addr is not None:
         query = query.filter(TradeEvent.wallet_address == wallet_addr)
+    if hyperdrive_address is not None:
+        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
     query = query.scalar()
 
     if query is None:
@@ -138,7 +147,9 @@ def get_latest_block_number_from_trade_event(session: Session, wallet_addr: str 
     return int(query)
 
 
-def get_latest_block_number_from_positions_snapshot_table(session: Session, wallet_addr: str | None) -> int:
+def get_latest_block_number_from_positions_snapshot_table(
+    session: Session, wallet_addr: str | None, hyperdrive_address: str | None
+) -> int:
     """Get the latest block number based on the positions snapshot table in the db.
 
     Arguments
@@ -148,6 +159,9 @@ def get_latest_block_number_from_positions_snapshot_table(session: Session, wall
     wallet_addr: str | None
         The wallet address to filter the results on. Can be None to return latest block number
         regardless of wallet.
+    hyperdrive_address: str | None
+        The hyperdrive address to filter the results on. Can be None to return latest block number
+        regardless of pool.
 
     Returns
     -------
@@ -158,6 +172,8 @@ def get_latest_block_number_from_positions_snapshot_table(session: Session, wall
     query = session.query(func.max(PositionSnapshot.block_number))
     if wallet_addr is not None:
         query = query.filter(PositionSnapshot.wallet_address == wallet_addr)
+    if hyperdrive_address is not None:
+        query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
     query = query.scalar()
 
     if query is None:
@@ -481,20 +497,29 @@ def get_pool_info(
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def get_latest_block_number_from_checkpoint_info_table(session: Session) -> int:
-    """Get the latest block number based on the pool info table in the db.
+def get_latest_block_number_from_checkpoint_info_table(session: Session, hyperdrive_address: str | None) -> int:
+    """Get the latest block number based on the checkpoint info table in the db.
 
     Arguments
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None
+        The hyperdrive pool address to filter the query on.
 
     Returns
     -------
     int
         The latest block number in the poolinfo table.
     """
-    return get_latest_block_number_from_table(CheckpointInfo, session)
+    query = session.query(func.max(CheckpointInfo.block_number))
+    if hyperdrive_address is not None:
+        query = query.filter(CheckpointInfo.hyperdrive_address == hyperdrive_address)
+    query = query.scalar()
+
+    if query is None:
+        return 0
+    return int(query)
 
 
 def get_checkpoint_info(
