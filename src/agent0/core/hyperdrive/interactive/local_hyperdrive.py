@@ -487,9 +487,11 @@ class LocalHyperdrive(Hyperdrive):
         Returns
         -------
         pd.Dataframe
-            A pandas dataframe that consists of previous checkpoints made.
+            A pandas dataframe that consists of previous checkpoints made on this pool.
         """
-        return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
+        return get_checkpoint_info(
+            self.chain.db_session, hyperdrive_address=self.hyperdrive_address, coerce_float=coerce_float
+        )
 
     def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets all current positions of this pool and their corresponding pnl

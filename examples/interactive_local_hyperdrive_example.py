@@ -93,7 +93,6 @@ pool_config = hyperdrive.get_pool_config()
 # here, and pandas need a numerical float for plotting, so we coerce decimals to floats here
 pool_info = hyperdrive.get_pool_info(coerce_float=True)
 
-# FIXME sort these values by checkpoint time
 checkpoint_info = hyperdrive.get_checkpoint_info()
 
 # Change this to get wallet
