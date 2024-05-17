@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import contextlib
+import atexit
 import logging
 import os
 from dataclasses import dataclass
@@ -98,6 +98,11 @@ class Chain:
         self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
         self._db_name = self.postgres_config.POSTGRES_DB
 
+        # Registers the cleanup function to run when the python script exist.
+        # NOTE this isn't guaranteed to run (e.g., in notebook and vscode debugging environment)
+        # so still best practice to manually call cleanup at the end of scripts.
+        atexit.register(self.cleanup)
+
     def _initialize_postgres_container(
         self, container_name: str, db_port: int, remove_existing_db_container: bool
     ) -> tuple[PostgresConfig, Container]:
@@ -164,16 +169,21 @@ class Chain:
 
     def cleanup(self):
         """General cleanup of resources of interactive hyperdrive."""
-        self.db_session.close()
+        try:
+            if self.db_session is not None:
+                self.db_session.close()
+        except Exception as e:  # pylint: disable=broad-except
+            print("Error in cleanup: %s" % repr(e))
+
         try:
             self.postgres_container.kill()
-        except Exception:  # pylint: disable=broad-except
-            pass
+        except Exception as e:  # pylint: disable=broad-except
+            print("Error in cleanup: %s" % repr(e))
 
-    def __del__(self):
-        """General cleanup of resources of interactive hyperdrive."""
-        with contextlib.suppress(Exception):
-            self.cleanup()
+    # def __del__(self):
+    #    """General cleanup of resources of interactive hyperdrive."""
+    #    with contextlib.suppress(Exception):
+    #        self.cleanup()
 
     def block_number(self) -> int:
         """Get the current block number on the chain.

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import atexit
-import contextlib
 import os
 import pathlib
 import subprocess
@@ -119,30 +117,32 @@ class LocalChain(Chain):
         self.config = config
         self.dashboard_subprocess: subprocess.Popen | None = None
 
-        # Registers the cleanup function to run when the python script exist.
-        # NOTE this isn't guaranteed to run (e.g., in notebook and vscode debugging environment)
-        # so still best practice to manually call cleanup at the end of scripts.
-        atexit.register(self.cleanup)
-
         # TODO hack, wait for chain to init
         time.sleep(1)
 
     def cleanup(self):
         """Kills the subprocess in this class' destructor."""
         # Runs cleanup on all deployed pools
-        self.anvil_process.kill()
+        try:
+            if self.anvil_process is not None:
+                self.anvil_process.kill()
+        except Exception as e:  # pylint: disable=broad-except
+            print("Error in cleanup: %s" % repr(e))
 
-        if self.dashboard_subprocess is not None:
-            self.dashboard_subprocess.kill()
-            self.dashboard_subprocess = None
+        try:
+            if self.dashboard_subprocess is not None:
+                self.dashboard_subprocess.kill()
+                self.dashboard_subprocess = None
+        except Exception as e:  # pylint: disable=broad-except
+            print("Error in cleanup: %s" % repr(e))
 
         super().cleanup()
 
-    def __del__(self):
-        """Kill subprocess in this class' destructor."""
-        with contextlib.suppress(Exception):
-            self.cleanup()
-        super().__del__()
+    # def __del__(self):
+    #    """Kill subprocess in this class' destructor."""
+    #    with contextlib.suppress(Exception):
+    #        self.cleanup()
+    #    super().__del__()
 
     def get_deployer_account_private_key(self) -> str:
         """Get the private key of the deployer account.
