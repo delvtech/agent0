@@ -236,7 +236,7 @@ def get_current_positions(
     wallet_addr: str | None = None,
     hyperdrive_address: str | None = None,
     query_block: int | None = None,
-    show_zero_balance: bool = False,
+    show_closed_positions: bool = False,
     coerce_float=False,
 ) -> pd.DataFrame:
     """Gets all positions for a given wallet address.
@@ -252,8 +252,8 @@ def get_current_positions(
     query_block: int | None, optional
         The block to get positions for. query_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
-    show_zero_balance: bool, optional
-        Whether to show positions with zero balance.
+    show_closed_positions: bool, optional
+        Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
         When False, will only return currently open positions. Useful for gathering currently open positions.
         When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
     coerce_float: bool
@@ -298,7 +298,7 @@ def get_current_positions(
     query = query.group_by(TradeEvent.hyperdrive_address, TradeEvent.wallet_address, TradeEvent.token_id)
     out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
-    if not show_zero_balance:
+    if not show_closed_positions:
         out_df = out_df[out_df["token_balance"] != 0].reset_index(drop=True).copy()
     return out_df
 

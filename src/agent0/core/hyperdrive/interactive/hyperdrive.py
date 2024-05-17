@@ -371,7 +371,9 @@ class Hyperdrive:
             calc_pnl=self.config.calc_pnl,
         )
 
-    def _get_positions(self, agent: HyperdrivePolicyAgent, show_zero_balance: bool, coerce_float: bool) -> pd.DataFrame:
+    def _get_positions(
+        self, agent: HyperdrivePolicyAgent, show_closed_positions: bool, coerce_float: bool
+    ) -> pd.DataFrame:
         # Sync all events, then sync snapshots for pnl and value calculation
         self._sync_events(agent)
         self._sync_snapshot(agent)
@@ -382,7 +384,7 @@ class Hyperdrive:
             wallet_address=agent.address,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
-        if not show_zero_balance:
+        if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
         position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
@@ -396,7 +398,7 @@ class Hyperdrive:
             self.chain.db_session,
             agent.checksum_address,
             hyperdrive_address=self.interface.hyperdrive_address,
-            show_zero_balance=False,
+            show_closed_positions=False,
             coerce_float=False,
         )
         # Convert to hyperdrive wallet object

@@ -491,7 +491,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         return get_checkpoint_info(self.chain.db_session, coerce_float=coerce_float)
 
-    def get_positions(self, show_zero_balance: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets all current positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
         This function only exists in local hyperdrive as only sim pool keeps track
@@ -501,8 +501,8 @@ class LocalHyperdrive(Hyperdrive):
         ---------
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
-        show_zero_balance: bool
-            Whether to show positions with zero balance.
+        show_closed_positions: bool
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
 
@@ -517,7 +517,7 @@ class LocalHyperdrive(Hyperdrive):
             start_block=-1,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
-        if not show_zero_balance:
+        if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
         position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
