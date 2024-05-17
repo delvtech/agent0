@@ -3,6 +3,7 @@
 import json
 from dataclasses import asdict, is_dataclass
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from traceback import format_tb
 from types import TracebackType
@@ -47,6 +48,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
         if isinstance(o, np.ndarray):
             return o.tolist()
         if isinstance(o, FixedPoint):
+            return str(o)
+        if isinstance(o, Decimal):
             return str(o)
         if isinstance(o, Generator):
             return "NumpyGenerator"
