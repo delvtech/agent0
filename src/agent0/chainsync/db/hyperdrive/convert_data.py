@@ -42,7 +42,7 @@ def convert_checkpoint_events(events: list[EventData]) -> pd.DataFrame:
     DataFrame
         A DataFrame that matches the db schema of checkpoint events.
     """
-    # Convert attribute dictionary event data to dictionary to allow conversion to dataframe
+    # Convert list of event data to list of dictionaries to allow conversion to dataframe
     events_df = pd.DataFrame([_event_data_to_dict(event) for event in events])
 
     # If no events, we just return

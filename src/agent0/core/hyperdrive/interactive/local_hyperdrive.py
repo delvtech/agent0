@@ -502,12 +502,14 @@ class LocalHyperdrive(Hyperdrive):
 
         Arguments
         ---------
-        coerce_float: bool
-            If True, will coerce underlying Decimals to floats.
-        show_closed_positions: bool
+        show_closed_positions: bool, optional
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+            Defaults to False.
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+            Defaults to False.
 
         Returns
         -------

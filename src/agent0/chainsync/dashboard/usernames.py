@@ -8,7 +8,10 @@ import pandas as pd
 
 
 def build_user_mapping(addresses: pd.Series, addr_to_username: pd.DataFrame) -> pd.DataFrame:
-    """Given a pd.Series of wallet addresses, we build a corresponding dataframe that contains
+    """Builds a mapping from wallet addresses to usernames and any additional aliases
+    that address may have.
+
+    Given a pd.Series of wallet addresses, we build a corresponding dataframe that contains
     the mapping between that wallet address and any additional aliases that address may have.
     Specifically, the output dataframe contains the following columns:
         address: The original wallet address

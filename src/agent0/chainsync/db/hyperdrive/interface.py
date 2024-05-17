@@ -200,18 +200,20 @@ def get_trade_events(
         The wallet address(es) to filter the results on. Return all if None.
     hyperdrive_address: str | None, optional
         The hyperdrive address to filter the results on. Returns all if None.
-    all_token_deltas: bool
+    all_token_deltas: bool, optional
         When removing liquidity that results in withdrawal shares, the events table returns
         two entries for this transaction to keep track of token deltas (one for lp tokens and
-        one for withdrawal shares). If this flag is true, will return all entries in the table,
-        which is useful for calculating token positions. If false, will drop the duplicate
-        withdrawal share entry (useful for returning a ticker).
-    sort_ascending: bool
-        If true, will sort events in ascending block order. Otherwise, will sort in descending order.
-    query_limit: int | None
-        The number of rows to return. If None, will return all rows.
-    coerce_float: bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
+        one for withdrawal shares). If this flag is True, will return all entries in the table,
+        which is useful for calculating token positions. If False, will drop the duplicate
+        withdrawal share entry (useful for returning a ticker). Defaults to True.
+    sort_ascending: bool, optional
+        If True, will sort events in ascending block order. Otherwise, will sort in descending order.
+        Defaults to True.
+    query_limit: int | None, optional
+        The number of rows to return. Defaults to return all rows.
+    coerce_float: bool, optional
+        If True, will return floats in dataframe. Otherwise, will return fixed point Decimal.
+        Defaults to False.
 
     Returns
     -------
@@ -330,9 +332,9 @@ def get_pool_config(session: Session, hyperdrive_address: str | None = None, coe
     session: Session
         The initialized session object.
     hyperdrive_address: str | None, optional
-        The contract_address to filter the results on. Return all if None.
-    coerce_float: bool
-        If True, will coerce all numeric columns to float.
+        The contract_address to filter the results on. Return all if None. Defaults to returning all.
+    coerce_float: bool, optional
+        If True, will coerce all numeric columns to float. Defaults to False.
 
     Returns
     -------
@@ -535,8 +537,9 @@ def get_checkpoint_info(
         The hyperdrive pool address to filter the query on. Defaults to returning all checkpoint infos.
     checkpoint_time: int | None, optional
         The checkpoint time to filter the query on. Defaults to returning all checkpoint infos.
-    coerce_float: bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
+    coerce_float: bool, optional
+        If True, will return floats in dataframe. Otherwise, will return fixed point Decimal.
+        Defaults to False
 
     Returns
     -------
@@ -608,13 +611,16 @@ def get_position_snapshot(
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
+        Defaults to first entry.
     end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
+        Defaults to last entry.
     wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on. Returns all if None.
-    coerce_float: bool
-        If true, will return floats in dataframe. Otherwise, will return fixed point Decimal.
+    coerce_float: bool, optional
+        If True, will return floats in dataframe. Otherwise, will return fixed point Decimal.
+        Defaults to False.
 
     Returns
     -------
@@ -680,7 +686,7 @@ def get_total_pnl_over_time(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
-    # TODO do we want to keep pools seperate?
+    # TODO add optional argument of hyperdrive address to not aggregate across pools.
     query = session.query(
         PositionSnapshot.wallet_address,
         PositionSnapshot.block_number,

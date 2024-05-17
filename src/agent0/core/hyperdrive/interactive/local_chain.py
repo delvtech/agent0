@@ -449,7 +449,7 @@ class LocalChain(Chain):
         Returns
         -------
         IFrame
-            An dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
+            A dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
         """
         dashboard_run_command = self._get_dashboard_run_command(
             flags=[

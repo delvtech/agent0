@@ -56,7 +56,7 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     interfaces: list[HyperdriveReadInterface]
         A collection of Hyperdrive interface objects, each connected to a pool.
     block_number: int
-        The block number to data on.
+        The block number to query the chain on.
     session: Session
         The database session.
     """
