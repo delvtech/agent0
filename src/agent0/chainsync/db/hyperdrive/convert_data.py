@@ -9,7 +9,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 from web3.types import EventData
 
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
