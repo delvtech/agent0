@@ -18,32 +18,6 @@ from agent0.hypertypes.utilities.conversions import camel_to_snake
 from .schema import PoolConfig, PoolInfo
 
 
-def _convert_object_hexbytes_to_strings(obj: Any) -> Any:
-    """Recursively converts all HexBytes in an object to strings.
-
-    Arguments
-    ---------
-    obj: Any
-        Could be a HexBytes, dict, or any object with the `items` attribute
-
-    Returns
-    -------
-    Any
-        A nested dictionary containing the decoded object values
-
-
-    .. todo::
-        This function needs to be better constrained & typed, or avoided all together?
-    """
-    if isinstance(obj, HexBytes):
-        return obj.hex()
-    if isinstance(obj, dict):
-        return {key: _convert_object_hexbytes_to_strings(value) for key, value in obj.items()}
-    if hasattr(obj, "items"):  # any other type with "items" attr, e.g. TypedDict and OrderedDict
-        return {key: _convert_object_hexbytes_to_strings(value) for key, value in obj.items()}
-    return obj
-
-
 def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
     out = dict(in_val)
     # The args field is also an attribute dict, change to dict
