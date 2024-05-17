@@ -594,7 +594,6 @@ class LocalHyperdrive(Hyperdrive):
         """
         out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self._add_username_to_dataframe(out, "wallet_address")
-        out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
 
     ### Private agent methods ###
