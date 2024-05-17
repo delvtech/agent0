@@ -1,4 +1,4 @@
-"""Functions to gather data from postgres, do analysis, and add back into postgres"""
+"""Functions to gather data from postgres, do analysis, and add back into postgres."""
 
 from __future__ import annotations
 
@@ -55,15 +55,16 @@ def snapshot_positions_to_db(
     """Function to query the trade events table and takes a snapshot
     of the current positions and pnl.
 
-    ..note:: This function does not scale well in simulation mode, as this table grows
-    for all wallets, for all positions, for every snapshot period (currently set to every block).
+    .. note::
+        This function does not scale well in simulation mode, as this table grows
+        for all wallets, for all positions, for every snapshot period (currently set to every block).
 
-    We can try to alleviate this by (1) increasing the snapshot period, and (2) removing
-    duplicate entries of closed positions (since their `realized_value` never changes).
+        We can try to alleviate this by (1) increasing the snapshot period, and (2) removing
+        duplicate entries of closed positions (since their `realized_value` never changes).
 
-    This shouldn't be a problem for remote mode, as we limit this table to (1) only
-    agents managed by agent0, and (2) only adds an entry for every explicit "get_all_positions"
-    call.
+        This shouldn't be a problem for remote mode, as we limit this table to (1) only
+        agents managed by agent0, and (2) only adds an entry for every explicit "get_all_positions"
+        call.
 
     Arguments
     ---------

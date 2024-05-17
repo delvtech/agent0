@@ -1,4 +1,4 @@
-"""Builds the dataframes used by the streamlit dashboard."""
+"""Builds the dataframes used by the dashboard."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ from .usernames import build_user_mapping
 
 
 def build_pool_dashboard(
-    hyperdrive_address: str, session: Session, max_live_blocks: int = 5000, max_ticker_rows=1000
+    hyperdrive_address: str, session: Session, max_live_blocks: int = 5000, max_ticker_rows: int = 1000
 ) -> dict[str, pd.DataFrame]:
     """Builds the dataframes for the main dashboard page that focuses on pools.
 
@@ -44,7 +44,7 @@ def build_pool_dashboard(
     session: Session
         The initialized sqlalchemy db session object.
     max_live_blocks: int, optional
-        The maximum number of blocks to look in the past for. Defaults to 5000.
+        The maximum look-back length in blocks. Defaults to 5000.
     max_ticker_rows: int, optional
         The maximum number of ticker rows to show. Defaults to 1000.
 
@@ -124,7 +124,7 @@ def build_wallet_dashboard(
     session: Session,
     user_map: pd.DataFrame | None = None,
     max_plot_blocks: int = 5000,
-    max_ticker_rows=1000,
+    max_ticker_rows: int = 1000,
 ) -> dict[str, pd.DataFrame]:
     """Builds the dataframes for the main dashboard page that focuses on pools.
 
