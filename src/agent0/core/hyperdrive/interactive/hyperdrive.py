@@ -236,6 +236,94 @@ class Hyperdrive:
 
         self._initialize(chain, hyperdrive_address, name)
 
+    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets all current positions of this pool and their corresponding pnl
+        and returns as a pandas dataframe.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+        show_closed_positions: bool
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe consisting of currently open positions and their corresponding pnl.
+        """
+        raise NotImplementedError
+
+    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the ticker history of all trades and the corresponding token deltas for each trade.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        all_token_deltas: bool
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe of trade events.
+        """
+        raise NotImplementedError
+
+    def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets the history of all positions over time and their corresponding pnl
+        and returns as a pandas dataframe.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe consisting of positions over time and their corresponding pnl.
+        """
+        raise NotImplementedError
+
+    def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
+        """Gets total pnl for each wallet for each block, aggregated across all open positions.
+
+        This function is not implemented for remote hyperdrive, as gathering this data
+        is expensive. In the future, we can explicitly make this call gather data from
+        the remote chain.
+
+        Arguments
+        ---------
+        coerce_float: bool
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        pd.Dataframe
+            A dataframe of aggregated wallet pnl per block
+        """
+        raise NotImplementedError
+
     @property
     def hyperdrive_address(self) -> ChecksumAddress:
         """Returns the hyperdrive addresses for this pool.

@@ -494,6 +494,7 @@ class LocalHyperdrive(Hyperdrive):
     def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets all current positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
+
         This function only exists in local hyperdrive as only sim pool keeps track
         of all positions of all wallets.
 
