@@ -50,10 +50,6 @@ open_long_event_1 = agent0.open_long(base=FixedPoint(11111))
 open_long_event_1  # pyright: ignore
 # %%
 
-# Allow for creating checkpoints on the fly
-# TODO Need to figure out how to mint checkpoints on the fly
-# checkpoint_event = hyperdrive_agent0.create_checkpoint()
-
 # Another long with a different maturity time
 open_long_event_2 = agent0.open_long(FixedPoint(22222))
 

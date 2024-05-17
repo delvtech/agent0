@@ -7,6 +7,9 @@ from fixedpointmath import FixedPoint
 
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 
+# The dashboard will run for approximately this many seconds before crashing
+DEMO_NUM_ITERATIONS = 1000
+
 # Initialization
 local_chain_config = LocalChain.Config()
 chain = LocalChain(local_chain_config)
@@ -42,7 +45,7 @@ agent1 = hyperdrive1.init_agent(
 chain.run_dashboard(blocking=False)
 
 # Make trades slowly
-for _ in range(100):
+for _ in range(DEMO_NUM_ITERATIONS):
     agent0.execute_policy_action()
     agent1.execute_policy_action()
     time.sleep(1)

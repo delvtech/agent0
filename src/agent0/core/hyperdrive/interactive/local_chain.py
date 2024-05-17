@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import os
 import pathlib
@@ -117,6 +118,11 @@ class LocalChain(Chain):
 
         self.config = config
         self.dashboard_subprocess: subprocess.Popen | None = None
+
+        # Registers the cleanup function to run when the python script exist.
+        # NOTE this isn't guaranteed to run (e.g., in notebook and vscode debugging environment)
+        # so still best practice to manually call cleanup at the end of scripts.
+        atexit.register(self.cleanup)
 
         # TODO hack, wait for chain to init
         time.sleep(1)
