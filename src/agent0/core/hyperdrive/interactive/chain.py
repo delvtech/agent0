@@ -7,6 +7,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Type
 
 import docker
 import numpy as np
@@ -17,8 +18,11 @@ from web3.types import BlockData, Timestamp
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.hyperlogs import close_logging, setup_logging
+
+from .hyperdrive_agent import HyperdriveAgent
 
 
 class Chain:
@@ -113,6 +117,7 @@ class Chain:
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
         self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
         self._db_name = self.postgres_config.POSTGRES_DB
+        self.config = config
 
         # Registers the cleanup function to run when the python script exist.
         # NOTE this isn't guaranteed to run (e.g., in notebook and vscode debugging environment)
@@ -239,3 +244,46 @@ class Chain:
         if block_timestamp is None:
             raise AssertionError("The provided block has no timestamp")
         return block_timestamp
+
+    ################
+    # Agent functions
+    ################
+
+    def init_agent(
+        self,
+        private_key: str,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
+        name: str | None = None,
+    ) -> HyperdriveAgent:
+        """Initialize an agent object given a private key.
+
+        .. note::
+            Due to the underlying bookkeeping, each agent object needs a unique private key.
+
+        Arguments
+        ---------
+        private_key: str
+            The private key of the associated account.
+        policy: HyperdrivePolicy, optional
+            An optional policy to attach to this agent.
+        policy_config: HyperdrivePolicy, optional
+            The configuration for the attached policy.
+        name: str, optional
+            The name of the agent. Defaults to the wallet address.
+
+        Returns
+        -------
+        HyperdriveAgent
+            The agent object for a user to execute trades with.
+        """
+        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
+        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
+            policy_config.rng = self.config.rng
+        out_agent = HyperdriveAgent(
+            name=name,
+            policy=policy,
+            policy_config=policy_config,
+            private_key=private_key,
+        )
+        return out_agent

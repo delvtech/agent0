@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Type
+from typing import Any
 
 import nest_asyncio
-import numpy as np
 import pandas as pd
 from eth_typing import ChecksumAddress
 
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import get_addr_to_username
 from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, get_hyperdrive_addr_to_name
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     generate_name_for_hyperdrive,
@@ -23,7 +21,6 @@ from agent0.ethpy.hyperdrive import (
 )
 
 from .chain import Chain
-from .hyperdrive_agent import HyperdriveAgent
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -273,46 +270,6 @@ class Hyperdrive:
         """
         # pylint: disable=protected-access
         return self.interface.hyperdrive_address
-
-    def init_agent(
-        self,
-        private_key: str,
-        policy: Type[HyperdriveBasePolicy] | None = None,
-        policy_config: HyperdriveBasePolicy.Config | None = None,
-        name: str | None = None,
-    ) -> HyperdriveAgent:
-        """Initialize an agent object given a private key.
-
-        .. note::
-            Due to the underlying bookkeeping, each agent object needs a unique private key.
-
-        Arguments
-        ---------
-        private_key: str
-            The private key of the associated account.
-        policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
-        policy_config: HyperdrivePolicy, optional
-            The configuration for the attached policy.
-        name: str, optional
-            The name of the agent. Defaults to the wallet address.
-
-        Returns
-        -------
-        HyperdriveAgent
-            The agent object for a user to execute trades with.
-        """
-        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
-        out_agent = HyperdriveAgent(
-            name=name,
-            pool=self,
-            policy=policy,
-            policy_config=policy_config,
-            private_key=private_key,
-        )
-        return out_agent
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
         addr_to_username = get_addr_to_username(self.chain.db_session)
