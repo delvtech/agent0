@@ -31,7 +31,7 @@ class TestHyperdriveReadWriteInterface:
         # TODO: Setup a fixture to create a funded local account
         extra_key_bytes = text_if_str(to_bytes, "extra_entropy")
         key_bytes = keccak(os.urandom(32) + extra_key_bytes)
-        private_key = Account()._parsePrivateKey(key_bytes)  # pylint: disable=protected-access
+        private_key = Account()._parse_private_key(key_bytes)  # pylint: disable=protected-access
         sender: LocalAccount = Account().from_key(private_key)
         set_anvil_account_balance(hyperdrive_read_write_interface_fixture.web3, sender.address, 10**19)
         hyperdrive_read_write_interface_fixture.set_variable_rate(sender, new_rate)
