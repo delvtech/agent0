@@ -384,7 +384,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -526,7 +526,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -556,20 +556,25 @@ class HyperdriveReadInterface:
         """
         return _calc_time_stretch(target_rate, target_position_duration)
 
-    def calc_checkpoint_timestamp(self, time: int | Timestamp) -> Timestamp:
+    def calc_checkpoint_timestamp(self, time: int | Timestamp, pool_state: PoolState | None = None) -> Timestamp:
         """Converts a timestamp to the checkpoint timestamp that it corresponds to.
 
         Arguments
         ---------
         time: int | Timestamp
             Any timestamp (in seconds) before or at the present.
+        pool_state: PoolState | None, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
 
         Returns
         -------
         Timestamp
             The checkpoint timestamp.
         """
-        return _calc_checkpoint_timestamp(int(time))
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_checkpoint_timestamp(pool_state, int(time))
 
     def calc_checkpoint_id(
         self, checkpoint_duration: int | None = None, block_timestamp: Timestamp | None = None
@@ -612,7 +617,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -633,7 +638,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -651,7 +656,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -672,7 +677,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -685,12 +690,12 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_effective_share_reserves(pool_state)
 
-    def calc_idle_share_reserves_in_base(self, pool_state: PoolState) -> FixedPoint:
+    def calc_idle_share_reserves_in_base(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculates the idle share reserves in base of the pool.
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -726,7 +731,7 @@ class HyperdriveReadInterface:
             The target apr for which to calculate the bond reserves given the pools current share reserves.
         target_shares: FixedPoint, optional
             The target share reserves for the pool
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -749,7 +754,7 @@ class HyperdriveReadInterface:
         ---------
         base_amount: FixedPoint
             The amount to spend, in base.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -771,7 +776,7 @@ class HyperdriveReadInterface:
         ---------
         base_amount: FixedPoint
             The amount of base used to open a long.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -799,7 +804,7 @@ class HyperdriveReadInterface:
         bond_amount: FixedPoint | None, optional
             The amount of bonds that would be purchased by the long.
             The default is to use whatever is returned by `calc_open_long(base_amount)`.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -827,7 +832,7 @@ class HyperdriveReadInterface:
         bond_amount: FixedPoint | None, optional
             The amount of bonds that would be purchased by the long.
             The default is to use whatever is returned by `calc_open_long(base_amount)`.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -850,7 +855,7 @@ class HyperdriveReadInterface:
         ---------
         budget: FixedPoint
             How much money the agent is able to spend, in base.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -874,7 +879,7 @@ class HyperdriveReadInterface:
             The amount of bonds to sell.
         maturity_time: int
             The maturity time of the bond.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -909,7 +914,7 @@ class HyperdriveReadInterface:
         allowable_error: FixedPoint | None, optional
             The amount of error supported for reaching the target rate.
             Defaults to 1e-4.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -932,7 +937,7 @@ class HyperdriveReadInterface:
         ---------
         bond_amount: FixedPoint
             The amount to of bonds to short.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -954,7 +959,7 @@ class HyperdriveReadInterface:
         ---------
         bond_amount: FixedPoint
             The amount to of bonds to short.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -982,7 +987,7 @@ class HyperdriveReadInterface:
         base_amount: FixedPoint | None, optional
             The amount of base provided for the short.
             The default is to use whatever is returned by `calc_open_short(bond_amount)`.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1005,7 +1010,7 @@ class HyperdriveReadInterface:
         ---------
         budget: FixedPoint
             How much money the agent is able to spend, in base.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1040,7 +1045,7 @@ class HyperdriveReadInterface:
             If the short is mature, this is the share price of the maturity checkpoint.
         maturity_time: int
             The maturity time of the short.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1060,7 +1065,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1078,7 +1083,7 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1089,7 +1094,7 @@ class HyperdriveReadInterface:
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_solvency(pool_state, pool_state.block_time)
+        return _calc_solvency(pool_state)
 
     def calc_bonds_out_given_shares_in_down(
         self, amount_in: FixedPoint, pool_state: PoolState | None = None
@@ -1104,7 +1109,7 @@ class HyperdriveReadInterface:
         ---------
         amount_in: FixedPoint
             The amount of shares going into the pool.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1130,7 +1135,7 @@ class HyperdriveReadInterface:
         ---------
         amount_in: FixedPoint
             The amount of bonds to target.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not given, use the current pool state.
 
@@ -1156,7 +1161,7 @@ class HyperdriveReadInterface:
         ---------
         amount_in: FixedPoint
             The amount of bonds to target.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 
@@ -1182,7 +1187,7 @@ class HyperdriveReadInterface:
         ---------
         amount_in: FixedPoint
             The amount of bonds in.
-        pool_state: PoolState, optional
+        pool_state: PoolState | None, optional
             The state of the pool, which includes block details, pool config, and pool info.
             If not provided, use the current pool state.
 

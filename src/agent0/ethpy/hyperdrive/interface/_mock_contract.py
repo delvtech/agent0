@@ -258,24 +258,6 @@ def _calculate_pool_deltas_after_open_short(pool_state: PoolState, bond_amount: 
     )
 
 
-def _calc_spot_price_after_short(
-    pool_state: PoolState, bond_amount: FixedPoint, base_amount: FixedPoint | None = None
-) -> FixedPoint:
-    """See API for documentation."""
-    base_amount_str: str | None
-    if base_amount is None:
-        base_amount_str = base_amount
-    else:
-        base_amount_str = str(base_amount.scaled_value)
-    spot_price_after_short = hyperdrivepy.calculate_spot_price_after_short(
-        fixedpoint_to_pool_config(pool_state.pool_config),
-        fixedpoint_to_pool_info(pool_state.pool_info),
-        str(bond_amount.scaled_value),
-        base_amount_str,
-    )
-    return FixedPoint(scaled_value=int(spot_price_after_short))
-
-
 def _calc_pool_deltas_after_open_short(
     pool_state: PoolState,
     short_amount: FixedPoint,
@@ -290,9 +272,7 @@ def _calc_pool_deltas_after_open_short(
 
 
 def _calc_spot_price_after_short(
-    pool_state: PoolState,
-    bond_amount: FixedPoint,
-    base_amount: FixedPoint | None = None,
+    pool_state: PoolState, bond_amount: FixedPoint, base_amount: FixedPoint | None = None
 ) -> FixedPoint:
     """See API for documentation."""
     base_amount_str: str | None

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import fields
+from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
 from fixedpointmath import FixedPoint
@@ -112,23 +113,14 @@ class TestHyperdriveReadInterface:
         long_close_time = maturity_time - 60 * 60 * 24
         _ = hyperdrive_read_interface_fixture.calc_close_long(mid_long, long_close_time)
 
-        # TODO compare values
+        # state values
         _ = hyperdrive_read_interface_fixture.calc_spot_price_after_long(FixedPoint(100))
+        _ = hyperdrive_read_interface_fixture.calc_spot_rate_after_long(FixedPoint(100))
+        _ = hyperdrive_read_interface_fixture.calc_pool_deltas_after_open_long(FixedPoint(100))
 
-    def test_misc(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
-        """Miscellaneous tests only verify that the attributes exist and functions can be called.
-
-        TODO: These functions are tested heavily in Rust, we should still write tests that verify
-        the conversion to and from Rust via strings was successful.
-        """
-        # State
-        _ = hyperdrive_read_interface_fixture.current_pool_state
-        _ = hyperdrive_read_interface_fixture.current_pool_state.variable_rate
-        _ = hyperdrive_read_interface_fixture.current_pool_state.vault_shares
-        _ = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
+    def test_calc_short(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
+        """Test various fns associated with short trades."""
         current_time = hyperdrive_read_interface_fixture.current_pool_state.block_time
-
-        # Short
         bond_amount = FixedPoint(100)
         price_with_default = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount)
         base_amount = (
@@ -145,6 +137,27 @@ class TestHyperdriveReadInterface:
             close_vault_share_price=hyperdrive_read_interface_fixture.current_pool_state.pool_info.vault_share_price,
             maturity_time=current_time + 100,
         )
+        _ = hyperdrive_read_interface_fixture.calc_pool_deltas_after_open_short(bond_amount)
+
+    def test_misc(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
+        """Miscellaneous tests only verify that the attributes exist and functions can be called.
+
+        .. todo::
+            TODO: Write tests that verify the conversion to and from Rust via strings was successful.
+            This should include checks for the FixedPoint conversion to ensure that it was scaled correctly.
+        """
+        # State
+        _ = hyperdrive_read_interface_fixture.current_pool_state
+        _ = hyperdrive_read_interface_fixture.current_pool_state.variable_rate
+        _ = hyperdrive_read_interface_fixture.current_pool_state.vault_shares
+        _ = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
+        _ = hyperdrive_read_interface_fixture.calc_checkpoint_timestamp(int(datetime.now().timestamp()))
+        _ = hyperdrive_read_interface_fixture.calc_idle_share_reserves_in_base()
+        _ = hyperdrive_read_interface_fixture.calc_solvency()
+
+        spot_price = hyperdrive_read_interface_fixture.calc_spot_price()
+        max_spot_price = hyperdrive_read_interface_fixture.calc_max_spot_price()
+        assert spot_price <= max_spot_price, "Spot price calc error."
 
         # LP
         _ = hyperdrive_read_interface_fixture.calc_present_value()
