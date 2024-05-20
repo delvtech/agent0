@@ -43,7 +43,10 @@ dependencies = [
     "psycopg[binary]",
     "pytest",
     "python-dotenv",
-    "requests",
+    # "requests",
+    # Docker-py breaks with latest requests:
+    # https://github.com/docker/docker-py/issues/3256
+    "requests==2.31.0",
     "rollbar",
     "setuptools",
     "sqlalchemy",
