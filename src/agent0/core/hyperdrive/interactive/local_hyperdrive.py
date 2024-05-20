@@ -4,16 +4,13 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Literal, Type, overload
+from typing import Type
 
 import dill
 import pandas as pd
-from eth_account.account import Account
-from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
 
-from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     get_checkpoint_info,
     get_pool_config,
@@ -23,29 +20,11 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
-from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
-from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.hyperdrive import (
-    AssetIdPrefix,
-    DeployedHyperdrivePool,
-    ReceiptBreakdown,
-    deploy_hyperdrive_from_factory,
-    encode_asset_id,
-)
+from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
-from .event_types import (
-    AddLiquidity,
-    CloseLong,
-    CloseShort,
-    CreateCheckpoint,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
+from .event_types import CreateCheckpoint
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
 from .local_hyperdrive_agent import LocalHyperdriveAgent
@@ -600,165 +579,9 @@ class LocalHyperdrive(Hyperdrive):
         out = self._add_username_to_dataframe(out, "wallet_address")
         return out
 
-    ### Private agent methods ###
-
-    def _init_local_agent(
-        self,
-        base: FixedPoint,
-        eth: FixedPoint,
-        name: str | None,
-        policy: Type[HyperdriveBasePolicy] | None,
-        policy_config: HyperdriveBasePolicy.Config | None,
-        private_key: str | None = None,
-    ) -> HyperdrivePolicyAgent:
-        # We overwrite the base init agents with different parameters
-        # pylint: disable=arguments-differ
-        # pylint: disable=too-many-arguments
-        agent_private_key = make_private_key() if private_key is None else private_key
-
-        # Setting the budget to 0 here, we'll update the wallet from the chain
-        if policy is None:
-            if policy_config is None:
-                policy_config = HyperdriveBasePolicy.Config(rng=self.config.rng)
-            policy_obj = HyperdriveBasePolicy(policy_config)
-        else:
-            if policy_config is None:
-                policy_config = policy.Config(rng=self.config.rng)
-            policy_obj = policy(policy_config)
-
-        # Setting the budget to 0 here, `_add_funds` will take care of updating the wallet
-        agent = HyperdrivePolicyAgent(
-            Account().from_key(agent_private_key), initial_budget=FixedPoint(0), policy=policy_obj
-        )
-        # Update wallet to agent's previous budget
-        if private_key is not None:  # address already existed
-            agent.wallet.balance.amount = self.interface.get_eth_base_balances(agent)[1]
-            agent.wallet.lp_tokens = FixedPoint(
-                scaled_value=self.interface.hyperdrive_contract.functions.balanceOf(
-                    encode_asset_id(AssetIdPrefix.LP, 0),
-                    agent.checksum_address,
-                ).call()
-            )
-            agent.wallet.withdraw_shares = FixedPoint(
-                scaled_value=self.interface.hyperdrive_contract.functions.balanceOf(
-                    encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0),
-                    agent.checksum_address,
-                ).call()
-            )
-        # Fund agent
-        if eth > 0 or base > 0:
-            self._add_funds(agent, base, eth)
-
-        # Establish max approval for the hyperdrive contract
-        self._set_max_approval(agent)
-
-        # Register the username if it was provided
-        if name is not None:
-            add_addr_to_username(name, [agent.address], self.chain.db_session)
-        return agent
-
-    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
-        # No need to sync in local hyperdrive, we sync when we run the data pipeline
-        pass
-
-    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
-        # No need to sync in local hyperdrive, we sync when we run the data pipeline
-        pass
-
-    def _add_funds(
-        self,
-        agent: HyperdrivePolicyAgent,
-        base: FixedPoint,
-        eth: FixedPoint,
-        signer_account: LocalAccount | None = None,
-    ) -> None:
-        # Adding funds default to the deploy account
-        if signer_account is None:
-            signer_account = self._deployed_hyperdrive.deploy_account
-
-        super()._add_funds(agent, base, eth, signer_account=signer_account)
-
-        # Adding funds mines a block, so we run data pipeline here
-        self._run_blocking_data_pipeline()
-
-    @overload
-    def _handle_trade_result(
-        self, trade_result: TradeResult, always_throw_exception: Literal[True]
-    ) -> ReceiptBreakdown: ...
-
-    @overload
-    def _handle_trade_result(
-        self, trade_result: TradeResult, always_throw_exception: Literal[False]
-    ) -> ReceiptBreakdown | None: ...
-
-    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
-        # We add specific data to the trade result from interactive hyperdrive
-        if trade_result.status == TradeStatus.FAIL:
-            assert trade_result.exception is not None
-            # TODO we likely want to explicitly check for slippage here and not
-            # get anvil state dump if it's a slippage error and the user wants to
-            # ignore slippage errors
-            trade_result.anvil_state = get_anvil_state_dump(self.interface.web3)
-            if self.config.crash_log_ticker:
-                if trade_result.additional_info is None:
-                    trade_result.additional_info = {"trade_events": self.get_trade_events()}
-                else:
-                    trade_result.additional_info["trade_events"] = self.get_trade_events()
-
-        # This check is necessary for subclass overloading and typing,
-        # as types are narrowed based on the literal `always_throw_exception`
-        if always_throw_exception:
-            return super()._handle_trade_result(trade_result, always_throw_exception)
-        return super()._handle_trade_result(trade_result, always_throw_exception)
-
-    def _open_long(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> OpenLong:
-        out = super()._open_long(agent, base)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _close_long(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseLong:
-        out = super()._close_long(agent, maturity_time, bonds)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _open_short(self, agent: HyperdrivePolicyAgent, bonds: FixedPoint) -> OpenShort:
-        out = super()._open_short(agent, bonds)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _close_short(self, agent: HyperdrivePolicyAgent, maturity_time: int, bonds: FixedPoint) -> CloseShort:
-        out = super()._close_short(agent, maturity_time, bonds)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _add_liquidity(self, agent: HyperdrivePolicyAgent, base: FixedPoint) -> AddLiquidity:
-        out = super()._add_liquidity(agent, base)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _remove_liquidity(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RemoveLiquidity:
-        out = super()._remove_liquidity(agent, shares)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _redeem_withdraw_share(self, agent: HyperdrivePolicyAgent, shares: FixedPoint) -> RedeemWithdrawalShares:
-        out = super()._redeem_withdraw_share(agent, shares)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _execute_policy_action(
-        self, agent: HyperdrivePolicyAgent
-    ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
-        out = super()._execute_policy_action(agent)
-        self._run_blocking_data_pipeline()
-        return out
-
-    def _liquidate(
-        self, agent: HyperdrivePolicyAgent, randomize: bool
-    ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
-        out = super()._liquidate(agent, randomize)
-        self._run_blocking_data_pipeline()
-        return out
+    ################
+    # Bookkeeping
+    ################
 
     def _reinit_state_after_load_snapshot(self) -> None:
         """After loading a snapshot, we need to re-initialize the state the internal
@@ -771,7 +594,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # Load and set all agent wallets from the db
         for agent in self._pool_agents:
-            agent.agent.wallet = self._get_wallet(agent.agent)
+            agent.agent.wallet = agent.get_wallet()
 
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         """Saves the policy state to file.
