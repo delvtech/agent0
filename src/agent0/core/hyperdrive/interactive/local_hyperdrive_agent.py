@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Type, overload
+from typing import TYPE_CHECKING, Literal, Type, overload
 
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
@@ -23,7 +23,9 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .hyperdrive_agent import HyperdriveAgent
-from .local_hyperdrive import LocalHyperdrive
+
+if TYPE_CHECKING:
+    from .local_hyperdrive import LocalHyperdrive
 
 
 class LocalHyperdriveAgent(HyperdriveAgent):

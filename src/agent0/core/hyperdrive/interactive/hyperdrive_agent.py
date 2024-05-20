@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Literal, Type, overload
+from typing import TYPE_CHECKING, Literal, Type, overload
 
 import pandas as pd
 from eth_account.account import Account
@@ -56,7 +56,9 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
-from .hyperdrive import Hyperdrive
+
+if TYPE_CHECKING:
+    from .hyperdrive import Hyperdrive
 
 # We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
 # Hence, we call protected class methods in this class.
