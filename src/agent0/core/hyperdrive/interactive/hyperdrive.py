@@ -12,7 +12,9 @@ import pandas as pd
 from eth_typing import ChecksumAddress
 from numpy.random._generator import Generator
 
-from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name
+from agent0.chainsync.dashboard.usernames import build_user_mapping
+from agent0.chainsync.db.base import get_addr_to_username
+from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, get_hyperdrive_addr_to_name
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
@@ -326,3 +328,27 @@ class Hyperdrive:
             private_key=private_key,
         )
         return out_agent
+
+    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        addr_to_username = get_addr_to_username(self.chain.db_session)
+
+        # Get corresponding usernames
+        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
+        out = df.copy()
+        # Weird pandas type error
+        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
+        return out
+
+    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.chain.db_session)
+
+        # Do lookup from address to name
+        hyperdrive_name = (
+            df[addr_column]
+            .to_frame()
+            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
+        )["name"]
+        # Weird pandas type error
+        out = df.copy()
+        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
+        return out

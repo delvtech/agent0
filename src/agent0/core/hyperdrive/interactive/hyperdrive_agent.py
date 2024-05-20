@@ -14,12 +14,10 @@ from hexbytes import HexBytes
 from web3 import Web3
 
 from agent0.chainsync.analysis import snapshot_positions_to_db
-from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import add_addr_to_username, get_addr_to_username
+from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     checkpoint_events_to_db,
     get_current_positions,
-    get_hyperdrive_addr_to_name,
     get_position_snapshot,
     get_trade_events,
     trade_events_to_db,
@@ -676,8 +674,8 @@ class HyperdriveAgent:
         if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
-        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        position_snapshot = self._pool._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self._pool._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
         return position_snapshot
 
     def get_wallet(self) -> HyperdriveWallet:
@@ -768,30 +766,6 @@ class HyperdriveAgent:
         ).drop("id", axis=1)
 
     # Helper functions for analysis
-
-    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        addr_to_username = get_addr_to_username(self._pool.chain.db_session)
-
-        # Get corresponding usernames
-        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
-        out = df.copy()
-        # Weird pandas type error
-        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
-        return out
-
-    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self._pool.chain.db_session)
-
-        # Do lookup from address to name
-        hyperdrive_name = (
-            df[addr_column]
-            .to_frame()
-            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
-        )["name"]
-        # Weird pandas type error
-        out = df.copy()
-        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
-        return out
 
     def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
         # Update the db with this wallet
