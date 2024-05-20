@@ -484,7 +484,7 @@ async def _async_send_transaction_and_wait_for_receipt(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     signed_txn = signer.sign_transaction(unsent_txn)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
@@ -691,7 +691,7 @@ def send_transaction_and_wait_for_receipt(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     signed_txn = signer.sign_transaction(unsent_txn)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
@@ -927,7 +927,7 @@ async def async_eth_transfer(
     unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
     unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     signed_txn = signer.sign_transaction(unsent_txn)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     return await async_wait_for_transaction_receipt(web3, tx_hash)
 
 
@@ -991,7 +991,7 @@ def eth_transfer(
     unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     signed_txn = signer.sign_transaction(unsent_txn)
 
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
