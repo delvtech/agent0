@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from typing import Type
 
 import dill
 import pandas as pd
@@ -20,7 +18,6 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
@@ -47,13 +44,6 @@ class LocalHyperdrive(Hyperdrive):
         """The timeout for the data pipeline. Defaults to 60 seconds."""
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
-        load_rng_on_snapshot: bool = True
-        """
-        If True, loading a snapshot also loads the RNG state of the underlying policy.
-        This results in the same RNG state as when the snapshot was taken.
-        If False, will use the existing RNG state before load.
-        Defaults to False.
-        """
 
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -142,7 +132,6 @@ class LocalHyperdrive(Hyperdrive):
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
-            super().__post_init__()
 
         @property
         def _factory_min_fees(self) -> Fees:
@@ -212,8 +201,6 @@ class LocalHyperdrive(Hyperdrive):
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
         self._run_blocking_data_pipeline()
-
-        self._pool_agents: list[LocalHyperdriveAgent] = []
 
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
         # TODO these functions are not thread safe, need to fix if we expose async functions
@@ -356,64 +343,6 @@ class LocalHyperdrive(Hyperdrive):
             matured_longs=tx_receipt.matured_longs,
             lp_share_price=tx_receipt.lp_share_price,
         )
-
-    def init_agent(
-        self,
-        private_key: str | None = None,
-        policy: Type[HyperdriveBasePolicy] | None = None,
-        policy_config: HyperdriveBasePolicy.Config | None = None,
-        name: str | None = None,
-        base: FixedPoint | None = None,
-        eth: FixedPoint | None = None,
-    ) -> LocalHyperdriveAgent:
-        """Initializes an agent with initial funding and a logical name.
-
-        Arguments
-        ---------
-        private_key: str, optional
-            The private key of the associated account. Default is auto-generated.
-        policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
-        policy_config: HyperdrivePolicy, optional
-            The configuration for the attached policy.
-        base: FixedPoint | None, optional
-            The amount of base to fund the agent with. Defaults to 0.
-            If a private key is provided then the base amount is added to their previous balance.
-        eth: FixedPoint | None, optional
-            The amount of ETH to fund the agent with. Defaults to 0.
-            If a private key is provided then the eth amount is added to their previous balance.
-        name: str, optional
-            The name of the agent. Defaults to the wallet address.
-
-        Returns
-        -------
-        LocalHyperdriveAgent
-            The agent object for a user to execute trades with.
-        """
-        # pylint: disable=too-many-arguments
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            logging.warning(
-                "Adding new agent with existing snapshot. "
-                "This object will no longer be valid if the snapshot is loaded."
-            )
-        if base is None:
-            base = FixedPoint(0)
-        if eth is None:
-            eth = FixedPoint(0)
-        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
-        out_agent = LocalHyperdriveAgent(
-            base=base,
-            eth=eth,
-            name=name,
-            pool=self,
-            policy=policy,
-            policy_config=policy_config,
-            private_key=private_key,
-        )
-        self._pool_agents.append(out_agent)
-        return out_agent
 
     ### Database methods
     # These methods expose the underlying chainsync getter methods with minimal processing
@@ -591,77 +520,3 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Set internal state block number to 0 to enusre it updates
         self.interface.last_state_block_number = BlockNumber(0)
-
-        # Load and set all agent wallets from the db
-        for agent in self._pool_agents:
-            agent.agent.wallet = agent.get_wallet()
-
-    def _save_agent_bookkeeping(self, save_dir: str) -> None:
-        """Saves the policy state to file.
-
-        Arguments
-        ---------
-        save_dir: str
-            The directory to save the state to.
-        """
-        policy_file = save_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
-        agents = [agent.checksum_address for agent in self._pool_agents]
-        with open(policy_file, "wb") as file:
-            # We use dill, as pickle can't store local objects
-            dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
-
-    def _save_policy_state(self, save_dir: str) -> None:
-        """Saves the policy state to file.
-
-        Arguments
-        ---------
-        save_dir: str
-            The directory to save the state to.
-        """
-        # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
-        policy_file_prefix = save_dir + "/" + self.interface.hyperdrive_contract.address + "-"
-        for agent in self._pool_agents:
-            policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
-            with open(policy_file, "wb") as file:
-                # We use dill, as pickle can't store local objects
-                dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
-
-    def _load_agent_bookkeeping(self, load_dir: str) -> None:
-        """Loads the list of agents from file.
-
-        Arguments
-        ---------
-        load_dir: str
-            The directory to load the state from.
-        """
-        policy_file = load_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
-        with open(policy_file, "rb") as file:
-            # We use dill, as pickle can't store local objects
-            load_agents = dill.load(file)
-        # Remove references of all agents added after snapshot
-        # NOTE: existing agent objects initialized after snapshot will no longer be valid.
-        self._pool_agents = [agent for agent in self._pool_agents if agent.checksum_address in load_agents]
-
-    def _load_policy_state(self, load_dir: str) -> None:
-        """Loads the policy state from file.
-
-        Arguments
-        ---------
-        load_dir: str
-            The directory to load the state from.
-        """
-        # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
-        policy_file_prefix = load_dir + "/" + self.interface.hyperdrive_contract.address + "-"
-        for agent in self._pool_agents:
-            policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
-            with open(policy_file, "rb") as file:
-                # If we don't load rng, we get the current RNG state and set it after loading
-                rng = None
-                if not self.config.load_rng_on_snapshot:
-                    rng = agent.agent.policy.rng
-                # We use dill, as pickle can't store local objects
-                agent.agent.policy = dill.load(file)
-                if not self.config.load_rng_on_snapshot:
-                    # For type checking
-                    assert rng is not None
-                    agent.agent.policy.rng = rng

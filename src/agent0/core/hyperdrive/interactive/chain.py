@@ -9,8 +9,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import docker
+import numpy as np
 from docker.errors import NotFound
 from docker.models.containers import Container
+from numpy.random._generator import Generator
 from web3.types import BlockData, Timestamp
 
 from agent0.chainsync import PostgresConfig
@@ -52,6 +54,20 @@ class Chain:
         """
         remove_existing_db_container: bool = True
         """Whether to remove the existing container if it exists on container launch. Defaults to True."""
+
+        # RNG config
+        rng_seed: int | None = None
+        """The seed for the random number generator. Defaults to None."""
+        rng: Generator | None = None
+        """
+        The experiment's stateful random number generator. Defaults to creating a generator from
+        the provided random seed if not set.
+        """
+
+        def __post_init__(self):
+            """Create the random number generator if not set."""
+            if self.rng is None:
+                self.rng = np.random.default_rng(self.rng_seed)
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.

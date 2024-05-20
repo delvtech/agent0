@@ -10,7 +10,6 @@ import nest_asyncio
 import numpy as np
 import pandas as pd
 from eth_typing import ChecksumAddress
-from numpy.random._generator import Generator
 
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import get_addr_to_username
@@ -55,15 +54,6 @@ class Hyperdrive:
         txn_receipt_timeout: float | None = None
         """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
 
-        # RNG config
-        rng_seed: int | None = None
-        """The seed for the random number generator. Defaults to None."""
-        rng: Generator | None = None
-        """
-        The experiment's stateful random number generator. Defaults to creating a generator from
-        the provided random seed if not set.
-        """
-
         # Logging and crash reporting
         log_to_rollbar: bool = False
         """Whether to log crash reports to rollbar. Defaults to False."""
@@ -84,11 +74,6 @@ class Hyperdrive:
         # Data pipeline parameters
         calc_pnl: bool = True
         """Whether to calculate pnl. Defaults to True."""
-
-        def __post_init__(self):
-            """Create the random number generator if not set."""
-            if self.rng is None:
-                self.rng = np.random.default_rng(self.rng_seed)
 
     @classmethod
     def get_hyperdrive_addresses_from_artifacts(

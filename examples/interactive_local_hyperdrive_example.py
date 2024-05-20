@@ -23,8 +23,19 @@ chain = LocalChain(local_chain_config)
 # Names are reflected on output data frames and plots later
 # NOTE a local chain can initialize with base and eth.
 # Base is a mock token used for all underlying pools deployed.
-agent0 = chain.init_agent(base=FixedPoint(100_000_000), eth=FixedPoint(100), name="agent0")
-agent1 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), name="agent1")
+agent0 = chain.init_agent(
+    base=FixedPoint(100_000_000),
+    eth=FixedPoint(100),
+    name="agent0",
+)
+# We can initialize an agent with a custom policy - more on that later
+agent1 = chain.init_agent(
+    base=FixedPoint(100_000),
+    eth=FixedPoint(100),
+    name="agent1",
+    policy=PolicyZoo.random,
+    policy_config=PolicyZoo.random.Config(),
+)
 # Omission of name defaults to wallet address
 agent2 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10))
 # Add funds to an agent
@@ -97,28 +108,25 @@ remove_lp_event = agent1.remove_liquidity(shares=agent1.get_lp())
 # %%
 
 # Agents can also execute policies, which encapsulates actions to take on a pool.
-# This requires initializing a policy class. For example, we initialize a policy that makes random trades.
-
-# NOTE:
-# Best practices for policies include creating a separate policy object for each agent and pool the policy
-# is expect to run on. This ensures that any internal state the policy uses is tied to a single agent and pool
-# (which most of our existing policies assume). This isn't strictly necessary for e.g., `RandomPolicy`,
-# which doesn't use state as bookkeeping (and it even may be desired to use a single policy object to e.g.,
-# use one rng state across all trades). Overall, we leave the mapping between policy objects, agents, and pools
-# to the specific policy implementation and caller.
-
-agent0_random_policy = PolicyZoo.random(PolicyZoo.random.Config(rng_seed=123))
-agent1_random_policy = PolicyZoo.random(PolicyZoo.random.Config(rng_seed=345))
+# This requires initializing a policy class from the agent.
+# For example, we set a policy that makes random trades.
+# We can either initialize a policy on initialization (see agent1's initialization)
+# or we can explicitly call `set_policy` to set a policy on an agent.
+# NOTE: `set_policy` overwrites the existing policy.
+# TODO we may be able to set multiple policies on an agent and hot-swap them
+agent0.set_policy(
+    policy=PolicyZoo.random,
+    policy_config=PolicyZoo.random.Config(rng_seed=123),
+)
 
 # Execute policy trade on a pool
 # Output event is one of the possible trade events
 agent0_trades = []
 for i in range(10):
     # NOTE Since a policy can execute multiple trades per action, the output events is a list
-    agent0_trades.extend(agent0.execute_policy_action(policy=agent0_random_policy, pool=hyperdrive0))
+    agent0_trades.extend(agent0.execute_policy_action(pool=hyperdrive0))
 
-# Similar to pools, we can set an active policy for an agent
-agent1.set_active_policy(agent1_random_policy)
+# Agent1's policy was set during initialization
 agent1_trades = []
 for i in range(10):
     agent1_trades.extend(agent1.execute_policy_action())
