@@ -165,10 +165,12 @@ chain.run_dashboard(blocking=False)
 # a pandas dataframe.
 
 # Agent level analysis
-# Change this to get wallet
 
-# Get the raw trade events in pandas
+# Get the raw trade events in pandas across all pools
 agent_trade_events = agent0.get_trade_events()
+# Alternatively, filter by pool
+agent_trade_events = agent0.get_trade_events(pool=hyperdrive0)
+agent_trade_events = agent0.get_trade_events(pool=hyperdrive1)
 
 # Gets all open positions and their corresponding PNL for an agent across all pools
 agent_positions = agent0.get_positions()
