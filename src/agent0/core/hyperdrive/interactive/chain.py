@@ -16,7 +16,7 @@ from web3.types import BlockData, Timestamp
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.hyperlogs import setup_logging
+from agent0.hyperlogs import close_logging, setup_logging
 
 
 class Chain:
@@ -177,6 +177,11 @@ class Chain:
 
         try:
             self.postgres_container.kill()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+        try:
+            close_logging()
         except Exception:  # pylint: disable=broad-except
             pass
 
