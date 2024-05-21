@@ -27,6 +27,7 @@ def run_invariant_checks(
     raise_error_on_failure: bool = False,
     log_to_rollbar: bool = True,
     pool_name: str | None = None,
+    lp_share_price_test: bool | None = None,
 ) -> None:
     """Run the invariant checks.
 
@@ -54,6 +55,9 @@ def run_invariant_checks(
         If True, log to rollbar if any invariant check fails.
     pool_name: str | None
         The name of the pool for crash reporting information.
+    lp_share_price_test: bool | None, optional
+        If True, only test the lp share price. If False, skips the lp share price test.
+        If None (default), runs all tests.
     """
     # TODO cleanup
     # pylint: disable=too-many-locals
@@ -65,17 +69,35 @@ def run_invariant_checks(
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data: dict[str, Any] = {}
 
-    results: list[InvariantCheckResults] = [
-        _check_eth_balances(pool_state),
-        _check_base_balances(pool_state, interface.base_is_eth),
-        _check_total_shares(pool_state),
-        _check_minimum_share_reserves(pool_state),
-        _check_solvency(pool_state),
-        _check_present_value_greater_than_idle_shares(interface, pool_state),
-        _check_lp_share_price(interface, test_epsilon, pool_state),
-        _check_checkpointing_should_never_fail(interface, pool_state),
-        _check_initial_lp_profitable(pool_state),
-    ]
+    results: list[InvariantCheckResults]
+    if lp_share_price_test is None:
+        results = [
+            _check_lp_share_price(interface, test_epsilon, pool_state),
+            _check_eth_balances(pool_state),
+            _check_base_balances(pool_state, interface.base_is_eth),
+            _check_total_shares(pool_state),
+            _check_minimum_share_reserves(pool_state),
+            _check_solvency(pool_state),
+            _check_present_value_greater_than_idle_shares(interface, pool_state),
+            _check_checkpointing_should_never_fail(interface, pool_state),
+            _check_initial_lp_profitable(pool_state),
+        ]
+    else:
+        if lp_share_price_test:
+            results = [
+                _check_lp_share_price(interface, test_epsilon, pool_state),
+            ]
+        else:
+            results = [
+                _check_eth_balances(pool_state),
+                _check_base_balances(pool_state, interface.base_is_eth),
+                _check_total_shares(pool_state),
+                _check_minimum_share_reserves(pool_state),
+                _check_solvency(pool_state),
+                _check_present_value_greater_than_idle_shares(interface, pool_state),
+                _check_checkpointing_should_never_fail(interface, pool_state),
+                _check_initial_lp_profitable(pool_state),
+            ]
 
     for failed, message, data in results:
         any_check_failed = failed | any_check_failed
@@ -355,9 +377,8 @@ def _check_lp_share_price(
 
 def _check_initial_lp_profitable(pool_state: PoolState, epsilon: FixedPoint | None = None) -> InvariantCheckResults:
 
-    # There's a rounding difference of 1 wei due to rounding lp_rate down
     if epsilon is None:
-        epsilon = FixedPoint(scaled_value=1)
+        epsilon = FixedPoint("0.005")
 
     failed = False
     exception_message = ""

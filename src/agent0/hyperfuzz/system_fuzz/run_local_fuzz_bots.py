@@ -29,7 +29,7 @@ CIRCUIT_BREAKER_DELTA_RANGE: tuple[float, float] = (0.15, 2)
 
 # Position and checkpoint duration are in units of hours, as
 # the `factory_checkpoint_duration_resolution` is 1 hour
-POSITION_DURATION_HOURS_RANGE: tuple[int, int] = (91, ONE_YEAR_IN_HOURS)
+POSITION_DURATION_HOURS_RANGE: tuple[int, int] = (91, 2 * ONE_YEAR_IN_HOURS)
 CHECKPOINT_DURATION_HOURS_RANGE: tuple[int, int] = (1, 24)
 
 # The initial time stretch APR
@@ -41,8 +41,18 @@ ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, ONE_DAY_IN_SECONDS)
 # The fee percentage. The range controls all 4 fees
 FEE_RANGE: tuple[float, float] = (0.0001, 0.2)
 
+# Special case for checking block to block lp share price
+LP_SHARE_PRICE_VARIABLE_RATE_RANGE: tuple[float, float] = (0, 0.1)
+LP_SHARE_PRICE_FLAT_FEE_RANGE: tuple[float, float] = (0, 0)
+LP_SHARE_PRICE_CURVE_FEE_RANGE: tuple[float, float] = (0, 0)
+LP_SHARE_PRICE_GOVERNANCE_LP_FEE_RANGE: tuple[float, float] = (0, 0)
+LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
-def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_seed: int) -> LocalHyperdrive.Config:
+
+# pylint: disable=too-many-locals
+def generate_fuzz_hyperdrive_config(
+    rng: Generator, log_to_rollbar: bool, rng_seed: int, lp_share_price_test: bool
+) -> LocalHyperdrive.Config:
     """Fuzz over hyperdrive config.
 
     Arguments
@@ -53,6 +63,8 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
         If True, log errors to rollbar.
     rng_seed: int
         Seed for the rng.
+    lp_share_price_test: bool
+        If True, uses lp share price test fuzz parameters.
 
     Returns
     -------
@@ -81,8 +93,22 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
     checkpoint_duration = checkpoint_duration_hours * ONE_HOUR_IN_SECONDS
 
     initial_time_stretch_apr = FixedPoint(rng.uniform(*INITIAL_TIME_STRETCH_APR_RANGE))
+
+    if lp_share_price_test:
+        variable_rate_range = LP_SHARE_PRICE_VARIABLE_RATE_RANGE
+        flat_fee_range = LP_SHARE_PRICE_FLAT_FEE_RANGE
+        curve_fee_range = LP_SHARE_PRICE_CURVE_FEE_RANGE
+        governance_lp_fee_range = LP_SHARE_PRICE_GOVERNANCE_LP_FEE_RANGE
+        governance_zombie_fee_range = LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE
+    else:
+        variable_rate_range = VARIABLE_RATE_RANGE
+        flat_fee_range = FEE_RANGE
+        curve_fee_range = FEE_RANGE
+        governance_lp_fee_range = FEE_RANGE
+        governance_zombie_fee_range = FEE_RANGE
+
     # Generate flat fee in terms of APR
-    flat_fee = FixedPoint(rng.uniform(*FEE_RANGE) * (position_duration / ONE_YEAR_IN_SECONDS))
+    flat_fee = FixedPoint(rng.uniform(*flat_fee_range) * (position_duration / ONE_YEAR_IN_SECONDS))
 
     return LocalHyperdrive.Config(
         preview_before_trade=True,
@@ -95,16 +121,16 @@ def generate_fuzz_hyperdrive_config(rng: Generator, log_to_rollbar: bool, rng_se
         initial_liquidity=FixedPoint(rng.uniform(*INITIAL_LIQUIDITY_RANGE)),
         initial_fixed_apr=initial_time_stretch_apr,
         initial_time_stretch_apr=initial_time_stretch_apr,
-        initial_variable_rate=FixedPoint(rng.uniform(*VARIABLE_RATE_RANGE)),
+        initial_variable_rate=FixedPoint(rng.uniform(*variable_rate_range)),
         minimum_share_reserves=FixedPoint(rng.uniform(*MINIMUM_SHARE_RESERVES_RANGE)),
         minimum_transaction_amount=FixedPoint(rng.uniform(*MINIMUM_TRANSACTION_AMOUNT_RANGE)),
         circuit_breaker_delta=FixedPoint(rng.uniform(*CIRCUIT_BREAKER_DELTA_RANGE)),
         position_duration=position_duration,
         checkpoint_duration=checkpoint_duration,
-        curve_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
+        curve_fee=FixedPoint(rng.uniform(*curve_fee_range)),
         flat_fee=flat_fee,
-        governance_lp_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
-        governance_zombie_fee=FixedPoint(rng.uniform(*FEE_RANGE)),
+        governance_lp_fee=FixedPoint(rng.uniform(*governance_lp_fee_range)),
+        governance_zombie_fee=FixedPoint(rng.uniform(*governance_zombie_fee_range)),
     )
 
 
@@ -179,6 +205,7 @@ def run_local_fuzz_bots(
     random_advance_time: bool = False,
     random_variable_rate: bool = False,
     num_iterations: int | None = None,
+    lp_share_price_test: bool = False,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -217,6 +244,8 @@ def run_local_fuzz_bots(
         If True, will randomly change the rate between sets of trades. Defaults to False.
     num_iterations: int | None, optional
         The number of iterations to run. Defaults to None (infinite)
+    lp_share_price_test: bool, optional
+        If True, will test the LP share price. Defaults to False.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -314,6 +343,7 @@ def run_local_fuzz_bots(
                 test_epsilon=invariance_test_epsilon,
                 raise_error_on_failure=raise_error_on_failed_invariance_checks,
                 log_to_rollbar=log_to_rollbar,
+                lp_share_price_test=lp_share_price_test,
             )
 
         # Check agent funds and refund if necessary
