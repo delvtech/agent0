@@ -103,7 +103,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(
-        "--lp_share_price_test",
+        "--lp-share-price-test",
         default=False,
         action="store_true",
         help="Runs the lp share price fuzz with specific fee and rate parameters.",
