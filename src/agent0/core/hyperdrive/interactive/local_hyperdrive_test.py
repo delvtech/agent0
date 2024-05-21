@@ -363,7 +363,7 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
     )
     expected_timestretch = _to_unscaled_decimal(expected_timestretch_fp)
     expected_inv_timestretch = _to_unscaled_decimal((1 / expected_timestretch_fp))
-    deployer_address = fast_hyperdrive_fixture.chain.get_deployer_account_address()
+    deployer_address = fast_hyperdrive_fixture.chain.get_deployer_address()
     # pylint: disable=protected-access
     base_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.base_token_contract.address
     vault_shares_token_addr = fast_hyperdrive_fixture._deployed_hyperdrive.vault_shares_token_contract.address

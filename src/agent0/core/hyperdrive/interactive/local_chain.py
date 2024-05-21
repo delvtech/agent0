@@ -171,7 +171,7 @@ class LocalChain(Chain):
         # TODO this is the deployed account for anvil, get this programmatically
         return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
-    def get_deployer_account_address(self) -> str:
+    def get_deployer_account(self) -> LocalAccount:
         """Get the public key of the deployer account.
 
         Returns
@@ -179,8 +179,17 @@ class LocalChain(Chain):
         src
             The public key for the deployer account.
         """
-        account: LocalAccount = Account().from_key(self.get_deployer_account_private_key())
-        return account.address
+        return Account().from_key(self.get_deployer_account_private_key())
+
+    def get_deployer_address(self) -> str:
+        """Get the public key of the deployer account.
+
+        Returns
+        -------
+        src
+            The public key for the deployer account.
+        """
+        return self.get_deployer_account().address
 
     ##########
     # Advance time functions
@@ -561,6 +570,7 @@ class LocalChain(Chain):
             base=base,
             eth=eth,
             name=name,
+            chain=self,
             policy=policy,
             policy_config=policy_config,
             private_key=private_key,

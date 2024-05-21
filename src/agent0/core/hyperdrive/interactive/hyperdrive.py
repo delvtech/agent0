@@ -39,39 +39,6 @@ class Hyperdrive:
     class Config:
         """The configuration for the interactive hyperdrive class."""
 
-        # Execution config
-        exception_on_policy_error: bool = True
-        """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
-        exception_on_policy_slippage: bool = False
-        """
-        When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False.
-        """
-        preview_before_trade: bool = False
-        """Whether to preview the position before executing a trade. Defaults to False."""
-        txn_receipt_timeout: float | None = None
-        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
-
-        # Logging and crash reporting
-        log_to_rollbar: bool = False
-        """Whether to log crash reports to rollbar. Defaults to False."""
-        rollbar_log_prefix: str | None = None
-        """Additional prefix for this hyperdrive to log to rollbar."""
-        crash_log_level: int = logging.CRITICAL
-        """The log level to log crashes at. Defaults to critical."""
-        crash_report_additional_info: dict[str, Any] | None = None
-        """Additional information to include in the crash report."""
-        always_execute_policy_post_action: bool = False
-        """
-        Whether to execute the policy `post_action` function after non-policy trades. 
-        If True, the policy `post_action` function always be called after any agent trade.
-        If False, the policy `post_action` function will only be called after `execute_policy_action`.
-        Defaults to False.
-        """
-
-        # Data pipeline parameters
-        calc_pnl: bool = True
-        """Whether to calculate pnl. Defaults to True."""
-
     @classmethod
     def get_hyperdrive_addresses_from_artifacts(
         cls,

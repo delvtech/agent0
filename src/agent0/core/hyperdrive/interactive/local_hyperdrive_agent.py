@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Type, overload
 
+import pandas as pd
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
@@ -11,7 +12,7 @@ from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.hyperdrive import AssetIdPrefix, ReceiptBreakdown, encode_asset_id
+from agent0.ethpy.hyperdrive import ReceiptBreakdown
 
 from .event_types import (
     AddLiquidity,
@@ -25,6 +26,8 @@ from .event_types import (
 from .hyperdrive_agent import HyperdriveAgent
 
 if TYPE_CHECKING:
+    from .hyperdrive import Hyperdrive
+    from .local_chain import LocalChain
     from .local_hyperdrive import LocalHyperdrive
 
 
@@ -40,14 +43,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         base: FixedPoint,
         eth: FixedPoint,
         name: str | None,
-        pool: LocalHyperdrive,
+        chain: LocalChain,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
 
-        NOTE: this constructor shouldn't be called directly, but rather from LocalHyperdrive's
+        NOTE: this constructor shouldn't be called directly, but rather from LocalChain's
         `init_agent` method.
 
         Arguments
@@ -58,8 +61,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The amount of ETH to fund the agent with.
         name: str | None
             The name of the agent. Defaults to the wallet address.
-        pool: LocalHyperdrive
-            The pool object that this agent belongs to.
+        chain: LocalChain
+            The chain object that this agent belongs to.
         policy: HyperdrivePolicy | None
             An optional policy to attach to this agent.
         policy_config: HyperdrivePolicy.Config | None,
@@ -71,39 +74,29 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         agent_private_key = make_private_key() if private_key is None else private_key
 
         super().__init__(
-            name=name, pool=pool, policy=policy, policy_config=policy_config, private_key=agent_private_key
+            name=name, chain=chain, policy=policy, policy_config=policy_config, private_key=agent_private_key
         )
 
-        # Type narrow to the local hyperdrive type
-        self._pool: LocalHyperdrive = pool
+        self.chain = chain
 
-        # Update wallet to agent's previous budget
-        if private_key is not None:  # address already existed
-            self.agent.wallet.balance.amount = self._pool.interface.get_eth_base_balances(self.agent)[1]
-            self.agent.wallet.lp_tokens = FixedPoint(
-                scaled_value=self._pool.interface.hyperdrive_contract.functions.balanceOf(
-                    encode_asset_id(AssetIdPrefix.LP, 0),
-                    self.agent.checksum_address,
-                ).call()
-            )
-            self.agent.wallet.withdraw_shares = FixedPoint(
-                scaled_value=self._pool.interface.hyperdrive_contract.functions.balanceOf(
-                    encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0),
-                    self.agent.checksum_address,
-                ).call()
-            )
+        # Type narrow to the local hyperdrive type
+        # TODO could add this to initializer as an option
+        # similar to policies
+        self._active_pool: LocalHyperdrive | None = None
 
         # Fund agent
         if eth > 0 or base > 0:
             self.add_funds(base, eth)
 
         # Establish max approval for the hyperdrive contract
-        self.set_max_approval()
+        # TODO can't set approval here, bookkeep pools that need approval
+        # self.set_max_approval()
 
     def add_funds(
         self,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
+        pool: LocalHyperdrive | None = None,
         signer_account: LocalAccount | None = None,
     ) -> None:
         """Adds additional funds to the agent.
@@ -118,17 +111,16 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The amount of base to fund the agent with. Defaults to 0.
         eth: FixedPoint | None, optional
             The amount of ETH to fund the agent with. Defaults to 0.
+        pool: LocalHyperdrive | None, optional
+            The pool to mint base for.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
         """
         # Adding funds default to the deploy account
         if signer_account is None:
-            signer_account = self._pool._deployed_hyperdrive.deploy_account  # pylint: disable=protected-access
+            signer_account = self.chain.get_deployer_account()
 
-        super().add_funds(base, eth, signer_account=signer_account)
-
-        # Adding funds mines a block, so we run data pipeline here
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        super().add_funds(base, eth, pool, signer_account=signer_account)
 
     ################
     # Trades
@@ -326,10 +318,36 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     # Analysis
     ################
 
-    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
+    def get_trade_events(
+        self, pool: LocalHyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
+    ) -> pd.DataFrame:
+        """Returns the agent's current wallet.
+
+        Arguments
+        ---------
+        pool : LocalHyperdrive | None, optional
+            The hyperdrive pool to get trade events from. If None, will retrieve all events from
+            all pools.
+        all_token_deltas: bool, optional
+            When removing liquidity that results in withdrawal shares, the events table returns
+            two entries for this transaction to keep track of token deltas (one for lp tokens and
+            one for withdrawal shares). If this flag is true, will return all entries in the table,
+            which is useful for calculating token positions. If false, will drop the duplicate
+            withdrawal share entry (useful for returning a ticker).
+        coerce_float: bool, optional
+            If True, will coerce underlying Decimals to floats.
+
+        Returns
+        -------
+        HyperdriveWallet
+            The agent's current wallet.
+        """
+        return self._get_trade_events(pool=pool, all_token_deltas=all_token_deltas, coerce_float=coerce_float)
+
+    def _sync_events(self, agent: HyperdrivePolicyAgent, pool: Hyperdrive) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass
 
-    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
+    def _sync_snapshot(self, agent: HyperdrivePolicyAgent, pool: Hyperdrive) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass
