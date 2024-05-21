@@ -7,13 +7,16 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import ReceiptBreakdown
 
 if TYPE_CHECKING:
+    from eth_account.signers.local import LocalAccount
+
     from agent0.core.base import Trade
 
     from .hyperdrive_actions import HyperdriveMarketAction
-    from .hyperdrive_policy_agent import HyperdrivePolicyAgent
+    from .hyperdrive_wallet import HyperdriveWallet
 
 
 class TradeStatus(Enum):
@@ -32,8 +35,12 @@ class TradeResult:
 
     status: TradeStatus
     """The status of the trade."""
-    agent: HyperdrivePolicyAgent | None = None
+    account: LocalAccount | None = None
     """The agent that was executing the trade."""
+    wallet: HyperdriveWallet | None = None
+    """The wallet of the agent that was executing the trade."""
+    policy: HyperdriveBasePolicy | None = None
+    """The policy that was executing the trade."""
     trade_object: Trade[HyperdriveMarketAction] | None = None
     """The trade object for the trade."""
     tx_receipt: ReceiptBreakdown | None = None

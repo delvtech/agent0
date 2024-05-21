@@ -5,16 +5,14 @@ from __future__ import annotations
 import logging
 
 import eth_utils
+from eth_account.signers.local import LocalAccount
 from web3 import Web3
 from web3.contract.contract import Contract
 
-from agent0.core.hyperdrive import HyperdrivePolicyAgent
 from agent0.ethpy.base import smart_contract_transact
 
 
-def set_max_approval(
-    agent: HyperdrivePolicyAgent, web3: Web3, base_token_contract: Contract, hyperdrive_address: str
-) -> None:
+def set_max_approval(agent: LocalAccount, web3: Web3, base_token_contract: Contract, hyperdrive_address: str) -> None:
     """Establish max approval for the hyperdrive contract for the given agent.
 
     Arguments

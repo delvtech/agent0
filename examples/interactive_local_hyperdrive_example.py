@@ -72,7 +72,7 @@ open_long_event_1 = agent0.open_long(base=FixedPoint(11111), pool=hyperdrive0)
 # %%
 # We can also set an active pool an agent is using to avoid passing in the pool
 # for every trade.
-agent1.set_active_pool(hyperdrive0)
+agent1.set_active(pool=hyperdrive0)
 open_long_event_2 = agent1.open_long(base=FixedPoint(22222))
 
 # Close previous longs from events
@@ -114,7 +114,7 @@ remove_lp_event = agent1.remove_liquidity(shares=agent1.get_lp())
 # or we can explicitly call `set_policy` to set a policy on an agent.
 # NOTE: `set_policy` overwrites the existing policy.
 # TODO we may be able to set multiple policies on an agent and hot-swap them
-agent0.set_policy(
+agent0.set_active(
     policy=PolicyZoo.random,
     policy_config=PolicyZoo.random.Config(rng_seed=123),
 )

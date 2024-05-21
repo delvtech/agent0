@@ -498,7 +498,8 @@ class LocalChain(Chain):
             policy_file = save_dir + agent.checksum_address + ".pkl"
             with open(policy_file, "wb") as file:
                 # We use dill, as pickle can't store local objects
-                dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
+                # This should also store None if there is no active policy
+                dill.dump(agent._active_policy, file, protocol=dill.HIGHEST_PROTOCOL)
 
     def _load_policy_state(self, load_dir: str) -> None:
         for agent in self._chain_agents:
@@ -507,13 +508,13 @@ class LocalChain(Chain):
                 # If we don't load rng, we get the current RNG state and set it after loading
                 rng = None
                 if not self.config.load_rng_on_snapshot:
-                    rng = agent.agent.policy.rng
+                    rng = agent._active_policy.rng
                 # We use dill, as pickle can't store local objects
-                agent.agent.policy = dill.load(file)
-                if not self.config.load_rng_on_snapshot:
+                agent._active_policy = dill.load(file)
+                if not self.config.load_rng_on_snapshot and agent._active_policy is not None:
                     # For type checking
                     assert rng is not None
-                    agent.agent.policy.rng = rng
+                    agent._active_policy.rng = rng
 
     ################
     # Agent functions

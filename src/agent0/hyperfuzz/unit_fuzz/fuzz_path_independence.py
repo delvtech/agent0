@@ -248,7 +248,7 @@ def fuzz_path_independence(
                 rollbar_data.update(error.exception_data)
 
                 report = build_crash_trade_result(
-                    error, interactive_hyperdrive.interface, agent.agent, additional_info=additional_info
+                    error, interactive_hyperdrive.interface, agent.account, additional_info=additional_info
                 )
                 # Crash reporting already going to file in logging
                 log_hyperdrive_crash_report(
