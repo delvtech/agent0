@@ -355,9 +355,8 @@ def _check_lp_share_price(
 
 def _check_initial_lp_profitable(pool_state: PoolState, epsilon: FixedPoint | None = None) -> InvariantCheckResults:
 
-    # There's a rounding difference of 1 wei due to rounding lp_rate down
     if epsilon is None:
-        epsilon = FixedPoint(scaled_value=1)
+        epsilon = FixedPoint(".005")
 
     failed = False
     exception_message = ""
