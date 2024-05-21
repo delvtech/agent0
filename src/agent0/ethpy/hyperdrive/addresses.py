@@ -135,6 +135,21 @@ def get_hyperdrive_addresses_from_registry(
             # Remove item from dictionary
             unnamed_addresses_dict.pop(hyperdrive_address)
 
+    # Check all versions of registered pools to ensure addresses are correct
+    for address, _ in unnamed_addresses_dict.items():
+        hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(
+            web3.to_checksum_address(hyperdrive_address)
+        )
+        try:
+            hyperdrive_version = hyperdrive_contract.functions.version().call()
+            correct_version = "v1.0.6"
+            if hyperdrive_version != correct_version:
+                raise ValueError(
+                    f"Hyperdrive pool at address {address} version does not match ({correct_version=}, {hyperdrive_version=})."
+                )
+        except Exception as e:
+            raise ValueError(f"Hyperdrive pool at address {address} version call failed.") from e
+
     addresses = {}
     if generate_name:
         for address, index in unnamed_addresses_dict.items():
