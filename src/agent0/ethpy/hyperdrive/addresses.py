@@ -145,7 +145,7 @@ def get_hyperdrive_addresses_from_registry(
         try:
             hyperdrive_version = hyperdrive_contract.functions.version().call()
             expected_version = get_expected_hyperdrive_version()
-            if hyperdrive_version != expected_version:
+            if hyperdrive_version not in expected_version:
                 logging.error(
                     "Hyperdrive pool at address %s version does not match (expected %s, actual %s}).",
                     hyperdrive_address,

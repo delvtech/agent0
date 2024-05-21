@@ -130,10 +130,10 @@ class HyperdriveReadInterface:
         # Check version here to ensure the contract is the correct version
         hyperdrive_version = self.hyperdrive_contract.functions.version().call()
         expected_version = get_expected_hyperdrive_version()
-        if hyperdrive_version != expected_version:
+        if hyperdrive_version not in expected_version:
             raise ValueError(
                 f"Hyperdrive address {self.hyperdrive_address} is version {hyperdrive_version}, "
-                f"does not match expected version {expected_version}"
+                f"does not match one of the expected versions {expected_version}"
             )
 
         # We get the yield address and contract from the pool config
