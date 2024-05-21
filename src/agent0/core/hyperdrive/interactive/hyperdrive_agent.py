@@ -118,7 +118,7 @@ class HyperdriveAgent:
             add_addr_to_username(name, [self.account.address], self.chain.db_session)
 
     @property
-    def checksum_address(self) -> ChecksumAddress:
+    def address(self) -> ChecksumAddress:
         """Return the checksum address of the account."""
         return self.account.address
 
@@ -569,12 +569,17 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Liquidate requires an active pool.")
 
+        # For type narrowing
+        # rng should always be set in post_init
+        assert self.chain.config.rng is not None
+
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
                 pool.interface,
                 self.account,
                 self.get_wallet(pool),
-                self.chain.config.rng,
+                policy=None,
+                rng=self.chain.config.rng,
                 preview_before_trade=self.chain.config.preview_before_trade,
                 liquidate=True,
                 randomize_liquidation=randomize,
@@ -798,8 +803,8 @@ class HyperdriveAgent:
             The agent's positions across all hyperdrive pools.
         """
         # Sync all events, then sync snapshots for pnl and value calculation
-        self._sync_events(self.account)
-        self._sync_snapshot(self.account)
+        self._sync_events(pool)
+        self._sync_snapshot(pool)
         # Query the snapshot for the most recent positions.
         position_snapshot = get_position_snapshot(
             session=self.chain.db_session,
@@ -903,7 +908,7 @@ class HyperdriveAgent:
         HyperdriveWallet
             The agent's current wallet.
         """
-        self._sync_events(self.account, pool)
+        self._sync_events(pool)
         return self._get_trade_events(all_token_deltas=all_token_deltas, pool=pool, coerce_float=coerce_float)
 
     def _get_trade_events(
@@ -923,14 +928,14 @@ class HyperdriveAgent:
         return get_trade_events(
             self.chain.db_session,
             hyperdrive_address=hyperdrive_address,
-            wallet_address=self.account.checksum_address,
+            wallet_address=self.address,
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
 
     # Helper functions for analysis
 
-    def _sync_events(self, agent: HyperdrivePolicyAgent, pool: Hyperdrive) -> None:
+    def _sync_events(self, pool: Hyperdrive) -> None:
         # Update the db with this wallet
         # Note that remote hyperdrive only updates the wallet wrt the agent itself.
         # TODO this function can be optimized to cache.
@@ -940,17 +945,17 @@ class HyperdriveAgent:
         # table, based on if we're updating the table with all wallets or just a single wallet.
 
         # Remote hyperdrive stack syncs only the agent's wallet
-        trade_events_to_db([pool.interface], wallet_addr=agent.checksum_address, db_session=pool.chain.db_session)
+        trade_events_to_db([pool.interface], wallet_addr=self.address, db_session=pool.chain.db_session)
         # We sync checkpoint events as well
         checkpoint_events_to_db([pool.interface], db_session=pool.chain.db_session)
 
-    def _sync_snapshot(self, agent: HyperdrivePolicyAgent, pool: Hyperdrive) -> None:
+    def _sync_snapshot(self, pool: Hyperdrive) -> None:
         # Update the db with a snapshot of the wallet
 
         # Note that remote hyperdrive only updates snapshots wrt the agent itself.
         snapshot_positions_to_db(
             [pool.interface],
-            wallet_addr=agent.checksum_address,
+            wallet_addr=self.address,
             db_session=self.chain.db_session,
             calc_pnl=self.chain.config.calc_pnl,
         )

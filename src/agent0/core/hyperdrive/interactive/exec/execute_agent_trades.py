@@ -99,7 +99,7 @@ async def async_execute_agent_trades(
     interface: HyperdriveReadWriteInterface,
     account: LocalAccount,
     wallet: HyperdriveWallet,
-    policy: HyperdriveBasePolicy,
+    policy: HyperdriveBasePolicy | None,
     preview_before_trade: bool,
     liquidate: bool,
     randomize_liquidation: bool = False,
@@ -139,11 +139,14 @@ async def async_execute_agent_trades(
     """
 
     if liquidate:
-        # TODO: test this option
+        if rng is None:
+            raise ValueError("RNG cannot be None when liquidating.")
         trades: list[Trade[HyperdriveMarketAction]] = _get_liquidation_trades(
             interface, wallet, randomize_liquidation, rng
         )
     else:
+        if policy is None:
+            raise ValueError("Policy cannot be None when executing agent trades.")
         trades: list[Trade[HyperdriveMarketAction]] = _get_trades(
             interface=interface.get_read_interface(), policy=policy, wallet=wallet
         )

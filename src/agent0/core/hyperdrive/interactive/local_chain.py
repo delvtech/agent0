@@ -479,7 +479,7 @@ class LocalChain(Chain):
     def _save_agent_bookkeeping(self, save_dir: str) -> None:
         policy_file = save_dir + "agents.pkl"
 
-        agents = [agent.checksum_address for agent in self._chain_agents]
+        agents = [agent.address for agent in self._chain_agents]
         with open(policy_file, "wb") as file:
             # We use dill, as pickle can't store local objects
             dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
@@ -491,11 +491,11 @@ class LocalChain(Chain):
             load_agents = dill.load(file)
         # Remove references of all agents added after snapshot
         # NOTE: existing agent objects initialized after snapshot will no longer be valid.
-        self._chain_agents = [agent for agent in self._chain_agents if agent.checksum_address in load_agents]
+        self._chain_agents = [agent for agent in self._chain_agents if agent.address in load_agents]
 
     def _save_policy_state(self, save_dir: str) -> None:
         for agent in self._chain_agents:
-            policy_file = save_dir + agent.checksum_address + ".pkl"
+            policy_file = save_dir + agent.address + ".pkl"
             with open(policy_file, "wb") as file:
                 # We use dill, as pickle can't store local objects
                 # This should also store None if there is no active policy
@@ -503,7 +503,7 @@ class LocalChain(Chain):
 
     def _load_policy_state(self, load_dir: str) -> None:
         for agent in self._chain_agents:
-            policy_file = load_dir + agent.checksum_address + ".pkl"
+            policy_file = load_dir + agent.address + ".pkl"
             with open(policy_file, "rb") as file:
                 # If we don't load rng, we get the current RNG state and set it after loading
                 rng = None

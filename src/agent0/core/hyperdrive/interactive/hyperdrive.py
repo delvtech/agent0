@@ -87,7 +87,7 @@ class Hyperdrive:
             hyperdrive_address,
             rpc_uri=chain.rpc_uri,
             web3=chain._web3,  # pylint: disable=protected-access
-            txn_receipt_timeout=self.config.txn_receipt_timeout,
+            txn_receipt_timeout=self.chain.config.txn_receipt_timeout,
         )
 
         self.chain = chain
