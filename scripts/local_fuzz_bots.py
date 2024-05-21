@@ -118,6 +118,3 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 if __name__ == "__main__":
     main()
-
-if __name__ == "__main__":
-    main()
