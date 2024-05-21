@@ -13,6 +13,7 @@ from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
+from agent0.ethpy.hyperdrive.get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_checkpoint,
@@ -125,6 +126,15 @@ class HyperdriveReadInterface:
         self.hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.hyperdrive_address)
         )
+
+        # Check version here to ensure the contract is the correct version
+        hyperdrive_version = self.hyperdrive_contract.functions.version().call()
+        expected_version = get_expected_hyperdrive_version()
+        if hyperdrive_version not in expected_version:
+            raise ValueError(
+                f"Hyperdrive address {self.hyperdrive_address} is version {hyperdrive_version}, "
+                f"does not match one of the expected versions {expected_version}"
+            )
 
         # We get the yield address and contract from the pool config
         self.pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)

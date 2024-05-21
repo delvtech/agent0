@@ -13,6 +13,7 @@ from web3 import Web3
 from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract, MockERC4626Contract
 from agent0.hypertypes.utilities.conversions import camel_to_snake
 
+from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from .transactions import get_hyperdrive_pool_config
 
 
@@ -134,6 +135,30 @@ def get_hyperdrive_addresses_from_registry(
             ), f"Unexpected deregister without corresponding register for pool {hyperdrive_address}"
             # Remove item from dictionary
             unnamed_addresses_dict.pop(hyperdrive_address)
+
+    # Check all versions of registered pools to ensure addresses are correct
+    for hyperdrive_address in list(unnamed_addresses_dict.keys()):
+        success = False
+        hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(
+            web3.to_checksum_address(hyperdrive_address)
+        )
+        try:
+            hyperdrive_version = hyperdrive_contract.functions.version().call()
+            expected_version = get_expected_hyperdrive_version()
+            if hyperdrive_version not in expected_version:
+                logging.error(
+                    "Hyperdrive pool at address %s version does not match (expected %s, actual %s}).",
+                    hyperdrive_address,
+                    expected_version,
+                    hyperdrive_version,
+                )
+            success = True
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error("Hyperdrive pool at address %s version call failed: %s", hyperdrive_address, repr(e))
+
+        # Drop from table if failed
+        if not success:
+            del unnamed_addresses_dict[hyperdrive_address]
 
     addresses = {}
     if generate_name:
