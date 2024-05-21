@@ -781,67 +781,31 @@ class HyperdriveAgent:
     # Analysis
     ################
 
-    def get_positions(
-        self, show_closed_positions: bool = False, coerce_float: bool = False, pool: Hyperdrive | None = None
-    ) -> pd.DataFrame:
-        """Returns all of the agent's positions across all hyperdrive pools.
-
-        Arguments
-        ---------
-        show_closed_positions: bool, optional
-            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
-            When False, will only return currently open positions. Useful for gathering currently open positions.
-            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
-        coerce_float: bool, optional
-            Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
-        pool: Hyperdrive, optional
-            The hyperdrive pool to query. Defaults to None, which will query all pools.
-
-        Returns
-        -------
-        pd.DataFrame
-            The agent's positions across all hyperdrive pools.
-        """
-        # Sync all events, then sync snapshots for pnl and value calculation
-        self._sync_events(pool)
-        self._sync_snapshot(pool)
-        # Query the snapshot for the most recent positions.
-        position_snapshot = get_position_snapshot(
-            session=self.chain.db_session,
-            start_block=-1,
-            wallet_address=self.account.address,
-            coerce_float=coerce_float,
-        ).drop("id", axis=1)
-        if not show_closed_positions:
-            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
-        # Add usernames
-        position_snapshot = self._pool._add_username_to_dataframe(position_snapshot, "wallet_address")
-        position_snapshot = self._pool._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
-        return position_snapshot
-
     def get_wallet(self, pool: Hyperdrive | None = None) -> HyperdriveWallet:
         """Returns the wallet object for the agent for the given hyperdrive pool.
 
-        This function will eventually use the active pool or take a pool as an argument
-        once agent gets detached from the pool.
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         HyperdriveWallet
             Returns the HyperdriveWallet object for the given pool.
         """
-
-        self._sync_events(self.account, pool)
-        # If pool is None, we don't filter on hyperdrive address
         if pool is None:
-            hyperdrive_address = None
-        else:
-            hyperdrive_address = pool.interface.hyperdrive_address
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Getting wallet object requires an active pool.")
+
+        self._sync_events(pool)
+        hyperdrive_address = pool.interface.hyperdrive_address
 
         # Query current positions from the events table
         positions = get_current_positions(
             self.chain.db_session,
-            self.account.checksum_address,
+            self.address,
             hyperdrive_address=hyperdrive_address,
             show_closed_positions=False,
             coerce_float=False,
@@ -854,7 +818,7 @@ class HyperdriveAgent:
         for _, row in positions.iterrows():
             # Sanity checks
             assert row["hyperdrive_address"] == hyperdrive_address
-            assert row["wallet_address"] == self.account.checksum_address
+            assert row["wallet_address"] == self.address
             if row["token_id"] == "LP":
                 lp_balance = FixedPoint(row["token_balance"])
             elif row["token_id"] == "WITHDRAWAL_SHARE":
@@ -868,13 +832,11 @@ class HyperdriveAgent:
 
         # We do a balance of call to get base balance.
         base_balance = FixedPoint(
-            scaled_value=self._pool.interface.base_token_contract.functions.balanceOf(
-                self.account.checksum_address
-            ).call()
+            scaled_value=pool.interface.base_token_contract.functions.balanceOf(self.address).call()
         )
 
         return HyperdriveWallet(
-            address=HexBytes(self.account.checksum_address),
+            address=HexBytes(self.address),
             balance=Quantity(
                 amount=base_balance,
                 unit=TokenType.BASE,
@@ -885,14 +847,69 @@ class HyperdriveAgent:
             shorts=short_obj,
         )
 
+    def get_positions(
+        self, pool_filter: Hyperdrive | None = None, show_closed_positions: bool = False, coerce_float: bool = False
+    ) -> pd.DataFrame:
+        """Returns all of the agent's positions across all hyperdrive pools.
+
+        Arguments
+        ---------
+        pool_filter: Hyperdrive, optional
+            The hyperdrive pool to query. Defaults to None, which will query all pools.
+        show_closed_positions: bool, optional
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+        coerce_float: bool, optional
+            Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
+
+        Returns
+        -------
+        pd.DataFrame
+            The agent's positions across all hyperdrive pools.
+        """
+        if pool_filter is None:
+            # TODO get positions on remote chains must pass in pool for now
+            # Eventually we get the list of pools from registry and track all pools in registry
+            raise NotImplementedError("Filter pool must be specified to get positions.")
+        # Sync all events, then sync snapshots for pnl and value calculation
+        self._sync_events(pool_filter)
+        self._sync_snapshot(pool_filter)
+        return self._get_positions(
+            pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
+        )
+
+    def _get_positions(
+        self, pool_filter: Hyperdrive | None, show_closed_positions: bool, coerce_float: bool
+    ) -> pd.DataFrame:
+        # Query the snapshot for the most recent positions.
+        if pool_filter is None:
+            hyperdrive_address = None
+        else:
+            hyperdrive_address = pool_filter.hyperdrive_address
+
+        position_snapshot = get_position_snapshot(
+            session=self.chain.db_session,
+            start_block=-1,
+            wallet_address=self.account.address,
+            hyperdrive_address=hyperdrive_address,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        if not show_closed_positions:
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
+        # Add usernames
+        position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
+
     def get_trade_events(
-        self, pool: Hyperdrive, all_token_deltas: bool = False, coerce_float: bool = False
+        self, pool: Hyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
     ) -> pd.DataFrame:
         """Returns the agent's current wallet.
 
         Arguments
         ---------
-        pool : Hyperdrive
+        pool : Hyperdrive | None, optional
             The hyperdrive pool to get trade events from.
         all_token_deltas: bool, optional
             When removing liquidity that results in withdrawal shares, the events table returns
@@ -908,6 +925,10 @@ class HyperdriveAgent:
         HyperdriveWallet
             The agent's current wallet.
         """
+        if pool is None:
+            # TODO get positions on remote chains must pass in pool for now
+            # Eventually we get the list of pools from registry and track all pools in registry
+            raise NotImplementedError("Pool must be specified to get trade events.")
         self._sync_events(pool)
         return self._get_trade_events(all_token_deltas=all_token_deltas, pool=pool, coerce_float=coerce_float)
 

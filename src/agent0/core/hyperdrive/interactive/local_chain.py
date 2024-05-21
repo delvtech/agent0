@@ -65,6 +65,9 @@ class LocalChain(Chain):
         Defaults to False.
         """
 
+        crash_log_ticker: bool = False
+        """Whether to log the trade ticker in crash reports. Defaults to False."""
+
     def __init__(self, config: Config | None = None, fork_uri: str | None = None, fork_block_number: int | None = None):
         """Initialize the Chain class that connects to an existing chain.
 

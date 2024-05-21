@@ -11,13 +11,16 @@ from typing import Any, Type
 
 import docker
 import numpy as np
+import pandas as pd
 from docker.errors import NotFound
 from docker.models.containers import Container
 from numpy.random._generator import Generator
 from web3.types import BlockData, Timestamp
 
 from agent0.chainsync import PostgresConfig
-from agent0.chainsync.db.base import initialize_session
+from agent0.chainsync.dashboard.usernames import build_user_mapping
+from agent0.chainsync.db.base import get_addr_to_username, initialize_session
+from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.hyperlogs import close_logging, setup_logging
@@ -321,3 +324,34 @@ class Chain:
             private_key=private_key,
         )
         return out_agent
+
+    ################
+    # Helper functions
+    ################
+
+    # TODO should likely move these to chainsync
+    # or have the db query automatically add these columns to the result
+
+    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        addr_to_username = get_addr_to_username(self.db_session)
+
+        # Get corresponding usernames
+        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
+        out = df.copy()
+        # Weird pandas type error
+        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
+        return out
+
+    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.db_session)
+
+        # Do lookup from address to name
+        hyperdrive_name = (
+            df[addr_column]
+            .to_frame()
+            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
+        )["name"]
+        # Weird pandas type error
+        out = df.copy()
+        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
+        return out

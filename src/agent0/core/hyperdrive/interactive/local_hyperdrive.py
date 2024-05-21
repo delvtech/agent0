@@ -24,7 +24,6 @@ from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from .event_types import CreateCheckpoint
 from .hyperdrive import Hyperdrive
 from .local_chain import LocalChain
-from .local_hyperdrive_agent import LocalHyperdriveAgent
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
@@ -42,8 +41,6 @@ class LocalHyperdrive(Hyperdrive):
         # Environment variables
         data_pipeline_timeout: int = 60
         """The timeout for the data pipeline. Defaults to 60 seconds."""
-        crash_log_ticker: bool = False
-        """Whether to log the trade ticker in crash reports. Defaults to False."""
 
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -182,7 +179,7 @@ class LocalHyperdrive(Hyperdrive):
         else:
             self.config = config
 
-        self.calc_pnl = self.config.calc_pnl
+        self.calc_pnl = self.chain.config.calc_pnl
 
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
@@ -433,9 +430,9 @@ class LocalHyperdrive(Hyperdrive):
         if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
-        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
         # Add logical name for pool
-        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
         return position_snapshot
 
     def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -457,8 +454,8 @@ class LocalHyperdrive(Hyperdrive):
             self.chain.db_session, hyperdrive_address=self.interface.hyperdrive_address, coerce_float=coerce_float
         ).drop("id", axis=1)
         # Add usernames
-        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
         return position_snapshot
 
     def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
@@ -487,8 +484,8 @@ class LocalHyperdrive(Hyperdrive):
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
-        out = self._add_username_to_dataframe(out, "wallet_address")
-        out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
+        out = self.chain._add_username_to_dataframe(out, "wallet_address")
+        out = self.chain._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
 
     def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -505,7 +502,7 @@ class LocalHyperdrive(Hyperdrive):
             A dataframe of aggregated wallet pnl per block
         """
         out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
-        out = self._add_username_to_dataframe(out, "wallet_address")
+        out = self.chain._add_username_to_dataframe(out, "wallet_address")
         return out
 
     ################

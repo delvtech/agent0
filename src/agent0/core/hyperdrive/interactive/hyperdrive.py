@@ -10,8 +10,6 @@ import nest_asyncio
 import pandas as pd
 from eth_typing import ChecksumAddress
 
-from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import get_addr_to_username
 from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, get_hyperdrive_addr_to_name
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
@@ -83,6 +81,8 @@ class Hyperdrive:
         return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
     def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress, name: str | None):
+        self.chain = chain
+
         self.interface = HyperdriveReadWriteInterface(
             hyperdrive_address,
             rpc_uri=chain.rpc_uri,
@@ -90,7 +90,6 @@ class Hyperdrive:
             txn_receipt_timeout=self.chain.config.txn_receipt_timeout,
         )
 
-        self.chain = chain
         # Register the username if it was provided
         if name is None:
             # Build the name in this case
@@ -237,27 +236,3 @@ class Hyperdrive:
         """
         # pylint: disable=protected-access
         return self.interface.hyperdrive_address
-
-    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        addr_to_username = get_addr_to_username(self.chain.db_session)
-
-        # Get corresponding usernames
-        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
-        out = df.copy()
-        # Weird pandas type error
-        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
-        return out
-
-    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.chain.db_session)
-
-        # Do lookup from address to name
-        hyperdrive_name = (
-            df[addr_column]
-            .to_frame()
-            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
-        )["name"]
-        # Weird pandas type error
-        out = df.copy()
-        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
-        return out

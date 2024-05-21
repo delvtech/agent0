@@ -126,24 +126,31 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     # Trades
     ################
 
-    def open_long(self, base: FixedPoint) -> OpenLong:
+    def open_long(self, base: FixedPoint, pool: LocalHyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
 
         Arguments
         ---------
         base: FixedPoint
             The amount of longs to open in units of base.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         OpenLong
             The emitted event of the open long call.
         """
-        out = super().open_long(base)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Open long requires an active pool.")
+
+        out = super().open_long(base, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def close_long(self, maturity_time: int, bonds: FixedPoint) -> CloseLong:
+    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: LocalHyperdrive | None = None) -> CloseLong:
         """Closes a long for this agent.
 
         Arguments
@@ -152,34 +159,48 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The maturity time of the bonds to close. This is the identifier of the long tokens.
         bonds: FixedPoint
             The amount of longs to close in units of bonds.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         CloseLong
             The emitted event of the close long call.
         """
-        out = super().close_long(maturity_time, bonds)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Close long requires an active pool.")
+
+        out = super().close_long(maturity_time, bonds, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def open_short(self, bonds: FixedPoint) -> OpenShort:
+    def open_short(self, bonds: FixedPoint, pool: LocalHyperdrive | None = None) -> OpenShort:
         """Opens a short for this agent.
 
         Arguments
         ---------
         bonds: FixedPoint
             The amount of shorts to open in units of bonds.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         OpenShort
             The emitted event of the open short call.
         """
-        out = super().open_short(bonds)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Open short requires an active pool.")
+
+        out = super().open_short(bonds, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def close_short(self, maturity_time: int, bonds: FixedPoint) -> CloseShort:
+    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: LocalHyperdrive | None = None) -> CloseShort:
         """Closes a short for this agent.
 
         Arguments
@@ -188,83 +209,121 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The maturity time of the bonds to close. This is the identifier of the short tokens.
         bonds: FixedPoint
             The amount of shorts to close in units of bonds.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         CloseShort
             The emitted event of the close short call.
         """
-        out = super().close_short(maturity_time, bonds)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Close short requires an active pool.")
+
+        out = super().close_short(maturity_time, bonds, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def add_liquidity(self, base: FixedPoint) -> AddLiquidity:
+    def add_liquidity(self, base: FixedPoint, pool: LocalHyperdrive | None = None) -> AddLiquidity:
         """Adds liquidity for this agent.
 
         Arguments
         ---------
         base: FixedPoint
             The amount of liquidity to add in units of base.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         AddLiquidity
             The emitted event of the add liquidity call.
         """
-        out = super().add_liquidity(base)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Add liquidity requires an active pool.")
+
+        out = super().add_liquidity(base, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def remove_liquidity(self, shares: FixedPoint) -> RemoveLiquidity:
+    def remove_liquidity(self, shares: FixedPoint, pool: LocalHyperdrive | None = None) -> RemoveLiquidity:
         """Removes liquidity for this agent.
 
         Arguments
         ---------
         shares: FixedPoint
             The amount of liquidity to remove in units of shares.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         RemoveLiquidity
             The emitted event of the remove liquidity call.
         """
-        out = super().remove_liquidity(shares)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Remove liquidity requires an active pool.")
+
+        out = super().remove_liquidity(shares, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def redeem_withdraw_share(self, shares: FixedPoint) -> RedeemWithdrawalShares:
+    def redeem_withdraw_share(self, shares: FixedPoint, pool: LocalHyperdrive | None = None) -> RedeemWithdrawalShares:
         """Redeems withdrawal shares for this agent.
 
         Arguments
         ---------
         shares: FixedPoint
             The amount of withdrawal shares to redeem in units of shares.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         RedeemWithdrawalShares
             The emitted event of the redeem withdrawal shares call.
         """
-        out = super().redeem_withdraw_share(shares)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Remove liquidity requires an active pool.")
+
+        out = super().redeem_withdraw_share(shares, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def execute_policy_action(
-        self,
+        self, pool: LocalHyperdrive | None = None
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         """Executes the underlying policy action (if set).
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
-        out = super().execute_policy_action()
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Executing policy action requires an active pool.")
+
+        out = super().execute_policy_action(pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def liquidate(
-        self, randomize: bool = False
+        self, randomize: bool = False, pool: LocalHyperdrive | None = None
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         """Liquidate all of the agent's positions.
 
@@ -272,14 +331,21 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         ---------
         randomize: bool, optional
             Whether to randomize liquidation trades. Defaults to False.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
-        out = super().liquidate(randomize)
-        self._pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Liquidate requires an active pool.")
+
+        out = super().liquidate(randomize, pool)
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     # Helper functions for trades
@@ -301,8 +367,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             # TODO we likely want to explicitly check for slippage here and not
             # get anvil state dump if it's a slippage error and the user wants to
             # ignore slippage errors
-            trade_result.anvil_state = get_anvil_state_dump(self._pool.interface.web3)
-            if self._pool.config.crash_log_ticker:
+            trade_result.anvil_state = get_anvil_state_dump(self.chain._web3)
+            if self.chain.config.crash_log_ticker:
                 if trade_result.additional_info is None:
                     trade_result.additional_info = {"trade_events": self.get_trade_events()}
                 else:
@@ -317,6 +383,34 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     ################
     # Analysis
     ################
+
+    def get_positions(
+        self,
+        pool_filter: LocalHyperdrive | None = None,
+        show_closed_positions: bool = False,
+        coerce_float: bool = False,
+    ) -> pd.DataFrame:
+        """Returns all of the agent's positions across all hyperdrive pools.
+
+        Arguments
+        ---------
+        pool_filter: LocalHyperdrive, optional
+            The hyperdrive pool to query. Defaults to None, which will query all pools.
+        show_closed_positions: bool, optional
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+        coerce_float: bool, optional
+            Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
+
+        Returns
+        -------
+        pd.DataFrame
+            The agent's positions across all hyperdrive pools.
+        """
+        return self._get_positions(
+            pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
+        )
 
     def get_trade_events(
         self, pool: LocalHyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
@@ -344,10 +438,10 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         """
         return self._get_trade_events(pool=pool, all_token_deltas=all_token_deltas, coerce_float=coerce_float)
 
-    def _sync_events(self, agent: HyperdrivePolicyAgent, pool: Hyperdrive) -> None:
+    def _sync_events(self, pool: Hyperdrive) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass
 
-    def _sync_snapshot(self, agent: HyperdrivePolicyAgent, pool: Hyperdrive) -> None:
+    def _sync_snapshot(self, pool: Hyperdrive) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass
