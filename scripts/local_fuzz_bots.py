@@ -15,7 +15,13 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Runs local fuzz bots."""
+    """Runs local fuzz bots.
+
+    Arguments
+    ---------
+    argv: Sequence[str]
+        A sequence containing the uri to the database server and the test epsilon.
+    """
     # TODO consolidate setup into single function
 
     parsed_args = parse_arguments(argv)
