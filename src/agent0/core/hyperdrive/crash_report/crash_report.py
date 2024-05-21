@@ -18,7 +18,6 @@ from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.core.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive.state import PoolState
@@ -27,7 +26,7 @@ from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
-    from agent0.core.hyperdrive import HyperdriveMarketAction
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
@@ -86,7 +85,7 @@ def build_crash_trade_result(
         The trade result object.
     """
     trade_result = TradeResult(
-        status=TradeStatus.FAIL,
+        trade_successful=False,
         account=account,
         wallet=wallet,
         policy=policy,

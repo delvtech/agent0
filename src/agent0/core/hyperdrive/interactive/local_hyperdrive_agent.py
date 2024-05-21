@@ -9,7 +9,7 @@ from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import TradeResult, TradeStatus
+from agent0.core.hyperdrive.agent import TradeResult
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import ReceiptBreakdown
@@ -362,7 +362,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
         # We add specific data to the trade result from interactive hyperdrive
-        if trade_result.status == TradeStatus.FAIL:
+        if not trade_result.trade_successful:
             assert trade_result.exception is not None
             # TODO we likely want to explicitly check for slippage here and not
             # get anvil state dump if it's a slippage error and the user wants to

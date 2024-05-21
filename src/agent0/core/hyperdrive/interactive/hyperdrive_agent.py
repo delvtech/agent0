@@ -23,8 +23,10 @@ from agent0.chainsync.db.hyperdrive import (
     trade_events_to_db,
 )
 from agent0.core.base import Quantity, TokenType
-from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveWallet, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import (
+    HyperdriveActionType,
+    HyperdriveWallet,
+    TradeResult,
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
@@ -604,7 +606,7 @@ class HyperdriveAgent:
     ) -> ReceiptBreakdown | None: ...
 
     def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
-        if trade_result.status == TradeStatus.FAIL:
+        if not trade_result.trade_successful:
             # Defaults to CRITICAL
             assert trade_result.exception is not None
             log_hyperdrive_crash_report(
@@ -626,7 +628,7 @@ class HyperdriveAgent:
                 ):
                     raise trade_result.exception
 
-        if trade_result.status != TradeStatus.SUCCESS:
+        if not trade_result.trade_successful:
             return None
         tx_receipt = trade_result.tx_receipt
         assert tx_receipt is not None
@@ -840,6 +842,70 @@ class HyperdriveAgent:
             longs=long_obj,
             shorts=short_obj,
         )
+
+    def get_longs(self, pool: Hyperdrive | None = None) -> list[Long]:
+        """Returns longs for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Long]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return list(wallet.longs.values())
+
+    def get_shorts(self, pool: Hyperdrive | None = None) -> list[Short]:
+        """Returns shorts for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Short]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return list(wallet.shorts.values())
+
+    def get_lp(self, pool: Hyperdrive | None = None) -> FixedPoint:
+        """Returns lp balance for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Short]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return wallet.lp_tokens
+
+    def get_withdrawal_shares(self, pool: Hyperdrive | None = None) -> FixedPoint:
+        """Returns withdrawal shares balance for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Short]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return wallet.withdraw_shares
 
     def get_positions(
         self, pool_filter: Hyperdrive | None = None, show_closed_positions: bool = False, coerce_float: bool = False

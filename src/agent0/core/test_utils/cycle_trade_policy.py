@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type
+from typing import TYPE_CHECKING, Type
 
 import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.base import Trade
-from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
@@ -21,6 +20,9 @@ from agent0.core.hyperdrive.agent import (
 )
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+
+if TYPE_CHECKING:
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 
 
 # Build custom policy

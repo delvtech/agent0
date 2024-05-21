@@ -19,13 +19,6 @@ if TYPE_CHECKING:
     from .hyperdrive_wallet import HyperdriveWallet
 
 
-class TradeStatus(Enum):
-    r"""A type of token"""
-
-    SUCCESS = "success"
-    FAIL = "fail"
-
-
 # TODO some of these are generic, move to base directory
 @dataclass
 # Dataclass has lots of attributes
@@ -33,7 +26,7 @@ class TradeStatus(Enum):
 class TradeResult:
     """A data object that stores all information of an executed trade."""
 
-    status: TradeStatus
+    trade_successful: bool
     """The status of the trade."""
     account: LocalAccount | None = None
     """The agent that was executing the trade."""

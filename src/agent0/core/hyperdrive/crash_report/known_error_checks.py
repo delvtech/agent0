@@ -1,11 +1,18 @@
 """Helper functions for checking for known errors in contract calls."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from web3.exceptions import ContractCustomError
 
-from agent0.core.hyperdrive import HyperdriveActionType, TradeResult
+from agent0.core.hyperdrive.agent import HyperdriveActionType
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+
+if TYPE_CHECKING:
+    from agent0.core.hyperdrive import TradeResult
 
 
 # pylint: disable=too-many-statements

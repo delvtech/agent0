@@ -12,4 +12,4 @@ from .hyperdrive_actions import (
     remove_liquidity_trade,
 )
 from .hyperdrive_wallet import HyperdriveWallet, Long, Short
-from .trade_result import TradeResult, TradeStatus
+from .trade_result import TradeResult

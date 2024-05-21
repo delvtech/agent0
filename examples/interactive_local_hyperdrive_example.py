@@ -50,13 +50,11 @@ agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
 # Launches 2 pools on the same local chain
 
-# Hyperdrive0 uses the anvil admin account to deploy. The config object is automatically build.
+# The config object is automatically build.
+# TODO add argument for deployer
 hyperdrive0 = LocalHyperdrive(chain)
-# Hyperdrive1 uses agent0 as the deployer
-# Note the deployer is the "admin" account, and will be the account used when
-# creating checkpoints for this pool when advancing time.
 initial_pool_config = LocalHyperdrive.Config(initial_liquidity=FixedPoint(100_000))
-hyperdrive1 = LocalHyperdrive(chain, initial_pool_config, deployer=agent0)
+hyperdrive1 = LocalHyperdrive(chain, initial_pool_config)
 
 # %% [markdown]
 #####################
@@ -95,7 +93,7 @@ close_long_event_2 = agent1.close_long(maturity_time=agent1_longs[0].maturity_ti
 # Shorts
 open_short_event = agent1.open_short(bonds=FixedPoint(33333))
 agent1_shorts = agent1.get_shorts()
-close_short_event = agent1.close_short(maturity_time=agent1_shorts[0].maturity_time, bonds=agent1_shorts[0].bond_amount)
+close_short_event = agent1.close_short(maturity_time=agent1_shorts[0].maturity_time, bonds=agent1_shorts[0].balance)
 
 # LP
 add_lp_event = agent1.add_liquidity(base=FixedPoint(44444))

@@ -8,13 +8,12 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from agent0.core.base.types import Trade
-from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import close_long_trade, close_short_trade
 
 from .random import Random
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet, TradeResult
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
     from agent0.ethpy.hyperdrive.state import PoolState
 
@@ -260,7 +259,7 @@ class RandomHold(Random):
 
         # If the trade was successful and the transaction was successful,
         # we add the trade to bookkeeping and generate a close time
-        if result.status == TradeStatus.SUCCESS and result_action_type in (
+        if result.trade_successful and result_action_type in (
             HyperdriveActionType.OPEN_LONG,
             HyperdriveActionType.OPEN_SHORT,
         ):
@@ -286,7 +285,7 @@ class RandomHold(Random):
                 )
             )
         # If the close trade was unsuccessful, we reset the txn_set flag
-        elif result.status == TradeStatus.FAIL and result_action_type in (
+        elif not result.trade_successful and result_action_type in (
             HyperdriveActionType.CLOSE_LONG,
             HyperdriveActionType.CLOSE_SHORT,
         ):

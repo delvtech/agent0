@@ -19,7 +19,6 @@ from agent0.core.hyperdrive import (
     Long,
     Short,
     TradeResult,
-    TradeStatus,
 )
 from agent0.core.hyperdrive.agent import (
     HyperdriveMarketAction,
@@ -328,7 +327,7 @@ def _handle_contract_call_to_trade(
                 raise TypeError("The trade result is not the correct type.")
             tx_receipt = result
             trade_result = TradeResult(
-                status=TradeStatus.SUCCESS, account=account, trade_object=trade_object, tx_receipt=tx_receipt
+                trade_successful=True, account=account, trade_object=trade_object, tx_receipt=tx_receipt
             )
         trade_results.append(trade_result)
 
