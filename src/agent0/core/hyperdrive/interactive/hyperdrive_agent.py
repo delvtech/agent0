@@ -781,10 +781,10 @@ class HyperdriveAgent:
         position_snapshot = self._pool._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
         return position_snapshot
 
-    def get_wallet(self) -> HyperdriveWallet:
+    def get_wallet(self, pool: Hyperdrive | None = None) -> HyperdriveWallet:
         """Returns the wallet object for the agent for the given hyperdrive pool.
 
-        TODO this function will eventually use the active pool or take a pool as an argument
+        This function will eventually use the active pool or take a pool as an argument
         once agent gets detached from the pool.
 
         Returns
@@ -793,12 +793,18 @@ class HyperdriveAgent:
             Returns the HyperdriveWallet object for the given pool.
         """
 
-        self._sync_events(self.agent)
+        self._sync_events(self.agent, pool)
+        # If pool is None, we don't filter on hyperdrive address
+        if pool is None:
+            hyperdrive_address = None
+        else:
+            hyperdrive_address = pool.interface.hyperdrive_address
+
         # Query current positions from the events table
         positions = get_current_positions(
-            self._pool.chain.db_session,
+            self.chain.db_session,
             self.agent.checksum_address,
-            hyperdrive_address=self._pool.interface.hyperdrive_address,
+            hyperdrive_address=hyperdrive_address,
             show_closed_positions=False,
             coerce_float=False,
         )
@@ -809,7 +815,7 @@ class HyperdriveAgent:
         withdrawal_shares_balance: FixedPoint = FixedPoint(0)
         for _, row in positions.iterrows():
             # Sanity checks
-            assert row["hyperdrive_address"] == self._pool.interface.hyperdrive_address
+            assert row["hyperdrive_address"] == hyperdrive_address
             assert row["wallet_address"] == self.agent.checksum_address
             if row["token_id"] == "LP":
                 lp_balance = FixedPoint(row["token_balance"])
@@ -864,8 +870,6 @@ class HyperdriveAgent:
         HyperdriveWallet
             The agent's current wallet.
         """
-        if pool is None:
-            raise ValueError("Remote agents must provide a pool to query.")
         self._sync_events(self.agent, pool)
         return self._get_trade_events(all_token_deltas=all_token_deltas, pool=pool, coerce_float=coerce_float)
 
@@ -877,6 +881,7 @@ class HyperdriveAgent:
     ) -> pd.DataFrame:
         """We call this function in both remote and local agents, as the remote call needs to
         do argument checking."""
+        # If pool is None, we don't filter on hyperdrive address
         if pool is None:
             hyperdrive_address = None
         else:
