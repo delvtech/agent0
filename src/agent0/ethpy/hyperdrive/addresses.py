@@ -136,19 +136,28 @@ def get_hyperdrive_addresses_from_registry(
             unnamed_addresses_dict.pop(hyperdrive_address)
 
     # Check all versions of registered pools to ensure addresses are correct
-    for address, _ in unnamed_addresses_dict.items():
+    for hyperdrive_address in list(unnamed_addresses_dict.keys()):
+        success = False
         hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(
             web3.to_checksum_address(hyperdrive_address)
         )
         try:
             hyperdrive_version = hyperdrive_contract.functions.version().call()
-            correct_version = "v1.0.6"
-            if hyperdrive_version != correct_version:
-                raise ValueError(
-                    f"Hyperdrive pool at address {address} version does not match ({correct_version=}, {hyperdrive_version=})."
+            expected_version = "v1.0.6"
+            if hyperdrive_version != expected_version:
+                logging.error(
+                    "Hyperdrive pool at address %s version does not match (expected %s, actual %s}).",
+                    hyperdrive_address,
+                    expected_version,
+                    hyperdrive_version,
                 )
-        except Exception as e:
-            raise ValueError(f"Hyperdrive pool at address {address} version call failed.") from e
+            success = True
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error("Hyperdrive pool at address %s version call failed: %s", hyperdrive_address, repr(e))
+
+        # Drop from table if failed
+        if not success:
+            del unnamed_addresses_dict[hyperdrive_address]
 
     addresses = {}
     if generate_name:
