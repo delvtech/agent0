@@ -126,6 +126,15 @@ class HyperdriveReadInterface:
             web3.to_checksum_address(self.hyperdrive_address)
         )
 
+        # Check version here to ensure the contract is the correct version
+        hyperdrive_version = self.hyperdrive_contract.functions.version().call()
+        expected_version = "v1.0.6"
+        if hyperdrive_version != expected_version:
+            raise ValueError(
+                f"Hyperdrive address {self.hyperdrive_address} is version {hyperdrive_version}, "
+                f"does not match expected version {expected_version}"
+            )
+
         # We get the yield address and contract from the pool config
         self.pool_config = get_hyperdrive_pool_config(self.hyperdrive_contract)
         base_token_contract_address = self.pool_config.base_token
