@@ -507,7 +507,7 @@ class LocalChain(Chain):
             with open(policy_file, "rb") as file:
                 # If we don't load rng, we get the current RNG state and set it after loading
                 rng = None
-                if not self.config.load_rng_on_snapshot:
+                if not self.config.load_rng_on_snapshot and agent._active_policy is not None:
                     rng = agent._active_policy.rng
                 # We use dill, as pickle can't store local objects
                 agent._active_policy = dill.load(file)
