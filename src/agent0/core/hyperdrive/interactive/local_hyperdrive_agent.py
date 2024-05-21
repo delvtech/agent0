@@ -9,7 +9,7 @@ from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
 from agent0.core.base.make_key import make_private_key
-from agent0.core.hyperdrive import HyperdrivePolicyAgent, TradeResult, TradeStatus
+from agent0.core.hyperdrive import TradeResult, TradeStatus
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import ReceiptBreakdown

@@ -9,35 +9,7 @@ from typing import Iterable
 
 from fixedpointmath import FixedPoint
 
-from agent0.core.base import EthWallet, EthWalletDeltas
-
-
-@dataclass()
-class HyperdriveWalletDeltas(EthWalletDeltas):
-    r"""Store changes for an agent's wallet."""
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-
-    lp_tokens: FixedPoint = FixedPoint(0)
-    """The LP tokens held by the trader."""
-    # non-fungible (identified by key=maturity_time, stored as dict)
-    longs: dict[int, Long] = field(default_factory=dict)
-    """The long positions held by the trader."""
-    shorts: dict[int, Short] = field(default_factory=dict)
-    """The short positions held by the trader."""
-    withdraw_shares: FixedPoint = FixedPoint(0)
-    """The withdraw shares held by the trader."""
-
-    def copy(self) -> HyperdriveWalletDeltas:
-        """Return a new copy of self.
-
-        Returns
-        -------
-        HyperdriveWalletDeltas
-            A deepcopy of the wallet deltas.
-        """
-        return HyperdriveWalletDeltas(**copy.deepcopy(self.__dict__))
+from agent0.core.base import EthWallet
 
 
 @dataclass
@@ -64,7 +36,7 @@ class Short:
 
 
 @dataclass(kw_only=True)
-class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
+class HyperdriveWallet(EthWallet):
     r"""Stateful variable for storing what is in the agent's wallet."""
 
     # dataclasses can have many attributes
@@ -151,48 +123,3 @@ class HyperdriveWallet(EthWallet[HyperdriveWalletDeltas]):
             A deep copy of the wallet.
         """
         return HyperdriveWallet(**copy.deepcopy(self.__dict__))
-
-    def update(self, wallet_deltas: HyperdriveWalletDeltas) -> None:
-        """Update the agent's wallet in-place.
-
-        Arguments
-        ---------
-        wallet_deltas: AgentDeltas
-            The agent's wallet that tracks the amount of assets this agent holds
-        """
-        # track over time the agent's weighted average spend, for return calculation
-        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
-            if value_or_dict is None:
-                continue
-            match key:
-                case "frozen" | "no_new_attribs" | "borrows":
-                    continue
-                case "lp_tokens" | "withdraw_shares":
-                    logging.debug(
-                        "agent %s %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.address.hex(),
-                        key,
-                        getattr(self, key),
-                        getattr(self, key) + value_or_dict,
-                        value_or_dict,
-                    )
-                    self[key] += value_or_dict
-                # handle updating a Quantity
-                case "balance":
-                    logging.debug(
-                        "agent %s %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.address.hex(),
-                        key,
-                        float(getattr(self, key).amount),
-                        float(getattr(self, key).amount + value_or_dict.amount),
-                        float(value_or_dict.amount),
-                    )
-                    getattr(self, key).amount += value_or_dict.amount
-                # handle updating a dict, which have maturity_time attached
-                case "longs":
-                    self._update_longs(value_or_dict.items())
-                case "shorts":
-                    self._update_shorts(value_or_dict.items())
-                case _:
-                    raise ValueError(f"wallet_{key=} is not allowed.")
-            self.check_valid_wallet_state(self.__dict__)

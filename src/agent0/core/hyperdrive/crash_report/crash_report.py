@@ -27,7 +27,7 @@ from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
-    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdrivePolicyAgent
+    from agent0.core.hyperdrive import HyperdriveMarketAction
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 

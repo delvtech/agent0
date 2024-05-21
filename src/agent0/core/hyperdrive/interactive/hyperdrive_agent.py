@@ -23,13 +23,7 @@ from agent0.chainsync.db.hyperdrive import (
     trade_events_to_db,
 )
 from agent0.core.base import Quantity, TokenType
-from agent0.core.hyperdrive import (
-    HyperdriveActionType,
-    HyperdrivePolicyAgent,
-    HyperdriveWallet,
-    TradeResult,
-    TradeStatus,
-)
+from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveWallet, TradeResult, TradeStatus
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import dill
 import pandas as pd
 from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint

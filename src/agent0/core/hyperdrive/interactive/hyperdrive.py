@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from typing import Any
 
 import nest_asyncio
 import pandas as pd
 from eth_typing import ChecksumAddress
 
-from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, get_hyperdrive_addr_to_name
+from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     generate_name_for_hyperdrive,
