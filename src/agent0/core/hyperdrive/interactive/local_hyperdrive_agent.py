@@ -44,6 +44,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         eth: FixedPoint,
         name: str | None,
         chain: LocalChain,
+        pool: LocalHyperdrive | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
@@ -63,8 +64,10 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The name of the agent. Defaults to the wallet address.
         chain: LocalChain
             The chain object that this agent belongs to.
+        pool: LocalHyperdrive | None
+            An optional pool to set as the active pool.
         policy: HyperdrivePolicy | None
-            An optional policy to attach to this agent.
+            An optional policy to set as the active policy.
         policy_config: HyperdrivePolicy.Config | None,
             The configuration for the attached policy.
         private_key: str | None, optional
@@ -74,23 +77,20 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         agent_private_key = make_private_key() if private_key is None else private_key
 
         super().__init__(
-            name=name, chain=chain, policy=policy, policy_config=policy_config, private_key=agent_private_key
+            name=name, chain=chain, pool=pool, policy=policy, policy_config=policy_config, private_key=agent_private_key
         )
 
-        self.chain = chain
-
         # Type narrow to the local hyperdrive type
-        # TODO could add this to initializer as an option
-        # similar to policies
-        self._active_pool: LocalHyperdrive | None = None
+        self._active_pool: LocalHyperdrive | None = pool
+        self.chain = chain
 
         # Fund agent
         if eth > 0 or base > 0:
             self.add_funds(base, eth)
 
-        # Establish max approval for the hyperdrive contract
-        # TODO can't set approval here, bookkeep pools that need approval
-        # self.set_max_approval()
+        # We keep track of pools this agent has been approved for
+        # and call set max approval for any pools this agent has interacted with
+        self._max_approval_pools: dict[LocalHyperdrive, bool] = {}
 
     def add_funds(
         self,
@@ -122,9 +122,38 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         super().add_funds(base, eth, pool, signer_account=signer_account)
 
+    # We subclass from this function for typing
+    def set_active(
+        self,
+        pool: LocalHyperdrive | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
+    ) -> None:
+        """Sets the active pool or policy for the agent and calls max approval for the pool.
+
+        Setting an active pool for an agent allows trades to default to this pool.
+        Setting an active policy for an agent uses this policy with `execute_policy_action`.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive
+            The pool to set as the active pool.
+        policy: Type[HyperdriveBasePolicy] | None
+            The policy to set as the active policy.
+        policy_config: HyperdriveBasePolicy.Config | None
+            The configuration for the attached policy.
+        """
+        super().set_active(pool=pool, policy=policy, policy_config=policy_config)
+
     ################
     # Trades
     ################
+
+    def _ensure_approval_set(self, pool: LocalHyperdrive) -> None:
+        # Call set max approval for the pool if it hasn't been called yet.
+        if pool not in self._max_approval_pools:
+            self.set_max_approval(pool)
+            self._max_approval_pools[pool] = True
 
     def open_long(self, base: FixedPoint, pool: LocalHyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
@@ -146,6 +175,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Open long requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().open_long(base, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -172,6 +202,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Close long requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().close_long(maturity_time, bonds, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -196,6 +227,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Open short requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().open_short(bonds, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -222,6 +254,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Close short requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().close_short(maturity_time, bonds, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -246,6 +279,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Add liquidity requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().add_liquidity(base, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -270,6 +304,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Remove liquidity requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().remove_liquidity(shares, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -294,6 +329,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Remove liquidity requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().redeem_withdraw_share(shares, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -318,6 +354,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Executing policy action requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().execute_policy_action(pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
@@ -344,6 +381,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is None:
             raise ValueError("Liquidate requires an active pool.")
 
+        self._ensure_approval_set(pool)
         out = super().liquidate(randomize, pool)
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out

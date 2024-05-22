@@ -178,12 +178,12 @@ class LocalHyperdrive(Hyperdrive):
         else:
             self.config = config
 
-        self.calc_pnl = self.chain.config.calc_pnl
-
         # Deploys a hyperdrive factory + pool on the chain
         self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
 
         self._initialize(chain, self._deployed_hyperdrive.hyperdrive_contract.address, name)
+
+        self.calc_pnl = self.chain.config.calc_pnl
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline

@@ -409,6 +409,10 @@ class LocalChain(Chain):
 
         .. note::
             Saving/loading snapshot only persist on the same chain, not across chains.
+
+        .. note::
+            Loading a snapshot removes the agent's active pool, and reverts the active policy to the policy
+            of the saved snapshot.
         """
         # Loads the previous snapshot
         # When reverting snapshots, the chain deletes the previous snapshot, while we want it to persist.
@@ -428,12 +432,15 @@ class LocalChain(Chain):
         # load snapshot database state
         self._load_db(self._snapshot_dir)
         # Update pool's agent bookkeeping
+        # Note this will wipe the agent's active pool.
         self._load_agent_bookkeeping(self._snapshot_dir)
 
         # The hyperdrive interface in deployed pools need to wipe it's cache
         for pool in self._deployed_hyperdrive_pools:
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
 
+        # This loads the agent's active policy
+        # Note that this will set the active policy to the one before the snapshot.
         self._load_policy_state(self._snapshot_dir)
 
         # Save another anvil snapshot since reverting consumes the snapshot
@@ -495,6 +502,9 @@ class LocalChain(Chain):
         # Remove references of all agents added after snapshot
         # NOTE: existing agent objects initialized after snapshot will no longer be valid.
         self._chain_agents = [agent for agent in self._chain_agents if agent.address in load_agents]
+        # Clear any active pools as these may have changed between snapshots
+        for agent in self._chain_agents:
+            agent._active_pool = None
 
     def _save_policy_state(self, save_dir: str) -> None:
         for agent in self._chain_agents:
@@ -525,6 +535,7 @@ class LocalChain(Chain):
     def init_agent(
         self,
         private_key: str | None = None,
+        pool: LocalHyperdrive | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
         name: str | None = None,
@@ -575,6 +586,7 @@ class LocalChain(Chain):
             eth=eth,
             name=name,
             chain=self,
+            pool=pool,
             policy=policy,
             policy_config=policy_config,
             private_key=private_key,

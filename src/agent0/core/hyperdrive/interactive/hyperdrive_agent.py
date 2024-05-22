@@ -73,6 +73,7 @@ class HyperdriveAgent:
         self,
         name: str | None,
         chain: Chain,
+        pool: Hyperdrive | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
@@ -89,6 +90,8 @@ class HyperdriveAgent:
             The pool object that this agent belongs to.
         chain: Chain
             The chain object that this agent belongs to.
+        pool: Hyperdrive | None
+            An optional pool to set as the active pool.
         policy: Type[HyperdriveBasePolicy] | None
             An optional policy to attach to this agent.
         policy_config: HyperdriveBasePolicy.Config | None,
@@ -98,10 +101,10 @@ class HyperdriveAgent:
         """
         # pylint: disable=too-many-arguments
         self.chain = chain
-        self._active_pool: Hyperdrive | None = None
+
+        self._active_pool: Hyperdrive | None = pool
         self._active_policy: HyperdriveBasePolicy | None = None
 
-        # Setting the budget to 0 here, we'll update the wallet from the chain
         if policy is not None:
             if policy_config is None:
                 policy_config = policy.Config(rng=self.chain.config.rng)

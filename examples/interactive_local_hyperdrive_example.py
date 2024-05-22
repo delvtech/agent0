@@ -24,22 +24,16 @@ chain = LocalChain(local_chain_config)
 # NOTE a local chain can initialize with base and eth.
 # Base is a mock token used for all underlying pools deployed.
 agent0 = chain.init_agent(
-    base=FixedPoint(100_000_000),
     eth=FixedPoint(100),
     name="agent0",
 )
 # We can initialize an agent with a custom policy - more on that later
 agent1 = chain.init_agent(
-    base=FixedPoint(100_000),
     eth=FixedPoint(100),
     name="agent1",
     policy=PolicyZoo.random,
     policy_config=PolicyZoo.random.Config(),
 )
-# Omission of name defaults to wallet address
-agent2 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10))
-# Add funds to an agent
-agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 
 # %%
 # Initialize the interactive object with specified initial pool parameters and the chain to launch hyperdrive on.
@@ -55,6 +49,17 @@ agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 hyperdrive0 = LocalHyperdrive(chain)
 initial_pool_config = LocalHyperdrive.Config(initial_liquidity=FixedPoint(100_000))
 hyperdrive1 = LocalHyperdrive(chain, initial_pool_config)
+
+# %%
+
+# We also add an active pool to this agent as well.
+# This allows us to mint base in initialization
+agent2 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10), pool=hyperdrive0)
+
+# Add funds to an agent for various pools
+agent0.add_funds(base=FixedPoint(1_000_000), pool=hyperdrive0)
+agent1.add_funds(base=FixedPoint(100_000), pool=hyperdrive0)
+
 
 # %% [markdown]
 #####################
