@@ -13,6 +13,7 @@ from agent0 import Hyperdrive, LocalChain, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 
 # %%
+NUM_TEST_TRADES = 10
 
 # The chain to fork, e.g., to sepolia testnet
 rpc_uri = "http://uri.to.sepolia.testnet"
@@ -74,7 +75,7 @@ close_long_event = hyperdrive_agent0.close_long(
 
 # %%
 random_trade_events = []
-for i in range(10):
+for i in range(NUM_TEST_TRADES):
     # NOTE Since a policy can execute multiple trades per action, the output events is a list
     trade_events: list = hyperdrive_agent0.execute_policy_action()
     random_trade_events.extend(trade_events)
