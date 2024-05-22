@@ -127,8 +127,8 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_address)
 
     # Generate trading agents from the interactive object
-    hyperdrive_agent0 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
-    hyperdrive_agent1 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent0 = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
+    hyperdrive_agent1 = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
 
     # Add funds
     hyperdrive_agent0.add_funds(base=FixedPoint(1_111_111), eth=FixedPoint(111))
@@ -146,7 +146,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.agent)
+    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.account)
     assert chain_base_balance == FixedPoint(1_111_111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     # This epsilon is a bit bigger than i_local_hyperdrive_test because we use this account
@@ -155,7 +155,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent1.agent)
+    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent1.account)
     assert chain_base_balance == FixedPoint(222_222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0002")
@@ -179,7 +179,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
 
     # Testing adding another agent to the pool after trades have been made, making a trade,
     # then checking wallet
-    hyperdrive_agent2 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent2 = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
     hyperdrive_agent2.add_funds(base=FixedPoint(111_111), eth=FixedPoint(111))
     hyperdrive_agent2.set_max_approval()
     open_long_event_2 = hyperdrive_agent2.open_long(base=FixedPoint(333))
@@ -262,7 +262,7 @@ def test_no_policy_call(fast_chain_fixture: LocalChain):
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
 
     # Create agent without policy passed in
-    hyperdrive_agent = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
     # Attempt to execute agent policy, should throw value error
     with pytest.raises(ValueError):
         hyperdrive_agent.execute_policy_action()
