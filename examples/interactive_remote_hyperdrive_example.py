@@ -45,13 +45,6 @@ agent1 = chain.init_agent(
 )
 
 # %%
-# We expose this function for testing purposes, but the underlying function
-# calls `mint` and `anvil_set_balance`, which are likely to fail on any non-test
-# network. In practice, it's up to the user to ensure the wallet has sufficient funds.
-agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
-agent1.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
-
-# %%
 # Connect to a hyperdrive pool
 
 # Define a specific pool address
@@ -68,13 +61,21 @@ agent1.add_funds(base=FixedPoint(100000), eth=FixedPoint(100))
 hyperdrive_config = Hyperdrive.Config()
 hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
+# %%
+# We expose this function for testing purposes, but the underlying function
+# calls `mint` and `anvil_set_balance`, which are likely to fail on any non-test
+# network. In practice, it's up to the user to ensure the wallet has sufficient funds.
+agent0.add_funds(base=FixedPoint(100000), eth=FixedPoint(100), pool=hyperdrive_pool)
+agent1.add_funds(base=FixedPoint(100000), eth=FixedPoint(100), pool=hyperdrive_pool)
+
+
 # %% [markdown]
 #####################
 # Executing Trades
 #####################
 
 # We set agent1's active pool to avoid passing in pool for functions.
-agent1.set_active_pool(pool=hyperdrive_pool)
+agent1.set_active(pool=hyperdrive_pool)
 
 # Set max approval for the agent on a specific pool.
 # TODO this is overly permissive, we may want to expose setting approval for a specific
@@ -97,7 +98,7 @@ close_long_event = agent0.close_long(
 
 open_short_event = agent1.open_short(bonds=FixedPoint(33333))
 agent1_shorts = agent1.get_shorts()
-close_short_event = agent1.close_short(maturity_time=agent1_shorts[0].maturity_time, bonds=agent1_shorts[0].bond_amount)
+close_short_event = agent1.close_short(maturity_time=agent1_shorts[0].maturity_time, bonds=agent1_shorts[0].balance)
 
 # LP
 add_lp_event = agent1.add_liquidity(base=FixedPoint(44444))
@@ -117,7 +118,7 @@ remove_lp_event = agent1.remove_liquidity(shares=agent1.get_lp())
 # NOTE: `set_policy` overwrites the existing policy.
 # TODO we may be able to set multiple policies on an agent and hot-swap them
 
-agent0.set_policy(
+agent0.set_active(
     policy=PolicyZoo.random,
     policy_config=PolicyZoo.random.Config(rng_seed=123),
 )
@@ -147,9 +148,9 @@ for i in range(10):
 # Note the pool argument must be provided in remote settings
 agent_trade_events = agent0.get_trade_events(pool=hyperdrive_pool)
 # Gets all open positions and their corresponding PNL for an agent across all pools
-agent_positions = agent0.get_positions(pool=hyperdrive_pool)
+agent_positions = agent0.get_positions(pool_filter=hyperdrive_pool)
 # Gets all open and closed positions and their corresponding PNL for an agent across all pools
-agent_positions = agent0.get_positions(pool=hyperdrive_pool, show_closed_positions=True)
+agent_positions = agent0.get_positions(pool_filter=hyperdrive_pool, show_closed_positions=True)
 
 # %% [markdown]
 #####################

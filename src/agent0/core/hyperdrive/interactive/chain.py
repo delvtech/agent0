@@ -7,7 +7,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Type
+from typing import TYPE_CHECKING, Any, Type
 
 import docker
 import numpy as np
@@ -26,6 +26,9 @@ from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.hyperlogs import close_logging, setup_logging
 
 from .hyperdrive_agent import HyperdriveAgent
+
+if TYPE_CHECKING:
+    from .hyperdrive import Hyperdrive
 
 
 class Chain:
@@ -288,6 +291,7 @@ class Chain:
     def init_agent(
         self,
         private_key: str,
+        pool: Hyperdrive | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
         name: str | None = None,
@@ -319,6 +323,7 @@ class Chain:
         out_agent = HyperdriveAgent(
             name=name,
             chain=self,
+            pool=pool,
             policy=policy,
             policy_config=policy_config,
             private_key=private_key,
