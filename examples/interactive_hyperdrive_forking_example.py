@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fixedpointmath import FixedPoint
 
-from agent0 import Hyperdrive, LocalChain, PolicyZoo
+from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 
 # %%
@@ -26,17 +26,12 @@ registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
 # Launch a local anvil chain forked from the rpc uri.
 chain = LocalChain(fork_uri=rpc_uri, fork_block_number=fork_block_number)
 
-hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
+hyperdrive_address = LocalHyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
 
-# Note that we use Hyperdrive here instead of LocalHyperdrive,
-# as LocalHyperdrive deploys a new pool, whereas we want to connect to an existing pool
-# on the forked local chain.
-# TODO this prevents us from using data tools provided by LocalHyperdrive, ideally we can
-# load a LocalHyperdrive from an Hyperdrive object that connects to an existing pool and populates
-# the database. This is blocked by needing an archive node, the fix here would be to
-# (1) use event data instead, and (2) build historical data from event data.
-hyperdrive_config = Hyperdrive.Config()
-hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
+# Note that we pass in deploy=False and pass in an existing hyperdrive_address, as we
+# want to connect to the existing pool and not deploy a new one.
+hyperdrive_config = LocalHyperdrive.Config()
+hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config, deploy=False, hyperdrive_address=hyperdrive_address)
 
 # %%
 
@@ -44,8 +39,9 @@ hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 private_key = make_private_key()
 
 # Init from private key and attach policy
-hyperdrive_agent0 = hyperdrive_pool.init_agent(
+hyperdrive_agent0 = chain.init_agent(
     private_key=private_key,
+    pool=hyperdrive_pool,
     policy=PolicyZoo.random,
     # The configuration for the underlying policy
     policy_config=PolicyZoo.random.Config(rng_seed=123),

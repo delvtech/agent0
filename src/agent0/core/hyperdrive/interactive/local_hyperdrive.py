@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import pandas as pd
-from eth_typing import BlockNumber
+from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 
 from agent0.chainsync.db.hyperdrive import (
@@ -156,17 +156,30 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: LocalChain, config: Config | None = None, name: str | None = None):
+    def __init__(
+        self,
+        chain: LocalChain,
+        config: Config | None = None,
+        name: str | None = None,
+        deploy: bool = True,
+        hyperdrive_address: ChecksumAddress | None = None,
+    ):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
         chain: LocalChain
             The local chain object to launch hyperdrive on.
+        hyperdrive_address: ChecksumAddress | None, optional
+            The address of the hyperdrive contract to connect to if `deploy` is False.
+            Defaults to deploying a new hyperdrive.
         config: Config | None
             The configuration for the initial pool configuration.
         name: str | None, optional
             The logical name of the pool.
+        deploy: bool, optional
+            If True, will deploy a new hyperdrive contract.
+            If False, will connect to an existing hyperdrive contract (in cases of forking)
         """
 
         # We don't call super's init since we do specific type checking
@@ -179,9 +192,16 @@ class LocalHyperdrive(Hyperdrive):
             self.config = config
 
         # Deploys a hyperdrive factory + pool on the chain
-        self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
+        if deploy:
+            if hyperdrive_address is not None:
+                raise ValueError("Cannot specify a hyperdrive address if deploying a Hyperdrive contract.")
+            _deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
+            hyperdrive_address = _deployed_hyperdrive.hyperdrive_contract.address
+        else:
+            if hyperdrive_address is None:
+                raise ValueError("Must specify a hyperdrive address if not deploying a Hyperdrive contract.")
 
-        self._initialize(chain, self._deployed_hyperdrive.hyperdrive_contract.address, name)
+        self._initialize(chain, hyperdrive_address, name)
 
         self.calc_pnl = self.chain.config.calc_pnl
 
@@ -232,7 +252,7 @@ class LocalHyperdrive(Hyperdrive):
         return hash((self.chain.rpc_uri, self.hyperdrive_address))
 
     def __eq__(self, other):
-        return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
+        return (self.chain.rpc_uri, self.hyperdrive_address) == (
             other.chain.rpc_uri,
             other.hyperdrive_address,
         )
@@ -299,7 +319,7 @@ class LocalHyperdrive(Hyperdrive):
         variable_rate: FixedPoint
             The new variable rate for the pool.
         """
-        self.interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
+        self.interface.set_variable_rate(self.chain.get_deployer_account(), variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
         self._run_blocking_data_pipeline()
 
@@ -323,7 +343,7 @@ class LocalHyperdrive(Hyperdrive):
 
         try:
             tx_receipt = self.interface.create_checkpoint(
-                self._deployed_hyperdrive.deploy_account, checkpoint_time=checkpoint_time
+                self.chain.get_deployer_account(), checkpoint_time=checkpoint_time
             )
         except AssertionError as exc:
             # Adding additional context to the "Transaction receipt has no logs" error
