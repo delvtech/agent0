@@ -5,11 +5,13 @@ from __future__ import annotations
 import argparse
 import random
 import sys
+import time
 from typing import NamedTuple, Sequence
 
 import numpy as np
 
 from agent0 import LocalChain, LocalHyperdrive
+from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_local_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
@@ -53,19 +55,28 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
         hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
 
+        raise_error_on_fail = False
+        if parsed_args.pause_on_invariance_fail:
+            raise_error_on_fail = True
+
         # TODO submit multiple transactions per block
-        run_local_fuzz_bots(
-            hyperdrive_pool,
-            check_invariance=True,
-            raise_error_on_failed_invariance_checks=False,
-            raise_error_on_crash=False,
-            log_to_rollbar=log_to_rollbar,
-            run_async=False,
-            random_advance_time=True,
-            random_variable_rate=True,
-            num_iterations=3000,
-            lp_share_price_test=parsed_args.lp_share_price_test,
-        )
+        try:
+            run_local_fuzz_bots(
+                hyperdrive_pool,
+                check_invariance=True,
+                raise_error_on_failed_invariance_checks=raise_error_on_fail,
+                raise_error_on_crash=False,
+                log_to_rollbar=log_to_rollbar,
+                run_async=False,
+                random_advance_time=True,
+                random_variable_rate=True,
+                num_iterations=3000,
+                lp_share_price_test=parsed_args.lp_share_price_test,
+            )
+
+        except FuzzAssertionException as e:
+            print(f"Pausing pool on fuzz assertion exception {repr(e)}.")
+            time.sleep(1000000)
 
         chain.cleanup()
 
@@ -74,6 +85,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     lp_share_price_test: bool
+    pause_on_invariance_fail: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -91,6 +103,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         lp_share_price_test=namespace.lp_share_price_test,
+        pause_on_invariance_fail=namespace.pause_on_invariance_fail,
     )
 
 
@@ -110,6 +123,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(
         "--lp-share-price-test",
+        default=False,
+        action="store_true",
+        help="Runs the lp share price fuzz with specific fee and rate parameters.",
+    )
+    parser.add_argument(
+        "--pause-on-invariance-fail",
         default=False,
         action="store_true",
         help="Runs the lp share price fuzz with specific fee and rate parameters.",
