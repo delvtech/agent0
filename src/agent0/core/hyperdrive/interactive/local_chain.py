@@ -503,8 +503,11 @@ class LocalChain(Chain):
         # NOTE: existing agent objects initialized after snapshot will no longer be valid.
         self._chain_agents = [agent for agent in self._chain_agents if agent.address in load_agents]
         # Clear any active pools as these may have changed between snapshots
+        # Clear the _max_approval_pools to ensure we call approval
+        # NOTE this might be a duplicate approval, which should be okay
         for agent in self._chain_agents:
             agent._active_pool = None
+            agent._max_approval_pools = {}
 
     def _save_policy_state(self, save_dir: str) -> None:
         for agent in self._chain_agents:

@@ -541,14 +541,22 @@ def test_block_timestamp_interval(fast_chain_fixture: LocalChain):
         base=FixedPoint(1_111_111), eth=FixedPoint(111), pool=interactive_hyperdrive, name="alice"
     )
 
-    current_time_1 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+    current_block_1 = hyperdrive_interface.get_current_block()
+    current_time_1 = hyperdrive_interface.get_block_timestamp(current_block_1)
 
     # Make a trade to mine a block
     hyperdrive_agent0.open_long(base=FixedPoint(111))
 
-    current_time_2 = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_current_block())
+    current_block_2 = hyperdrive_interface.get_current_block()
+    current_time_2 = hyperdrive_interface.get_block_timestamp(current_block_2)
 
-    assert current_time_2 - current_time_1 == 12
+    # open_long made 2 transactions, 1 approve, and one for the long
+    assert "number" in current_block_1
+    assert "number" in current_block_2
+    block_diff = current_block_2["number"] - current_block_1["number"]
+    assert block_diff == 2
+
+    assert (current_time_2 - current_time_1) / block_diff == 12
 
 
 @pytest.mark.anvil
@@ -685,48 +693,8 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     # Save snapshot and check for equality
     chain_fixture.load_snapshot()
 
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.account)
-    check_agent_wallet = hyperdrive_agent.get_wallet()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
-
-    assert check_eth_on_chain == init_eth_on_chain
-    assert check_base_on_chain == init_base_on_chain
-    assert check_agent_wallet == init_agent_wallet
-    assert check_db_wallet.equals(init_db_wallet)
-    assert check_pool_info_on_chain == init_pool_info_on_chain
-    assert check_pool_state_on_db.equals(init_pool_state_on_db)
-
-    # Do it again to make sure we can do multiple loads
-
-    # Make a few trades to change the state
-    hyperdrive_agent.open_long(base=FixedPoint(222))
-    hyperdrive_agent.close_short(bonds=FixedPoint(333), maturity_time=open_short_event.maturity_time)
-    hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
-
-    # Ensure state has changed
-    (
-        check_eth_on_chain,
-        check_base_on_chain,
-    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.account)
-    check_agent_wallet = hyperdrive_agent.get_wallet()
-    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
-    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
-    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
-
-    assert check_eth_on_chain != init_eth_on_chain
-    assert check_base_on_chain != init_base_on_chain
-    assert check_agent_wallet != init_agent_wallet
-    assert not check_db_wallet.equals(init_db_wallet)
-    assert check_pool_info_on_chain != init_pool_info_on_chain
-    assert not check_pool_state_on_db.equals(init_pool_state_on_db)
-
-    # Save snapshot and check for equality
-    chain_fixture.load_snapshot()
+    # Need to reset active pool after loading snapshot
+    hyperdrive_agent.set_active(pool=interactive_hyperdrive)
 
     (
         check_eth_on_chain,
@@ -770,6 +738,55 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
 
     # Save snapshot and check for equality
     chain_fixture.load_snapshot()
+
+    # Need to reset active pool after loading snapshot
+    hyperdrive_agent.set_active(pool=interactive_hyperdrive)
+
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.account)
+    check_agent_wallet = hyperdrive_agent.get_wallet()
+    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+
+    assert check_eth_on_chain == init_eth_on_chain
+    assert check_base_on_chain == init_base_on_chain
+    assert check_agent_wallet == init_agent_wallet
+    assert check_db_wallet.equals(init_db_wallet)
+    assert check_pool_info_on_chain == init_pool_info_on_chain
+    assert check_pool_state_on_db.equals(init_pool_state_on_db)
+
+    # Do it again to make sure we can do multiple loads
+
+    # Make a few trades to change the state
+    hyperdrive_agent.open_long(base=FixedPoint(222))
+    hyperdrive_agent.close_short(bonds=FixedPoint(333), maturity_time=open_short_event.maturity_time)
+    hyperdrive_agent.remove_liquidity(shares=FixedPoint(555))
+
+    # Ensure state has changed
+    (
+        check_eth_on_chain,
+        check_base_on_chain,
+    ) = hyperdrive_interface.get_eth_base_balances(hyperdrive_agent.account)
+    check_agent_wallet = hyperdrive_agent.get_wallet()
+    check_db_wallet = interactive_hyperdrive.get_positions(coerce_float=False)
+    check_pool_info_on_chain = interactive_hyperdrive.interface.get_hyperdrive_state().pool_info
+    check_pool_state_on_db = interactive_hyperdrive.get_pool_info(coerce_float=False)
+
+    assert check_eth_on_chain != init_eth_on_chain
+    assert check_base_on_chain != init_base_on_chain
+    assert check_agent_wallet != init_agent_wallet
+    assert not check_db_wallet.equals(init_db_wallet)
+    assert check_pool_info_on_chain != init_pool_info_on_chain
+    assert not check_pool_state_on_db.equals(init_pool_state_on_db)
+
+    # Save snapshot and check for equality
+    chain_fixture.load_snapshot()
+
+    # Need to reset active pool after loading snapshot
+    hyperdrive_agent.set_active(pool=interactive_hyperdrive)
 
     (
         check_eth_on_chain,
