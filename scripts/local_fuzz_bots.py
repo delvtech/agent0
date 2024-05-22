@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import random
 import sys
 import time
@@ -75,8 +76,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
 
         except FuzzAssertionException as e:
-            print(f"Pausing pool on fuzz assertion exception {repr(e)}.")
-            time.sleep(1000000)
+            logging.error("Pausing pool on fuzz assertion exception %s", repr(e))
+            while True:
+                time.sleep(1000000)
 
         chain.cleanup()
 
@@ -131,7 +133,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         "--pause-on-invariance-fail",
         default=False,
         action="store_true",
-        help="Runs the lp share price fuzz with specific fee and rate parameters.",
+        help="Pause execution on invariance failure.",
     )
 
     # Use system arguments if none were passed
