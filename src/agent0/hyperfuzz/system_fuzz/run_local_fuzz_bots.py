@@ -200,6 +200,7 @@ def run_local_fuzz_bots(
     raise_error_on_failed_invariance_checks: bool = False,
     invariance_test_epsilon: float | None = None,
     minimum_avg_agent_base: FixedPoint | None = None,
+    minimum_avg_agent_eth: FixedPoint | None = None,
     log_to_rollbar: bool = True,
     run_async: bool = False,
     random_advance_time: bool = False,
@@ -234,6 +235,9 @@ def run_local_fuzz_bots(
     minimum_avg_agent_base: FixedPoint | None, optional
         The minimum average agent base. Will refund bots if average agent base drops below this.
         Defaults to 1/10 of base_budget_per_bot
+    minimum_avg_agent_eth: FixedPoint | None, optional
+        The minimum average agent eth. Will refund bots if average agent base drops below this.
+        Defaults to 1/10 of eth_budget_per_bot
     log_to_rollbar: bool, optional
         If True, log errors rollbar. Defaults to True.
     run_async: bool, optional
@@ -268,6 +272,8 @@ def run_local_fuzz_bots(
         invariance_test_epsilon = 1e-4
     if minimum_avg_agent_base is None:
         minimum_avg_agent_base = base_budget_per_bot / FixedPoint(10)
+    if minimum_avg_agent_eth is None:
+        minimum_avg_agent_eth = eth_budget_per_bot / FixedPoint(10)
 
     # Initialize agents
     agents: list[HyperdriveAgent] = []
@@ -349,8 +355,13 @@ def run_local_fuzz_bots(
         # Check agent funds and refund if necessary
         assert len(agents) > 0
         average_agent_base = sum(agent.get_wallet().balance.amount for agent in agents) / FixedPoint(len(agents))
+        # TODO add eth balance to wallet output
+        average_agent_eth = sum(
+            hyperdrive_pool.interface.get_eth_base_balances(agent.agent)[0] for agent in agents
+        ) / FixedPoint(len(agents))
+
         # Update agent funds
-        if average_agent_base < minimum_avg_agent_base:
+        if (average_agent_base < minimum_avg_agent_base) or (average_agent_eth < minimum_avg_agent_eth):
             logging.info("Refunding agents...")
             if run_async:
                 asyncio.run(
