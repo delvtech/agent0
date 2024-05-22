@@ -400,9 +400,7 @@ def _check_initial_lp_profitable(pool_state: PoolState, epsilon: FixedPoint | No
 
     difference_in_wei = lp_rate.scaled_value - vault_rate.scaled_value
 
-    # There's a weird type error for unary operator - for None type,
-    # so we do multiplication here
-    if difference_in_wei < (-1 * epsilon):
+    if difference_in_wei < (-epsilon.scaled_value):
         exception_message = f"{lp_rate=} is expected to be >= {vault_rate=}, {difference_in_wei=}"
         exception_data["invariance_check:lp_rate"] = lp_rate
         exception_data["invariance_check:vault_rate"] = vault_rate
