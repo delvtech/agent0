@@ -41,3 +41,14 @@ Submit a pull request that meets the following criteria:
 2. Be well-documented and follow our existing [STYLEGUIDE.md](STYLEGUIDE.md).
 3. Pass all linting and type checks (the GH actions will check this for you).
 4. Describe the bot's behavior in a `describe` [classmethod](https://docs.python.org/3/library/functions.html#classmethod) similarly to existing bots, ending in a `super().describe()` call.
+
+## Publishing a release
+
+For code owners who wish to publish a release, make sure to follow these guidelines:
+
+1. Merge a PR that edits `pyproject.toml` to specify the new semver version.
+2. From the updated `main` branch, make a new tag with `git tag vX.Y.Z`.
+3. Push that tag to the remote repository with `git push --tags`.
+4. Go to the `releases` tab in Github and add the new tag as a release.
+5. Click the "Generate Release Notes" button to generate release notes.
+6. Add a brief summary under the "What's Changed" heading and create a "PRs" heading for the generated list of "PRs".
