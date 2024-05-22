@@ -1,7 +1,7 @@
 [project]
 name = "agent0"
 version = "0.20.0"
-# Authors are the current, primary stuards of the repo
+# Authors are the current, primary stewards of the repo
 # contributors can be found on github
 authors = [
     { name = "Dylan Paiton", email = "dylan@delv.tech" },
