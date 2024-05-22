@@ -5,11 +5,14 @@ from __future__ import annotations
 import ast
 import os
 import tempfile
+from _ast import Module
 from contextlib import redirect_stderr, redirect_stdout
-from io import TextIOWrapper
 
-import astunparse
 import pytest
+
+# pylint: disable=missing-param-doc
+# pylint: disable=missing-return-doc
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture
@@ -20,25 +23,27 @@ def file_location(file_name: str) -> str:
 
 
 @pytest.fixture
-def file_contents(file_name: str) -> TextIOWrapper:
+def file_contents(file_name: str) -> list[str]:
     """Return the file contents of the file."""
     package_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    file_handle = open(os.path.join(package_root, "examples/" + file_name))
-    return file_handle.readlines()
+    with open(os.path.join(package_root, "examples/" + file_name), encoding="UTF-8") as file_handle:
+        return file_handle.readlines()
 
 
 class Base:
-    def prepare_tree_for_testing(self, tree):
+    """Base class for parsing python files without modification."""
+
+    def prepare_tree_for_testing(self, tree: Module) -> Module:
         """Parse the tree & make required modifications."""
         return ast.fix_missing_locations(tree)
 
-    def exec_tree(self, tree) -> None:
+    def exec_tree(self, tree: Module) -> None:
         """Execute the ast."""
         # decompile ast into source, write to a fake file, execute the file
         # writing to a fake file (as opposed to just directly executing the source)
         # allows us to hold an environment state (e.g. import aliases) throughout execution
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py") as ntf:
-            ntf.write(astunparse.unparse(tree))
+            ntf.write(ast.unparse(tree))
             ntf.seek(0)
             cleaned_source = compile(tree, filename=ntf.name, mode="exec")
             with (
@@ -50,19 +55,19 @@ class Base:
                 exec(cleaned_source, global_env)  # pylint: disable=exec-used
 
 
-@pytest.mark.skip(reason="Temporarily skipping.")
+@pytest.mark.skip(reason="Skip because we do not have a remote chain to fork from.")
 class TestInteractiveHyperdriveForkingExamples(Base):
     """Test the example file."""
 
     FILE = "interactive_hyperdrive_forking_example.py"
 
-    def prepare_tree_for_testing(self, tree):
+    def prepare_tree_for_testing(self, tree: Module) -> Module:
         """Parse the tree & make required modifications."""
         for node_idx, node in enumerate(tree.body):
             # type conditionals are used to narrow down the node type to assignment to a named object attribute
             if isinstance(node, ast.Assign):
                 target = node.targets[0]
-                obj_name = target.id  # object being modified
+                obj_name = target.id  # type: ignore
                 if obj_name == "NUM_TEST_TRADES":
                     test_value = 1  # reduces the total number of trades to keep things fast
                     tree.body[node_idx] = ast.Assign(
@@ -83,7 +88,7 @@ class TestInteractiveHyperdriveForkingExamples(Base):
     def test_file_runs(self, file_contents):
         """Test that the example runs."""
         # Convert the source code into a syntax tree to modify some config values
-        tree = self.prepare_tree_for_testing(ast.parse("\n".join(file_contents)))
+        tree = self.prepare_tree_for_testing(ast.parse("\n".join(file_contents), type_comments=True))
         try:
             self.exec_tree(tree)
         except Exception as exc:
@@ -95,18 +100,20 @@ class TestInteractiveLocalHyperdriveAdvancedExamples(Base):
 
     FILE = "interactive_local_hyperdrive_advanced_example.py"
 
-    def prepare_tree_for_testing(self, tree):
+    def prepare_tree_for_testing(self, tree: Module) -> Module:
         """Parse the tree & make required modifications."""
         for node_idx, node in enumerate(tree.body):
             # type conditionals are used to narrow down the node type to assignment to a named object attribute
             if isinstance(node, ast.Expr):
-                node_str = astunparse.unparse(node)
+                node_str = ast.unparse(node)
+                # If you run `ast.parse("print('hello')")` it looks like this,
+                # so we're ignoring the pyright errors.
                 if "run_dashboard" in node_str or "time.sleep" in node_str:
                     node_str = node_str.strip("\n")
                     tree.body[node_idx] = ast.Expr(
                         value=ast.Call(
                             func=ast.Name(id="print", ctx=ast.Load()),
-                            args=[ast.Constant(s="skipping `" + node_str + "`")],
+                            args=[ast.Constant(s="skipping `" + node_str + "`")],  # type: ignore
                             keywords=[],
                         ),
                     )
@@ -181,13 +188,13 @@ class TestStreamlitExamples(Base):
 
     FILE = "streamlit_example.py"
 
-    def prepare_tree_for_testing(self, tree):
+    def prepare_tree_for_testing(self, tree: Module) -> Module:
         """Parse the tree & make required modifications."""
         for node_idx, node in enumerate(tree.body):
             # type conditionals are used to narrow down the node type to assignment to a named object attribute
             if isinstance(node, ast.Assign):
                 target = node.targets[0]
-                obj_name = target.id  # object being modified
+                obj_name = target.id  # type: ignore
                 if obj_name == "DEMO_NUM_ITERATIONS":
                     test_value = 1  # reduces the total number of trades to keep things fast
                     tree.body[node_idx] = ast.Assign(
@@ -196,13 +203,13 @@ class TestStreamlitExamples(Base):
                         type_comment=node.type_comment,
                     )
             if isinstance(node, ast.Expr):
-                node_str = astunparse.unparse(node)
+                node_str = ast.unparse(node)
                 if "run_dashboard" in node_str or "time.sleep" in node_str:
                     node_str = node_str.strip("\n")
                     tree.body[node_idx] = ast.Expr(
                         value=ast.Call(
                             func=ast.Name(id="print", ctx=ast.Load()),
-                            args=[ast.Constant(s="skipping `" + node_str + "`")],
+                            args=[ast.Constant(s="skipping `" + node_str + "`")],  # type: ignore
                             keywords=[],
                         ),
                     )
