@@ -56,64 +56,6 @@ class HyperdriveWallet(EthWallet):
     The dictionary is keyed by the maturity time in seconds.
     """
 
-    def _update_longs(self, longs: Iterable[tuple[int, Long]]) -> None:
-        """Update the data about Longs contained in the Agent's Wallet.
-
-        Arguments
-        ---------
-        longs: Iterable[tuple[int, Long]]
-            A list (or other Iterable type) of tuples that contain a Long object
-            and its market-relative maturity time
-        """
-        for maturity_time, long in longs:
-            if long.balance != FixedPoint(0):
-                logging.debug(
-                    "agent %s trade longs, maturity_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                    self.address.hex(),
-                    maturity_time,
-                    self.longs,
-                    long,
-                )
-                if maturity_time in self.longs:  #  entry already exists for this maturity_time, so add to it
-                    self.longs[maturity_time].balance += long.balance
-                else:
-                    self.longs.update({maturity_time: long})
-            if self.longs[maturity_time].balance == FixedPoint(0):
-                # Removing the empty dictionary entries allows us to check existance
-                # of open longs using `if wallet.longs`
-                del self.longs[maturity_time]
-            if maturity_time in self.longs and self.longs[maturity_time].balance < FixedPoint(0):
-                raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[maturity_time]}.")
-
-    def _update_shorts(self, shorts: Iterable[tuple[int, Short]]) -> None:
-        """Update the data about Shorts contained in the Agent's Wallet.
-
-        Arguments
-        ---------
-        shorts: Iterable[tuple[int, Short]]
-            A list (or other Iterable type) of tuples that contain a Short object
-            and its market-relative mint time
-        """
-        for maturity_time, short in shorts:
-            if short.balance != FixedPoint(0):
-                logging.debug(
-                    "agent %s trade shorts, maturity_time = %s\npre-trade amount = %s\ntrade delta = %s",
-                    self.address.hex(),
-                    maturity_time,
-                    self.shorts,
-                    short,
-                )
-                if maturity_time in self.shorts:  #  entry already exists for this maturity_time, so add to it
-                    self.shorts[maturity_time].balance += short.balance
-                else:
-                    self.shorts.update({maturity_time: short})
-            if self.shorts[maturity_time].balance == FixedPoint(0):
-                # Removing the empty dictionary entries allows us to check existance
-                # of open shorts using `if wallet.shorts`
-                del self.shorts[maturity_time]
-            if maturity_time in self.shorts and self.shorts[maturity_time].balance < FixedPoint(0):
-                raise AssertionError(f"wallet balance should be >= 0, not {self.shorts[maturity_time]}")
-
     def copy(self) -> HyperdriveWallet:
         """Return a new copy of self.
 
