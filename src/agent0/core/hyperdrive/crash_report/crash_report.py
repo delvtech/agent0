@@ -19,16 +19,16 @@ from web3 import Web3
 from web3.types import RPCEndpoint
 
 from agent0.core.hyperdrive.agent import TradeResult
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base.errors import ContractCallException
-from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.hyperlogs import ExtendedJSONEncoder, logs
 from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
     from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+    from agent0.ethpy.hyperdrive.state import PoolState
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
