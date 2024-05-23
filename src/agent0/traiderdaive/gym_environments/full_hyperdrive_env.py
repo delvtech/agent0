@@ -90,11 +90,15 @@ class FullHyperdriveEnv(gym.Env):
         self.rng = np.random.default_rng()
 
         # Define the rl bot
-        self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget, name="rl_bot")
+        self.rl_bot = self.chain.init_agent(
+            base=gym_config.rl_agent_budget, pool=self.interactive_hyperdrive, name="rl_bot"
+        )
         # Define the random bots
         self.random_bots = [
-            self.interactive_hyperdrive.init_agent(
+            self.chain.init_agent(
                 base=gym_config.random_bot_budget,
+                eth=FixedPoint(100),
+                pool=self.interactive_hyperdrive,
                 policy=PolicyZoo.random,
                 # TODO set the seed per random bot here for reproducibility
                 # TODO omitting rng_seed results in the same random generators
@@ -107,8 +111,10 @@ class FullHyperdriveEnv(gym.Env):
 
         self.random_bots.extend(
             [
-                self.interactive_hyperdrive.init_agent(
+                self.chain.init_agent(
                     base=gym_config.random_bot_budget,
+                    eth=FixedPoint(100),
+                    pool=self.interactive_hyperdrive,
                     policy=PolicyZoo.random_hold,
                     # TODO set the seed per random bot here for reproducibility
                     policy_config=PolicyZoo.random_hold.Config(
@@ -461,7 +467,7 @@ class FullHyperdriveEnv(gym.Env):
     def _get_rl_wallet_positions(self, coerce_float: bool) -> pd.DataFrame:
         current_wallet = self.interactive_hyperdrive.get_positions(coerce_float=coerce_float)
         # Filter for rl bot
-        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
+        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
         return rl_bot_wallet
 
     def _get_observation(self) -> dict[str, np.ndarray]:
@@ -517,7 +523,7 @@ class FullHyperdriveEnv(gym.Env):
 
         current_wallet = self.interactive_hyperdrive.get_positions()
         # Filter by rl bot
-        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
+        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
         # The rl_bot_wallet shows the pnl of all positions
         # Sum across all positions
         # TODO one option here is to only look at base positions instead of sum across all positions.

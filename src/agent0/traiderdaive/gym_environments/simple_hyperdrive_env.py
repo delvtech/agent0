@@ -95,11 +95,15 @@ class SimpleHyperdriveEnv(gym.Env):
         self.interactive_hyperdrive = LocalHyperdrive(self.chain, initial_pool_config)
 
         # Define the rl bot
-        self.rl_bot = self.interactive_hyperdrive.init_agent(base=gym_config.rl_agent_budget, name="rl_bot")
+        self.rl_bot = self.chain.init_agent(
+            base=gym_config.rl_agent_budget, eth=FixedPoint(100), pool=self.interactive_hyperdrive, name="rl_bot"
+        )
         # Define the random bots
         self.random_bots = [
-            self.interactive_hyperdrive.init_agent(
+            self.chain.init_agent(
                 base=gym_config.random_bot_budget,
+                eth=FixedPoint(100),
+                pool=self.interactive_hyperdrive,
                 policy=PolicyZoo.random,
                 # TODO set the seed per random bot here for reproducability
                 policy_config=PolicyZoo.random.Config(),
@@ -110,8 +114,10 @@ class SimpleHyperdriveEnv(gym.Env):
 
         self.random_bots.extend(
             [
-                self.interactive_hyperdrive.init_agent(
+                self.chain.init_agent(
                     base=gym_config.random_bot_budget,
+                    eth=FixedPoint(100),
+                    pool=self.interactive_hyperdrive,
                     policy=PolicyZoo.random_hold,
                     # TODO set the seed per random bot here for reproducability
                     policy_config=PolicyZoo.random_hold.Config(
@@ -395,7 +401,7 @@ class SimpleHyperdriveEnv(gym.Env):
 
         current_wallet = self.interactive_hyperdrive.get_positions()
         # Filter by rl bot
-        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.checksum_address]
+        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
         # The rl_bot_wallet shows the pnl of all positions
         # Sum across all positions
         # TODO one option here is to only look at base positions instead of sum across all positions.
