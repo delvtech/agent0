@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from decimal import Decimal
 
 import pandas as pd
@@ -10,6 +11,39 @@ from fixedpointmath import FixedPoint
 
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state import PoolState
+
+
+# Define a context manager to suppress stdout and stderr.
+# We keep this as camel case due to it being a context manager
+# pylint: disable=invalid-name
+class _suppress_stdout_stderr:
+    """A context manager for doing a "deep suppression" of stdout and stderr in
+    Python, i.e. will suppress all print, even if the print originates in a
+    compiled C/Fortran sub-function.
+
+    This will not suppress raised exceptions, since exceptions are printed
+    to stderr just before a script exits, and after the context manager has
+    exited (at least, I think that is why it lets exceptions through).
+    """
+
+    def __init__(self):
+        # Open a pair of null files
+        self.null_fds = [os.open(os.devnull, os.O_RDWR) for x in range(2)]
+        # Save the actual stdout (1) and stderr (2) file descriptors.
+        self.save_fds = [os.dup(1), os.dup(2)]
+
+    def __enter__(self):
+        # Assign the null pointers to stdout and stderr.
+        os.dup2(self.null_fds[0], 1)
+        os.dup2(self.null_fds[1], 2)
+
+    def __exit__(self, *_):
+        # Re-assign the real stdout/stderr back to (1) and (2)
+        os.dup2(self.save_fds[0], 1)
+        os.dup2(self.save_fds[1], 2)
+        # Close all file descriptors
+        for fd in self.null_fds + self.save_fds:
+            os.close(fd)
 
 
 def calc_single_closeout(
@@ -50,10 +84,12 @@ def calc_single_closeout(
     out_value = Decimal("nan")
     if token_type == "LONG":
         try:
-            out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
+            # Suppress any errors coming from rust here, we already log it as info
+            with _suppress_stdout_stderr():
+                out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
-            logging.warning("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
+            logging.info("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
         # FixedPoint to Decimal
         out_value = Decimal(str(out_value))
 
@@ -79,16 +115,18 @@ def calc_single_closeout(
             close_share_price = hyperdrive_state.pool_info.vault_share_price
 
         try:
-            out_value = interface.calc_close_short(
-                amount,
-                open_vault_share_price=open_share_price,
-                close_vault_share_price=close_share_price,
-                maturity_time=maturity,
-                pool_state=hyperdrive_state,
-            )
+            # Suppress any errors coming from rust here, we already log it as info
+            with _suppress_stdout_stderr():
+                out_value = interface.calc_close_short(
+                    amount,
+                    open_vault_share_price=open_share_price,
+                    close_vault_share_price=close_share_price,
+                    maturity_time=maturity,
+                    pool_state=hyperdrive_state,
+                )
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
-            logging.warning("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
+            logging.info("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
         out_value = Decimal(str(out_value))
 
     # For PNL, we assume all withdrawal shares are redeemable

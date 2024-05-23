@@ -42,7 +42,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         chain_port = 33333
         db_port = 44444
 
-    local_chain_config = LocalChain.Config(chain_port=chain_port, db_port=db_port, block_timestamp_interval=12)
+    local_chain_config = LocalChain.Config(
+        chain_port=chain_port, db_port=db_port, block_timestamp_interval=12, log_level=logging.WARNING
+    )
 
     while True:
         # Build interactive local hyperdrive

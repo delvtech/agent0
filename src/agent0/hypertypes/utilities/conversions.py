@@ -123,8 +123,16 @@ def fixedpoint_to_checkpoint(
     Checkpoint
         A dataclass containing the checkpoint vault_share_price and exposure fields converted to integers.
     """
+    fixedpoint_keys = [
+        "weighted_spot_price",
+        "vault_share_price",
+    ]
+
     return Checkpoint(
-        **{snake_to_camel(key): value.scaled_value for key, value in asdict(fixedpoint_checkpoint).items()}
+        **{
+            snake_to_camel(key): value.scaled_value if key in fixedpoint_keys else value
+            for key, value in asdict(fixedpoint_checkpoint).items()
+        }
     )
 
 
