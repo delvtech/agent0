@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from eth_typing import BlockNumber, ChecksumAddress
@@ -22,7 +23,9 @@ from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
 from .event_types import CreateCheckpoint
 from .hyperdrive import Hyperdrive
-from .local_chain import LocalChain
+
+if TYPE_CHECKING:
+    from .local_chain import LocalChain
 
 # Is very thorough module.
 # pylint: disable=too-many-lines

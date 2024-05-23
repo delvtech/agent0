@@ -24,11 +24,11 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .hyperdrive_agent import HyperdriveAgent
+from .local_hyperdrive import LocalHyperdrive
 
 if TYPE_CHECKING:
     from .hyperdrive import Hyperdrive
     from .local_chain import LocalChain
-    from .local_hyperdrive import LocalHyperdrive
 
 
 class LocalHyperdriveAgent(HyperdriveAgent):
@@ -44,7 +44,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         eth: FixedPoint,
         name: str | None,
         chain: LocalChain,
-        pool: LocalHyperdrive | None,
+        pool: Hyperdrive | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str | None = None,
@@ -74,14 +74,17 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The private key of the associated account. Default is auto-generated.
         """
         # pylint: disable=too-many-arguments
+
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         agent_private_key = make_private_key() if private_key is None else private_key
 
         super().__init__(
             name=name, chain=chain, pool=pool, policy=policy, policy_config=policy_config, private_key=agent_private_key
         )
 
-        # Type narrow to the local hyperdrive type
-        self._active_pool: LocalHyperdrive | None = pool
         self.chain = chain
 
         # Fund agent
@@ -96,7 +99,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         self,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
-        pool: LocalHyperdrive | None = None,
+        pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
     ) -> None:
         """Adds additional funds to the agent.
@@ -116,6 +119,11 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
         """
+
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         # Adding funds default to the deploy account
         if signer_account is None:
             signer_account = self.chain.get_deployer_account()
@@ -125,7 +133,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     # We subclass from this function for typing
     def set_active(
         self,
-        pool: LocalHyperdrive | None = None,
+        pool: Hyperdrive | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
     ) -> None:
@@ -143,6 +151,10 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         policy_config: HyperdriveBasePolicy.Config | None
             The configuration for the attached policy.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         super().set_active(pool=pool, policy=policy, policy_config=policy_config)
 
     ################
@@ -155,7 +167,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             self.set_max_approval(pool)
             self._max_approval_pools[pool] = True
 
-    def open_long(self, base: FixedPoint, pool: LocalHyperdrive | None = None) -> OpenLong:
+    def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
 
         Arguments
@@ -170,7 +182,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         OpenLong
             The emitted event of the open long call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Open long requires an active pool.")
@@ -180,7 +199,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: LocalHyperdrive | None = None) -> CloseLong:
+    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
         """Closes a long for this agent.
 
         Arguments
@@ -197,7 +216,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         CloseLong
             The emitted event of the close long call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Close long requires an active pool.")
@@ -207,7 +233,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def open_short(self, bonds: FixedPoint, pool: LocalHyperdrive | None = None) -> OpenShort:
+    def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
         """Opens a short for this agent.
 
         Arguments
@@ -222,7 +248,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         OpenShort
             The emitted event of the open short call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Open short requires an active pool.")
@@ -232,7 +265,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: LocalHyperdrive | None = None) -> CloseShort:
+    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
         """Closes a short for this agent.
 
         Arguments
@@ -249,7 +282,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         CloseShort
             The emitted event of the close short call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Close short requires an active pool.")
@@ -259,7 +299,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def add_liquidity(self, base: FixedPoint, pool: LocalHyperdrive | None = None) -> AddLiquidity:
+    def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
         """Adds liquidity for this agent.
 
         Arguments
@@ -274,7 +314,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         AddLiquidity
             The emitted event of the add liquidity call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Add liquidity requires an active pool.")
@@ -284,7 +331,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def remove_liquidity(self, shares: FixedPoint, pool: LocalHyperdrive | None = None) -> RemoveLiquidity:
+    def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
         """Removes liquidity for this agent.
 
         Arguments
@@ -299,7 +346,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         RemoveLiquidity
             The emitted event of the remove liquidity call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Remove liquidity requires an active pool.")
@@ -309,7 +363,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def redeem_withdraw_share(self, shares: FixedPoint, pool: LocalHyperdrive | None = None) -> RedeemWithdrawalShares:
+    def redeem_withdraw_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
         """Redeems withdrawal shares for this agent.
 
         Arguments
@@ -324,7 +378,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         RedeemWithdrawalShares
             The emitted event of the redeem withdrawal shares call.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Remove liquidity requires an active pool.")
@@ -335,7 +396,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         return out
 
     def execute_policy_action(
-        self, pool: LocalHyperdrive | None = None
+        self, pool: Hyperdrive | None = None
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         """Executes the underlying policy action (if set).
 
@@ -349,7 +410,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Executing policy action requires an active pool.")
@@ -360,7 +428,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         return out
 
     def liquidate(
-        self, randomize: bool = False, pool: LocalHyperdrive | None = None
+        self, randomize: bool = False, pool: Hyperdrive | None = None
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         """Liquidate all of the agent's positions.
 
@@ -376,7 +444,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
         if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
             pool = self._active_pool
         if pool is None:
             raise ValueError("Liquidate requires an active pool.")
@@ -424,7 +499,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     def get_positions(
         self,
-        pool_filter: LocalHyperdrive | None = None,
+        pool_filter: Hyperdrive | None = None,
         show_closed_positions: bool = False,
         coerce_float: bool = False,
     ) -> pd.DataFrame:
@@ -446,12 +521,15 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
+        # Explicit type checking
+        if pool_filter is not None and not isinstance(pool_filter, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
         return self._get_positions(
             pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
         )
 
     def get_trade_events(
-        self, pool: LocalHyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
+        self, pool: Hyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
     ) -> pd.DataFrame:
         """Returns the agent's current wallet.
 
@@ -474,6 +552,9 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         HyperdriveWallet
             The agent's current wallet.
         """
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
         return self._get_trade_events(pool=pool, all_token_deltas=all_token_deltas, coerce_float=coerce_float)
 
     def _sync_events(self, pool: Hyperdrive) -> None:

@@ -25,10 +25,11 @@ from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
 from .chain import Chain
 from .event_types import CreateCheckpoint
+from .local_hyperdrive import LocalHyperdrive
 from .local_hyperdrive_agent import LocalHyperdriveAgent
 
 if TYPE_CHECKING:
-    from .local_hyperdrive import LocalHyperdrive
+    from .hyperdrive import Hyperdrive
 
 
 # pylint: disable=too-many-instance-attributes
@@ -538,7 +539,7 @@ class LocalChain(Chain):
     def init_agent(
         self,
         private_key: str | None = None,
-        pool: LocalHyperdrive | None = None,
+        pool: Hyperdrive | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
         name: str | None = None,
@@ -551,8 +552,10 @@ class LocalChain(Chain):
         ---------
         private_key: str, optional
             The private key of the associated account. Default is auto-generated.
+        pool: LocalHyperdrive, optional
+            An optional pool to set as the active pool.
         policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
+            An optional policy to set as the active policy.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
         base: FixedPoint | None, optional
@@ -569,6 +572,12 @@ class LocalChain(Chain):
         LocalHyperdriveAgent
             The agent object for a user to execute trades with.
         """
+        # pylint: disable=too-many-arguments
+
+        # Explicit type checking
+        if not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for LocalChain")
+
         # pylint: disable=too-many-arguments
         if self._has_saved_snapshot:  # pylint: disable=protected-access
             logging.warning(

@@ -305,8 +305,10 @@ class Chain:
         ---------
         private_key: str
             The private key of the associated account.
+        pool: LocalHyperdrive, optional
+            An optional pool to set as the active pool.
         policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
+            An optional policy to set as the active policy.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
         name: str, optional
@@ -317,6 +319,8 @@ class Chain:
         HyperdriveAgent
             The agent object for a user to execute trades with.
         """
+        # pylint: disable=too-many-arguments
+
         # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
