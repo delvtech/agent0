@@ -41,6 +41,21 @@ jobs:
           name: wheels-linux
           path: ./wheelhouse/*.whl
 
+      - name: Get the list of Python package versions
+        shell: bash
+        run: |
+          FREEZE_FILE="frozen-requirements.txt"
+          timestamp="$(date)"
+          version="$(git describe --abbrev=12 --always)"
+          echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
+          pip3 freeze | tee -a $FREEZE_FILE
+
+      - name: Upload the package versions as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frozen PIP package set
+          path: ./frozen-requirements.txt
+
   build-sdist:
     needs: detect-version-changes
     name: Build source distribution
