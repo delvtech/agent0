@@ -596,7 +596,7 @@ class LocalChain(Chain):
         # pylint: disable=too-many-arguments
 
         # Explicit type checking
-        if not isinstance(pool, LocalHyperdrive):
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
             raise TypeError("Pool must be an instance of LocalHyperdrive for LocalChain")
 
         # pylint: disable=too-many-arguments
