@@ -1,5 +1,4 @@
 """Base implementation of agents."""
 
-from .eth_wallet import EthWallet, EthWalletDeltas
+from .eth_wallet import EthWallet
 from .market_actions import BaseMarketAction
-from .policy_agent import PolicyAgent

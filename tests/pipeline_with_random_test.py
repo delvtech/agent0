@@ -22,9 +22,10 @@ class TestPipelineWithRandom:
         """Runs the random policy with different pool and input configurations.
         All arguments are fixtures.
         """
-        agent = fast_hyperdrive_fixture.init_agent(
+        agent = fast_hyperdrive_fixture.chain.init_agent(
             base=FixedPoint(1_000_000),
             eth=FixedPoint(100),
+            pool=fast_hyperdrive_fixture,
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(slippage_tolerance=None),
         )

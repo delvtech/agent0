@@ -1,13 +1,19 @@
 """Base class for hyperdrive policies."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from fixedpointmath import FixedPoint
 
 from agent0.core.base import Trade
 from agent0.core.base.policies import BasePolicy
-from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
-from agent0.core.hyperdrive.agent import close_long_trade, close_short_trade
+from agent0.core.hyperdrive.agent import HyperdriveWallet, close_long_trade, close_short_trade
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state import PoolState
+
+if TYPE_CHECKING:
+    from agent0.core.hyperdrive import HyperdriveMarketAction, TradeResult
 
 
 class HyperdriveBasePolicy(BasePolicy[HyperdriveReadInterface, HyperdriveWallet]):

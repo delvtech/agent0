@@ -8,13 +8,12 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint, maximum, minimum
 
 from agent0.core.base import Trade
-from agent0.core.hyperdrive import HyperdriveMarketAction, TradeResult
 from agent0.core.hyperdrive.agent import add_liquidity_trade, remove_liquidity_trade
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 # policy definitions can be more verbose, allowing for more local variables
@@ -162,7 +161,7 @@ class SimpleLP(HyperdriveBasePolicy):
         """
         if len(trade_results) > 0:
             if (
-                trade_results[-1].status.name == "SUCCESS"
+                trade_results[-1].trade_successful
                 and trade_results[-1].trade_object is not None
                 and trade_results[-1].tx_receipt is not None
             ):

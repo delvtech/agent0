@@ -29,10 +29,11 @@ def test_random_policy(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
-    random_agent = interactive_hyperdrive.init_agent(
+    random_agent = interactive_hyperdrive.chain.init_agent(
         base=FixedPoint(100_000),
         eth=FixedPoint(100),
         name="alice",
+        pool=interactive_hyperdrive,
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(
             slippage_tolerance=None,
@@ -53,10 +54,11 @@ def test_random_policy_trades(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
-    random_agent = interactive_hyperdrive.init_agent(
+    random_agent = fast_chain_fixture.init_agent(
         base=FixedPoint(100_000),
         eth=FixedPoint(100),
         name="alice",
+        pool=interactive_hyperdrive,
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(
             slippage_tolerance=None,
@@ -91,7 +93,8 @@ def test_random_policy_trades(fast_chain_fixture: LocalChain):
     ]
     for trade_sequence in hyperdrive_trade_actions:
         for trade in trade_sequence:
-            random_agent.agent.policy.allowable_actions = [trade]  # type: ignore
+            # pylint: disable=protected-access
+            random_agent._active_policy.allowable_actions = [trade]  # type: ignore
             trade_events = random_agent.execute_policy_action()
             for event in trade_events:
                 match event:

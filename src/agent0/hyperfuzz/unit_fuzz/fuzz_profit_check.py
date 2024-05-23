@@ -89,7 +89,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     )
 
     # Generate funded trading agent
-    long_agent = interactive_hyperdrive.init_agent(base=long_trade_amount, eth=FixedPoint(100), name="alice")
+    long_agent = chain.init_agent(
+        base=long_trade_amount, eth=FixedPoint(100), pool=interactive_hyperdrive, name="alice"
+    )
     long_agent_initial_balance = long_agent.get_wallet().balance.amount
 
     # Advance time to be right after a checkpoint boundary
@@ -133,7 +135,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
     # Generate funded trading agent
     # the short trade amount is in bonds, but we know we will need much less base
     # we can play it safe by initializing with that much base
-    short_agent = interactive_hyperdrive.init_agent(base=short_trade_amount, eth=FixedPoint(100), name="bob")
+    short_agent = chain.init_agent(
+        base=short_trade_amount, eth=FixedPoint(100), pool=interactive_hyperdrive, name="bob"
+    )
     short_agent_initial_balance = short_agent.get_wallet().balance.amount
 
     # Advance time to be right after a checkpoint boundary
@@ -194,11 +198,11 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
 
         # TODO do better checking here or make agent optional in build_crash_trade_result
         if "LONG" in error.args[0]:
-            agent = long_agent.agent
+            account = long_agent.account
         else:
-            agent = short_agent.agent
+            account = short_agent.account
         report = build_crash_trade_result(
-            error, interactive_hyperdrive.interface, agent, additional_info=additional_info
+            error, interactive_hyperdrive.interface, account, additional_info=additional_info
         )
         # Crash reporting already going to file in logging
         log_hyperdrive_crash_report(

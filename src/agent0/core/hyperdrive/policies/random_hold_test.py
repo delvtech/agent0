@@ -23,10 +23,11 @@ def test_random_hold_policy(fast_chain_fixture: LocalChain):
         checkpoint_duration=60 * 60 * 24,  # 1 day
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
-    random_hold_agent = interactive_hyperdrive.init_agent(
+    random_hold_agent = interactive_hyperdrive.chain.init_agent(
         base=FixedPoint(1_111_111),
         eth=FixedPoint(111),
         name="alice",
+        pool=interactive_hyperdrive,
         policy=PolicyZoo.random_hold,
         policy_config=PolicyZoo.random_hold.Config(
             trade_chance=FixedPoint("1.0"),

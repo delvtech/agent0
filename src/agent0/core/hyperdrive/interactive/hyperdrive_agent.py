@@ -23,14 +23,10 @@ from agent0.chainsync.db.hyperdrive import (
     trade_events_to_db,
 )
 from agent0.core.base import Quantity, TokenType
-from agent0.core.hyperdrive import (
+from agent0.core.hyperdrive.agent import (
     HyperdriveActionType,
-    HyperdrivePolicyAgent,
     HyperdriveWallet,
     TradeResult,
-    TradeStatus,
-)
-from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
@@ -43,7 +39,7 @@ from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
-from agent0.ethpy.base import set_anvil_account_balance, smart_contract_transact
+from agent0.ethpy.base import get_account_balance, set_anvil_account_balance, smart_contract_transact
 from agent0.ethpy.hyperdrive import ReceiptBreakdown
 
 from .event_types import (
@@ -58,15 +54,17 @@ from .event_types import (
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 
 if TYPE_CHECKING:
+    from .chain import Chain
     from .hyperdrive import Hyperdrive
 
-# We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
-# Hence, we call protected class methods in this class.
 # pylint: disable=protected-access
+# pylint: disable=too-many-lines
 
 
 class HyperdriveAgent:
     """Interactive Hyperdrive Agent."""
+
+    # pylint: disable=too-many-public-methods
 
     ################
     # Initialization
@@ -75,13 +73,14 @@ class HyperdriveAgent:
     def __init__(
         self,
         name: str | None,
-        pool: Hyperdrive,
+        chain: Chain,
+        pool: Hyperdrive | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
         private_key: str,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
-        NOTE: this constructor shouldn't be called directly, but rather from Hyperdrive's
+        NOTE: this constructor shouldn't be called directly, but rather from Chain's
         `init_agent` method.
 
         Arguments
@@ -90,6 +89,10 @@ class HyperdriveAgent:
             The name of the agent. Defaults to the wallet address.
         pool: Hyperdrive
             The pool object that this agent belongs to.
+        chain: Chain
+            The chain object that this agent belongs to.
+        pool: Hyperdrive | None
+            An optional pool to set as the active pool.
         policy: Type[HyperdriveBasePolicy] | None
             An optional policy to attach to this agent.
         policy_config: HyperdriveBasePolicy.Config | None,
@@ -98,38 +101,39 @@ class HyperdriveAgent:
             The private key of the associated account. Default is auto-generated.
         """
         # pylint: disable=too-many-arguments
-        self._pool = pool
-        # Setting the budget to 0 here, we'll update the wallet from the chain
-        if policy is None:
-            if policy_config is None:
-                policy_config = HyperdriveBasePolicy.Config(rng=self._pool.config.rng)
-            policy_obj = HyperdriveBasePolicy(policy_config)
-        else:
-            if policy_config is None:
-                policy_config = policy.Config(rng=self._pool.config.rng)
-            policy_obj = policy(policy_config)
+        self.chain = chain
 
-        agent = HyperdrivePolicyAgent(Account().from_key(private_key), initial_budget=FixedPoint(0), policy=policy_obj)
+        self._active_pool: Hyperdrive | None = pool
+        self._active_policy: HyperdriveBasePolicy | None = None
+
+        if policy is not None:
+            if policy_config is None:
+                policy_config = policy.Config(rng=self.chain.config.rng)
+            self._active_policy = policy(policy_config)
+
+        self.account: LocalAccount = Account().from_key(private_key)
 
         # Register the username if it was provided
         if name is not None:
-            add_addr_to_username(name, [agent.address], self._pool.chain.db_session)
-        self.agent = agent
+            add_addr_to_username(name, [self.account.address], self.chain.db_session)
 
     @property
-    def checksum_address(self) -> ChecksumAddress:
+    def address(self) -> ChecksumAddress:
         """Return the checksum address of the account."""
-        return self.agent.checksum_address
+        return self.account.address
 
     @property
     def policy_done_trading(self) -> bool:
         """Return whether the agent's policy is done trading."""
-        return self.agent.done_trading
+        if self._active_policy is None:
+            return False
+        return self._active_policy._done_trading
 
     def add_funds(
         self,
         base: FixedPoint | None = None,
         eth: FixedPoint | None = None,
+        pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
     ) -> None:
         """Adds additional funds to the agent.
@@ -144,9 +148,15 @@ class HyperdriveAgent:
             The amount of base to fund the agent with. Defaults to 0.
         eth: FixedPoint | None, optional
             The amount of ETH to fund the agent with. Defaults to 0.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
         """
+
+        if pool is None and self._active_pool is not None:
+            pool = self._active_pool
+
         if base is None:
             base = FixedPoint(0)
         if eth is None:
@@ -154,75 +164,122 @@ class HyperdriveAgent:
 
         # The signer of the mint transaction defaults to the agent itself, unless specified.
         if signer_account is None:
-            signer_account = self.agent
+            signer_account = self.account
 
         if eth > FixedPoint(0):
             # Eth is a set balance call
-            eth_balance, _ = self._pool.interface.get_eth_base_balances(self.agent)
+            eth_balance = FixedPoint(scaled_value=get_account_balance(self.chain._web3, self.account.address))
             new_eth_balance = eth_balance + eth
-            _ = set_anvil_account_balance(self._pool.interface.web3, self.agent.address, new_eth_balance.scaled_value)
+            _ = set_anvil_account_balance(self.chain._web3, self.account.address, new_eth_balance.scaled_value)
 
+        # TODO minting base requires a pool to be attached
         if base > FixedPoint(0):
+            if pool is None:
+                raise ValueError("Minting base requires an active pool.")
             # We mint base
             _ = smart_contract_transact(
-                self._pool.interface.web3,
-                self._pool.interface.base_token_contract,
+                self.chain._web3,
+                pool.interface.base_token_contract,
                 signer_account,
                 "mint(address,uint256)",
-                self.agent.checksum_address,
+                self.account.address,
                 base.scaled_value,
             )
-            # Update the agent's wallet balance
-            self.agent.wallet.balance.amount += base
 
-    def set_max_approval(self) -> None:
+    def set_max_approval(self, pool: Hyperdrive | None = None) -> None:
         """Sets the max approval to the hyperdrive contract.
 
         .. warning:: This sets the max approval to the underlying hyperdrive contract for
         this wallet. Do this at your own risk.
 
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
         """
         # Establish max approval for the hyperdrive contract
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Setting approval requires an active pool.")
+
+        if pool is None:
+            raise ValueError("Approval requires an active pool.")
         set_max_approval(
-            self.agent,
-            self._pool.interface.web3,
-            self._pool.interface.base_token_contract,
-            str(self._pool.interface.hyperdrive_contract.address),
+            self.account, self.chain._web3, pool.interface.base_token_contract, str(pool.hyperdrive_address)
         )
+
+    def set_active(
+        self,
+        pool: Hyperdrive | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
+    ) -> None:
+        """Sets the active pool or policy for the agent.
+
+        Setting an active pool for an agent allows trades to default to this pool.
+        Setting an active policy for an agent uses this policy with `execute_policy_action`.
+
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive
+            The pool to set as the active pool.
+        policy: Type[HyperdriveBasePolicy] | None
+            The policy to set as the active policy.
+        policy_config: HyperdriveBasePolicy.Config | None
+            The configuration for the attached policy.
+        """
+        if pool is not None:
+            self._active_pool = pool
+
+        if policy is not None:
+            if policy_config is None:
+                policy_config = policy.Config(rng=self.chain.config.rng)
+            self._active_policy = policy(policy_config)
 
     ################
     # Trades
     ################
 
-    def open_long(self, base: FixedPoint) -> OpenLong:
+    def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
 
         Arguments
         ---------
         base: FixedPoint
             The amount of longs to open in units of base.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         OpenLong
             The emitted event of the open long call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Open long requires an active pool.")
+
         # Build trade object
         trade_object = open_long_trade(base)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
-    def close_long(self, maturity_time: int, bonds: FixedPoint) -> CloseLong:
+    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
         """Closes a long for this agent.
 
         Arguments
@@ -231,55 +288,73 @@ class HyperdriveAgent:
             The maturity time of the bonds to close. This is the identifier of the long tokens.
         bonds: FixedPoint
             The amount of longs to close in units of bonds.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         CloseLong
             The emitted event of the close long call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Close long requires an active pool.")
+
         # Build trade object
         trade_object = close_long_trade(bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
-    def open_short(self, bonds: FixedPoint) -> OpenShort:
+    def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
         """Opens a short for this agent.
 
         Arguments
         ---------
         bonds: FixedPoint
             The amount of shorts to open in units of bonds.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         OpenShort
             The emitted event of the open short call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Open short requires an active pool.")
+
         trade_object = open_short_trade(bonds)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
-    def close_short(self, maturity_time: int, bonds: FixedPoint) -> CloseShort:
+    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
         """Closes a short for this agent.
 
         Arguments
@@ -288,111 +363,152 @@ class HyperdriveAgent:
             The maturity time of the bonds to close. This is the identifier of the short tokens.
         bonds: FixedPoint
             The amount of shorts to close in units of bonds.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         CloseShort
             The emitted event of the close short call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Close short requires an active pool.")
+
         trade_object = close_short_trade(bonds, maturity_time)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
-    def add_liquidity(self, base: FixedPoint) -> AddLiquidity:
+    def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
         """Adds liquidity for this agent.
 
         Arguments
         ---------
         base: FixedPoint
             The amount of liquidity to add in units of base.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         AddLiquidity
             The emitted event of the add liquidity call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Add liquidity requires an active pool.")
+
         trade_object = add_liquidity_trade(base)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
-    def remove_liquidity(self, shares: FixedPoint) -> RemoveLiquidity:
+    def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
         """Removes liquidity for this agent.
 
         Arguments
         ---------
         shares: FixedPoint
             The amount of liquidity to remove in units of shares.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         RemoveLiquidity
             The emitted event of the remove liquidity call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Remove liquidity requires an active pool.")
+
         trade_object = remove_liquidity_trade(shares)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
-    def redeem_withdraw_share(self, shares: FixedPoint) -> RedeemWithdrawalShares:
+    def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
         """Redeems withdrawal shares for this agent.
 
         Arguments
         ---------
         shares: FixedPoint
             The amount of withdrawal shares to redeem in units of shares.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         RedeemWithdrawalShares
             The emitted event of the redeem withdrawal shares call.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Redeem withdrawal shares requires an active pool.")
+
         trade_object = redeem_withdraw_shares_trade(shares)
         # TODO expose async here to the caller eventually
         trade_results: TradeResult = asyncio.run(
             async_execute_single_trade(
-                self._pool.interface,
-                self.agent,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
                 trade_object,
-                self._pool.config.always_execute_policy_post_action,
-                self._pool.config.preview_before_trade,
+                self.chain.config.always_execute_policy_post_action,
+                self.chain.config.preview_before_trade,
+                self._active_policy,
             )
         )
         tx_receipt = self._handle_trade_result(trade_results, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def execute_policy_action(
-        self,
+        self, pool: Hyperdrive | None = None
     ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
         """Executes the underlying policy action (if set).
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
@@ -402,16 +518,22 @@ class HyperdriveAgent:
         # Only allow executing agent policies if a policy was passed in the constructor
         # we check type instead of isinstance to explicitly check for the hyperdrive base class
         # pylint: disable=unidiomatic-typecheck
-        if type(self.agent.policy) == HyperdriveBasePolicy:
-            raise ValueError("Must pass in a policy in the constructor to execute policy action.")
+        if self._active_policy is None:
+            raise ValueError("No active policy set.")
+
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Executing policy action requires an active pool.")
 
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
-                self._pool.interface,
-                self.agent,
-                preview_before_trade=self._pool.config.preview_before_trade,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
+                policy=self._active_policy,
+                preview_before_trade=self.chain.config.preview_before_trade,
                 liquidate=False,
-                interactive_mode=True,
             )
         )
         out_events = []
@@ -426,7 +548,7 @@ class HyperdriveAgent:
         return out_events
 
     def liquidate(
-        self, randomize: bool = False
+        self, randomize: bool = False, pool: Hyperdrive | None = None
     ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
         """Liquidate all of the agent's positions.
 
@@ -434,20 +556,33 @@ class HyperdriveAgent:
         ---------
         randomize: bool, optional
             Whether to randomize liquidation trades. Defaults to False.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Liquidate requires an active pool.")
+
+        # For type narrowing
+        # rng should always be set in post_init
+        assert self.chain.config.rng is not None
+
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
-                self._pool.interface,
-                self.agent,
-                preview_before_trade=self._pool.config.preview_before_trade,
+                pool.interface,
+                self.account,
+                self.get_wallet(pool),
+                policy=None,
+                rng=self.chain.config.rng,
+                preview_before_trade=self.chain.config.preview_before_trade,
                 liquidate=True,
                 randomize_liquidation=randomize,
-                interactive_mode=True,
             )
         )
         out_events = []
@@ -475,29 +610,29 @@ class HyperdriveAgent:
     ) -> ReceiptBreakdown | None: ...
 
     def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
-        if trade_result.status == TradeStatus.FAIL:
+        if not trade_result.trade_successful:
             # Defaults to CRITICAL
             assert trade_result.exception is not None
             log_hyperdrive_crash_report(
                 trade_result,
-                log_level=self._pool.config.crash_log_level,
+                log_level=self.chain.config.crash_log_level,
                 crash_report_to_file=True,
                 crash_report_file_prefix="interactive_hyperdrive",
-                log_to_rollbar=self._pool.config.log_to_rollbar,
-                rollbar_log_prefix=self._pool.config.rollbar_log_prefix,
-                additional_info=self._pool.config.crash_report_additional_info,
+                log_to_rollbar=self.chain.config.log_to_rollbar,
+                rollbar_log_prefix=self.chain.config.rollbar_log_prefix,
+                additional_info=self.chain.config.crash_report_additional_info,
             )
 
-            if self._pool.config.exception_on_policy_error:
+            if self.chain.config.exception_on_policy_error:
                 # Check for slippage and if we want to throw an exception on slippage
                 if (
                     always_throw_exception
                     or (not trade_result.is_slippage)
-                    or (trade_result.is_slippage and self._pool.config.exception_on_policy_slippage)
+                    or (trade_result.is_slippage and self.chain.config.exception_on_policy_slippage)
                 ):
                     raise trade_result.exception
 
-        if trade_result.status != TradeStatus.SUCCESS:
+        if not trade_result.trade_successful:
             return None
         tx_receipt = trade_result.tx_receipt
         assert tx_receipt is not None
@@ -646,58 +781,32 @@ class HyperdriveAgent:
     # Analysis
     ################
 
-    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
-        """Returns all of the agent's positions across all hyperdrive pools.
+    def get_wallet(self, pool: Hyperdrive | None = None) -> HyperdriveWallet:
+        """Returns the wallet object for the agent for the given hyperdrive pool.
 
         Arguments
         ---------
-        show_closed_positions: bool, optional
-            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
-            When False, will only return currently open positions. Useful for gathering currently open positions.
-            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
-        coerce_float: bool, optional
-            Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
-
-        Returns
-        -------
-        pd.DataFrame
-            The agent's positions across all hyperdrive pools.
-        """
-        # Sync all events, then sync snapshots for pnl and value calculation
-        self._sync_events(self.agent)
-        self._sync_snapshot(self.agent)
-        # Query the snapshot for the most recent positions.
-        position_snapshot = get_position_snapshot(
-            session=self._pool.chain.db_session,
-            start_block=-1,
-            wallet_address=self.agent.address,
-            coerce_float=coerce_float,
-        ).drop("id", axis=1)
-        if not show_closed_positions:
-            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
-        # Add usernames
-        position_snapshot = self._pool._add_username_to_dataframe(position_snapshot, "wallet_address")
-        position_snapshot = self._pool._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
-        return position_snapshot
-
-    def get_wallet(self) -> HyperdriveWallet:
-        """Returns the wallet object for the agent for the given hyperdrive pool.
-
-        TODO this function will eventually use the active pool or take a pool as an argument
-        once agent gets detached from the pool.
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
         HyperdriveWallet
             Returns the HyperdriveWallet object for the given pool.
         """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Getting wallet object requires an active pool.")
 
-        self._sync_events(self.agent)
+        self._sync_events(pool)
+        hyperdrive_address = pool.interface.hyperdrive_address
+
         # Query current positions from the events table
         positions = get_current_positions(
-            self._pool.chain.db_session,
-            self.agent.checksum_address,
-            hyperdrive_address=self._pool.interface.hyperdrive_address,
+            self.chain.db_session,
+            self.address,
+            hyperdrive_address=hyperdrive_address,
             show_closed_positions=False,
             coerce_float=False,
         )
@@ -708,8 +817,8 @@ class HyperdriveAgent:
         withdrawal_shares_balance: FixedPoint = FixedPoint(0)
         for _, row in positions.iterrows():
             # Sanity checks
-            assert row["hyperdrive_address"] == self._pool.interface.hyperdrive_address
-            assert row["wallet_address"] == self.agent.checksum_address
+            assert row["hyperdrive_address"] == hyperdrive_address
+            assert row["wallet_address"] == self.address
             if row["token_id"] == "LP":
                 lp_balance = FixedPoint(row["token_balance"])
             elif row["token_id"] == "WITHDRAWAL_SHARE":
@@ -723,13 +832,11 @@ class HyperdriveAgent:
 
         # We do a balance of call to get base balance.
         base_balance = FixedPoint(
-            scaled_value=self._pool.interface.base_token_contract.functions.balanceOf(
-                self.agent.checksum_address
-            ).call()
+            scaled_value=pool.interface.base_token_contract.functions.balanceOf(self.address).call()
         )
 
         return HyperdriveWallet(
-            address=HexBytes(self.agent.checksum_address),
+            address=HexBytes(self.address),
             balance=Quantity(
                 amount=base_balance,
                 unit=TokenType.BASE,
@@ -740,11 +847,134 @@ class HyperdriveAgent:
             shorts=short_obj,
         )
 
-    def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+    def get_longs(self, pool: Hyperdrive | None = None) -> list[Long]:
+        """Returns longs for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Long]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return list(wallet.longs.values())
+
+    def get_shorts(self, pool: Hyperdrive | None = None) -> list[Short]:
+        """Returns shorts for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Short]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return list(wallet.shorts.values())
+
+    def get_lp(self, pool: Hyperdrive | None = None) -> FixedPoint:
+        """Returns lp balance for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Short]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return wallet.lp_tokens
+
+    def get_withdrawal_shares(self, pool: Hyperdrive | None = None) -> FixedPoint:
+        """Returns withdrawal shares balance for the agent for the given hyperdrive pool.
+
+        Arguments
+        ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[Short]
+            Returns the list of longs for the given pool.
+        """
+        wallet = self.get_wallet(pool)
+        return wallet.withdraw_shares
+
+    def get_positions(
+        self, pool_filter: Hyperdrive | None = None, show_closed_positions: bool = False, coerce_float: bool = False
+    ) -> pd.DataFrame:
+        """Returns all of the agent's positions across all hyperdrive pools.
+
+        Arguments
+        ---------
+        pool_filter: Hyperdrive, optional
+            The hyperdrive pool to query. Defaults to None, which will query all pools.
+        show_closed_positions: bool, optional
+            Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
+            When False, will only return currently open positions. Useful for gathering currently open positions.
+            When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+        coerce_float: bool, optional
+            Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
+
+        Returns
+        -------
+        pd.DataFrame
+            The agent's positions across all hyperdrive pools.
+        """
+        if pool_filter is None:
+            # TODO get positions on remote chains must pass in pool for now
+            # Eventually we get the list of pools from registry and track all pools in registry
+            raise NotImplementedError("Pool filter must be specified to get positions.")
+        # Sync all events, then sync snapshots for pnl and value calculation
+        self._sync_events(pool_filter)
+        self._sync_snapshot(pool_filter)
+        return self._get_positions(
+            pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
+        )
+
+    def _get_positions(
+        self, pool_filter: Hyperdrive | None, show_closed_positions: bool, coerce_float: bool
+    ) -> pd.DataFrame:
+        # Query the snapshot for the most recent positions.
+        if pool_filter is None:
+            hyperdrive_address = None
+        else:
+            hyperdrive_address = pool_filter.hyperdrive_address
+
+        position_snapshot = get_position_snapshot(
+            session=self.chain.db_session,
+            start_block=-1,
+            wallet_address=self.account.address,
+            hyperdrive_address=hyperdrive_address,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        if not show_closed_positions:
+            position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
+        # Add usernames
+        position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        return position_snapshot
+
+    def get_trade_events(
+        self, pool: Hyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
+    ) -> pd.DataFrame:
         """Returns the agent's current wallet.
 
         Arguments
         ---------
+        pool : Hyperdrive | None, optional
+            The hyperdrive pool to get trade events from.
         all_token_deltas: bool, optional
             When removing liquidity that results in withdrawal shares, the events table returns
             two entries for this transaction to keep track of token deltas (one for lp tokens and
@@ -759,17 +989,38 @@ class HyperdriveAgent:
         HyperdriveWallet
             The agent's current wallet.
         """
-        self._sync_events(self.agent)
+        if pool is None:
+            # TODO get positions on remote chains must pass in pool for now
+            # Eventually we get the list of pools from registry and track all pools in registry
+            raise NotImplementedError("Pool must be specified to get trade events.")
+        self._sync_events(pool)
+        return self._get_trade_events(all_token_deltas=all_token_deltas, pool=pool, coerce_float=coerce_float)
+
+    def _get_trade_events(
+        self,
+        pool: Hyperdrive | None,
+        all_token_deltas: bool,
+        coerce_float: bool,
+    ) -> pd.DataFrame:
+        """We call this function in both remote and local agents, as the remote call needs to
+        do argument checking."""
+        # If pool is None, we don't filter on hyperdrive address
+        if pool is None:
+            hyperdrive_address = None
+        else:
+            hyperdrive_address = pool.interface.hyperdrive_address
+
         return get_trade_events(
-            self._pool.chain.db_session,
-            self.agent.checksum_address,
+            self.chain.db_session,
+            hyperdrive_address=hyperdrive_address,
+            wallet_address=self.address,
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
 
     # Helper functions for analysis
 
-    def _sync_events(self, agent: HyperdrivePolicyAgent) -> None:
+    def _sync_events(self, pool: Hyperdrive) -> None:
         # Update the db with this wallet
         # Note that remote hyperdrive only updates the wallet wrt the agent itself.
         # TODO this function can be optimized to cache.
@@ -779,19 +1030,17 @@ class HyperdriveAgent:
         # table, based on if we're updating the table with all wallets or just a single wallet.
 
         # Remote hyperdrive stack syncs only the agent's wallet
-        trade_events_to_db(
-            [self._pool.interface], wallet_addr=agent.checksum_address, db_session=self._pool.chain.db_session
-        )
+        trade_events_to_db([pool.interface], wallet_addr=self.address, db_session=pool.chain.db_session)
         # We sync checkpoint events as well
-        checkpoint_events_to_db([self._pool.interface], db_session=self._pool.chain.db_session)
+        checkpoint_events_to_db([pool.interface], db_session=pool.chain.db_session)
 
-    def _sync_snapshot(self, agent: HyperdrivePolicyAgent) -> None:
+    def _sync_snapshot(self, pool: Hyperdrive) -> None:
         # Update the db with a snapshot of the wallet
 
         # Note that remote hyperdrive only updates snapshots wrt the agent itself.
         snapshot_positions_to_db(
-            [self._pool.interface],
-            wallet_addr=agent.checksum_address,
-            db_session=self._pool.chain.db_session,
-            calc_pnl=self._pool.config.calc_pnl,
+            [pool.interface],
+            wallet_addr=self.address,
+            db_session=self.chain.db_session,
+            calc_pnl=self.chain.config.calc_pnl,
         )

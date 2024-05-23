@@ -100,7 +100,7 @@ def test_prediction_example(fast_chain_fixture: LocalChain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
     base_needed = FixedPoint(100)
     delta = predict_long(hyperdrive_interface=interactive_hyperdrive.interface, base=base_needed)
     event = agent.open_long(base=base_needed)
@@ -117,7 +117,7 @@ def test_open_long_bonds(fast_chain_fixture: LocalChain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
 
     bonds_needed = FixedPoint(100)
     delta = predict_long(interactive_hyperdrive.interface, bonds=bonds_needed)
@@ -134,7 +134,7 @@ def test_open_short_base(fast_chain_fixture: LocalChain):
         flat_fee=FixedPoint(0),
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
 
     base_needed = FixedPoint(100)
     delta = predict_short(interactive_hyperdrive.interface, base=base_needed)
@@ -155,7 +155,7 @@ def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
     pool_state = deepcopy(hyperdrive_interface.current_pool_state)
 
     spot_price = hyperdrive_interface.calc_spot_price(pool_state)
@@ -174,7 +174,7 @@ def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     delta = predict_long(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
 
     # measure user wallet before trade
-    user_base_before = agent.agent.wallet.balance.amount
+    user_base_before = agent.get_wallet().balance.amount
     # measure pool before trade
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
@@ -198,10 +198,10 @@ def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     # does our prediction match the input
     assert isclose(delta.user.base, base_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
-    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
+    actual_delta_user_base = user_base_before - agent.get_wallet().balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     assert isclose(actual_delta_user_base, base_needed, abs_tol=FixedPoint("1e-16"))
-    actual_delta_user_bonds = list(agent.agent.wallet.longs.values())[0].balance
+    actual_delta_user_bonds = agent.get_longs()[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     # TODO fix tolerance
     # https://github.com/delvtech/agent0/issues/1357
@@ -228,7 +228,7 @@ def test_predict_open_long_base(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
 
     base_needed = FixedPoint(100_000)
     delta = predict_long(hyperdrive_interface=hyperdrive_interface, base=base_needed)
@@ -239,7 +239,7 @@ def test_predict_open_long_base(fast_chain_fixture: LocalChain):
     logging.info("predicted delta base is %s", delta.pool.base)
 
     # measure user wallet before trade
-    user_base_before = agent.agent.wallet.balance.amount
+    user_base_before = agent.get_wallet().balance.amount
     # measure pool before trade
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
@@ -263,7 +263,7 @@ def test_predict_open_long_base(fast_chain_fixture: LocalChain):
     # does our prediction match the input
     assert isclose(delta.user.base, base_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
-    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
+    actual_delta_user_base = user_base_before - agent.get_wallet().balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
     assert isclose(actual_delta_user_base, base_needed, abs_tol=FixedPoint("1e-16"))
 
@@ -287,7 +287,7 @@ def test_predict_open_short_bonds(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
 
     bonds_needed = FixedPoint(100_000)
     delta = predict_short(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)
@@ -299,7 +299,7 @@ def test_predict_open_short_bonds(fast_chain_fixture: LocalChain):
     logging.info("predicted pool delta base is %s", delta.pool.base)
 
     # measure user wallet before trade
-    user_base_before = agent.agent.wallet.balance.amount
+    user_base_before = agent.get_wallet().balance.amount
     # # measure pool before trade
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
@@ -323,9 +323,9 @@ def test_predict_open_short_bonds(fast_chain_fixture: LocalChain):
     # does our prediction match the input
     assert isclose(delta.user.bonds, bonds_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
-    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
+    actual_delta_user_base = user_base_before - agent.get_wallet().balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
-    actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
+    actual_delta_user_bonds = agent.get_shorts()[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-3"))
 
@@ -349,7 +349,7 @@ def test_predict_open_short_base(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    agent = fast_chain_fixture.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive)
 
     # start with base_needed, convert to bonds_needed
     base_needed = FixedPoint(100_000)
@@ -367,7 +367,7 @@ def test_predict_open_short_base(fast_chain_fixture: LocalChain):
     logging.info("predicted delta base is %s", delta.pool.base)
 
     # measure user wallet before trade
-    user_base_before = agent.agent.wallet.balance.amount
+    user_base_before = agent.get_wallet().balance.amount
     # # measure pool before trade
     pool_state_before = deepcopy(hyperdrive_interface.current_pool_state)
     pool_bonds_before = pool_state_before.pool_info.bond_reserves
@@ -391,9 +391,9 @@ def test_predict_open_short_base(fast_chain_fixture: LocalChain):
     # does our prediction match the input
     assert isclose(delta.user.bonds, bonds_needed, abs_tol=FixedPoint("1e-16"))
     # does the actual outcome match the prediction
-    actual_delta_user_base = user_base_before - agent.agent.wallet.balance.amount
+    actual_delta_user_base = user_base_before - agent.get_wallet().balance.amount
     logging.info("actual user delta base is %s", actual_delta_user_base)
-    actual_delta_user_bonds = list(agent.agent.wallet.shorts.values())[0].balance
+    actual_delta_user_bonds = agent.get_shorts()[0].balance
     logging.info("actual user delta bonds is %s", actual_delta_user_bonds)
     assert isclose(actual_delta_user_bonds, bonds_needed, abs_tol=FixedPoint("1e-3"))
 

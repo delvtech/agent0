@@ -80,7 +80,7 @@ def fuzz_long_short_maturity_values(
         chain_config,
         fuzz_test_name="fuzz_long_short_maturity_values",
     )
-    signer = interactive_hyperdrive.init_agent(eth=FixedPoint(100))
+    signer = chain.init_agent(eth=FixedPoint(100), pool=interactive_hyperdrive)
 
     # Add a small amount to ensure we're not at the edge of a checkpoint
     # This prevents the latter step of `chain.advance_time(position_duration+30)` advancing past a checkpoint
@@ -110,7 +110,7 @@ def fuzz_long_short_maturity_values(
     logging.info("Create a checkpoint...")
     # Get the maturity checkpoint for the previously created checkpoint
     checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
-    interactive_hyperdrive.interface.create_checkpoint(signer.agent, checkpoint_time=checkpoint_id)
+    interactive_hyperdrive.interface.create_checkpoint(signer.account, checkpoint_time=checkpoint_id)
     maturity_checkpoint = interactive_hyperdrive.interface.current_pool_state.checkpoint
 
     # Ensure this maturity checkpoint is the maturity of all open positions
@@ -164,7 +164,7 @@ def fuzz_long_short_maturity_values(
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
-                error, interactive_hyperdrive.interface, agent.agent, additional_info=additional_info
+                error, interactive_hyperdrive.interface, agent.account, additional_info=additional_info
             )
             # Crash reporting already going to file in logging
             log_hyperdrive_crash_report(

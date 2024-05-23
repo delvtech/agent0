@@ -14,7 +14,16 @@ from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, RemoveL
 
 
 @pytest.mark.anvil
-def test_simple_lp_policy(fast_chain_fixture: LocalChain):
+def test_simple_lp_policy():
+
+    chain = LocalChain(
+        config=LocalChain.Config(
+            chain_port=6000,
+            db_port=6001,
+            # This test requires the non-policy actions to be passed into the policy's post trade stage.
+            always_execute_policy_post_action=True,
+        )
+    )
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
     # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
     initial_pool_config = LocalHyperdrive.Config(
@@ -27,19 +36,18 @@ def test_simple_lp_policy(fast_chain_fixture: LocalChain):
         flat_fee=FixedPoint("0.0005"),
         governance_lp_fee=FixedPoint("0.15"),
         governance_zombie_fee=FixedPoint("0.03"),
-        # This test requires the non-policy actions to be passed into the policy's post trade stage.
-        always_execute_policy_post_action=True,
     )
-    interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+    interactive_hyperdrive = LocalHyperdrive(chain, initial_pool_config)
 
     # Deploy LP agent & add base liquidity
     pnl_target = FixedPoint("8.0")
     delta_liquidity = FixedPoint("100")
     minimum_liquidity_tokens = FixedPoint("100")
-    lp_agent = interactive_hyperdrive.init_agent(
+    lp_agent = chain.init_agent(
         base=FixedPoint("1_000_000"),
         eth=FixedPoint("1_000"),
         name="Lisa",
+        pool=interactive_hyperdrive,
         policy=PolicyZoo.simple_lp,
         policy_config=PolicyZoo.simple_lp.Config(
             pnl_target=pnl_target,
@@ -50,15 +58,15 @@ def test_simple_lp_policy(fast_chain_fixture: LocalChain):
     _ = lp_agent.add_liquidity(base=FixedPoint("10_000"))
 
     # Do dumb trades until the LP makes a move; that move should be adding liquidity
-    hyperdrive_agent0 = interactive_hyperdrive.init_agent(
-        base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), name="Bob"
+    hyperdrive_agent0 = chain.init_agent(
+        base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), pool=interactive_hyperdrive, name="Bob"
     )
     trade_event_list = []
     while len(trade_event_list) == 0:
         trade_amount = FixedPoint("1_000")
         hyperdrive_agent0.add_funds(base=trade_amount)
         open_event = hyperdrive_agent0.open_short(trade_amount)
-        fast_chain_fixture.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         hyperdrive_agent0.close_short(open_event.maturity_time, open_event.bond_amount)
         trade_event_list = lp_agent.execute_policy_action()
 
@@ -72,8 +80,8 @@ def test_simple_lp_policy(fast_chain_fixture: LocalChain):
     # Do smart trades until the LP removes liquidity
     # It's possible the LP could add liquidity in the first couple of trades,
     # depending on how much they influence the average PNL.
-    hyperdrive_agent1 = interactive_hyperdrive.init_agent(
-        base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), name="Bob"
+    hyperdrive_agent1 = chain.init_agent(
+        base=FixedPoint("1_000_000"), eth=FixedPoint("1_000"), pool=interactive_hyperdrive, name="Bob"
     )
     trade_event_list = []
     removed_liquidity = False
@@ -82,7 +90,7 @@ def test_simple_lp_policy(fast_chain_fixture: LocalChain):
         hyperdrive_agent1.add_funds(base=trade_amount)
         interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))  # LP gets no extra earnings from variable
         open_event = hyperdrive_agent1.open_long(trade_amount)
-        fast_chain_fixture.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
+        chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
         hyperdrive_agent1.close_long(open_event.maturity_time, open_event.bond_amount)
 
         trade_event_list = lp_agent.execute_policy_action()
@@ -96,3 +104,5 @@ def test_simple_lp_policy(fast_chain_fixture: LocalChain):
     assert isinstance(trade_event_list[0], RemoveLiquidity)
     # always should be close to delta_liquidity
     assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("0.1"))
+
+    chain.cleanup()

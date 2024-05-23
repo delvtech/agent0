@@ -1,11 +1,14 @@
 """Test utils specific for system tests."""
 
-from typing import Type
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Type
 
 from fixedpointmath import FixedPoint
 
-from agent0.core.hyperdrive.interactive import LocalHyperdrive
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+if TYPE_CHECKING:
+    from agent0.core.hyperdrive.interactive import LocalHyperdrive
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
 
 def expect_failure_with_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[HyperdriveBasePolicy]):
@@ -50,9 +53,10 @@ def run_with_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[Hyperdri
     in_policy: HyperdriveBasePolicy
         The policy that we expect to fail.
     """
-    agent = in_hyperdrive.init_agent(
+    agent = in_hyperdrive.chain.init_agent(
         base=FixedPoint(10_000_000),
         eth=FixedPoint(100),
+        pool=in_hyperdrive,
         policy=in_policy,
         policy_config=in_policy.Config(),
     )
@@ -71,9 +75,10 @@ def run_with_non_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[Hype
     in_policy: HyperdriveBasePolicy
         The policy that we expect to fail.
     """
-    agent = in_hyperdrive.init_agent(
+    agent = in_hyperdrive.chain.init_agent(
         base=FixedPoint(0.001),
         eth=FixedPoint(100),
+        pool=in_hyperdrive,
         policy=in_policy,
         policy_config=in_policy.Config(),
     )
