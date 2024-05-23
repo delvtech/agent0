@@ -57,13 +57,14 @@ if TYPE_CHECKING:
     from .chain import Chain
     from .hyperdrive import Hyperdrive
 
-# We keep this class bare bones, while we want the logic functions in InteractiveHyperdrive to be private
-# Hence, we call protected class methods in this class.
 # pylint: disable=protected-access
+# pylint: disable=too-many-lines
 
 
 class HyperdriveAgent:
     """Interactive Hyperdrive Agent."""
+
+    # pylint: disable=too-many-public-methods
 
     ################
     # Initialization

@@ -62,9 +62,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         chain = LocalChain(local_chain_config)
 
         # Fuzz over config values
-        hyperdrive_config = generate_fuzz_hyperdrive_config(
-            rng, log_to_rollbar, rng_seed, lp_share_price_test=parsed_args.lp_share_price_test
-        )
+        hyperdrive_config = generate_fuzz_hyperdrive_config(rng, lp_share_price_test=parsed_args.lp_share_price_test)
         hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
 
         raise_error_on_fail = False

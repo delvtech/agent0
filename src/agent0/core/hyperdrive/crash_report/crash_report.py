@@ -71,10 +71,14 @@ def build_crash_trade_result(
         The exception that was thrown
     interface: HyperdriveReadInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-    agent: HyperdrivePolicyAgent | None, optional.
-        Object containing a wallet address and Agent for determining trades. If None, won't report the agent.
+    account: LocalAccount | None, optional.
+        The LocalAccount object that made the trade. If None, won't report the agent.
+    wallet: HyperdriveWallet | None, optional
+        The agent's wallet. If None, won't report the wallet.
+    policy: HyperdriveBasePolicy | None, optional
+        The agent's policy. If None, won't report the policy.
     trade_object: Trade[HyperdriveMarketAction] | None, optional
-        A trade provided by a HyperdrivePolicyAgent. If None, won't report the trade object.
+        A trade provided by a LocalAgent. If None, won't report the trade object.
     additional_info: dict[str, Any] | None, optional
         Additional information used for crash reporting, optional
     pool_state: PoolState | None, optional

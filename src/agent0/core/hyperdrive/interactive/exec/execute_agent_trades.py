@@ -5,23 +5,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from copy import deepcopy
-from typing import TYPE_CHECKING
 
 from eth_account.signers.local import LocalAccount
 from numpy.random._generator import Generator
 from web3.types import Nonce
 
-from agent0.core.base import MarketType, Quantity, TokenType, Trade
-from agent0.core.hyperdrive import (
-    HyperdriveActionType,
-    HyperdriveMarketAction,
-    HyperdriveWallet,
-    Long,
-    Short,
-    TradeResult,
-)
+from agent0.core.base import MarketType, Trade
+from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet, TradeResult
 from agent0.core.hyperdrive.agent import (
-    HyperdriveMarketAction,
     close_long_trade,
     close_short_trade,
     redeem_withdraw_shares_trade,
@@ -129,6 +120,9 @@ async def async_execute_agent_trades(
     randomize_liquidation: bool, optional
         If set, will randomize the order of liquidation trades.
         Defaults to False.
+    rng: Generator, optional
+        The RNG used to randomize liquidation trades.
+        Defaults to None.
 
     Returns
     -------
@@ -217,8 +211,10 @@ async def async_execute_single_trade(
     ---------
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
-    agent: HyperdrivePolicyAgent
-        The HyperdrivePolicyAgent that is conducting the trade.
+    account: LocalAccount
+        The LocalAccount that is conducting the trade.
+    account_wallet: HyperdriveWallet
+        The wallet of the account.
     trade_object: Trade[HyperdriveMarketAction]
         The trade to execute.
     execute_policy_post_action: bool
@@ -292,8 +288,12 @@ def _handle_contract_call_to_trade(
         The list of trades that were executed.
     interface: HyperdriveReadInterface
         The read interface for the market.
-    agent: HyperdrivePolicyAgent
-        The agent that executed the trades.
+    account: LocalAccount
+        The account that executed the trades.
+    wallet: HyperdriveWallet
+        The wallet of the account.
+    policy: HyperdriveBasePolicy | None
+        The policy attached to the agent.
 
     Returns
     -------
@@ -335,24 +335,26 @@ def _handle_contract_call_to_trade(
 
 
 async def _async_match_contract_call_to_trade(
-    agent: LocalAccount,
+    account: LocalAccount,
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
-    preview_before_trade,
+    preview_before_trade: bool,
 ) -> ReceiptBreakdown:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
     ---------
-    agent: HyperdrivePolicyAgent
-        Object containing a wallet address and Agent for determining trades.
+    account: LocalAccount
+        Object containing the wallet address.
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
     trade_envelope: Trade[HyperdriveMarketAction]
         A specific Hyperdrive trade requested by the given agent.
     nonce: Nonce, optional
         Override the transaction number assigned to the transaction call from the agent wallet.
+    preview_before_trade: bool
+        Whether or not to preview the trade before it is executed.
 
     Returns
     -------
@@ -366,7 +368,7 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.OPEN_LONG:
             trade_result = await interface.async_open_long(
-                agent,
+                account,
                 trade.trade_amount,
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
@@ -378,7 +380,7 @@ async def _async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await interface.async_close_long(
-                agent,
+                account,
                 trade.trade_amount,
                 trade.maturity_time,
                 slippage_tolerance=trade.slippage_tolerance,
@@ -389,7 +391,7 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.OPEN_SHORT:
             trade_result = await interface.async_open_short(
-                agent,
+                account,
                 trade.trade_amount,
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
@@ -401,7 +403,7 @@ async def _async_match_contract_call_to_trade(
             if not trade.maturity_time:
                 raise ValueError("Maturity time was not provided, can't close long position.")
             trade_result = await interface.async_close_short(
-                agent,
+                account,
                 trade.trade_amount,
                 trade.maturity_time,
                 slippage_tolerance=trade.slippage_tolerance,
@@ -416,7 +418,7 @@ async def _async_match_contract_call_to_trade(
             if not trade.max_apr:
                 raise AssertionError("max_apr is required for ADD_LIQUIDITY")
             trade_result = await interface.async_add_liquidity(
-                agent,
+                account,
                 trade.trade_amount,
                 trade.min_apr,
                 trade.max_apr,
@@ -428,7 +430,7 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.REMOVE_LIQUIDITY:
             trade_result = await interface.async_remove_liquidity(
-                agent,
+                account,
                 trade.trade_amount,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,
@@ -437,7 +439,7 @@ async def _async_match_contract_call_to_trade(
 
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
             trade_result = await interface.async_redeem_withdraw_shares(
-                agent,
+                account,
                 trade.trade_amount,
                 gas_limit=trade.gas_limit,
                 nonce=nonce,

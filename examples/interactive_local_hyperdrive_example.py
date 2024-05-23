@@ -1,3 +1,6 @@
+"""An example of using agent0 to simulate hyperdrive on a local chain."""
+
+# %%
 import datetime
 
 from fixedpointmath import FixedPoint

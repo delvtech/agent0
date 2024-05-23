@@ -1,3 +1,8 @@
+"""An example of using agent0 to execute or analyze trades on a remote chain."""
+
+# %%
+# pylint: disable=invalid-name
+
 from fixedpointmath import FixedPoint
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo

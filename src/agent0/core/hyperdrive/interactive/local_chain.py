@@ -33,6 +33,9 @@ if TYPE_CHECKING:
 
 
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=protected-access
+
+
 class LocalChain(Chain):
     """Launches a local anvil chain in a subprocess, along with a postgres container."""
 
@@ -557,6 +560,7 @@ class LocalChain(Chain):
     ################
     # Agent functions
     ################
+
     def init_agent(
         self,
         private_key: str | None = None,
@@ -579,14 +583,14 @@ class LocalChain(Chain):
             An optional policy to set as the active policy.
         policy_config: HyperdrivePolicy, optional
             The configuration for the attached policy.
+        name: str, optional
+            The name of the agent. Defaults to the wallet address.
         base: FixedPoint | None, optional
             The amount of base to fund the agent with. Defaults to 0.
             If a private key is provided then the base amount is added to their previous balance.
         eth: FixedPoint | None, optional
             The amount of ETH to fund the agent with. Defaults to 0.
             If a private key is provided then the eth amount is added to their previous balance.
-        name: str, optional
-            The name of the agent. Defaults to the wallet address.
 
         Returns
         -------

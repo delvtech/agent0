@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
+# pylint: disable=protected-access
 
 
 class LocalHyperdrive(Hyperdrive):
@@ -159,6 +160,7 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         chain: LocalChain,

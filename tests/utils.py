@@ -1,11 +1,14 @@
 """Test utils specific for system tests."""
 
-from typing import Type
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Type
 
 from fixedpointmath import FixedPoint
 
-from agent0.core.hyperdrive.interactive import LocalHyperdrive
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+if TYPE_CHECKING:
+    from agent0.core.hyperdrive.interactive import LocalHyperdrive
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
 
 def expect_failure_with_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[HyperdriveBasePolicy]):

@@ -51,19 +51,13 @@ LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
 
 # pylint: disable=too-many-locals
-def generate_fuzz_hyperdrive_config(
-    rng: Generator, log_to_rollbar: bool, rng_seed: int, lp_share_price_test: bool
-) -> LocalHyperdrive.Config:
+def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -> LocalHyperdrive.Config:
     """Fuzz over hyperdrive config.
 
     Arguments
     ---------
     rng: np.random.Generator
         Random number generator.
-    log_to_rollbar: bool
-        If True, log errors to rollbar.
-    rng_seed: int
-        Seed for the rng.
     lp_share_price_test: bool
         If True, uses lp share price test fuzz parameters.
 

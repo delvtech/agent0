@@ -480,7 +480,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             # TODO we likely want to explicitly check for slippage here and not
             # get anvil state dump if it's a slippage error and the user wants to
             # ignore slippage errors
-            trade_result.anvil_state = get_anvil_state_dump(self.chain._web3)
+            trade_result.anvil_state = get_anvil_state_dump(self.chain._web3)  # pylint: disable=protected-access
             if self.chain.config.crash_log_ticker:
                 if trade_result.additional_info is None:
                     trade_result.additional_info = {"trade_events": self.get_trade_events()}

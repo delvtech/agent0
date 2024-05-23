@@ -34,6 +34,8 @@ YEAR_IN_SECONDS = 31_536_000
 # Long test file
 # pylint: disable=too-many-lines
 
+# pylint: disable=protected-access
+
 
 def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdrive, agent: LocalHyperdriveAgent):
     # pylint: disable=too-many-locals
