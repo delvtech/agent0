@@ -368,7 +368,7 @@ def run_local_fuzz_bots(
 
         # The deployer pays gas for advancing time
         # We check the eth balance and refund if it runs low
-        deployer_account = hyperdrive_pool._deployed_hyperdrive.deploy_account  # pylint: disable=protected-access
+        deployer_account = hyperdrive_pool.chain.get_deployer_account()
         deployer_agent_eth = hyperdrive_pool.interface.get_eth_base_balances(deployer_account)[0]
         if deployer_agent_eth < minimum_avg_agent_eth:
             _ = set_anvil_account_balance(

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-import os
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import exc
@@ -23,14 +23,14 @@ from .interface import (
 from .schema import CheckpointInfo, HyperdriveAddrToName, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
 
 
-def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
+def export_db_to_file(out_dir: Path, db_session: Session | None = None) -> None:
     """Export all tables from the database and write as parquet files, one per table.
     We use parquet since it's type aware, so all original types (including Decimals) are preserved
     when read
 
     Arguments
     ---------
-    out_dir: str
+    out_dir: Path
         The directory to write the parquet files to. It's assumed this directory already exists.
     db_session: Session | None, optional
         The initialized session object. If none, will read credentials from `postgres.env`
@@ -40,37 +40,35 @@ def export_db_to_file(out_dir: str, db_session: Session | None = None) -> None:
         db_session = initialize_session()
 
     # Base tables
-    get_addr_to_username(db_session).to_parquet(
-        os.path.join(out_dir, "addr_to_username.parquet"), index=False, engine="pyarrow"
-    )
+    get_addr_to_username(db_session).to_parquet(out_dir / "addr_to_username.parquet", index=False, engine="pyarrow")
 
     # Hyperdrive tables
     get_hyperdrive_addr_to_name(db_session).to_parquet(
-        os.path.join(out_dir, "hyperdrive_addr_to_name.parquet"), index=False, engine="pyarrow"
+        out_dir / "hyperdrive_addr_to_name.parquet", index=False, engine="pyarrow"
     )
     get_trade_events(db_session, all_token_deltas=True).to_parquet(
-        os.path.join(out_dir, "trade_event.parquet"), index=False, engine="pyarrow"
+        out_dir / "trade_event.parquet", index=False, engine="pyarrow"
     )
     get_pool_config(db_session, coerce_float=False).to_parquet(
-        os.path.join(out_dir, "pool_config.parquet"), index=False, engine="pyarrow"
+        out_dir / "pool_config.parquet", index=False, engine="pyarrow"
     )
     get_checkpoint_info(db_session, coerce_float=False).to_parquet(
-        os.path.join(out_dir, "checkpoint_info.parquet"), index=False, engine="pyarrow"
+        out_dir / "checkpoint_info.parquet", index=False, engine="pyarrow"
     )
     get_pool_info(db_session, coerce_float=False).to_parquet(
-        os.path.join(out_dir, "pool_info.parquet"), index=False, engine="pyarrow"
+        out_dir / "pool_info.parquet", index=False, engine="pyarrow"
     )
     get_position_snapshot(db_session, coerce_float=False).to_parquet(
-        os.path.join(out_dir, "position_snapshot.parquet"), index=False, engine="pyarrow"
+        out_dir / "position_snapshot.parquet", index=False, engine="pyarrow"
     )
 
 
-def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
+def import_to_pandas(in_dir: Path) -> dict[str, pd.DataFrame]:
     """Helper function to load data from parquet
 
     Arguments
     ---------
-    in_dir: str
+    in_dir: Path
         The directory to read the parquet files from that matches the out_dir passed into export_db_to_file
 
     Returns
@@ -80,26 +78,24 @@ def import_to_pandas(in_dir: str) -> dict[str, pd.DataFrame]:
     """
     out = {}
 
-    out["addr_to_username"] = pd.read_parquet(os.path.join(in_dir, "addr_to_username.parquet"), engine="pyarrow")
-    out["hyperdrive_addr_to_name"] = pd.read_parquet(
-        os.path.join(in_dir, "hyperdrive_addr_to_name.parquet"), engine="pyarrow"
-    )
-    out["trade_event"] = pd.read_parquet(os.path.join(in_dir, "trade_event.parquet"), engine="pyarrow")
-    out["pool_config"] = pd.read_parquet(os.path.join(in_dir, "pool_config.parquet"), engine="pyarrow")
-    out["checkpoint_info"] = pd.read_parquet(os.path.join(in_dir, "checkpoint_info.parquet"), engine="pyarrow")
-    out["pool_info"] = pd.read_parquet(os.path.join(in_dir, "pool_info.parquet"), engine="pyarrow")
-    out["position_snapshot"] = pd.read_parquet(os.path.join(in_dir, "position_snapshot.parquet"), engine="pyarrow")
+    out["addr_to_username"] = pd.read_parquet(in_dir / "addr_to_username.parquet", engine="pyarrow")
+    out["hyperdrive_addr_to_name"] = pd.read_parquet(in_dir / "hyperdrive_addr_to_name.parquet", engine="pyarrow")
+    out["trade_event"] = pd.read_parquet(in_dir / "trade_event.parquet", engine="pyarrow")
+    out["pool_config"] = pd.read_parquet(in_dir / "pool_config.parquet", engine="pyarrow")
+    out["checkpoint_info"] = pd.read_parquet(in_dir / "checkpoint_info.parquet", engine="pyarrow")
+    out["pool_info"] = pd.read_parquet(in_dir / "pool_info.parquet", engine="pyarrow")
+    out["position_snapshot"] = pd.read_parquet(in_dir / "position_snapshot.parquet", engine="pyarrow")
     return out
 
 
-def import_to_db(db_session: Session, in_dir: str, drop=True) -> None:
+def import_to_db(db_session: Session, in_dir: Path, drop=True) -> None:
     """Helper function to load data from parquet into the db
 
     Arguments
     ---------
     db_session: Session
         The sqlalchemy session object
-    in_dir: str
+    in_dir: Path
         The directory to read the parquet files from that matches the out_dir passed into export_db_to_file
     drop: bool, optional
         Whether to drop the existing data in the db before importing

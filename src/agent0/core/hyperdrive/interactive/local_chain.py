@@ -121,7 +121,7 @@ class LocalChain(Chain):
 
         # Snapshot bookkeeping
         # TODO snapshot dir will be clobbered if you run multiple chains simultaneously
-        self._snapshot_dir = config.snapshot_dir + "/" + self.chain_id + "/"
+        self._snapshot_dir = Path(config.snapshot_dir) / self.chain_id
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
@@ -331,13 +331,13 @@ class LocalChain(Chain):
     # Saving and Loading
     ##########
 
-    def save_state(self, save_dir: str | None = None, save_prefix: str | None = None) -> str:
+    def save_state(self, save_dir: Path | None = None, save_prefix: str | None = None) -> Path:
         """Saves the interactive state using the `anvil_dumpState` RPC call.
         Saving/loading state can be done across chains.
 
         Arguments
         ---------
-        save_dir: str, optional
+        save_dir: Path, optional
             The directory to save the state to. Defaults to `{Config.save_state_dir}/{save_prefix}_{current_time}/`,
             where `Config.save_state_dir` defaults to `./.interactive_state/`.
         save_prefix: str, optional
@@ -352,14 +352,14 @@ class LocalChain(Chain):
             curr_time = datetime.utcnow().replace(tzinfo=timezone.utc)
             fn_time_str = curr_time.strftime("%Y_%m_%d_%H_%M_%S_Z")
             if save_prefix is None:
-                save_dir = str(Path(".interactive_state/") / fn_time_str)
+                save_dir = Path(".interactive_state/") / fn_time_str
             else:
-                save_dir = str(Path(".interactive_state/") / (save_prefix + "_" + fn_time_str))
+                save_dir = Path(".interactive_state/") / (save_prefix + "_" + fn_time_str)
 
         self._dump_db(save_dir)
         anvil_state_dump = get_anvil_state_dump(self._web3)
         assert anvil_state_dump is not None
-        anvil_state_dump_file = Path(save_dir) / "anvil_state.dump"
+        anvil_state_dump_file = save_dir / "anvil_state.dump"
 
         with open(anvil_state_dump_file, "w", encoding="utf-8") as f:
             f.write(anvil_state_dump)
@@ -368,7 +368,7 @@ class LocalChain(Chain):
 
         return save_dir
 
-    def load_state(self, load_dir: str) -> None:
+    def load_state(self, load_dir: Path) -> None:
         """Loads the interactive state from the `save_state` function.
         Saving/loading state can be done across chains.
 
@@ -386,7 +386,7 @@ class LocalChain(Chain):
 
         Arguments
         ---------
-        load_dir: str
+        load_dir: Path
             The directory to load the state from.
         """
         raise NotImplementedError
@@ -439,7 +439,7 @@ class LocalChain(Chain):
         # Note this will wipe the agent's active pool.
         self._load_agent_bookkeeping(self._snapshot_dir)
 
-        # The hyperdrive interface in deployed pools need to wipe it's cache
+        # The hyperdrive interface in deployed pools need to wipe their cache
         for pool in self._deployed_hyperdrive_pools:
             pool._reinit_state_after_load_snapshot()  # pylint: disable=protected-access
 
@@ -460,27 +460,25 @@ class LocalChain(Chain):
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         self._deployed_hyperdrive_pools.append(pool)
 
-    def _dump_db(self, save_dir: str):
+    def _dump_db(self, save_dir: Path):
         # TODO parameterize the save path
-        export_path = str(Path(save_dir))  # pylint: disable=protected-access
-        os.makedirs(export_path, exist_ok=True)
-        export_db_to_file(export_path, self.db_session)
+        os.makedirs(save_dir, exist_ok=True)
+        export_db_to_file(save_dir, self.db_session)
 
-    def _load_db(self, load_dir: str):
+    def _load_db(self, load_dir: Path):
         # TODO parameterize the load path
-        import_path = str(Path(load_dir))  # pylint: disable=protected-access
-        import_to_db(self.db_session, import_path, drop=True)
+        import_to_db(self.db_session, load_dir, drop=True)
 
-    def _save_pool_bookkeeping(self, save_dir: str) -> None:
+    def _save_pool_bookkeeping(self, save_dir: Path) -> None:
         # Save bookkeeping of deployed pools
         # We save the addresses of deployed pools for loading
-        pool_filename = save_dir + "pools.pkl"
+        pool_filename = save_dir / "pools.pkl"
         pool_addr_list = [pool.hyperdrive_address for pool in self._deployed_hyperdrive_pools]
         with open(pool_filename, "wb") as file:
             dill.dump(pool_addr_list, file, dill.HIGHEST_PROTOCOL)
 
-    def _load_pool_bookkeeping(self, load_dir: str) -> None:
-        pool_filename = load_dir + "pools.pkl"
+    def _load_pool_bookkeeping(self, load_dir: Path) -> None:
+        pool_filename = load_dir / "pools.pkl"
         with open(pool_filename, "rb") as file:
             hyperdrive_pools: list[str] = dill.load(file)
 
@@ -490,21 +488,21 @@ class LocalChain(Chain):
             p for p in self._deployed_hyperdrive_pools if p.hyperdrive_address in hyperdrive_pools
         ]
 
-    def _save_agent_bookkeeping(self, save_dir: str) -> None:
-        policy_file = save_dir + "agents.pkl"
+    def _save_agent_bookkeeping(self, save_dir: Path) -> None:
+        policy_file = save_dir / "agents.pkl"
 
         agents = [agent.address for agent in self._chain_agents]
         with open(policy_file, "wb") as file:
             # We use dill, as pickle can't store local objects
             dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
         for agent in self._chain_agents:
-            active_pool_file = save_dir + agent.address + "-active-pool.pkl"
+            active_pool_file = save_dir / (agent.address + "-active-pool.pkl")
             if agent._active_pool is not None:
                 with open(active_pool_file, "wb") as file:
                     dill.dump(agent._active_pool.hyperdrive_address, file, protocol=dill.HIGHEST_PROTOCOL)
 
-    def _load_agent_bookkeeping(self, load_dir: str) -> None:
-        policy_file = load_dir + "agents.pkl"
+    def _load_agent_bookkeeping(self, load_dir: Path) -> None:
+        policy_file = load_dir / "agents.pkl"
         with open(policy_file, "rb") as file:
             # We use dill, as pickle can't store local objects
             load_agents = dill.load(file)
@@ -514,7 +512,7 @@ class LocalChain(Chain):
         # Clear the _max_approval_pools to ensure we call approval
         # NOTE this might be a duplicate approval, which should be okay
         for agent in self._chain_agents:
-            active_pool_file = load_dir + agent.address + "-active-pool.pkl"
+            active_pool_file = load_dir / (agent.address + "-active-pool.pkl")
             # If the file doesn't exist, there was no active pool at time of snapshot
             if not os.path.isfile(active_pool_file):
                 agent._active_pool = None
@@ -534,17 +532,17 @@ class LocalChain(Chain):
 
             agent._max_approval_pools = {}
 
-    def _save_policy_state(self, save_dir: str) -> None:
+    def _save_policy_state(self, save_dir: Path) -> None:
         for agent in self._chain_agents:
-            policy_file = save_dir + agent.address + ".pkl"
+            policy_file = save_dir / (agent.address + ".pkl")
             with open(policy_file, "wb") as file:
                 # We use dill, as pickle can't store local objects
                 # This should also store None if there is no active policy
                 dill.dump(agent._active_policy, file, protocol=dill.HIGHEST_PROTOCOL)
 
-    def _load_policy_state(self, load_dir: str) -> None:
+    def _load_policy_state(self, load_dir: Path) -> None:
         for agent in self._chain_agents:
-            policy_file = load_dir + agent.address + ".pkl"
+            policy_file = load_dir / (agent.address + ".pkl")
             with open(policy_file, "rb") as file:
                 # If we don't load rng, we get the current RNG state and set it after loading
                 rng = None

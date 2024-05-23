@@ -78,7 +78,7 @@ def build_crash_trade_result(
     policy: HyperdriveBasePolicy | None, optional
         The agent's policy. If None, won't report the policy.
     trade_object: Trade[HyperdriveMarketAction] | None, optional
-        A trade provided by a LocalAgent. If None, won't report the trade object.
+        A trade provided by the LocalAccount. If None, won't report the trade object.
     additional_info: dict[str, Any] | None, optional
         Additional information used for crash reporting, optional
     pool_state: PoolState | None, optional
