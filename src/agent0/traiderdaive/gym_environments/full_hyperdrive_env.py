@@ -393,7 +393,7 @@ class FullHyperdriveEnv(gym.Env):
             # Always try and remove withdrawal shares
             if self.rl_bot.get_wallet().withdraw_shares > 0:
                 # TODO error handling or check when withdrawal shares are not withdrawable
-                self.rl_bot.redeem_withdraw_share(self.rl_bot.get_wallet().withdraw_shares)
+                self.rl_bot.redeem_withdrawal_share(self.rl_bot.get_wallet().withdraw_shares)
         except Exception as err:  # pylint: disable=broad-except
             # TODO use logging here
             print(f"Warning: Failed to LP: {err=}")

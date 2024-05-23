@@ -1,5 +1,14 @@
 """An example of using agent0 to execute or analyze trades on a remote chain."""
 
+# %% [markdown]
+# This example demonstrates how to connect to a remote chain for analysis.
+# It is a demo, however, so we will spoof a remote chain using similar steps to the local hyperdrive example.
+
+# %% [markdown]
+#####################
+# Initialization
+#####################
+
 # %%
 # pylint: disable=invalid-name
 
@@ -14,25 +23,37 @@ from agent0.core.base.make_key import make_private_key
 #####################
 
 # %%
-# Set the rpc_uri to the chain, e.g., to sepolia testnet
+# In a typical remote setup we would want to set the rpc_uri to a remote chain,
+# such as Sepolia testnet:
 # rpc_uri = "http://uri.to.sepolia.testnet"
+# hyperdrive_address = "0x0000000000000000000000000000000000000000"
 
-# For this example, we launch a chain and local hyperdrive, and set the rpc_uri and hyperdrive address from these.
+# In addition to explicitly defining a contract address, we can also query the deployed registry to
+# look up registered hyperdrive pools. For example, we can define the registry address on Sepolia testnet,
+# then query it for the list of registered pools:
+# registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
+# hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
+
+# For this example, we instead launch a chain and local hyperdrive, and connect the remote chains to these resources.
 local_chain = LocalChain()
 local_hyperdrive = LocalHyperdrive(local_chain)
 rpc_uri = local_chain.rpc_uri
 hyperdrive_address = local_hyperdrive.hyperdrive_address
 
-# Need to set different db port here to avoid port collisions with local chain
+
+# Now we can treat the above as a remote chain and pool for our demonstration
+# NOTE: Need to set different db port here to avoid port collisions with local chain.
 chain = Chain(rpc_uri, config=Chain.Config(db_port=1234))
+hyperdrive_config = Hyperdrive.Config()
+hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
 # %%
 
-# Initialize agents
+# Initialize agents:
 
 # We set the private key here. In practice, this would be in a private
 # env file somewhere, and we only access this through environment variables.
-# For now, we generate a random key and explicitly fund it
+# For now, we generate a random key and explicitly fund it.
 private_key_0 = make_private_key()
 private_key_1 = make_private_key()
 
@@ -41,30 +62,13 @@ agent0 = chain.init_agent(
     private_key=private_key_0,
     name="agent0",
 )
-# We can initialize an agent with a custom policy - more on that later
+# We can initialize an agent with an active policy - more on that later.
 agent1 = chain.init_agent(
     private_key=private_key_1,
     name="agent1",
     policy=PolicyZoo.random,
     policy_config=PolicyZoo.random.Config(),
 )
-
-# %%
-# Connect to a hyperdrive pool
-
-# Define a specific pool address
-# hyperdrive_address = "0x0000000000000000000000000000000000000000"
-
-# Alternatively, look up the list of registered hyperdrive pools
-# This is the registry address deployed on sepolia.
-# registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
-#
-# hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
-
-# We'll use the previously deployed pool for this exapmle
-
-hyperdrive_config = Hyperdrive.Config()
-hyperdrive_pool = Hyperdrive(chain, hyperdrive_address, hyperdrive_config)
 
 # %%
 # We expose this function for testing purposes, but the underlying function
@@ -83,17 +87,12 @@ agent1.add_funds(base=FixedPoint(100000), eth=FixedPoint(100), pool=hyperdrive_p
 agent1.set_active(pool=hyperdrive_pool)
 
 # Set max approval for the agent on a specific pool.
-# TODO this is overly permissive, we may want to expose setting approval for a specific
-# amount, or allow a parameter in trade calls to approve for the preview amount
-# (plus slippage) before executing a trade.
 agent0.set_max_approval(pool=hyperdrive_pool)
 agent1.set_max_approval()
 
 # %%
-# Make trades
-
-# Return values here mirror the various events emitted from these contract calls
-# TODO These functions are blocking, expose async versions of the trades below
+# The return values for trade functions mirror the various events emitted from these contract calls
+# Here, base is unitless and is dependent on the underlying tokens the pool uses.
 open_long_event = agent0.open_long(base=FixedPoint(11111), pool=hyperdrive_pool)
 close_long_event = agent0.close_long(
     maturity_time=open_long_event.maturity_time,
@@ -109,20 +108,19 @@ close_short_event = agent1.close_short(maturity_time=agent1_shorts[0].maturity_t
 add_lp_event = agent1.add_liquidity(base=FixedPoint(44444))
 remove_lp_event = agent1.remove_liquidity(shares=agent1.get_lp())
 
-# The above trades doesn't result in withdraw shares, but the function below allows you
-# to withdrawal shares from the pool.
-# withdraw_shares_event = agent1.redeem_withdraw_share(shares=agent1.get_withdraw_shares())
+# The `remove_liquidity` trade above doesn't result in delayed lp (i.e., withdrawal shares),
+# but the function below allows you to redeem these shares from the pool.
+# withdraw_shares_event = agent1.redeem_withdrawal_share(shares=agent1.get_withdrawal_shares())
 
 
 # %%
 
 # Agents can also execute policies, which encapsulates actions to take on a pool.
-# This requires initializing a policy class. For example, we initialize a policy that makes random trades.
-# We can either initialize a policy on initialization (see agent1's initialization)
+# This requires initializing a policy class from the agent.
+# For example, we set a policy that makes random trades.
+# We can either initialize a policy on initialization (see agent1's initialization),
 # or we can explicitly call `set_policy` to set a policy on an agent.
 # NOTE: `set_policy` overwrites the existing policy.
-# TODO we may be able to set multiple policies on an agent and hot-swap them
-
 agent0.set_active(
     policy=PolicyZoo.random,
     policy_config=PolicyZoo.random.Config(rng_seed=123),
@@ -146,15 +144,15 @@ for i in range(10):
 #####################
 
 # %%
+# These functions query the underlying database to get data.
+# All functions here return a Pandas dataframe.
 
-# Get data from the database wrt an agent
-# This function shows an agent's wallet across all pools.
-# Get the raw trade events in pandas
-# Note the pool argument must be provided in remote settings
+# Get the raw trade events for the pool.
+# Note the pool argument must be provided in remote settings.
 agent_trade_events = agent0.get_trade_events(pool=hyperdrive_pool)
-# Gets all open positions and their corresponding PNL for an agent across all pools
+# Gets all open positions and their corresponding PNL for an agent for the pool.
 agent_positions = agent0.get_positions(pool_filter=hyperdrive_pool)
-# Gets all open and closed positions and their corresponding PNL for an agent across all pools
+# Gets all open and closed positions and their corresponding PNL for an agent for the pool.
 agent_positions = agent0.get_positions(pool_filter=hyperdrive_pool, show_closed_positions=True)
 
 # %% [markdown]

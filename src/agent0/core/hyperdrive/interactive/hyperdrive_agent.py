@@ -464,7 +464,7 @@ class HyperdriveAgent:
         tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
-    def redeem_withdraw_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
+    def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
         """Redeems withdrawal shares for this agent.
 
         Arguments

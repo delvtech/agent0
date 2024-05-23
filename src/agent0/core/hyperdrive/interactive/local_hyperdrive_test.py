@@ -290,13 +290,13 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
     # Redeem withdrawal shares
-    redeem_event_0 = hyperdrive_agent_0.redeem_withdraw_share(shares=remove_liquidity_event_0.withdrawal_share_amount)
+    redeem_event_0 = hyperdrive_agent_0.redeem_withdrawal_share(shares=remove_liquidity_event_0.withdrawal_share_amount)
     assert redeem_event_0.withdrawal_share_amount == remove_liquidity_event_0.withdrawal_share_amount
     assert hyperdrive_agent_0.get_wallet().withdraw_shares == FixedPoint(0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
 
     # Redeem withdrawal shares
-    redeem_event_1 = hyperdrive_agent_1.redeem_withdraw_share(shares=remove_liquidity_event_1.withdrawal_share_amount)
+    redeem_event_1 = hyperdrive_agent_1.redeem_withdrawal_share(shares=remove_liquidity_event_1.withdrawal_share_amount)
     assert redeem_event_1.withdrawal_share_amount == remove_liquidity_event_1.withdrawal_share_amount
     assert hyperdrive_agent_1.get_wallet().withdraw_shares == FixedPoint(0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
