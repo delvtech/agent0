@@ -67,9 +67,8 @@ def setup_fuzz(
     if crash_log_level is None:
         crash_log_level = logging.CRITICAL
 
-    random_seed = np.random.randint(
-        low=1, high=99999999
-    )  # No seed, we want this to be random every time it is executed
+    # Randomly generate a seed to track it in crash reporting
+    random_seed = np.random.randint(low=1, high=99999999)
     rng = np.random.default_rng(random_seed)
 
     crash_report_additional_info = {
