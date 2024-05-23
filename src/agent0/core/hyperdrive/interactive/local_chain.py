@@ -603,7 +603,6 @@ class LocalChain(Chain):
         if pool is not None and not isinstance(pool, LocalHyperdrive):
             raise TypeError("Pool must be an instance of LocalHyperdrive for LocalChain")
 
-        # pylint: disable=too-many-arguments
         if self._has_saved_snapshot:  # pylint: disable=protected-access
             logging.warning(
                 "Adding new agent with existing snapshot. "
