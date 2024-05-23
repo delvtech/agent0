@@ -43,7 +43,16 @@ def main(argv: Sequence[str] | None = None) -> None:
         db_port = 44444
 
     local_chain_config = LocalChain.Config(
-        chain_port=chain_port, db_port=db_port, block_timestamp_interval=12, log_level=logging.WARNING
+        chain_port=chain_port,
+        db_port=db_port,
+        block_timestamp_interval=12,
+        log_level=logging.WARNING,
+        preview_before_trade=True,
+        log_to_rollbar=log_to_rollbar,
+        rollbar_log_prefix="localfuzzbots",
+        rng=rng,
+        crash_log_level=logging.CRITICAL,
+        crash_report_additional_info={"rng_seed": rng_seed},
     )
 
     while True:
