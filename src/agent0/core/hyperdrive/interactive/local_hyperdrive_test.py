@@ -1218,6 +1218,9 @@ def test_load_rng_on_snapshot():
     assert np.array_equal(alice_random_before_snap, alice_random_after_snap)
     assert not np.array_equal(bob_random_before_snap, bob_random_after_snap)
 
+    load_rng_chain.cleanup()
+    non_load_rng_chain.cleanup()
+
 
 def test_hyperdrive_read_interface_standardized_variable_rate(fast_chain_fixture: LocalChain):
     # TODO this is testing the underlying standardized_variable_rate call in

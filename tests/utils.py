@@ -50,9 +50,10 @@ def run_with_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[Hyperdri
     in_policy: HyperdriveBasePolicy
         The policy that we expect to fail.
     """
-    agent = in_hyperdrive.init_agent(
+    agent = in_hyperdrive.chain.init_agent(
         base=FixedPoint(10_000_000),
         eth=FixedPoint(100),
+        pool=in_hyperdrive,
         policy=in_policy,
         policy_config=in_policy.Config(),
     )
@@ -71,9 +72,10 @@ def run_with_non_funded_bot(in_hyperdrive: LocalHyperdrive, in_policy: Type[Hype
     in_policy: HyperdriveBasePolicy
         The policy that we expect to fail.
     """
-    agent = in_hyperdrive.init_agent(
+    agent = in_hyperdrive.chain.init_agent(
         base=FixedPoint(0.001),
         eth=FixedPoint(100),
+        pool=in_hyperdrive,
         policy=in_policy,
         policy_config=in_policy.Config(),
     )

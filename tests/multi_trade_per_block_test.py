@@ -82,9 +82,10 @@ class TestMultiTradePerBlock:
         # For now, this is simply testing that the introduction of async trades doesn't break
         # when automining.
 
-        agent = fast_hyperdrive_fixture.init_agent(
+        agent = fast_hyperdrive_fixture.chain.init_agent(
             base=FixedPoint(10_000_000),
             eth=FixedPoint(100),
+            pool=fast_hyperdrive_fixture,
             policy=MultiTradePolicy,
             policy_config=MultiTradePolicy.Config(),
         )

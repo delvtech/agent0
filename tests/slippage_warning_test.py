@@ -231,51 +231,73 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_no_halt_on_slippage(
         self,
-        fast_chain_fixture: LocalChain,
     ):
+        chain = LocalChain(
+            config=LocalChain.Config(
+                chain_port=6000,
+                db_port=6001,
+                exception_on_policy_slippage=False,
+            )
+        )
+
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
-            exception_on_policy_slippage=False,
         )
-        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+        hyperdrive = LocalHyperdrive(chain, config)
         # All of these calls should pass if we're not halting on slippage
         run_with_funded_bot(hyperdrive, InvalidOpenLongSlippage)
         run_with_funded_bot(hyperdrive, InvalidOpenShortSlippage)
         run_with_funded_bot(hyperdrive, InvalidCloseLongSlippage)
         run_with_funded_bot(hyperdrive, InvalidCloseShortSlippage)
 
+        chain.cleanup()
+
     @pytest.mark.docker
     def test_invalid_slippage_open_long(
         self,
-        fast_chain_fixture: LocalChain,
     ):
+        chain = LocalChain(
+            config=LocalChain.Config(
+                chain_port=6000,
+                db_port=6001,
+                exception_on_policy_slippage=True,
+            )
+        )
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
-            exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+        hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenLongSlippage)
         except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
 
+        chain.cleanup()
+
     @pytest.mark.docker
     def test_invalid_slippage_open_short(
         self,
-        fast_chain_fixture: LocalChain,
     ):
+        chain = LocalChain(
+            config=LocalChain.Config(
+                chain_port=6000,
+                db_port=6001,
+                exception_on_policy_slippage=True,
+            )
+        )
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
-            exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+        hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenShortSlippage)
         except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
+
+        chain.cleanup()
 
     # TODO slippage isn't implemented in the python side for add/remove liquidity and
     # withdrawal shares. Remove liquidity has bindings for slippage, but is ignored.
@@ -283,31 +305,45 @@ class TestSlippageWarning:
     @pytest.mark.docker
     def test_invalid_slippage_close_long(
         self,
-        fast_chain_fixture: LocalChain,
     ):
+        chain = LocalChain(
+            config=LocalChain.Config(
+                chain_port=6000,
+                db_port=6001,
+                exception_on_policy_slippage=True,
+            )
+        )
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
-            exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+        hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongSlippage)
         except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
 
+        chain.cleanup()
+
     @pytest.mark.docker
     def test_invalid_slippage_close_short(
         self,
-        fast_chain_fixture: LocalChain,
     ):
+        chain = LocalChain(
+            config=LocalChain.Config(
+                chain_port=6000,
+                db_port=6001,
+                exception_on_policy_slippage=True,
+            )
+        )
         config = LocalHyperdrive.Config(
             initial_liquidity=FixedPoint(1_000),
             position_duration=60 * 60 * 24 * 365,  # 1 year
-            exception_on_policy_slippage=True,
         )
-        hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
+        hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortSlippage)
         except ContractCallException as exc:
             assert "Slippage detected" in exc.args[0]
+
+        chain.cleanup()

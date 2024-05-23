@@ -17,15 +17,15 @@ def test_gas_price_base_multiple_explicit(fast_chain_fixture: LocalChain):
     hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
     web3 = interface.web3
-    agent = hyperdrive.init_agent(eth=FixedPoint(1))
+    agent = fast_chain_fixture.init_agent(eth=FixedPoint(1), pool=hyperdrive)
 
     fn_args_mint = (
-        agent.checksum_address,  # destination
+        agent.address,  # destination
         FixedPoint(11111).scaled_value,  # amount
     )
     regular_built_transaction = build_transaction(
         func_handle=interface.base_token_contract.functions.mint(*fn_args_mint),
-        signer=agent.agent,
+        signer=agent.account,
         web3=web3,
     )
     assert "maxPriorityFeePerGas" in regular_built_transaction
@@ -37,7 +37,7 @@ def test_gas_price_base_multiple_explicit(fast_chain_fixture: LocalChain):
 
     multiplied_built_transaction = build_transaction(
         func_handle=interface.base_token_contract.functions.mint(*fn_args_mint),
-        signer=agent.agent,
+        signer=agent.account,
         web3=web3,
         txn_options_base_fee_multiple=base_fee_multiple,
     )
@@ -60,15 +60,15 @@ def test_gas_price_priority_multiple_explicit(fast_chain_fixture: LocalChain):
     hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
     web3 = interface.web3
-    agent = hyperdrive.init_agent(eth=FixedPoint(1))
+    agent = fast_chain_fixture.init_agent(eth=FixedPoint(1), pool=hyperdrive)
 
     fn_args_mint = (
-        agent.checksum_address,  # destination
+        agent.address,  # destination
         FixedPoint(11111).scaled_value,  # amount
     )
     regular_built_transaction = build_transaction(
         func_handle=interface.base_token_contract.functions.mint(*fn_args_mint),
-        signer=agent.agent,
+        signer=agent.account,
         web3=web3,
     )
     assert "maxPriorityFeePerGas" in regular_built_transaction
@@ -77,7 +77,7 @@ def test_gas_price_priority_multiple_explicit(fast_chain_fixture: LocalChain):
 
     multiplied_built_transaction = build_transaction(
         func_handle=interface.base_token_contract.functions.mint(*fn_args_mint),
-        signer=agent.agent,
+        signer=agent.account,
         web3=web3,
         txn_options_priority_fee_multiple=priority_fee_multiple,
     )
@@ -91,27 +91,35 @@ def test_gas_price_priority_multiple_explicit(fast_chain_fixture: LocalChain):
 @pytest.mark.anvil
 def test_gas_price_base_multiple_policy(fast_chain_fixture: LocalChain):
     """Set the gas price base multiple through an agent policy."""
+    # pylint: disable=protected-access
     # set up config, hyperdrive, interface, web3, and agent
     base_fee_multiple = 100
     config = LocalHyperdrive.Config()
     hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
 
-    regular_agent = hyperdrive.init_agent(
-        base=FixedPoint(11111), eth=FixedPoint(10), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
-    )
-    multiplied_agent = hyperdrive.init_agent(
+    regular_agent = fast_chain_fixture.init_agent(
         base=FixedPoint(11111),
         eth=FixedPoint(10),
+        pool=hyperdrive,
+        policy=PolicyZoo.random,
+        policy_config=PolicyZoo.random.Config(),
+    )
+    multiplied_agent = fast_chain_fixture.init_agent(
+        base=FixedPoint(11111),
+        eth=FixedPoint(10),
+        pool=hyperdrive,
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(base_fee_multiple=base_fee_multiple),
     )
 
-    actions, _ = regular_agent.agent.policy.action(interface, regular_agent.agent.wallet)
+    assert regular_agent._active_policy is not None
+    actions, _ = regular_agent._active_policy.action(interface, regular_agent.get_wallet())
     regular_base_fee_multiple = actions[0].market_action.base_fee_multiple
     assert regular_base_fee_multiple is None
 
-    actions, _ = multiplied_agent.agent.policy.action(interface, multiplied_agent.agent.wallet)
+    assert multiplied_agent._active_policy is not None
+    actions, _ = multiplied_agent._active_policy.action(interface, multiplied_agent.get_wallet())
     multiplied_base_fee_multiple = actions[0].market_action.base_fee_multiple
     assert multiplied_base_fee_multiple == base_fee_multiple
 
@@ -119,26 +127,34 @@ def test_gas_price_base_multiple_policy(fast_chain_fixture: LocalChain):
 @pytest.mark.anvil
 def test_gas_price_priority_multiple_policy(fast_chain_fixture: LocalChain):
     """Set the gas price priority multiple through an agent policy."""
+    # pylint: disable=protected-access
     # set up config, hyperdrive, interface, web3, and agent
     priority_fee_multiple = 100
     config = LocalHyperdrive.Config()
     hyperdrive = LocalHyperdrive(fast_chain_fixture, config)
     interface = hyperdrive.interface
 
-    regular_agent = hyperdrive.init_agent(
-        base=FixedPoint(11111), eth=FixedPoint(10), policy=PolicyZoo.random, policy_config=PolicyZoo.random.Config()
-    )
-    multiplied_agent = hyperdrive.init_agent(
+    regular_agent = fast_chain_fixture.init_agent(
         base=FixedPoint(11111),
         eth=FixedPoint(10),
+        pool=hyperdrive,
+        policy=PolicyZoo.random,
+        policy_config=PolicyZoo.random.Config(),
+    )
+    multiplied_agent = fast_chain_fixture.init_agent(
+        base=FixedPoint(11111),
+        eth=FixedPoint(10),
+        pool=hyperdrive,
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(priority_fee_multiple=priority_fee_multiple),
     )
 
-    actions, _ = regular_agent.agent.policy.action(interface, regular_agent.agent.wallet)
+    assert regular_agent._active_policy is not None
+    actions, _ = regular_agent._active_policy.action(interface, regular_agent.get_wallet())
     regular_priority_fee_multiple = actions[0].market_action.priority_fee_multiple
     assert regular_priority_fee_multiple is None
 
-    actions, _ = multiplied_agent.agent.policy.action(interface, multiplied_agent.agent.wallet)
+    assert multiplied_agent._active_policy is not None
+    actions, _ = multiplied_agent._active_policy.action(interface, multiplied_agent.get_wallet())
     multiplied_priority_fee_multiple = actions[0].market_action.priority_fee_multiple
     assert multiplied_priority_fee_multiple == priority_fee_multiple

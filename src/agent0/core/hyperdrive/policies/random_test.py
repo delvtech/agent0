@@ -29,10 +29,11 @@ def test_random_policy(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
 
-    random_agent = interactive_hyperdrive.init_agent(
+    random_agent = interactive_hyperdrive.chain.init_agent(
         base=FixedPoint(100_000),
         eth=FixedPoint(100),
         name="alice",
+        pool=interactive_hyperdrive,
         policy=PolicyZoo.random,
         policy_config=PolicyZoo.random.Config(
             slippage_tolerance=None,

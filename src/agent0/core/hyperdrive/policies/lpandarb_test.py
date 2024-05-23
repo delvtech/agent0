@@ -330,8 +330,13 @@ def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent
         lp_portion=FixedPoint("0.99"),
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
-    larry = interactive_hyperdrive.init_agent(
-        base=larry_base, eth=FixedPoint(10), name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+    larry = interactive_hyperdrive.chain.init_agent(
+        base=larry_base,
+        eth=FixedPoint(10),
+        name="larry",
+        pool=interactive_hyperdrive,
+        policy=PolicyZoo.lp_and_arb,
+        policy_config=larry_config,
     )
     # change the fixed rate
     manual_agent.open_short(bonds=FixedPoint(100_000))
@@ -352,8 +357,13 @@ def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agen
         lp_portion=FixedPoint("0.9"),
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
-    larry = interactive_hyperdrive.init_agent(
-        base=larry_base, eth=FixedPoint(10), name="larry", policy=PolicyZoo.lp_and_arb, policy_config=larry_config
+    larry = interactive_hyperdrive.chain.init_agent(
+        base=larry_base,
+        eth=FixedPoint(10),
+        name="larry",
+        pool=interactive_hyperdrive,
+        policy=PolicyZoo.lp_and_arb,
+        policy_config=larry_config,
     )
     # change the fixed rate
     manual_agent.open_long(base=FixedPoint(100_000))
