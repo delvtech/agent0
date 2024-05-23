@@ -12,6 +12,7 @@ from numpy.random._generator import Generator
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
+from agent0.ethpy.base import set_anvil_account_balance
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 
 ONE_HOUR_IN_SECONDS = 60 * 60
@@ -374,6 +375,15 @@ def run_local_fuzz_bots(
                 )
             else:
                 _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
+
+        # The deployer pays gas for advancing time
+        # We check the eth balance and refund if it runs low
+        deployer_account = hyperdrive_pool._deployed_hyperdrive.deploy_account  # pylint: disable=protected-access
+        deployer_agent_eth = hyperdrive_pool.interface.get_eth_base_balances(deployer_account)[0]
+        if deployer_agent_eth < minimum_avg_agent_eth:
+            _ = set_anvil_account_balance(
+                hyperdrive_pool.interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
+            )
 
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a

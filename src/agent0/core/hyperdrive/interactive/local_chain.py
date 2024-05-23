@@ -125,7 +125,7 @@ class LocalChain(Chain):
         # Runs cleanup on all deployed pools
         try:
             if self.anvil_process is not None:
-                self.anvil_process.kill()
+                self.anvil_process.terminate()
                 if self.anvil_process.stdout is not None:
                     self.anvil_process.stdout.close()
                 if self.anvil_process.stderr is not None:
@@ -137,7 +137,7 @@ class LocalChain(Chain):
 
         try:
             if self.dashboard_subprocess is not None:
-                self.dashboard_subprocess.kill()
+                self.dashboard_subprocess.terminate()
                 if self.dashboard_subprocess.stdout is not None:
                     self.dashboard_subprocess.stdout.close()
                 if self.dashboard_subprocess.stderr is not None:
