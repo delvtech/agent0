@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from agent0.core.base.types import Trade
-from agent0.core.hyperdrive.agent import close_long_trade, close_short_trade
+from agent0.core.hyperdrive.agent import HyperdriveActionType, close_long_trade, close_short_trade
 
 from .random import Random
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction, HyperdriveWallet, TradeResult
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
     from agent0.ethpy.hyperdrive.state import PoolState
 

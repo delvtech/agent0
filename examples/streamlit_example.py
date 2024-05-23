@@ -17,10 +17,11 @@ chain = LocalChain(local_chain_config)
 initial_pool_config = LocalHyperdrive.Config()
 hyperdrive0 = LocalHyperdrive(chain, initial_pool_config)
 
-agent0 = hyperdrive0.init_agent(
+agent0 = chain.init_agent(
     base=FixedPoint(100000),
     eth=FixedPoint(100),
     name="random_bot",
+    pool=hyperdrive0,
     # The underlying policy to attach to this agent
     policy=PolicyZoo.random,
     # The configuration for the underlying policy
@@ -30,10 +31,11 @@ agent0 = hyperdrive0.init_agent(
 initial_pool_config = LocalHyperdrive.Config()
 hyperdrive1 = LocalHyperdrive(chain, initial_pool_config)
 
-agent1 = hyperdrive1.init_agent(
+agent1 = chain.init_agent(
     base=FixedPoint(100000),
     eth=FixedPoint(100),
     name="random_bot",
+    pool=hyperdrive1,
     # The underlying policy to attach to this agent
     policy=PolicyZoo.random,
     # The configuration for the underlying policy

@@ -4,16 +4,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any
-
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.hyperdrive import ReceiptBreakdown
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
 
     from agent0.core.base import Trade
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+    from agent0.ethpy.hyperdrive import ReceiptBreakdown
 
     from .hyperdrive_actions import HyperdriveMarketAction
     from .hyperdrive_wallet import HyperdriveWallet

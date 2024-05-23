@@ -48,7 +48,7 @@ def interactive_hyperdrive(fast_chain_fixture: LocalChain) -> LocalHyperdrive:
 
 
 @pytest.fixture(scope="function")
-def arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
+def arbitrage_andy(interactive_hyperdrive: LocalHyperdrive) -> LocalHyperdriveAgent:
     """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
 
     Arguments
@@ -64,7 +64,7 @@ def arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
     return create_arbitrage_andy(interactive_hyperdrive)
 
 
-def create_arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
+def create_arbitrage_andy(interactive_hyperdrive: LocalHyperdrive) -> LocalHyperdriveAgent:
     """Create Arbitrage Andy interactive hyperdrive agent used to arbitrage the fixed rate to the variable rate.
 
     Arguments
@@ -82,13 +82,18 @@ def create_arbitrage_andy(interactive_hyperdrive) -> LocalHyperdriveAgent:
         lp_portion=FixedPoint(0),
         min_trade_amount_bonds=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount,
     )
-    return interactive_hyperdrive.init_agent(
-        base=andy_base, eth=FixedPoint(10), name="andy", policy=PolicyZoo.lp_and_arb, policy_config=andy_config
+    return interactive_hyperdrive.chain.init_agent(
+        base=andy_base,
+        eth=FixedPoint(10),
+        name="andy",
+        pool=interactive_hyperdrive,
+        policy=PolicyZoo.lp_and_arb,
+        policy_config=andy_config,
     )
 
 
 @pytest.fixture(scope="function")
-def manual_agent(interactive_hyperdrive) -> LocalHyperdriveAgent:
+def manual_agent(interactive_hyperdrive: LocalHyperdrive) -> LocalHyperdriveAgent:
     """Create manual interactive hyperdrive agent used to manually move markets.
 
     Arguments
@@ -101,7 +106,9 @@ def manual_agent(interactive_hyperdrive) -> LocalHyperdriveAgent:
     InteractiveHyperdriveAgent
         Manual interactive hyperdrive agent.
     """
-    return interactive_hyperdrive.init_agent(base=FixedPoint(1e9), eth=FixedPoint(10))
+    return interactive_hyperdrive.chain.init_agent(
+        base=FixedPoint(1e9), eth=FixedPoint(10), pool=interactive_hyperdrive
+    )
 
 
 @pytest.mark.anvil
