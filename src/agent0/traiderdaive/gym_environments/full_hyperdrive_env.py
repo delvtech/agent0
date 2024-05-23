@@ -321,7 +321,7 @@ class FullHyperdriveEnv(gym.Env):
                         )
             except Exception as err:  # pylint: disable=broad-except
                 # TODO use logging here
-                print(f"Warning: Failed to close trade: {err=}")
+                print(f"Warning: Failed to close trade: {repr(err)}")
                 # Terminate if error
                 return True
 
@@ -365,7 +365,7 @@ class FullHyperdriveEnv(gym.Env):
                         # Base exception here to catch rust errors
                         except BaseException as err:  # pylint: disable=broad-except
                             # TODO use logging here
-                            print(f"Warning: Failed to open trade: {err=}")
+                            print(f"Warning: Failed to open trade: {repr(err)}")
                             # Terminate if error
                             return True
 
@@ -396,7 +396,7 @@ class FullHyperdriveEnv(gym.Env):
                 self.rl_bot.redeem_withdrawal_share(self.rl_bot.get_wallet().withdraw_shares)
         except Exception as err:  # pylint: disable=broad-except
             # TODO use logging here
-            print(f"Warning: Failed to LP: {err=}")
+            print(f"Warning: Failed to LP: {repr(err)}")
             # Terminate if error
             return True
 
@@ -439,7 +439,7 @@ class FullHyperdriveEnv(gym.Env):
             try:
                 random_bot.execute_policy_action()
             except BaseException as err:  # pylint: disable=broad-except
-                print(f"Warning: Failed to execute random bot: {err=}")
+                print(f"Warning: Failed to execute random bot: {repr(err)}")
                 # We ignore errors in random bots
                 continue
 
