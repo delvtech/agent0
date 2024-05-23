@@ -62,36 +62,38 @@ def setup_fuzz(
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
 
-    # Setup local chain
-    config = chain_config if chain_config else LocalChain.Config()
-    chain = LocalChain(config=config)
-    random_seed = np.random.randint(
-        low=1, high=99999999
-    )  # No seed, we want this to be random every time it is executed
-    rng = np.random.default_rng(random_seed)
-
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
     if crash_log_level is None:
         crash_log_level = logging.CRITICAL
+
+    random_seed = np.random.randint(
+        low=1, high=99999999
+    )  # No seed, we want this to be random every time it is executed
+    rng = np.random.default_rng(random_seed)
 
     crash_report_additional_info = {
         "fuzz_random_seed": random_seed,
         "fuzz_test_name": fuzz_test_name,
     }
 
+    # Setup local chain
+    config = chain_config if chain_config else LocalChain.Config()
+    # We explicitly set some config parameters here
+    config.preview_before_trade = True
+    config.log_to_rollbar = log_to_rollbar
+    config.rollbar_log_prefix = fuzz_test_name
+    config.crash_log_level = crash_log_level
+    config.crash_log_ticker = True
+    config.crash_report_additional_info = crash_report_additional_info
+    config.calc_pnl = False
+
+    chain = LocalChain(config=config)
+
     initial_pool_config = LocalHyperdrive.Config(
-        preview_before_trade=True,
         checkpoint_duration=60 * 60 * 24,  # 1 day
         # TODO calc_max_short doesn't work with a week position duration, setting to 30 days
         position_duration=60 * 60 * 24 * 30,  # 30 days
-        log_to_rollbar=log_to_rollbar,
-        rollbar_log_prefix=fuzz_test_name,
-        crash_log_level=crash_log_level,
-        crash_log_ticker=True,
-        # Put this into crash report for all tests
-        crash_report_additional_info=crash_report_additional_info,
-        calc_pnl=False,
     )
 
     if curve_fee is not None:

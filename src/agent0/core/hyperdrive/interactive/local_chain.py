@@ -412,8 +412,8 @@ class LocalChain(Chain):
             Saving/loading snapshot only persist on the same chain, not across chains.
 
         .. note::
-            Loading a snapshot removes the agent's active pool, and reverts the active policy to the policy
-            of the saved snapshot.
+            Loading a snapshot affects any agent's active pools and policies,
+            and will revert both to the state of the saved snapshot.
         """
         # Loads the previous snapshot
         # When reverting snapshots, the chain deletes the previous snapshot, while we want it to persist.
@@ -494,6 +494,11 @@ class LocalChain(Chain):
         with open(policy_file, "wb") as file:
             # We use dill, as pickle can't store local objects
             dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
+        for agent in self._chain_agents:
+            active_pool_file = save_dir + agent.address + "-active-pool.pkl"
+            if agent._active_pool is not None:
+                with open(active_pool_file, "wb") as file:
+                    dill.dump(agent._active_pool.hyperdrive_address, file, protocol=dill.HIGHEST_PROTOCOL)
 
     def _load_agent_bookkeeping(self, load_dir: str) -> None:
         policy_file = load_dir + "agents.pkl"
@@ -503,11 +508,27 @@ class LocalChain(Chain):
         # Remove references of all agents added after snapshot
         # NOTE: existing agent objects initialized after snapshot will no longer be valid.
         self._chain_agents = [agent for agent in self._chain_agents if agent.address in load_agents]
-        # Clear any active pools as these may have changed between snapshots
         # Clear the _max_approval_pools to ensure we call approval
         # NOTE this might be a duplicate approval, which should be okay
         for agent in self._chain_agents:
-            agent._active_pool = None
+            active_pool_file = load_dir + agent.address + "-active-pool.pkl"
+            # If the file doesn't exist, there was no active pool at time of snapshot
+            if not os.path.isfile(active_pool_file):
+                agent._active_pool = None
+            else:
+                with open(active_pool_file, "rb") as file:
+                    # We use dill, as pickle can't store local objects
+                    hyperdrive_address = dill.load(file)
+                    # Find the pool in the list of deployed pools
+                    target_pool = None
+                    for pool in self._deployed_hyperdrive_pools:
+                        if pool.hyperdrive_address == hyperdrive_address:
+                            target_pool = pool
+                            break
+                    if target_pool is None:
+                        raise ValueError("Saved active pool not found in list of deployed pools.")
+                    agent._active_pool = target_pool
+
             agent._max_approval_pools = {}
 
     def _save_policy_state(self, save_dir: str) -> None:

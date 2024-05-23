@@ -693,9 +693,6 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     # Save snapshot and check for equality
     chain_fixture.load_snapshot()
 
-    # Need to reset active pool after loading snapshot
-    hyperdrive_agent.set_active(pool=interactive_hyperdrive)
-
     (
         check_eth_on_chain,
         check_base_on_chain,
@@ -739,9 +736,6 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
     # Save snapshot and check for equality
     chain_fixture.load_snapshot()
 
-    # Need to reset active pool after loading snapshot
-    hyperdrive_agent.set_active(pool=interactive_hyperdrive)
-
     (
         check_eth_on_chain,
         check_base_on_chain,
@@ -784,9 +778,6 @@ def test_save_load_snapshot(chain_fixture: LocalChain):
 
     # Save snapshot and check for equality
     chain_fixture.load_snapshot()
-
-    # Need to reset active pool after loading snapshot
-    hyperdrive_agent.set_active(pool=interactive_hyperdrive)
 
     (
         check_eth_on_chain,

@@ -1,4 +1,4 @@
-"""System test for checking calculated wallets versus wallets on chain."""
+"""System test for running fuzzing pipeline."""
 
 from __future__ import annotations
 

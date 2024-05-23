@@ -79,7 +79,7 @@ def fuzz_present_value(
         "initial_lp_share_price": initial_pool_state.pool_info.lp_share_price,
         "initial_present_value": interactive_hyperdrive.interface.calc_present_value(initial_pool_state),
     }
-    agent = interactive_hyperdrive.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000))
+    agent = chain.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000), pool=interactive_hyperdrive)
 
     # Execute the trades and check invariances for each trade
     for trade_type in [
@@ -177,7 +177,7 @@ def fuzz_present_value(
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
-                error, interactive_hyperdrive.interface, agent.agent, additional_info=additional_info
+                error, interactive_hyperdrive.interface, agent.account, additional_info=additional_info
             )
             # Crash reporting already going to file in logging
             log_hyperdrive_crash_report(
