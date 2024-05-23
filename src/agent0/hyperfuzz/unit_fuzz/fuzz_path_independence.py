@@ -210,7 +210,7 @@ def fuzz_path_independence(
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             check_data["curr_checkpoint_id"] = ending_checkpoint_id
-            first_run_state_dump_dir = chain.save_state(save_prefix="fuzz_path_independence")
+            first_run_state_dump_dir = str(chain.save_state(save_prefix="fuzz_path_independence"))
             first_run_ticker = interactive_hyperdrive.get_trade_events()
 
         # On subsequent run, check against the saved final state
