@@ -340,7 +340,7 @@ class SimpleHyperdriveEnv(gym.Env):
             try:
                 random_bot.execute_policy_action()
             except Exception as err:  # pylint: disable=broad-except
-                print(f"Warning: Failed to execute random bot: {err=}")
+                print(f"Warning: Failed to execute random bot: {repr(err)}")
                 # We ignore errors in random bots
                 continue
 
