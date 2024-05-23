@@ -95,48 +95,6 @@ class TestInteractiveHyperdriveForkingExamples(Base):
             raise AssertionError(f"notebook {self.FILE} failed") from exc
 
 
-class TestInteractiveLocalHyperdriveAdvancedExamples(Base):
-    """Test the example file."""
-
-    FILE = "interactive_local_hyperdrive_advanced_example.py"
-
-    def prepare_tree_for_testing(self, tree: Module) -> Module:
-        """Parse the tree & make required modifications."""
-        for node_idx, node in enumerate(tree.body):
-            # type conditionals are used to narrow down the node type to assignment to a named object attribute
-            if isinstance(node, ast.Expr):
-                node_str = ast.unparse(node)
-                # If you run `ast.parse("print('hello')")` it looks like this,
-                # so we're ignoring the pyright errors.
-                if "run_dashboard" in node_str or "time.sleep" in node_str:
-                    node_str = node_str.strip("\n")
-                    tree.body[node_idx] = ast.Expr(
-                        value=ast.Call(
-                            func=ast.Name(id="print", ctx=ast.Load()),
-                            args=[ast.Constant(s="skipping `" + node_str + "`")],  # type: ignore
-                            keywords=[],
-                        ),
-                    )
-        return ast.fix_missing_locations(tree)  # adds newlines to modified nodes
-
-    @pytest.mark.parametrize("file_name", [FILE])
-    def test_file_exists(self, file_location):
-        """Make sure the file exists."""
-        assert os.path.exists(file_location)
-        assert os.path.isfile(file_location)
-
-    @pytest.mark.parametrize("file_name", [FILE])
-    @pytest.mark.docker
-    def test_file_runs(self, file_contents):
-        """Test that the example runs."""
-        # Convert the source code into a syntax tree to modify some config values
-        tree = self.prepare_tree_for_testing(ast.parse("\n".join(file_contents)))
-        try:
-            self.exec_tree(tree)
-        except Exception as exc:
-            raise AssertionError(f"notebook {self.FILE} failed") from exc
-
-
 class TestInteractiveLocalHyperdriveExamples(Base):
     """Test the example file."""
 

@@ -2,20 +2,13 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from typing import Any, Type
 
 import nest_asyncio
-import numpy as np
 import pandas as pd
 from eth_typing import ChecksumAddress
-from numpy.random._generator import Generator
 
-from agent0.chainsync.dashboard.usernames import build_user_mapping
-from agent0.chainsync.db.base import get_addr_to_username
-from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, get_hyperdrive_addr_to_name
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     generate_name_for_hyperdrive,
@@ -24,7 +17,6 @@ from agent0.ethpy.hyperdrive import (
 )
 
 from .chain import Chain
-from .hyperdrive_agent import HyperdriveAgent
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -42,53 +34,6 @@ class Hyperdrive:
     @dataclass(kw_only=True)
     class Config:
         """The configuration for the interactive hyperdrive class."""
-
-        # Execution config
-        exception_on_policy_error: bool = True
-        """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
-        exception_on_policy_slippage: bool = False
-        """
-        When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False.
-        """
-        preview_before_trade: bool = False
-        """Whether to preview the position before executing a trade. Defaults to False."""
-        txn_receipt_timeout: float | None = None
-        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
-
-        # RNG config
-        rng_seed: int | None = None
-        """The seed for the random number generator. Defaults to None."""
-        rng: Generator | None = None
-        """
-        The experiment's stateful random number generator. Defaults to creating a generator from
-        the provided random seed if not set.
-        """
-
-        # Logging and crash reporting
-        log_to_rollbar: bool = False
-        """Whether to log crash reports to rollbar. Defaults to False."""
-        rollbar_log_prefix: str | None = None
-        """Additional prefix for this hyperdrive to log to rollbar."""
-        crash_log_level: int = logging.CRITICAL
-        """The log level to log crashes at. Defaults to critical."""
-        crash_report_additional_info: dict[str, Any] | None = None
-        """Additional information to include in the crash report."""
-        always_execute_policy_post_action: bool = False
-        """
-        Whether to execute the policy `post_action` function after non-policy trades. 
-        If True, the policy `post_action` function always be called after any agent trade.
-        If False, the policy `post_action` function will only be called after `execute_policy_action`.
-        Defaults to False.
-        """
-
-        # Data pipeline parameters
-        calc_pnl: bool = True
-        """Whether to calculate pnl. Defaults to True."""
-
-        def __post_init__(self):
-            """Create the random number generator if not set."""
-            if self.rng is None:
-                self.rng = np.random.default_rng(self.rng_seed)
 
     @classmethod
     def get_hyperdrive_addresses_from_artifacts(
@@ -134,14 +79,15 @@ class Hyperdrive:
         return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
 
     def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress, name: str | None):
+        self.chain = chain
+
         self.interface = HyperdriveReadWriteInterface(
             hyperdrive_address,
             rpc_uri=chain.rpc_uri,
             web3=chain._web3,  # pylint: disable=protected-access
-            txn_receipt_timeout=self.config.txn_receipt_timeout,
+            txn_receipt_timeout=self.chain.config.txn_receipt_timeout,
         )
 
-        self.chain = chain
         # Register the username if it was provided
         if name is None:
             # Build the name in this case
@@ -288,67 +234,3 @@ class Hyperdrive:
         """
         # pylint: disable=protected-access
         return self.interface.hyperdrive_address
-
-    def init_agent(
-        self,
-        private_key: str,
-        policy: Type[HyperdriveBasePolicy] | None = None,
-        policy_config: HyperdriveBasePolicy.Config | None = None,
-        name: str | None = None,
-    ) -> HyperdriveAgent:
-        """Initialize an agent object given a private key.
-
-        .. note::
-            Due to the underlying bookkeeping, each agent object needs a unique private key.
-
-        Arguments
-        ---------
-        private_key: str
-            The private key of the associated account.
-        policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
-        policy_config: HyperdrivePolicy, optional
-            The configuration for the attached policy.
-        name: str, optional
-            The name of the agent. Defaults to the wallet address.
-
-        Returns
-        -------
-        HyperdriveAgent
-            The agent object for a user to execute trades with.
-        """
-        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
-        out_agent = HyperdriveAgent(
-            name=name,
-            pool=self,
-            policy=policy,
-            policy_config=policy_config,
-            private_key=private_key,
-        )
-        return out_agent
-
-    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        addr_to_username = get_addr_to_username(self.chain.db_session)
-
-        # Get corresponding usernames
-        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
-        out = df.copy()
-        # Weird pandas type error
-        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
-        return out
-
-    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
-        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.chain.db_session)
-
-        # Do lookup from address to name
-        hyperdrive_name = (
-            df[addr_column]
-            .to_frame()
-            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
-        )["name"]
-        # Weird pandas type error
-        out = df.copy()
-        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
-        return out

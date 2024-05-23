@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint, maximum, minimum
 
 from agent0.core.base import Trade
-from agent0.core.hyperdrive import HyperdriveMarketAction
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
     close_long_trade,
@@ -24,7 +23,7 @@ from agent0.ethpy.hyperdrive.state import PoolState
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 # constants

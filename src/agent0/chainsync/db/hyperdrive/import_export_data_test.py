@@ -1,6 +1,7 @@
 """Tests for export data"""
 
 from decimal import Decimal
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -26,6 +27,7 @@ class TestExportImportData:
 
         # Create a temporary directory
         with TemporaryDirectory() as temp_data_dir:
+            temp_data_dir = Path(temp_data_dir)
             export_db_to_file(temp_data_dir, db_session)
             read_pool_config = import_to_pandas(temp_data_dir)["pool_config"]
             assert read_pool_config.equals(pool_config_in)

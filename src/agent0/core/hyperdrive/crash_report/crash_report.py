@@ -13,20 +13,22 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
+from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.types import RPCEndpoint
 
-from agent0.core.hyperdrive import HyperdriveWallet, TradeResult, TradeStatus
+from agent0.core.hyperdrive.agent import TradeResult
 from agent0.ethpy.base.errors import ContractCallException
-from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.hyperlogs import ExtendedJSONEncoder, logs
 from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
-    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdrivePolicyAgent
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
+    from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+    from agent0.ethpy.hyperdrive.state import PoolState
 
 
 def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) -> None:
@@ -54,7 +56,9 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 def build_crash_trade_result(
     exception: Exception,
     interface: HyperdriveReadInterface,
-    agent: HyperdrivePolicyAgent | None = None,
+    account: LocalAccount | None = None,
+    wallet: HyperdriveWallet | None = None,
+    policy: HyperdriveBasePolicy | None = None,
     trade_object: Trade[HyperdriveMarketAction] | None = None,
     additional_info: dict[str, Any] | None = None,
     pool_state: PoolState | None = None,
@@ -67,10 +71,14 @@ def build_crash_trade_result(
         The exception that was thrown
     interface: HyperdriveReadInterface
         An interface for Hyperdrive with contracts deployed on any chain with an RPC url.
-    agent: HyperdrivePolicyAgent | None, optional.
-        Object containing a wallet address and Agent for determining trades. If None, won't report the agent.
+    account: LocalAccount | None, optional.
+        The LocalAccount object that made the trade. If None, won't report the agent.
+    wallet: HyperdriveWallet | None, optional
+        The agent's wallet. If None, won't report the wallet.
+    policy: HyperdriveBasePolicy | None, optional
+        The agent's policy. If None, won't report the policy.
     trade_object: Trade[HyperdriveMarketAction] | None, optional
-        A trade provided by a HyperdrivePolicyAgent. If None, won't report the trade object.
+        A trade provided by the LocalAccount. If None, won't report the trade object.
     additional_info: dict[str, Any] | None, optional
         Additional information used for crash reporting, optional
     pool_state: PoolState | None, optional
@@ -82,8 +90,10 @@ def build_crash_trade_result(
         The trade result object.
     """
     trade_result = TradeResult(
-        status=TradeStatus.FAIL,
-        agent=agent,
+        trade_successful=False,
+        account=account,
+        wallet=wallet,
+        policy=policy,
         trade_object=trade_object,
     )
     current_block_number = interface.get_block_number(interface.get_current_block())
@@ -259,10 +269,15 @@ def log_hyperdrive_crash_report(
         else:
             assert False
 
-    if trade_result.agent is not None:
-        agent_wallet = trade_result.agent.wallet
+    if trade_result.wallet is not None:
+        wallet = trade_result.wallet
     else:
-        agent_wallet = None
+        wallet = None
+
+    if trade_result.policy is not None:
+        policy_name = trade_result.policy.name
+    else:
+        policy_name = None
 
     # Best attempt at getting a git commit version
     try:
@@ -279,8 +294,9 @@ def log_hyperdrive_crash_report(
             ("orig_exception", trade_result.orig_exception),
             ("trade", _hyperdrive_trade_obj_to_dict(trade_result.trade_object)),
             ("contract_call", trade_result.contract_call),
-            ("wallet", _hyperdrive_wallet_to_dict(agent_wallet)),
-            ("agent_info", _hyperdrive_agent_to_dict(trade_result.agent)),
+            ("wallet", _hyperdrive_wallet_to_dict(wallet)),
+            ("policy", policy_name),
+            ("account_info", _hyperdrive_agent_to_dict(trade_result.account)),
             # TODO Once pool_info and pool_config are objects,
             # we need to add a conversion function to convert to dict
             ("pool_config", trade_result.pool_config),
@@ -405,10 +421,10 @@ def _hyperdrive_trade_obj_to_dict(trade_obj: Trade[HyperdriveMarketAction] | Non
     }
 
 
-def _hyperdrive_agent_to_dict(agent: HyperdrivePolicyAgent | None):
+def _hyperdrive_agent_to_dict(agent: LocalAccount | None):
     if agent is None:
         return {}
-    return {"address": agent.checksum_address, "policy": agent.policy.name}
+    return {"address": agent.address}
 
 
 def _get_git_revision_hash() -> str:

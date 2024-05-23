@@ -12,6 +12,7 @@ from numpy.random._generator import Generator
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
+from agent0.ethpy.base import set_anvil_account_balance
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 
 ONE_HOUR_IN_SECONDS = 60 * 60
@@ -50,19 +51,13 @@ LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
 
 # pylint: disable=too-many-locals
-def generate_fuzz_hyperdrive_config(
-    rng: Generator, log_to_rollbar: bool, rng_seed: int, lp_share_price_test: bool
-) -> LocalHyperdrive.Config:
+def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -> LocalHyperdrive.Config:
     """Fuzz over hyperdrive config.
 
     Arguments
     ---------
     rng: np.random.Generator
         Random number generator.
-    log_to_rollbar: bool
-        If True, log errors to rollbar.
-    rng_seed: int
-        Seed for the rng.
     lp_share_price_test: bool
         If True, uses lp share price test fuzz parameters.
 
@@ -111,12 +106,6 @@ def generate_fuzz_hyperdrive_config(
     flat_fee = FixedPoint(rng.uniform(*flat_fee_range) * (position_duration / ONE_YEAR_IN_SECONDS))
 
     return LocalHyperdrive.Config(
-        preview_before_trade=True,
-        rng=rng,
-        log_to_rollbar=log_to_rollbar,
-        rollbar_log_prefix="localfuzzbots",
-        crash_log_level=logging.CRITICAL,
-        crash_report_additional_info={"rng_seed": rng_seed},
         # Initial hyperdrive config
         initial_liquidity=FixedPoint(rng.uniform(*INITIAL_LIQUIDITY_RANGE)),
         initial_fixed_apr=initial_time_stretch_apr,
@@ -279,10 +268,11 @@ def run_local_fuzz_bots(
     agents: list[HyperdriveAgent] = []
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
-        agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+        agent: HyperdriveAgent = hyperdrive_pool.chain.init_agent(
             base=base_budget_per_bot,
             eth=eth_budget_per_bot,
             private_key=make_private_key(),
+            pool=hyperdrive_pool,
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
                 slippage_tolerance=slippage_tolerance,
@@ -294,10 +284,11 @@ def run_local_fuzz_bots(
         agents.append(agent)
 
     for _ in range(num_random_hold_agents):
-        agent: HyperdriveAgent = hyperdrive_pool.init_agent(
+        agent: HyperdriveAgent = hyperdrive_pool.chain.init_agent(
             base=base_budget_per_bot,
             eth=eth_budget_per_bot,
             private_key=make_private_key(),
+            pool=hyperdrive_pool,
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
                 slippage_tolerance=slippage_tolerance,
@@ -357,7 +348,7 @@ def run_local_fuzz_bots(
         average_agent_base = sum(agent.get_wallet().balance.amount for agent in agents) / FixedPoint(len(agents))
         # TODO add eth balance to wallet output
         average_agent_eth = sum(
-            hyperdrive_pool.interface.get_eth_base_balances(agent.agent)[0] for agent in agents
+            hyperdrive_pool.interface.get_eth_base_balances(agent.account)[0] for agent in agents
         ) / FixedPoint(len(agents))
 
         # Update agent funds
@@ -375,15 +366,24 @@ def run_local_fuzz_bots(
             else:
                 _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
 
+        # The deployer pays gas for advancing time
+        # We check the eth balance and refund if it runs low
+        deployer_account = hyperdrive_pool.chain.get_deployer_account()
+        deployer_agent_eth = hyperdrive_pool.interface.get_eth_base_balances(deployer_account)[0]
+        if deployer_agent_eth < minimum_avg_agent_eth:
+            _ = set_anvil_account_balance(
+                hyperdrive_pool.interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
+            )
+
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
             # LocalChain object
             if isinstance(hyperdrive_pool.chain, LocalChain):
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
-                assert hyperdrive_pool.config.rng is not None
+                assert hyperdrive_pool.chain.config.rng is not None
                 # TODO should there be an upper bound for advancing time?
-                random_time = int(hyperdrive_pool.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
+                random_time = int(hyperdrive_pool.chain.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
                 hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
@@ -392,8 +392,8 @@ def run_local_fuzz_bots(
             if isinstance(hyperdrive_pool, LocalHyperdrive):
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
-                assert hyperdrive_pool.config.rng is not None
-                random_rate = FixedPoint(hyperdrive_pool.config.rng.uniform(*VARIABLE_RATE_RANGE))
+                assert hyperdrive_pool.chain.config.rng is not None
+                random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*VARIABLE_RATE_RANGE))
                 hyperdrive_pool.set_variable_rate(random_rate)
             else:
                 raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")

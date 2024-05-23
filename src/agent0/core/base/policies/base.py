@@ -57,6 +57,10 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         self.config.freeze()
         self.config.disable_new_attribs()
         self.slippage_tolerance = policy_config.slippage_tolerance
+
+        # Stateful variable storing if this agent is done trading
+        self._done_trading = False
+
         # Generate rng if not set in config
         if policy_config.rng is None:
             self.rng: Generator = default_rng(policy_config.rng_seed)

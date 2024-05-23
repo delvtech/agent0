@@ -13,10 +13,10 @@ from functools import partial
 from typing import NamedTuple, Sequence
 
 from eth_account.account import Account
+from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 
 from agent0 import Chain, Hyperdrive
-from agent0.core.base import PolicyAgent
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
 from agent0.hyperfuzz.system_fuzz.run_local_fuzz_bots import async_runner
@@ -54,7 +54,7 @@ def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_t
 def run_checkpoint_bot(
     chain: Chain,
     pool_address: ChecksumAddress,
-    sender: PolicyAgent,
+    sender: LocalAccount,
     block_time: int = 1,
     block_timestamp_interval: int = 1,
     check_checkpoint: bool = False,
@@ -69,7 +69,7 @@ def run_checkpoint_bot(
         The chain object.
     pool_address: ChecksumAddress
         The pool address.
-    sender: PolicyAgent
+    sender: LocalAccount
         The sender of the transaction.
     block_time: int
         The block time in seconds.
@@ -206,7 +206,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12
 
     private_key = os.getenv("CHECKPOINT_BOT_KEY")
-    sender = PolicyAgent(Account().from_key(private_key))
+    sender: LocalAccount = Account().from_key(private_key)
 
     while True:
         logging.info("Checking for new pools...")

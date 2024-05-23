@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from typing import Type
+from typing import TYPE_CHECKING
 
-import dill
 import pandas as pd
-from eth_typing import BlockNumber
+from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 
 from agent0.chainsync.db.hyperdrive import (
@@ -20,17 +18,18 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
 from .event_types import CreateCheckpoint
 from .hyperdrive import Hyperdrive
-from .local_chain import LocalChain
-from .local_hyperdrive_agent import LocalHyperdriveAgent
+
+if TYPE_CHECKING:
+    from .local_chain import LocalChain
 
 # Is very thorough module.
 # pylint: disable=too-many-lines
+# pylint: disable=protected-access
 
 
 class LocalHyperdrive(Hyperdrive):
@@ -45,15 +44,6 @@ class LocalHyperdrive(Hyperdrive):
         # Environment variables
         data_pipeline_timeout: int = 60
         """The timeout for the data pipeline. Defaults to 60 seconds."""
-        crash_log_ticker: bool = False
-        """Whether to log the trade ticker in crash reports. Defaults to False."""
-        load_rng_on_snapshot: bool = True
-        """
-        If True, loading a snapshot also loads the RNG state of the underlying policy.
-        This results in the same RNG state as when the snapshot was taken.
-        If False, will use the existing RNG state before load.
-        Defaults to False.
-        """
 
         # Initial pool variables
         initial_liquidity: FixedPoint = FixedPoint(100_000_000)
@@ -142,7 +132,6 @@ class LocalHyperdrive(Hyperdrive):
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
-            super().__post_init__()
 
         @property
         def _factory_min_fees(self) -> Fees:
@@ -171,17 +160,31 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
-    def __init__(self, chain: LocalChain, config: Config | None = None, name: str | None = None):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        chain: LocalChain,
+        config: Config | None = None,
+        name: str | None = None,
+        deploy: bool = True,
+        hyperdrive_address: ChecksumAddress | None = None,
+    ):
         """Constructor for the interactive hyperdrive agent.
 
         Arguments
         ---------
         chain: LocalChain
             The local chain object to launch hyperdrive on.
+        hyperdrive_address: ChecksumAddress | None, optional
+            The address of the hyperdrive contract to connect to if `deploy` is False.
+            Defaults to deploying a new hyperdrive.
         config: Config | None
             The configuration for the initial pool configuration.
         name: str | None, optional
             The logical name of the pool.
+        deploy: bool, optional
+            If True, will deploy a new hyperdrive contract.
+            If False, will connect to an existing hyperdrive contract (in cases of forking)
         """
 
         # We don't call super's init since we do specific type checking
@@ -193,12 +196,19 @@ class LocalHyperdrive(Hyperdrive):
         else:
             self.config = config
 
-        self.calc_pnl = self.config.calc_pnl
-
         # Deploys a hyperdrive factory + pool on the chain
-        self._deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
+        if deploy:
+            if hyperdrive_address is not None:
+                raise ValueError("Cannot specify a hyperdrive address if deploying a Hyperdrive contract.")
+            _deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
+            hyperdrive_address = _deployed_hyperdrive.hyperdrive_contract.address
+        else:
+            if hyperdrive_address is None:
+                raise ValueError("Must specify a hyperdrive address if not deploying a Hyperdrive contract.")
 
-        self._initialize(chain, self._deployed_hyperdrive.hyperdrive_contract.address, name)
+        self._initialize(chain, hyperdrive_address, name)
+
+        self.calc_pnl = self.chain.config.calc_pnl
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
@@ -212,8 +222,6 @@ class LocalHyperdrive(Hyperdrive):
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
         self._run_blocking_data_pipeline()
-
-        self._pool_agents: list[LocalHyperdriveAgent] = []
 
     def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
         # TODO these functions are not thread safe, need to fix if we expose async functions
@@ -249,7 +257,7 @@ class LocalHyperdrive(Hyperdrive):
         return hash((self.chain.rpc_uri, self.hyperdrive_address))
 
     def __eq__(self, other):
-        return (self.chain.rpc_uri, self._deployed_hyperdrive.hyperdrive_contract.address) == (
+        return (self.chain.rpc_uri, self.hyperdrive_address) == (
             other.chain.rpc_uri,
             other.hyperdrive_address,
         )
@@ -316,7 +324,7 @@ class LocalHyperdrive(Hyperdrive):
         variable_rate: FixedPoint
             The new variable rate for the pool.
         """
-        self.interface.set_variable_rate(self._deployed_hyperdrive.deploy_account, variable_rate)
+        self.interface.set_variable_rate(self.chain.get_deployer_account(), variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
         self._run_blocking_data_pipeline()
 
@@ -340,7 +348,7 @@ class LocalHyperdrive(Hyperdrive):
 
         try:
             tx_receipt = self.interface.create_checkpoint(
-                self._deployed_hyperdrive.deploy_account, checkpoint_time=checkpoint_time
+                self.chain.get_deployer_account(), checkpoint_time=checkpoint_time
             )
         except AssertionError as exc:
             # Adding additional context to the "Transaction receipt has no logs" error
@@ -356,64 +364,6 @@ class LocalHyperdrive(Hyperdrive):
             matured_longs=tx_receipt.matured_longs,
             lp_share_price=tx_receipt.lp_share_price,
         )
-
-    def init_agent(
-        self,
-        private_key: str | None = None,
-        policy: Type[HyperdriveBasePolicy] | None = None,
-        policy_config: HyperdriveBasePolicy.Config | None = None,
-        name: str | None = None,
-        base: FixedPoint | None = None,
-        eth: FixedPoint | None = None,
-    ) -> LocalHyperdriveAgent:
-        """Initializes an agent with initial funding and a logical name.
-
-        Arguments
-        ---------
-        private_key: str, optional
-            The private key of the associated account. Default is auto-generated.
-        policy: HyperdrivePolicy, optional
-            An optional policy to attach to this agent.
-        policy_config: HyperdrivePolicy, optional
-            The configuration for the attached policy.
-        base: FixedPoint | None, optional
-            The amount of base to fund the agent with. Defaults to 0.
-            If a private key is provided then the base amount is added to their previous balance.
-        eth: FixedPoint | None, optional
-            The amount of ETH to fund the agent with. Defaults to 0.
-            If a private key is provided then the eth amount is added to their previous balance.
-        name: str, optional
-            The name of the agent. Defaults to the wallet address.
-
-        Returns
-        -------
-        LocalHyperdriveAgent
-            The agent object for a user to execute trades with.
-        """
-        # pylint: disable=too-many-arguments
-        if self.chain._has_saved_snapshot:  # pylint: disable=protected-access
-            logging.warning(
-                "Adding new agent with existing snapshot. "
-                "This object will no longer be valid if the snapshot is loaded."
-            )
-        if base is None:
-            base = FixedPoint(0)
-        if eth is None:
-            eth = FixedPoint(0)
-        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
-        out_agent = LocalHyperdriveAgent(
-            base=base,
-            eth=eth,
-            name=name,
-            pool=self,
-            policy=policy,
-            policy_config=policy_config,
-            private_key=private_key,
-        )
-        self._pool_agents.append(out_agent)
-        return out_agent
 
     ### Database methods
     # These methods expose the underlying chainsync getter methods with minimal processing
@@ -504,9 +454,9 @@ class LocalHyperdrive(Hyperdrive):
         if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
         # Add usernames
-        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
         # Add logical name for pool
-        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
         return position_snapshot
 
     def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -528,8 +478,8 @@ class LocalHyperdrive(Hyperdrive):
             self.chain.db_session, hyperdrive_address=self.interface.hyperdrive_address, coerce_float=coerce_float
         ).drop("id", axis=1)
         # Add usernames
-        position_snapshot = self._add_username_to_dataframe(position_snapshot, "wallet_address")
-        position_snapshot = self._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
+        position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
+        position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")
         return position_snapshot
 
     def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
@@ -558,8 +508,8 @@ class LocalHyperdrive(Hyperdrive):
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
-        out = self._add_username_to_dataframe(out, "wallet_address")
-        out = self._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
+        out = self.chain._add_username_to_dataframe(out, "wallet_address")
+        out = self.chain._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
         return out
 
     def get_historical_pnl(self, coerce_float: bool = False) -> pd.DataFrame:
@@ -576,7 +526,7 @@ class LocalHyperdrive(Hyperdrive):
             A dataframe of aggregated wallet pnl per block
         """
         out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
-        out = self._add_username_to_dataframe(out, "wallet_address")
+        out = self.chain._add_username_to_dataframe(out, "wallet_address")
         return out
 
     ################
@@ -591,77 +541,3 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Set internal state block number to 0 to enusre it updates
         self.interface.last_state_block_number = BlockNumber(0)
-
-        # Load and set all agent wallets from the db
-        for agent in self._pool_agents:
-            agent.agent.wallet = agent.get_wallet()
-
-    def _save_agent_bookkeeping(self, save_dir: str) -> None:
-        """Saves the policy state to file.
-
-        Arguments
-        ---------
-        save_dir: str
-            The directory to save the state to.
-        """
-        policy_file = save_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
-        agents = [agent.checksum_address for agent in self._pool_agents]
-        with open(policy_file, "wb") as file:
-            # We use dill, as pickle can't store local objects
-            dill.dump(agents, file, protocol=dill.HIGHEST_PROTOCOL)
-
-    def _save_policy_state(self, save_dir: str) -> None:
-        """Saves the policy state to file.
-
-        Arguments
-        ---------
-        save_dir: str
-            The directory to save the state to.
-        """
-        # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
-        policy_file_prefix = save_dir + "/" + self.interface.hyperdrive_contract.address + "-"
-        for agent in self._pool_agents:
-            policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
-            with open(policy_file, "wb") as file:
-                # We use dill, as pickle can't store local objects
-                dill.dump(agent.agent.policy, file, protocol=dill.HIGHEST_PROTOCOL)
-
-    def _load_agent_bookkeeping(self, load_dir: str) -> None:
-        """Loads the list of agents from file.
-
-        Arguments
-        ---------
-        load_dir: str
-            The directory to load the state from.
-        """
-        policy_file = load_dir + "/" + self.interface.hyperdrive_contract.address + "-agents.pkl"
-        with open(policy_file, "rb") as file:
-            # We use dill, as pickle can't store local objects
-            load_agents = dill.load(file)
-        # Remove references of all agents added after snapshot
-        # NOTE: existing agent objects initialized after snapshot will no longer be valid.
-        self._pool_agents = [agent for agent in self._pool_agents if agent.checksum_address in load_agents]
-
-    def _load_policy_state(self, load_dir: str) -> None:
-        """Loads the policy state from file.
-
-        Arguments
-        ---------
-        load_dir: str
-            The directory to load the state from.
-        """
-        # The policy file is stored as <pool_hyperdrive_contract_address>-<agent_checksum_address>.pkl
-        policy_file_prefix = load_dir + "/" + self.interface.hyperdrive_contract.address + "-"
-        for agent in self._pool_agents:
-            policy_file = policy_file_prefix + agent.checksum_address + ".pkl"
-            with open(policy_file, "rb") as file:
-                # If we don't load rng, we get the current RNG state and set it after loading
-                rng = None
-                if not self.config.load_rng_on_snapshot:
-                    rng = agent.agent.policy.rng
-                # We use dill, as pickle can't store local objects
-                agent.agent.policy = dill.load(file)
-                if not self.config.load_rng_on_snapshot:
-                    # For type checking
-                    assert rng is not None
-                    agent.agent.policy.rng = rng

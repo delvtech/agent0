@@ -52,7 +52,12 @@ def launch_chain(port_base) -> LocalChain:
         else:
             raise exc
 
-    local_chain_config = LocalChain.Config(chain_port=port_base, db_port=port_base + 1)
+    local_chain_config = LocalChain.Config(
+        chain_port=port_base,
+        db_port=port_base + 1,
+        # Always preview before trade in tests
+        preview_before_trade=True,
+    )
     return LocalChain(local_chain_config)
 
 

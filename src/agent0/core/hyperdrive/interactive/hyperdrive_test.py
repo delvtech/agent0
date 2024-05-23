@@ -26,9 +26,9 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
     interface = in_hyperdrive.interface
 
     # Test against db
-    positions_df = agent.get_positions(coerce_float=False)
+    positions_df = agent.get_positions(coerce_float=False, pool_filter=in_hyperdrive)
     # Filter for wallet
-    positions_df = positions_df[positions_df["wallet_address"] == agent.checksum_address]
+    positions_df = positions_df[positions_df["wallet_address"] == agent.address]
 
     agent_wallet = agent.get_wallet()
 
@@ -42,7 +42,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
         assert False
     assert check_value == agent_wallet.lp_tokens
     asset_id = encode_asset_id(AssetIdPrefix.LP, 0)
-    lp_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+    lp_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.address).call()
     assert check_value == FixedPoint(scaled_value=lp_from_chain)
 
     # Check withdrawal_shares
@@ -55,7 +55,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
         assert False
     assert check_value == agent_wallet.withdraw_shares
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
-    withdrawal_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+    withdrawal_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.address).call()
     assert check_value == FixedPoint(scaled_value=withdrawal_from_chain)
 
     # Check longs
@@ -67,7 +67,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
         assert maturity_time in agent_wallet.longs
         assert agent_wallet.longs[maturity_time].balance == long_df["token_balance"]
         asset_id = encode_asset_id(AssetIdPrefix.LONG, maturity_time)
-        long_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+        long_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.address).call()
         assert FixedPoint(scaled_value=long_from_chain) == FixedPoint(long_df["token_balance"])
 
     # Check shorts
@@ -78,7 +78,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
         assert maturity_time in agent_wallet.shorts
         assert agent_wallet.shorts[maturity_time].balance == short_df["token_balance"]
         asset_id = encode_asset_id(AssetIdPrefix.SHORT, maturity_time)
-        short_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.checksum_address).call()
+        short_from_chain = interface.hyperdrive_contract.functions.balanceOf(asset_id, agent.address).call()
         assert FixedPoint(scaled_value=short_from_chain) == FixedPoint(short_df["token_balance"])
 
 
@@ -127,8 +127,8 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_address)
 
     # Generate trading agents from the interactive object
-    hyperdrive_agent0 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
-    hyperdrive_agent1 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent0 = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
+    hyperdrive_agent1 = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
 
     # Add funds
     hyperdrive_agent0.add_funds(base=FixedPoint(1_111_111), eth=FixedPoint(111))
@@ -146,7 +146,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.agent)
+    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent0.account)
     assert chain_base_balance == FixedPoint(1_111_111)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     # This epsilon is a bit bigger than i_local_hyperdrive_test because we use this account
@@ -155,7 +155,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     (
         chain_eth_balance,
         chain_base_balance,
-    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent1.agent)
+    ) = interactive_remote_hyperdrive.interface.get_eth_base_balances(hyperdrive_agent1.account)
     assert chain_base_balance == FixedPoint(222_222)
     # There was a little bit of gas spent to approve, so we don't do a direct comparison here
     assert (FixedPoint(222) - chain_eth_balance) < FixedPoint("0.0002")
@@ -179,7 +179,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
 
     # Testing adding another agent to the pool after trades have been made, making a trade,
     # then checking wallet
-    hyperdrive_agent2 = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent2 = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
     hyperdrive_agent2.add_funds(base=FixedPoint(111_111), eth=FixedPoint(111))
     hyperdrive_agent2.set_max_approval()
     open_long_event_2 = hyperdrive_agent2.open_long(base=FixedPoint(333))
@@ -239,7 +239,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     # Redeem withdrawal shares
     # Note that redeeming withdrawal shares for more than available in the pool
     # will pull out as much withdrawal shares as possible
-    redeem_event = hyperdrive_agent0.redeem_withdraw_share(shares=remove_liquidity_event.withdrawal_share_amount)
+    redeem_event = hyperdrive_agent0.redeem_withdrawal_share(shares=remove_liquidity_event.withdrawal_share_amount)
     assert (
         hyperdrive_agent0.get_wallet().withdraw_shares
         == remove_liquidity_event.withdrawal_share_amount - redeem_event.withdrawal_share_amount
@@ -262,7 +262,7 @@ def test_no_policy_call(fast_chain_fixture: LocalChain):
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
 
     # Create agent without policy passed in
-    hyperdrive_agent = interactive_remote_hyperdrive.init_agent(private_key=make_private_key())
+    hyperdrive_agent = remote_chain.init_agent(private_key=make_private_key(), pool=interactive_remote_hyperdrive)
     # Attempt to execute agent policy, should throw value error
     with pytest.raises(ValueError):
         hyperdrive_agent.execute_policy_action()

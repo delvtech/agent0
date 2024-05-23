@@ -1,11 +1,18 @@
 """Helper functions for checking for known errors in contract calls."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from web3.exceptions import ContractCustomError
 
-from agent0.core.hyperdrive import HyperdriveActionType, TradeResult
+from agent0.core.hyperdrive.agent import HyperdriveActionType
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+
+if TYPE_CHECKING:
+    from agent0.core.hyperdrive import TradeResult
 
 
 # pylint: disable=too-many-statements
@@ -25,8 +32,8 @@ def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveRe
     TradeResult
         A modified trade_result that has a custom exception argument message prepended
     """
-    assert trade_result.agent is not None
-    wallet = trade_result.agent.wallet
+    assert trade_result.wallet is not None
+    wallet = trade_result.wallet
     assert trade_result.trade_object is not None
     trade_type = trade_result.trade_object.market_action.action_type
     trade_amount = trade_result.trade_object.market_action.trade_amount

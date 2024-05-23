@@ -7,16 +7,28 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Type
 
 import docker
+import numpy as np
+import pandas as pd
 from docker.errors import NotFound
 from docker.models.containers import Container
+from numpy.random._generator import Generator
 from web3.types import BlockData, Timestamp
 
 from agent0.chainsync import PostgresConfig
-from agent0.chainsync.db.base import initialize_session
+from agent0.chainsync.dashboard.usernames import build_user_mapping
+from agent0.chainsync.db.base import get_addr_to_username, initialize_session
+from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.hyperlogs import close_logging, setup_logging
+
+from .hyperdrive_agent import HyperdriveAgent
+
+if TYPE_CHECKING:
+    from .hyperdrive import Hyperdrive
 
 
 class Chain:
@@ -44,6 +56,39 @@ class Chain:
         keep_previous_handlers: bool = False
         """Whether to keep previous handlers. Defaults to False."""
 
+        # Execution config
+        exception_on_policy_error: bool = True
+        """When executing agent policies, whether to raise an exception if an error is encountered. Defaults to True."""
+        exception_on_policy_slippage: bool = False
+        """
+        When executing agent policies, whether to raise an exception if the slippage is too large. Defaults to False.
+        """
+        preview_before_trade: bool = False
+        """Whether to preview the position before executing a trade. Defaults to False."""
+        txn_receipt_timeout: float | None = None
+        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
+
+        # Logging and crash reporting
+        log_to_rollbar: bool = False
+        """Whether to log crash reports to rollbar. Defaults to False."""
+        rollbar_log_prefix: str | None = None
+        """Additional prefix for this hyperdrive to log to rollbar."""
+        crash_log_level: int = logging.CRITICAL
+        """The log level to log crashes at. Defaults to critical."""
+        crash_report_additional_info: dict[str, Any] | None = None
+        """Additional information to include in the crash report."""
+        always_execute_policy_post_action: bool = False
+        """
+        Whether to execute the policy `post_action` function after non-policy trades. 
+        If True, the policy `post_action` function always be called after any agent trade.
+        If False, the policy `post_action` function will only be called after `execute_policy_action`.
+        Defaults to False.
+        """
+
+        # Data pipeline parameters
+        calc_pnl: bool = True
+        """Whether to calculate pnl. Defaults to True."""
+
         # DB parameters
         db_port: int = 5433
         """
@@ -52,6 +97,20 @@ class Chain:
         """
         remove_existing_db_container: bool = True
         """Whether to remove the existing container if it exists on container launch. Defaults to True."""
+
+        # RNG config
+        rng_seed: int | None = None
+        """The seed for the random number generator. Defaults to None."""
+        rng: Generator | None = None
+        """
+        The experiment's stateful random number generator. Defaults to creating a generator from
+        the provided random seed if not set.
+        """
+
+        def __post_init__(self):
+            """Create the random number generator if not set."""
+            if self.rng is None:
+                self.rng = np.random.default_rng(self.rng_seed)
 
     def __init__(self, rpc_uri: str, config: Config | None = None):
         """Initialize the Chain class that connects to an existing chain.
@@ -97,6 +156,7 @@ class Chain:
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
         self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
         self._db_name = self.postgres_config.POSTGRES_DB
+        self.config = config
 
         # Registers the cleanup function to run when the python script exist.
         # NOTE this isn't guaranteed to run (e.g., in notebook and vscode debugging environment)
@@ -223,3 +283,84 @@ class Chain:
         if block_timestamp is None:
             raise AssertionError("The provided block has no timestamp")
         return block_timestamp
+
+    ################
+    # Agent functions
+    ################
+
+    def init_agent(
+        self,
+        private_key: str,
+        pool: Hyperdrive | None = None,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
+        name: str | None = None,
+    ) -> HyperdriveAgent:
+        """Initialize an agent object given a private key.
+
+        .. note::
+            Due to the underlying bookkeeping, each agent object needs a unique private key.
+
+        Arguments
+        ---------
+        private_key: str
+            The private key of the associated account.
+        pool: LocalHyperdrive, optional
+            An optional pool to set as the active pool.
+        policy: HyperdrivePolicy, optional
+            An optional policy to set as the active policy.
+        policy_config: HyperdrivePolicy, optional
+            The configuration for the attached policy.
+        name: str, optional
+            The name of the agent. Defaults to the wallet address.
+
+        Returns
+        -------
+        HyperdriveAgent
+            The agent object for a user to execute trades with.
+        """
+        # pylint: disable=too-many-arguments
+
+        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
+        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
+            policy_config.rng = self.config.rng
+        out_agent = HyperdriveAgent(
+            name=name,
+            chain=self,
+            pool=pool,
+            policy=policy,
+            policy_config=policy_config,
+            private_key=private_key,
+        )
+        return out_agent
+
+    ################
+    # Helper functions
+    ################
+
+    # TODO should likely move these to chainsync
+    # or have the db query automatically add these columns to the result
+
+    def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        addr_to_username = get_addr_to_username(self.db_session)
+
+        # Get corresponding usernames
+        usernames = build_user_mapping(df[addr_column], addr_to_username)["username"]
+        out = df.copy()
+        # Weird pandas type error
+        out.insert(df.columns.get_loc(addr_column), "username", usernames)  # type: ignore
+        return out
+
+    def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.db_session)
+
+        # Do lookup from address to name
+        hyperdrive_name = (
+            df[addr_column]
+            .to_frame()
+            .merge(hyperdrive_addr_to_name, how="left", left_on=addr_column, right_on="hyperdrive_address")
+        )["name"]
+        # Weird pandas type error
+        out = df.copy()
+        out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
+        return out

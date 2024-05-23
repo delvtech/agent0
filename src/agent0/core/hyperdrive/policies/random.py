@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 from fixedpointmath import FixedPoint
 
 from agent0.core.base import Trade
-from agent0.core.hyperdrive import HyperdriveActionType, HyperdriveMarketAction
 from agent0.core.hyperdrive.agent import (
+    HyperdriveActionType,
     add_liquidity_trade,
     close_long_trade,
     close_short_trade,
@@ -25,7 +25,7 @@ from agent0.ethpy.base.errors import ContractCallException, ContractCallType
 from .hyperdrive_policy import HyperdriveBasePolicy
 
 if TYPE_CHECKING:
-    from agent0.core.hyperdrive import HyperdriveWallet
+    from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
     from agent0.ethpy.hyperdrive.state import PoolState
 
