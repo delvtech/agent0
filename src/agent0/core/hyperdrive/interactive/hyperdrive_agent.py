@@ -934,7 +934,7 @@ class HyperdriveAgent:
         if pool_filter is None:
             # TODO get positions on remote chains must pass in pool for now
             # Eventually we get the list of pools from registry and track all pools in registry
-            raise NotImplementedError("Filter pool must be specified to get positions.")
+            raise NotImplementedError("Pool filter must be specified to get positions.")
         # Sync all events, then sync snapshots for pnl and value calculation
         self._sync_events(pool_filter)
         self._sync_snapshot(pool_filter)

@@ -26,7 +26,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: Hyperdrive, 
     interface = in_hyperdrive.interface
 
     # Test against db
-    positions_df = agent.get_positions(coerce_float=False)
+    positions_df = agent.get_positions(coerce_float=False, pool_filter=in_hyperdrive)
     # Filter for wallet
     positions_df = positions_df[positions_df["wallet_address"] == agent.address]
 
