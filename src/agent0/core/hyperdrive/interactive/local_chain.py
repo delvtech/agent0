@@ -110,6 +110,7 @@ class LocalChain(Chain):
             anvil_launch_args,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
+            close_fds=True,
         )
 
         # TODO HACK wait for anvil to start, ideally we would be looking for the output to stdout
@@ -144,23 +145,22 @@ class LocalChain(Chain):
         # Runs cleanup on all deployed pools
         try:
             if self.anvil_process is not None:
-                self.anvil_process.terminate()
                 if self.anvil_process.stdout is not None:
                     self.anvil_process.stdout.close()
                 if self.anvil_process.stderr is not None:
                     self.anvil_process.stderr.close()
+                self.anvil_process.terminate()
                 self.anvil_process = None
-
         except Exception:  # pylint: disable=broad-except
             pass
 
         try:
             if self.dashboard_subprocess is not None:
-                self.dashboard_subprocess.terminate()
                 if self.dashboard_subprocess.stdout is not None:
                     self.dashboard_subprocess.stdout.close()
                 if self.dashboard_subprocess.stderr is not None:
                     self.dashboard_subprocess.stderr.close()
+                self.dashboard_subprocess.terminate()
                 self.dashboard_subprocess = None
         except Exception:  # pylint: disable=broad-except
             pass
