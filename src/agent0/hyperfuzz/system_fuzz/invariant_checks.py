@@ -305,8 +305,13 @@ def _check_present_value_greater_than_idle_shares(
     exception_message = ""
     exception_data: dict[str, Any] = {}
 
-    present_value = interface.calc_present_value(pool_state)
-    idle_shares = interface.get_idle_shares(pool_state)
+    # Rust calls here can fail, we log if it does
+    try:
+        present_value = interface.calc_present_value(pool_state)
+        idle_shares = interface.get_idle_shares(pool_state)
+    # Catching rust panics here
+    except BaseException as e:  # pylint: disable=broad-except
+        return InvariantCheckResults(False, repr(e), exception_data)
 
     if not present_value >= idle_shares:
         difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
