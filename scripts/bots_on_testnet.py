@@ -190,7 +190,7 @@ RETH_30 = reth_30_pool.init_agent(
 RETH_30.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
 RETH_30._pool._contract = reth_30_contract
 RETH_30._pool._token = reth_contract
-RETH_30.agent.name = "reth30
+RETH_30.agent.name = "reth30"
 
 EZETH_14 = ezeth_14_pool.init_agent(
     private_key=EZETH_14_PRIVATE_KEY,
