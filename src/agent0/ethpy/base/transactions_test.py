@@ -48,7 +48,8 @@ def test_gas_price_base_multiple_explicit(fast_chain_fixture: LocalChain):
     assert isinstance(multiplied_built_transaction["maxFeePerGas"], int)
     multiplied_base_fee_per_gas = multiplied_built_transaction["maxFeePerGas"] - multiplied_priority_fee_per_gas
 
-    assert multiplied_base_fee_per_gas / regular_base_fee_per_gas == base_fee_multiple
+    # Regular base fee per gas is 2x, so we expect this ratio to be base fee multiple / 2
+    assert multiplied_base_fee_per_gas / regular_base_fee_per_gas == base_fee_multiple / 2
 
 
 @pytest.mark.anvil
