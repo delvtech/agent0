@@ -163,6 +163,15 @@ class Chain:
         # so still best practice to manually call cleanup at the end of scripts.
         atexit.register(self.cleanup)
 
+    # Allow this to be used as a context manager
+    def __enter__(self):
+        # Nothing needs to be done when entered, the constructor handles everything
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Call cleanup when exited
+        self.cleanup()
+
     def _initialize_postgres_container(
         self, container_name: str, db_port: int, remove_existing_db_container: bool
     ) -> tuple[PostgresConfig, Container]:

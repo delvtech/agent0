@@ -58,14 +58,20 @@ class TestLogging(unittest.TestCase):
         setup_logging(log_filename=log_filename, log_stdout=False, keep_previous_handlers=False)
         self.assertEqual(len(get_root_logger().handlers), 1)
         close_logging()
+        # No handlers after closing
+        self.assertEqual(len(get_root_logger().handlers), 0)
         # one handler because we're logging to stdout only
         setup_logging(log_stdout=True)
         self.assertEqual(len(get_root_logger().handlers), 1)
         close_logging()
+        # No handlers after closing
+        self.assertEqual(len(get_root_logger().handlers), 0)
         # two handlers because we're logging to file and stdout
         setup_logging(log_filename=log_filename, log_stdout=True)
         self.assertEqual(len(get_root_logger().handlers), 2)
         close_logging()
+        # No handlers after closing
+        self.assertEqual(len(get_root_logger().handlers), 0)
 
     def test_multiple_handlers_add_handlers(self):
         """Verfies that two handlers are created if we log to file and stdout."""
