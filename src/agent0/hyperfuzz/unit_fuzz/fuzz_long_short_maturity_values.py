@@ -6,7 +6,7 @@
 - execute random trades
   - from [open_long, open_short]
   - trade amount in uniform[min_trade_amount, max_trade_amount) base
-  - advance one block (12 sec) betwen each trade.
+  - advance one block (12 sec) between each trade.
 - advance time past the position duration, into a new checkpoint, create a checkpoint
 - close the trades one at a time in random order, run invariance checks after each close action
 

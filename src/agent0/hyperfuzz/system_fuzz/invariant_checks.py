@@ -369,11 +369,11 @@ def _check_lp_share_price(
     current_lp_share_price = pool_state.pool_info.lp_share_price
     test_tolerance = previous_lp_share_price * FixedPoint(str(normalized_test_epsilon))
 
-    # Determine if the current checkpoint has been minted by looking at the checkpoint's vault share price.
-    current_checkpoint_minted = pool_state.checkpoint.vault_share_price > 0
+    # Determine if the previous checkpoint has been minted by looking at the checkpoint's vault share price.
+    previous_checkpoint_minted = previous_pool_state.checkpoint.vault_share_price > 0
 
     # Check both directions if checkpoint has been minted.
-    if current_checkpoint_minted:
+    if previous_checkpoint_minted:
         if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
             failed = True
     # Only check that the lp share price doesn't decrease by more than our tolerance if checkpoint hasn't been minted.

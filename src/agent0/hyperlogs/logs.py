@@ -89,6 +89,7 @@ def close_logging(delete_logs=True) -> None:
     logging.shutdown()
     root_logger = get_root_logger()
     if delete_logs:
+        # Close all handlers
         for handler in root_logger.handlers:
             if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
                 # access baseFilename in a type safe way
@@ -96,7 +97,8 @@ def close_logging(delete_logs=True) -> None:
                 if handler_file_name is not None and os.path.exists(handler_file_name):
                     os.remove(handler_file_name)
             handler.close()
-            root_logger.removeHandler(handler)
+    # Remove all handlers
+    remove_handlers(root_logger)
 
 
 def prepare_log_path(log_filename: str) -> tuple[str, str]:
@@ -285,8 +287,8 @@ def remove_handlers(logger: logging.Logger):
     logger: logging.Logger
         Logger from which to remove handlers.
     """
-    while logger.handlers:
-        logger.removeHandler(logger.handlers[-1])
+    while logger.hasHandlers():
+        logger.removeHandler(logger.handlers[0])
 
 
 def create_file_handler(

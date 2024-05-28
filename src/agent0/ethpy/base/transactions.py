@@ -21,7 +21,9 @@ from .retry_utils import retry_call
 
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
-DEFAULT_BASE_FEE_MULTIPLE = 1
+# This is the default to be the standard for setting
+# max_fee = (2 * base_fee) + max_priority_fee
+DEFAULT_BASE_FEE_MULTIPLE = 2
 DEFAULT_PRIORITY_FEE_MULTIPLE = 1
 
 # pylint: disable=too-many-lines
