@@ -53,25 +53,29 @@ def calc_price_and_rate(interface:HyperdriveReadWriteInterface):
 
 def trade(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_portion, max_long, max_short):
     relevant_max = max_long if trade_portion > 0 else max_short
-    trade_size = int(float(relevant_max) * trade_portion)
+    trade_size = float(relevant_max) * trade_portion
     trade_result = trade_long(interface, agent, trade_size) if trade_size > 0 else trade_short(interface, agent, abs(trade_size))
     return *trade_result, trade_size
 
 def trade_long(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
     try:
-        agent.open_long(base=FixedPoint(trade_size))
-        return calc_price_and_rate(interface)
+        trade_result = agent.open_long(base=FixedPoint(trade_size))
+        base_traded = trade_result.amount
+        bonds_traded = trade_result.bond_amount
+        return *calc_price_and_rate(interface), base_traded, bonds_traded
     except:
         pass
-    return None, None
+    return None, None, None, None
 
 def trade_short(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
     try:
-        agent.open_short(bonds=FixedPoint(trade_size))
-        return calc_price_and_rate(interface)
+        trade_result = agent.open_short(bonds=FixedPoint(trade_size))
+        base_traded = -trade_result.amount
+        bonds_traded = -trade_result.bond_amount
+        return *calc_price_and_rate(interface), base_traded, bonds_traded
     except:
         pass
-    return None, None
+    return None, None, None, None
 
 def trade_liq(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent, trade_size):
     agent.add_liquidity(base=trade_size)
@@ -82,13 +86,14 @@ def trade_liq(interface:HyperdriveReadWriteInterface, agent:LocalHyperdriveAgent
 # @pytest.mark.parametrize("time_stretch_apr", [0.01, 0.05, 0.1, 0.2, 0.3])
 @pytest.mark.parametrize(
     "trial,time_stretch_apr, trade_portion_one",
-    [(1, 0.2, -0.90), (2, 0.2, -0.99)],
-    # [(1, 0.2, 0.99)],
+    # [(1, 0.2, -0.90), (2, 0.2, -0.99), (3, 0.15, -0.90), (4, 0.15, -0.99), (5, 0.1, -0.90), (6, 0.1, -0.99), (7, 0.05, -0.90), (8, 0.05, -0.99)],
+    [(1, 0.1, -0.995)],
 )
 @pytest.mark.anvil
-def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float, trade_portion_one: float):
+def test_discoverability(fast_chain_fixture: LocalChain, trial: int, time_stretch_apr: float, trade_portion_one: float):
     """Test discoverability of rates by time stretch."""
-    liquidity = FixedPoint(100)
+    liquidity = FixedPoint(100)  # stEth ($3000*100 = $30k)
+    liquidity = FixedPoint(10_000)  # Dai ($10k)
     trade_portion_list = [*np.arange(0.1, 1.0, 0.1), 0.99]
     trade_portion_list += [-x for x in trade_portion_list]  # add negative portions
     records = []
@@ -106,37 +111,39 @@ def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float,
         factory_min_time_stretch_apr=FixedPoint(0.001),
         factory_max_time_stretch_apr=FixedPoint(1000),
     )
-    hyperdrive:LocalHyperdrive = LocalHyperdrive(chain, interactive_config)
-    agent:LocalHyperdriveAgent = hyperdrive.init_agent(base=FixedPoint(1e18))
+    hyperdrive:LocalHyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
+    agent:LocalHyperdriveAgent = hyperdrive.init_agent(base=FixedPoint(1e18), eth=FixedPoint(1e18))
     interface = hyperdrive.interface
     time_stretch = interface.current_pool_state.pool_config.time_stretch
     logging.info("Time stretch: %s", time_stretch)
     logging.info("Time stretch: %s", time_stretch)
 
-    max_long = interface.calc_max_long(budget=agent.wallet.balance.amount)
-    max_short = interface.calc_max_short(budget=agent.wallet.balance.amount)
+    max_long = interface.calc_max_long(budget=agent.get_positions().balance.amount)
+    max_short = interface.calc_max_short(budget=agent.get_positions().balance.amount)
     logging.info(f"Max long :  base={float(max_long):>10,.0f}")
     logging.info(f"Max short: bonds={float(max_short):>10,.0f}")
-    price, rate, trade_size = trade(interface, agent, trade_portion_one, max_long, max_short)
-    records.append((trial, "first", interface.calc_effective_share_reserves(), trade_size, trade_portion_one, price, rate, time_stretch_apr))
-    price, rate = trade_liq(interface, agent, liquidity)
-    records.append((trial, "addliq", interface.calc_effective_share_reserves(), trade_size, trade_portion_one, price, rate, time_stretch_apr))
+    price, rate, base_traded, bonds_traded, trade_size = trade(interface, agent, trade_portion_one, max_long, max_short)
+    records.append((trial, "first", interface.calc_effective_share_reserves(), trade_size, base_traded, bonds_traded, trade_portion_one, price, rate, time_stretch_apr))
+    price, rate = trade_liq(interface, agent, liquidity*100)
+    records.append((trial, "addliq", interface.calc_effective_share_reserves(), trade_size, None, None, trade_portion_one, price, rate, time_stretch_apr))
     del price, rate, trade_size
 
     # save the snapshot
-    chain.save_snapshot()
+    fast_chain_fixture.save_snapshot()
 
     # then we short
-    max_short_two = interface.calc_max_short(budget=agent.wallet.balance.amount)
-    max_long_two = interface.calc_max_long(budget=agent.wallet.balance.amount)
+    max_short_two = interface.calc_max_short(budget=agent.get_positions().balance.amount)
+    max_long_two = interface.calc_max_long(budget=agent.get_positions().balance.amount)
     logging.info(f"Max short: bonds={float(max_short_two):>10,.0f}")
     logging.info(f"Max long :  base={float(max_long_two):>10,.0f}")
     for trade_portion_two in trade_portion_list:
-        chain.load_snapshot()
-        price, rate, trade_size = trade(interface, agent, trade_portion_two, max_long_two, max_short_two)
-        records.append((trial, "second", interface.calc_effective_share_reserves(), trade_size, trade_portion_two, price, rate, time_stretch_apr))
+        fast_chain_fixture.load_snapshot()
+        price = rate = base_traded = bonds_traded = trade_size = None
+        price, rate, base_traded, bonds_traded, trade_size = trade(interface, agent, trade_portion_two, max_long_two, max_short_two)
+        records.append((trial, "second", interface.calc_effective_share_reserves(), trade_size, base_traded, bonds_traded, trade_portion_two, price, rate, time_stretch_apr))
         logging.info("trade_portion=%s, rate=%s", trade_portion_two, rate)
-    columns = ["trial", "type", "liquidity", "trade_size", "portion", "price", "rate", "time_stretch_apr"]
+        del price, rate, trade_size, bonds_traded, base_traded
+    columns = ["trial", "type", "liquidity", "trade_size", "base_traded", "bonds_traded", "portion", "price", "rate", "time_stretch_apr"]
     new_result = pd.DataFrame.from_records(records, columns=columns)
     logging.info(f"\n{new_result[columns[:-1]]}")
     previous_results = pd.read_csv("discoverability.csv") if os.path.exists("discoverability.csv") else pd.DataFrame()
@@ -145,9 +152,16 @@ def test_discoverability(chain: LocalChain, trial: int, time_stretch_apr: float,
     logging.info(f"all_results.shape: {all_results.shape}")
     all_results.to_csv("discoverability.csv", index=False)
 
+    # 1. short
+    # 2. add liquidity
+    # 3. open long
+    # up to maximum circuit breaker limit (15%)
+    # how does circuit breaker work?
+    # 
+
 
 @pytest.mark.anvil
-def test_lp_pnl(chain: LocalChain):
+def test_lp_pnl(fast_chain_fixture: LocalChain):
     """Test whether LP PNL matches our rule of thumb."""
     liquidity = FixedPoint(10_000_000)
     time_stretch_apr_list = [0.05]
@@ -163,7 +177,7 @@ def test_lp_pnl(chain: LocalChain):
                 initial_liquidity=liquidity,
                 initial_time_stretch_apr=FixedPoint(str(time_stretch_apr)),
             )
-            interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+            interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
             interface = interactive_hyperdrive.interface
 
             manual_agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e9))
@@ -171,7 +185,7 @@ def test_lp_pnl(chain: LocalChain):
             logging.info(f"New rate: {interface.calc_spot_rate()}")
 
 
-def test_lp_pnl_calculator(chain: LocalChain):
+def test_lp_pnl_calculator(fast_chain_fixture: LocalChain):
     """Calculate LP PNL given a set of parameters."""
     initial_liquidity = FixedPoint(10_000_000)
     time_stretch_apr = 0.05
@@ -188,7 +202,7 @@ def test_lp_pnl_calculator(chain: LocalChain):
         initial_fixed_apr=FixedPoint(str(initial_fixed_apr)),
         initial_variable_rate=FixedPoint(str(initial_fixed_apr)),
     )
-    max_short = LocalHyperdrive(chain, interactive_config).interface.calc_max_short(budget=FixedPoint(1e12))
+    max_short = LocalHyperdrive(fast_chain_fixture, interactive_config).interface.calc_max_short(budget=FixedPoint(1e12))
     increment = int(max_short) // 10
     records = []
     for trade_size in range(increment, 11 * increment, increment):
@@ -203,9 +217,9 @@ def test_lp_pnl_calculator(chain: LocalChain):
             initial_fixed_apr=FixedPoint(str(initial_fixed_apr)),
             initial_variable_rate=FixedPoint(str(initial_fixed_apr)),
         )
-        interactive_hyperdrive = LocalHyperdrive(chain, interactive_config)
+        interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
         lp_larry = interactive_hyperdrive.init_agent(
-            base=FixedPoint(0), name="larry", private_key=chain.get_deployer_account_private_key()
+            base=FixedPoint(0), name="larry", private_key=fast_chain_fixture.get_deployer_account_private_key()
         )
         manual_agent = interactive_hyperdrive.init_agent(base=FixedPoint(1e12))
         start_timestamp = interactive_hyperdrive.interface.current_pool_state.block_time
@@ -217,7 +231,7 @@ def test_lp_pnl_calculator(chain: LocalChain):
                 # larry is the deployer, their base balance is the initial liquidity
                 starting_base[agent.name] = initial_liquidity
             else:
-                starting_base[agent.name] = agent.wallet.balance.amount
+                starting_base[agent.name] = agent.get_positions().balance.amount
         for k, v in starting_base.items():
             if k is not None:
                 print(f"{k:6}: {float(v):>17,.0f}")
@@ -231,11 +245,11 @@ def test_lp_pnl_calculator(chain: LocalChain):
         event = event_list[0] if isinstance(event_list, list) else event_list
         effective_spot_price = event.base_proceeds / event.bond_amount
         effective_interest_rate = (FixedPoint(1) - effective_spot_price) / effective_spot_price
-        position_size = manual_agent.agent.wallet.shorts[list(manual_agent.agent.wallet.shorts)[0]].balance
+        position_size = manual_agent.agent.get_positions().shorts[list(manual_agent.agent.get_positions().shorts)[0]].balance
         print(f"  position size is {float(position_size):,.0f} bonds")
         spent_base = {}
         for agent in interactive_hyperdrive._pool_agents:  # pylint: disable=protected-access
-            spent_base[agent.name] = starting_base[agent.name] - agent.wallet.balance.amount
+            spent_base[agent.name] = starting_base[agent.name] - agent.get_positions().balance.amount
         ending_pool_state = deepcopy(interactive_hyperdrive.interface.current_pool_state)
         new_fixed_rate = interactive_hyperdrive.interface.calc_spot_rate(ending_pool_state)
         print("fixed rate is", new_fixed_rate)
@@ -249,29 +263,29 @@ def test_lp_pnl_calculator(chain: LocalChain):
         advance_time_to = YEAR_IN_SECONDS
         advance_time_seconds = int(advance_time_to) - time_already_passed
         print(f"  advancing {advance_time_seconds} seconds... ", end="")
-        chain.advance_time(advance_time_seconds, create_checkpoints=False)
+        fast_chain_fixture.advance_time(advance_time_seconds, create_checkpoints=False)
         print("done.")
         current_timestamp = interactive_hyperdrive.interface.current_pool_state.block_time
         print(f"new timestamp is {current_timestamp}")
         # close all positions
         print("before agent action")
-        for short in manual_agent.agent.wallet.shorts:
+        for short in manual_agent.agent.get_positions().shorts:
             print(
                 f"  {short}: time to maturity {short-current_timestamp} seconds ({(short-current_timestamp)/YEAR_IN_SECONDS:0.5f} years)"
             )
         manual_agent.liquidate()
         print("after  agent action")
-        for short in manual_agent.agent.wallet.shorts:
+        for short in manual_agent.agent.get_positions().shorts:
             print(
                 f"  {short}: time to maturity {short-current_timestamp} seconds ({(short-current_timestamp)/YEAR_IN_SECONDS:0.5f} years)"
             )
-        lp_larry.remove_liquidity(lp_larry.wallet.lp_tokens - interactive_config.minimum_share_reserves * 2)
+        lp_larry.remove_liquidity(lp_larry.get_positions().lp_tokens - interactive_config.minimum_share_reserves * 2)
 
         print("=== END ===")
         print("ending WETH balances:")
         ending_base = {}
         for agent in interactive_hyperdrive._pool_agents:  # pylint: disable=protected-access
-            ending_base[agent.name] = agent.wallet.balance.amount
+            ending_base[agent.name] = agent.get_positions().balance.amount
         for k, v in ending_base.items():
             if k is not None:
                 print(f"  {k:6}: {float(v):>17,.0f}")

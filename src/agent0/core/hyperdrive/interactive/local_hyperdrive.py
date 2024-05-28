@@ -163,7 +163,7 @@ class LocalHyperdrive(Hyperdrive):
         """The upper bound on the governance zombie fee that governance can set."""
 
         # Pool Deploy Config variables
-        minimum_share_reserves: FixedPoint = FixedPoint(10)
+        minimum_share_reserves: FixedPoint = FixedPoint(1)
         """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         """The minimum amount of tokens that a position can be opened or closed with."""
