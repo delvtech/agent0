@@ -167,15 +167,16 @@ class HyperdriveReadInterface:
             web3.to_checksum_address(base_token_contract_address)
         )
 
-        # Fill in the initial state cache.
-        self._current_pool_state = self.get_hyperdrive_state()
-        self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
-
         # Set the retry count for contract calls using the interface when previewing/transacting
         # TODO these parameters are currently only used for trades against hyperdrive
         # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
         self.read_retry_count = read_retry_count
         self.txn_receipt_timeout = txn_receipt_timeout
+
+        # Fill in the initial state cache.
+        self._current_pool_state = self.get_hyperdrive_state()
+        self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+
         self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
 
     def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
