@@ -493,7 +493,7 @@ class HyperdriveReadInterface:
         FixedPoint
             The eth on the chain.
         """
-        return _get_hyperdrive_eth_balance(self.web3, self.hyperdrive_contract.address)
+        return _get_hyperdrive_eth_balance(self, self.web3, self.hyperdrive_contract.address)
 
     def get_hyperdrive_base_balance(self, block_number: BlockNumber | None = None) -> FixedPoint:
         """Get the current Hyperdrive balance in the base contract.

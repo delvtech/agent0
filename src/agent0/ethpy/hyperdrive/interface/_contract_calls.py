@@ -65,7 +65,7 @@ def _get_vault_shares(
 def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address)
+    agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address, interface.read_retry_count)
     agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
 
     return (
@@ -86,10 +86,14 @@ def _get_hyperdrive_base_balance(
     return FixedPoint(scaled_value=base_balance)
 
 
-def _get_hyperdrive_eth_balance(web3, hyperdrive_address) -> FixedPoint:
+def _get_hyperdrive_eth_balance(
+    interface: HyperdriveReadInterface,
+    web3: Web3,
+    hyperdrive_address: str,
+) -> FixedPoint:
     """See API for documentation."""
     hyperdrive_checksum_address = Web3.to_checksum_address(hyperdrive_address)
-    agent_eth_balance = get_account_balance(web3, hyperdrive_checksum_address)
+    agent_eth_balance = get_account_balance(web3, hyperdrive_checksum_address, interface.read_retry_count)
     return FixedPoint(scaled_value=agent_eth_balance)
 
 
