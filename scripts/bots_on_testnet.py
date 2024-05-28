@@ -28,7 +28,7 @@ from fixedpointmath import FixedPoint
 # %%
 # config
 load_dotenv()
-BASE_FEE_MULTIPLE = 1.5
+BASE_FEE_MULTIPLE = 10
 PRIORITY_FEE_MULTIPLE = 2
 RANDOM_DAI_14_PRIVATE_KEY = os.getenv("RANDOM_DAI_14")
 RANDOM_DAI_30_PRIVATE_KEY = os.getenv("RANDOM_DAI_30")
@@ -201,8 +201,8 @@ while True:
         time.sleep(1)
     print(f"{latest_block['number']}")
     for agent in agents:
-        # print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
-        # print(f"{agent._pool.interface.current_pool_state.pool_info}")
+        print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
+        print(f"===POOL INFO===\n{agent._pool.interface.current_pool_state.pool_info}")
         if agent.agent.wallet.balance.amount < agent.agent.TARGET_BASE:
             mint(agent)
         event_list = agent.execute_policy_action()
