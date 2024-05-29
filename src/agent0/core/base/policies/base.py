@@ -40,6 +40,8 @@ class BasePolicy(Generic[MarketInterface, Wallet]):
         """The base fee multiple for transactions. Defaults to None."""
         priority_fee_multiple: float | None = None
         """The priority fee multiple for transactions. Defaults to None."""
+        gas_limit: int | None = None
+        """Maximum gas to spend per trade."""
 
     def __init__(self, policy_config: Config):
         """Initialize the policy.

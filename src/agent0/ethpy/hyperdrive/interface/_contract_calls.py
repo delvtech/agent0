@@ -117,6 +117,7 @@ def _create_checkpoint(
     sender: LocalAccount,
     block_number: BlockNumber | None = None,
     checkpoint_time: int | None = None,
+    gas_limit: int | None = None,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
     if checkpoint_time is None:
@@ -138,6 +139,7 @@ def _create_checkpoint(
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         timeout=interface.txn_receipt_timeout,
+        txn_options_gas=gas_limit,
     )
     trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "createCheckpoint")
     return trade_result

@@ -278,7 +278,6 @@ def run_local_fuzz_bots(
                 slippage_tolerance=slippage_tolerance,
                 trade_chance=FixedPoint("0.8"),
                 randomly_ignore_slippage_tolerance=True,
-                gas_limit=int(1e6),  # Plenty of gas limit for transactions
             ),
         )
         agents.append(agent)
@@ -295,7 +294,6 @@ def run_local_fuzz_bots(
                 trade_chance=FixedPoint("0.8"),
                 randomly_ignore_slippage_tolerance=True,
                 max_open_positions=2_000,
-                gas_limit=int(1e6),  # Plenty of gas limit for transactions
             ),
         )
         agents.append(agent)

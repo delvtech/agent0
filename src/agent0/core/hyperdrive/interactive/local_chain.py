@@ -68,6 +68,14 @@ class LocalChain(Chain):
         If False, will use the existing RNG state before load.
         Defaults to False.
         """
+        gas_limit: int | None = None
+        """
+        The maximum gas to use when executing transactions. This gas limit controls
+        any transactions that are executed on the chain.
+        NOTE: the policies `gas_limit` overwrites this value if it is set.
+        """
+        # TODO we only use gas_limit currently for policy trades and `create_checkpoint` in advance time,
+        # need to propagate this to other trades
 
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
@@ -285,7 +293,7 @@ class LocalChain(Chain):
             for pool in self._deployed_hyperdrive_pools:
                 # Create checkpoint handles making a checkpoint at the right time
                 checkpoint_event = pool._create_checkpoint(  # pylint: disable=protected-access
-                    check_if_exists=True,
+                    check_if_exists=True, gas_limit=self.config.gas_limit
                 )
                 if checkpoint_event is not None:
                     out_dict[pool].append(checkpoint_event)
@@ -307,7 +315,9 @@ class LocalChain(Chain):
                 time_before_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
                 assert time_before_checkpoints is not None
                 for pool in self._deployed_hyperdrive_pools:
-                    checkpoint_event = pool._create_checkpoint()  # pylint: disable=protected-access
+                    checkpoint_event = pool._create_checkpoint(
+                        gas_limit=self.config.gas_limit
+                    )  # pylint: disable=protected-access
                     # These checkpoints should never fail
                     assert checkpoint_event is not None
                     # Add checkpoint event to the output
@@ -614,6 +624,10 @@ class LocalChain(Chain):
         # If the underlying policy's rng isn't set, we use the one from the chain object
         if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
             policy_config.rng = self.config.rng
+
+        # If the underlying policy's `gas_limit` isn't set, we use the one from the chain object
+        if policy_config is not None and policy_config.gas_limit is None:
+            policy_config.gas_limit = self.config.gas_limit
 
         out_agent = LocalHyperdriveAgent(
             base=base,
