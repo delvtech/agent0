@@ -8,15 +8,12 @@
 # TODO: add _contract to _pool
 # pylint: disable=protected-access
 
-import logging
 import os
 import time
 
 import numpy as np
-from agent0 import IChain, IHyperdrive, PolicyZoo
-from agent0.core.base.config import EnvironmentConfig
-from agent0.core.hyperdrive import HyperdriveAgent
-from agent0.ethpy import build_eth_config
+from agent0 import Chain, Hyperdrive, PolicyZoo
+from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import initialize_web3_with_http_provider, smart_contract_transact
 from agent0.hypertypes import IHyperdriveContract
 from dotenv import load_dotenv
@@ -31,6 +28,12 @@ DAI_14_PRIVATE_KEY = os.getenv("DAI_14")
 DAI_30_PRIVATE_KEY = os.getenv("DAI_30")
 STETH_14_PRIVATE_KEY = os.getenv("STETH_14")
 STETH_30_PRIVATE_KEY = os.getenv("STETH_30")
+RETH_14_PRIVATE_KEY = os.getenv("RETH_14")
+RETH_30_PRIVATE_KEY = os.getenv("RETH_30")
+EZETH_14_PRIVATE_KEY = os.getenv("EZETH_14")
+EZETH_30_PRIVATE_KEY = os.getenv("EZETH_30")
+MORPHO_14_PRIVATE_KEY = os.getenv("MORPHO_14")
+MORPHO_30_PRIVATE_KEY = os.getenv("MORPHO_30")
 SEPOLIA_ENDPOINT = os.getenv("SEPOLIA_ENDPOINT")
 CLOUDCHAIN_ENDPOINT = os.getenv("CLOUDCHAIN_ENDPOINT")
 CLOUDCHAIN_PRIVATE_KEY = os.getenv("CLOUDCHAIN_PRIVATE_KEY")
@@ -38,6 +41,12 @@ assert isinstance(DAI_14_PRIVATE_KEY, str)
 assert isinstance(DAI_30_PRIVATE_KEY, str)
 assert isinstance(STETH_14_PRIVATE_KEY, str)
 assert isinstance(STETH_30_PRIVATE_KEY, str)
+assert isinstance(RETH_14_PRIVATE_KEY, str)
+assert isinstance(RETH_30_PRIVATE_KEY, str)
+assert isinstance(EZETH_14_PRIVATE_KEY, str)
+assert isinstance(EZETH_30_PRIVATE_KEY, str)
+assert isinstance(MORPHO_14_PRIVATE_KEY, str)
+assert isinstance(MORPHO_30_PRIVATE_KEY, str)
 assert isinstance(SEPOLIA_ENDPOINT, str)
 assert isinstance(CLOUDCHAIN_ENDPOINT, str)
 assert isinstance(CLOUDCHAIN_PRIVATE_KEY, str)
@@ -50,21 +59,14 @@ RANDSEED = 123
 RANDOM_TRADE_CHANCE = 0.1  # on average 1 bot trades every block (10 bots)
 TIMEOUT = 600  # seconds to wait for a transaction receipt
 
-# Get the configuration and initialize the web3 provider.
-eth_config = build_eth_config()
-
-# The configuration for the checkpoint bot halts on errors and logs to stdout.
-env_config = EnvironmentConfig(
-    # Errors
-    halt_on_errors=True,
-    # Logging
-    log_stdout=True,
-    log_level=logging.INFO,
-)
-
 # %%
 # prepare chain and contracts
-chain = IChain(SEPOLIA_ENDPOINT)
+rng_generator = np.random.default_rng(RANDSEED)
+chain = Chain(SEPOLIA_ENDPOINT, Chain.Config(
+    preview_before_trade=True,
+    rng=rng_generator,
+    txn_receipt_timeout=TIMEOUT,
+))
 web3 = initialize_web3_with_http_provider(SEPOLIA_ENDPOINT, reset_provider=False)
 dai_abi = '[{"inputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"uint8","name":"decimals","type":"uint8"},{"internalType":"address","name":"admin","type":"address"},{"internalType":"bool","name":"isCompetitionMode_","type":"bool"},{"internalType":"uint256","name":"maxMintAmount_","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"contract Authority","name":"newAuthority","type":"address"}],"name":"AuthorityUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes4","name":"functionSig","type":"bytes4"},{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"PublicCapabilityUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint8","name":"role","type":"uint8"},{"indexed":true,"internalType":"bytes4","name":"functionSig","type":"bytes4"},{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"RoleCapabilityUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"target","type":"address"},{"indexed":true,"internalType":"contract Authority","name":"authority","type":"address"}],"name":"TargetCustomAuthorityUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint8","name":"role","type":"uint8"},{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"UserRoleUpdated","type":"event"},{"inputs":[],"name":"DOMAIN_SEPARATOR","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"authority","outputs":[{"internalType":"contract Authority","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"destination","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"address","name":"target","type":"address"},{"internalType":"bytes4","name":"functionSig","type":"bytes4"}],"name":"canCall","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"role","type":"uint8"},{"internalType":"bytes4","name":"functionSig","type":"bytes4"}],"name":"doesRoleHaveCapability","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint8","name":"role","type":"uint8"}],"name":"doesUserHaveRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"name":"getRolesWithCapability","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"getTargetCustomAuthority","outputs":[{"internalType":"contract Authority","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"getUserRoles","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes4","name":"","type":"bytes4"}],"name":"isCapabilityPublic","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isCompetitionMode","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"maxMintAmount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"destination","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"nonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"permit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"contract Authority","name":"newAuthority","type":"address"}],"name":"setAuthority","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"functionSig","type":"bytes4"},{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setPublicCapability","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"role","type":"uint8"},{"internalType":"bytes4","name":"functionSig","type":"bytes4"},{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setRoleCapability","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"target","type":"address"},{"internalType":"contract Authority","name":"customAuthority","type":"address"}],"name":"setTargetCustomAuthority","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint8","name":"role","type":"uint8"},{"internalType":"bool","name":"enabled","type":"bool"}],"name":"setUserRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}]'
 dai_contract = web3.eth.contract(web3.to_checksum_address("0x8fb0c5a09438b36e42c6a7c7fd25b73c140ed3a3"), abi=dai_abi)
@@ -88,26 +90,18 @@ ezeth_14_address = web3.to_checksum_address("0xdeC715C6EAbad704A50deCB400bb18Ef4
 ezeth_30_address = web3.to_checksum_address("0x496c57E03B63911ED37cd1ffc95d49b60AA22107")
 morpho_14_address = web3.to_checksum_address("0x2F8702a0f20Bd6C152381D59a39DBe8cA87db9c2")
 morpho_30_address = web3.to_checksum_address("0xb4E605E079B4D9ed50B7202Ca0d008EE473A8de4")
-rng_generator = np.random.default_rng(RANDSEED)
-hyperdrive_config = IHyperdrive.Config(
-    preview_before_trade=True,
-    rng=rng_generator,
-    txn_receipt_timeout=TIMEOUT,
-    txn_options_base_fee_multiple=BASE_FEE_MULTIPLE,
-    txn_options_priority_fee_multiple=PRIORITY_FEE_MULTIPLE,
-)
 
 # initialize pools
-dai_14_pool = IHyperdrive(chain, dai_14_address, hyperdrive_config)
-dai_30_pool = IHyperdrive(chain, dai_30_address, hyperdrive_config)
-steth_14_pool = IHyperdrive(chain, steth_14_address, hyperdrive_config)
-steth_30_pool = IHyperdrive(chain, steth_30_address, hyperdrive_config)
-reth_14_pool = IHyperdrive(chain, reth_14_address, hyperdrive_config)
-reth_30_pool = IHyperdrive(chain, reth_30_address, hyperdrive_config)
-ezeth_14_pool = IHyperdrive(chain, ezeth_14_address, hyperdrive_config)
-ezeth_30_pool = IHyperdrive(chain, ezeth_30_address, hyperdrive_config)
-morpho_14_pool = IHyperdrive(chain, morpho_14_address, hyperdrive_config)
-morpho_30_pool = IHyperdrive(chain, morpho_30_address, hyperdrive_config)
+dai_14_pool = Hyperdrive(chain, dai_14_address)
+dai_30_pool = Hyperdrive(chain, dai_30_address)
+steth_14_pool = Hyperdrive(chain, steth_14_address)
+steth_30_pool = Hyperdrive(chain, steth_30_address)
+reth_14_pool = Hyperdrive(chain, reth_14_address)
+reth_30_pool = Hyperdrive(chain, reth_30_address)
+ezeth_14_pool = Hyperdrive(chain, ezeth_14_address)
+ezeth_30_pool = Hyperdrive(chain, ezeth_30_address)
+morpho_14_pool = Hyperdrive(chain, morpho_14_address)
+morpho_30_pool = Hyperdrive(chain, morpho_30_address)
 
 # initialize contracts
 dai_14_contract = IHyperdriveContract.factory(w3=web3)(dai_14_address)
@@ -131,105 +125,115 @@ kwargs = {
     "trade_chance": RANDOM_TRADE_CHANCE,
     "lp_portion": FixedPoint("0.0"),
 }
-DAI_14 = dai_14_pool.init_agent(
+DAI_14 = chain.init_agent(
+    pool=dai_14_pool,
     private_key=DAI_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=dai_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-DAI_14.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
-DAI_14.agent.name = "dai14"
-DAI_14._pool._contract = dai_14_contract
-DAI_14._pool._token = dai_contract
+DAI_14.TARGET_BASE = FixedPoint(TARGET_BASE)
+DAI_14.name = "dai14"
+DAI_14._active_pool._contract = dai_14_contract
+DAI_14._active_pool._token = dai_contract
 
-DAI_30 = dai_30_pool.init_agent(
+DAI_30 = chain.init_agent(
+    pool=dai_30_pool,
     private_key=DAI_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=dai_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-DAI_30.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
-DAI_30._pool._contract = dai_30_contract
-DAI_30._pool._token = dai_contract
-DAI_30.agent.name = "dai30"
+DAI_30.TARGET_BASE = FixedPoint(TARGET_BASE)
+DAI_30._active_pool._contract = dai_30_contract
+DAI_30._active_pool._token = dai_contract
+DAI_30.name = "dai30"
 
-STETH_14 = steth_14_pool.init_agent(
+STETH_14 = chain.init_agent(
+    pool=steth_14_pool,
     private_key=STETH_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=steth_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-STETH_14.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
-STETH_14._pool._contract = steth_14_contract
-STETH_14._pool._token = steth_contract
-STETH_14.agent.name = "steth14"
+STETH_14.TARGET_BASE = FixedPoint(TARGET_ETH)
+STETH_14._active_pool._contract = steth_14_contract
+STETH_14._active_pool._token = steth_contract
+STETH_14.name = "steth14"
 
-STETH_30 = steth_30_pool.init_agent(
+STETH_30 = chain.init_agent(
+    pool=steth_30_pool,
     private_key=STETH_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=steth_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-STETH_30.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
-STETH_30._pool._contract = steth_30_contract
-STETH_30._pool._token = steth_contract
-STETH_30.agent.name = "steth30"
+STETH_30.TARGET_BASE = FixedPoint(TARGET_ETH)
+STETH_30._active_pool._contract = steth_30_contract
+STETH_30._active_pool._token = steth_contract
+STETH_30.name = "steth30"
 
-RETH_14 = reth_14_pool.init_agent(
+RETH_14 = chain.init_agent(
+    pool=reth_14_pool,
     private_key=RETH_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=reth_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-RETH_14.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
-RETH_14._pool._contract = reth_14_contract
-RETH_14._pool._token = reth_contract
-RETH_14.agent.name = "reth14"
+RETH_14.TARGET_BASE = FixedPoint(TARGET_ETH)
+RETH_14._active_pool._contract = reth_14_contract
+RETH_14._active_pool._token = reth_contract
+RETH_14.name = "reth14"
 
-RETH_30 = reth_30_pool.init_agent(
+RETH_30 = chain.init_agent(
+    pool=reth_30_pool,
     private_key=RETH_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=reth_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-RETH_30.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
-RETH_30._pool._contract = reth_30_contract
-RETH_30._pool._token = reth_contract
-RETH_30.agent.name = "reth30"
+RETH_30.TARGET_BASE = FixedPoint(TARGET_ETH)
+RETH_30._active_pool._contract = reth_30_contract
+RETH_30._active_pool._token = reth_contract
+RETH_30.name = "reth30"
 
-EZETH_14 = ezeth_14_pool.init_agent(
+EZETH_14 = chain.init_agent(
+    pool=ezeth_14_pool,
     private_key=EZETH_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=ezeth_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-EZETH_14.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
-EZETH_14._pool._contract = ezeth_14_contract
-EZETH_14._pool._token = ezeth_contract
-EZETH_14.agent.name = "ezeth14"
+EZETH_14.TARGET_BASE = FixedPoint(TARGET_ETH)
+EZETH_14._active_pool._contract = ezeth_14_contract
+EZETH_14._active_pool._token = ezeth_contract
+EZETH_14.name = "ezeth14"
 
-EZETH_30 = ezeth_30_pool.init_agent(
+EZETH_30 = chain.init_agent(
+    pool=ezeth_30_pool,
     private_key=EZETH_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=ezeth_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-EZETH_30.agent.TARGET_BASE = FixedPoint(TARGET_ETH)
-EZETH_30._pool._contract = ezeth_30_contract
-EZETH_30._pool._token = ezeth_contract
-EZETH_30.agent.name = "ezeth30"
+EZETH_30.TARGET_BASE = FixedPoint(TARGET_ETH)
+EZETH_30._active_pool._contract = ezeth_30_contract
+EZETH_30._active_pool._token = ezeth_contract
+EZETH_30.name = "ezeth30"
 
-MORPHO_14 = morpho_14_pool.init_agent(
+MORPHO_14 = chain.init_agent(
+    pool=morpho_14_pool,
     private_key=MORPHO_14_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=morpho_14_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-MORPHO_14.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
-MORPHO_14._pool._contract = morpho_14_contract
-MORPHO_14._pool._token = morpho_contract
-MORPHO_14.agent.name = "morpho14"
+MORPHO_14.TARGET_BASE = FixedPoint(TARGET_BASE)
+MORPHO_14._active_pool._contract = morpho_14_contract
+MORPHO_14._active_pool._token = dai_contract
+MORPHO_14.name = "morpho14"
 
-MORPHO_30 = morpho_30_pool.init_agent(
+MORPHO_30 = chain.init_agent(
+    pool=morpho_30_pool,
     private_key=MORPHO_30_PRIVATE_KEY,
     policy=PolicyZoo.lp_and_arb,
     policy_config=PolicyZoo.lp_and_arb.Config(min_trade_amount_bonds=morpho_30_pool.interface.pool_config.minimum_transaction_amount * FixedPoint(2), **kwargs),
 )
-MORPHO_30.agent.TARGET_BASE = FixedPoint(TARGET_BASE)
-MORPHO_30._pool._contract = morpho_30_contract
-MORPHO_30._pool._token = morpho_contract
-MORPHO_30.agent.name = "morpho30"
+MORPHO_30.TARGET_BASE = FixedPoint(TARGET_BASE)
+MORPHO_30._active_pool._contract = morpho_30_contract
+MORPHO_30._active_pool._token = dai_contract
+MORPHO_30.name = "morpho30"
 
 # concatenate agents
 agents = [DAI_14, DAI_30, STETH_14, STETH_30, RETH_14, RETH_30, EZETH_14, EZETH_30, MORPHO_14, MORPHO_30]
@@ -237,18 +241,18 @@ agents = [DAI_14, DAI_30, STETH_14, STETH_30, RETH_14, RETH_30, EZETH_14, EZETH_
 # %%
 # report agents
 for agent in agents:
-    print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
+    print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
 
 
 # %%
 # prepare agents
 def mint(agent: HyperdriveAgent):
-    print(f"MINT by {agent.agent.name:<14} ({agent.agent.checksum_address}) of {float(agent.agent.TARGET_BASE):,.0f}..",end="",)
-    fn_args = [agent.agent.TARGET_BASE.scaled_value]
+    print(f"MINT by {agent.name:<14} ({agent.address}) of {float(agent.TARGET_BASE):,.0f}..",end="",)
+    fn_args = [agent.TARGET_BASE.scaled_value]
     smart_contract_transact(
         web3,
-        agent._pool._token,
-        agent.agent,
+        agent._active_pool._token,
+        agent.account,
         "mint(uint256)",
         timeout=TIMEOUT,
         txn_options_base_fee_multiple=BASE_FEE_MULTIPLE,
@@ -256,24 +260,24 @@ def mint(agent: HyperdriveAgent):
         *fn_args,
     )
     print("success!")
-    # print(f"checking {agent._pool._token.name} balance of {agent.agent.name:<14} ({agent.agent.checksum_address})..", end="")
-    base_from_chain = agent._pool._token.functions.balanceOf(agent.agent.checksum_address).call()
+    # print(f"checking {agent._active_pool._token.name} balance of {agent.name:<14} ({agent.address})..", end="")
+    base_from_chain = agent._active_pool._token.functions.balanceOf(agent.address).call()
     # print("success!")
-    agent.agent.wallet.balance.amount = FixedPoint(scaled_value=base_from_chain)
-    print(f"Balance of {agent.agent.name:<14} ({agent.agent.checksum_address}) topped up to {agent.agent.wallet.balance.amount}")
+    agent.get_wallet().balance.amount = FixedPoint(scaled_value=base_from_chain)
+    print(f"Balance of {agent.name:<14} ({agent.address}) topped up to {agent.get_wallet().balance.amount}")
 
 
 print("preparing agents..")
 for agent in agents:
-    if agent.agent.wallet.balance.amount < agent.agent.TARGET_BASE:
+    if agent.get_wallet().balance.amount < agent.TARGET_BASE:
         mint(agent)
     else:
-        print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) is good to go!")
+        print(f"{agent.name:<14} ({agent.address}) is good to go!")
 
 # %%
 # report agents again
 for agent in agents:
-    print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
+    print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
 
 # %%
 # check latest block
@@ -286,13 +290,13 @@ while True:
         time.sleep(1)
     print(f"{latest_block['number']}")
     for agent in agents:
-        print(f"{agent.agent.name:<14} ({agent.agent.checksum_address}) BASE={float(agent.agent.wallet.balance.amount):,.0f} ETH={web3.eth.get_balance(agent.agent.checksum_address)/1e18:,.5f}")
-        print(f"===POOL INFO===\n{agent._pool.interface.current_pool_state.pool_info}")
-        if agent.agent.wallet.balance.amount < agent.agent.TARGET_BASE:
+        print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
+        print(f"===POOL INFO===\n{agent._active_pool.interface.current_pool_state.pool_info}")
+        if agent.get_wallet().balance.amount < agent.TARGET_BASE:
             mint(agent)
         event_list = agent.execute_policy_action()
         for event in event_list:
-            print(f"agent {agent.agent.name}({agent.agent.checksum_address}) decided to trade: {event}")
+            print(f"agent {agent.name}({agent.address}) decided to trade: {event}")
             print(event)
     previous_block = latest_block
 
