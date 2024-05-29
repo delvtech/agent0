@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Type
 import docker
 import numpy as np
 import pandas as pd
+from docker import DockerClient
 from docker.errors import NotFound
 from docker.models.containers import Container
 from numpy.random._generator import Generator
@@ -156,7 +157,8 @@ class Chain:
         self.chain_id = str(config.db_port)
         obj_name = type(self).__name__.lower()
         db_container_name = f"agent0-{obj_name}-{self.chain_id}"
-        self.postgres_config, self.postgres_container = self._initialize_postgres_container(
+
+        self.docker_client, self.postgres_config, self.postgres_container = self._initialize_postgres_container(
             db_container_name, config.db_port, config.remove_existing_db_container
         )
         assert isinstance(self.postgres_container, Container)
@@ -182,7 +184,7 @@ class Chain:
 
     def _initialize_postgres_container(
         self, container_name: str, db_port: int, remove_existing_db_container: bool
-    ) -> tuple[PostgresConfig, Container]:
+    ) -> tuple[DockerClient, PostgresConfig, Container]:
         # Attempt to use the default socket if it exists
         try:
             client = docker.from_env()
@@ -242,13 +244,23 @@ class Chain:
         )
         assert isinstance(container, Container)
 
-        return postgres_config, container
+        return client, postgres_config, container
 
     def cleanup(self):
         """General cleanup of resources of interactive hyperdrive."""
+        db_engine = None
+        if self.db_session is not None:
+            db_engine = self.db_session.get_bind()
+
         try:
             if self.db_session is not None:
                 self.db_session.close()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+        try:
+            if db_engine is not None:
+                db_engine.dispose()  # type: ignore
         except Exception:  # pylint: disable=broad-except
             pass
 
@@ -258,14 +270,19 @@ class Chain:
             pass
 
         try:
-            close_logging()
+            self.postgres_container.remove()
         except Exception:  # pylint: disable=broad-except
             pass
 
-    # def __del__(self):
-    #    """General cleanup of resources of interactive hyperdrive."""
-    #    with contextlib.suppress(Exception):
-    #        self.cleanup()
+        try:
+            self.docker_client.close()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+        try:
+            close_logging()
+        except Exception:  # pylint: disable=broad-except
+            pass
 
     def block_number(self) -> int:
         """Get the current block number on the chain.
