@@ -34,12 +34,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     rng_seed = random.randint(0, 10000000)
     rng = np.random.default_rng(rng_seed)
 
+    # Negative chain port means default
+    if parsed_args.chain_port < 0:
+        if parsed_args.lp_share_price_test:
+            chain_port = 11111
+        else:
+            chain_port = 33333
+    else:
+        chain_port = parsed_args.chain_port
+
     # Set different ports if we're doing lp share price test
     if parsed_args.lp_share_price_test:
-        chain_port = 11111
         db_port = 22222
     else:
-        chain_port = 33333
         db_port = 44444
 
     local_chain_config = LocalChain.Config(
@@ -98,6 +105,7 @@ class Args(NamedTuple):
 
     lp_share_price_test: bool
     pause_on_invariance_fail: bool
+    chain_port: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -116,6 +124,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         lp_share_price_test=namespace.lp_share_price_test,
         pause_on_invariance_fail=namespace.pause_on_invariance_fail,
+        chain_port=namespace.chain_port,
     )
 
 
@@ -144,6 +153,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=False,
         action="store_true",
         help="Pause execution on invariance failure.",
+    )
+    parser.add_argument(
+        "--chain_port",
+        type=int,
+        default=-1,
+        help="The port to run anvil on.",
     )
 
     # Use system arguments if none were passed
