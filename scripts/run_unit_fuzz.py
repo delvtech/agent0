@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import traceback
 from typing import NamedTuple, Sequence
 
 from agent0.core.hyperdrive.interactive import LocalChain
@@ -52,7 +53,7 @@ def main(argv: Sequence[str] | None = None):
         # We catch other exceptions here, for some reason rollbar needs to be continuously running in order
         # to log.
         except Exception:  # pylint: disable=broad-except
-            print("Unexpected error:", sys.exc_info()[0])
+            print("Unexpected error:\n", traceback.print_exc())
 
         try:
             print("Running path independence test")
@@ -89,7 +90,7 @@ def main(argv: Sequence[str] | None = None):
         except FuzzAssertionException:
             pass
         except Exception:  # pylint: disable=broad-except
-            print("Unexpected error:", sys.exc_info()[0])
+            print("Unexpected error:\n", traceback.print_exc())
 
         try:
             print("Running fuzz present value test")
@@ -104,7 +105,7 @@ def main(argv: Sequence[str] | None = None):
         except FuzzAssertionException:
             pass
         except Exception:  # pylint: disable=broad-except
-            print("Unexpected error:", sys.exc_info()[0])
+            print("Unexpected error:\n", traceback.print_exc())
 
         num_checks += 1
         if parsed_args.number_of_runs > 0 and num_checks >= parsed_args.number_of_runs:

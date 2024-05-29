@@ -89,7 +89,11 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         )
 
     def create_checkpoint(
-        self, sender: LocalAccount, block_number: BlockNumber | None = None, checkpoint_time: int | None = None
+        self,
+        sender: LocalAccount,
+        block_number: BlockNumber | None = None,
+        checkpoint_time: int | None = None,
+        gas_limit: int | None = None,
     ) -> ReceiptBreakdown:
         """Create a Hyperdrive checkpoint.
 
@@ -102,6 +106,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Defaults to the current block number.
         checkpoint_time: int, optional
             The checkpoint time to use. Defaults to the corresponding checkpoint for the provided block_number
+        gas_limit: int | None, optional
+            The maximum amount of gas used by the transaction.
 
         Returns
         -------
@@ -113,6 +119,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             sender=sender,
             block_number=block_number,
             checkpoint_time=checkpoint_time,
+            gas_limit=gas_limit,
         )
 
     def set_variable_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:

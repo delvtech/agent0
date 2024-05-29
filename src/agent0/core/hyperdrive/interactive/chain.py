@@ -5,7 +5,7 @@ from __future__ import annotations
 import atexit
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Type
 
@@ -106,6 +106,14 @@ class Chain:
         The experiment's stateful random number generator. Defaults to creating a generator from
         the provided random seed if not set.
         """
+        gas_limit: int | None = None
+        """
+        The maximum gas to use when executing transactions. This gas limit controls
+        any transactions that are executed on the chain.
+        NOTE: the policies `gas_limit` overwrites this value if it is set.
+        """
+        # TODO we only use gas_limit currently for policy trades and `create_checkpoint` in advance time,
+        # need to propagate this to other trades
 
         def __post_init__(self):
             """Create the random number generator if not set."""
@@ -297,6 +305,28 @@ class Chain:
     # Agent functions
     ################
 
+    def _handle_policy_config(
+        self,
+        policy: Type[HyperdriveBasePolicy] | None = None,
+        policy_config: HyperdriveBasePolicy.Config | None = None,
+    ) -> HyperdriveBasePolicy.Config | None:
+        if policy is None:
+            return None
+        return_policy_config = None
+        # Policy config might be frozen, we create a new one while setting these variables
+        if policy_config is not None:
+            policy_dict = asdict(policy_config)
+            # If the underlying policy's rng isn't set, we use the one from the chain object
+            if policy_config.rng is None and policy_config.rng_seed is None:
+                policy_dict["rng"] = self.config.rng
+            # If the underlying policy's `gas_limit` isn't set, we use the one from the chain object
+            if policy_config.gas_limit is None:
+                policy_dict["gas_limit"] = self.config.gas_limit
+            return_policy_config = policy.Config(**policy_dict)
+        else:
+            return_policy_config = policy.Config(rng=self.config.rng, gas_limit=self.config.gas_limit)
+        return return_policy_config
+
     def init_agent(
         self,
         private_key: str,
@@ -330,9 +360,8 @@ class Chain:
         """
         # pylint: disable=too-many-arguments
 
-        # If the underlying policy's rng isn't set, we use the one from interactive hyperdrive
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
+        policy_config = self._handle_policy_config(policy, policy_config)
+
         out_agent = HyperdriveAgent(
             name=name,
             chain=self,

@@ -63,8 +63,6 @@ class Random(HyperdriveBasePolicy):
         """The probability of this bot to make a trade on an action call."""
         randomly_ignore_slippage_tolerance: bool = False
         """If we randomly ignore slippage tolerance."""
-        gas_limit: int | None = None
-        """Maximum gas to spend per trade."""
         allowable_actions: list[HyperdriveActionType] = field(
             default_factory=lambda: [
                 HyperdriveActionType.OPEN_LONG,

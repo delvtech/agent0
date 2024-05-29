@@ -329,7 +329,7 @@ class LocalHyperdrive(Hyperdrive):
         self._run_blocking_data_pipeline()
 
     def _create_checkpoint(
-        self, checkpoint_time: int | None = None, check_if_exists: bool = True
+        self, checkpoint_time: int | None = None, check_if_exists: bool = True, gas_limit: int | None = None
     ) -> CreateCheckpoint | None:
         """Internal function without safeguard checks for creating a checkpoint.
         Creating checkpoints is called by the chain's `advance_time`.
@@ -348,7 +348,7 @@ class LocalHyperdrive(Hyperdrive):
 
         try:
             tx_receipt = self.interface.create_checkpoint(
-                self.chain.get_deployer_account(), checkpoint_time=checkpoint_time
+                self.chain.get_deployer_account(), checkpoint_time=checkpoint_time, gas_limit=gas_limit
             )
         except AssertionError as exc:
             # Adding additional context to the "Transaction receipt has no logs" error

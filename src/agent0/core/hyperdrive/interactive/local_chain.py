@@ -285,7 +285,7 @@ class LocalChain(Chain):
             for pool in self._deployed_hyperdrive_pools:
                 # Create checkpoint handles making a checkpoint at the right time
                 checkpoint_event = pool._create_checkpoint(  # pylint: disable=protected-access
-                    check_if_exists=True,
+                    check_if_exists=True, gas_limit=self.config.gas_limit
                 )
                 if checkpoint_event is not None:
                     out_dict[pool].append(checkpoint_event)
@@ -307,7 +307,9 @@ class LocalChain(Chain):
                 time_before_checkpoints = self._web3.eth.get_block("latest").get("timestamp")
                 assert time_before_checkpoints is not None
                 for pool in self._deployed_hyperdrive_pools:
-                    checkpoint_event = pool._create_checkpoint()  # pylint: disable=protected-access
+                    checkpoint_event = pool._create_checkpoint(
+                        gas_limit=self.config.gas_limit
+                    )  # pylint: disable=protected-access
                     # These checkpoints should never fail
                     assert checkpoint_event is not None
                     # Add checkpoint event to the output
@@ -611,9 +613,7 @@ class LocalChain(Chain):
         if eth is None:
             eth = FixedPoint(0)
 
-        # If the underlying policy's rng isn't set, we use the one from the chain object
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
+        policy_config = self._handle_policy_config(policy, policy_config)
 
         out_agent = LocalHyperdriveAgent(
             base=base,
@@ -748,4 +748,5 @@ class LocalChain(Chain):
         if blocking:
             input("Press any key to kill dashboard server.")
             self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
             self.dashboard_subprocess = None
