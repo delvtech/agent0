@@ -68,14 +68,6 @@ class LocalChain(Chain):
         If False, will use the existing RNG state before load.
         Defaults to False.
         """
-        gas_limit: int | None = None
-        """
-        The maximum gas to use when executing transactions. This gas limit controls
-        any transactions that are executed on the chain.
-        NOTE: the policies `gas_limit` overwrites this value if it is set.
-        """
-        # TODO we only use gas_limit currently for policy trades and `create_checkpoint` in advance time,
-        # need to propagate this to other trades
 
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
@@ -621,13 +613,7 @@ class LocalChain(Chain):
         if eth is None:
             eth = FixedPoint(0)
 
-        # If the underlying policy's rng isn't set, we use the one from the chain object
-        if policy_config is not None and policy_config.rng is None and policy_config.rng_seed is None:
-            policy_config.rng = self.config.rng
-
-        # If the underlying policy's `gas_limit` isn't set, we use the one from the chain object
-        if policy_config is not None and policy_config.gas_limit is None:
-            policy_config.gas_limit = self.config.gas_limit
+        policy_config = self._handle_policy_config(policy, policy_config)
 
         out_agent = LocalHyperdriveAgent(
             base=base,
@@ -762,4 +748,5 @@ class LocalChain(Chain):
         if blocking:
             input("Press any key to kill dashboard server.")
             self.dashboard_subprocess.kill()
+            self.dashboard_subprocess = None
             self.dashboard_subprocess = None

@@ -107,8 +107,8 @@ class HyperdriveAgent:
         self._active_policy: HyperdriveBasePolicy | None = None
 
         if policy is not None:
-            if policy_config is None:
-                policy_config = policy.Config(rng=self.chain.config.rng)
+            # Policy config gets set in `init_agent` and `set_active_policy` if passed in
+            assert policy_config is not None
             self._active_policy = policy(policy_config)
 
         self.account: LocalAccount = Account().from_key(private_key)
@@ -234,8 +234,8 @@ class HyperdriveAgent:
             self._active_pool = pool
 
         if policy is not None:
-            if policy_config is None:
-                policy_config = policy.Config(rng=self.chain.config.rng)
+            policy_config = self.chain._handle_policy_config(policy, policy_config)
+            assert policy_config is not None
             self._active_policy = policy(policy_config)
 
     ################
