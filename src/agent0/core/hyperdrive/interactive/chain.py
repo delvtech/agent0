@@ -139,9 +139,8 @@ class Chain:
         ---------
         rpc_uri: str
             The uri for the chain to connect to, e.g., `http://localhost:8545`.
-
-        config: Chain.Config
-            The chain configuration.
+        config: Chain.Config | None, optional
+            The chain configuration. Will use defaults if not provided.
         """
         if config is None:
             config = self.Config()

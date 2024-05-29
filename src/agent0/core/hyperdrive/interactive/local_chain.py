@@ -77,15 +77,24 @@ class LocalChain(Chain):
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
 
-    def __init__(self, config: Config | None = None, fork_uri: str | None = None, fork_block_number: int | None = None):
+    def __init__(
+        self,
+        config: Config | None = None,
+        fork_uri: str | None = None,
+        fork_block_number: int | None = None,
+    ):
         """Initialize the Chain class that connects to an existing chain.
 
         Also launch a postgres docker container for gathering data.
 
         Arguments
         ---------
-        config: Config | None
-            The local chain configuration.
+        config: Config | None, optional
+            The local chain configuration. Will use defaults if not provided.
+        fork_uri: str | None, optional
+            The URI of the fork to connect to. Will start a chain from scratch if not set.
+        fork_block_number: int | None, optional
+            The block number to fork at if fork_uri is set. Defaults to latest.
         """
         if config is None:
             config = self.Config()

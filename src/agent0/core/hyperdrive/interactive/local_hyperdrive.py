@@ -18,7 +18,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
-from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from agent0.ethpy.hyperdrive import DeployedHyperdriveFactory, DeployedHyperdrivePool, deploy_hyperdrive_from_factory
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
 from .event_types import CreateCheckpoint
@@ -307,7 +307,7 @@ class LocalHyperdrive(Hyperdrive):
 
         return deploy_hyperdrive_from_factory(
             chain.rpc_uri,
-            chain.get_deployer_account_private_key(),
+            chain.get_deployer_account(),
             config.initial_liquidity,
             config.initial_variable_rate,
             config.initial_fixed_apr,
