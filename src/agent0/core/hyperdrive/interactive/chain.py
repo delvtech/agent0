@@ -246,9 +246,19 @@ class Chain:
 
     def cleanup(self):
         """General cleanup of resources of interactive hyperdrive."""
+        db_engine = None
+        if self.db_session is not None:
+            db_engine = self.db_session.get_bind()
+
         try:
             if self.db_session is not None:
                 self.db_session.close()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+        try:
+            if db_engine is not None:
+                db_engine.dispose()  # type: ignore
         except Exception:  # pylint: disable=broad-except
             pass
 

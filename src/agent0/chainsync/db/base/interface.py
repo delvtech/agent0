@@ -12,6 +12,7 @@ from sqlalchemy import Column, Engine, MetaData, String, Table, create_engine, e
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool
 from sqlalchemy.sql import text
 from sqlalchemy_utils import create_database, database_exists
 
@@ -78,7 +79,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
         postgres_config = build_postgres_config()
 
     url_object = postgres_config.create_url_obj()
-    engine = create_engine(url_object)
+    engine = create_engine(url_object, poolclass=NullPool)
 
     if ensure_database_created:
         exception = None
