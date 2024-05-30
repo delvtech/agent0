@@ -63,7 +63,7 @@ TIMEOUT = 600  # seconds to wait for a transaction receipt
 # prepare chain and contracts
 rng_generator = np.random.default_rng(RANDSEED)
 chain = Chain(SEPOLIA_ENDPOINT, Chain.Config(
-    preview_before_trade=True,
+    preview_before_trade=False,
     rng=rng_generator,
     txn_receipt_timeout=TIMEOUT,
 ))
@@ -239,12 +239,6 @@ MORPHO_30.name = "morpho30"
 agents = [DAI_14, DAI_30, STETH_14, STETH_30, RETH_14, RETH_30, EZETH_14, EZETH_30, MORPHO_14, MORPHO_30]
 
 # %%
-# report agents
-for agent in agents:
-    print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
-
-
-# %%
 # prepare agents
 def mint(agent: HyperdriveAgent):
     print(f"MINT by {agent.name:<14} ({agent.address}) of {float(agent.TARGET_BASE):,.0f}..",end="",)
@@ -260,24 +254,32 @@ def mint(agent: HyperdriveAgent):
         *fn_args,
     )
     print("success!")
-    # print(f"checking {agent._active_pool._token.name} balance of {agent.name:<14} ({agent.address})..", end="")
     base_from_chain = agent._active_pool._token.functions.balanceOf(agent.address).call()
-    # print("success!")
     agent.get_wallet().balance.amount = FixedPoint(scaled_value=base_from_chain)
     print(f"Balance of {agent.name:<14} ({agent.address}) topped up to {agent.get_wallet().balance.amount}")
 
 
 print("preparing agents..")
 for agent in agents:
+    # mint the base token if needed
     if agent.get_wallet().balance.amount < agent.TARGET_BASE:
         mint(agent)
     else:
-        print(f"{agent.name:<14} ({agent.address}) is good to go!")
-
-# %%
-# report agents again
-for agent in agents:
-    print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
+        print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
+    # set max approval if it's not set
+    pool = agent._active_pool
+    if "_max_approval_pools" not in agent.__dict__:
+        agent._max_approval_pools = {}
+        # get allowance amount
+        # x = contract.functions.allowance(_owner, _spender).call();
+        allowance = pool.interface.base_token_contract.functions.allowance(agent.address, pool.hyperdrive_address).call()
+        if allowance > 2**128:
+            agent._max_approval_pools[pool] = True
+    if pool not in agent._max_approval_pools:
+        print(f"MAX_APPROVAL by {agent.name:<14} ({agent.address})..",end="",)
+        agent.set_max_approval(pool)
+        agent._max_approval_pools[pool] = True
+        print("success!")
 
 # %%
 # check latest block
