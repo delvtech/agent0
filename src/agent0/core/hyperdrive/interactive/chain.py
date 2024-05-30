@@ -164,7 +164,7 @@ class Chain:
         self.postgres_container = None
         if config.use_existing_postgres:
             self.postgres_config = build_postgres_config_from_env()
-            self.chain_id = self.postgres_config.POSTGRES_PORT
+            self.chain_id = str(self.postgres_config.POSTGRES_PORT)
         else:
             # Set up db connections
             # We use the db port as the container name
