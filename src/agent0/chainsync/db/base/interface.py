@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.sql import text
 from sqlalchemy_utils import create_database, database_exists
 
-from agent0.chainsync import PostgresConfig, build_postgres_config
+from agent0.chainsync import PostgresConfig, build_postgres_config_from_env
 
 from .schema import AddrToUsername, Base
 
@@ -75,7 +75,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
         The initialized engine object connected to postgres
     """
     if postgres_config is None:
-        postgres_config = build_postgres_config()
+        postgres_config = build_postgres_config_from_env()
 
     url_object = postgres_config.create_url_obj()
     engine = create_engine(url_object)

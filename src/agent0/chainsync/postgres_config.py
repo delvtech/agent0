@@ -23,7 +23,7 @@ class PostgresConfig:
     """The username to authenticate with."""
     POSTGRES_PASSWORD: str = "password"
     """The password to authenticate with."""
-    POSTGRES_DB: str = "postgres_db"
+    POSTGRES_DB: str = "agent0_db"
     """The name of the database."""
     POSTGRES_HOST: str = "localhost"
     """The hostname to connect to."""
@@ -50,7 +50,7 @@ class PostgresConfig:
         )
 
 
-def build_postgres_config() -> PostgresConfig:
+def build_postgres_config_from_env() -> PostgresConfig:
     """Build a PostgresConfig that looks for environmental variables.
     If env var exists, use that, otherwise, use default.
 
