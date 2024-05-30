@@ -34,6 +34,7 @@ def set_max_approval(account: LocalAccount, web3: Web3, base_token_contract: Con
             "approve",
             hyperdrive_address,
             eth_utils.conversions.to_int(eth_utils.currency.MAX_WEI),
+            timeout=600,
         )
     except Exception as err:  # pylint: disable=broad-exception-caught
         logging.warning(
