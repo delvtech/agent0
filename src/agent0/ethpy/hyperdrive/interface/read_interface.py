@@ -339,7 +339,7 @@ class HyperdriveReadInterface:
             gov_fees_accrued=gov_fees_accrued,
         )
 
-    def get_checkpoint(self, checkpoint_time: Timestamp, block_number: BlockNumber | None) -> CheckpointFP:
+    def get_checkpoint(self, checkpoint_time: Timestamp, block_number: BlockNumber | None = None) -> CheckpointFP:
         """Use an RPC to get the checkpoint info for the Hyperdrive contract for a given checkpoint_time index.
 
         Arguments
@@ -457,9 +457,7 @@ class HyperdriveReadInterface:
         current_block = self.current_pool_state.block
         current_block_time = self.get_block_timestamp(current_block)
         start_checkpoint_id = self.calc_checkpoint_id(block_timestamp=Timestamp(current_block_time - time_range))
-        start_vault_share_price = self.get_checkpoint(
-            start_checkpoint_id, block_number=self.get_block_number(current_block)
-        ).vault_share_price
+        start_vault_share_price = self.get_checkpoint(start_checkpoint_id).vault_share_price
 
         # Vault share price is 0 if checkpoint doesn't exist
         # This happens if the pool was deployed within the past `time_range`
@@ -468,9 +466,7 @@ class HyperdriveReadInterface:
 
         # We can also get the current vault share price instead of getting it from the latest checkpoint
         current_checkpoint_id = self.calc_checkpoint_id(block_timestamp=current_block_time)
-        current_vault_share_price = self.get_checkpoint(
-            current_checkpoint_id, block_number=self.get_block_number(current_block)
-        ).vault_share_price
+        current_vault_share_price = self.get_checkpoint(current_checkpoint_id).vault_share_price
         # If the current checkpoint doesn't exist (due to checkpoint not being made yet),
         # we use the current vault share price
         if current_vault_share_price == FixedPoint(0):
