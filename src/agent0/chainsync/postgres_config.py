@@ -60,7 +60,7 @@ def build_postgres_config() -> PostgresConfig:
         Config settings required to connect to and use the database.
     """
     # Look for and load local config if it exists
-    load_dotenv("postgres.env")
+    load_dotenv(".env")
 
     user = os.getenv("POSTGRES_USER")
     password = os.getenv("POSTGRES_PASSWORD")

@@ -51,9 +51,9 @@ def analyze_data(
         Not used if a list of interfaces is provided.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
-        postgres.env.
+        .env.
     postgres_config: PostgresConfig | None = None,
-        PostgresConfig for connecting to db. If none, will set from postgres.env.
+        PostgresConfig for connecting to db. If none, will set from .env.
     exit_on_catch_up: bool
         If True, will exit after catching up to current block
     exit_callback_fn: Callable[[], bool] | None, optional

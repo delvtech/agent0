@@ -65,7 +65,7 @@ def initialize_engine(postgres_config: PostgresConfig | None = None, ensure_data
     Arguments
     ---------
     postgres_config: PostgresConfig | None, optional
-        The postgres config. If none, will set from `postgres.env` file or set to defaults.
+        The postgres config. If none, will set from `.env` file or set to defaults.
     ensure_database_created: bool, optional
         If true, will create the database within postgres if it doesn't exist. Defaults to false.
 
@@ -121,7 +121,7 @@ def initialize_session(
     Arguments
     ---------
     postgres_config: PostgresConfig | None, optional
-        The postgres config. If none, will set from `postgres.env` file or set to defaults.
+        The postgres config. If none, will set from `.env` file or set to defaults.
     drop: bool, optional
         If true, will drop all tables in the database before doing anything for debugging.
         Defaults to false.
