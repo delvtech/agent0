@@ -58,7 +58,9 @@ def get_hyperdrive_pool_info(hyperdrive_contract: IHyperdriveContract, block_num
     return pool_info_to_fixedpoint(pool_info)
 
 
-def get_hyperdrive_checkpoint(hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp) -> CheckpointFP:
+def get_hyperdrive_checkpoint(
+    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp, block_number: BlockNumber
+) -> CheckpointFP:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
     Arguments
@@ -67,18 +69,20 @@ def get_hyperdrive_checkpoint(hyperdrive_contract: IHyperdriveContract, checkpoi
         The contract to query the pool info from.
     checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.
+    block_number: BlockNumber
+        The block number to query from the chain.
 
     Returns
     -------
     CheckpointFP
         The dataclass containing the checkpoint info in fixed point
     """
-    checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
+    checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call(None, block_number)
     return checkpoint_to_fixedpoint(checkpoint)
 
 
 def get_hyperdrive_checkpoint_exposure(
-    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp
+    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp, block_number: BlockNumber
 ) -> FixedPoint:
     """Get the checkpoint exposure for the Hyperdrive contract at a given block.
 
@@ -89,13 +93,15 @@ def get_hyperdrive_checkpoint_exposure(
     checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.
         This must be an exact checkpoint time for the deployed pool.
+    block_number: BlockNumber
+        The block number to query from the chain.
 
     Returns
     -------
     CheckpointFP
         The dataclass containing the checkpoint info in fixed point.
     """
-    exposure = hyperdrive_contract.functions.getCheckpointExposure(checkpoint_time).call()
+    exposure = hyperdrive_contract.functions.getCheckpointExposure(checkpoint_time).call(None, block_number)
     return FixedPoint(scaled_value=exposure)
 
 

@@ -302,8 +302,8 @@ class HyperdriveReadInterface:
         block_number = self.get_block_number(block)
         pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
         checkpoint_time = self.calc_checkpoint_id(self.pool_config.checkpoint_duration, self.get_block_timestamp(block))
-        checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time)
-        exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time)
+        checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_number)
+        exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time, block_number)
 
         try:
             variable_rate = self.get_variable_rate(block_number)
@@ -339,20 +339,25 @@ class HyperdriveReadInterface:
             gov_fees_accrued=gov_fees_accrued,
         )
 
-    def get_checkpoint(self, checkpoint_time: Timestamp) -> CheckpointFP:
+    def get_checkpoint(self, checkpoint_time: Timestamp, block_number: BlockNumber | None) -> CheckpointFP:
         """Use an RPC to get the checkpoint info for the Hyperdrive contract for a given checkpoint_time index.
 
         Arguments
         ---------
         checkpoint_time: Timestamp
             The block timestamp that indexes the checkpoint to get.
+        block_number: BlockNumber, optional
+            The number for any minted block.
+            If not given, the latest block number is used.
 
         Returns
         -------
         CheckpointFP
             The dataclass containing the checkpoint info in fixed point
         """
-        return get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time)
+        if block_number is None:
+            block_number = self.get_block_number(self.get_current_block())
+        return get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_number)
 
     def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:
         """Use an RPC to get the total supply of withdrawal shares in the pool at the given block.
@@ -449,9 +454,12 @@ class HyperdriveReadInterface:
             The standardized variable rate.
         """
         # Get the vault share price of the checkpoint in the past `time_range`
-        current_block_time = self.get_block_timestamp(self.current_pool_state.block)
+        current_block = self.current_pool_state.block
+        current_block_time = self.get_block_timestamp(current_block)
         start_checkpoint_id = self.calc_checkpoint_id(block_timestamp=Timestamp(current_block_time - time_range))
-        start_vault_share_price = self.get_checkpoint(start_checkpoint_id).vault_share_price
+        start_vault_share_price = self.get_checkpoint(
+            start_checkpoint_id, block_number=self.get_block_number(current_block)
+        ).vault_share_price
 
         # Vault share price is 0 if checkpoint doesn't exist
         # This happens if the pool was deployed within the past `time_range`
@@ -460,7 +468,9 @@ class HyperdriveReadInterface:
 
         # We can also get the current vault share price instead of getting it from the latest checkpoint
         current_checkpoint_id = self.calc_checkpoint_id(block_timestamp=current_block_time)
-        current_vault_share_price = self.get_checkpoint(current_checkpoint_id).vault_share_price
+        current_vault_share_price = self.get_checkpoint(
+            current_checkpoint_id, block_number=self.get_block_number(current_block)
+        ).vault_share_price
         # If the current checkpoint doesn't exist (due to checkpoint not being made yet),
         # we use the current vault share price
         if current_vault_share_price == FixedPoint(0):
