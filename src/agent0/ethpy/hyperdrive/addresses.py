@@ -11,13 +11,12 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 
 from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract, MockERC4626Contract
-from agent0.hypertypes.utilities.conversions import camel_to_snake
 
 from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from .transactions import get_hyperdrive_pool_config
 
 
-def get_hyperdrive_addresses_from_artifacts(artifacts_uri: str) -> dict[str, ChecksumAddress]:
+def get_hyperdrive_registry_from_artifacts(artifacts_uri: str) -> str:
     """Fetch addresses for deployed contracts in the Hyperdrive system.
 
     Arguments
@@ -51,16 +50,8 @@ def get_hyperdrive_addresses_from_artifacts(artifacts_uri: str) -> dict[str, Che
         raise ConnectionError(f"Request failed with status code {response.status_code} @ {time.ctime()}")
     addresses_json = response.json()
 
-    # We use a dictionary here to allow for dynamically generating deployed pools
-    # without having to change the code here
-    hyperdrive_addresses: dict[str, ChecksumAddress] = {}
-    for key, value in addresses_json.items():
-        # We don't add the base token or factory in the resulting addresses
-        if key not in ("baseToken", "factory", "hyperdriveRegistry"):
-            # We ensure checksum addresses here
-            hyperdrive_addresses[camel_to_snake(key)] = Web3.to_checksum_address(value)
-
-    return hyperdrive_addresses
+    registry_address = addresses_json["hyperdriveRegistry"]
+    return registry_address
 
 
 @overload

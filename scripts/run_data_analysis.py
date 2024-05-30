@@ -5,7 +5,10 @@ from __future__ import annotations
 import os
 
 from agent0.chainsync.exec import analyze_data
-from agent0.ethpy.hyperdrive.addresses import get_hyperdrive_addresses_from_artifacts
+from agent0.ethpy.hyperdrive.addresses import (
+    get_hyperdrive_addresses_from_registry,
+    get_hyperdrive_registry_from_artifacts,
+)
 from agent0.hyperlogs import setup_logging
 
 if __name__ == "__main__":
