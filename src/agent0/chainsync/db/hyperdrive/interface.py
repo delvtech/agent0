@@ -60,6 +60,7 @@ def add_hyperdrive_addr_to_name(
     try:
         session.commit()
     except exc.DataError as err:
+        session.rollback()
         logging.error("DB Error adding user: %s", err)
         raise err
 
