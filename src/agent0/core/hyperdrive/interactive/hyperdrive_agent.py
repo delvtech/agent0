@@ -40,7 +40,7 @@ from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.base import get_account_balance, set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import ReceiptBreakdown
+from agent0.ethpy.hyperdrive import ReceiptBreakdown, get_hyperdrive_addresses_from_registry
 
 from .event_types import (
     AddLiquidity,
@@ -52,10 +52,12 @@ from .event_types import (
     RemoveLiquidity,
 )
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
+from .hyperdrive import Hyperdrive
 
 if TYPE_CHECKING:
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+
     from .chain import Chain
-    from .hyperdrive import Hyperdrive
 
 # pylint: disable=protected-access
 # pylint: disable=too-many-lines
@@ -912,30 +914,48 @@ class HyperdriveAgent:
         return wallet.withdraw_shares
 
     def get_positions(
-        self, pool_filter: Hyperdrive | None = None, show_closed_positions: bool = False, coerce_float: bool = False
+        self,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
+        show_closed_positions: bool = False,
+        coerce_float: bool = False,
+        registry_address: str | None = None,
     ) -> pd.DataFrame:
         """Returns all of the agent's positions across all hyperdrive pools.
 
         Arguments
         ---------
-        pool_filter: Hyperdrive, optional
-            The hyperdrive pool to query. Defaults to None, which will query all pools.
+        pool_filter: Hyperdrive | list[Hyperdrive], optional
+            The hyperdrive pool(s) to query. Defaults to None, which will query all pools.
         show_closed_positions: bool, optional
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
         coerce_float: bool, optional
             Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
+        registry_address: str, optional
+            The registry address to query all positions across registered pools. Can't be used with pool_filter.
 
         Returns
         -------
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
-        if pool_filter is None:
-            # TODO get positions on remote chains must pass in pool for now
-            # Eventually we get the list of pools from registry and track all pools in registry
-            raise NotImplementedError("Pool filter must be specified to get positions.")
+        if pool_filter is None and registry_address is None:
+            raise ValueError("Pool filter or registry address must be specified to get positions.")
+
+        if pool_filter is not None and registry_address is not None:
+            raise ValueError("Pool filter and registry address cannot both be specified.")
+
+        if registry_address is not None:
+            # Get all pools from registry
+            hyperdrive_addresses = get_hyperdrive_addresses_from_registry(registry_address, self.chain._web3)
+            # Generate hyperdrive pool objects here
+            pool_filter = []
+            for hyperdrive_name, hyperdrive_address in hyperdrive_addresses.items():
+                pool_filter.append(Hyperdrive(self.chain, hyperdrive_address, name=hyperdrive_name))
+
+        assert pool_filter is not None
+
         # Sync all events, then sync snapshots for pnl and value calculation
         self._sync_events(pool_filter)
         self._sync_snapshot(pool_filter)
@@ -944,13 +964,15 @@ class HyperdriveAgent:
         )
 
     def _get_positions(
-        self, pool_filter: Hyperdrive | None, show_closed_positions: bool, coerce_float: bool
+        self, pool_filter: Hyperdrive | list[Hyperdrive] | None, show_closed_positions: bool, coerce_float: bool
     ) -> pd.DataFrame:
         # Query the snapshot for the most recent positions.
         if pool_filter is None:
             hyperdrive_address = None
+        elif isinstance(pool_filter, list):
+            hyperdrive_address = [str(pool.hyperdrive_address) for pool in pool_filter]
         else:
-            hyperdrive_address = pool_filter.hyperdrive_address
+            hyperdrive_address = str(pool_filter.hyperdrive_address)
 
         position_snapshot = get_position_snapshot(
             session=self.chain.db_session,
@@ -1020,7 +1042,7 @@ class HyperdriveAgent:
 
     # Helper functions for analysis
 
-    def _sync_events(self, pool: Hyperdrive) -> None:
+    def _sync_events(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # Update the db with this wallet
         # Note that remote hyperdrive only updates the wallet wrt the agent itself.
         # TODO this function can be optimized to cache.
@@ -1028,18 +1050,29 @@ class HyperdriveAgent:
         # NOTE the way we sync the events table is by either looking at (1) the latest
         # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
         # table, based on if we're updating the table with all wallets or just a single wallet.
+        interfaces: list[HyperdriveReadInterface]
+        if isinstance(pool, Hyperdrive):
+            interfaces = [pool.interface]
+        elif isinstance(pool, list):
+            interfaces = [p.interface for p in pool]
 
         # Remote hyperdrive stack syncs only the agent's wallet
-        trade_events_to_db([pool.interface], wallet_addr=self.address, db_session=pool.chain.db_session)
+        trade_events_to_db(interfaces, wallet_addr=self.address, db_session=self.chain.db_session)
         # We sync checkpoint events as well
-        checkpoint_events_to_db([pool.interface], db_session=pool.chain.db_session)
+        checkpoint_events_to_db(interfaces, db_session=self.chain.db_session)
 
-    def _sync_snapshot(self, pool: Hyperdrive) -> None:
+    def _sync_snapshot(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # Update the db with a snapshot of the wallet
+
+        interfaces: list[HyperdriveReadInterface]
+        if isinstance(pool, Hyperdrive):
+            interfaces = [pool.interface]
+        elif isinstance(pool, list):
+            interfaces = [p.interface for p in pool]
 
         # Note that remote hyperdrive only updates snapshots wrt the agent itself.
         snapshot_positions_to_db(
-            [pool.interface],
+            interfaces,
             wallet_addr=self.address,
             db_session=self.chain.db_session,
             calc_pnl=self.chain.config.calc_pnl,
