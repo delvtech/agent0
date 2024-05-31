@@ -32,6 +32,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     """
 
     parsed_args = parse_arguments(argv)
+
     chain = Chain(parsed_args.rpc_uri)
 
     # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
