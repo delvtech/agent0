@@ -37,7 +37,7 @@ from agent0 import LocalHyperdrive, LocalChain
 # Initialize
 chain = LocalChain()
 hyperdrive = LocalHyperdrive(chain)
-hyperdrive_agent0 = hyperdrive.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10))
+hyperdrive_agent0 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10), pool=hyperdrive)
 
 # Run trades
 chain.advance_time(datetime.timedelta(weeks=1))
@@ -48,8 +48,8 @@ close_event = hyperdrive_agent0.close_long(
 )
 
 # Analyze
-pool_state = hyperdrive.get_pool_state(coerce_float=True)
-pool_state.plot(x="block_number", y="longs_outstanding", kind="line")
+pool_info = hyperdrive.get_pool_info(coerce_float=True)
+pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
 ```
 
 See our [tutorial notebook](examples/tutorial.ipynb) for more information, including details on executing trades on remote chains.
