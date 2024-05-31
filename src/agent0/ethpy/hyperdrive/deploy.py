@@ -209,7 +209,8 @@ def deploy_hyperdrive_from_factory(
         function_name,
         *function_args,
     )
-    assert receipt["status"] == 1, f"Failed to register Hyperdrive contract.\n{receipt=}"
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed to register Hyperdrive contract.\n{receipt=}")
 
     # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
@@ -335,7 +336,8 @@ def _deploy_hyperdrive_factory(
         function_name,
         *function_args,
     )
-    assert receipt["status"] == 1, f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}"
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
 
     # Deploy the hyperdrive registry contract
     registry_contract = HyperdriveRegistryContract.deploy(
@@ -531,7 +533,8 @@ def _deploy_and_initialize_hyperdrive_pool(
             function_name,
             *function_args,
         )
-        assert receipt["status"] == 1, f"Failed calling deployTarget on target {target_index}.\n{receipt=}"
+        if receipt["status"] != 1:
+            raise ValueError(f"Failed calling deployTarget on target {target_index}.\n{receipt=}")
 
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
         deploymentId=deployment_id,
