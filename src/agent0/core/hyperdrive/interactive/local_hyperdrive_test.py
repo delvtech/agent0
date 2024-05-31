@@ -1047,12 +1047,13 @@ def test_share_price_compounding_annus(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
+    beginning_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
     fast_chain_fixture.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
     logging.info(f"Ending   share price: {ending_share_price}")
-    assert ending_share_price - 1 == initial_variable_rate
+    assert ending_share_price - beginning_share_price == initial_variable_rate
 
 
 @pytest.mark.anvil
