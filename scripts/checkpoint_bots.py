@@ -12,7 +12,6 @@ import time
 from functools import partial
 from typing import NamedTuple, Sequence
 
-from dotenv import load_dotenv
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
