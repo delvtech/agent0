@@ -78,6 +78,7 @@ class Hyperdrive:
             )
 
         add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
+        self.name = name
 
     def __init__(
         self,
