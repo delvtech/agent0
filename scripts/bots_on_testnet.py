@@ -304,7 +304,7 @@ while True:
         time.sleep(1)
     print(f"{latest_block['number']}")
     for agent in agents:
-        print(f"{agent.name:<14} {agent._active_pool.interface.calc_spot_rate():.2%}")
+        print(f"{agent.name:<14} {float(agent._active_pool.interface.calc_spot_rate()):.2%}")
         logger.info(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
         logger.info(agent._active_pool.interface.current_pool_state.pool_info)
         if agent.get_wallet().balance.amount < agent.TARGET_BASE:
