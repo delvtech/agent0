@@ -988,8 +988,12 @@ class HyperdriveAgent:
             raise ValueError("Pool filter and registry address cannot both be specified.")
 
         if registry_address is not None:
+            # TODO cache these objects
+
             # Get all pools from registry
             hyperdrive_addresses = get_hyperdrive_addresses_from_registry(registry_address, self.chain._web3)
+            if len(hyperdrive_addresses) == 0:
+                raise ValueError("Registry does not have any hyperdrive pools registered.")
             # Generate hyperdrive pool objects here
             pool_filter = []
             for hyperdrive_name, hyperdrive_address in hyperdrive_addresses.items():
