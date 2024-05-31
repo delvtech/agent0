@@ -7,7 +7,7 @@ import logging
 import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Type
+from typing import TYPE_CHECKING, Any, Type
 
 import docker
 import numpy as np
@@ -25,11 +25,12 @@ from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
 from agent0.chainsync.postgres_config import build_postgres_config_from_env
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive import get_hyperdrive_addresses_from_registry
 from agent0.hyperlogs import close_logging, setup_logging
 
-from .hyperdrive import Hyperdrive
 from .hyperdrive_agent import HyperdriveAgent
+
+if TYPE_CHECKING:
+    from .hyperdrive import Hyperdrive
 
 
 class Chain:
@@ -341,30 +342,6 @@ class Chain:
     def is_local_chain(self) -> bool:
         """Returns if this object is a local chain."""
         return False
-
-    def get_registered_pools(self, registry_address: str) -> list[Hyperdrive]:
-        """Returns hyperdrive objects for all availabie pools
-
-        Arguments
-        ---------
-        registry_address: str, optional
-            The registry address to query all positions across registered pools. Can't be used with pool_filter.
-
-        Returns
-        -------
-        list[Hyperdrive]
-            The hyperdrive objects for all registered pools
-        """
-        # Get all pools from registry
-        hyperdrive_addresses = get_hyperdrive_addresses_from_registry(registry_address, self._web3)
-        if len(hyperdrive_addresses) == 0:
-            raise ValueError("Registry does not have any hyperdrive pools registered.")
-        # Generate hyperdrive pool objects here
-        registered_pools = []
-        for hyperdrive_name, hyperdrive_address in hyperdrive_addresses.items():
-            registered_pools.append(Hyperdrive(self, hyperdrive_address, name=hyperdrive_name))
-
-        return registered_pools
 
     ################
     # Agent functions

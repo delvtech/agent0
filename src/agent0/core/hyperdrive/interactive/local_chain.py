@@ -203,21 +203,6 @@ class LocalChain(Chain):
         """Returns if this object is a local chain."""
         return True
 
-    def get_registered_pools(self, registry_address: str) -> list[Hyperdrive]:
-        """Returns hyperdrive objects for all availabie pools
-
-        Arguments
-        ---------
-        registry_address: str, optional
-            The registry address to query all positions across registered pools. Can't be used with pool_filter.
-
-        Returns
-        -------
-        list[Hyperdrive]
-            The hyperdrive objects for all registered pools
-        """
-        raise NotImplementedError("Local chain doesn't support managing a registry yet.")
-
     ##########
     # Advance time functions
     ##########
