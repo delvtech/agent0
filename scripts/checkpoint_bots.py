@@ -12,6 +12,7 @@ import time
 from functools import partial
 from typing import NamedTuple, Sequence
 
+from dotenv import load_dotenv
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -200,18 +201,14 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     parsed_args = parse_arguments(argv)
 
+    # Initialize
     if parsed_args.infra:
         # Get the rpc uri from env variable
         rpc_uri = os.getenv("RPC_URI", None)
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
-    else:
-        rpc_uri = parsed_args.rpc_uri
 
-    # Initialize
-    chain = Chain(parsed_args.rpc_uri)
-
-    if parsed_args.infra:
+        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
         private_key = make_private_key()
         # We create an agent here to fund it eth
         agent = chain.init_agent(private_key=private_key)
@@ -228,6 +225,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         block_time = int(os.getenv("BLOCK_TIME", "12"))
         block_timestamp_interval = int(os.getenv("BLOCK_TIMESTAMP_INTERVAL", "12"))
     else:
+        chain = Chain(parsed_args.rpc_uri)
         private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
         if private_key is None:
             raise ValueError("CHECKPOINT_BOT_KEY is not set")

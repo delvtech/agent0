@@ -218,7 +218,7 @@ class Chain:
         postgres_config = PostgresConfig(
             POSTGRES_USER="admin",
             POSTGRES_PASSWORD="password",
-            POSTGRES_DB="interactive_hyperdrive",
+            POSTGRES_DB="agent0_db",
             POSTGRES_HOST="127.0.0.1",
             POSTGRES_PORT=db_port,
         )
