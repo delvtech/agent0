@@ -52,7 +52,7 @@ pool_info = hyperdrive.get_pool_info(coerce_float=True)
 pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
 ```
 
-See our [tutorial notebook](examples/tutorial.ipynb) for more information, including details on executing trades on remote chains.
+See our [tutorial notebook](examples/tutorial.ipynb) and [examples notebook](examples/short_examples.ipynb) for more information, including details on executing trades on remote chains.
 
 ## Install
 
