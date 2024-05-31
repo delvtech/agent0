@@ -167,6 +167,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         super().set_active(pool=pool, policy=policy, policy_config=policy_config)
 
+    # Expose account and address for type narrowing in local agent
+    @property
+    def account(self) -> LocalAccount:
+        """Returns the `LocalAccount` associated with the agent."""
+        # Account should always be set in local agents
+        assert self._account is not None
+        return self._account
+
     ################
     # Trades
     ################

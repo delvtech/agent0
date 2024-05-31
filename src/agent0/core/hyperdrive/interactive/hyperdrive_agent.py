@@ -120,18 +120,24 @@ class HyperdriveAgent:
         if private_key is not None and public_address is not None:
             raise ValueError("Either private_key or public_address must be provided, but not both.")
 
-        self.account: LocalAccount | None = None
+        self._account: LocalAccount | None = None
         self.address: ChecksumAddress
         if private_key is not None:
-            self.account = Account().from_key(private_key)
-            assert self.account is not None
-            self.address = self.account.address
+            self._account = Account().from_key(private_key)
+            assert self._account is not None
+            self.address = self._account.address
         elif public_address is not None:
             self.address = Web3.to_checksum_address(public_address)
 
         # Register the username if it was provided
         if name is not None:
             add_addr_to_username(name, [self.address], self.chain.db_session)
+
+    # Expose account and address for type narrowing in local agent
+    @property
+    def account(self) -> LocalAccount | None:
+        """Returns the `LocalAccount` associated with the agent."""
+        return self._account
 
     @property
     def policy_done_trading(self) -> bool:
