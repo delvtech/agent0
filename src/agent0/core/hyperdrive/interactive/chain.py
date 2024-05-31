@@ -338,6 +338,11 @@ class Chain:
             raise AssertionError("The provided block has no timestamp")
         return block_timestamp
 
+    @property
+    def is_local_chain(self) -> bool:
+        """Returns if this object is a local chain."""
+        return False
+
     ################
     # Agent functions
     ################

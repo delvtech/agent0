@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import nest_asyncio
 import pandas as pd
@@ -15,7 +16,8 @@ from agent0.ethpy.hyperdrive import (
     get_hyperdrive_addresses_from_registry,
 )
 
-from .chain import Chain
+if TYPE_CHECKING:
+    from .chain import Chain
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -106,10 +108,7 @@ class Hyperdrive:
         # held by the chain object, we want to ensure that we dont mix and match
         # local vs non-local hyperdrive objects. Hence, we ensure that any hyperdrive
         # objects must come from a base Chain object and not a LocalChain.
-        # We use `type` instead of `isinstance` to explicitly check for
-        # the base Chain type instead of any subclass.
-        # pylint: disable=unidiomatic-typecheck
-        if type(chain) != Chain:
+        if chain.is_local_chain:
             raise TypeError("The chain parameter must be a Chain object, not a LocalChain.")
 
         self._initialize(chain, hyperdrive_address, name)

@@ -198,6 +198,11 @@ class LocalChain(Chain):
         """
         return self.get_deployer_account().address
 
+    @property
+    def is_local_chain(self) -> bool:
+        """Returns if this object is a local chain."""
+        return True
+
     ##########
     # Advance time functions
     ##########
