@@ -51,7 +51,6 @@ UINT256_MAX = int(2**256 - 1)
 class DeployedHyperdriveFactory(NamedTuple):
     """Collection of attributes associated with a locally deployed Hyperdrive factory."""
 
-    deploy_account: LocalAccount
     factory_contract: HyperdriveFactoryContract
     deployer_coordinator_contract: ERC4626HyperdriveDeployerCoordinatorContract
     factory_deploy_config: FactoryConfig
@@ -61,7 +60,6 @@ class DeployedHyperdriveFactory(NamedTuple):
 class DeployedHyperdrivePool(NamedTuple):
     """Collection of attributes associated with a locally deployed chain with a Hyperdrive pool."""
 
-    deploy_account: LocalAccount
     hyperdrive_contract: IHyperdriveContract
     # Keeping the base and vault shares contract generic
     base_token_contract: Contract
@@ -215,7 +213,6 @@ def deploy_hyperdrive_from_factory(
 
     # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
-        deploy_account=deployer_account,
         hyperdrive_contract=IHyperdriveContract.factory(web3)(hyperdrive_checksum_address),
         base_token_contract=base_token_contract,
         vault_shares_token_contract=vault_contract,
@@ -348,7 +345,6 @@ def _deploy_hyperdrive_factory(
     )
 
     return DeployedHyperdriveFactory(
-        deploy_account=deploy_account,
         factory_contract=factory_contract,
         deployer_coordinator_contract=deployer_coordinator_contract,
         factory_deploy_config=factory_deploy_config,

@@ -7,6 +7,8 @@ from dataclasses import fields
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
+from eth_account import Account
+from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
 from agent0.hypertypes import PoolConfig
@@ -210,7 +212,10 @@ class TestHyperdriveReadInterface:
         expected_timestretch_fp = FixedPoint(1) / (
             FixedPoint("5.24592") / (FixedPoint("0.04665") * (initial_fixed_rate * FixedPoint(100)))
         )
-        deploy_account = local_hyperdrive_pool.deploy_account
+        # This deploy account is defined from the fixture, which is using anvil account0.
+        deploy_account: LocalAccount = Account().from_key(
+            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+        )
         base_token_address = local_hyperdrive_pool.base_token_contract.address
         vault_shares_token_address = local_hyperdrive_pool.vault_shares_token_contract.address
         expected_pool_config = {
