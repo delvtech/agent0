@@ -135,8 +135,10 @@ class HyperdriveAgent:
 
     # Expose account and address for type narrowing in local agent
     @property
-    def account(self) -> LocalAccount | None:
+    def account(self) -> LocalAccount:
         """Returns the `LocalAccount` associated with the agent."""
+        if self._account is None:
+            raise ValueError("Must initialize agent with private key to access agent's LocalAccount.")
         return self._account
 
     @property
