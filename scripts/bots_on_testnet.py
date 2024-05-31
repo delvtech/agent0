@@ -8,6 +8,7 @@
 # TODO: add _contract to _pool
 # pylint: disable=protected-access
 
+import logging
 import os
 import time
 
@@ -20,6 +21,18 @@ from dotenv import load_dotenv
 from fixedpointmath import FixedPoint
 
 # pylint: disable=redefined-outer-name
+
+# Create a custom logger
+logger = logging.getLogger('CustomLogger')
+# Create handlers
+file_handler = logging.FileHandler('bots_on_testnet.log', mode='a')
+# Create formatters and add it to handlers
+log_format = "%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s"
+date_format = "%H:%M:%S"
+formatter = logging.Formatter(log_format, datefmt=date_format)
+file_handler.setFormatter(formatter)
+# Add handlers to the logger
+logger.addHandler(file_handler)
 
 # %%
 # config
@@ -271,7 +284,6 @@ for agent in agents:
     if "_max_approval_pools" not in agent.__dict__:
         agent._max_approval_pools = {}
         # get allowance amount
-        # x = contract.functions.allowance(_owner, _spender).call();
         allowance = pool.interface.base_token_contract.functions.allowance(agent.address, pool.hyperdrive_address).call()
         if allowance > 2**128:
             agent._max_approval_pools[pool] = True
@@ -292,14 +304,14 @@ while True:
         time.sleep(1)
     print(f"{latest_block['number']}")
     for agent in agents:
-        print(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
-        print(f"===POOL INFO===\n{agent._active_pool.interface.current_pool_state.pool_info}")
+        print(f"{agent.name:<14} {agent._active_pool.interface.calc_spot_rate():.2%}")
+        logger.info(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
+        logger.info(agent._active_pool.interface.current_pool_state.pool_info)
         if agent.get_wallet().balance.amount < agent.TARGET_BASE:
             mint(agent)
         event_list = agent.execute_policy_action()
         for event in event_list:
             print(f"agent {agent.name}({agent.address}) decided to trade: {event}")
-            print(event)
     previous_block = latest_block
 
 # %%
