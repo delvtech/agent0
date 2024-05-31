@@ -18,7 +18,7 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
-from agent0.ethpy.hyperdrive import DeployedHyperdriveFactory, DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_factory, deploy_hyperdrive_from_factory
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
 from .event_types import CreateCheckpoint
@@ -305,14 +305,21 @@ class LocalHyperdrive(Hyperdrive):
             fees=config._fees,  # pylint: disable=protected-access
         )
 
+        # TODO move deploying factory to be part of a parent, where deploying hyperdrive
+        # only uses the factory
+
+        deployed_hyperdrive_factory = deploy_hyperdrive_factory(
+            chain.rpc_uri, chain.get_deployer_account(), factory_deploy_config
+        )
+
         return deploy_hyperdrive_from_factory(
             chain.rpc_uri,
             chain.get_deployer_account(),
+            deployed_hyperdrive_factory,
             config.initial_liquidity,
             config.initial_variable_rate,
             config.initial_fixed_apr,
             config.initial_time_stretch_apr,
-            factory_deploy_config,
             pool_deploy_config,
         )
 
