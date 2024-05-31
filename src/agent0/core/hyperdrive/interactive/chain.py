@@ -371,7 +371,8 @@ class Chain:
 
     def init_agent(
         self,
-        private_key: str,
+        private_key: str | None = None,
+        public_address: str | None = None,
         pool: Hyperdrive | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
@@ -384,8 +385,13 @@ class Chain:
 
         Arguments
         ---------
-        private_key: str
+        private_key: str, optional
             The private key of the associated account.
+            Must be supplied to allow this agent to do any transactions.
+        public_address: str | None, optional
+            The public address of the associated account. This allows this agent
+            to be used for analyzing data.
+            Can't be used in conjunction with private_key.
         pool: LocalHyperdrive, optional
             An optional pool to set as the active pool.
         policy: HyperdrivePolicy, optional
@@ -411,6 +417,7 @@ class Chain:
             policy=policy,
             policy_config=policy_config,
             private_key=private_key,
+            public_address=public_address,
         )
         return out_agent
 

@@ -569,6 +569,7 @@ class LocalChain(Chain):
     def init_agent(
         self,
         private_key: str | None = None,
+        public_address: str | None = None,
         pool: Hyperdrive | None = None,
         policy: Type[HyperdriveBasePolicy] | None = None,
         policy_config: HyperdriveBasePolicy.Config | None = None,
@@ -582,6 +583,8 @@ class LocalChain(Chain):
         ---------
         private_key: str, optional
             The private key of the associated account. Default is auto-generated.
+        public_address: str | None, optional
+            Must be None for local agents.
         pool: LocalHyperdrive, optional
             An optional pool to set as the active pool.
         policy: HyperdrivePolicy, optional
@@ -608,6 +611,9 @@ class LocalChain(Chain):
         if pool is not None and not isinstance(pool, LocalHyperdrive):
             raise TypeError("Pool must be an instance of LocalHyperdrive for LocalChain")
 
+        if public_address is not None:
+            raise ValueError("Can't pass in public key for local agents.")
+
         if self._has_saved_snapshot:  # pylint: disable=protected-access
             logging.warning(
                 "Adding new agent with existing snapshot. "
@@ -629,6 +635,7 @@ class LocalChain(Chain):
             policy=policy,
             policy_config=policy_config,
             private_key=private_key,
+            public_address=None,
         )
         self._chain_agents.append(out_agent)
         return out_agent
