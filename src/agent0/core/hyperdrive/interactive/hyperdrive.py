@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import nest_asyncio
 import pandas as pd
@@ -15,7 +16,8 @@ from agent0.ethpy.hyperdrive import (
     get_hyperdrive_addresses_from_registry,
 )
 
-from .chain import Chain
+if TYPE_CHECKING:
+    from .chain import Chain
 
 # In order to support both scripts and jupyter notebooks with underlying async functions,
 # we use the nest_asyncio package so that we can execute asyncio.run within a running event loop.
@@ -38,7 +40,7 @@ class Hyperdrive:
     def get_hyperdrive_addresses_from_registry(
         cls,
         chain: Chain,
-        registry_contract_addr: str,
+        registry_address: str,
     ) -> dict[str, ChecksumAddress]:
         """Gather deployed Hyperdrive pool addresses.
 
@@ -46,7 +48,7 @@ class Hyperdrive:
         ---------
         chain: Chain
             The Chain object connected to a chain.
-        registry_contract_addr: str
+        registry_address: str
             The address of the Hyperdrive factory contract.
 
         Returns
@@ -55,7 +57,37 @@ class Hyperdrive:
             A dictionary keyed by the pool's name, valued by the pool's address
         """
         # pylint: disable=protected-access
-        return get_hyperdrive_addresses_from_registry(registry_contract_addr, chain._web3)
+        return get_hyperdrive_addresses_from_registry(registry_address, chain._web3)
+
+    @classmethod
+    def get_hyperdrive_pools_from_registry(
+        cls,
+        chain: Chain,
+        registry_address: str,
+    ) -> list[Hyperdrive]:
+        """Gather deployed Hyperdrive pool addresses.
+
+        Arguments
+        ---------
+        chain: Chain
+            The Chain object connected to a chain.
+        registry_address: str
+            The address of the Hyperdrive registry contract.
+
+        Returns
+        -------
+        list[Hyperdrive]
+            The hyperdrive objects for all registered pools
+        """
+        hyperdrive_addresses = cls.get_hyperdrive_addresses_from_registry(chain, registry_address)
+        if len(hyperdrive_addresses) == 0:
+            raise ValueError("Registry does not have any hyperdrive pools registered.")
+        # Generate hyperdrive pool objects here
+        registered_pools = []
+        for hyperdrive_name, hyperdrive_address in hyperdrive_addresses.items():
+            registered_pools.append(Hyperdrive(chain, hyperdrive_address, name=hyperdrive_name))
+
+        return registered_pools
 
     def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress, name: str | None):
         self.chain = chain
@@ -76,6 +108,7 @@ class Hyperdrive:
             )
 
         add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
+        self.name = name
 
     def __init__(
         self,
@@ -106,10 +139,7 @@ class Hyperdrive:
         # held by the chain object, we want to ensure that we dont mix and match
         # local vs non-local hyperdrive objects. Hence, we ensure that any hyperdrive
         # objects must come from a base Chain object and not a LocalChain.
-        # We use `type` instead of `isinstance` to explicitly check for
-        # the base Chain type instead of any subclass.
-        # pylint: disable=unidiomatic-typecheck
-        if type(chain) != Chain:
+        if chain.is_local_chain:
             raise TypeError("The chain parameter must be a Chain object, not a LocalChain.")
 
         self._initialize(chain, hyperdrive_address, name)

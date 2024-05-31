@@ -595,7 +595,7 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
 # pylint: disable=too-many-arguments
 def get_position_snapshot(
     session: Session,
-    hyperdrive_address: str | None = None,
+    hyperdrive_address: list[str] | str | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | str | None = None,
@@ -607,8 +607,8 @@ def get_position_snapshot(
     ---------
     session: Session
         The initialized session object.
-    hyperdrive_address: str | None, optional
-        The hyperdrive pool address to filter the query on. Defaults to returning all position snapshots.
+    hyperdrive_address: list[str] | str | None, optional
+        The hyperdrive pool address(es) to filter the query on. Defaults to returning all position snapshots.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
@@ -630,7 +630,9 @@ def get_position_snapshot(
     """
     query = session.query(PositionSnapshot)
 
-    if hyperdrive_address is not None:
+    if isinstance(hyperdrive_address, list):
+        query = query.filter(PositionSnapshot.hyperdrive_address.in_(hyperdrive_address))
+    elif hyperdrive_address is not None:
         query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
 
     latest_block = get_latest_block_number_from_table(PositionSnapshot, session)

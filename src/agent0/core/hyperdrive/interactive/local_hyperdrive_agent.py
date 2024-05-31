@@ -47,7 +47,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool: Hyperdrive | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
-        private_key: str | None = None,
+        private_key: str | None,
+        public_address: str | None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
 
@@ -79,10 +80,19 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is not None and not isinstance(pool, LocalHyperdrive):
             raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
 
+        if public_address is not None:
+            raise ValueError("LocalHyperdriveAgent does not support public_address")
+
         agent_private_key = make_private_key() if private_key is None else private_key
 
         super().__init__(
-            name=name, chain=chain, pool=pool, policy=policy, policy_config=policy_config, private_key=agent_private_key
+            name=name,
+            chain=chain,
+            pool=pool,
+            policy=policy,
+            policy_config=policy_config,
+            private_key=agent_private_key,
+            public_address=None,
         )
 
         self.chain = chain
@@ -156,6 +166,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
 
         super().set_active(pool=pool, policy=policy, policy_config=policy_config)
+
+    # Expose account and address for type narrowing in local agent
+    @property
+    def account(self) -> LocalAccount:
+        """Returns the `LocalAccount` associated with the agent."""
+        # Account should always be set in local agents
+        assert self._account is not None
+        return self._account
 
     ################
     # Trades
@@ -499,28 +517,33 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     def get_positions(
         self,
-        pool_filter: Hyperdrive | None = None,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
         show_closed_positions: bool = False,
         coerce_float: bool = False,
+        registry_address: str | None = None,
     ) -> pd.DataFrame:
         """Returns all of the agent's positions across all hyperdrive pools.
 
         Arguments
         ---------
-        pool_filter: LocalHyperdrive, optional
-            The hyperdrive pool to query. Defaults to None, which will query all pools.
+        pool_filter: LocalHyperdrive | list[Hyperdrive], optional
+            The hyperdrive pool(s) to query. Defaults to None, which will query all pools.
         show_closed_positions: bool, optional
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
         coerce_float: bool, optional
             Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
+        registry_address: str, optional
+            Must be None when calling from local hyperdrive agent.
 
         Returns
         -------
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
+        if registry_address is not None:
+            raise ValueError("registry_address not used with local agents")
         # Explicit type checking
         if pool_filter is not None and not isinstance(pool_filter, LocalHyperdrive):
             raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
@@ -557,10 +580,10 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
         return self._get_trade_events(pool=pool, all_token_deltas=all_token_deltas, coerce_float=coerce_float)
 
-    def _sync_events(self, pool: Hyperdrive) -> None:
+    def _sync_events(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass
 
-    def _sync_snapshot(self, pool: Hyperdrive) -> None:
+    def _sync_snapshot(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
         pass

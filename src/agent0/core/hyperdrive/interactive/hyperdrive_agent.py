@@ -54,6 +54,8 @@ from .event_types import (
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 
 if TYPE_CHECKING:
+    from agent0.ethpy.hyperdrive import HyperdriveReadInterface
+
     from .chain import Chain
     from .hyperdrive import Hyperdrive
 
@@ -77,7 +79,8 @@ class HyperdriveAgent:
         pool: Hyperdrive | None,
         policy: Type[HyperdriveBasePolicy] | None,
         policy_config: HyperdriveBasePolicy.Config | None,
-        private_key: str,
+        private_key: str | None,
+        public_address: str | None,
     ) -> None:
         """Constructor for the interactive hyperdrive agent.
         NOTE: this constructor shouldn't be called directly, but rather from Chain's
@@ -111,16 +114,32 @@ class HyperdriveAgent:
             assert policy_config is not None
             self._active_policy = policy(policy_config)
 
-        self.account: LocalAccount = Account().from_key(private_key)
+        if private_key is None and public_address is None:
+            raise ValueError("Either private_key or public_address must be provided.")
+
+        if private_key is not None and public_address is not None:
+            raise ValueError("Either private_key or public_address must be provided, but not both.")
+
+        self._account: LocalAccount | None = None
+        self.address: ChecksumAddress
+        if private_key is not None:
+            self._account = Account().from_key(private_key)
+            assert self._account is not None
+            self.address = self._account.address
+        elif public_address is not None:
+            self.address = Web3.to_checksum_address(public_address)
 
         # Register the username if it was provided
         if name is not None:
-            add_addr_to_username(name, [self.account.address], self.chain.db_session)
+            add_addr_to_username(name, [self.address], self.chain.db_session)
 
+    # Expose account and address for type narrowing in local agent
     @property
-    def address(self) -> ChecksumAddress:
-        """Return the checksum address of the account."""
-        return self.account.address
+    def account(self) -> LocalAccount:
+        """Returns the `LocalAccount` associated with the agent."""
+        if self._account is None:
+            raise ValueError("Must initialize agent with private key to access agent's LocalAccount.")
+        return self._account
 
     @property
     def policy_done_trading(self) -> bool:
@@ -153,6 +172,9 @@ class HyperdriveAgent:
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
         """
+
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
 
         if pool is None and self._active_pool is not None:
             pool = self._active_pool
@@ -198,6 +220,9 @@ class HyperdriveAgent:
             The pool to interact with. Defaults to the active pool.
         """
         # Establish max approval for the hyperdrive contract
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
+
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -257,6 +282,8 @@ class HyperdriveAgent:
         OpenLong
             The emitted event of the open long call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -296,6 +323,8 @@ class HyperdriveAgent:
         CloseLong
             The emitted event of the close long call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -333,6 +362,8 @@ class HyperdriveAgent:
         OpenShort
             The emitted event of the open short call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -371,6 +402,8 @@ class HyperdriveAgent:
         CloseShort
             The emitted event of the close short call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -407,6 +440,8 @@ class HyperdriveAgent:
         AddLiquidity
             The emitted event of the add liquidity call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -443,6 +478,8 @@ class HyperdriveAgent:
         RemoveLiquidity
             The emitted event of the remove liquidity call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -479,6 +516,8 @@ class HyperdriveAgent:
         RedeemWithdrawalShares
             The emitted event of the redeem withdrawal shares call.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -515,6 +554,8 @@ class HyperdriveAgent:
         list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         # Only allow executing agent policies if a policy was passed in the constructor
         # we check type instead of isinstance to explicitly check for the hyperdrive base class
         # pylint: disable=unidiomatic-typecheck
@@ -564,6 +605,8 @@ class HyperdriveAgent:
         list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
+        if self.account is None:
+            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -912,14 +955,17 @@ class HyperdriveAgent:
         return wallet.withdraw_shares
 
     def get_positions(
-        self, pool_filter: Hyperdrive | None = None, show_closed_positions: bool = False, coerce_float: bool = False
+        self,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
+        show_closed_positions: bool = False,
+        coerce_float: bool = False,
     ) -> pd.DataFrame:
         """Returns all of the agent's positions across all hyperdrive pools.
 
         Arguments
         ---------
-        pool_filter: Hyperdrive, optional
-            The hyperdrive pool to query. Defaults to None, which will query all pools.
+        pool_filter: Hyperdrive | list[Hyperdrive], optional
+            The hyperdrive pool(s) to query. Defaults to None, which will query all pools.
         show_closed_positions: bool, optional
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
@@ -933,9 +979,8 @@ class HyperdriveAgent:
             The agent's positions across all hyperdrive pools.
         """
         if pool_filter is None:
-            # TODO get positions on remote chains must pass in pool for now
-            # Eventually we get the list of pools from registry and track all pools in registry
-            raise NotImplementedError("Pool filter must be specified to get positions.")
+            raise ValueError("Pool filter or registry address must be specified to get positions.")
+
         # Sync all events, then sync snapshots for pnl and value calculation
         self._sync_events(pool_filter)
         self._sync_snapshot(pool_filter)
@@ -944,18 +989,20 @@ class HyperdriveAgent:
         )
 
     def _get_positions(
-        self, pool_filter: Hyperdrive | None, show_closed_positions: bool, coerce_float: bool
+        self, pool_filter: Hyperdrive | list[Hyperdrive] | None, show_closed_positions: bool, coerce_float: bool
     ) -> pd.DataFrame:
         # Query the snapshot for the most recent positions.
         if pool_filter is None:
             hyperdrive_address = None
+        elif isinstance(pool_filter, list):
+            hyperdrive_address = [str(pool.hyperdrive_address) for pool in pool_filter]
         else:
-            hyperdrive_address = pool_filter.hyperdrive_address
+            hyperdrive_address = str(pool_filter.hyperdrive_address)
 
         position_snapshot = get_position_snapshot(
             session=self.chain.db_session,
             start_block=-1,
-            wallet_address=self.account.address,
+            wallet_address=self.address,
             hyperdrive_address=hyperdrive_address,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
@@ -1020,7 +1067,7 @@ class HyperdriveAgent:
 
     # Helper functions for analysis
 
-    def _sync_events(self, pool: Hyperdrive) -> None:
+    def _sync_events(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # Update the db with this wallet
         # Note that remote hyperdrive only updates the wallet wrt the agent itself.
         # TODO this function can be optimized to cache.
@@ -1028,18 +1075,29 @@ class HyperdriveAgent:
         # NOTE the way we sync the events table is by either looking at (1) the latest
         # entry wrt a wallet in the events table, or (2) the latest entry overall in the events
         # table, based on if we're updating the table with all wallets or just a single wallet.
+        interfaces: list[HyperdriveReadInterface]
+        if isinstance(pool, list):
+            interfaces = [p.interface for p in pool]
+        else:
+            interfaces = [pool.interface]
 
         # Remote hyperdrive stack syncs only the agent's wallet
-        trade_events_to_db([pool.interface], wallet_addr=self.address, db_session=pool.chain.db_session)
+        trade_events_to_db(interfaces, wallet_addr=self.address, db_session=self.chain.db_session)
         # We sync checkpoint events as well
-        checkpoint_events_to_db([pool.interface], db_session=pool.chain.db_session)
+        checkpoint_events_to_db(interfaces, db_session=self.chain.db_session)
 
-    def _sync_snapshot(self, pool: Hyperdrive) -> None:
+    def _sync_snapshot(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # Update the db with a snapshot of the wallet
+
+        interfaces: list[HyperdriveReadInterface]
+        if isinstance(pool, list):
+            interfaces = [p.interface for p in pool]
+        else:
+            interfaces = [pool.interface]
 
         # Note that remote hyperdrive only updates snapshots wrt the agent itself.
         snapshot_positions_to_db(
-            [pool.interface],
+            interfaces,
             wallet_addr=self.address,
             db_session=self.chain.db_session,
             calc_pnl=self.chain.config.calc_pnl,
