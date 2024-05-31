@@ -22,6 +22,7 @@ from agent0.chainsync import PostgresConfig
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import get_addr_to_username, initialize_session
 from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
+from agent0.chainsync.postgres_config import build_postgres_config_from_env
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import initialize_web3_with_http_provider
 from agent0.hyperlogs import close_logging, setup_logging
@@ -90,14 +91,23 @@ class Chain:
         calc_pnl: bool = True
         """Whether to calculate pnl. Defaults to True."""
 
+        use_existing_postgres: bool = False
+        """
+        If True, will connect to a remote postgres instance using environmental variables (see env.sample).
+        If False, will manage a local postgres instance. Defaults to False.
+        """
         # DB parameters
         db_port: int = 5433
         """
         The port to bind for the postgres container. Will fail if this port is being used.
         Defaults to 5433.
+        Not used if `use_existing_postgres` is True.
         """
         remove_existing_db_container: bool = True
-        """Whether to remove the existing container if it exists on container launch. Defaults to True."""
+        """
+        Whether to remove the existing container if it exists on container launch. Defaults to True.
+        Not used if `use_existing_postgres` is True.
+        """
 
         # RNG config
         rng_seed: int | None = None
@@ -150,22 +160,29 @@ class Chain:
         # Initialize web3 here for rpc calls
         self._web3 = initialize_web3_with_http_provider(self.rpc_uri, reset_provider=False)
 
-        # Set up db connections
-        # We use the db port as the container name
-        # TODO we may want to use the actual chain id for this when we start
-        # caching the db specific to the chain id
-        self.chain_id = str(config.db_port)
-        obj_name = type(self).__name__.lower()
-        db_container_name = f"agent0-{obj_name}-{self.chain_id}"
+        self.docker_client = None
+        self.postgres_container = None
+        if config.use_existing_postgres:
+            self.postgres_config = build_postgres_config_from_env()
+            self.chain_id = str(self.postgres_config.POSTGRES_PORT)
+        else:
+            # Set up db connections
+            # We use the db port as the container name
+            # TODO we may want to use the actual chain id for this when we start
+            # caching the db specific to the chain id
+            self.chain_id = str(config.db_port)
+            obj_name = type(self).__name__.lower()
+            db_container_name = f"agent0-{obj_name}-{self.chain_id}"
 
-        self.docker_client, self.postgres_config, self.postgres_container = self._initialize_postgres_container(
-            db_container_name, config.db_port, config.remove_existing_db_container
-        )
-        assert isinstance(self.postgres_container, Container)
+            self.docker_client, self.postgres_config, self.postgres_container = self._initialize_postgres_container(
+                db_container_name, config.db_port, config.remove_existing_db_container
+            )
+            assert isinstance(self.postgres_container, Container)
 
         # Update the database field to use a unique name for this pool using the hyperdrive contract address
         self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
         self._db_name = self.postgres_config.POSTGRES_DB
+
         self.config = config
 
         # Registers the cleanup function to run when the python script exist.
@@ -201,7 +218,7 @@ class Chain:
         postgres_config = PostgresConfig(
             POSTGRES_USER="admin",
             POSTGRES_PASSWORD="password",
-            POSTGRES_DB="interactive_hyperdrive",
+            POSTGRES_DB="agent0_db",
             POSTGRES_HOST="127.0.0.1",
             POSTGRES_PORT=db_port,
         )
@@ -265,17 +282,20 @@ class Chain:
             pass
 
         try:
-            self.postgres_container.kill()
+            if self.postgres_container is not None:
+                self.postgres_container.kill()
         except Exception:  # pylint: disable=broad-except
             pass
 
         try:
-            self.postgres_container.remove()
+            if self.postgres_container is not None:
+                self.postgres_container.remove()
         except Exception:  # pylint: disable=broad-except
             pass
 
         try:
-            self.docker_client.close()
+            if self.docker_client is not None:
+                self.docker_client.close()
         except Exception:  # pylint: disable=broad-except
             pass
 

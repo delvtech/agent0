@@ -155,7 +155,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="Pause execution on invariance failure.",
     )
     parser.add_argument(
-        "--chain_port",
+        "--chain-port",
         type=int,
         default=-1,
         help="The port to run anvil on.",

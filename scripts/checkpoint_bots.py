@@ -15,10 +15,12 @@ from typing import NamedTuple, Sequence
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
+from fixedpointmath import FixedPoint
 
 from agent0 import Chain, Hyperdrive
+from agent0.core.base.make_key import make_private_key
 from agent0.ethpy.base import smart_contract_transact
-from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config
+from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.run_local_fuzz_bots import async_runner
 from agent0.hypertypes import IHyperdriveContract
 
@@ -84,8 +86,7 @@ def run_checkpoint_bot(
     """
     # pylint: disable=too-many-arguments
 
-    # TODO pull this function out and put into agent0, and use this function in
-    # the infra version of checkpoint bot
+    # TODO pull this function out and put into agent0
     web3 = chain._web3  # pylint: disable=protected-access
 
     hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(pool_address)
@@ -200,18 +201,43 @@ def main(argv: Sequence[str] | None = None) -> None:
     parsed_args = parse_arguments(argv)
 
     # Initialize
-    chain = Chain(parsed_args.rpc_uri)
+    if parsed_args.infra:
+        # Get the rpc uri from env variable
+        rpc_uri = os.getenv("RPC_URI", None)
+        if rpc_uri is None:
+            raise ValueError("RPC_URI is not set")
 
-    # We calculate how many blocks we should wait before checking for a new pool
-    pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12
+        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
+        private_key = make_private_key()
+        # We create an agent here to fund it eth
+        agent = chain.init_agent(private_key=private_key)
+        agent.add_funds(eth=FixedPoint(100_000))
+        sender: LocalAccount = agent.account
 
-    private_key = os.getenv("CHECKPOINT_BOT_KEY")
-    sender: LocalAccount = Account().from_key(private_key)
+        # Get the registry address from artifacts
+        artifacts_uri = os.getenv("ARTIFACTS_URI", None)
+        if artifacts_uri is None:
+            raise ValueError("ARTIFACTS_URI is not set")
+        registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
 
+        # Get block time and block timestamp interval from env vars
+        block_time = int(os.getenv("BLOCK_TIME", "12"))
+        block_timestamp_interval = int(os.getenv("BLOCK_TIMESTAMP_INTERVAL", "12"))
+    else:
+        chain = Chain(parsed_args.rpc_uri)
+        private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
+        if private_key is None:
+            raise ValueError("CHECKPOINT_BOT_KEY is not set")
+        sender: LocalAccount = Account().from_key(private_key)
+        registry_address = parsed_args.registry_addr
+        block_time = 1
+        block_timestamp_interval = 1
+
+    # Loop for checkpoint bot across all registered pools
     while True:
         logging.info("Checking for new pools...")
         # Reset hyperdrive objs
-        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, parsed_args.registry_addr)
+        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
 
         logging.info("Running for all pools...")
 
@@ -219,7 +245,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         # we make partial calls for each call. The proper fix here is to generalize
         # _async_runner to take separate arguments for each call.
         partials = [
-            partial(run_checkpoint_bot, pool_address=pool_addr, pool_name=pool_name)
+            partial(
+                run_checkpoint_bot,
+                pool_address=pool_addr,
+                pool_name=pool_name,
+                block_time=block_time,
+                block_timestamp_interval=block_timestamp_interval,
+            )
             for pool_name, pool_addr in deployed_pools.items()
         ]
 
@@ -231,7 +263,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 funcs=partials,
                 chain=chain,
                 sender=sender,
-                block_to_exit=chain.block_number() + pool_check_num_blocks,
+                block_to_exit=chain.block_number() + parsed_args.pool_check_sleep_blocks,
             )
         )
 
@@ -239,7 +271,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 class Args(NamedTuple):
     """Command line arguments for the checkpoint bot."""
 
-    pool_check_sleep_time: int
+    pool_check_sleep_blocks: int
+    infra: bool
     registry_addr: str
     rpc_uri: str
 
@@ -258,7 +291,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        pool_check_sleep_time=namespace.pool_check_sleep_time,
+        pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
+        infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
     )
@@ -279,10 +313,17 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     """
     parser = argparse.ArgumentParser(description="Runs a bot that creates checkpoints each checkpoint_duration.")
     parser.add_argument(
-        "--pool-check-sleep-time",
+        "--pool-check-sleep-blocks",
         type=int,
-        default=86400,  # 1 day
-        help="Sleep time between checking for new pools, in seconds.",
+        default=7200,  # 1 day for 12 second block time
+        help="Number of blocks in between checking for new pools.",
+    )
+
+    parser.add_argument(
+        "--infra",
+        default=False,
+        action="store_true",
+        help="Infra mode, we get registry address from artifacts, and we fund a random account with eth as sender.",
     )
 
     parser.add_argument(

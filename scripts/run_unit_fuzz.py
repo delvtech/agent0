@@ -151,7 +151,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
     parser.add_argument(
-        "--number_of_runs",
+        "--number-of-runs",
         type=int,
         default=0,
         help="The number times to run the tests. If not set, will run forever.",

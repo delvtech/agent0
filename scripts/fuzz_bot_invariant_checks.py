@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import time
 from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
+from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
@@ -30,18 +32,35 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         A sequence containing the uri to the database server and the test epsilon.
     """
+    # pylint: disable=too-many-locals
 
     parsed_args = parse_arguments(argv)
-    chain = Chain(parsed_args.rpc_uri)
+
+    if parsed_args.infra:
+        # Get the rpc uri from env variable
+        rpc_uri = os.getenv("RPC_URI", None)
+        if rpc_uri is None:
+            raise ValueError("RPC_URI is not set")
+
+        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
+
+        # Get the registry address from artifacts
+        artifacts_uri = os.getenv("ARTIFACTS_URI", None)
+        if artifacts_uri is None:
+            raise ValueError("ARTIFACTS_URI is not set")
+        registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+    else:
+        chain = Chain(parsed_args.rpc_uri)
+        registry_address = parsed_args.registry_addr
 
     # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
     rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # We calculate how many blocks we should wait before checking for a new pool
-    pool_check_num_blocks = parsed_args.pool_check_sleep_time // 12
-
-    last_executed_block_number = -pool_check_num_blocks - 1  # no matter what we will run the check the first time
+    last_executed_block_number = (
+        -parsed_args.pool_check_sleep_blocks - 1
+    )  # no matter what we will run the check the first time
     last_pool_check_block_number = 0
 
     hyperdrive_objs: dict[str, Hyperdrive] = {}
@@ -54,12 +73,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         if latest_block_number is None:
             raise AssertionError("Block has no number.")
 
-        if latest_block_number > last_pool_check_block_number + pool_check_num_blocks:
+        if latest_block_number > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
             logging.info("Checking for new pools...")
             # Reset hyperdrive objs
             hyperdrive_objs: dict[str, Hyperdrive] = {}
             # First iteration, get list of deployed pools
-            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, parsed_args.registry_addr)
+            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
             for name, addr in deployed_pools.items():
                 logging.info("Adding pool %s", name)
                 hyperdrive_objs[name] = Hyperdrive(chain, addr)
@@ -90,7 +109,8 @@ class Args(NamedTuple):
 
     test_epsilon: float
     invariance_check_sleep_time: int
-    pool_check_sleep_time: int
+    pool_check_sleep_blocks: int
+    infra: bool
     registry_addr: str
     rpc_uri: str
 
@@ -111,7 +131,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         test_epsilon=namespace.test_epsilon,
         invariance_check_sleep_time=namespace.invariance_check_sleep_time,
-        pool_check_sleep_time=namespace.pool_check_sleep_time,
+        pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
+        infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
     )
@@ -143,11 +164,19 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=5,
         help="Sleep time between invariance checks, in seconds.",
     )
+
     parser.add_argument(
-        "--pool-check-sleep-time",
+        "--pool-check-sleep-blocks",
         type=int,
-        default=3600,  # 1 hour
-        help="Sleep time between checking for new pools, in seconds.",
+        default=300,  # 1 hour for 12 second block time
+        help="Number of blocks in between checking for new pools.",
+    )
+
+    parser.add_argument(
+        "--infra",
+        default=False,
+        action="store_true",
+        help="Infra mode, we get registry address from artifacts, and we fund a random account with eth as sender.",
     )
 
     parser.add_argument(

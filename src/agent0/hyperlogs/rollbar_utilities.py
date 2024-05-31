@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 from agent0.ethpy.base.errors import ContractCallException
 
-load_dotenv("rollbar.env")
+load_dotenv(".env")
 ROLLBAR_API_KEY = os.getenv("ROLLBAR_API_KEY")
 
 

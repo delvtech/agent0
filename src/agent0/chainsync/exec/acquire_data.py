@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
 from agent0.chainsync.db.hyperdrive import (
+    add_hyperdrive_addr_to_name,
     data_chain_to_db,
     get_latest_block_number_from_pool_info_table,
     init_data_chain_to_db,
@@ -30,7 +31,7 @@ def acquire_data(
     lookback_block_limit: int = 1000,
     interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
-    hyperdrive_addresses: list[ChecksumAddress] | None = None,
+    hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
     exit_on_catch_up: bool = False,
@@ -51,14 +52,17 @@ def acquire_data(
     rpc_uri: str, optional
         The URI for the web3 provider to initialize the interface with. Not used if an interface
         is provided.
-    hyperdrive_addresses: list[ChecksumAddress] | None, optional
+    hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None, optional
         A collection of Hyperdrive address, each pointing to an initialized pool.
+        Can also be the output of `get_hyperdrive_addresses_from_registry`, which is a
+        dictionary keyed by a logical name and a value of a hyperdrive address.
+        If it's a dictionary, will add this mapping to the database.
         Not used if a list of interfaces is provided.
     db_session: Session | None
         Session object for connecting to db. If None, will initialize a new session based on
         postgres_config.
     postgres_config: PostgresConfig | None = None,
-        PostgresConfig for connecting to db. If none, will set from postgres.env.
+        PostgresConfig for connecting to db. If none, will set from .env.
     exit_on_catch_up: bool, optional
         If True, will exit after catching up to current block. Defaults to False.
     exit_callback_fn: Callable[[], bool] | None, optional
@@ -70,12 +74,19 @@ def acquire_data(
     """
     # TODO implement logger instead of global logging to suppress based on module name.
 
+    hyperdrive_name_mapping = None
+
     ## Initialization
     if interfaces is None:
         if hyperdrive_addresses is None or rpc_uri is None:
             # TODO when we start deploying the registry, this case should look for existing
             # pools in the registry and use those.
             raise ValueError("hyperdrive_address and rpc_uri must be provided if not providing interface")
+
+        if isinstance(hyperdrive_addresses, dict):
+            hyperdrive_name_mapping = hyperdrive_addresses
+            hyperdrive_addresses = list(hyperdrive_addresses.values())
+
         interfaces = [
             HyperdriveReadInterface(hyperdrive_address, rpc_uri) for hyperdrive_address in hyperdrive_addresses
         ]
@@ -88,6 +99,11 @@ def acquire_data(
     if db_session is None:
         db_session_init = True
         db_session = initialize_session(postgres_config, ensure_database_created=True)
+
+    # Add mappings if set
+    if hyperdrive_name_mapping is not None:
+        for hyperdrive_name, hyperdrive_address in hyperdrive_name_mapping.items():
+            add_hyperdrive_addr_to_name(hyperdrive_name, hyperdrive_address, db_session)
 
     ## Get starting point for restarts
     # Get last entry of pool info in db

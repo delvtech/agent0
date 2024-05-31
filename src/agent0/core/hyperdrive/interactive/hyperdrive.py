@@ -12,7 +12,6 @@ from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     generate_name_for_hyperdrive,
-    get_hyperdrive_addresses_from_artifacts,
     get_hyperdrive_addresses_from_registry,
 )
 
@@ -34,26 +33,6 @@ class Hyperdrive:
     @dataclass(kw_only=True)
     class Config:
         """The configuration for the interactive hyperdrive class."""
-
-    @classmethod
-    def get_hyperdrive_addresses_from_artifacts(
-        cls,
-        artifacts_uri: str,
-    ) -> dict[str, ChecksumAddress]:
-        """Gather deployed Hyperdrive pool addresses.
-
-        Arguments
-        ---------
-        artifacts_uri: str
-            The uri of the artifacts json file. This is specific to the infra deployment.
-
-        Returns
-        -------
-        dict[str, ChecksumAddress]
-            A dictionary keyed by the pool's name, valued by the pool's address
-        """
-        # pylint: disable=protected-access
-        return get_hyperdrive_addresses_from_artifacts(artifacts_uri)
 
     @classmethod
     def get_hyperdrive_addresses_from_registry(
