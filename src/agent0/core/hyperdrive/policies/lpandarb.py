@@ -132,7 +132,7 @@ def arb_fixed_rate_down(
                 reduce_short_amount,
                 reduce_short_amount * curve_portion,
             )
-            action_list.append(close_short_trade(reduce_short_amount, maturity_time, slippage_tolerance, gas_limit))
+            action_list.append(close_short_trade(reduce_short_amount, maturity_time, slippage_tolerance, base_fee_multiple, priority_fee_multiple, gas_limit))
     # Open a new long, if there's still a need, and we have money
     if max_trade_amount_base >= min_trade_amount_bonds and bonds_needed > min_trade_amount_bonds:
         max_long_shares = interface.calc_shares_in_given_bonds_out_down(
