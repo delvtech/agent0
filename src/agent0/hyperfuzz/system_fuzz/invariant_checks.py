@@ -342,6 +342,8 @@ def _check_lp_share_price(
     -------
     InvariantCheckResults
     """
+    # pylint: disable=too-many-locals
+
     # LP share price
     # for any trade, LP share price shouldn't change by more than 0.1%
 
