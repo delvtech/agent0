@@ -227,9 +227,6 @@ class HyperdriveAgent:
             pool = self._active_pool
         if pool is None:
             raise ValueError("Setting approval requires an active pool.")
-
-        if pool is None:
-            raise ValueError("Approval requires an active pool.")
         set_max_approval(
             self.account, self.chain._web3, pool.interface.base_token_contract, str(pool.hyperdrive_address)
         )
