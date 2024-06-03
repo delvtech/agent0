@@ -27,8 +27,8 @@ classifiers = [
 dependencies = [
     "dill",
     "docker",
-    "eth-typing==4.1.0",
-    "eth-account==0.12.3",
+    "eth-typing",
+    "eth-account",
     "fixedpointmath",
     "flask",
     "flask-expects-json",
