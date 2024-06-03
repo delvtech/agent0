@@ -372,8 +372,24 @@ def _check_lp_share_price(
     # Determine if the previous checkpoint has been minted by looking at the checkpoint's vault share price.
     previous_checkpoint_minted = previous_pool_state.checkpoint.vault_share_price > 0
 
-    # Check both directions if checkpoint has been minted.
-    if previous_checkpoint_minted:
+    # Determine if matured positions were closed this timestamp
+    # We look for close events on this block
+    events = []
+    events.extend(interface.hyperdrive_contract.events.CloseShort.get_logs(fromBlock=pool_state.block_number))
+    events.extend(interface.hyperdrive_contract.events.CloseLong.get_logs(fromBlock=pool_state.block_number))
+
+    closing_mature_position = False
+    for event in events:
+        # maturityTime should always be part of close short/long
+        assert "maturityTime" in event.args
+        # Race condition, filter only on events from the current block
+        # Check if any matured positions were closed
+        if (event.blockNumber == pool_state.block_number) and (pool_state.block_time >= event.args.maturityTime):
+            closing_mature_position = True
+            break
+
+    # Relax check if previous checkpoint wasn't minted or closing mature position this block
+    if previous_checkpoint_minted and not closing_mature_position:
         if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
             failed = True
     # Only check that the lp share price doesn't decrease by more than our tolerance if checkpoint hasn't been minted.
