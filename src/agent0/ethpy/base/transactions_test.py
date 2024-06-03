@@ -55,7 +55,6 @@ def test_gas_price_base_multiple_explicit(fast_chain_fixture: LocalChain):
 @pytest.mark.anvil
 def test_gas_price_priority_multiple_explicit(fast_chain_fixture: LocalChain):
     """Set the gas price priority multiple explicitly."""
-    pytest.skip(reason="TODO: Failing in CI.")
     # set up config, hyperdrive, interface, web3, and agent
     priority_fee_multiple = 100
     config = LocalHyperdrive.Config()

@@ -28,7 +28,7 @@ dependencies = [
     "dill",
     "docker",
     "eth-typing==4.1.0",
-    "eth-account",
+    "eth-account==0.12.3",
     "fixedpointmath",
     "flask",
     "flask-expects-json",
