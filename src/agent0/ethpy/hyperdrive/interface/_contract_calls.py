@@ -118,8 +118,13 @@ def _create_checkpoint(
     block_number: BlockNumber | None = None,
     checkpoint_time: int | None = None,
     gas_limit: int | None = None,
+    write_retry_count: int | None = None,
 ) -> ReceiptBreakdown:
     """See API for documentation."""
+
+    if write_retry_count is None:
+        write_retry_count = interface.write_retry_count
+
     if checkpoint_time is None:
         if block_number is None:
             block_timestamp = interface.get_block_timestamp(interface.get_current_block())
@@ -137,7 +142,7 @@ def _create_checkpoint(
         "checkpoint",
         *fn_args,
         read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
+        write_retry_count=write_retry_count,
         timeout=interface.txn_receipt_timeout,
         txn_options_gas=gas_limit,
     )
