@@ -1061,13 +1061,18 @@ class HyperdriveAgent:
         else:
             hyperdrive_address = pool_filter.interface.hyperdrive_address
 
-        return get_trade_events(
+        trade_events = get_trade_events(
             self.chain.db_session,
             hyperdrive_address=hyperdrive_address,
             wallet_address=self.address,
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
+
+        # Add usernames
+        trade_events = self.chain._add_username_to_dataframe(trade_events, "wallet_address")
+        trade_events = self.chain._add_hyperdrive_name_to_dataframe(trade_events, "hyperdrive_address")
+        return trade_events
 
     # Helper functions for analysis
 
