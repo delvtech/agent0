@@ -185,7 +185,7 @@ def get_latest_block_number_from_positions_snapshot_table(
 def get_trade_events(
     session: Session,
     wallet_address: str | list[str] | None = None,
-    hyperdrive_address: str | None = None,
+    hyperdrive_address: str | list[str] | None = None,
     all_token_deltas: bool = True,
     sort_ascending: bool = True,
     query_limit: int | None = None,
@@ -199,8 +199,8 @@ def get_trade_events(
         The initialized db session object.
     wallet_address: str | list[str] | None, optional
         The wallet address(es) to filter the results on. Return all if None.
-    hyperdrive_address: str | None, optional
-        The hyperdrive address to filter the results on. Returns all if None.
+    hyperdrive_address: str | list[str] | None, optional
+        The hyperdrive address(es) to filter the results on. Returns all if None.
     all_token_deltas: bool, optional
         When removing liquidity that results in withdrawal shares, the events table returns
         two entries for this transaction to keep track of token deltas (one for lp tokens and
@@ -230,8 +230,11 @@ def get_trade_events(
     elif wallet_address is not None:
         query = query.filter(TradeEvent.wallet_address == wallet_address)
 
-    if hyperdrive_address is not None:
+    if isinstance(hyperdrive_address, list):
+        query = query.filter(TradeEvent.hyperdrive_address.in_(hyperdrive_address))
+    elif hyperdrive_address is not None:
         query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+
     if not all_token_deltas:
         # Drop the duplicate events
         query = query.filter(
@@ -595,7 +598,7 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
 # pylint: disable=too-many-arguments
 def get_position_snapshot(
     session: Session,
-    hyperdrive_address: list[str] | str | None = None,
+    hyperdrive_address: str | list[str] | None = None,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | str | None = None,
@@ -607,7 +610,7 @@ def get_position_snapshot(
     ---------
     session: Session
         The initialized session object.
-    hyperdrive_address: list[str] | str | None, optional
+    hyperdrive_address: str | list[str] | None, optional
         The hyperdrive pool address(es) to filter the query on. Defaults to returning all position snapshots.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers

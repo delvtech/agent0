@@ -149,7 +149,7 @@ for i in range(10):
 
 # Get the raw trade events for the pool.
 # Note the pool argument must be provided in remote settings.
-agent_trade_events = agent0.get_trade_events(pool=hyperdrive_pool)
+agent_trade_events = agent0.get_trade_events(pool_filter=hyperdrive_pool)
 # Gets all open positions and their corresponding PNL for an agent for the pool.
 agent_positions = agent0.get_positions(pool_filter=hyperdrive_pool)
 # Gets all open and closed positions and their corresponding PNL for an agent for the pool.
