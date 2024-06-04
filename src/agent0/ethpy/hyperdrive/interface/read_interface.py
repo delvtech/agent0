@@ -6,7 +6,6 @@ import copy
 import logging
 from typing import TYPE_CHECKING, cast
 
-from eth_account import Account
 from fixedpointmath import FixedPoint
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
@@ -181,8 +180,6 @@ class HyperdriveReadInterface:
 
     def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
         return DeployedHyperdrivePool(
-            web3=self.web3,
-            deploy_account=Account().from_key("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
             hyperdrive_contract=self.hyperdrive_contract,
             base_token_contract=self.base_token_contract,
             vault_shares_token_contract=self.vault_shares_token_contract,

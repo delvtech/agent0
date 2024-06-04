@@ -28,6 +28,7 @@ from agent0.hypertypes import (
     ERC4626Target3DeployerContract,
     FactoryConfig,
     HyperdriveFactoryContract,
+    HyperdriveRegistryContract,
     IHyperdriveContract,
     LPMathContract,
     MockERC4626Contract,
@@ -47,11 +48,18 @@ from agent0.hypertypes.types.ERC4626Target3DeployerContract import erc4626target
 UINT256_MAX = int(2**256 - 1)
 
 
+class DeployedHyperdriveFactory(NamedTuple):
+    """Collection of attributes associated with a locally deployed Hyperdrive factory."""
+
+    factory_contract: HyperdriveFactoryContract
+    deployer_coordinator_contract: ERC4626HyperdriveDeployerCoordinatorContract
+    factory_deploy_config: FactoryConfig
+    registry_contract: HyperdriveRegistryContract
+
+
 class DeployedHyperdrivePool(NamedTuple):
     """Collection of attributes associated with a locally deployed chain with a Hyperdrive pool."""
 
-    web3: Web3
-    deploy_account: LocalAccount
     hyperdrive_contract: IHyperdriveContract
     # Keeping the base and vault shares contract generic
     base_token_contract: Contract
@@ -59,59 +67,33 @@ class DeployedHyperdrivePool(NamedTuple):
     deploy_block_number: int
 
 
-def deploy_hyperdrive_from_factory(
+def deploy_hyperdrive_factory(
     rpc_uri: str,
-    deployer_private_key: str,
-    initial_liquidity: FixedPoint,
-    initial_variable_rate: FixedPoint,
-    initial_fixed_apr: FixedPoint,
-    initial_time_stretch_apr: FixedPoint,
+    deployer_account: LocalAccount,
     factory_deploy_config: FactoryConfig,
-    pool_deploy_config: PoolDeployConfig,
-) -> DeployedHyperdrivePool:
-    """Initializes a Hyperdrive pool on an existing chain.
+) -> DeployedHyperdriveFactory:
+    """Deploys the hyperdrive factory and supporting contracts on the rpc_uri chain.
 
     Arguments
     ---------
     rpc_uri: str
-        The URI of the local RPC node.
-    deployer_private_key: str
-        Private key for the funded wallet for deploying Hyperdrive.
-    initial_liquidity: FixedPoint
-        The amount of money to be provided by the `deploy_account` for initial pool liquidity.
-    initial_variable_rate: FixedPoint
-        The starting variable rate for an underlying vault.
-    initial_fixed_apr: FixedPoint
-        The fixed rate of the pool on initialization.
-    initial_time_stretch_apr: FixedPoint
-        The apr to target for the time stretch calculation.
+        The URI of the RPC node.
+    deployer_account: LocalAccount
+        The account that's deploying the contract.
     factory_deploy_config: FactoryConfig
-        The configuration for initializing the hyperdrive factory.
-        The type is generated from the Hyperdrive ABI using Pypechain.
-    pool_deploy_config: PoolDeployConfig
-        The configuration for initializing hyperdrive pool.
+        The factory configuration for initializing the hyperdrive factory.
         The type is generated from the Hyperdrive ABI using Pypechain.
 
     Returns
     -------
-    LocalHyperdriveChain
-        A named tuple with the following fields:
-            web3: Web3
-                Web3 provider object.
-            deploy_account: LocalAccount
-                The local account that deploys and initializes hyperdrive.
-            hyperdrive_contract: Contract
-                Web3 contract instance for the hyperdrive contract.
-            base_token_contract: Contract
-                Web3 contract instance for the base token contract.
-            deploy_block_number: int
-                The block number hyperdrive was deployed at.
+    DeployedHyperdriveFactory
+        Containing the deployed factory, the deploy coordinator contracts, the updated
+        factory config, and the hyperdrive registry contract.
     """
     # Contract calls use the web3.py interface
     web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
     # Create the pre-funded account on the Delv devnet
-    deploy_account = _initialize_deployment_account(web3, deployer_private_key)
-    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
+    deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
 
     # Update various configs with the deploy account address
     factory_deploy_config.governance = deploy_account_addr
@@ -121,13 +103,68 @@ def deploy_hyperdrive_from_factory(
     factory_deploy_config.sweepCollector = deploy_account_addr
 
     # Deploy the factory and base token contracts
-    factory_contract, deployer_contract, factory_deploy_config = _deploy_hyperdrive_factory(
+    return _deploy_hyperdrive_factory(
         web3,
-        deploy_account,
+        deployer_account,
         factory_deploy_config,
     )
 
-    base_token_contract, vault_contract = _deploy_base_and_vault(web3, deploy_account, initial_variable_rate)
+
+def deploy_hyperdrive_from_factory(
+    rpc_uri: str,
+    deployer_account: LocalAccount,
+    deployed_factory: DeployedHyperdriveFactory,
+    initial_liquidity: FixedPoint,
+    initial_variable_rate: FixedPoint,
+    initial_fixed_apr: FixedPoint,
+    initial_time_stretch_apr: FixedPoint,
+    pool_deploy_config: PoolDeployConfig,
+) -> DeployedHyperdrivePool:
+    """Initializes a Hyperdrive pool and supporting contracts on an existing chain.
+
+    Arguments
+    ---------
+    rpc_uri: str
+        The URI of the local RPC node.
+    deployer_account: LocalAccount
+        The local account deploying Hyperdrive.
+    deployed_factory: DeployedHyperdriveFactory
+        The factory and supporting contracts that were deployed on the local chain.
+    initial_liquidity: FixedPoint
+        The amount of money to be provided by the `deployer_account` for initial pool liquidity.
+    initial_variable_rate: FixedPoint
+        The starting variable rate for an underlying vault.
+    initial_fixed_apr: FixedPoint
+        The fixed rate of the pool on initialization.
+    initial_time_stretch_apr: FixedPoint
+        The apr to target for the time stretch calculation.
+    pool_deploy_config: PoolDeployConfig
+        The configuration for initializing hyperdrive pool.
+        The type is generated from the Hyperdrive ABI using Pypechain.
+
+    Returns
+    -------
+    DeployedHyperdrivePool
+        A named tuple with the following fields:
+            deploy_account: LocalAccount
+                The local account that deploys and initializes hyperdrive.
+            hyperdrive_contract: IHyperdriveContract
+                Web3 contract instance for the hyperdrive contract.
+            base_token_contract: Contract
+                Web3 contract instance for the base token contract.
+            vault_shares_token_contract: Contract
+                Web3 contract instance for the vault shares token contract.
+            deploy_block_number: int
+                The block number hyperdrive was deployed at.
+    """
+
+    # Contract calls use the web3.py interface
+    web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
+
+    # Create the pre-funded account on the Delv devnet
+    deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
+
+    base_token_contract, vault_contract = _deploy_base_and_vault(web3, deployer_account, initial_variable_rate)
 
     # Update pool deploy config with factory settings
     pool_deploy_config.baseToken = base_token_contract.address
@@ -135,15 +172,15 @@ def deploy_hyperdrive_from_factory(
     pool_deploy_config.governance = deploy_account_addr
     pool_deploy_config.feeCollector = deploy_account_addr
     pool_deploy_config.sweepCollector = deploy_account_addr
-    pool_deploy_config.linkerFactory = factory_deploy_config.linkerFactory
-    pool_deploy_config.linkerCodeHash = factory_deploy_config.linkerCodeHash
+    pool_deploy_config.linkerFactory = deployed_factory.factory_deploy_config.linkerFactory
+    pool_deploy_config.linkerCodeHash = deployed_factory.factory_deploy_config.linkerCodeHash
 
     # Mint base and approve the initial liquidity amount for the hyperdrive factory
     _mint_and_approve(
         web3=web3,
-        funding_account=deploy_account,
+        funding_account=deployer_account,
         funding_contract=base_token_contract,
-        contract_to_approve=deployer_contract,
+        contract_to_approve=deployed_factory.deployer_coordinator_contract,
         mint_amount=initial_liquidity,
     )
 
@@ -151,19 +188,32 @@ def deploy_hyperdrive_from_factory(
     hyperdrive_checksum_address = Web3.to_checksum_address(
         _deploy_and_initialize_hyperdrive_pool(
             web3,
-            deployer_contract.address,
-            deploy_account,
+            deployed_factory.deployer_coordinator_contract.address,
+            deployer_account,
             initial_liquidity,
             initial_fixed_apr,
             initial_time_stretch_apr,
             pool_deploy_config,
-            factory_contract,
+            deployed_factory.factory_contract,
         )
     )
+
+    # Register this pool with the registry contract
+    register_function = deployed_factory.registry_contract.functions.setHyperdriveInfo(hyperdrive_checksum_address, 1)
+    function_name = register_function.fn_name
+    function_args = register_function.args
+    receipt = smart_contract_transact(
+        web3,
+        deployed_factory.registry_contract,
+        deployer_account,
+        function_name,
+        *function_args,
+    )
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed to register Hyperdrive contract.\n{receipt=}")
+
     # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
-        web3,
-        deploy_account=deploy_account,
         hyperdrive_contract=IHyperdriveContract.factory(web3)(hyperdrive_checksum_address),
         base_token_contract=base_token_contract,
         vault_shares_token_contract=vault_contract,
@@ -201,7 +251,7 @@ def _deploy_hyperdrive_factory(
     web3: Web3,
     deploy_account: LocalAccount,
     factory_deploy_config: FactoryConfig,
-) -> tuple[HyperdriveFactoryContract, ERC4626HyperdriveDeployerCoordinatorContract, FactoryConfig]:
+) -> DeployedHyperdriveFactory:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
 
     Arguments
@@ -262,7 +312,7 @@ def _deploy_hyperdrive_factory(
     target1_contract = ERC4626Target1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target2_contract = ERC4626Target2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target3_contract = ERC4626Target3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    deployer_contract = ERC4626HyperdriveDeployerCoordinatorContract.deploy(
+    deployer_coordinator_contract = ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
@@ -274,7 +324,9 @@ def _deploy_hyperdrive_factory(
             target3Deployer=target3_contract.address,
         ),
     )
-    add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(deployer_contract.address)
+    add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(
+        deployer_coordinator_contract.address
+    )
     function_name = add_deployer_coordinator_function.fn_name
     function_args = add_deployer_coordinator_function.args
     receipt = smart_contract_transact(
@@ -284,8 +336,22 @@ def _deploy_hyperdrive_factory(
         function_name,
         *function_args,
     )
-    assert receipt["status"] == 1, f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}"
-    return factory_contract, deployer_contract, factory_deploy_config
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
+
+    # Deploy the hyperdrive registry contract
+    registry_contract = HyperdriveRegistryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=HyperdriveRegistryContract.ConstructorArgs(name="HyperdriveRegistry"),
+    )
+
+    return DeployedHyperdriveFactory(
+        factory_contract=factory_contract,
+        deployer_coordinator_contract=deployer_coordinator_contract,
+        factory_deploy_config=factory_deploy_config,
+        registry_contract=registry_contract,
+    )
 
 
 def _deploy_base_and_vault(
@@ -467,7 +533,8 @@ def _deploy_and_initialize_hyperdrive_pool(
             function_name,
             *function_args,
         )
-        assert receipt["status"] == 1, f"Failed calling deployTarget on target {target_index}.\n{receipt=}"
+        if receipt["status"] != 1:
+            raise ValueError(f"Failed calling deployTarget on target {target_index}.\n{receipt=}")
 
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
         deploymentId=deployment_id,

@@ -6,7 +6,12 @@ from .addresses import (
     get_hyperdrive_registry_from_artifacts,
 )
 from .assets import BASE_TOKEN_SYMBOL, AssetIdPrefix, decode_asset_id, encode_asset_id
-from .deploy import DeployedHyperdrivePool, deploy_hyperdrive_from_factory
+from .deploy import (
+    DeployedHyperdriveFactory,
+    DeployedHyperdrivePool,
+    deploy_hyperdrive_factory,
+    deploy_hyperdrive_from_factory,
+)
 from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from .interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from .receipt_breakdown import ReceiptBreakdown
