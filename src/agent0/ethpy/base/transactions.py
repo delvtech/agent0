@@ -572,29 +572,36 @@ async def async_smart_contract_transact(
     else:
         func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
-    unsent_txn = {}
-    try:
+    unsent_txn: TxParams = {}
+
+    # We need to retry both build transaction with send and wait
+    # so we compose both of these functions here in a private subfunction
+    async def _async_build_send_and_wait():
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
-        unsent_txn = build_transaction(
-            func_handle,
-            signer,
-            web3,
-            nonce=nonce,
-            read_retry_count=read_retry_count,
-            txn_options_value=txn_options_value,
-            txn_options_gas=txn_options_gas,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+
+        # We need to update the mutable variable above to ensure this variable
+        # gets set if build succeeds for crash reporting
+        unsent_txn.update(
+            build_transaction(
+                func_handle,
+                signer,
+                web3,
+                nonce=nonce,
+                read_retry_count=read_retry_count,
+                txn_options_value=txn_options_value,
+                txn_options_gas=txn_options_gas,
+                txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+                txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            )
         )
+        return await _async_send_transaction_and_wait_for_receipt(unsent_txn, signer, web3, timeout=timeout)
+
+    try:
         return await retry_call(
             write_retry_count,
             _retry_txn_check,
-            _async_send_transaction_and_wait_for_receipt,
-            unsent_txn,
-            signer,
-            web3,
-            timeout=timeout,
+            _async_build_send_and_wait,
         )
 
     # Wraps the exception with a contract call exception, adding additional information
@@ -670,7 +677,7 @@ async def async_smart_contract_transact(
         ) from err
 
 
-def send_transaction_and_wait_for_receipt(
+def _send_transaction_and_wait_for_receipt(
     unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt.
@@ -775,29 +782,36 @@ def smart_contract_transact(
     else:
         func_handle = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
 
-    unsent_txn = {}
-    try:
+    unsent_txn: TxParams = {}
+
+    # We need to retry both build transaction with send and wait
+    # so we compose both of these functions here in a private subfunction
+    def _build_send_and_wait():
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
-        unsent_txn = build_transaction(
-            func_handle,
-            signer,
-            web3,
-            nonce=nonce,
-            read_retry_count=read_retry_count,
-            txn_options_value=txn_options_value,
-            txn_options_gas=txn_options_gas,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+
+        # We need to update the mutable variable above to ensure this variable
+        # gets set if build succeeds for crash reporting
+        unsent_txn.update(
+            build_transaction(
+                func_handle,
+                signer,
+                web3,
+                nonce=nonce,
+                read_retry_count=read_retry_count,
+                txn_options_value=txn_options_value,
+                txn_options_gas=txn_options_gas,
+                txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+                txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+            )
         )
+        return _send_transaction_and_wait_for_receipt(unsent_txn, signer, web3, timeout=timeout)
+
+    try:
         return retry_call(
             write_retry_count,
             _retry_txn_check,
-            send_transaction_and_wait_for_receipt,
-            unsent_txn,
-            signer,
-            web3,
-            timeout=timeout,
+            _build_send_and_wait,
         )
 
     # Wraps the exception with a contract call exception, adding additional information
