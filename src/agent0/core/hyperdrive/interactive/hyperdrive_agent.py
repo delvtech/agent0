@@ -1011,14 +1011,17 @@ class HyperdriveAgent:
         return position_snapshot
 
     def get_trade_events(
-        self, pool: Hyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
+        self,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
+        all_token_deltas: bool = False,
+        coerce_float: bool = False,
     ) -> pd.DataFrame:
         """Returns the agent's current wallet.
 
         Arguments
         ---------
-        pool : Hyperdrive | None, optional
-            The hyperdrive pool to get trade events from.
+        pool_filter : Hyperdrive | list[Hyperdrive] | None, optional
+            The hyperdrive pool(s) to get trade events from.
         all_token_deltas: bool, optional
             When removing liquidity that results in withdrawal shares, the events table returns
             two entries for this transaction to keep track of token deltas (one for lp tokens and
@@ -1033,34 +1036,43 @@ class HyperdriveAgent:
         HyperdriveWallet
             The agent's current wallet.
         """
-        if pool is None:
+        if pool_filter is None:
             # TODO get positions on remote chains must pass in pool for now
             # Eventually we get the list of pools from registry and track all pools in registry
             raise NotImplementedError("Pool must be specified to get trade events.")
-        self._sync_events(pool)
-        return self._get_trade_events(all_token_deltas=all_token_deltas, pool=pool, coerce_float=coerce_float)
+        self._sync_events(pool_filter)
+        return self._get_trade_events(
+            all_token_deltas=all_token_deltas, pool_filter=pool_filter, coerce_float=coerce_float
+        )
 
     def _get_trade_events(
         self,
-        pool: Hyperdrive | None,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None,
         all_token_deltas: bool,
         coerce_float: bool,
     ) -> pd.DataFrame:
         """We call this function in both remote and local agents, as the remote call needs to
         do argument checking."""
         # If pool is None, we don't filter on hyperdrive address
-        if pool is None:
+        if pool_filter is None:
             hyperdrive_address = None
+        elif isinstance(pool_filter, list):
+            hyperdrive_address = [str(pool.hyperdrive_address) for pool in pool_filter]
         else:
-            hyperdrive_address = pool.interface.hyperdrive_address
+            hyperdrive_address = pool_filter.interface.hyperdrive_address
 
-        return get_trade_events(
+        trade_events = get_trade_events(
             self.chain.db_session,
             hyperdrive_address=hyperdrive_address,
             wallet_address=self.address,
             all_token_deltas=all_token_deltas,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
+
+        # Add usernames
+        trade_events = self.chain._add_username_to_dataframe(trade_events, "wallet_address")
+        trade_events = self.chain._add_hyperdrive_name_to_dataframe(trade_events, "hyperdrive_address")
+        return trade_events
 
     # Helper functions for analysis
 

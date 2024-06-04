@@ -9,7 +9,13 @@ import nest_asyncio
 import pandas as pd
 from eth_typing import ChecksumAddress
 
-from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name
+from agent0.chainsync.db.hyperdrive import (
+    add_hyperdrive_addr_to_name,
+    checkpoint_events_to_db,
+    get_latest_block_number_from_trade_event,
+    get_trade_events,
+    trade_events_to_db,
+)
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
     generate_name_for_hyperdrive,
@@ -191,7 +197,33 @@ class Hyperdrive:
         pd.Dataframe
             A dataframe of trade events.
         """
-        raise NotImplementedError
+        # pylint: disable=protected-access
+
+        # There's a case where a user calls `agent.get_trade_events()` followed by
+        # `pool.get_trade_events()`. This puts duplicate entries into the same underlying
+        # table.
+        # We prevent this by not allowing this call if the underlying table isn't empty
+        # TODO we can relax this by either dropping any entries from this pool, or by making
+        # a db update on a unique constraint.
+
+        if (
+            get_latest_block_number_from_trade_event(
+                self.chain.db_session, hyperdrive_address=self.hyperdrive_address, wallet_address=None
+            )
+            != 0
+        ):
+            raise NotImplementedError("Can't call `hyperdrive.get_trade_events` after `agent.get_trade_events()`.")
+
+        self._sync_events()
+        out = get_trade_events(
+            self.chain.db_session,
+            hyperdrive_address=self.interface.hyperdrive_address,
+            all_token_deltas=all_token_deltas,
+            coerce_float=coerce_float,
+        ).drop("id", axis=1)
+        out = self.chain._add_username_to_dataframe(out, "wallet_address")
+        out = self.chain._add_hyperdrive_name_to_dataframe(out, "hyperdrive_address")
+        return out
 
     def get_historical_positions(self, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the history of all positions over time and their corresponding pnl
@@ -243,3 +275,9 @@ class Hyperdrive:
         """
         # pylint: disable=protected-access
         return self.interface.hyperdrive_address
+
+    def _sync_events(self) -> None:
+        # Remote hyperdrive stack syncs only the agent's wallet
+        trade_events_to_db([self.interface], wallet_addr=None, db_session=self.chain.db_session)
+        # We sync checkpoint events as well
+        checkpoint_events_to_db([self.interface], db_session=self.chain.db_session)

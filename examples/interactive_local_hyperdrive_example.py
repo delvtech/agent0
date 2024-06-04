@@ -181,8 +181,8 @@ chain.run_dashboard(blocking=False)
 # Get the raw trade events across all pools.
 agent_trade_events = agent0.get_trade_events()
 # Alternatively, get events from a single pool.
-agent_trade_events = agent0.get_trade_events(pool=hyperdrive0)
-agent_trade_events = agent0.get_trade_events(pool=hyperdrive1)
+agent_trade_events = agent0.get_trade_events(pool_filter=hyperdrive0)
+agent_trade_events = agent0.get_trade_events(pool_filter=hyperdrive1)
 
 # Gets all open positions and their corresponding PNL for an agent across all pools.
 agent_positions = agent0.get_positions()

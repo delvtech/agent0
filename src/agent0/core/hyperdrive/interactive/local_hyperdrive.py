@@ -556,3 +556,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Set internal state block number to 0 to enusre it updates
         self.interface.last_state_block_number = BlockNumber(0)
+
+    def _sync_events(self) -> None:
+        # Making sure this function isn't called in local_hyperdrive
+        raise NotImplementedError

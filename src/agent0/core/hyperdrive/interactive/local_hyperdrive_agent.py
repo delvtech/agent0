@@ -526,7 +526,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         Arguments
         ---------
-        pool_filter: LocalHyperdrive | list[Hyperdrive], optional
+        pool_filter: LocalHyperdrive | list[LocalHyperdrive], optional
             The hyperdrive pool(s) to query. Defaults to None, which will query all pools.
         show_closed_positions: bool, optional
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
@@ -545,21 +545,29 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if registry_address is not None:
             raise ValueError("registry_address not used with local agents")
         # Explicit type checking
-        if pool_filter is not None and not isinstance(pool_filter, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+        if pool_filter is not None:
+            if isinstance(pool_filter, list):
+                for pool in pool_filter:
+                    if not isinstance(pool, LocalHyperdrive):
+                        raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+            elif not isinstance(pool_filter, LocalHyperdrive):
+                raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
         return self._get_positions(
             pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
         )
 
     def get_trade_events(
-        self, pool: Hyperdrive | None = None, all_token_deltas: bool = False, coerce_float: bool = False
+        self,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
+        all_token_deltas: bool = False,
+        coerce_float: bool = False,
     ) -> pd.DataFrame:
         """Returns the agent's current wallet.
 
         Arguments
         ---------
-        pool : LocalHyperdrive | None, optional
-            The hyperdrive pool to get trade events from. If None, will retrieve all events from
+        pool_filter : LocalHyperdrive | list[LocalHyperdrive] | None, optional
+            The hyperdrive pool(s) to get trade events from. If None, will retrieve all events from
             all pools.
         all_token_deltas: bool, optional
             When removing liquidity that results in withdrawal shares, the events table returns
@@ -576,9 +584,17 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The agent's current wallet.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-        return self._get_trade_events(pool=pool, all_token_deltas=all_token_deltas, coerce_float=coerce_float)
+        # Explicit type checking
+        if pool_filter is not None:
+            if isinstance(pool_filter, list):
+                for pool in pool_filter:
+                    if not isinstance(pool, LocalHyperdrive):
+                        raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+            elif not isinstance(pool_filter, LocalHyperdrive):
+                raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+        return self._get_trade_events(
+            pool_filter=pool_filter, all_token_deltas=all_token_deltas, coerce_float=coerce_float
+        )
 
     def _sync_events(self, pool: Hyperdrive | list[Hyperdrive]) -> None:
         # No need to sync in local hyperdrive, we sync when we run the data pipeline
