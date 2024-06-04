@@ -582,6 +582,8 @@ async def async_smart_contract_transact(
 
         # We need to update the mutable variable above to ensure this variable
         # gets set if build succeeds for crash reporting
+        # Updating this named dict multiple times should be okay
+        # as long as `build_transaction` always returns the same keys
         unsent_txn.update(
             build_transaction(
                 func_handle,
@@ -792,6 +794,8 @@ def smart_contract_transact(
 
         # We need to update the mutable variable above to ensure this variable
         # gets set if build succeeds for crash reporting
+        # Updating this named dict multiple times should be okay
+        # as long as `build_transaction` always returns the same keys
         unsent_txn.update(
             build_transaction(
                 func_handle,
