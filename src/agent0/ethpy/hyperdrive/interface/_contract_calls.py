@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-arguments
 # ruff: noqa: PLR0913
 
+AGENT0_SIGNATURE = bytes.fromhex("a0")
+
 
 def _get_total_supply_withdrawal_shares(
     hyperdrive_contract: IHyperdriveContract, block_number: BlockNumber | None = None
@@ -202,7 +204,7 @@ async def _async_open_long(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
 
@@ -233,7 +235,7 @@ async def _async_open_long(
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 as_base_option,  # asBase
-                bytes(0),  # extraData
+                AGENT0_SIGNATURE,  # extraData
             ),
         )
     try:
@@ -289,7 +291,7 @@ async def _async_close_long(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
 
@@ -318,7 +320,7 @@ async def _async_close_long(
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 as_base_option,  # asBase
-                bytes(0),  # extraData
+                AGENT0_SIGNATURE,  # extraData
             ),
         )
     try:
@@ -378,7 +380,7 @@ async def _async_open_short(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
 
@@ -407,7 +409,7 @@ async def _async_open_short(
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 as_base_option,  # asBase
-                bytes(0),  # extraData
+                AGENT0_SIGNATURE,  # extraData
             ),
         )
     try:
@@ -462,7 +464,7 @@ async def _async_close_short(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
 
@@ -491,7 +493,7 @@ async def _async_close_short(
             (  # IHyperdrive.Options
                 agent_checksum_address,  # destination
                 as_base_option,  # asBase
-                bytes(0),  # extraData
+                AGENT0_SIGNATURE,  # extraData
             ),
         )
     try:
@@ -552,7 +554,7 @@ async def _async_add_liquidity(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
 
@@ -618,7 +620,7 @@ async def _async_remove_liquidity(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
@@ -684,7 +686,7 @@ async def _async_redeem_withdraw_shares(
         (  # IHyperdrive.Options
             agent_checksum_address,  # destination
             as_base_option,  # asBase
-            bytes(0),  # extraData
+            AGENT0_SIGNATURE,  # extraData
         ),
     )
     # To catch any solidity errors, we always preview transactions on the current block
