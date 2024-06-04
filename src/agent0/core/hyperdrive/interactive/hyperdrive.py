@@ -103,6 +103,7 @@ class Hyperdrive:
             rpc_uri=chain.rpc_uri,
             web3=chain._web3,  # pylint: disable=protected-access
             txn_receipt_timeout=self.chain.config.txn_receipt_timeout,
+            txn_signature=self.chain.config.txn_signature,
         )
 
         # Register the username if it was provided

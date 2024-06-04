@@ -67,8 +67,6 @@ class Chain:
         """
         preview_before_trade: bool = False
         """Whether to preview the position before executing a trade. Defaults to False."""
-        txn_receipt_timeout: float | None = None
-        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
 
         # Logging and crash reporting
         log_to_rollbar: bool = False
@@ -117,6 +115,10 @@ class Chain:
         The experiment's stateful random number generator. Defaults to creating a generator from
         the provided random seed if not set.
         """
+
+        # Txn config
+        txn_receipt_timeout: float | None = None
+        """The timeout for waiting for a transaction receipt in seconds. Defaults to 120."""
         gas_limit: int | None = None
         """
         The maximum gas to use when executing transactions. This gas limit controls
@@ -125,6 +127,10 @@ class Chain:
         """
         # TODO we only use gas_limit currently for policy trades and `create_checkpoint` in advance time,
         # need to propagate this to other trades
+        txn_signature: bytes | None = None
+        """
+        The signature for transactions. Defaults to `0xa0`.
+        """
 
         def __post_init__(self):
             """Create the random number generator if not set."""

@@ -63,6 +63,13 @@ from ._mock_contract import (
     _calc_time_stretch,
 )
 
+AGENT0_SIGNATURE = bytes.fromhex("a0")
+
+if TYPE_CHECKING:
+    from eth_account.signers.local import LocalAccount
+    from eth_typing import BlockNumber, ChecksumAddress
+    from web3 import Web3
+
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-instance-attributes
@@ -71,12 +78,6 @@ from ._mock_contract import (
 # ruff: noqa: PLR0913
 # We only worry about protected access for anyone outside of this folder.
 # pylint: disable=protected-access
-
-
-if TYPE_CHECKING:
-    from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber, ChecksumAddress
-    from web3 import Web3
 
 
 class HyperdriveReadInterface:
@@ -91,6 +92,7 @@ class HyperdriveReadInterface:
         web3: Web3 | None = None,
         read_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
+        txn_signature: bytes | None = None,
     ) -> None:
         """Initialize the HyperdriveReadInterface API.
 
@@ -109,7 +111,14 @@ class HyperdriveReadInterface:
             The number of times to retry the read call if it fails. Defaults to 5.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
+        txn_signature: bytes | None, optional
+            The signature for transactions. Defaults to `0xa0`.
         """
+        if txn_signature is None:
+            self.txn_signature = AGENT0_SIGNATURE
+        else:
+            self.txn_signature = txn_signature
+
         # Handle defaults for config and addresses.
         self.hyperdrive_address = hyperdrive_address
 
