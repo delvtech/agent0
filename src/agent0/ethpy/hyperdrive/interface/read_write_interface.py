@@ -17,13 +17,6 @@ from ._contract_calls import (
 )
 from .read_interface import HyperdriveReadInterface
 
-# We have no control over the number of arguments since it is specified by the smart contracts
-# pylint: disable=too-many-arguments
-# ruff: noqa: PLR0913
-# We only worry about protected access for anyone outside of this folder.
-# pylint: disable=protected-access
-
-
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber, ChecksumAddress
@@ -32,6 +25,12 @@ if TYPE_CHECKING:
     from web3.types import Nonce
 
     from agent0.ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
+
+# We have no control over the number of arguments since it is specified by the smart contracts
+# pylint: disable=too-many-arguments
+# ruff: noqa: PLR0913
+# We only worry about protected access for anyone outside of this folder.
+# pylint: disable=protected-access
 
 
 class HyperdriveReadWriteInterface(HyperdriveReadInterface):
@@ -45,6 +44,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         read_retry_count: int | None = None,
         write_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
+        txn_signature: bytes | None = None,
     ) -> None:
         """Initialize the primary endpoint for users to execute transactions on Hyperdrive smart contracts.
 
@@ -63,6 +63,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The number of times to retry the transact call if it fails. Defaults to no retries.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
+        txn_signature: bytes | None, optional
+            The signature for transactions. Defaults to `0xa0`.
         """
         super().__init__(
             hyperdrive_address=hyperdrive_address,
@@ -70,6 +72,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             web3=web3,
             read_retry_count=read_retry_count,
             txn_receipt_timeout=txn_receipt_timeout,
+            txn_signature=txn_signature,
         )
         self.write_retry_count = write_retry_count
 
