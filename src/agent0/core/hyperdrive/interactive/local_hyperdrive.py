@@ -233,7 +233,7 @@ class LocalHyperdrive(Hyperdrive):
                 {
                     "factory_deployer_account": self._deployed_hyperdrive_factory.deployer_account.address,
                     "factory_contract": self._deployed_hyperdrive_factory.factory_contract.address,
-                    "deployer_coordinator_contract": self._deployed_hyperdrive_factory.deployer_coordinator_contract.address,
+                    "deployer_coor_contract": self._deployed_hyperdrive_factory.deployer_coordinator_contract.address,
                     "registry_contract": self._deployed_hyperdrive_factory.registry_contract.address,
                     "factory_deploy_config": asdict(self._deployed_hyperdrive_factory.factory_deploy_config),
                 }
