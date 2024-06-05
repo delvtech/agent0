@@ -31,7 +31,12 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     log_to_rollbar = initialize_rollbar("localfuzzbots")
 
-    rng_seed = random.randint(0, 10000000)
+    # Negative rng_seed means default
+    if parsed_args.rng_seed < 0:
+        rng_seed = random.randint(0, 10000000)
+    else:
+        # rng_seed = 7815695
+        rng_seed = parsed_args.rng_seed
     rng = np.random.default_rng(rng_seed)
 
     # Negative chain port means default
@@ -107,6 +112,7 @@ class Args(NamedTuple):
     lp_share_price_test: bool
     pause_on_invariance_fail: bool
     chain_port: int
+    rng_seed: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -126,6 +132,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         lp_share_price_test=namespace.lp_share_price_test,
         pause_on_invariance_fail=namespace.pause_on_invariance_fail,
         chain_port=namespace.chain_port,
+        rng_seed=namespace.rng_seed,
     )
 
 
@@ -160,6 +167,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=-1,
         help="The port to run anvil on.",
+    )
+    parser.add_argument(
+        "--rng-seed",
+        type=int,
+        default=-1,
+        help="The random seed to use for the fuzz run.",
     )
 
     # Use system arguments if none were passed

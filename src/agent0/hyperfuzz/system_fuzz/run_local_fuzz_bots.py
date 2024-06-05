@@ -339,6 +339,7 @@ def run_local_fuzz_bots(
                 raise_error_on_failure=raise_error_on_failed_invariance_checks,
                 log_to_rollbar=log_to_rollbar,
                 lp_share_price_test=lp_share_price_test,
+                crash_report_additional_info=hyperdrive_pool.chain.config.crash_report_additional_info,
             )
 
         # Check agent funds and refund if necessary

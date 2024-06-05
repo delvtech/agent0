@@ -28,6 +28,7 @@ def run_invariant_checks(
     log_to_rollbar: bool = True,
     pool_name: str | None = None,
     lp_share_price_test: bool | None = None,
+    crash_report_additional_info: dict[str, Any] | None = None,
 ) -> None:
     """Run the invariant checks.
 
@@ -58,6 +59,8 @@ def run_invariant_checks(
     lp_share_price_test: bool | None, optional
         If True, only test the lp share price. If False, skips the lp share price test.
         If None (default), runs all tests.
+    crash_report_additional_info: dict[str, Any] | None
+        Additional information to include in the crash report.
     """
     # TODO cleanup
     # pylint: disable=too-many-locals
@@ -68,6 +71,8 @@ def run_invariant_checks(
     any_check_failed = False
     exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data: dict[str, Any] = {}
+    if crash_report_additional_info is not None:
+        exception_data.update(crash_report_additional_info)
 
     results: list[InvariantCheckResults]
     if lp_share_price_test is None:
