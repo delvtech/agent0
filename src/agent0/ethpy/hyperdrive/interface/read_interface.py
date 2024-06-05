@@ -11,7 +11,6 @@ from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy.base import initialize_web3_with_http_provider
-from agent0.ethpy.hyperdrive.deploy import DeployedHyperdrivePool
 from agent0.ethpy.hyperdrive.get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -82,8 +81,6 @@ if TYPE_CHECKING:
 
 class HyperdriveReadInterface:
     """Read-only end-point API for interfacing with a deployed Hyperdrive pool."""
-
-    _deployed_hyperdrive_pool: DeployedHyperdrivePool | None = None
 
     def __init__(
         self,
@@ -184,23 +181,6 @@ class HyperdriveReadInterface:
         # Fill in the initial state cache.
         self._current_pool_state = self.get_hyperdrive_state()
         self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
-
-        self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
-
-    def _create_deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
-        return DeployedHyperdrivePool(
-            hyperdrive_contract=self.hyperdrive_contract,
-            base_token_contract=self.base_token_contract,
-            vault_shares_token_contract=self.vault_shares_token_contract,
-            deploy_block_number=0,  # don't have access to this here, use at your own risk
-        )
-
-    @property
-    def deployed_hyperdrive_pool(self) -> DeployedHyperdrivePool:
-        """Retrieve the deployed hyperdrive pool to which the interface is connected."""
-        if self._deployed_hyperdrive_pool is None:
-            self._deployed_hyperdrive_pool = self._create_deployed_hyperdrive_pool()
-        return self._deployed_hyperdrive_pool
 
     @property
     def current_pool_state(self) -> PoolState:

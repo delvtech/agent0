@@ -300,7 +300,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
 
     def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
@@ -341,7 +341,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
 
     def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
@@ -379,7 +379,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
 
     def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
@@ -419,7 +419,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
 
     def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
@@ -457,7 +457,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
 
     def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
@@ -495,7 +495,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
 
     def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
@@ -533,7 +533,7 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_results, always_throw_exception=True)
+        tx_receipt = self._handle_trade_result(trade_results, pool, always_throw_exception=True)
         return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
 
     def execute_policy_action(
@@ -577,7 +577,7 @@ class HyperdriveAgent:
         out_events = []
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=False)
+            tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
             if tx_receipt is not None:
                 assert trade_result.trade_object is not None
                 action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
@@ -629,7 +629,7 @@ class HyperdriveAgent:
 
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result, always_throw_exception=False)
+            tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
             if tx_receipt is not None:
                 assert trade_result.trade_object is not None
                 action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
@@ -641,15 +641,17 @@ class HyperdriveAgent:
 
     @overload
     def _handle_trade_result(
-        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+        self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[True]
     ) -> ReceiptBreakdown: ...
 
     @overload
     def _handle_trade_result(
-        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+        self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[False]
     ) -> ReceiptBreakdown | None: ...
 
-    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
+    def _handle_trade_result(
+        self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: bool
+    ) -> ReceiptBreakdown | None:
         if not trade_result.trade_successful:
             # Defaults to CRITICAL
             assert trade_result.exception is not None
@@ -660,7 +662,7 @@ class HyperdriveAgent:
                 crash_report_file_prefix="interactive_hyperdrive",
                 log_to_rollbar=self.chain.config.log_to_rollbar,
                 rollbar_log_prefix=self.chain.config.rollbar_log_prefix,
-                additional_info=self.chain.config.crash_report_additional_info,
+                additional_info=pool._crash_report_additional_info,
             )
 
             if self.chain.config.exception_on_policy_error:

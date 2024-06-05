@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -18,7 +18,12 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
 )
 from agent0.chainsync.exec import acquire_data, analyze_data
-from agent0.ethpy.hyperdrive import DeployedHyperdrivePool, deploy_hyperdrive_factory, deploy_hyperdrive_from_factory
+from agent0.ethpy.hyperdrive import (
+    DeployedHyperdriveFactory,
+    DeployedHyperdrivePool,
+    deploy_hyperdrive_factory,
+    deploy_hyperdrive_from_factory,
+)
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
 from .event_types import CreateCheckpoint
@@ -197,11 +202,15 @@ class LocalHyperdrive(Hyperdrive):
             self.config = config
 
         # Deploys a hyperdrive factory + pool on the chain
+        self._deployed_hyperdrive_factory = None
+        self._deployed_hyperdrive_pool = None
         if deploy:
             if hyperdrive_address is not None:
                 raise ValueError("Cannot specify a hyperdrive address if deploying a Hyperdrive contract.")
-            _deployed_hyperdrive = self._deploy_hyperdrive(self.config, chain)
-            hyperdrive_address = _deployed_hyperdrive.hyperdrive_contract.address
+            (self._deployed_hyperdrive_factory, self._deployed_hyperdrive_pool) = self._deploy_hyperdrive(
+                self.config, chain
+            )
+            hyperdrive_address = self._deployed_hyperdrive_pool.hyperdrive_contract.address
         else:
             if hyperdrive_address is None:
                 raise ValueError("Must specify a hyperdrive address if not deploying a Hyperdrive contract.")
@@ -217,6 +226,30 @@ class LocalHyperdrive(Hyperdrive):
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
+
+        # Add additional deployment info to crash report additional info
+        if self._deployed_hyperdrive_factory is not None:
+            self._crash_report_additional_info.update(
+                {
+                    "factory_deployer_account": self._deployed_hyperdrive_factory.deployer_account.address,
+                    "factory_contract": self._deployed_hyperdrive_factory.factory_contract.address,
+                    "deployer_coor_contract": self._deployed_hyperdrive_factory.deployer_coordinator_contract.address,
+                    "registry_contract": self._deployed_hyperdrive_factory.registry_contract.address,
+                    "factory_deploy_config": asdict(self._deployed_hyperdrive_factory.factory_deploy_config),
+                }
+            )
+
+        if self._deployed_hyperdrive_pool is not None:
+            self._crash_report_additional_info.update(
+                {
+                    "pool_deployer_account": self._deployed_hyperdrive_pool.deployer_account.address,
+                    "hyperdrive_contract": self._deployed_hyperdrive_pool.hyperdrive_contract.address,
+                    "base_token_contract": self._deployed_hyperdrive_pool.base_token_contract.address,
+                    "vault_shares_token_contract": self._deployed_hyperdrive_pool.vault_shares_token_contract.address,
+                    "deploy_block_number": self._deploy_block_number,
+                    "pool_deploy_config": asdict(self._deployed_hyperdrive_pool.pool_deploy_config),
+                }
+            )
 
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
@@ -262,7 +295,9 @@ class LocalHyperdrive(Hyperdrive):
             other.hyperdrive_address,
         )
 
-    def _deploy_hyperdrive(self, config: Config, chain: LocalChain) -> DeployedHyperdrivePool:
+    def _deploy_hyperdrive(
+        self, config: Config, chain: LocalChain
+    ) -> tuple[DeployedHyperdriveFactory, DeployedHyperdrivePool]:
         # sanity check (also for type checking), should get set in __post_init__
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
@@ -312,7 +347,7 @@ class LocalHyperdrive(Hyperdrive):
             chain.rpc_uri, chain.get_deployer_account(), factory_deploy_config
         )
 
-        return deploy_hyperdrive_from_factory(
+        deployed_hyperdrive_pool = deploy_hyperdrive_from_factory(
             chain.rpc_uri,
             chain.get_deployer_account(),
             deployed_hyperdrive_factory,
@@ -322,6 +357,7 @@ class LocalHyperdrive(Hyperdrive):
             config.initial_time_stretch_apr,
             pool_deploy_config,
         )
+        return (deployed_hyperdrive_factory, deployed_hyperdrive_pool)
 
     def set_variable_rate(self, variable_rate: FixedPoint) -> None:
         """Sets the underlying variable rate for this pool.

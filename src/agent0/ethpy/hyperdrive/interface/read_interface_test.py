@@ -205,7 +205,6 @@ class TestHyperdriveReadInterface:
     def test_deployed_values(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Test the hyperdrive interface versus expected values."""
         # pylint: disable=too-many-locals
-        local_hyperdrive_pool = hyperdrive_read_interface_fixture.deployed_hyperdrive_pool
         # Fixed rate is annualized
         initial_fixed_rate = FixedPoint("0.05")
         # This expected time stretch is only true for 1 year position duration
@@ -216,8 +215,8 @@ class TestHyperdriveReadInterface:
         deploy_account: LocalAccount = Account().from_key(
             "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
         )
-        base_token_address = local_hyperdrive_pool.base_token_contract.address
-        vault_shares_token_address = local_hyperdrive_pool.vault_shares_token_contract.address
+        base_token_address = hyperdrive_read_interface_fixture.base_token_contract.address
+        vault_shares_token_address = hyperdrive_read_interface_fixture.vault_shares_token_contract.address
         expected_pool_config = {
             "base_token": base_token_address,
             "vault_shares_token": vault_shares_token_address,

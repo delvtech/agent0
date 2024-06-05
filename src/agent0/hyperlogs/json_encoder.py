@@ -1,4 +1,4 @@
-"""Extend the dfault JSON encoder to include additional types."""
+"""Extend the default JSON encoder to include additional types."""
 
 import json
 from dataclasses import asdict, is_dataclass
@@ -68,8 +68,9 @@ class ExtendedJSONEncoder(json.JSONEncoder):
         if isinstance(o, pd.DataFrame):
             return o.to_dict(orient="records")
         if is_dataclass(o):
-            out = asdict(o)
-            out.update({"class_name": o.__class__.__name__})
+            # We know o is an object here, not a type.
+            out = asdict(o)  # type: ignore
+            out.update({"class_name": o.__class__.__name__})  # type: ignore
             return out
 
         try:
