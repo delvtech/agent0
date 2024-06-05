@@ -483,15 +483,17 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     @overload
     def _handle_trade_result(
-        self, trade_result: TradeResult, always_throw_exception: Literal[True]
+        self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[True]
     ) -> ReceiptBreakdown: ...
 
     @overload
     def _handle_trade_result(
-        self, trade_result: TradeResult, always_throw_exception: Literal[False]
+        self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[False]
     ) -> ReceiptBreakdown | None: ...
 
-    def _handle_trade_result(self, trade_result: TradeResult, always_throw_exception: bool) -> ReceiptBreakdown | None:
+    def _handle_trade_result(
+        self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: bool
+    ) -> ReceiptBreakdown | None:
         # We add specific data to the trade result from interactive hyperdrive
         if not trade_result.trade_successful:
             assert trade_result.exception is not None
@@ -508,8 +510,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         # This check is necessary for subclass overloading and typing,
         # as types are narrowed based on the literal `always_throw_exception`
         if always_throw_exception:
-            return super()._handle_trade_result(trade_result, always_throw_exception)
-        return super()._handle_trade_result(trade_result, always_throw_exception)
+            return super()._handle_trade_result(trade_result, pool, always_throw_exception)
+        return super()._handle_trade_result(trade_result, pool, always_throw_exception)
 
     ################
     # Analysis

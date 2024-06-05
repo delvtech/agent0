@@ -117,6 +117,11 @@ class Hyperdrive:
         add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
         self.name = name
 
+        # Set the crash report's additional information from the chain.
+        self._crash_report_additional_info = {}
+        if self.chain.config.crash_report_additional_info is not None:
+            self._crash_report_additional_info.update(self.chain.config.crash_report_additional_info)
+
     def __init__(
         self,
         chain: Chain,
