@@ -35,7 +35,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     if parsed_args.rng_seed < 0:
         rng_seed = random.randint(0, 10000000)
     else:
-        # rng_seed = 7815695
         rng_seed = parsed_args.rng_seed
     rng = np.random.default_rng(rng_seed)
 
