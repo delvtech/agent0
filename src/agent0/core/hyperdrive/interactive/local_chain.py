@@ -57,10 +57,11 @@ class LocalChain(Chain):
         """The port to bind for the anvil chain. Will fail if this port is being used."""
         transaction_block_keeper: int = 10_000
         """The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here."""
-        snapshot_dir: str = ".interactive_state/snapshot/"
-        """The directory where the snapshot will be stored. Defaults to `.interactive_state/snapshot/`."""
-        saved_state_dir: str = ".interactive_state/"
-        """The directory where the saved state will be stored. Defaults to `.interactive_state/`."""
+        snapshot_dir: str | None = None
+        """
+        The directory where the snapshot will be stored. 
+        Defaults to `.interactive_state/snapshot/chain_<chain_port>`.
+        """
         load_rng_on_snapshot: bool = True
         """
         If True, loading a snapshot also loads the RNG state of the underlying policy.
@@ -135,8 +136,12 @@ class LocalChain(Chain):
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
 
         # Snapshot bookkeeping
-        # TODO snapshot dir will be clobbered if you run multiple chains simultaneously
-        self._snapshot_dir = Path(config.snapshot_dir) / self.chain_id
+        # Put chain_id as a separate directory to avoid conflicts
+        if config.snapshot_dir is None:
+            self._snapshot_dir = Path(".interactive_state") / "snapshot" / ("chain_" + str(self.chain_id))
+        else:
+            self._snapshot_dir = Path(config.snapshot_dir)
+
         self._saved_snapshot_id: str
         self._has_saved_snapshot = False
         self._deployed_hyperdrive_pools: list[LocalHyperdrive] = []
