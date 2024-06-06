@@ -130,7 +130,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 hyperdrive_pool,
                 check_invariance=True,
                 raise_error_on_failed_invariance_checks=raise_error_on_fail,
-                raise_error_on_crash=False,
+                raise_error_on_crash=raise_error_on_fail,
                 log_to_rollbar=log_to_rollbar,
                 ignore_raise_error_func=_fuzz_ignore_errors,
                 run_async=False,

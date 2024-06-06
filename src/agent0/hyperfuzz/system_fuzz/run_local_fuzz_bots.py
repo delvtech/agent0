@@ -223,8 +223,6 @@ def run_local_fuzz_bots(
         A function that determines if an exception should be ignored when raising error on crash.
         The function takes an exception as an an argument and returns True if the exception
         should be ignored. Defaults to raising all errors.
-    invariance_test_epsilon: float | None, optional
-        The epsilon for invariance tests. Defaults to 1e-4
     minimum_avg_agent_base: FixedPoint | None, optional
         The minimum average agent base. Will refund bots if average agent base drops below this.
         Defaults to 1/10 of base_budget_per_bot
