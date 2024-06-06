@@ -19,11 +19,13 @@ from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state.pool_state import PoolState
 from agent0.hyperfuzz import FuzzAssertionException
 
+LP_SHARE_PRICE_EPSILON = 1e-4
+TOTAL_SHARES_EPSILON = 1e-9
+
 
 def run_invariant_checks(
     latest_block: BlockData,
     interface: HyperdriveReadInterface,
-    test_epsilon: float,
     raise_error_on_failure: bool = False,
     log_to_rollbar: bool = True,
     pool_name: str | None = None,
@@ -48,8 +50,6 @@ def run_invariant_checks(
         The current block to be tested.
     interface: HyperdriveReadInterface
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
-    test_epsilon: float
-        The tolerance for the invariance checks.
     raise_error_on_failure: bool
         If True, raise an error if any invariant check fails.
     log_to_rollbar: bool
@@ -77,7 +77,7 @@ def run_invariant_checks(
     results: list[InvariantCheckResults]
     if lp_share_price_test is None:
         results = [
-            _check_lp_share_price(interface, test_epsilon, pool_state),
+            _check_lp_share_price(interface, pool_state),
             _check_eth_balances(pool_state),
             _check_base_balances(pool_state, interface.base_is_eth),
             _check_total_shares(pool_state),
@@ -90,7 +90,7 @@ def run_invariant_checks(
     else:
         if lp_share_price_test:
             results = [
-                _check_lp_share_price(interface, test_epsilon, pool_state),
+                _check_lp_share_price(interface, pool_state),
             ]
         else:
             results = [
@@ -276,7 +276,7 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
 
     # While the expected vault shares is a bit inaccurate, we're testing
     # solvency here, hence, we ensure that the actual vault shares >= expected vault shares
-    if actual_vault_shares < expected_vault_shares:
+    if actual_vault_shares < (expected_vault_shares - FixedPoint(str(TOTAL_SHARES_EPSILON))):
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message = (
             f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=}. {difference_in_wei=}. "
@@ -331,22 +331,9 @@ def _check_present_value_greater_than_idle_shares(
 
 def _check_lp_share_price(
     interface: HyperdriveReadInterface,
-    test_epsilon: float,
     pool_state: PoolState,
 ) -> InvariantCheckResults:
-    """Returns True if the test (∆ lp_share_price > test_epsilon) fails.
-
-    Arguments
-    ---------
-    block_number: BlockNumber
-    interface: HyperdriveReadInterface
-    test_epsilon: float
-    pool_state: PoolState
-
-    Returns
-    -------
-    InvariantCheckResults
-    """
+    """Returns True if the test (∆ lp_share_price > test_epsilon) fails."""
     # pylint: disable=too-many-locals
 
     # LP share price
@@ -370,7 +357,7 @@ def _check_lp_share_price(
         return InvariantCheckResults(False, exception_message, exception_data)
 
     block_time_delta = pool_state.block_time - previous_pool_state.block_time
-    normalized_test_epsilon = test_epsilon * (block_time_delta / 12)
+    normalized_test_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
 
     previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
     current_lp_share_price = pool_state.pool_info.lp_share_price

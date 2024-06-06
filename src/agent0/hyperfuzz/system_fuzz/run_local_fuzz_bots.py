@@ -187,7 +187,6 @@ def run_local_fuzz_bots(
     slippage_tolerance: FixedPoint | None = None,
     raise_error_on_crash: bool = False,
     raise_error_on_failed_invariance_checks: bool = False,
-    invariance_test_epsilon: float | None = None,
     minimum_avg_agent_base: FixedPoint | None = None,
     minimum_avg_agent_eth: FixedPoint | None = None,
     log_to_rollbar: bool = True,
@@ -257,8 +256,6 @@ def run_local_fuzz_bots(
         eth_budget_per_bot = FixedPoint("1_000")
     if slippage_tolerance is None:
         slippage_tolerance = FixedPoint("0.01")  # 1% slippage
-    if invariance_test_epsilon is None:
-        invariance_test_epsilon = 1e-4
     if minimum_avg_agent_base is None:
         minimum_avg_agent_base = base_budget_per_bot / FixedPoint(10)
     if minimum_avg_agent_eth is None:
@@ -336,7 +333,6 @@ def run_local_fuzz_bots(
             run_invariant_checks(
                 latest_block=latest_block,
                 interface=hyperdrive_pool.interface,
-                test_epsilon=invariance_test_epsilon,
                 raise_error_on_failure=raise_error_on_failed_invariance_checks,
                 log_to_rollbar=log_to_rollbar,
                 lp_share_price_test=lp_share_price_test,

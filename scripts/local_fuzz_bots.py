@@ -23,7 +23,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     Arguments
     ---------
     argv: Sequence[str]
-        A sequence containing the uri to the database server and the test epsilon.
+        A sequence containing the uri to the database server.
     """
     # TODO consolidate setup into single function
 
