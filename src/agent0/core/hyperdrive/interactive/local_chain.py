@@ -53,8 +53,13 @@ class LocalChain(Chain):
         """If None, mines per transaction. Otherwise mines every `block_time` seconds."""
         block_timestamp_interval: int | None = 12
         """Number of seconds to advance time for every mined block. Uses real time if None."""
+        chain_host: str | None = None
+        """The host to bind for the anvil chain. Defaults to `127.0.0.1`."""
+        # TODO allow chain_port to be None to allow for automatically finding an open port within range.
         chain_port: int = 10_000
         """The port to bind for the anvil chain. Will fail if this port is being used."""
+        chain_genesis_timestamp: int | None = None
+        """The genesis timestamp (in epoch seconds) for the anvil chain. If None, uses the current time."""
         transaction_block_keeper: int = 10_000
         """The number of blocks to keep transaction records for. Undocumented in Anvil, we're being optimistic here."""
         snapshot_dir: str | None = None
@@ -100,10 +105,15 @@ class LocalChain(Chain):
         if config is None:
             config = self.Config()
 
+        if config.chain_host is None:
+            chain_host = "127.0.0.1"
+        else:
+            chain_host = config.chain_host
+
         anvil_launch_args = [
             "anvil",
             "--host",
-            "127.0.0.1",
+            chain_host,
             "--port",
             str(config.chain_port),
             "--code-size-limit",
@@ -113,6 +123,9 @@ class LocalChain(Chain):
         ]
         if config.block_time is not None:
             anvil_launch_args.extend(("--block-time", str(config.block_time)))
+
+        if config.chain_genesis_timestamp is not None:
+            anvil_launch_args.extend(("--timestamp", str(config.chain_genesis_timestamp)))
 
         if fork_uri is not None:
             anvil_launch_args.extend(["--fork-url", fork_uri])
