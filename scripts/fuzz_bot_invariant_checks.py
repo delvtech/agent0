@@ -30,7 +30,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     Arguments
     ---------
     argv: Sequence[str]
-        A sequence containing the uri to the database server and the test epsilon.
+        A sequence containing the uri to the database server.
     """
     # pylint: disable=too-many-locals
 
@@ -97,7 +97,6 @@ def main(argv: Sequence[str] | None = None) -> None:
             run_invariant_checks(
                 latest_block=latest_block,
                 interface=hyperdrive_obj.interface,
-                test_epsilon=parsed_args.test_epsilon,
                 raise_error_on_failure=False,
                 log_to_rollbar=log_to_rollbar,
                 pool_name=name,
@@ -107,7 +106,6 @@ def main(argv: Sequence[str] | None = None) -> None:
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
-    test_epsilon: float
     invariance_check_sleep_time: int
     pool_check_sleep_blocks: int
     infra: bool
@@ -129,7 +127,6 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        test_epsilon=namespace.test_epsilon,
         invariance_check_sleep_time=namespace.invariance_check_sleep_time,
         pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
         infra=namespace.infra,
@@ -152,12 +149,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
-    parser.add_argument(
-        "--test-epsilon",
-        type=float,
-        default=1e-4,
-        help="The allowed error for equality tests.",
-    )
     parser.add_argument(
         "--invariance-check-sleep-time",
         type=int,

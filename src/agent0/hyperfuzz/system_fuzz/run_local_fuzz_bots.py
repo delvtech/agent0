@@ -187,7 +187,7 @@ def run_local_fuzz_bots(
     slippage_tolerance: FixedPoint | None = None,
     raise_error_on_crash: bool = False,
     raise_error_on_failed_invariance_checks: bool = False,
-    invariance_test_epsilon: float | None = None,
+    ignore_raise_error_func: Callable[[Exception], bool] | None = None,
     minimum_avg_agent_base: FixedPoint | None = None,
     minimum_avg_agent_eth: FixedPoint | None = None,
     log_to_rollbar: bool = True,
@@ -219,8 +219,10 @@ def run_local_fuzz_bots(
         If True, will exit the process if a bot crashes. Defaults to False.
     raise_error_on_failed_invariance_checks: bool, optional
         If True, will exit the process if the pool fails an invariance check. Defaults to False.
-    invariance_test_epsilon: float | None, optional
-        The epsilon for invariance tests. Defaults to 1e-4
+    ignore_raise_error_func: Callable[[Exception], bool] | None, optional
+        A function that determines if an exception should be ignored when raising error on crash.
+        The function takes an exception as an an argument and returns True if the exception
+        should be ignored. Defaults to raising all errors.
     minimum_avg_agent_base: FixedPoint | None, optional
         The minimum average agent base. Will refund bots if average agent base drops below this.
         Defaults to 1/10 of base_budget_per_bot
@@ -257,8 +259,6 @@ def run_local_fuzz_bots(
         eth_budget_per_bot = FixedPoint("1_000")
     if slippage_tolerance is None:
         slippage_tolerance = FixedPoint("0.01")  # 1% slippage
-    if invariance_test_epsilon is None:
-        invariance_test_epsilon = 1e-4
     if minimum_avg_agent_base is None:
         minimum_avg_agent_base = base_budget_per_bot / FixedPoint(10)
     if minimum_avg_agent_eth is None:
@@ -319,7 +319,8 @@ def run_local_fuzz_bots(
                 trades = [agent.execute_policy_action() for agent in agents]
         except Exception as exc:  # pylint: disable=broad-exception-caught
             if raise_error_on_crash:
-                raise exc
+                if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                    raise exc
             # Otherwise, we ignore crashes, we want the bot to keep trading
             # These errors will get logged regardless
 
@@ -336,7 +337,6 @@ def run_local_fuzz_bots(
             run_invariant_checks(
                 latest_block=latest_block,
                 interface=hyperdrive_pool.interface,
-                test_epsilon=invariance_test_epsilon,
                 raise_error_on_failure=raise_error_on_failed_invariance_checks,
                 log_to_rollbar=log_to_rollbar,
                 lp_share_price_test=lp_share_price_test,

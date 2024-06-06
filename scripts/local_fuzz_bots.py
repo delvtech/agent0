@@ -10,11 +10,53 @@ import time
 from typing import NamedTuple, Sequence
 
 import numpy as np
+from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
-from agent0.hyperfuzz import FuzzAssertionException
+from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_local_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+
+
+def _fuzz_ignore_errors(exc: Exception) -> bool:
+    if isinstance(exc, ContractCallException):
+        orig_exception = exc.orig_exception
+        if orig_exception is None:
+            return False
+
+        # Insufficient liquidity error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "InsufficientLiquidity raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # Circuit breaker triggered error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "CircuitBreakerTriggered raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # Status == 0, but preview was successful error
+        if (
+            # Lots of conditions to check
+            # pylint: disable=too-many-boolean-expressions
+            isinstance(orig_exception, list)
+            and len(orig_exception) > 1
+            and isinstance(orig_exception[0], UnknownBlockError)
+            and len(orig_exception[0].args) > 0
+            and "Receipt has status of 0" in orig_exception[0].args[0]
+            # Ensure the second preview was successful to ignore
+            and isinstance(orig_exception[1], AssertionError)
+            and len(orig_exception[1].args) > 1
+            and "Preview was successful" in orig_exception[1].args[1]
+        ):
+            return True
+
+    return False
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -23,7 +65,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     Arguments
     ---------
     argv: Sequence[str]
-        A sequence containing the uri to the database server and the test epsilon.
+        A sequence containing the uri to the database server.
     """
     # TODO consolidate setup into single function
 
@@ -88,8 +130,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                 hyperdrive_pool,
                 check_invariance=True,
                 raise_error_on_failed_invariance_checks=raise_error_on_fail,
-                raise_error_on_crash=False,
+                raise_error_on_crash=raise_error_on_fail,
                 log_to_rollbar=log_to_rollbar,
+                ignore_raise_error_func=_fuzz_ignore_errors,
                 run_async=False,
                 random_advance_time=True,
                 random_variable_rate=True,
@@ -97,8 +140,8 @@ def main(argv: Sequence[str] | None = None) -> None:
                 lp_share_price_test=parsed_args.lp_share_price_test,
             )
 
-        except FuzzAssertionException as e:
-            logging.error("Pausing pool on fuzz assertion exception %s", repr(e))
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error("Pausing pool on crash %s", repr(e))
             while True:
                 time.sleep(1000000)
 
