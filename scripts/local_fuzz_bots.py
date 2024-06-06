@@ -67,7 +67,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     argv: Sequence[str]
         A sequence containing the uri to the database server.
     """
-    # TODO consolidate setup into single function
+    # TODO consolidate setup into single function and clean up.
+    # pylint: disable=too-many-branches
 
     parsed_args = parse_arguments(argv)
 
@@ -79,6 +80,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         rng_seed = parsed_args.rng_seed
     rng = np.random.default_rng(rng_seed)
+
+    # Empty string means default
+    if parsed_args.chain_host == "":
+        chain_host = None
+    else:
+        chain_host = parsed_args.chain_host
 
     # Negative chain port means default
     if parsed_args.chain_port < 0:
@@ -95,8 +102,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         db_port = 44444
 
+    # Negative timestamp means default
+    if parsed_args.genesis_timestamp < 0:
+        genesis_timestamp = None
+    else:
+        genesis_timestamp = parsed_args.genesis_timestamp
+
     local_chain_config = LocalChain.Config(
+        chain_host=chain_host,
         chain_port=chain_port,
+        chain_genesis_timestamp=genesis_timestamp,
         db_port=db_port,
         block_timestamp_interval=12,
         log_level=logging.WARNING,
@@ -153,7 +168,9 @@ class Args(NamedTuple):
 
     lp_share_price_test: bool
     pause_on_invariance_fail: bool
+    chain_host: str
     chain_port: int
+    genesis_timestamp: int
     rng_seed: int
 
 
@@ -173,7 +190,9 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         lp_share_price_test=namespace.lp_share_price_test,
         pause_on_invariance_fail=namespace.pause_on_invariance_fail,
+        chain_host=namespace.chain_host,
         chain_port=namespace.chain_port,
+        genesis_timestamp=namespace.genesis_timestamp,
         rng_seed=namespace.rng_seed,
     )
 
@@ -205,10 +224,22 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="Pause execution on invariance failure.",
     )
     parser.add_argument(
+        "--chain-host",
+        type=str,
+        default="",
+        help="The host to bind for the anvil chain. Defaults to 127.0.0.1.",
+    )
+    parser.add_argument(
         "--chain-port",
         type=int,
         default=-1,
         help="The port to run anvil on.",
+    )
+    parser.add_argument(
+        "--genesis-timestamp",
+        type=int,
+        default=-1,
+        help="The timestamp of the genesis block. Defaults to current time.",
     )
     parser.add_argument(
         "--rng-seed",
