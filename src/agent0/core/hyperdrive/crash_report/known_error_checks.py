@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
@@ -187,14 +188,18 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
             raise ValueError(f"{trade_type} not supported!")
 
         case HyperdriveActionType.ADD_LIQUIDITY | HyperdriveActionType.OPEN_LONG:
-            # TODO may want to wrap this in a try/catch so we don't crash in crash reporting
-            allowance = FixedPoint(
-                scaled_value=interface.base_token_contract.functions.allowance(
-                    agent_address,
-                    hyperdrive_contract_address,
-                ).call()
-            )
-            if allowance < trade_amount:
+            allowance = None
+            try:
+                allowance = FixedPoint(
+                    scaled_value=interface.base_token_contract.functions.allowance(
+                        agent_address,
+                        hyperdrive_contract_address,
+                    ).call()
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                logging.warning("Failed to get allowance in crash reporting: %s", e)
+
+            if allowance is not None and allowance < trade_amount:
                 insufficient_allowance = True
                 add_arg = (
                     f"Insufficient allowance: {trade_type.name} for {trade_amount} , "
@@ -202,16 +207,21 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
                 )
 
         case HyperdriveActionType.OPEN_SHORT:
-            allowance = FixedPoint(
-                scaled_value=interface.base_token_contract.functions.allowance(
-                    agent_address,
-                    hyperdrive_contract_address,
-                ).call()
-            )
+            allowance = None
+            try:
+                allowance = FixedPoint(
+                    scaled_value=interface.base_token_contract.functions.allowance(
+                        agent_address,
+                        hyperdrive_contract_address,
+                    ).call()
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                logging.warning("Failed to get allowance in crash reporting: %s", e)
+
             # Since the trade amount here is in units of bonds, we only check for
             # 0 allowance here.
             # TODO calculate short deposit value here
-            if allowance == 0:
+            if allowance is not None and allowance == 0:
                 insufficient_allowance = True
                 add_arg = (
                     f"Insufficient allowance: {trade_type.name} for {trade_amount} , "
