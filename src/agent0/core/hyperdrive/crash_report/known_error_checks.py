@@ -235,7 +235,7 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
         assert trade_result.exception is not None
         assert add_arg is not None
         trade_result.exception.args = (add_arg,) + trade_result.exception.args
-        trade_result.is_insufficient_approval = True
+        trade_result.is_insufficient_allowance = True
 
     return trade_result
 
