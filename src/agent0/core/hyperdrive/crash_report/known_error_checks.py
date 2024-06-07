@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fixedpointmath import FixedPoint
 from web3.exceptions import ContractCustomError
 
 from agent0.core.hyperdrive.agent import HyperdriveActionType
@@ -150,6 +151,75 @@ def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveRe
         assert add_arg is not None
         trade_result.exception.args = (add_arg,) + trade_result.exception.args
         trade_result.is_invalid_balance = True
+
+    return trade_result
+
+
+def check_for_insufficient_allowance(trade_result: TradeResult, interface: HyperdriveReadInterface) -> TradeResult:
+    """Detects insufficient allowance in trade_result and adds additional information to the
+    exception in trade_result.
+
+    Arguments
+    ---------
+    trade_result: TradeResult
+        The trade result object from trading.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface to compute expected balances for trades.
+
+    Returns
+    -------
+    TradeResult
+        A modified trade_result that has a custom exception argument message prepended
+    """
+    assert trade_result.account is not None
+    agent_address = trade_result.account.address
+    assert trade_result.trade_object is not None
+    trade_type = trade_result.trade_object.market_action.action_type
+    trade_amount = trade_result.trade_object.market_action.trade_amount
+
+    base_token_contract_address = interface.base_token_contract.address
+
+    insufficient_allowance = False
+    add_arg = None
+    match trade_type:
+        case HyperdriveActionType.INITIALIZE_MARKET:
+            raise ValueError(f"{trade_type} not supported!")
+
+        case HyperdriveActionType.ADD_LIQUIDITY | HyperdriveActionType.OPEN_LONG | HyperdriveActionType.OPEN_SHORT:
+            # We first check to ensure this transaction has approval
+            # and throw an error if it doesn't.
+            # TODO may want to wrap this in a try/catch so we don't crash in crash reporting
+            allowance = FixedPoint(
+                scaled_value=interface.base_token_contract.functions.allowance(
+                    base_token_contract_address,
+                    agent_address,
+                ).call()
+            )
+            if allowance < trade_amount:
+                insufficient_allowance = True
+                add_arg = (
+                    f"Insufficient allowance: {trade_type.name} for {trade_amount} , "
+                    f"allowance of {allowance} for token {base_token_contract_address}."
+                )
+
+        case (
+            HyperdriveActionType.REMOVE_LIQUIDITY
+            | HyperdriveActionType.CLOSE_LONG
+            | HyperdriveActionType.CLOSE_SHORT
+            | HyperdriveActionType.REDEEM_WITHDRAW_SHARE
+        ):
+            # No need for approval for close trades
+            pass
+
+        case _:
+            assert_never(trade_type)
+
+    # Prepend balance error argument to exception args
+    if insufficient_allowance:
+        assert trade_result.exception is not None
+        assert add_arg is not None
+        trade_result.exception.args = (add_arg,) + trade_result.exception.args
+        trade_result.is_insufficient_approval = True
 
     return trade_result
 

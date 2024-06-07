@@ -20,6 +20,7 @@ from agent0.core.hyperdrive.agent import (
 )
 from agent0.core.hyperdrive.crash_report import (
     build_crash_trade_result,
+    check_for_insufficient_allowance,
     check_for_invalid_balance,
     check_for_min_txn_amount,
     check_for_slippage,
@@ -320,6 +321,7 @@ def _handle_contract_call_to_trade(
             # These functions adjust the trade_result.exception object to add
             # additional arguments describing these detected errors for crash reporting.
             trade_result = check_for_invalid_balance(trade_result, interface)
+            trade_result = check_for_insufficient_allowance(trade_result, interface)
             trade_result = check_for_slippage(trade_result)
             trade_result = check_for_min_txn_amount(trade_result)
         else:
