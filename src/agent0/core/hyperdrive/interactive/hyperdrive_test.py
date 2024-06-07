@@ -4,6 +4,7 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.base.make_key import make_private_key
+from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 
 from .chain import Chain
@@ -251,7 +252,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
 
 @pytest.mark.anvil
 def test_no_policy_call(fast_chain_fixture: LocalChain):
-    """Deploy a local chain and point the remote interface to the local chain."""
+    """Test no policy call error on the base remote chain."""
     initial_pool_config = LocalHyperdrive.Config()
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     hyperdrive_addresses = interactive_local_hyperdrive.hyperdrive_address
@@ -266,5 +267,87 @@ def test_no_policy_call(fast_chain_fixture: LocalChain):
     # Attempt to execute agent policy, should throw value error
     with pytest.raises(ValueError):
         hyperdrive_agent.execute_policy_action()
+
+    remote_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_no_approval(fast_chain_fixture: LocalChain):
+    """Test no approval error on the base remote chain."""
+    initial_pool_config = LocalHyperdrive.Config()
+    local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+    private_key = make_private_key()
+
+    # Initialize the agent here to fund
+    fast_chain_fixture.init_agent(
+        base=FixedPoint(1_000_000), eth=FixedPoint(1_000), private_key=private_key, pool=local_hyperdrive
+    )
+    hyperdrive_addresses = local_hyperdrive.hyperdrive_address
+    # Connect to the local chain using the remote hyperdrive interface
+    # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
+    # we use a separate chain port here
+
+    remote_chain = Chain(
+        fast_chain_fixture.rpc_uri,
+        Chain.Config(
+            db_port=40000,
+        ),
+    )
+    interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
+    # Create agent with same private key
+    hyperdrive_agent = remote_chain.init_agent(private_key=private_key, pool=interactive_remote_hyperdrive)
+
+    # Make a call without approval
+    try:
+        hyperdrive_agent.add_liquidity(base=FixedPoint(1_000))
+    except ContractCallException as exc:
+        assert "Insufficient allowance: " in exc.args[0]
+
+    try:
+        hyperdrive_agent.open_long(base=FixedPoint(1_000))
+    except ContractCallException as exc:
+        assert "Insufficient allowance: " in exc.args[0]
+
+    try:
+        hyperdrive_agent.open_short(bonds=FixedPoint(1_000))
+    except ContractCallException as exc:
+        assert "Insufficient allowance: " in exc.args[0]
+
+    remote_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_out_of_gas(fast_chain_fixture: LocalChain):
+    """Test out of gas error on the base remote chain."""
+    initial_pool_config = LocalHyperdrive.Config()
+    local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+    private_key = make_private_key()
+
+    # Initialize the agent here to fund
+    fast_chain_fixture.init_agent(
+        base=FixedPoint(1_000_000), eth=FixedPoint(1_000), private_key=private_key, pool=local_hyperdrive
+    )
+    hyperdrive_addresses = local_hyperdrive.hyperdrive_address
+    # Connect to the local chain using the remote hyperdrive interface
+    # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
+    # we use a separate chain port here
+
+    remote_chain = Chain(
+        fast_chain_fixture.rpc_uri,
+        Chain.Config(
+            db_port=40000,
+            gas_limit=100000,
+        ),
+    )
+    interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
+    # Create agent with same private key
+    hyperdrive_agent = remote_chain.init_agent(private_key=private_key, pool=interactive_remote_hyperdrive)
+    hyperdrive_agent.set_max_approval()
+
+    # Make a call with not enough gas
+    try:
+        hyperdrive_agent.add_liquidity(base=FixedPoint(1_000))
+    except ContractCallException as exc:
+        assert "Out of gas" in exc.args[0]
 
     remote_chain.cleanup()

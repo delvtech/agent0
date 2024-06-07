@@ -96,12 +96,20 @@ def calc_single_closeout(
     elif token_type == "SHORT":
         # Get the open share price from the checkpoint lookup
         open_checkpoint_time = maturity - position_duration
-        # TODO checkpoint db doesn't exist for remote chains, fix
-        # Use checkpoint event to fill database, following the same
-        # event gathering logic as position events.
-        assert (
-            open_checkpoint_time in checkpoint_share_prices.index
-        ), "Chainsync: open short checkpoint not found for position."
+
+        # Use checkpoint events to get checkpoint share price.
+        # NOTE: anvil doesn't keep events past a certain point
+        # so checkpoint events may be missing if we fork a chain.
+        # We detect this case, print a warning, and set value to NaN.
+        if open_checkpoint_time not in checkpoint_share_prices.index:
+            if open_checkpoint_time < checkpoint_share_prices.index.min():
+                logging.warning(
+                    "Chainsync: Missing checkpoint event data for short position, event history likely lost."
+                )
+                return Decimal("nan")
+            # If we have events and open checkpoint time still missing, something very wrong.
+            raise ValueError("Chainsync: Missing checkpoint event data for short position.")
+
         open_share_price = FixedPoint(checkpoint_share_prices.loc[open_checkpoint_time])
 
         # If the position has matured, we use the share price from the checkpoint

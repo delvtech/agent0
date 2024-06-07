@@ -44,6 +44,8 @@ class TradeResult:
     """If the trade failed due to slippage."""
     is_invalid_balance: bool = False
     """If the trade failed due to invalid balance."""
+    is_insufficient_allowance: bool = False
+    """If the trade failed due to insufficient approval."""
     is_min_txn_amount: bool = False
     """If the trade failed due to minimum transaction amount."""
 

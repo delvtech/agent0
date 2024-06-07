@@ -287,7 +287,7 @@ class HyperdriveAgent:
             raise ValueError("Open long requires an active pool.")
 
         # Build trade object
-        trade_object = open_long_trade(base)
+        trade_object = open_long_trade(base, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
@@ -328,7 +328,7 @@ class HyperdriveAgent:
             raise ValueError("Close long requires an active pool.")
 
         # Build trade object
-        trade_object = close_long_trade(bonds, maturity_time)
+        trade_object = close_long_trade(bonds, maturity_time, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
@@ -366,7 +366,7 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Open short requires an active pool.")
 
-        trade_object = open_short_trade(bonds)
+        trade_object = open_short_trade(bonds, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
@@ -406,7 +406,7 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Close short requires an active pool.")
 
-        trade_object = close_short_trade(bonds, maturity_time)
+        trade_object = close_short_trade(bonds, maturity_time, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
@@ -444,7 +444,7 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Add liquidity requires an active pool.")
 
-        trade_object = add_liquidity_trade(base)
+        trade_object = add_liquidity_trade(base, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
@@ -482,7 +482,7 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Remove liquidity requires an active pool.")
 
-        trade_object = remove_liquidity_trade(shares)
+        trade_object = remove_liquidity_trade(shares, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_result: TradeResult = asyncio.run(
             async_execute_single_trade(
@@ -520,7 +520,7 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Redeem withdrawal shares requires an active pool.")
 
-        trade_object = redeem_withdraw_shares_trade(shares)
+        trade_object = redeem_withdraw_shares_trade(shares, gas_limit=self.chain.config.gas_limit)
         # TODO expose async here to the caller eventually
         trade_results: TradeResult = asyncio.run(
             async_execute_single_trade(
