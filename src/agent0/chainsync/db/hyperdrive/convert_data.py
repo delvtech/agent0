@@ -23,7 +23,7 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
     out["args"] = dict(in_val["args"])
 
     # Convert transaction hash to string
-    out["transactionHash"] = in_val["transactionHash"].to_0x_hex()
+    out["transactionHash"] = in_val["transactionHash"].hex()
     # Get token id field from args.
     # This field is `assetId` for open/close long/short
     return out
