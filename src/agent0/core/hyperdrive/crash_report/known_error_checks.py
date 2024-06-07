@@ -217,7 +217,6 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
                     f"Insufficient allowance: {trade_type.name} for {trade_amount} , "
                     f"allowance of {allowance} for token {base_token_contract_address}."
                 )
-            pass
 
         case (
             HyperdriveActionType.REMOVE_LIQUIDITY
