@@ -178,6 +178,7 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
     trade_amount = trade_result.trade_object.market_action.trade_amount
 
     base_token_contract_address = interface.base_token_contract.address
+    hyperdrive_contract_address = interface.hyperdrive_contract.address
 
     insufficient_allowance = False
     add_arg = None
@@ -185,14 +186,12 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
         case HyperdriveActionType.INITIALIZE_MARKET:
             raise ValueError(f"{trade_type} not supported!")
 
-        case HyperdriveActionType.ADD_LIQUIDITY | HyperdriveActionType.OPEN_LONG | HyperdriveActionType.OPEN_SHORT:
-            # We first check to ensure this transaction has approval
-            # and throw an error if it doesn't.
+        case HyperdriveActionType.ADD_LIQUIDITY | HyperdriveActionType.OPEN_LONG:
             # TODO may want to wrap this in a try/catch so we don't crash in crash reporting
             allowance = FixedPoint(
                 scaled_value=interface.base_token_contract.functions.allowance(
-                    base_token_contract_address,
                     agent_address,
+                    hyperdrive_contract_address,
                 ).call()
             )
             if allowance < trade_amount:
@@ -201,6 +200,24 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
                     f"Insufficient allowance: {trade_type.name} for {trade_amount} , "
                     f"allowance of {allowance} for token {base_token_contract_address}."
                 )
+
+        case HyperdriveActionType.OPEN_SHORT:
+            allowance = FixedPoint(
+                scaled_value=interface.base_token_contract.functions.allowance(
+                    agent_address,
+                    hyperdrive_contract_address,
+                ).call()
+            )
+            # Since the trade amount here is in units of bonds, we only check for
+            # 0 allowance here.
+            # TODO calculate short deposit value here
+            if allowance == 0:
+                insufficient_allowance = True
+                add_arg = (
+                    f"Insufficient allowance: {trade_type.name} for {trade_amount} , "
+                    f"allowance of {allowance} for token {base_token_contract_address}."
+                )
+            pass
 
         case (
             HyperdriveActionType.REMOVE_LIQUIDITY
