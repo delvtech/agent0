@@ -169,7 +169,7 @@ def check_for_insufficient_allowance(trade_result: TradeResult, interface: Hyper
     Returns
     -------
     TradeResult
-        A modified trade_result that has a custom exception argument message prepended
+        A modified trade_result that has a custom exception argument message prepended.
     """
     assert trade_result.account is not None
     agent_address = trade_result.account.address
