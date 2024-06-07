@@ -252,7 +252,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
 
 @pytest.mark.anvil
 def test_no_policy_call(fast_chain_fixture: LocalChain):
-    """Deploy a local chain and point the remote interface to the local chain."""
+    """Test no policy call error on the base remote chain."""
     initial_pool_config = LocalHyperdrive.Config()
     interactive_local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     hyperdrive_addresses = interactive_local_hyperdrive.hyperdrive_address
@@ -273,7 +273,7 @@ def test_no_policy_call(fast_chain_fixture: LocalChain):
 
 @pytest.mark.anvil
 def test_no_approval(fast_chain_fixture: LocalChain):
-    """Deploy a local chain and point the remote interface to the local chain."""
+    """Test no approval error on the base remote chain."""
     initial_pool_config = LocalHyperdrive.Config()
     local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     private_key = make_private_key()
@@ -318,7 +318,7 @@ def test_no_approval(fast_chain_fixture: LocalChain):
 
 @pytest.mark.anvil
 def test_out_of_gas(fast_chain_fixture: LocalChain):
-    """Deploy a local chain and point the remote interface to the local chain."""
+    """Test out of gas error on the base remote chain."""
     initial_pool_config = LocalHyperdrive.Config()
     local_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     private_key = make_private_key()
