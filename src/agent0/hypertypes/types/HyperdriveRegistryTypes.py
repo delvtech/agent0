@@ -22,22 +22,33 @@ from dataclasses import dataclass
 
 from web3.types import ABIEvent, ABIEventParams
 
-GovernanceUpdated = ABIEvent(
+AdminUpdated = ABIEvent(
     anonymous=False,
     inputs=[
-        ABIEventParams(indexed=True, name="governance", type="address"),
+        ABIEventParams(indexed=True, name="admin", type="address"),
     ],
-    name="GovernanceUpdated",
+    name="AdminUpdated",
     type="event",
 )
 
-HyperdriveInfoUpdated = ABIEvent(
+FactoryInfoUpdated = ABIEvent(
     anonymous=False,
     inputs=[
-        ABIEventParams(indexed=True, name="hyperdrive", type="address"),
-        ABIEventParams(indexed=False, name="data", type="uint256"),
+        ABIEventParams(indexed=True, name="factory", type="address"),
+        ABIEventParams(indexed=True, name="data", type="uint256"),
     ],
-    name="HyperdriveInfoUpdated",
+    name="FactoryInfoUpdated",
+    type="event",
+)
+
+InstanceInfoUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="instance", type="address"),
+        ABIEventParams(indexed=True, name="data", type="uint256"),
+        ABIEventParams(indexed=True, name="factory", type="address"),
+    ],
+    name="InstanceInfoUpdated",
     type="event",
 )
 
@@ -60,6 +71,34 @@ class ErrorParams:
     solidity_type: str
     python_type: str
 
+
+EndIndexTooLargeError = ErrorInfo(
+    inputs=[],
+    name="EndIndexTooLarge",
+    selector="0xe0f7becb",
+    signature="EndIndexTooLarge()",
+)
+
+InputLengthMismatchError = ErrorInfo(
+    inputs=[],
+    name="InputLengthMismatch",
+    selector="0xaaad13f7",
+    signature="InputLengthMismatch()",
+)
+
+InvalidFactoryError = ErrorInfo(
+    inputs=[],
+    name="InvalidFactory",
+    selector="0x7a44db95",
+    signature="InvalidFactory()",
+)
+
+InvalidIndexesError = ErrorInfo(
+    inputs=[],
+    name="InvalidIndexes",
+    selector="0x764e6b56",
+    signature="InvalidIndexes()",
+)
 
 UnauthorizedError = ErrorInfo(
     inputs=[],
