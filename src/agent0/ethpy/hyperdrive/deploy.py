@@ -202,7 +202,9 @@ def deploy_hyperdrive_from_factory(
     )
 
     # Register this pool with the registry contract
-    register_function = deployed_factory.registry_contract.functions.setHyperdriveInfo(hyperdrive_checksum_address, 1)
+    register_function = deployed_factory.registry_contract.functions.setInstanceInfo(
+        [hyperdrive_checksum_address], [1], [deployed_factory.factory_contract.address]
+    )
     function_name = register_function.fn_name
     function_args = register_function.args
     receipt = smart_contract_transact(
@@ -214,6 +216,20 @@ def deploy_hyperdrive_from_factory(
     )
     if receipt["status"] != 1:
         raise ValueError(f"Failed to register Hyperdrive contract.\n{receipt=}")
+
+    # Register the admin account
+    register_function = deployed_factory.registry_contract.functions.updateAdmin(deploy_account_addr)
+    function_name = register_function.fn_name
+    function_args = register_function.args
+    receipt = smart_contract_transact(
+        web3,
+        deployed_factory.registry_contract,
+        deployer_account,
+        function_name,
+        *function_args,
+    )
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed to register Hyperdrive deployer admin address.\n{receipt=}")
 
     # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
@@ -254,7 +270,7 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
 
 def _deploy_hyperdrive_factory(
     web3: Web3,
-    deploy_account: LocalAccount,
+    deployer_account: LocalAccount,
     factory_deploy_config: FactoryConfig,
 ) -> DeployedHyperdriveFactory:
     """Deploys the hyperdrive factory contract on the rpc_uri chain.
@@ -263,7 +279,7 @@ def _deploy_hyperdrive_factory(
     ---------
     web3: Web3
         Web3 provider object.
-    deploy_account: LocalAccount
+    deployer_account: LocalAccount
         The account that's deploying the contract.
     factory_deploy_config: FactoryConfig
         The factory configuration for initializing the hyperdrive factory.
@@ -279,7 +295,7 @@ def _deploy_hyperdrive_factory(
         Containing the deployed factory, the deploy coordinator contracts, and the updated
         factory config
     """
-    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
+    deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
     # Deploy forwarder factory
     forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(w3=web3, account=deploy_account_addr)
     # Set config from forwarder factory contract here
@@ -337,22 +353,36 @@ def _deploy_hyperdrive_factory(
     receipt = smart_contract_transact(
         web3,
         factory_contract,
-        deploy_account,
+        deployer_account,
         function_name,
         *function_args,
     )
     if receipt["status"] != 1:
         raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
 
-    # Deploy the hyperdrive registry contract
+    # Deploy the Hyperdrive registry contract
     registry_contract = HyperdriveRegistryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=HyperdriveRegistryContract.ConstructorArgs(name="HyperdriveRegistry"),
     )
 
+    # Register the factory with the registry contract
+    register_function = registry_contract.functions.setFactoryInfo([factory_contract.address], [1])
+    function_name = register_function.fn_name
+    function_args = register_function.args
+    receipt = smart_contract_transact(
+        web3,
+        registry_contract,
+        deployer_account,
+        function_name,
+        *function_args,
+    )
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed to register Hyperdrive factory.\n{receipt=}")
+
     return DeployedHyperdriveFactory(
-        deployer_account=deploy_account,
+        deployer_account=deployer_account,
         factory_contract=factory_contract,
         deployer_coordinator_contract=deployer_coordinator_contract,
         factory_deploy_config=factory_deploy_config,
