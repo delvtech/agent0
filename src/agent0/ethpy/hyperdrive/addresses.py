@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Literal, overload
 
 import requests
 from eth_typing import ChecksumAddress
