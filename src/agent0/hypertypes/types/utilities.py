@@ -107,7 +107,7 @@ def rename_returned_types(
         # Convert the tuple to the dataclass instance using the utility function
         converted_values = []
         for return_type, value in zip(return_types, raw_values):
-            if type(return_type) == type(list[Any]):
+            if type(return_type) == type(list[Any]):  # pylint: disable=unidiomatic-typecheck
                 raise NotImplementedError("Multiple return values of type list[...] is not supported.")
             converted_values.append(tuple_to_dataclass(return_type, structs, value))
         converted_values = tuple(converted_values)
@@ -116,14 +116,14 @@ def rename_returned_types(
 
     # cover case of single return type
     # single return type is a list of SomeType, aka `list[SomeType]`
-    if type(return_types) == type(list[Any]):
+    if type(return_types) == type(list[Any]):  # pylint: disable=unidiomatic-typecheck
         inner_types = get_args(return_types)
         # make sure there is only one inner type
-        if len(inner_types) > 1:
+        if len(inner_types) != 1:
             raise NotImplementedError("Only a single inner type in list[...] is supported")
         inner_type = inner_types[0]
         # make sure the type is not also a list
-        if type(inner_type) == type(list[Any]):
+        if type(inner_type) == type(list[Any]):  # pylint: disable=unidiomatic-typecheck
             raise NotImplementedError("Type list[list[...]] is not supported.")
         # type narrowing
         assert isinstance(raw_values, Iterable)
