@@ -20,6 +20,7 @@ from .LPMathTypes import *
 from .ERC4626Target3DeployerContract import *
 from .HyperdriveRegistryContract import *
 from .HyperdriveRegistryTypes import *
+from .IHyperdriveRegistryTypes import *
 from .ERC4626Target1DeployerContract import *
 from .ERC4626Target2DeployerContract import *
 from .ERC20MintableContract import *

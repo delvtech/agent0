@@ -94,7 +94,7 @@ def get_hyperdrive_addresses_from_registry(
         address=web3.to_checksum_address(hyperdrive_registry_addr)
     )
     # Look for events from the contract
-    events = registry_contract.events.HyperdriveInfoUpdated.get_logs(fromBlock=0)
+    events = registry_contract.events.InstanceInfoUpdated.get_logs(fromBlock=0)
 
     # Temporary dictionary to hold registered addresses
     # keyed by hyperdrive address, valued by an arbitrary index based on event order

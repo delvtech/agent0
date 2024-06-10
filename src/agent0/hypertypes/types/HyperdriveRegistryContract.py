@@ -47,16 +47,209 @@ from web3.contract.contract import (
 from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
+from .IHyperdriveRegistryTypes import FactoryInfo, InstanceInfo
 from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
-structs = {}
+structs = {
+    "FactoryInfo": FactoryInfo,
+    "InstanceInfo": InstanceInfo,
+}
 
 
-class HyperdriveRegistryGetHyperdriveInfoContractFunction(ContractFunction):
-    """ContractFunction for the getHyperdriveInfo method."""
+class HyperdriveRegistryAdminContractFunction(ContractFunction):
+    """ContractFunction for the admin method."""
 
-    def __call__(self, hyperdriveInstance: str) -> HyperdriveRegistryGetHyperdriveInfoContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(hyperdriveInstance))
+    def __call__(self) -> HyperdriveRegistryAdminContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetFactoriesInRangeContractFunction(ContractFunction):
+    """ContractFunction for the getFactoriesInRange method."""
+
+    def __call__(self, startIndex: int, endIndex: int) -> HyperdriveRegistryGetFactoriesInRangeContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(startIndex), dataclass_to_tuple(endIndex))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> list[str]:
+        """returns list[str]."""
+        # Define the expected return types from the smart contract call
+
+        return_types = list[str]
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetFactoryAtIndexContractFunction(ContractFunction):
+    """ContractFunction for the getFactoryAtIndex method."""
+
+    def __call__(self, index: int) -> HyperdriveRegistryGetFactoryAtIndexContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(index))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetFactoryInfoContractFunction(ContractFunction):
+    """ContractFunction for the getFactoryInfo method."""
+
+    def __call__(self, factories: list[str]) -> HyperdriveRegistryGetFactoryInfoContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(factories))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> list[FactoryInfo]:
+        """returns list[FactoryInfo]."""
+        # Define the expected return types from the smart contract call
+
+        return_types = list[FactoryInfo]
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(list[FactoryInfo], rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetInstanceAtIndexContractFunction(ContractFunction):
+    """ContractFunction for the getInstanceAtIndex method."""
+
+    def __call__(self, index: int) -> HyperdriveRegistryGetInstanceAtIndexContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(index))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetInstanceInfoContractFunction(ContractFunction):
+    """ContractFunction for the getInstanceInfo method."""
+
+    def __call__(self, instances: list[str]) -> HyperdriveRegistryGetInstanceInfoContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(instances))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> list[InstanceInfo]:
+        """returns list[InstanceInfo]."""
+        # Define the expected return types from the smart contract call
+
+        return_types = list[InstanceInfo]
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(list[InstanceInfo], rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetInstancesInRangeContractFunction(ContractFunction):
+    """ContractFunction for the getInstancesInRange method."""
+
+    def __call__(self, startIndex: int, endIndex: int) -> HyperdriveRegistryGetInstancesInRangeContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(startIndex), dataclass_to_tuple(endIndex))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> list[str]:
+        """returns list[str]."""
+        # Define the expected return types from the smart contract call
+
+        return_types = list[str]
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(list[str], rename_returned_types(structs, return_types, raw_values))
+
+
+class HyperdriveRegistryGetNumberOfFactoriesContractFunction(ContractFunction):
+    """ContractFunction for the getNumberOfFactories method."""
+
+    def __call__(self) -> HyperdriveRegistryGetNumberOfFactoriesContractFunction:  # type: ignore
+        clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -79,10 +272,10 @@ class HyperdriveRegistryGetHyperdriveInfoContractFunction(ContractFunction):
         return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveRegistryGovernanceContractFunction(ContractFunction):
-    """ContractFunction for the governance method."""
+class HyperdriveRegistryGetNumberOfInstancesContractFunction(ContractFunction):
+    """ContractFunction for the getNumberOfInstances method."""
 
-    def __call__(self) -> HyperdriveRegistryGovernanceContractFunction:  # type: ignore
+    def __call__(self) -> HyperdriveRegistryGetNumberOfInstancesContractFunction:  # type: ignore
         clone = super().__call__()
         self.kwargs = clone.kwargs
         self.args = clone.args
@@ -94,16 +287,16 @@ class HyperdriveRegistryGovernanceContractFunction(ContractFunction):
         block_identifier: BlockIdentifier = "latest",
         state_override: CallOverride | None = None,
         ccip_read_enabled: bool | None = None,
-    ) -> str:
-        """returns str."""
+    ) -> int:
+        """returns int."""
         # Define the expected return types from the smart contract call
 
-        return_types = str
+        return_types = int
 
         # Call the function
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(str, rename_returned_types(structs, return_types, raw_values))
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
 class HyperdriveRegistryNameContractFunction(ContractFunction):
@@ -133,11 +326,11 @@ class HyperdriveRegistryNameContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class HyperdriveRegistrySetHyperdriveInfoContractFunction(ContractFunction):
-    """ContractFunction for the setHyperdriveInfo method."""
+class HyperdriveRegistrySetFactoryInfoContractFunction(ContractFunction):
+    """ContractFunction for the setFactoryInfo method."""
 
-    def __call__(self, hyperdriveInstance: str, data: int) -> HyperdriveRegistrySetHyperdriveInfoContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(hyperdriveInstance), dataclass_to_tuple(data))
+    def __call__(self, factories: list[str], data: list[int]) -> HyperdriveRegistrySetFactoryInfoContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(factories), dataclass_to_tuple(data))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -155,11 +348,33 @@ class HyperdriveRegistrySetHyperdriveInfoContractFunction(ContractFunction):
         # Call the function
 
 
-class HyperdriveRegistryUpdateGovernanceContractFunction(ContractFunction):
-    """ContractFunction for the updateGovernance method."""
+class HyperdriveRegistrySetInstanceInfoContractFunction(ContractFunction):
+    """ContractFunction for the setInstanceInfo method."""
 
-    def __call__(self, governance: str) -> HyperdriveRegistryUpdateGovernanceContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(governance))
+    def __call__(self, instances: list[str], data: list[int], factories: list[str]) -> HyperdriveRegistrySetInstanceInfoContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(instances), dataclass_to_tuple(data), dataclass_to_tuple(factories))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class HyperdriveRegistryUpdateAdminContractFunction(ContractFunction):
+    """ContractFunction for the updateAdmin method."""
+
+    def __call__(self, admin: str) -> HyperdriveRegistryUpdateAdminContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(admin))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -207,15 +422,31 @@ class HyperdriveRegistryVersionContractFunction(ContractFunction):
 class HyperdriveRegistryContractFunctions(ContractFunctions):
     """ContractFunctions for the HyperdriveRegistry contract."""
 
-    getHyperdriveInfo: HyperdriveRegistryGetHyperdriveInfoContractFunction
+    admin: HyperdriveRegistryAdminContractFunction
 
-    governance: HyperdriveRegistryGovernanceContractFunction
+    getFactoriesInRange: HyperdriveRegistryGetFactoriesInRangeContractFunction
+
+    getFactoryAtIndex: HyperdriveRegistryGetFactoryAtIndexContractFunction
+
+    getFactoryInfo: HyperdriveRegistryGetFactoryInfoContractFunction
+
+    getInstanceAtIndex: HyperdriveRegistryGetInstanceAtIndexContractFunction
+
+    getInstanceInfo: HyperdriveRegistryGetInstanceInfoContractFunction
+
+    getInstancesInRange: HyperdriveRegistryGetInstancesInRangeContractFunction
+
+    getNumberOfFactories: HyperdriveRegistryGetNumberOfFactoriesContractFunction
+
+    getNumberOfInstances: HyperdriveRegistryGetNumberOfInstancesContractFunction
 
     name: HyperdriveRegistryNameContractFunction
 
-    setHyperdriveInfo: HyperdriveRegistrySetHyperdriveInfoContractFunction
+    setFactoryInfo: HyperdriveRegistrySetFactoryInfoContractFunction
 
-    updateGovernance: HyperdriveRegistryUpdateGovernanceContractFunction
+    setInstanceInfo: HyperdriveRegistrySetInstanceInfoContractFunction
+
+    updateAdmin: HyperdriveRegistryUpdateAdminContractFunction
 
     version: HyperdriveRegistryVersionContractFunction
 
@@ -227,21 +458,77 @@ class HyperdriveRegistryContractFunctions(ContractFunctions):
         decode_tuples: bool | None = False,
     ) -> None:
         super().__init__(abi, w3, address, decode_tuples)
-        self.getHyperdriveInfo = HyperdriveRegistryGetHyperdriveInfoContractFunction.factory(
-            "getHyperdriveInfo",
+        self.admin = HyperdriveRegistryAdminContractFunction.factory(
+            "admin",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="getHyperdriveInfo",
+            function_identifier="admin",
         )
-        self.governance = HyperdriveRegistryGovernanceContractFunction.factory(
-            "governance",
+        self.getFactoriesInRange = HyperdriveRegistryGetFactoriesInRangeContractFunction.factory(
+            "getFactoriesInRange",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="governance",
+            function_identifier="getFactoriesInRange",
+        )
+        self.getFactoryAtIndex = HyperdriveRegistryGetFactoryAtIndexContractFunction.factory(
+            "getFactoryAtIndex",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getFactoryAtIndex",
+        )
+        self.getFactoryInfo = HyperdriveRegistryGetFactoryInfoContractFunction.factory(
+            "getFactoryInfo",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getFactoryInfo",
+        )
+        self.getInstanceAtIndex = HyperdriveRegistryGetInstanceAtIndexContractFunction.factory(
+            "getInstanceAtIndex",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getInstanceAtIndex",
+        )
+        self.getInstanceInfo = HyperdriveRegistryGetInstanceInfoContractFunction.factory(
+            "getInstanceInfo",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getInstanceInfo",
+        )
+        self.getInstancesInRange = HyperdriveRegistryGetInstancesInRangeContractFunction.factory(
+            "getInstancesInRange",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getInstancesInRange",
+        )
+        self.getNumberOfFactories = HyperdriveRegistryGetNumberOfFactoriesContractFunction.factory(
+            "getNumberOfFactories",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getNumberOfFactories",
+        )
+        self.getNumberOfInstances = HyperdriveRegistryGetNumberOfInstancesContractFunction.factory(
+            "getNumberOfInstances",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="getNumberOfInstances",
         )
         self.name = HyperdriveRegistryNameContractFunction.factory(
             "name",
@@ -251,21 +538,29 @@ class HyperdriveRegistryContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="name",
         )
-        self.setHyperdriveInfo = HyperdriveRegistrySetHyperdriveInfoContractFunction.factory(
-            "setHyperdriveInfo",
+        self.setFactoryInfo = HyperdriveRegistrySetFactoryInfoContractFunction.factory(
+            "setFactoryInfo",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="setHyperdriveInfo",
+            function_identifier="setFactoryInfo",
         )
-        self.updateGovernance = HyperdriveRegistryUpdateGovernanceContractFunction.factory(
-            "updateGovernance",
+        self.setInstanceInfo = HyperdriveRegistrySetInstanceInfoContractFunction.factory(
+            "setInstanceInfo",
             w3=w3,
             contract_abi=abi,
             address=address,
             decode_tuples=decode_tuples,
-            function_identifier="updateGovernance",
+            function_identifier="setInstanceInfo",
+        )
+        self.updateAdmin = HyperdriveRegistryUpdateAdminContractFunction.factory(
+            "updateAdmin",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="updateAdmin",
         )
         self.version = HyperdriveRegistryVersionContractFunction.factory(
             "version",
@@ -277,8 +572,8 @@ class HyperdriveRegistryContractFunctions(ContractFunctions):
         )
 
 
-class HyperdriveRegistryGovernanceUpdatedContractEvent(ContractEvent):
-    """ContractEvent for GovernanceUpdated."""
+class HyperdriveRegistryAdminUpdatedContractEvent(ContractEvent):
+    """ContractEvent for AdminUpdated."""
 
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
@@ -291,7 +586,7 @@ class HyperdriveRegistryGovernanceUpdatedContractEvent(ContractEvent):
         super().__init__(*argument_names)
 
     def get_logs(  # type: ignore
-        self: "HyperdriveRegistryGovernanceUpdatedContractEvent",
+        self: "HyperdriveRegistryAdminUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
@@ -306,7 +601,7 @@ class HyperdriveRegistryGovernanceUpdatedContractEvent(ContractEvent):
 
     @classmethod
     def get_logs(  # type: ignore
-        cls: Type["HyperdriveRegistryGovernanceUpdatedContractEvent"],
+        cls: Type["HyperdriveRegistryAdminUpdatedContractEvent"],
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
@@ -320,7 +615,7 @@ class HyperdriveRegistryGovernanceUpdatedContractEvent(ContractEvent):
         )
 
     def create_filter(  # type: ignore
-        self: "HyperdriveRegistryGovernanceUpdatedContractEvent",
+        self: "HyperdriveRegistryAdminUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -337,7 +632,7 @@ class HyperdriveRegistryGovernanceUpdatedContractEvent(ContractEvent):
 
     @classmethod
     def create_filter(  # type: ignore
-        cls: Type["HyperdriveRegistryGovernanceUpdatedContractEvent"],
+        cls: Type["HyperdriveRegistryAdminUpdatedContractEvent"],
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -353,8 +648,8 @@ class HyperdriveRegistryGovernanceUpdatedContractEvent(ContractEvent):
         )
 
 
-class HyperdriveRegistryHyperdriveInfoUpdatedContractEvent(ContractEvent):
-    """ContractEvent for HyperdriveInfoUpdated."""
+class HyperdriveRegistryFactoryInfoUpdatedContractEvent(ContractEvent):
+    """ContractEvent for FactoryInfoUpdated."""
 
     # super() get_logs and create_filter methods are generic, while our version adds values & types
     # pylint: disable=arguments-differ
@@ -367,7 +662,7 @@ class HyperdriveRegistryHyperdriveInfoUpdatedContractEvent(ContractEvent):
         super().__init__(*argument_names)
 
     def get_logs(  # type: ignore
-        self: "HyperdriveRegistryHyperdriveInfoUpdatedContractEvent",
+        self: "HyperdriveRegistryFactoryInfoUpdatedContractEvent",
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
@@ -382,7 +677,7 @@ class HyperdriveRegistryHyperdriveInfoUpdatedContractEvent(ContractEvent):
 
     @classmethod
     def get_logs(  # type: ignore
-        cls: Type["HyperdriveRegistryHyperdriveInfoUpdatedContractEvent"],
+        cls: Type["HyperdriveRegistryFactoryInfoUpdatedContractEvent"],
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
         toBlock: BlockIdentifier | None = None,
@@ -396,7 +691,7 @@ class HyperdriveRegistryHyperdriveInfoUpdatedContractEvent(ContractEvent):
         )
 
     def create_filter(  # type: ignore
-        self: "HyperdriveRegistryHyperdriveInfoUpdatedContractEvent",
+        self: "HyperdriveRegistryFactoryInfoUpdatedContractEvent",
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -413,7 +708,83 @@ class HyperdriveRegistryHyperdriveInfoUpdatedContractEvent(ContractEvent):
 
     @classmethod
     def create_filter(  # type: ignore
-        cls: Type["HyperdriveRegistryHyperdriveInfoUpdatedContractEvent"],
+        cls: Type["HyperdriveRegistryFactoryInfoUpdatedContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class HyperdriveRegistryInstanceInfoUpdatedContractEvent(ContractEvent):
+    """ContractEvent for InstanceInfoUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "HyperdriveRegistryInstanceInfoUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["HyperdriveRegistryInstanceInfoUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "HyperdriveRegistryInstanceInfoUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["HyperdriveRegistryInstanceInfoUpdatedContractEvent"],
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -432,9 +803,11 @@ class HyperdriveRegistryHyperdriveInfoUpdatedContractEvent(ContractEvent):
 class HyperdriveRegistryContractEvents(ContractEvents):
     """ContractEvents for the HyperdriveRegistry contract."""
 
-    GovernanceUpdated: HyperdriveRegistryGovernanceUpdatedContractEvent
+    AdminUpdated: HyperdriveRegistryAdminUpdatedContractEvent
 
-    HyperdriveInfoUpdated: HyperdriveRegistryHyperdriveInfoUpdatedContractEvent
+    FactoryInfoUpdated: HyperdriveRegistryFactoryInfoUpdatedContractEvent
+
+    InstanceInfoUpdated: HyperdriveRegistryInstanceInfoUpdatedContractEvent
 
     def __init__(
         self,
@@ -443,18 +816,252 @@ class HyperdriveRegistryContractEvents(ContractEvents):
         address: ChecksumAddress | None = None,
     ) -> None:
         super().__init__(abi, w3, address)
-        self.GovernanceUpdated = cast(
-            HyperdriveRegistryGovernanceUpdatedContractEvent,
-            HyperdriveRegistryGovernanceUpdatedContractEvent.factory(
-                "GovernanceUpdated", w3=w3, contract_abi=abi, address=address, event_name="GovernanceUpdated"
+        self.AdminUpdated = cast(
+            HyperdriveRegistryAdminUpdatedContractEvent,
+            HyperdriveRegistryAdminUpdatedContractEvent.factory(
+                "AdminUpdated", w3=w3, contract_abi=abi, address=address, event_name="AdminUpdated"
             ),
         )
-        self.HyperdriveInfoUpdated = cast(
-            HyperdriveRegistryHyperdriveInfoUpdatedContractEvent,
-            HyperdriveRegistryHyperdriveInfoUpdatedContractEvent.factory(
-                "HyperdriveInfoUpdated", w3=w3, contract_abi=abi, address=address, event_name="HyperdriveInfoUpdated"
+        self.FactoryInfoUpdated = cast(
+            HyperdriveRegistryFactoryInfoUpdatedContractEvent,
+            HyperdriveRegistryFactoryInfoUpdatedContractEvent.factory(
+                "FactoryInfoUpdated", w3=w3, contract_abi=abi, address=address, event_name="FactoryInfoUpdated"
             ),
         )
+        self.InstanceInfoUpdated = cast(
+            HyperdriveRegistryInstanceInfoUpdatedContractEvent,
+            HyperdriveRegistryInstanceInfoUpdatedContractEvent.factory(
+                "InstanceInfoUpdated", w3=w3, contract_abi=abi, address=address, event_name="InstanceInfoUpdated"
+            ),
+        )
+
+
+class HyperdriveRegistryEndIndexTooLargeContractError:
+    """ContractError for EndIndexTooLarge."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveRegistryEndIndexTooLargeContractError",
+    ) -> None:
+        self.selector = "0xe0f7becb"
+        self.signature = "EndIndexTooLarge()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveRegistryEndIndexTooLargeContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "EndIndexTooLarge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveRegistryEndIndexTooLargeContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "EndIndexTooLarge" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveRegistryInputLengthMismatchContractError:
+    """ContractError for InputLengthMismatch."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveRegistryInputLengthMismatchContractError",
+    ) -> None:
+        self.selector = "0xaaad13f7"
+        self.signature = "InputLengthMismatch()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveRegistryInputLengthMismatchContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "InputLengthMismatch" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveRegistryInputLengthMismatchContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "InputLengthMismatch" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveRegistryInvalidFactoryContractError:
+    """ContractError for InvalidFactory."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveRegistryInvalidFactoryContractError",
+    ) -> None:
+        self.selector = "0x7a44db95"
+        self.signature = "InvalidFactory()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveRegistryInvalidFactoryContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "InvalidFactory" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveRegistryInvalidFactoryContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "InvalidFactory" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class HyperdriveRegistryInvalidIndexesContractError:
+    """ContractError for InvalidIndexes."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "HyperdriveRegistryInvalidIndexesContractError",
+    ) -> None:
+        self.selector = "0x764e6b56"
+        self.signature = "InvalidIndexes()"
+
+    def decode_error_data(  # type: ignore
+        self: "HyperdriveRegistryInvalidIndexesContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "InvalidIndexes" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["HyperdriveRegistryInvalidIndexesContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in hyperdriveregistry_abi
+                if item.get("name") == "InvalidIndexes" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
 
 
 class HyperdriveRegistryUnauthorizedContractError:
@@ -517,14 +1124,30 @@ class HyperdriveRegistryUnauthorizedContractError:
 class HyperdriveRegistryContractErrors:
     """ContractErrors for the HyperdriveRegistry contract."""
 
+    EndIndexTooLarge: HyperdriveRegistryEndIndexTooLargeContractError
+
+    InputLengthMismatch: HyperdriveRegistryInputLengthMismatchContractError
+
+    InvalidFactory: HyperdriveRegistryInvalidFactoryContractError
+
+    InvalidIndexes: HyperdriveRegistryInvalidIndexesContractError
+
     Unauthorized: HyperdriveRegistryUnauthorizedContractError
 
     def __init__(
         self,
     ) -> None:
+        self.EndIndexTooLarge = HyperdriveRegistryEndIndexTooLargeContractError()
+        self.InputLengthMismatch = HyperdriveRegistryInputLengthMismatchContractError()
+        self.InvalidFactory = HyperdriveRegistryInvalidFactoryContractError()
+        self.InvalidIndexes = HyperdriveRegistryInvalidIndexesContractError()
         self.Unauthorized = HyperdriveRegistryUnauthorizedContractError()
 
         self._all = [
+            self.EndIndexTooLarge,
+            self.InputLengthMismatch,
+            self.InvalidFactory,
+            self.InvalidIndexes,
             self.Unauthorized,
         ]
 
@@ -548,16 +1171,94 @@ hyperdriveregistry_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "getHyperdriveInfo",
-            "inputs": [{"name": "_hyperdriveInstance", "type": "address", "internalType": "address"}],
+            "name": "admin",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getFactoriesInRange",
+            "inputs": [
+                {"name": "_startIndex", "type": "uint256", "internalType": "uint256"},
+                {"name": "_endIndex", "type": "uint256", "internalType": "uint256"},
+            ],
+            "outputs": [{"name": "factories", "type": "address[]", "internalType": "address[]"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getFactoryAtIndex",
+            "inputs": [{"name": "_index", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getFactoryInfo",
+            "inputs": [{"name": "__factories", "type": "address[]", "internalType": "address[]"}],
+            "outputs": [
+                {
+                    "name": "info",
+                    "type": "tuple[]",
+                    "internalType": "struct IHyperdriveRegistry.FactoryInfo[]",
+                    "components": [
+                        {"name": "data", "type": "uint256", "internalType": "uint256"},
+                        {"name": "name", "type": "string", "internalType": "string"},
+                        {"name": "version", "type": "string", "internalType": "string"},
+                    ],
+                }
+            ],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getInstanceAtIndex",
+            "inputs": [{"name": "_index", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getInstanceInfo",
+            "inputs": [{"name": "__instances", "type": "address[]", "internalType": "address[]"}],
+            "outputs": [
+                {
+                    "name": "info",
+                    "type": "tuple[]",
+                    "internalType": "struct IHyperdriveRegistry.InstanceInfo[]",
+                    "components": [
+                        {"name": "data", "type": "uint256", "internalType": "uint256"},
+                        {"name": "factory", "type": "address", "internalType": "address"},
+                        {"name": "name", "type": "string", "internalType": "string"},
+                        {"name": "version", "type": "string", "internalType": "string"},
+                    ],
+                }
+            ],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getInstancesInRange",
+            "inputs": [
+                {"name": "_startIndex", "type": "uint256", "internalType": "uint256"},
+                {"name": "_endIndex", "type": "uint256", "internalType": "uint256"},
+            ],
+            "outputs": [{"name": "instances", "type": "address[]", "internalType": "address[]"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "getNumberOfFactories",
+            "inputs": [],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
         },
         {
             "type": "function",
-            "name": "governance",
+            "name": "getNumberOfInstances",
             "inputs": [],
-            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
         },
         {
@@ -569,18 +1270,29 @@ hyperdriveregistry_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "setHyperdriveInfo",
+            "name": "setFactoryInfo",
             "inputs": [
-                {"name": "_hyperdriveInstance", "type": "address", "internalType": "address"},
-                {"name": "_data", "type": "uint256", "internalType": "uint256"},
+                {"name": "__factories", "type": "address[]", "internalType": "address[]"},
+                {"name": "_data", "type": "uint128[]", "internalType": "uint128[]"},
             ],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
         {
             "type": "function",
-            "name": "updateGovernance",
-            "inputs": [{"name": "_governance", "type": "address", "internalType": "address"}],
+            "name": "setInstanceInfo",
+            "inputs": [
+                {"name": "__instances", "type": "address[]", "internalType": "address[]"},
+                {"name": "_data", "type": "uint128[]", "internalType": "uint128[]"},
+                {"name": "__factories", "type": "address[]", "internalType": "address[]"},
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
+            "name": "updateAdmin",
+            "inputs": [{"name": "_admin", "type": "address", "internalType": "address"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -593,25 +1305,39 @@ hyperdriveregistry_abi: ABI = cast(
         },
         {
             "type": "event",
-            "name": "GovernanceUpdated",
-            "inputs": [{"name": "governance", "type": "address", "indexed": True, "internalType": "address"}],
+            "name": "AdminUpdated",
+            "inputs": [{"name": "admin", "type": "address", "indexed": True, "internalType": "address"}],
             "anonymous": False,
         },
         {
             "type": "event",
-            "name": "HyperdriveInfoUpdated",
+            "name": "FactoryInfoUpdated",
             "inputs": [
-                {"name": "hyperdrive", "type": "address", "indexed": True, "internalType": "address"},
-                {"name": "data", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "factory", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "data", "type": "uint256", "indexed": True, "internalType": "uint256"},
             ],
             "anonymous": False,
         },
+        {
+            "type": "event",
+            "name": "InstanceInfoUpdated",
+            "inputs": [
+                {"name": "instance", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "data", "type": "uint256", "indexed": True, "internalType": "uint256"},
+                {"name": "factory", "type": "address", "indexed": True, "internalType": "address"},
+            ],
+            "anonymous": False,
+        },
+        {"type": "error", "name": "EndIndexTooLarge", "inputs": []},
+        {"type": "error", "name": "InputLengthMismatch", "inputs": []},
+        {"type": "error", "name": "InvalidFactory", "inputs": []},
+        {"type": "error", "name": "InvalidIndexes", "inputs": []},
         {"type": "error", "name": "Unauthorized", "inputs": []},
     ],
 )
 # pylint: disable=line-too-long
 hyperdriveregistry_bytecode = HexStr(
-    "0x608060405234801561001057600080fd5b5060405161066938038061066983398101604081905261002f9161006a565b600180546001600160a01b03191633179055600061004d82826101bc565b505061027b565b634e487b7160e01b600052604160045260246000fd5b6000602080838503121561007d57600080fd5b82516001600160401b038082111561009457600080fd5b818501915085601f8301126100a857600080fd5b8151818111156100ba576100ba610054565b604051601f8201601f19908116603f011681019083821181831017156100e2576100e2610054565b8160405282815288868487010111156100fa57600080fd5b600093505b8284101561011c57848401860151818501870152928501926100ff565b600086848301015280965050505050505092915050565b600181811c9082168061014757607f821691505b60208210810361016757634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156101b757600081815260208120601f850160051c810160208610156101945750805b601f850160051c820191505b818110156101b3578281556001016101a0565b5050505b505050565b81516001600160401b038111156101d5576101d5610054565b6101e9816101e38454610133565b8461016d565b602080601f83116001811461021e57600084156102065750858301515b600019600386901b1c1916600185901b1785556101b3565b600085815260208120601f198616915b8281101561024d5788860151825594840194600190910190840161022e565b508582101561026b5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6103df8061028a6000396000f3fe608060405234801561001057600080fd5b50600436106100625760003560e01c806306fdde031461006757806332ddcb881461008557806354fd4d50146100bc5780635aa6e675146100e1578063b25612631461010c578063be44e71a14610121575b600080fd5b61006f610134565b60405161007c91906102b9565b60405180910390f35b6100ae610093366004610323565b6001600160a01b031660009081526002602052604090205490565b60405190815260200161007c565b61006f604051806040016040528060068152602001653b189718171b60d11b81525081565b6001546100f4906001600160a01b031681565b6040516001600160a01b03909116815260200161007c565b61011f61011a366004610323565b6101c2565b005b61011f61012f366004610345565b610236565b600080546101419061036f565b80601f016020809104026020016040519081016040528092919081815260200182805461016d9061036f565b80156101ba5780601f1061018f576101008083540402835291602001916101ba565b820191906000526020600020905b81548152906001019060200180831161019d57829003601f168201915b505050505081565b6001546001600160a01b031633146101ec576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517f9d3e522e1e47a2f6009739342b9cc7b252a1888154e843ab55ee1c81745795ab90600090a250565b6001546001600160a01b03163314610260576040516282b42960e81b815260040160405180910390fd5b6001600160a01b03821660008181526002602052604090819020839055517ff0ddd07f037f75a9ab309993d576264e5074e0d60be48db5629946f0fec5d356906102ad9084815260200190565b60405180910390a25050565b600060208083528351808285015260005b818110156102e6578581018301518582016040015282016102ca565b506000604082860101526040601f19601f8301168501019250505092915050565b80356001600160a01b038116811461031e57600080fd5b919050565b60006020828403121561033557600080fd5b61033e82610307565b9392505050565b6000806040838503121561035857600080fd5b61036183610307565b946020939093013593505050565b600181811c9082168061038357607f821691505b6020821081036103a357634e487b7160e01b600052602260045260246000fd5b5091905056fea2646970667358221220bd6a826ea1fc45691da59c0f81bf396f05292431a8f98f91c96997eaef39a27264736f6c63430008140033"
+    "0x60806040523480156200001157600080fd5b5060405162001f8e38038062001f8e833981016040819052620000349162000072565b600180546001600160a01b031916331790556000620000548282620001d6565b5050620002a2565b634e487b7160e01b600052604160045260246000fd5b600060208083850312156200008657600080fd5b82516001600160401b03808211156200009e57600080fd5b818501915085601f830112620000b357600080fd5b815181811115620000c857620000c86200005c565b604051601f8201601f19908116603f01168101908382118183101715620000f357620000f36200005c565b8160405282815288868487010111156200010c57600080fd5b600093505b8284101562000130578484018601518185018701529285019262000111565b600086848301015280965050505050505092915050565b600181811c908216806200015c57607f821691505b6020821081036200017d57634e487b7160e01b600052602260045260246000fd5b50919050565b601f821115620001d157600081815260208120601f850160051c81016020861015620001ac5750805b601f850160051c820191505b81811015620001cd57828155600101620001b8565b5050505b505050565b81516001600160401b03811115620001f257620001f26200005c565b6200020a8162000203845462000147565b8462000183565b602080601f831160018114620002425760008415620002295750858301515b600019600386901b1c1916600185901b178555620001cd565b600085815260208120601f198616915b82811015620002735788860151825594840194600190910190840162000252565b5085821015620002925787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b611cdc80620002b26000396000f3fe608060405234801561001057600080fd5b50600436106100ea5760003560e01c8063a587bbe11161008c578063e2f273bd11610066578063e2f273bd1461020b578063e967e3881461021e578063f59d00b914610231578063f851a4401461023957600080fd5b8063a587bbe1146101ba578063bc30e7a1146101e5578063daac24da146101f857600080fd5b806354fd4d50116100c857806354fd4d50146101425780636e95d67c14610168578063716ba5f61461017a5780638363edda1461019a57600080fd5b806306fdde03146100ef5780631ff30ad21461010d5780633dea3ce514610122575b600080fd5b6100f761024c565b6040516101049190611767565b60405180910390f35b61012061011b3660046117cd565b6102da565b005b610135610130366004611867565b6106af565b60405161010491906118a9565b6100f760405180604001604052806007815260200166076312e302e31360cc1b81525081565b6004545b604051908152602001610104565b61018d61018836600461193a565b6108e0565b604051610104919061195c565b6101ad6101a8366004611867565b6109ea565b60405161010491906119a9565b6101cd6101c8366004611a42565b610c78565b6040516001600160a01b039091168152602001610104565b61018d6101f336600461193a565b610ca8565b6101cd610206366004611a42565b610db2565b610120610219366004611a5b565b610dc7565b61012061022c366004611a84565b610e3b565b60025461016c565b6001546101cd906001600160a01b031681565b6000805461025990611af0565b80601f016020809104026020016040519081016040528092919081815260200182805461028590611af0565b80156102d25780601f106102a7576101008083540402835291602001916102d2565b820191906000526020600020905b8154815290600101906020018083116102b557829003601f168201915b505050505081565b6001546001600160a01b03163314610304576040516282b42960e81b815260040160405180910390fd5b84831415806103135750848114155b156103315760405163aaad13f760e01b815260040160405180910390fd5b60005b858110156106a65760006005600089898581811061035457610354611b2a565b90506020020160208101906103699190611a5b565b6001600160a01b031681526020810191909152604001600020546001600160801b031690508585838181106103a0576103a0611b2a565b90506020020160208101906103b59190611b40565b6001600160801b03161580156103ca57508015155b156104535760008484848181106103e3576103e3611b2a565b90506020020160208101906103f89190611a5b565b6001600160a01b03161461041f57604051637a44db9560e01b815260040160405180910390fd5b61044e88888481811061043457610434611b2a565b90506020020160208101906104499190611a5b565b6111f1565b6105d6565b85858381811061046557610465611b2a565b905060200201602081019061047a9190611b40565b6001600160801b03161580159061049057508015155b156105125761044e8888848181106104aa576104aa611b2a565b90506020020160208101906104bf9190611a5b565b8787858181106104d1576104d1611b2a565b90506020020160208101906104e69190611b40565b8686868181106104f8576104f8611b2a565b905060200201602081019061050d9190611a5b565b611347565b85858381811061052457610524611b2a565b90506020020160208101906105399190611b40565b6001600160801b03161580159061054e575080155b156105d05761044e88888481811061056857610568611b2a565b905060200201602081019061057d9190611a5b565b87878581811061058f5761058f611b2a565b90506020020160208101906105a49190611b40565b8686868181106105b6576105b6611b2a565b90506020020160208101906105cb9190611a5b565b61148e565b50610694565b8383838181106105e8576105e8611b2a565b90506020020160208101906105fd9190611a5b565b6001600160a01b031686868481811061061857610618611b2a565b905060200201602081019061062d9190611b40565b6001600160801b031689898581811061064857610648611b2a565b905060200201602081019061065d9190611a5b565b6001600160a01b03167fdcdda2b8267b8fe0ebfeb2cc8f266807b412bec096d16cbbe576d46d122553e060405160405180910390a4505b8061069e81611b7f565b915050610334565b50505050505050565b60608167ffffffffffffffff8111156106ca576106ca611b98565b60405190808252806020026020018201604052801561071f57816020015b61070c60405180606001604052806000815260200160608152602001606081525090565b8152602001906001900390816106e85790505b50905060005b828110156108d857600084848381811061074157610741611b2a565b90506020020160208101906107569190611a5b565b905060405180606001604052806003600088888781811061077957610779611b2a565b905060200201602081019061078e9190611a5b565b6001600160a01b03166001600160a01b0316815260200190815260200160002060000160009054906101000a90046001600160801b03166001600160801b03168152602001826001600160a01b03166306fdde036040518163ffffffff1660e01b8152600401600060405180830381865afa158015610811573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526108399190810190611bae565b8152602001826001600160a01b03166354fd4d506040518163ffffffff1660e01b8152600401600060405180830381865afa15801561087c573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526108a49190810190611bae565b8152508383815181106108b9576108b9611b2a565b60200260200101819052505080806108d090611b7f565b915050610725565b505b92915050565b606081831061090257604051633b2735ab60e11b815260040160405180910390fd5b6002548211156109255760405163e0f7becb60e01b815260040160405180910390fd5b61092f8383611c5b565b67ffffffffffffffff81111561094757610947611b98565b604051908082528060200260200182016040528015610970578160200160208202803683370190505b509050825b828110156108d8576002818154811061099057610990611b2a565b6000918252602090912001546001600160a01b0316826109b08684611c5b565b815181106109c0576109c0611b2a565b6001600160a01b0390921660209283029190910190910152806109e281611b7f565b915050610975565b60608167ffffffffffffffff811115610a0557610a05611b98565b604051908082528060200260200182016040528015610a6a57816020015b610a5760405180608001604052806000815260200160006001600160a01b0316815260200160608152602001606081525090565b815260200190600190039081610a235790505b50905060005b828110156108d8576000848483818110610a8c57610a8c611b2a565b9050602002016020810190610aa19190611a5b565b9050604051806080016040528060056000888887818110610ac457610ac4611b2a565b9050602002016020810190610ad99190611a5b565b6001600160a01b031681526020808201929092526040016000908120546001600160801b03168352910190600590888887818110610b1957610b19611b2a565b9050602002016020810190610b2e9190611a5b565b6001600160a01b03166001600160a01b0316815260200190815260200160002060010160009054906101000a90046001600160a01b03166001600160a01b03168152602001826001600160a01b03166306fdde036040518163ffffffff1660e01b8152600401600060405180830381865afa158015610bb1573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f19168201604052610bd99190810190611bae565b8152602001826001600160a01b03166354fd4d506040518163ffffffff1660e01b8152600401600060405180830381865afa158015610c1c573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f19168201604052610c449190810190611bae565b815250838381518110610c5957610c59611b2a565b6020026020010181905250508080610c7090611b7f565b915050610a70565b600060028281548110610c8d57610c8d611b2a565b6000918252602090912001546001600160a01b031692915050565b6060818310610cca57604051633b2735ab60e11b815260040160405180910390fd5b600454821115610ced5760405163e0f7becb60e01b815260040160405180910390fd5b610cf78383611c5b565b67ffffffffffffffff811115610d0f57610d0f611b98565b604051908082528060200260200182016040528015610d38578160200160208202803683370190505b509050825b828110156108d85760048181548110610d5857610d58611b2a565b6000918252602090912001546001600160a01b031682610d788684611c5b565b81518110610d8857610d88611b2a565b6001600160a01b039092166020928302919091019091015280610daa81611b7f565b915050610d3d565b600060048281548110610c8d57610c8d611b2a565b6001546001600160a01b03163314610df1576040516282b42960e81b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517f54e4612788f90384e6843298d7854436f3a585b2c3831ab66abf1de63bfa6c2d90600090a250565b6001546001600160a01b03163314610e65576040516282b42960e81b815260040160405180910390fd5b828114610e855760405163aaad13f760e01b815260040160405180910390fd5b60005b838110156111ea57600060036000878785818110610ea857610ea8611b2a565b9050602002016020810190610ebd9190611a5b565b6001600160a01b031681526020810191909152604001600020546001600160801b03169050838383818110610ef457610ef4611b2a565b9050602002016020810190610f099190611b40565b6001600160801b0316158015610f1e57508015155b15610f5757610f52868684818110610f3857610f38611b2a565b9050602002016020810190610f4d9190611a5b565b6115d3565b61114a565b838383818110610f6957610f69611b2a565b9050602002016020810190610f7e9190611b40565b6001600160801b031615801590610f9457508015155b1561102357610f52868684818110610fae57610fae611b2a565b9050602002016020810190610fc39190611a5b565b858585818110610fd557610fd5611b2a565b9050602002016020810190610fea9190611b40565b6001600160a01b0391909116600090815260036020526040902080546001600160801b0319166001600160801b03909216919091179055565b83838381811061103557611035611b2a565b905060200201602081019061104a9190611b40565b6001600160801b03161580159061105f575080155b1561114457610f5286868481811061107957611079611b2a565b905060200201602081019061108e9190611a5b565b8585858181106110a0576110a0611b2a565b90506020020160208101906110b59190611b40565b60028054600181019091557f405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ace810180546001600160a01b039094166001600160a01b0319909416841790556040805180820182526001600160801b03938416815291831660208381019182526000958652600390529320905192518216600160801b0292909116919091179055565b506111d8565b83838381811061115c5761115c611b2a565b90506020020160208101906111719190611b40565b6001600160801b031686868481811061118c5761118c611b2a565b90506020020160208101906111a19190611a5b565b6001600160a01b03167fd840ea8cb042bc840d3e55a04618ab268434d3d0a218638360a30fdb80de63f660405160405180910390a3505b806111e281611b7f565b915050610e88565b5050505050565b6001600160a01b038116600090815260056020526040902054600454600160801b9091046001600160801b03169061122a600182611c5b565b826001600160801b0316146112e25760006004611248600184611c5b565b8154811061125857611258611b2a565b60009182526020808320909101546001600160a01b03168083526005909152604090912080546001600160801b03808716600160801b8102919092161790915560048054929350839290919081106112b2576112b2611b2a565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b03160217905550505b60048054806112f3576112f3611c6e565b60008281526020808220830160001990810180546001600160a01b031990811690915593019093556001600160a01b0395909516855260059091526040842093845560019390930180549093169092555050565b6001600160a01b038084166000908152600560205260409020600101541680158015906113865750816001600160a01b0316816001600160a01b031614155b8061141e57506001600160a01b0381161580156113ab57506001600160a01b03821615155b801561141e57506040516335a2735f60e11b81526001600160a01b038581166004830152831690636b44e6be90602401602060405180830381865afa1580156113f8573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061141c9190611c84565b155b1561143c57604051637a44db9560e01b815260040160405180910390fd5b506001600160a01b03928316600090815260056020526040902080546001600160801b0319166001600160801b0393909316929092178255600190910180546001600160a01b03191691909216179055565b6001600160a01b0381161580159061150d57506040516335a2735f60e11b81526001600160a01b038481166004830152821690636b44e6be90602401602060405180830381865afa1580156114e7573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061150b9190611c84565b155b1561152b57604051637a44db9560e01b815260040160405180910390fd5b6004805460018082019092557f8a35acfbc15ff81a39ae7d344fd709f28e8600b4aa8c65c6b64bfe7fe36bd19b810180546001600160a01b039687166001600160a01b03199182168117909255604080516060810182526001600160801b0397881681529387166020858101918252968916858301908152600094855260059097529220925191518616600160801b0291909516178155915191018054919093169116179055565b6001600160a01b038116600090815260036020526040902054600254600160801b9091046001600160801b03169061160c600182611c5b565b826001600160801b0316146116c4576000600261162a600184611c5b565b8154811061163a5761163a611b2a565b60009182526020808320909101546001600160a01b03168083526003909152604090912080546001600160801b03808716600160801b81029190921617909155600280549293508392909190811061169457611694611b2a565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b03160217905550505b60028054806116d5576116d5611c6e565b60008281526020808220830160001990810180546001600160a01b03191690559092019092556001600160a01b03949094168152600390935250506040812055565b60005b8381101561173257818101518382015260200161171a565b50506000910152565b60008151808452611753816020860160208601611717565b601f01601f19169290920160200192915050565b60208152600061177a602083018461173b565b9392505050565b60008083601f84011261179357600080fd5b50813567ffffffffffffffff8111156117ab57600080fd5b6020830191508360208260051b85010111156117c657600080fd5b9250929050565b600080600080600080606087890312156117e657600080fd5b863567ffffffffffffffff808211156117fe57600080fd5b61180a8a838b01611781565b9098509650602089013591508082111561182357600080fd5b61182f8a838b01611781565b9096509450604089013591508082111561184857600080fd5b5061185589828a01611781565b979a9699509497509295939492505050565b6000806020838503121561187a57600080fd5b823567ffffffffffffffff81111561189157600080fd5b61189d85828601611781565b90969095509350505050565b60006020808301818452808551808352604092508286019150828160051b87010184880160005b8381101561192c57603f19898403018552815160608151855288820151818a8701526118fe8287018261173b565b91505087820151915084810388860152611918818361173b565b9689019694505050908601906001016118d0565b509098975050505050505050565b6000806040838503121561194d57600080fd5b50508035926020909101359150565b6020808252825182820181905260009190848201906040850190845b8181101561199d5783516001600160a01b031683529284019291840191600101611978565b50909695505050505050565b60006020808301818452808551808352604092508286019150828160051b87010184880160005b8381101561192c57888303603f19018552815180518452878101516001600160a01b03168885015286810151608088860181905290611a118287018261173b565b91505060608083015192508582038187015250611a2e818361173b565b9689019694505050908601906001016119d0565b600060208284031215611a5457600080fd5b5035919050565b600060208284031215611a6d57600080fd5b81356001600160a01b038116811461177a57600080fd5b60008060008060408587031215611a9a57600080fd5b843567ffffffffffffffff80821115611ab257600080fd5b611abe88838901611781565b90965094506020870135915080821115611ad757600080fd5b50611ae487828801611781565b95989497509550505050565b600181811c90821680611b0457607f821691505b602082108103611b2457634e487b7160e01b600052602260045260246000fd5b50919050565b634e487b7160e01b600052603260045260246000fd5b600060208284031215611b5257600080fd5b81356001600160801b038116811461177a57600080fd5b634e487b7160e01b600052601160045260246000fd5b600060018201611b9157611b91611b69565b5060010190565b634e487b7160e01b600052604160045260246000fd5b600060208284031215611bc057600080fd5b815167ffffffffffffffff80821115611bd857600080fd5b818401915084601f830112611bec57600080fd5b815181811115611bfe57611bfe611b98565b604051601f8201601f19908116603f01168101908382118183101715611c2657611c26611b98565b81604052828152876020848701011115611c3f57600080fd5b611c50836020830160208801611717565b979650505050505050565b818103818111156108da576108da611b69565b634e487b7160e01b600052603160045260246000fd5b600060208284031215611c9657600080fd5b8151801515811461177a57600080fdfea264697066735822122073f4544db1a9631941e04a4dd73648176592ca6d457b0cda213b0e4bf1b01eea64736f6c63430008140033"
 )
 
 
