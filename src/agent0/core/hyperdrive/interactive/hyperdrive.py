@@ -95,6 +95,13 @@ class Hyperdrive:
 
         return registered_pools
 
+    # Pretty print for this class
+    def __str__(self) -> str:
+        return f"Hyperdrive Pool {self.name} at chain address {self.hyperdrive_address}"
+
+    def __repr__(self) -> str:
+        return "<" + str(self) + ">"
+
     def _initialize(self, chain: Chain, hyperdrive_address: ChecksumAddress, name: str | None):
         self.chain = chain
 

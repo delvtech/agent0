@@ -178,9 +178,9 @@ class HyperdriveReadInterface:
         self.read_retry_count = read_retry_count
         self.txn_receipt_timeout = txn_receipt_timeout
 
-        # Fill in the initial state cache.
-        self._current_pool_state = self.get_hyperdrive_state()
-        self.last_state_block_number = copy.copy(self._current_pool_state.block_number)
+        # Lazily fill in state cache
+        self._current_pool_state = None
+        self.last_state_block_number = -1
 
     @property
     def current_pool_state(self) -> PoolState:
@@ -189,6 +189,7 @@ class HyperdriveReadInterface:
         Each time this is accessed we use an RPC to check that the pool state is synced with the current block.
         """
         _ = self._ensure_current_state()
+        assert self._current_pool_state is not None
         return self._current_pool_state
 
     def _ensure_current_state(self) -> bool:
