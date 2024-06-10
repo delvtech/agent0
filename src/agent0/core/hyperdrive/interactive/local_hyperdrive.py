@@ -165,6 +165,10 @@ class LocalHyperdrive(Hyperdrive):
                 governanceZombie=self.governance_zombie_fee.scaled_value,
             )
 
+    # Pretty print for this class
+    def __str__(self) -> str:
+        return f"Local Hyperdrive Pool {self.name} at chain address {self.hyperdrive_address}"
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
