@@ -27,9 +27,9 @@ from agent0.core.hyperdrive.crash_report import (
 )
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
-from agent0.ethpy.base import retry_call
 from agent0.ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface, ReceiptBreakdown
+from agent0.utils import retry_call
 
 
 def _get_liquidation_trades(

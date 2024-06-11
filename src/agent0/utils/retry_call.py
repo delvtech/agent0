@@ -1,4 +1,4 @@
-"""Wrapper functions for retrying."""
+"""General utility function for retrying a function call."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import logging
 import time
 from typing import Callable, ParamSpec, TypeVar
 
+# Async runner helper
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -18,7 +19,7 @@ def retry_call(
     *args: P.args,
     **kwargs: P.kwargs,
 ) -> R:
-    """Retry a function call to allow for arbitrary RPC failures.
+    """Retry a function call to allow for arbitrary failures.
 
     Arguments
     ---------

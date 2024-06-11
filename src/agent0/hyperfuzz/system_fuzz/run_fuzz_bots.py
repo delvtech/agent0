@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable
 
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
+from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
@@ -123,62 +122,9 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -
     )
 
 
-# Async runner helper
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-# TODO move this to somewhere that's more general
-async def async_runner(
-    return_exceptions: bool,
-    funcs: list[Callable[P, R]],
-    *args: P.args,
-    **kwargs: P.kwargs,
-) -> list[R]:
-    """Helper function that runs a list of passed in functions asynchronously.
-
-    WARNING: this assumes all functions passed in are thread safe, use at your own risk.
-
-    TODO: args and kwargs likely should also be a list for passing in separate arguments.
-
-    Arguments
-    ---------
-    return_exceptions: bool
-        If True, return exceptions from the functions. Otherwise, will throw exception if
-        a thread fails.
-    funcs: list[Callable[P, R]]
-        List of functions to run asynchronously.
-    *args: P.args
-        Positional arguments for the functions.
-    **kwargs: P.kwargs
-        Keyword arguments for the functions.
-
-    Returns
-    -------
-    list[R]
-        List of results.
-    """
-    # We launch all functions in threads using the `to_thread` function.
-    # This allows the underlying functions to use non-async waits.
-
-    # Runs all functions passed in and gathers results
-    gather_result: list[R | BaseException] = await asyncio.gather(
-        *[asyncio.to_thread(func, *args, **kwargs) for func in funcs], return_exceptions=return_exceptions
-    )
-
-    # Error checking
-    # TODO we can add retries here
-    out_result: list[R] = []
-    for result in gather_result:
-        if isinstance(result, BaseException):
-            raise result
-        out_result.append(result)
-
-    return out_result
-
-
-def run_local_fuzz_bots(
-    hyperdrive_pool: LocalHyperdrive,
+def run_fuzz_bots(
+    chain: Chain,
+    hyperdrive_pools: Hyperdrive | list[Hyperdrive],
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -201,8 +147,10 @@ def run_local_fuzz_bots(
 
     Arguments
     ---------
-    hyperdrive_pool: Hyperdrive
-        The hyperdrive pool to run the bots on.
+    chain: Chain
+        The chain to run the bots on.
+    hyperdrive_pools: Hyperdrive | list[Hyperdrive]
+        The hyperdrive pool(s) to run the bots on.
     check_invariance: bool
         If True, will run invariance checks after each set of trades.
     num_random_agents: int | None, optional
@@ -264,15 +212,15 @@ def run_local_fuzz_bots(
     if minimum_avg_agent_eth is None:
         minimum_avg_agent_eth = eth_budget_per_bot / FixedPoint(10)
 
+    if not isinstance(hyperdrive_pools, list):
+        hyperdrive_pools = [hyperdrive_pools]
+
     # Initialize agents
     agents: list[HyperdriveAgent] = []
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
-        agent: HyperdriveAgent = hyperdrive_pool.chain.init_agent(
-            base=base_budget_per_bot,
-            eth=eth_budget_per_bot,
+        agent: HyperdriveAgent = chain.init_agent(
             private_key=make_private_key(),
-            pool=hyperdrive_pool,
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
                 slippage_tolerance=slippage_tolerance,
@@ -280,14 +228,15 @@ def run_local_fuzz_bots(
                 randomly_ignore_slippage_tolerance=True,
             ),
         )
+        # We're assuming we can fund the agent here
+        for pool in hyperdrive_pools:
+            agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=pool)
+            agent.set_max_approval(pool=pool)
         agents.append(agent)
 
     for _ in range(num_random_hold_agents):
-        agent: HyperdriveAgent = hyperdrive_pool.chain.init_agent(
-            base=base_budget_per_bot,
-            eth=eth_budget_per_bot,
+        agent: HyperdriveAgent = chain.init_agent(
             private_key=make_private_key(),
-            pool=hyperdrive_pool,
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
                 slippage_tolerance=slippage_tolerance,
@@ -296,6 +245,10 @@ def run_local_fuzz_bots(
                 max_open_positions=2_000,
             ),
         )
+        # We're assuming we can fund the agent here
+        for pool in hyperdrive_pools:
+            agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=pool)
+            agent.set_max_approval(pool=pool)
         agents.append(agent)
 
     # Make trades until the user or agents stop us
@@ -309,14 +262,9 @@ def run_local_fuzz_bots(
         trades = []
         try:
             if run_async:
-                trades = asyncio.run(
-                    async_runner(
-                        return_exceptions=True,
-                        funcs=[agent.execute_policy_action for agent in agents],
-                    )
-                )
-            else:
-                trades = [agent.execute_policy_action() for agent in agents]
+                # There are race conditions throughout that need to be fixed here
+                raise NotImplementedError("Running async not implemented")
+            trades = [agent.execute_policy_action(pool=pool) for agent in agents for pool in hyperdrive_pools]
         except Exception as exc:  # pylint: disable=broad-exception-caught
             if raise_error_on_crash:
                 if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
@@ -329,71 +277,72 @@ def run_local_fuzz_bots(
 
         # Run invariance checks if flag is set
         if check_invariance:
-            latest_block = hyperdrive_pool.interface.get_block("latest")
-            latest_block_number = latest_block.get("number", None)
-            if latest_block_number is None:
-                raise AssertionError("Block has no number.")
-            # pylint: disable=protected-access
-            run_invariant_checks(
-                latest_block=latest_block,
-                interface=hyperdrive_pool.interface,
-                raise_error_on_failure=raise_error_on_failed_invariance_checks,
-                log_to_rollbar=log_to_rollbar,
-                lp_share_price_test=lp_share_price_test,
-                crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
-            )
+            for hyperdrive_pool in hyperdrive_pools:
+                latest_block = hyperdrive_pool.interface.get_block("latest")
+                latest_block_number = latest_block.get("number", None)
+                if latest_block_number is None:
+                    raise AssertionError("Block has no number.")
+                # pylint: disable=protected-access
+                run_invariant_checks(
+                    latest_block=latest_block,
+                    interface=hyperdrive_pool.interface,
+                    raise_error_on_failure=raise_error_on_failed_invariance_checks,
+                    log_to_rollbar=log_to_rollbar,
+                    lp_share_price_test=lp_share_price_test,
+                    crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
+                )
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
-        average_agent_base = sum(agent.get_wallet().balance.amount for agent in agents) / FixedPoint(len(agents))
-        # TODO add eth balance to wallet output
-        average_agent_eth = sum(
-            hyperdrive_pool.interface.get_eth_base_balances(agent.account)[0] for agent in agents
-        ) / FixedPoint(len(agents))
+        for hyperdrive_pool in hyperdrive_pools:
+            average_agent_base = sum(
+                agent.get_wallet(pool=hyperdrive_pool).balance.amount for agent in agents
+            ) / FixedPoint(len(agents))
+            # TODO add eth balance to wallet output
+            average_agent_eth = sum(
+                hyperdrive_pool.interface.get_eth_base_balances(agent.account)[0] for agent in agents
+            ) / FixedPoint(len(agents))
 
-        # Update agent funds
-        if (average_agent_base < minimum_avg_agent_base) or (average_agent_eth < minimum_avg_agent_eth):
-            logging.info("Refunding agents...")
-            if run_async:
-                asyncio.run(
-                    async_runner(
-                        return_exceptions=True,
-                        funcs=[agent.add_funds for agent in agents],
-                        base=base_budget_per_bot,
-                        eth=eth_budget_per_bot,
-                    )
-                )
-            else:
-                _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
-
-        # The deployer pays gas for advancing time
-        # We check the eth balance and refund if it runs low
-        deployer_account = hyperdrive_pool.chain.get_deployer_account()
-        deployer_agent_eth = hyperdrive_pool.interface.get_eth_base_balances(deployer_account)[0]
-        if deployer_agent_eth < minimum_avg_agent_eth:
-            _ = set_anvil_account_balance(
-                hyperdrive_pool.interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
-            )
+            # Update agent funds
+            if (average_agent_base < minimum_avg_agent_base) or (average_agent_eth < minimum_avg_agent_eth):
+                logging.info("Refunding agents...")
+                if run_async:
+                    raise NotImplementedError("Running async not implemented")
+                _ = [
+                    agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=hyperdrive_pool)
+                    for agent in agents
+                ]
 
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
             # LocalChain object
-            if isinstance(hyperdrive_pool.chain, LocalChain):
+            if isinstance(chain, LocalChain):
+                # The deployer pays gas for advancing time
+                # We check the eth balance and refund if it runs low
+                deployer_account = chain.get_deployer_account()
+                deployer_agent_eth = hyperdrive_pools[0].interface.get_eth_base_balances(deployer_account)[0]
+                if deployer_agent_eth < minimum_avg_agent_eth:
+                    _ = set_anvil_account_balance(
+                        hyperdrive_pools[0].interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
+                    )
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
-                assert hyperdrive_pool.chain.config.rng is not None
+                assert chain.config.rng is not None
                 # TODO should there be an upper bound for advancing time?
-                random_time = int(hyperdrive_pool.chain.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
-                hyperdrive_pool.chain.advance_time(random_time, create_checkpoints=True)
+                random_time = int(chain.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
+                chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
 
         if random_variable_rate:
-            if isinstance(hyperdrive_pool, LocalHyperdrive):
-                # RNG should always exist, config's post_init should always
-                # initialize an rng object
-                assert hyperdrive_pool.chain.config.rng is not None
-                random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*VARIABLE_RATE_RANGE))
-                hyperdrive_pool.set_variable_rate(random_rate)
-            else:
-                raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")
+            # This will change an underlying yield source twice if pools share the same underlying
+            # yield source
+            for hyperdrive_pool in hyperdrive_pools:
+                if isinstance(hyperdrive_pool, LocalHyperdrive):
+                    # RNG should always exist, config's post_init should always
+                    # initialize an rng object
+                    assert hyperdrive_pool.chain.config.rng is not None
+                    random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*VARIABLE_RATE_RANGE))
+                    hyperdrive_pool.set_variable_rate(random_rate)
+                else:
+                    raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")

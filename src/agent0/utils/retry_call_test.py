@@ -1,9 +1,10 @@
-"""Test executing transactions."""
+"""Tests for retry calls."""
 
 import pytest
 
 from agent0.core.hyperdrive.interactive import LocalChain
-from agent0.utils import retry_call
+
+from .retry_call import retry_call
 
 
 @pytest.mark.anvil

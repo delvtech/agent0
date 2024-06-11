@@ -1,37 +1,32 @@
-"""Script for automatically detecting deployed pools using the registry contract on testnet,
-and checking Hyperdrive invariants.
-
-# Invariance checks (these should be True):
-- hyperdrive base & eth balances are zero
-- the expected total shares equals the hyperdrive balance in the vault contract
-- the pool has more than the minimum share reserves
-- the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
-- if a hyperdrive trade happened then a checkpoint was created at the appropriate time
-"""
+"""Runs random bots against a remote chain."""
 
 from __future__ import annotations
 
 import argparse
 import logging
 import os
+import random
 import sys
-import time
 from typing import NamedTuple, Sequence
+
+import numpy as np
 
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
-from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
+from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Check Hyperdrive invariants each block.
+    """Runs local fuzz bots.
 
     Arguments
     ---------
     argv: Sequence[str]
         A sequence containing the uri to the database server.
     """
+    # TODO consolidate setup into single function and clean up.
+    # pylint: disable=too-many-branches
     # pylint: disable=too-many-locals
 
     parsed_args = parse_arguments(argv)
@@ -41,30 +36,46 @@ def main(argv: Sequence[str] | None = None) -> None:
         rpc_uri = os.getenv("RPC_URI", None)
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
-
-        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
-
+        use_existing_postgres = True
         # Get the registry address from artifacts
         artifacts_uri = os.getenv("ARTIFACTS_URI", None)
         if artifacts_uri is None:
             raise ValueError("ARTIFACTS_URI is not set")
         registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
     else:
-        chain = Chain(parsed_args.rpc_uri)
+        rpc_uri = parsed_args.rpc_uri
+        use_existing_postgres = False
         registry_address = parsed_args.registry_addr
 
-    rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
-    log_to_rollbar = initialize_rollbar(rollbar_environment_name)
+    log_to_rollbar = initialize_rollbar("remotefuzzbots")
 
-    # We calculate how many blocks we should wait before checking for a new pool
-    last_executed_block_number = (
-        -parsed_args.pool_check_sleep_blocks - 1
-    )  # no matter what we will run the check the first time
+    # Negative rng_seed means default
+    if parsed_args.rng_seed < 0:
+        rng_seed = random.randint(0, 10000000)
+    else:
+        rng_seed = parsed_args.rng_seed
+    rng = np.random.default_rng(rng_seed)
+
+    chain_config = Chain.Config(
+        use_existing_postgres=use_existing_postgres,
+        log_level=logging.WARNING,
+        preview_before_trade=True,
+        log_to_rollbar=log_to_rollbar,
+        rollbar_log_prefix="remotefuzzbots",
+        rng=rng,
+        crash_log_level=logging.CRITICAL,
+        crash_report_additional_info={"rng_seed": rng_seed},
+        gas_limit=int(1e6),  # Plenty of gas limit for transactions
+    )
+    # Build interactive local hyperdrive
+    # TODO can likely reuse some of these resources
+    # instead, we start from scratch every time.
+    chain = Chain(rpc_uri=rpc_uri, config=chain_config)
+
     last_pool_check_block_number = 0
-    # Get deployed pools on first iteration
+    # Get list of deployed pools on initial iteration
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
 
-    # Run the loop forever
     while True:
         # Check for new pools
         latest_block = chain.block_data()
@@ -78,34 +89,32 @@ def main(argv: Sequence[str] | None = None) -> None:
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
             last_pool_check_block_number = latest_block_number
 
-        if not latest_block_number > last_executed_block_number:
-            # take a nap
-            time.sleep(parsed_args.invariance_check_sleep_time)
-            continue
+        run_fuzz_bots(
+            chain,
+            hyperdrive_pools=deployed_pools,
+            check_invariance=False,  # We don't check invariance here
+            raise_error_on_failed_invariance_checks=False,
+            raise_error_on_crash=False,
+            log_to_rollbar=log_to_rollbar,
+            ignore_raise_error_func=None,
+            run_async=False,
+            random_advance_time=False,
+            random_variable_rate=False,
+            num_iterations=parsed_args.pool_check_sleep_blocks,
+            lp_share_price_test=False,
+        )
 
-        # Update block number
-        last_executed_block_number = latest_block_number
-        # Loop through all deployed pools and run invariant checks
-        for hyperdrive_obj in deployed_pools:
-            name = hyperdrive_obj.name
-            logging.info("Running invariance check on %s", name)
-            run_invariant_checks(
-                latest_block=latest_block,
-                interface=hyperdrive_obj.interface,
-                raise_error_on_failure=False,
-                log_to_rollbar=log_to_rollbar,
-                pool_name=name,
-            )
+        chain.cleanup()
 
 
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
-    invariance_check_sleep_time: int
     pool_check_sleep_blocks: int
     infra: bool
     registry_addr: str
     rpc_uri: str
+    rng_seed: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -122,11 +131,11 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        invariance_check_sleep_time=namespace.invariance_check_sleep_time,
         pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
+        rng_seed=namespace.rng_seed,
     )
 
 
@@ -144,12 +153,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
-    parser.add_argument(
-        "--invariance-check-sleep-time",
-        type=int,
-        default=5,
-        help="Sleep time between invariance checks, in seconds.",
-    )
 
     parser.add_argument(
         "--pool-check-sleep-blocks",
@@ -171,12 +174,17 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default="",
         help="The address of the registry.",
     )
-
     parser.add_argument(
         "--rpc-uri",
         type=str,
         default="",
         help="The RPC URI of the chain.",
+    )
+    parser.add_argument(
+        "--rng-seed",
+        type=int,
+        default=-1,
+        help="The random seed to use for the fuzz run.",
     )
 
     # Use system arguments if none were passed

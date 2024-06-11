@@ -21,8 +21,8 @@ from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
-from agent0.hyperfuzz.system_fuzz.run_local_fuzz_bots import async_runner
 from agent0.hypertypes import IHyperdriveContract
+from agent0.utils import async_runner
 
 # Checkpoint bot has a lot going on
 # pylint: disable=too-many-locals

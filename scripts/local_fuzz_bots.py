@@ -1,4 +1,4 @@
-"""Runs random bots against a remote chain for fuzz testing."""
+"""Runs random bots against a local chain for fuzz testing."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
-from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_local_fuzz_bots
+from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
@@ -141,7 +141,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         # TODO submit multiple transactions per block
         try:
-            run_local_fuzz_bots(
+            run_fuzz_bots(
+                chain,
                 hyperdrive_pool,
                 check_invariance=True,
                 raise_error_on_failed_invariance_checks=raise_error_on_fail,

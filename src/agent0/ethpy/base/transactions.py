@@ -15,9 +15,10 @@ from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
 from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
 
+from agent0.utils import retry_call
+
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
-from .retry_utils import retry_call
 
 DEFAULT_READ_RETRY_COUNT = 5
 DEFAULT_WRITE_RETRY_COUNT = 1
