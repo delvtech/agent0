@@ -23,6 +23,7 @@ class TestLocalFuzzBots:
 
         # Run without lp share price test
         run_fuzz_bots(
+            fast_hyperdrive_fixture.chain,
             fast_hyperdrive_fixture,
             check_invariance=True,
             raise_error_on_failed_invariance_checks=False,
