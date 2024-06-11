@@ -123,10 +123,13 @@ def convert_trade_events(events: list[EventData], wallet_addr: str | None) -> pd
     # Find any transfer events that are not associated with a trade.
     # This happens when e.g., a wallet to wallet transfer happens, or
     # if this wallet is the initializer of the pool.
+    # Sometimes, there doesn't exist a transfer event with a trade
+    # So we also make sure the set of unique events per transaction hash contains transfer single.
     # TODO we have a test for initializer of the pool, but we need to implement
     # wallet to wallet transfers of tokens in the interactive interface for a full test
     transfer_events_trx_hash = unique_events_per_transaction[
-        unique_events_per_transaction["nunique"] < 2
+        (unique_events_per_transaction["nunique"] < 2)
+        & (unique_events_per_transaction["unique"].str.contains("TransferSingle", regex=False))
     ].reset_index()["transactionHash"]
     transfer_events_df = events_df[events_df["transactionHash"].isin(transfer_events_trx_hash)].copy()
     if len(transfer_events_df) > 0:
@@ -136,6 +139,8 @@ def convert_trade_events(events: list[EventData], wallet_addr: str | None) -> pd
         transfer_events_df = pd.concat([transfer_events_df, args_columns], axis=1)
         # We apply the decode function to each element, then expand the resulting
         # tuple to multiple columns
+        if "id" not in transfer_events_df:
+            pass
         transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
             *transfer_events_df["id"].astype(int).apply(decode_asset_id)
         )
