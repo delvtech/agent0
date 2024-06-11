@@ -53,7 +53,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         chain = Chain(parsed_args.rpc_uri)
         registry_address = parsed_args.registry_addr
 
-    # We use the logical name if we don't specify pool addr, otherwise we use the pool addr
     rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
@@ -62,8 +61,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         -parsed_args.pool_check_sleep_blocks - 1
     )  # no matter what we will run the check the first time
     last_pool_check_block_number = 0
-
-    hyperdrive_objs: dict[str, Hyperdrive] = {}
 
     # Run the loop forever
     while True:
@@ -75,13 +72,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         if latest_block_number > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
             logging.info("Checking for new pools...")
-            # Reset hyperdrive objs
-            hyperdrive_objs: dict[str, Hyperdrive] = {}
             # First iteration, get list of deployed pools
-            deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
-            for name, addr in deployed_pools.items():
-                logging.info("Adding pool %s", name)
-                hyperdrive_objs[name] = Hyperdrive(chain, addr, name=name)
+            deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
             last_pool_check_block_number = latest_block_number
 
         if not latest_block_number > last_executed_block_number:
@@ -92,7 +84,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Update block number
         last_executed_block_number = latest_block_number
         # Loop through all deployed pools and run invariant checks
-        for name, hyperdrive_obj in hyperdrive_objs.items():
+        for hyperdrive_obj in deployed_pools:
+            name = hyperdrive_obj.name
             logging.info("Running invariance check on %s", name)
             run_invariant_checks(
                 latest_block=latest_block,
