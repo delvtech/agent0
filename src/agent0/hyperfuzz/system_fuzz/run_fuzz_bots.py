@@ -335,11 +335,14 @@ def run_fuzz_bots(
                 raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
 
         if random_variable_rate:
-            if isinstance(hyperdrive_pools, LocalHyperdrive):
-                # RNG should always exist, config's post_init should always
-                # initialize an rng object
-                assert hyperdrive_pools.chain.config.rng is not None
-                random_rate = FixedPoint(hyperdrive_pools.chain.config.rng.uniform(*VARIABLE_RATE_RANGE))
-                hyperdrive_pools.set_variable_rate(random_rate)
-            else:
-                raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")
+            # This will change an underlying yield source twice if pools share the same underlying
+            # yield source
+            for hyperdrive_pool in hyperdrive_pools:
+                if isinstance(hyperdrive_pool, LocalHyperdrive):
+                    # RNG should always exist, config's post_init should always
+                    # initialize an rng object
+                    assert hyperdrive_pool.chain.config.rng is not None
+                    random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*VARIABLE_RATE_RANGE))
+                    hyperdrive_pool.set_variable_rate(random_rate)
+                else:
+                    raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")
