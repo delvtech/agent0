@@ -511,10 +511,7 @@ async def _async_send_transaction_and_wait_for_receipt(
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Don't crash in crash reporting
             logging.warning("Tracing failed for handling failed status: %s", repr(e))
-
-        if error_message is None:
-            raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
-
+            error_message = f"Receipt has status of 0. Error getting trace: {repr(e)}"
         raise UnknownBlockError(f"{error_message}", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
@@ -731,7 +728,20 @@ def _send_transaction_and_wait_for_receipt(
     if status is None:
         raise UnknownBlockError("Receipt did not return status", f"{block_number=}")
     if status == 0:
-        raise UnknownBlockError("Receipt has status of 0", f"{block_number=}", f"{tx_receipt=}")
+        # We use web3 tracing to attempt to get the error message
+        error_message = None
+        try:
+            # Tracing doesn't exist in typing for some reason.
+            # Doing this in error checking with try/catch.
+            trace = web3.tracing.trace_transaction(tx_receipt["transactionHash"])  # type: ignore
+            # Trace gives a list of values, the last one should contain the error
+            error_message = trace[-1].get("error", None)
+        # TODO does this need to be BaseException?
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # Don't crash in crash reporting
+            logging.warning("Tracing failed for handling failed status: %s", repr(e))
+            error_message = f"Receipt has status of 0. Error getting trace: {repr(e)}"
+        raise UnknownBlockError(f"{error_message}", f"{block_number=}", f"{tx_receipt=}")
     return tx_receipt
 
 
