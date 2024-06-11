@@ -563,7 +563,7 @@ def get_checkpoint_info(
     # TODO there exists a race condition where the same checkpoint info row
     # can be duplicated. While this should be fixed in insertion, we fix by
     # ensuring the getter selects on distinct checkpoint times.
-    query = query.distinct(CheckpointInfo.checkpoint_time)
+    query = query.distinct(CheckpointInfo.hyperdrive_address, CheckpointInfo.checkpoint_time)
 
     # Always sort by time in order
     query = query.order_by(CheckpointInfo.checkpoint_time)
