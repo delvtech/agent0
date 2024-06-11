@@ -233,7 +233,7 @@ def run_fuzz_bots(
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
             agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=pool)
-            agent.set_max_approval()
+            agent.set_max_approval(pool=pool)
         agents.append(agent)
 
     for _ in range(num_random_hold_agents):
@@ -250,7 +250,7 @@ def run_fuzz_bots(
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
             agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot)
-            agent.set_max_approval()
+            agent.set_max_approval(pool=pool)
         agents.append(agent)
 
     # Make trades until the user or agents stop us
