@@ -94,19 +94,13 @@ def build_pool_dashboard(
     # Adds user lookup to the ticker
     out_dfs["display_ticker"] = build_ticker_for_pool_page(trade_events, user_map, block_to_timestamp)
 
-    if len(out_dfs["display_ticker"]) > 0:
-        # get wallet pnl and calculate leaderboard
-        # We use an exact query block since the position snapshot table
-        # could be getting updated under the hood.
-        query_block = int(out_dfs["display_ticker"]["Block Number"].iloc[0])
-    else:
-        query_block = 0
-
+    # Since this table is updated every block, we try and lag behind one block
+    # for position snapshots to avoid getting a currently updating block.
     latest_wallet_pnl = get_position_snapshot(
         session,
         hyperdrive_address=hyperdrive_address,
-        start_block=query_block,
-        end_block=query_block + 1,
+        start_block=-2,
+        end_block=-1,
         coerce_float=False,
     )
     out_dfs["leaderboard"] = build_total_leaderboard(latest_wallet_pnl, user_map)
@@ -184,15 +178,13 @@ def build_wallet_dashboard(
         trade_events, user_map, hyperdrive_addr_mapping, block_to_timestamp
     )
 
-    # get wallet pnl and calculate leaderboard
-    # We use an exact query block since the position snapshot table
-    # could be getting updated under the hood.
-    query_block = int(out_dfs["display_ticker"]["Block Number"].iloc[0])
+    # Since this table is updated every block, we try and lag behind one block
+    # for position snapshots to avoid getting a currently updating block.
     position_snapshot = get_position_snapshot(
         session,
         wallet_address=wallet_addresses,
-        start_block=query_block,
-        end_block=query_block + 1,
+        start_block=-2,
+        end_block=-1,
         coerce_float=False,
     )
 
