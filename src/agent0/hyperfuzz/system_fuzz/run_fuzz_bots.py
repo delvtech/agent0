@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable
 
 from fixedpointmath import FixedPoint
 from numpy.random._generator import Generator
 
-from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
+from agent0 import Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
+from agent0.utils import async_runner
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -123,62 +124,8 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -
     )
 
 
-# Async runner helper
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-# TODO move this to somewhere that's more general
-async def async_runner(
-    return_exceptions: bool,
-    funcs: list[Callable[P, R]],
-    *args: P.args,
-    **kwargs: P.kwargs,
-) -> list[R]:
-    """Helper function that runs a list of passed in functions asynchronously.
-
-    WARNING: this assumes all functions passed in are thread safe, use at your own risk.
-
-    TODO: args and kwargs likely should also be a list for passing in separate arguments.
-
-    Arguments
-    ---------
-    return_exceptions: bool
-        If True, return exceptions from the functions. Otherwise, will throw exception if
-        a thread fails.
-    funcs: list[Callable[P, R]]
-        List of functions to run asynchronously.
-    *args: P.args
-        Positional arguments for the functions.
-    **kwargs: P.kwargs
-        Keyword arguments for the functions.
-
-    Returns
-    -------
-    list[R]
-        List of results.
-    """
-    # We launch all functions in threads using the `to_thread` function.
-    # This allows the underlying functions to use non-async waits.
-
-    # Runs all functions passed in and gathers results
-    gather_result: list[R | BaseException] = await asyncio.gather(
-        *[asyncio.to_thread(func, *args, **kwargs) for func in funcs], return_exceptions=return_exceptions
-    )
-
-    # Error checking
-    # TODO we can add retries here
-    out_result: list[R] = []
-    for result in gather_result:
-        if isinstance(result, BaseException):
-            raise result
-        out_result.append(result)
-
-    return out_result
-
-
-def run_local_fuzz_bots(
-    hyperdrive_pool: LocalHyperdrive,
+def run_fuzz_bots(
+    hyperdrive_pool: Hyperdrive,
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -269,8 +216,6 @@ def run_local_fuzz_bots(
     for _ in range(num_random_agents):
         # Initialize & fund agent using a random private key
         agent: HyperdriveAgent = hyperdrive_pool.chain.init_agent(
-            base=base_budget_per_bot,
-            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             pool=hyperdrive_pool,
             policy=PolicyZoo.random,
@@ -280,12 +225,13 @@ def run_local_fuzz_bots(
                 randomly_ignore_slippage_tolerance=True,
             ),
         )
+        # We're assuming we can fund the agent here
+        agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot)
+        agent.set_max_approval()
         agents.append(agent)
 
     for _ in range(num_random_hold_agents):
         agent: HyperdriveAgent = hyperdrive_pool.chain.init_agent(
-            base=base_budget_per_bot,
-            eth=eth_budget_per_bot,
             private_key=make_private_key(),
             pool=hyperdrive_pool,
             policy=PolicyZoo.random_hold,
@@ -296,6 +242,9 @@ def run_local_fuzz_bots(
                 max_open_positions=2_000,
             ),
         )
+        # We're assuming we can fund the agent here
+        agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot)
+        agent.set_max_approval()
         agents.append(agent)
 
     # Make trades until the user or agents stop us
@@ -366,19 +315,18 @@ def run_local_fuzz_bots(
             else:
                 _ = [agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot) for agent in agents]
 
-        # The deployer pays gas for advancing time
-        # We check the eth balance and refund if it runs low
-        deployer_account = hyperdrive_pool.chain.get_deployer_account()
-        deployer_agent_eth = hyperdrive_pool.interface.get_eth_base_balances(deployer_account)[0]
-        if deployer_agent_eth < minimum_avg_agent_eth:
-            _ = set_anvil_account_balance(
-                hyperdrive_pool.interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
-            )
-
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
             # LocalChain object
             if isinstance(hyperdrive_pool.chain, LocalChain):
+                # The deployer pays gas for advancing time
+                # We check the eth balance and refund if it runs low
+                deployer_account = hyperdrive_pool.chain.get_deployer_account()
+                deployer_agent_eth = hyperdrive_pool.interface.get_eth_base_balances(deployer_account)[0]
+                if deployer_agent_eth < minimum_avg_agent_eth:
+                    _ = set_anvil_account_balance(
+                        hyperdrive_pool.interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
+                    )
                 # RNG should always exist, config's post_init should always
                 # initialize an rng object
                 assert hyperdrive_pool.chain.config.rng is not None

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from agent0.core.hyperdrive.interactive import LocalHyperdrive
-from agent0.hyperfuzz.system_fuzz import run_local_fuzz_bots
+from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 
 
 class TestLocalFuzzBots:
@@ -22,7 +22,7 @@ class TestLocalFuzzBots:
         # We only run for 1 iteration to ensure the pipeline works
 
         # Run without lp share price test
-        run_local_fuzz_bots(
+        run_fuzz_bots(
             fast_hyperdrive_fixture,
             check_invariance=True,
             raise_error_on_failed_invariance_checks=False,
@@ -36,7 +36,7 @@ class TestLocalFuzzBots:
         )
 
         # Run with lp share price test
-        run_local_fuzz_bots(
+        run_fuzz_bots(
             fast_hyperdrive_fixture,
             check_invariance=True,
             raise_error_on_failed_invariance_checks=False,

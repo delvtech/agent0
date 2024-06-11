@@ -5,7 +5,8 @@ from __future__ import annotations
 from web3 import Web3
 from web3.types import RPCEndpoint, RPCResponse
 
-from .retry_utils import retry_call
+from agent0.utils import retry_call
+
 from .transactions import DEFAULT_READ_RETRY_COUNT
 
 
