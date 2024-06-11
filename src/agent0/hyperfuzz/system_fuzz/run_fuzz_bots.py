@@ -249,7 +249,7 @@ def run_fuzz_bots(
         )
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
-            agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot)
+            agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=pool)
             agent.set_max_approval(pool=pool)
         agents.append(agent)
 
