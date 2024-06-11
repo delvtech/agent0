@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import gc
+import time
 
 import matplotlib.pyplot as plt
 import mplfinance as mpf
@@ -86,3 +87,5 @@ while True:
             main_fig.autofmt_xdate()
             # streamlit doesn't play nice with types
             st.pyplot(fig=main_fig)  # type: ignore
+    # Slow down refreshes
+    time.sleep(1)

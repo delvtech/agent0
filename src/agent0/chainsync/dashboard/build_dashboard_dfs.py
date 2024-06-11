@@ -99,8 +99,8 @@ def build_pool_dashboard(
     latest_wallet_pnl = get_position_snapshot(
         session,
         hyperdrive_address=hyperdrive_address,
-        start_block=-2,
-        end_block=-1,
+        start_block=-1,
+        end_block=None,
         coerce_float=False,
     )
     out_dfs["leaderboard"] = build_total_leaderboard(latest_wallet_pnl, user_map)
@@ -183,8 +183,8 @@ def build_wallet_dashboard(
     position_snapshot = get_position_snapshot(
         session,
         wallet_address=wallet_addresses,
-        start_block=-2,
-        end_block=-1,
+        start_block=-1,
+        end_block=None,
         coerce_float=False,
     )
 
