@@ -17,7 +17,7 @@ def test_async_runner():
     # TODO because _async_runner only takes one set of arguments for all calls,
     # we make partial calls for each call. The proper fix here is to generalize
     # _async_runner to take separate arguments for each call.
-    partials = [partial(_return_int, i) for i in [1, 2, 3]]
+    partials = [partial(_return_int, i) for i in range(3)]]
 
     out_tuples = asyncio.run(async_runner(return_exceptions=False, funcs=partials, j=10))
 
