@@ -142,6 +142,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         # TODO submit multiple transactions per block
         try:
             run_fuzz_bots(
+                chain,
                 hyperdrive_pool,
                 check_invariance=True,
                 raise_error_on_failed_invariance_checks=raise_error_on_fail,

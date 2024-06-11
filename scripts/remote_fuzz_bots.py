@@ -92,34 +92,19 @@ def main(argv: Sequence[str] | None = None) -> None:
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
             last_pool_check_block_number = latest_block_number
 
-        # TODO because _async_runner only takes one set of arguments for all calls,
-        # we make partial calls for each call. The proper fix here is to generalize
-        # _async_runner to take separate arguments for each call.
-        partials = [
-            partial(
-                run_fuzz_bots,
-                hyperdrive_pool=pool,
-            )
-            for pool in deployed_pools
-        ]
-
-        # Run checkpoint bots
-        # We set return_exceptions to False to crash immediately if a thread fails
-        asyncio.run(
-            async_runner(
-                return_exceptions=False,
-                funcs=partials,
-                check_invariance=False,  # We don't check invariance here
-                raise_error_on_failed_invariance_checks=False,
-                raise_error_on_crash=False,
-                log_to_rollbar=log_to_rollbar,
-                ignore_raise_error_func=None,
-                run_async=False,
-                random_advance_time=False,
-                random_variable_rate=False,
-                num_iterations=parsed_args.pool_check_sleep_blocks,
-                lp_share_price_test=False,
-            )
+        run_fuzz_bots(
+            chain,
+            hyperdrive_pools=deployed_pools,
+            check_invariance=False,  # We don't check invariance here
+            raise_error_on_failed_invariance_checks=False,
+            raise_error_on_crash=False,
+            log_to_rollbar=log_to_rollbar,
+            ignore_raise_error_func=None,
+            run_async=False,
+            random_advance_time=False,
+            random_variable_rate=False,
+            num_iterations=parsed_args.pool_check_sleep_blocks,
+            lp_share_price_test=False,
         )
 
         chain.cleanup()
