@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import logging
 import os
 import random
 import sys
-from functools import partial
 from typing import NamedTuple, Sequence
 
 import numpy as np
@@ -17,7 +15,6 @@ from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
-from agent0.utils import async_runner
 
 
 def main(argv: Sequence[str] | None = None) -> None:
