@@ -61,6 +61,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         -parsed_args.pool_check_sleep_blocks - 1
     )  # no matter what we will run the check the first time
     last_pool_check_block_number = 0
+    # Get deployed pools on first iteration
+    deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
 
     # Run the loop forever
     while True:

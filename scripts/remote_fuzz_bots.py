@@ -46,7 +46,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise ValueError("ARTIFACTS_URI is not set")
         registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
     else:
-        use_existing_postgres = True
+        rpc_uri = parsed_args.rpc_uri
+        use_existing_postgres = False
         registry_address = parsed_args.registry_addr
 
     log_to_rollbar = initialize_rollbar("remotefuzzbots")
@@ -75,6 +76,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     chain = Chain(rpc_uri=rpc_uri, config=chain_config)
 
     last_pool_check_block_number = 0
+    # Get list of deployed pools on initial iteration
+    deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
 
     while True:
         # Check for new pools
