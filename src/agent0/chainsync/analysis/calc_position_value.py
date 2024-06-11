@@ -110,7 +110,11 @@ def calc_single_closeout(
             # If we have events and open checkpoint time still missing, something very wrong.
             raise ValueError("Chainsync: Missing checkpoint event data for short position.")
 
-        open_share_price = FixedPoint(checkpoint_share_prices.loc[open_checkpoint_time])
+        open_share_price = checkpoint_share_prices.loc[open_checkpoint_time]
+        # Sanity check, the getter of checkpoint share price should only select distinct
+        # so this should be a singular int instead of a series.
+        assert isinstance(open_share_price, Decimal)
+        open_share_price = FixedPoint(open_share_price)
 
         # If the position has matured, we use the share price from the checkpoint
         # Otherwise, we use the current share price
