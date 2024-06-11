@@ -94,10 +94,14 @@ def build_pool_dashboard(
     # Adds user lookup to the ticker
     out_dfs["display_ticker"] = build_ticker_for_pool_page(trade_events, user_map, block_to_timestamp)
 
-    # get wallet pnl and calculate leaderboard
-    # We use an exact query block since the position snapshot table
-    # could be getting updated under the hood.
-    query_block = int(out_dfs["display_ticker"]["Block Number"].iloc[0])
+    if len(out_dfs["display_ticker"]) > 0:
+        # get wallet pnl and calculate leaderboard
+        # We use an exact query block since the position snapshot table
+        # could be getting updated under the hood.
+        query_block = int(out_dfs["display_ticker"]["Block Number"].iloc[0])
+    else:
+        query_block = 0
+
     latest_wallet_pnl = get_position_snapshot(
         session,
         hyperdrive_address=hyperdrive_address,

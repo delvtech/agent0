@@ -81,7 +81,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
             for name, addr in deployed_pools.items():
                 logging.info("Adding pool %s", name)
-                hyperdrive_objs[name] = Hyperdrive(chain, addr)
+                hyperdrive_objs[name] = Hyperdrive(chain, addr, name=name)
             last_pool_check_block_number = latest_block_number
 
         if not latest_block_number > last_executed_block_number:

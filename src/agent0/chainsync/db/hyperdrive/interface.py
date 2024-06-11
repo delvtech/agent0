@@ -49,7 +49,9 @@ def add_hyperdrive_addr_to_name(
     elif len(existing_map) == 1:
         existing_name = existing_map.iloc[0]["name"]
         if existing_name != name and not force_update:
-            raise ValueError(f"Address {hyperdrive_address=} already registered to {existing_name}")
+            raise ValueError(
+                f"Registering address {hyperdrive_address=} to {name} failed: already registered to {existing_name}"
+            )
     else:
         # Should never be more than one address in table
         raise ValueError("Fatal error: postgres returning multiple entries for primary key")
