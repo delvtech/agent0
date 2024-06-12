@@ -37,6 +37,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parsed_args = parse_arguments(argv)
 
     if parsed_args.infra:
+        # TODO Abstract this method out for infra scripts
         # Get the rpc uri from env variable
         rpc_uri = os.getenv("RPC_URI", None)
         if rpc_uri is None:
@@ -45,10 +46,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
 
         # Get the registry address from artifacts
-        artifacts_uri = os.getenv("ARTIFACTS_URI", None)
-        if artifacts_uri is None:
-            raise ValueError("ARTIFACTS_URI is not set")
-        registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+        registry_address = os.getenv("REGISTRY_ADDRESS", None)
+        if registry_address is None or registry_address == "":
+            artifacts_uri = os.getenv("ARTIFACTS_URI", None)
+            if artifacts_uri is None:
+                raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
+            registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
     else:
         chain = Chain(parsed_args.rpc_uri)
         registry_address = parsed_args.registry_addr

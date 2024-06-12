@@ -117,19 +117,20 @@ def run_checkpoint_bot(
         checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
 
         logging.info(
-            "pool_name=%s "
-            "timestamp=%s checkpoint_portion_elapsed=%s checkpoint_time=%s "
-            "need_checkpoint=%s checkpoint_doesnt_exist=%s",
+            "Pool %s for checkpointTime=%s: "
+            "Checking if checkpoint needed. "
+            "timestamp=%s checkpoint_portion_elapsed=%s "
+            "enough_time_has_elapsed=%s checkpoint_doesnt_exist=%s",
             pool_name,
+            checkpoint_time,
             timestamp,
             checkpoint_portion_elapsed,
-            checkpoint_time,
             enough_time_has_elapsed,
             checkpoint_doesnt_exist,
         )
 
         if enough_time_has_elapsed and checkpoint_doesnt_exist:
-            logging.info("Pool %s submitting a checkpoint for checkpointTime=%s...", pool_name, checkpoint_time)
+            logging.info("Pool %s for checkpointTime=%s: submitting checkpoint", pool_name, checkpoint_time)
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
             # will need to make this more robust so that we retry this
@@ -146,13 +147,20 @@ def run_checkpoint_bot(
                     *fn_args,
                 )
             except Exception as e:  # pylint: disable=broad-except
-                logging.warning("Checkpoint transaction failed with exception=%s, retrying", e)
+                logging.warning(
+                    "Pool %s for checkpointTime=%s: checkpoint transaction failed with exception=%s, retrying",
+                    pool_name,
+                    checkpoint_time,
+                    repr(e),
+                )
                 # Catch all errors here and retry next iteration
                 # TODO adjust wait period
                 time.sleep(1)
                 continue
             logging.info(
-                "Checkpoint successfully mined with receipt=%s",
+                "Pool %s for checkpointTime=%s: Checkpoint succesfully mined with receipt==%s",
+                pool_name,
+                checkpoint_time,
                 receipt["transactionHash"].hex(),
             )
             if check_checkpoint:
@@ -180,7 +188,7 @@ def run_checkpoint_bot(
         # Adjust sleep duration by the speedup factor
         adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
         logging.info(
-            "Pool name %s. Current time is %s. Sleeping for %s seconds ...",
+            "Pool %s: Current time is %s. Sleeping for %s seconds.",
             pool_name,
             datetime.datetime.fromtimestamp(timestamp),
             adjusted_sleep_duration,
@@ -202,36 +210,43 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Initialize
     if parsed_args.infra:
+        # TODO Abstract this method out for infra scripts
         # Get the rpc uri from env variable
         rpc_uri = os.getenv("RPC_URI", None)
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
 
         chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
-        private_key = make_private_key()
-        # We create an agent here to fund it eth
-        agent = chain.init_agent(private_key=private_key)
-        agent.add_funds(eth=FixedPoint(100_000))
-        sender: LocalAccount = agent.account
 
         # Get the registry address from artifacts
-        artifacts_uri = os.getenv("ARTIFACTS_URI", None)
-        if artifacts_uri is None:
-            raise ValueError("ARTIFACTS_URI is not set")
-        registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+        registry_address = os.getenv("REGISTRY_ADDRESS", None)
+        if registry_address is None or registry_address == "":
+            artifacts_uri = os.getenv("ARTIFACTS_URI", None)
+            if artifacts_uri is None:
+                raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
+            registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
 
         # Get block time and block timestamp interval from env vars
         block_time = int(os.getenv("BLOCK_TIME", "12"))
         block_timestamp_interval = int(os.getenv("BLOCK_TIMESTAMP_INTERVAL", "12"))
     else:
         chain = Chain(parsed_args.rpc_uri)
-        private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
-        if private_key is None:
-            raise ValueError("CHECKPOINT_BOT_KEY is not set")
-        sender: LocalAccount = Account().from_key(private_key)
         registry_address = parsed_args.registry_addr
         block_time = 1
         block_timestamp_interval = 1
+
+    # Look for `CHECKPOINT_BOT_KEY` env variable
+    # If it exists, use the existing key and assume it's funded
+    # If it doesn't exist, create a new key and fund it (assuming this is a local anvil chain)
+    private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
+    if private_key is None or private_key == "":
+        private_key = make_private_key()
+        # We create an agent here to fund it eth
+        agent = chain.init_agent(private_key=private_key)
+        agent.add_funds(eth=FixedPoint(100_000))
+        sender: LocalAccount = agent.account
+    else:
+        sender: LocalAccount = Account().from_key(private_key)
 
     # Loop for checkpoint bot across all registered pools
     while True:

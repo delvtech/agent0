@@ -32,16 +32,27 @@ def main(argv: Sequence[str] | None = None) -> None:
     parsed_args = parse_arguments(argv)
 
     if parsed_args.infra:
+        # TODO Abstract this method out for infra scripts
         # Get the rpc uri from env variable
         rpc_uri = os.getenv("RPC_URI", None)
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
         use_existing_postgres = True
-        # Get the registry address from artifacts
+
+        # Guardrail to make sure this isn't ran on actual chain
+        registry_address = os.getenv("REGISTRY_ADDRESS", None)
+        if registry_address is None:
+            raise ValueError(
+                "Refusing to run with explicit registry address. "
+                "This script is assuming it's running on a local anvil chain, which "
+                "mints money."
+            )
+
         artifacts_uri = os.getenv("ARTIFACTS_URI", None)
         if artifacts_uri is None:
             raise ValueError("ARTIFACTS_URI is not set")
         registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+
     else:
         rpc_uri = parsed_args.rpc_uri
         use_existing_postgres = False
