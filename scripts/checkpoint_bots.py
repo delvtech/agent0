@@ -89,6 +89,7 @@ def run_checkpoint_bot(
         Whether or not to log to rollbar.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
 
     # TODO pull this function out and put into agent0
     web3 = chain._web3  # pylint: disable=protected-access
