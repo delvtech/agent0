@@ -21,6 +21,7 @@ from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.hypertypes import IHyperdriveContract
 from agent0.utils import async_runner
 
@@ -62,6 +63,7 @@ def run_checkpoint_bot(
     check_checkpoint: bool = False,
     block_to_exit: int | None = None,
     pool_name: str | None = None,
+    log_to_rollbar=False,
 ):
     """Runs the checkpoint bot.
 
@@ -83,8 +85,11 @@ def run_checkpoint_bot(
         The block number to exit the loop.
     pool_name: str | None
         The name of the pool. Only used for logging
+    log_to_rollbar: bool
+        Whether or not to log to rollbar.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
 
     # TODO pull this function out and put into agent0
     web3 = chain._web3  # pylint: disable=protected-access
@@ -116,20 +121,28 @@ def run_checkpoint_bot(
         enough_time_has_elapsed = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
         checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
 
-        logging.info(
-            "pool_name=%s "
-            "timestamp=%s checkpoint_portion_elapsed=%s checkpoint_time=%s "
-            "need_checkpoint=%s checkpoint_doesnt_exist=%s",
-            pool_name,
-            timestamp,
-            checkpoint_portion_elapsed,
-            checkpoint_time,
-            enough_time_has_elapsed,
-            checkpoint_doesnt_exist,
+        logging_str = (
+            f"Pool {pool_name} for checkpointTime={checkpoint_time}: "
+            "Checking if checkpoint needed. "
+            f"{timestamp=} {checkpoint_portion_elapsed=} "
+            f"{enough_time_has_elapsed=} {checkpoint_doesnt_exist=}"
         )
+        logging.info(logging_str)
+        if log_to_rollbar:
+            log_rollbar_message(
+                message=logging_str,
+                log_level=logging.INFO,
+            )
 
         if enough_time_has_elapsed and checkpoint_doesnt_exist:
-            logging.info("Pool %s submitting a checkpoint for checkpointTime=%s...", pool_name, checkpoint_time)
+            logging_str = f"Pool {pool_name} for {checkpoint_time=}: submitting checkpoint"
+            logging.info(logging_str)
+            if log_to_rollbar:
+                log_rollbar_message(
+                    message=logging_str,
+                    log_level=logging.INFO,
+                )
+
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
             # will need to make this more robust so that we retry this
@@ -146,15 +159,31 @@ def run_checkpoint_bot(
                     *fn_args,
                 )
             except Exception as e:  # pylint: disable=broad-except
-                logging.warning("Checkpoint transaction failed with exception=%s, retrying", e)
+                logging_str = (
+                    f"Pool {pool_name} for {checkpoint_time=}: checkpoint transaction failed, retrying. {repr(e)}.",
+                )
+                logging.warning(logging_str)
+                if log_to_rollbar:
+                    log_rollbar_exception(
+                        exception=e,
+                        log_level=logging.WARNING,
+                        rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}",
+                    )
                 # Catch all errors here and retry next iteration
                 # TODO adjust wait period
                 time.sleep(1)
                 continue
-            logging.info(
-                "Checkpoint successfully mined with receipt=%s",
-                receipt["transactionHash"].hex(),
+            logging_str = (
+                f"Pool {pool_name} for {checkpoint_time=}: "
+                f"Checkpoint successfully mined with transaction_hash={receipt['transactionHash'].hex()}"
             )
+            logging.info(logging_str)
+            if log_to_rollbar:
+                log_rollbar_message(
+                    message=logging_str,
+                    log_level=logging.INFO,
+                )
+
             if check_checkpoint:
                 # TODO: Add crash report
                 assert receipt["status"] == 1, "Checkpoint failed."
@@ -179,12 +208,13 @@ def run_checkpoint_bot(
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
         # Adjust sleep duration by the speedup factor
         adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
-        logging.info(
-            "Pool name %s. Current time is %s. Sleeping for %s seconds ...",
-            pool_name,
-            datetime.datetime.fromtimestamp(timestamp),
-            adjusted_sleep_duration,
+        logging_str = (
+            f"Pool {pool_name}: Current time is {datetime.datetime.fromtimestamp(timestamp)}. "
+            f"Sleeping for {adjusted_sleep_duration} seconds."
         )
+        logging.info(logging_str)
+        # No need to log sleeping info to rollbar here
+
         time.sleep(adjusted_sleep_duration)
 
 
@@ -200,38 +230,58 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     parsed_args = parse_arguments(argv)
 
+    rollbar_environment_name = "checkpoint_bot"
+    log_to_rollbar = initialize_rollbar(rollbar_environment_name)
+
     # Initialize
+    registry_address_env = None
     if parsed_args.infra:
+        # TODO Abstract this method out for infra scripts
         # Get the rpc uri from env variable
         rpc_uri = os.getenv("RPC_URI", None)
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
 
         chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
-        private_key = make_private_key()
-        # We create an agent here to fund it eth
-        agent = chain.init_agent(private_key=private_key)
-        agent.add_funds(eth=FixedPoint(100_000))
-        sender: LocalAccount = agent.account
 
-        # Get the registry address from artifacts
-        artifacts_uri = os.getenv("ARTIFACTS_URI", None)
-        if artifacts_uri is None:
-            raise ValueError("ARTIFACTS_URI is not set")
-        registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+        # Get the registry address from environment variable
+        registry_address_env = os.getenv("REGISTRY_ADDRESS", None)
+        if registry_address_env is None or registry_address_env == "":
+            # If env is not set, get the registry address from artifacts
+            artifacts_uri = os.getenv("ARTIFACTS_URI", None)
+            if artifacts_uri is None:
+                raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
+            registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+        else:
+            registry_address = registry_address_env
 
         # Get block time and block timestamp interval from env vars
         block_time = int(os.getenv("BLOCK_TIME", "12"))
         block_timestamp_interval = int(os.getenv("BLOCK_TIMESTAMP_INTERVAL", "12"))
     else:
         chain = Chain(parsed_args.rpc_uri)
-        private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
-        if private_key is None:
-            raise ValueError("CHECKPOINT_BOT_KEY is not set")
-        sender: LocalAccount = Account().from_key(private_key)
         registry_address = parsed_args.registry_addr
         block_time = 1
         block_timestamp_interval = 1
+
+    # Look for `CHECKPOINT_BOT_KEY` env variable
+    # If it exists, use the existing key and assume it's funded
+    # If it doesn't exist, create a new key and fund it (assuming this is a local anvil chain)
+    private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
+    if private_key is None or private_key == "":
+        # Guardrail to make sure this isn't ran on non-local chain
+        if registry_address_env is not None and registry_address_env != "":
+            raise ValueError(
+                "Refusing to run without `CHECKPOINT_BOT_KEY` with an explicit registry address. "
+                "Need to provide `CHECKPOINT_BOT_KEY` if running on remote chain."
+            )
+        private_key = make_private_key()
+        # We create an agent here to fund it eth
+        agent = chain.init_agent(private_key=private_key)
+        agent.add_funds(eth=FixedPoint(100_000))
+        sender: LocalAccount = agent.account
+    else:
+        sender: LocalAccount = Account().from_key(private_key)
 
     # Loop for checkpoint bot across all registered pools
     while True:
@@ -251,6 +301,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 pool_name=pool_name,
                 block_time=block_time,
                 block_timestamp_interval=block_timestamp_interval,
+                log_to_rollbar=log_to_rollbar,
             )
             for pool_name, pool_addr in deployed_pools.items()
         ]
