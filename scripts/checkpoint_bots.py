@@ -85,6 +85,8 @@ def run_checkpoint_bot(
         The block number to exit the loop.
     pool_name: str | None
         The name of the pool. Only used for logging
+    log_to_rollbar: bool
+        Whether or not to log to rollbar.
     """
     # pylint: disable=too-many-arguments
 
@@ -235,6 +237,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # Initialize
+    registry_address_env = None
     if parsed_args.infra:
         # TODO Abstract this method out for infra scripts
         # Get the rpc uri from env variable
@@ -244,13 +247,16 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
 
-        # Get the registry address from artifacts
-        registry_address = os.getenv("REGISTRY_ADDRESS", None)
-        if registry_address is None or registry_address == "":
+        # Get the registry address from environment variable
+        registry_address_env = os.getenv("REGISTRY_ADDRESS", None)
+        if registry_address_env is None or registry_address_env == "":
+            # If env is not set, get the registry address from artifacts
             artifacts_uri = os.getenv("ARTIFACTS_URI", None)
             if artifacts_uri is None:
                 raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
             registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+        else:
+            registry_address = registry_address_env
 
         # Get block time and block timestamp interval from env vars
         block_time = int(os.getenv("BLOCK_TIME", "12"))
@@ -266,6 +272,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     # If it doesn't exist, create a new key and fund it (assuming this is a local anvil chain)
     private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
     if private_key is None or private_key == "":
+        # Guardrail to make sure this isn't ran on actual chain
+        if registry_address is not None and registry_address != "":
+            raise ValueError(
+                "Refusing to run without `CHECKPOINT_BOT_KEY` with an explicit registry address. "
+                "Need to provide `CHECKPOINT_BOT_KEY` if running on remote chain."
+            )
         private_key = make_private_key()
         # We create an agent here to fund it eth
         agent = chain.init_agent(private_key=private_key)

@@ -39,9 +39,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise ValueError("RPC_URI is not set")
         use_existing_postgres = True
 
-        # Guardrail to make sure this isn't ran on actual chain
+        # Guardrail to make sure this isn't ran on non-local chain
         registry_address = os.getenv("REGISTRY_ADDRESS", None)
-        if registry_address is None:
+        if registry_address is not None and registry_address != "":
             raise ValueError(
                 "Refusing to run with explicit registry address. "
                 "This script is assuming it's running on a local anvil chain, which "
