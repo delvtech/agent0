@@ -270,7 +270,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     private_key = os.getenv("CHECKPOINT_BOT_KEY", None)
     if private_key is None or private_key == "":
         # Guardrail to make sure this isn't ran on non-local chain
-        if registry_address is not None and registry_address != "":
+        if registry_address_env is not None and registry_address_env != "":
             raise ValueError(
                 "Refusing to run without `CHECKPOINT_BOT_KEY` with an explicit registry address. "
                 "Need to provide `CHECKPOINT_BOT_KEY` if running on remote chain."
