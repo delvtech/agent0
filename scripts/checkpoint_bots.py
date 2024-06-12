@@ -174,7 +174,7 @@ def run_checkpoint_bot(
                 continue
             logging_str = (
                 f"Pool {pool_name} for {checkpoint_time=}: "
-                f"Checkpoint succesfully mined with transaction_hash={receipt['transactionHash'].hex()}"
+                f"Checkpoint successfully mined with transaction_hash={receipt['transactionHash'].hex()}"
             )
             logging.info(logging_str)
             if log_to_rollbar:
@@ -212,11 +212,7 @@ def run_checkpoint_bot(
             f"Sleeping for {adjusted_sleep_duration} seconds."
         )
         logging.info(logging_str)
-        if log_to_rollbar:
-            log_rollbar_message(
-                message=logging_str,
-                log_level=logging.INFO,
-            )
+        # No need to log sleeping info to rollbar here
 
         time.sleep(adjusted_sleep_duration)
 
