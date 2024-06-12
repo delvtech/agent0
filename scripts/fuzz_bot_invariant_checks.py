@@ -56,7 +56,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         chain = Chain(parsed_args.rpc_uri)
         registry_address = parsed_args.registry_addr
 
-    rollbar_environment_name = "testnet_fuzz_bot_invariant_check"
+    rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # We calculate how many blocks we should wait before checking for a new pool

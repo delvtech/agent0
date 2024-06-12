@@ -21,6 +21,7 @@ from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
 from agent0.ethpy.base import smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.hypertypes import IHyperdriveContract
 from agent0.utils import async_runner
 
@@ -62,6 +63,7 @@ def run_checkpoint_bot(
     check_checkpoint: bool = False,
     block_to_exit: int | None = None,
     pool_name: str | None = None,
+    log_to_rollbar=False,
 ):
     """Runs the checkpoint bot.
 
@@ -116,21 +118,28 @@ def run_checkpoint_bot(
         enough_time_has_elapsed = checkpoint_portion_elapsed >= CHECKPOINT_WAITING_PERIOD * checkpoint_duration
         checkpoint_doesnt_exist = not does_checkpoint_exist(hyperdrive_contract, checkpoint_time)
 
-        logging.info(
-            "Pool %s for checkpointTime=%s: "
+        logging_str = (
+            f"Pool {pool_name} for checkpointTime={checkpoint_time}: "
             "Checking if checkpoint needed. "
-            "timestamp=%s checkpoint_portion_elapsed=%s "
-            "enough_time_has_elapsed=%s checkpoint_doesnt_exist=%s",
-            pool_name,
-            checkpoint_time,
-            timestamp,
-            checkpoint_portion_elapsed,
-            enough_time_has_elapsed,
-            checkpoint_doesnt_exist,
+            f"{timestamp=} {checkpoint_portion_elapsed=} "
+            f"{enough_time_has_elapsed=} {checkpoint_doesnt_exist=}"
         )
+        logging.info(logging_str)
+        if log_to_rollbar:
+            log_rollbar_message(
+                message=logging_str,
+                log_level=logging.INFO,
+            )
 
         if enough_time_has_elapsed and checkpoint_doesnt_exist:
-            logging.info("Pool %s for checkpointTime=%s: submitting checkpoint", pool_name, checkpoint_time)
+            logging_str = f"Pool {pool_name} for {checkpoint_time=}: submitting checkpoint"
+            logging.info(logging_str)
+            if log_to_rollbar:
+                log_rollbar_message(
+                    message=logging_str,
+                    log_level=logging.INFO,
+                )
+
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
             # will need to make this more robust so that we retry this
@@ -147,22 +156,31 @@ def run_checkpoint_bot(
                     *fn_args,
                 )
             except Exception as e:  # pylint: disable=broad-except
-                logging.warning(
-                    "Pool %s for checkpointTime=%s: checkpoint transaction failed with exception=%s, retrying",
-                    pool_name,
-                    checkpoint_time,
-                    repr(e),
+                logging_str = (
+                    f"Pool {pool_name} for {checkpoint_time=}: checkpoint transaction failed, retrying. {repr(e)}.",
                 )
+                logging.warning(logging_str)
+                if log_to_rollbar:
+                    log_rollbar_exception(
+                        exception=e,
+                        log_level=logging.WARNING,
+                        rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}",
+                    )
                 # Catch all errors here and retry next iteration
                 # TODO adjust wait period
                 time.sleep(1)
                 continue
-            logging.info(
-                "Pool %s for checkpointTime=%s: Checkpoint succesfully mined with receipt==%s",
-                pool_name,
-                checkpoint_time,
-                receipt["transactionHash"].hex(),
+            logging_str = (
+                f"Pool {pool_name} for {checkpoint_time=}: "
+                f"Checkpoint succesfully mined with transaction_hash={receipt['transactionHash'].hex()}"
             )
+            logging.info(logging_str)
+            if log_to_rollbar:
+                log_rollbar_message(
+                    message=logging_str,
+                    log_level=logging.INFO,
+                )
+
             if check_checkpoint:
                 # TODO: Add crash report
                 assert receipt["status"] == 1, "Checkpoint failed."
@@ -187,12 +205,17 @@ def run_checkpoint_bot(
             sleep_duration = checkpoint_duration * CHECKPOINT_WAITING_PERIOD - checkpoint_portion_elapsed
         # Adjust sleep duration by the speedup factor
         adjusted_sleep_duration = sleep_duration / (block_timestamp_interval / block_time)
-        logging.info(
-            "Pool %s: Current time is %s. Sleeping for %s seconds.",
-            pool_name,
-            datetime.datetime.fromtimestamp(timestamp),
-            adjusted_sleep_duration,
+        logging_str = (
+            f"Pool {pool_name}: Current time is {datetime.datetime.fromtimestamp(timestamp)}. "
+            f"Sleeping for {adjusted_sleep_duration} seconds."
         )
+        logging.info(logging_str)
+        if log_to_rollbar:
+            log_rollbar_message(
+                message=logging_str,
+                log_level=logging.INFO,
+            )
+
         time.sleep(adjusted_sleep_duration)
 
 
@@ -207,6 +230,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     # pylint: disable=too-many-branches
 
     parsed_args = parse_arguments(argv)
+
+    rollbar_environment_name = "checkpoint_bot"
+    log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # Initialize
     if parsed_args.infra:
@@ -266,6 +292,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 pool_name=pool_name,
                 block_time=block_time,
                 block_timestamp_interval=block_timestamp_interval,
+                log_to_rollbar=log_to_rollbar,
             )
             for pool_name, pool_addr in deployed_pools.items()
         ]
