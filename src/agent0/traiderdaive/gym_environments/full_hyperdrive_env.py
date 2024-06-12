@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -15,8 +15,7 @@ from fixedpointmath import FixedPoint
 from gymnasium import spaces
 from scipy.special import expit
 
-from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
 
 # Global suppression of warnings, TODO fix
 warnings.filterwarnings("ignore")
@@ -67,6 +66,36 @@ class FullHyperdriveEnv(gym.Env):
         sample_actions: bool = False
         eval_mode: bool = False
 
+        # Defines which columns from pool info to include in the observation space
+        pool_info_columns: list[str] = field(
+            default_factory=lambda: [
+                "epoch_timestamp",
+                "share_reserves",
+                "share_adjustment",
+                "zombie_base_proceeds",
+                "zombie_share_reserves",
+                "bond_reserves",
+                "lp_total_supply",
+                "vault_share_price",
+                "longs_outstanding",
+                "long_average_maturity_time",
+                "shorts_outstanding",
+                "short_average_maturity_time",
+                "withdrawal_shares_ready_to_withdraw",
+                "withdrawal_shares_proceeds",
+                "lp_share_price",
+                "long_exposure",
+                "total_supply_withdrawal_shares",
+                "gov_fees_accrued",
+                "hyperdrive_base_balance",
+                "hyperdrive_eth_balance",
+                "variable_rate",
+                "vault_shares",
+                "spot_price",
+                "fixed_rate",
+            ]
+        )
+
     # Defines allowed render modes and fps
     metadata = {"render_modes": ["human"], "render_fps": 4}
 
@@ -91,7 +120,7 @@ class FullHyperdriveEnv(gym.Env):
 
         # Define the rl bot
         self.rl_bot = self.chain.init_agent(
-            base=gym_config.rl_agent_budget, pool=self.interactive_hyperdrive, name="rl_bot"
+            base=gym_config.rl_agent_budget, eth=FixedPoint(100), pool=self.interactive_hyperdrive, name="rl_bot"
         )
         # Define the random bots
         self.random_bots = [
@@ -181,8 +210,7 @@ class FullHyperdriveEnv(gym.Env):
         # LP: -> [volume, value]
         # Here, orders_i is a direct mapping to agent.wallet
         # Note normalize_time_to_maturity will always be 0 for LP positions
-        # Removing timestamp and block number from pool state
-        self.num_pool_features = len(self.interactive_hyperdrive.get_pool_info(coerce_float=True).columns) - 2
+        self.num_pool_features = len(gym_config.pool_info_columns)
         inf = 1e10
         self.observation_space = spaces.Dict(
             {
@@ -297,7 +325,7 @@ class FullHyperdriveEnv(gym.Env):
                 orders_to_close_index = np.nonzero(close_orders_probability > self.gym_config.close_threshold)[0]
 
             # TODO Close orders
-            trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
+            trade_positions = rl_bot_wallet[rl_bot_wallet["token_type"] == trade_type.name]
             # Ensure positions are sorted from oldest to newest
             trade_positions = trade_positions.sort_values("maturity_time")
             num_trade_positions = len(trade_positions)
@@ -312,12 +340,12 @@ class FullHyperdriveEnv(gym.Env):
                     if trade_type == TradeTypes.LONG:
                         self.rl_bot.close_long(
                             maturity_time=int(position_to_close["maturity_time"]),
-                            bonds=FixedPoint(position_to_close["position"]),
+                            bonds=FixedPoint(position_to_close["token_balance"]),
                         )
                     elif trade_type == TradeTypes.SHORT:
                         self.rl_bot.close_short(
                             maturity_time=int(position_to_close["maturity_time"]),
-                            bonds=FixedPoint(position_to_close["position"]),
+                            bonds=FixedPoint(position_to_close["token_balance"]),
                         )
             except Exception as err:  # pylint: disable=broad-except
                 # TODO use logging here
@@ -332,7 +360,7 @@ class FullHyperdriveEnv(gym.Env):
         min_tx_amount = self.interactive_hyperdrive.config.minimum_transaction_amount * 2
         for trade_type in TradeTypes:
             # Only open trades if we haven't maxed out positions
-            trade_positions = rl_bot_wallet[rl_bot_wallet["base_token_type"] == trade_type.name]
+            trade_positions = rl_bot_wallet[rl_bot_wallet["token_type"] == trade_type.name]
             num_trade_positions = len(trade_positions)
             if num_trade_positions < self.gym_config.max_positions_per_type:
                 new_order_probability = expit(open_long_short_actions[trade_type.value, 0])
@@ -465,6 +493,7 @@ class FullHyperdriveEnv(gym.Env):
         return {}
 
     def _get_rl_wallet_positions(self, coerce_float: bool) -> pd.DataFrame:
+        # TODO can we use self.rl_bot.get_positions()?
         current_wallet = self.interactive_hyperdrive.get_positions(coerce_float=coerce_float)
         # Filter for rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
@@ -473,34 +502,10 @@ class FullHyperdriveEnv(gym.Env):
     def _get_observation(self) -> dict[str, np.ndarray]:
         # Get the latest pool state feature from the db
         pool_state_df = self.interactive_hyperdrive.get_pool_info(coerce_float=True)
-        pool_state_columns = [c for c in pool_state_df.columns if c not in ("timestamp", "block_number")]
-        pool_state_df = pool_state_df[pool_state_columns].iloc[-1].astype(float)
+        pool_state_df = pool_state_df[self.gym_config.pool_info_columns].iloc[-1].astype(float)
 
         out_obs = {}
         out_obs["pool_features"] = pool_state_df.values
-
-        # Observation data uses floats
-        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=True)
-
-        position_duration = self.interactive_hyperdrive.config.position_duration
-        # We convert timestamp to epoch time here
-        # We keep negative values for time past maturity
-        rl_bot_wallet["normalized_time_remaining"] = (
-            rl_bot_wallet["maturity_time"] - (rl_bot_wallet["timestamp"].astype(int) / int(1e9))
-        ) / position_duration
-
-        long_orders = rl_bot_wallet[rl_bot_wallet["base_token_type"] == "LONG"]
-        # Ensure data is the same as the action space
-        long_orders = long_orders.sort_values("maturity_time")
-        long_orders = long_orders[["position", "pnl", "normalized_time_remaining"]].values.flatten()
-
-        short_orders = rl_bot_wallet[rl_bot_wallet["base_token_type"] == "LONG"]
-        # Ensure data is the same as the action space
-        short_orders = short_orders.sort_values("maturity_time")
-        short_orders = short_orders[["position", "pnl", "normalized_time_remaining"]].values.flatten()
-
-        lp_orders = rl_bot_wallet[rl_bot_wallet["base_token_type"] == "LP"]
-        lp_orders = lp_orders[["position", "pnl"]].values.flatten()
 
         # TODO can also add other features, e.g., opening spot price
         # Long Orders: trade type, order_i -> [volume, value, normalized_time_remaining]
@@ -510,10 +515,37 @@ class FullHyperdriveEnv(gym.Env):
         # LP: -> [volume, value]
         out_obs["lp_orders"] = np.zeros(2)
 
-        # Add data to static size arrays
-        out_obs["long_orders"][: len(long_orders)] = long_orders
-        out_obs["short_orders"][: len(short_orders)] = short_orders
-        out_obs["lp_orders"][: len(lp_orders)] = lp_orders
+        # Observation data uses floats
+        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=True)
+
+        if not rl_bot_wallet.empty:
+            position_duration = self.interactive_hyperdrive.config.position_duration
+            # We convert timestamp to epoch time here
+            # We keep negative values for time past maturity
+            current_block = self.interactive_hyperdrive.interface.get_current_block()
+            timestamp = self.interactive_hyperdrive.interface.get_block_timestamp(current_block)
+            rl_bot_wallet["normalized_time_remaining"] = (
+                rl_bot_wallet["maturity_time"] - timestamp
+            ) / position_duration
+
+            long_orders = rl_bot_wallet[rl_bot_wallet["token_id"] == "LONG"]
+            # Ensure data is the same as the action space
+            long_orders = long_orders.sort_values("maturity_time")
+            # long_orders["pnl"] = long_orders["unrealized_"]
+            long_orders = long_orders[["token_balance", "pnl", "normalized_time_remaining"]].values.flatten()
+
+            short_orders = rl_bot_wallet[rl_bot_wallet["token_type"] == "LONG"]
+            # Ensure data is the same as the action space
+            short_orders = short_orders.sort_values("maturity_time")
+            short_orders = short_orders[["token_balance", "pnl", "normalized_time_remaining"]].values.flatten()
+
+            lp_orders = rl_bot_wallet[rl_bot_wallet["token_type"] == "LP"]
+            lp_orders = lp_orders[["token_balance", "pnl"]].values.flatten()
+
+            # Add data to static size arrays
+            out_obs["long_orders"][: len(long_orders)] = long_orders
+            out_obs["short_orders"][: len(short_orders)] = short_orders
+            out_obs["lp_orders"][: len(lp_orders)] = lp_orders
 
         # Sanity check
         return out_obs
@@ -521,7 +553,7 @@ class FullHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         # The total delta for this episode
 
-        current_wallet = self.interactive_hyperdrive.get_positions()
+        current_wallet = self.interactive_hyperdrive.get_positions(show_closed_positions=True, coerce_float=True)
         # Filter by rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
         # The rl_bot_wallet shows the pnl of all positions
@@ -529,16 +561,13 @@ class FullHyperdriveEnv(gym.Env):
         # TODO one option here is to only look at base positions instead of sum across all positions.
         # TODO handle the case where pnl calculation doesn't return a number
         # when you can't close the position
-        base_pnl = float(rl_bot_wallet[rl_bot_wallet["token_type"] == "WETH"]["pnl"].sum())
+
         total_pnl = float(rl_bot_wallet["pnl"].sum())
 
         # reward is in units of base
         # We use the change in pnl as the reward
-        current_reward = (
-            base_pnl * self.gym_config.base_reward_scale + total_pnl * self.gym_config.position_reward_scale
-        )
-        reward = current_reward - self._prev_pnl
-        self._prev_pnl = current_reward
+        reward = total_pnl - self._prev_pnl
+        self._prev_pnl = total_pnl
 
         return reward
 
