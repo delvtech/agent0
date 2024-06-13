@@ -531,7 +531,6 @@ class FullHyperdriveEnv(gym.Env):
             long_orders = rl_bot_wallet[rl_bot_wallet["token_id"] == "LONG"]
             # Ensure data is the same as the action space
             long_orders = long_orders.sort_values("maturity_time")
-            # long_orders["pnl"] = long_orders["unrealized_"]
             long_orders = long_orders[["token_balance", "pnl", "normalized_time_remaining"]].values.flatten()
 
             short_orders = rl_bot_wallet[rl_bot_wallet["token_type"] == "LONG"]
