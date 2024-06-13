@@ -294,7 +294,7 @@ class FullHyperdriveEnv(gym.Env):
 
         # Get current wallet positions
         # We need exact decimals here to avoid rounding errors
-        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
+        rl_bot_wallet = self.rl_bot.get_positions(coerce_float=False)
 
         # TODO should likely try and handle these trades as fast as possible, or eventually
         # allow for reordering.
@@ -354,7 +354,7 @@ class FullHyperdriveEnv(gym.Env):
                 return True
 
         # Get current wallet positions again after closing trades
-        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=False)
+        rl_bot_wallet = self.rl_bot.get_positions(coerce_float=False)
 
         # Open trades
         min_tx_amount = self.interactive_hyperdrive.config.minimum_transaction_amount * 2
@@ -492,13 +492,6 @@ class FullHyperdriveEnv(gym.Env):
         # TODO return aux info here
         return {}
 
-    def _get_rl_wallet_positions(self, coerce_float: bool) -> pd.DataFrame:
-        # TODO can we use self.rl_bot.get_positions()?
-        current_wallet = self.interactive_hyperdrive.get_positions(coerce_float=coerce_float)
-        # Filter for rl bot
-        rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
-        return rl_bot_wallet
-
     def _get_observation(self) -> dict[str, np.ndarray]:
         # Get the latest pool state feature from the db
         pool_state_df = self.interactive_hyperdrive.get_pool_info(coerce_float=True)
@@ -516,7 +509,7 @@ class FullHyperdriveEnv(gym.Env):
         out_obs["lp_orders"] = np.zeros(2)
 
         # Observation data uses floats
-        rl_bot_wallet = self._get_rl_wallet_positions(coerce_float=True)
+        rl_bot_wallet = self.rl_bot.get_positions(coerce_float=True)
 
         if not rl_bot_wallet.empty:
             position_duration = self.interactive_hyperdrive.config.position_duration
