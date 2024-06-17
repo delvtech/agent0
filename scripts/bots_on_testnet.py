@@ -311,15 +311,26 @@ while True:
     if os.path.exists("latestrates.csv"):
         os.remove("latestrates.csv")
     for agent in agents:
+        start_time = time.time()
         latest_rate = float(agent._active_pool.interface.calc_spot_rate())
-        print(f"{agent.name:<14} {latest_rate:.2%}")
-        with open("latestrates.csv", "a") as f:
+        print(f"{agent.name:<14} {latest_rate:.2%} calculated in {time.time() - start_time:.2f}s")
+        start_time = time.time()
+        with open("latestrates.csv", "a", encoding="UTF-8") as f:
             f.write(f"{agent.name},{latest_rate}\n")
+        print(f"updated latestrates.csv in {time.time() - start_time:.2f}s")
+        start_time = time.time()
         logger.info(f"{agent.name:<14} ({agent.address}) BASE={float(agent.get_wallet().balance.amount):,.0f} ETH={web3.eth.get_balance(agent.address)/1e18:,.5f}")
+        print(f"logged agent info in {time.time() - start_time:.2f}s")
+        start_time = time.time()
         logger.info(agent._active_pool.interface.current_pool_state.pool_info)
+        print(f"logged pool info in {time.time() - start_time:.2f}s")
         if agent.get_wallet().balance.amount < agent.TARGET_BASE:
+            start_time = time.time()
             mint(agent)
+            print(f"minted base in {time.time() - start_time:.2f}s")
+        start_time = time.time()
         event_list = agent.execute_policy_action()
+        print(f"executed policy in {time.time() - start_time:.2f}s")
         for event in event_list:
             print(f"agent {agent.name}({agent.address}) decided to trade: {event}")
     previous_block = latest_block
