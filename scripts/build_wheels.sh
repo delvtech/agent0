@@ -4,9 +4,9 @@
 
 echo "install required packages for building wheels"
 python -m pip install --upgrade pip uv
-uv venv .venv -p 3.10
+python -m venv --upgrade-deps .venv
 source .venv/bin/activate
-uv pip install 'agent0[all]@.' build
+pip install '.[all]' build
 
 echo "build the wheel for the current platform"
 python -m build

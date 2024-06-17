@@ -26,9 +26,9 @@ jobs:
 
       - name: install requirements
         run: |
-          uv venv .venv -p 3.10
+          python -m venv --upgrade-deps .venv
           source .venv/bin/activate
-          uv pip install -e .[all]
+          pip install -e '.[all]'
 
       - name: analysing code with pyright
         run: |
