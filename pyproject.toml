@@ -38,7 +38,7 @@ dependencies = [
     "matplotlib",
     "mplfinance",
     "nest_asyncio",
-    "numpy",
+    "numpy==1.26.4",
     "pandas",
     "pandas-stubs",
     "psycopg[binary]",
