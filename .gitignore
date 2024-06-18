@@ -24,6 +24,9 @@ elf-env
 .python-version
 __pypackages__/
 
+# Throwaway scripts
+.scripts
+
 # default logging directory
 .logging
 
