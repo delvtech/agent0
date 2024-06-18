@@ -97,22 +97,17 @@ def arb_fixed_rate_down(
             FixedPoint((maturity_time - pool_state.block_time + 12))
             / FixedPoint(interface.pool_config.position_duration),
         )
-        logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
-        reduce_short_amount = minimum(
-            short.balance, bonds_needed / curve_portion, interface.calc_max_long(max_trade_amount_base, pool_state)
-        )
-        if reduce_short_amount > min_trade_amount_bonds:
-            bonds_needed -= reduce_short_amount * curve_portion
-            logging.debug(
-                "reducing short by %s\nreduce_short_amount*curve_portion = %s",
-                reduce_short_amount,
-                reduce_short_amount * curve_portion,
+        if curve_portion > FixedPoint(0):
+            logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
+            reduce_short_amount = minimum(
+                short.balance, bonds_needed / curve_portion, interface.calc_max_long(max_trade_amount_base, pool_state)
             )
-            action_list.append(
-                close_short_trade(
-                    reduce_short_amount, maturity_time, slippage_tolerance, base_fee_multiple, priority_fee_multiple
+            if reduce_short_amount > min_trade_amount_bonds:
+                action_list.append(
+                    close_short_trade(
+                        reduce_short_amount, maturity_time, slippage_tolerance, base_fee_multiple, priority_fee_multiple
+                    )
                 )
-            )
     # Open a new long, if there's still a need, and we have money
     if max_trade_amount_base >= min_trade_amount_bonds and bonds_needed > min_trade_amount_bonds:
         max_long_shares = interface.calc_shares_in_given_bonds_out_down(
@@ -186,14 +181,15 @@ def arb_fixed_rate_up(
             FixedPoint(maturity_time - pool_state.block_time + 12)
             / FixedPoint(interface.pool_config.position_duration),
         )
-        logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
-        reduce_long_amount = minimum(
-            long.balance, bonds_needed / curve_portion, interface.calc_max_short(max_trade_amount_base, pool_state)
-        )
-        if reduce_long_amount > min_trade_amount_bonds:
-            bonds_needed -= reduce_long_amount * curve_portion
-            logging.debug("reducing long by %s", reduce_long_amount)
-            action_list.append(close_long_trade(reduce_long_amount, maturity_time, slippage_tolerance))
+        if curve_portion > FixedPoint(0):
+            logging.info("curve portion is %s\nbonds needed is %s", curve_portion, bonds_needed)
+            reduce_long_amount = minimum(
+                long.balance, bonds_needed / curve_portion, interface.calc_max_short(max_trade_amount_base, pool_state)
+            )
+            if reduce_long_amount > min_trade_amount_bonds:
+                bonds_needed -= reduce_long_amount * curve_portion
+                logging.debug("reducing long by %s", reduce_long_amount)
+                action_list.append(close_long_trade(reduce_long_amount, maturity_time, slippage_tolerance, gas_limit))
     # Open a new short, if there's still a need, and we have money
     if max_trade_amount_base >= min_trade_amount_bonds and bonds_needed > min_trade_amount_bonds:
         max_short = interface.calc_max_short(max_trade_amount_base, pool_state)
