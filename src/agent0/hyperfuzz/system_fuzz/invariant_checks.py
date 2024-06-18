@@ -364,12 +364,8 @@ def _check_lp_share_price(
     test_tolerance = previous_lp_share_price * FixedPoint(str(normalized_test_epsilon))
 
     # Relax check if
-    # - previous checkpoint wasn't minted
     # - a checkpoint was minted on the current block
     # - closing mature position this block
-
-    # Determine if the previous checkpoint has been minted by looking at the checkpoint's vault share price.
-    previous_checkpoint_minted = previous_pool_state.checkpoint.vault_share_price > 0
 
     # Determine if a checkpoint was minted on the current block
     # -1 to get events from current block
@@ -398,7 +394,7 @@ def _check_lp_share_price(
             break
 
     # Full check
-    if previous_checkpoint_minted and not currently_minting_checkpoint and not closing_mature_position:
+    if not currently_minting_checkpoint and not closing_mature_position:
         if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
             failed = True
     # Relaxed check
