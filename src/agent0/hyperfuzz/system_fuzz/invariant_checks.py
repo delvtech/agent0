@@ -394,7 +394,7 @@ def _check_lp_share_price(
             break
 
     # Full check
-    if currently_minting_checkpoint and not closing_mature_position:
+    if not currently_minting_checkpoint and not closing_mature_position:
         if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
             failed = True
     # Relaxed check
