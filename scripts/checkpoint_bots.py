@@ -7,6 +7,7 @@ import asyncio
 import datetime
 import logging
 import os
+import random
 import sys
 import time
 from functools import partial
@@ -125,7 +126,6 @@ def run_checkpoint_bot(
             f"Pool {pool_name} for checkpointTime={checkpoint_time}: "
             "Checking if checkpoint needed. "
             f"{timestamp=} {checkpoint_portion_elapsed=} "
-            f"{enough_time_has_elapsed=} {checkpoint_doesnt_exist=}"
         )
         logging.info(logging_str)
         if log_to_rollbar:
@@ -142,6 +142,11 @@ def run_checkpoint_bot(
                     message=logging_str,
                     log_level=logging.INFO,
                 )
+
+            # To prevent race conditions with the checkpoint bot submitting transactions
+            # for multiple pools simultaneously, we wait a random amount of time before
+            # actually submitting a checkpoint
+            time.sleep(random.uniform(0, 5))
 
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
@@ -170,8 +175,6 @@ def run_checkpoint_bot(
                         rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}",
                     )
                 # Catch all errors here and retry next iteration
-                # TODO adjust wait period
-                time.sleep(1)
                 continue
             logging_str = (
                 f"Pool {pool_name} for {checkpoint_time=}: "
