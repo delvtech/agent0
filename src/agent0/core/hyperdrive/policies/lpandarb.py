@@ -189,7 +189,11 @@ def arb_fixed_rate_up(
             if reduce_long_amount > min_trade_amount_bonds:
                 bonds_needed -= reduce_long_amount * curve_portion
                 logging.debug("reducing long by %s", reduce_long_amount)
-                action_list.append(close_long_trade(reduce_long_amount, maturity_time, slippage_tolerance, base_fee_multiple, priority_fee_multiple))
+                action_list.append(
+                    close_long_trade(
+                        reduce_long_amount, maturity_time, slippage_tolerance, base_fee_multiple, priority_fee_multiple
+                    )
+                )
     # Open a new short, if there's still a need, and we have money
     if max_trade_amount_base >= min_trade_amount_bonds and bonds_needed > min_trade_amount_bonds:
         max_short = interface.calc_max_short(max_trade_amount_base, pool_state)
