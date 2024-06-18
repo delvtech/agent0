@@ -391,7 +391,7 @@ def test_matured_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: L
     # arbitrage it back
     arbitrage_andy.open_long(base=FixedPoint(100_000))
 
-    chain.advance_time(int(YEAR_IN_SECONDS * 2), create_checkpoints=False)
+    interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS * 2), create_checkpoints=False)
 
     # check Andy's trades to make sure he doesn't CloseLong
     event = arbitrage_andy.execute_policy_action()
@@ -409,7 +409,7 @@ def test_matured_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: 
     # arbitrage it back
     arbitrage_andy.open_short(bonds=FixedPoint(100_000))
 
-    chain.advance_time(int(YEAR_IN_SECONDS * 2), create_checkpoints=False)
+    interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS * 2), create_checkpoints=False)
 
     # check Andy's trades to make sure he doesn't CloseShort
     event = arbitrage_andy.execute_policy_action()
