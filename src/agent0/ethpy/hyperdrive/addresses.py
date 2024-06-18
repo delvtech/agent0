@@ -66,7 +66,7 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     Returns
     -------
     dict[str, ChecksumAddress]
-        A dictionary keyed by the pool name (e.g., `StETHHyperdrive_14_day`)
+        A dictionary keyed by the pool name (e.g., `StETHHyperdrive_14day`)
         with a value of the address of the deployed hyperdrive pool.
     """
     # TODO
@@ -110,7 +110,7 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
         pool_config = get_hyperdrive_pool_config(hyperdrive_contract)
         # Convert seconds to days
         position_duration = str(pool_config.position_duration // (60 * 60 * 24))
-        pool_name = info.name + "_" + position_duration + "_day"
+        pool_name = info.name + "_" + position_duration + "day"
 
         out_addresses[pool_name] = address
 
