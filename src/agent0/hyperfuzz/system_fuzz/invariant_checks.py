@@ -363,17 +363,32 @@ def _check_lp_share_price(
     current_lp_share_price = pool_state.pool_info.lp_share_price
     test_tolerance = previous_lp_share_price * FixedPoint(str(normalized_test_epsilon))
 
+    # Relax check if
+    # - previous checkpoint wasn't minted
+    # - a checkpoint was minted on the current block
+    # - closing mature position this block
+
     # Determine if the previous checkpoint has been minted by looking at the checkpoint's vault share price.
     previous_checkpoint_minted = previous_pool_state.checkpoint.vault_share_price > 0
 
+    # Determine if a checkpoint was minted on the current block
+    # -1 to get events from current block
+    checkpoint_events = interface.hyperdrive_contract.events.CreateCheckpoint.get_logs(
+        fromBlock=pool_state.block_number - 1
+    )
+    currently_minting_checkpoint = False
+    if len(list(checkpoint_events)) > 0:
+        currently_minting_checkpoint = True
+
     # Determine if matured positions were closed this timestamp
     # We look for close events on this block
-    events = []
-    events.extend(interface.hyperdrive_contract.events.CloseShort.get_logs(fromBlock=pool_state.block_number))
-    events.extend(interface.hyperdrive_contract.events.CloseLong.get_logs(fromBlock=pool_state.block_number))
+    # -1 to get events from current block
+    trade_events = []
+    trade_events.extend(interface.hyperdrive_contract.events.CloseShort.get_logs(fromBlock=pool_state.block_number - 1))
+    trade_events.extend(interface.hyperdrive_contract.events.CloseLong.get_logs(fromBlock=pool_state.block_number - 1))
 
     closing_mature_position = False
-    for event in events:
+    for event in trade_events:
         # maturityTime should always be part of close short/long
         assert "maturityTime" in event.args
         # Race condition, filter only on events from the current block
@@ -382,11 +397,11 @@ def _check_lp_share_price(
             closing_mature_position = True
             break
 
-    # Relax check if previous checkpoint wasn't minted or closing mature position this block
-    if previous_checkpoint_minted and not closing_mature_position:
+    # Full check
+    if previous_checkpoint_minted and not currently_minting_checkpoint and not closing_mature_position:
         if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
             failed = True
-    # Only check that the lp share price doesn't decrease by more than our tolerance if checkpoint hasn't been minted.
+    # Relaxed check
     else:
         if (previous_lp_share_price - current_lp_share_price) >= test_tolerance:
             failed = True

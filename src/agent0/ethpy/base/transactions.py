@@ -508,6 +508,9 @@ async def _async_send_transaction_and_wait_for_receipt(
             trace = web3.tracing.trace_transaction(tx_receipt["transactionHash"])  # type: ignore
             # Trace gives a list of values, the last one should contain the error
             error_message = trace[-1].get("error", None)
+            # If no trace, add back in status == 0 error
+            if error_message is None:
+                error_message = f"Receipt has status of 0. No trace found: {trace=}"
         # TODO does this need to be BaseException?
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Don't crash in crash reporting
@@ -737,6 +740,9 @@ def _send_transaction_and_wait_for_receipt(
             trace = web3.tracing.trace_transaction(tx_receipt["transactionHash"])  # type: ignore
             # Trace gives a list of values, the last one should contain the error
             error_message = trace[-1].get("error", None)
+            # If no trace, add back in status == 0 error
+            if error_message is None:
+                error_message = f"Receipt has status of 0. No trace found: {trace=}"
         # TODO does this need to be BaseException?
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Don't crash in crash reporting
