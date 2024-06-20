@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from numpy.random._generator import Generator
+from numpy.random import Generator
 
 from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent

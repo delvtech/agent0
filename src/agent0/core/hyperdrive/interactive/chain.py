@@ -15,7 +15,7 @@ import pandas as pd
 from docker import DockerClient
 from docker.errors import NotFound
 from docker.models.containers import Container
-from numpy.random._generator import Generator
+from numpy.random import Generator
 from web3.types import BlockData, Timestamp
 
 from agent0.chainsync import PostgresConfig
