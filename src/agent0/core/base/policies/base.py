@@ -12,7 +12,7 @@ from numpy.random import default_rng
 from agent0.core.base.types import Freezable
 
 if TYPE_CHECKING:
-    from numpy.random._generator import Generator
+    from numpy.random import Generator
 
     from agent0.core.base.agent import EthWallet
     from agent0.core.base.types import Trade

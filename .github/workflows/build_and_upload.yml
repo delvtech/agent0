@@ -4,18 +4,17 @@ on:
   push:
     branches:
       - main
-
 jobs:
   detect-version-changes:
     uses: ./.github/workflows/check_version.yml
     with:
       file_path: pyproject.toml
 
-  build-wheels:
+  build-wheels-linux:
     needs: detect-version-changes
     # Run on main if version has changed
     if: needs.detect-version-changes.outputs.version_changed == 'true'
-    name: build wheel
+    name: build linux wheel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -39,22 +38,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux
-          path: ./wheelhouse/*.whl
-
-      - name: Get the list of Python package versions
-        shell: bash
-        run: |
-          FREEZE_FILE="frozen-requirements.txt"
-          timestamp="$(date)"
-          version="$(git describe --abbrev=12 --always)"
-          echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
-          pip3 freeze | tee -a $FREEZE_FILE
+          path: dist/*.whl
 
       - name: Upload the package versions as an artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Frozen PIP package set
-          path: ./frozen-requirements.txt
+          name: frozen-dependencies
+          path: dist/frozen-requirements.txt
 
   build-sdist:
     needs: detect-version-changes
@@ -74,18 +64,29 @@ jobs:
           path: dist/*.tar.gz
 
   upload_pypi:
-    needs: [build-wheels, build-sdist, detect-version-changes]
+    needs: [build-wheels-linux, build-sdist, detect-version-changes]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write
+      contents: write
     # Run on main if version has changed
     if: needs.detect-version-changes.outputs.version_changed == 'true'
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
         with:
-          # unpacks all wheels into dist/
           pattern: wheels-*
           path: dist
           merge-multiple: true
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Download dependency list artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: frozen-requirements.txt
+          path: dist
+      - name: Upload dependency list to release
+        shell: bash
+        run: |
+          gh release upload ${{github.event.release.tag_name}} ./frozen-requirements.txt
+      - name: Upload to pypi
+        uses: pypa/gh-action-pypi-publish@release/v1

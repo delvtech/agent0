@@ -7,7 +7,7 @@ import logging
 from copy import deepcopy
 
 from eth_account.signers.local import LocalAccount
-from numpy.random._generator import Generator
+from numpy.random import Generator
 from web3.types import Nonce
 
 from agent0.core.base import MarketType, Trade

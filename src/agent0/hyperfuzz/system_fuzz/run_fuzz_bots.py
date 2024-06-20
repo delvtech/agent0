@@ -6,7 +6,7 @@ import logging
 from typing import Callable
 
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
+from numpy.random import Generator
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key

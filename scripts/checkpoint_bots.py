@@ -7,6 +7,7 @@ import asyncio
 import datetime
 import logging
 import os
+import random
 import sys
 import time
 from functools import partial
@@ -58,11 +59,11 @@ def run_checkpoint_bot(
     chain: Chain,
     pool_address: ChecksumAddress,
     sender: LocalAccount,
+    pool_name: str,
     block_time: int = 1,
     block_timestamp_interval: int = 1,
     check_checkpoint: bool = False,
     block_to_exit: int | None = None,
-    pool_name: str | None = None,
     log_to_rollbar=False,
 ):
     """Runs the checkpoint bot.
@@ -75,6 +76,8 @@ def run_checkpoint_bot(
         The pool address.
     sender: LocalAccount
         The sender of the transaction.
+    pool_name: str
+        The name of the pool from `get_hyperdrive_addresses_from_registry`. Only used in logging.
     block_time: int
         The block time in seconds.
     block_timestamp_interval: int
@@ -83,8 +86,6 @@ def run_checkpoint_bot(
         Whether or not to check the checkpoint after it's been made.
     block_to_exit: int | None
         The block number to exit the loop.
-    pool_name: str | None
-        The name of the pool. Only used for logging
     log_to_rollbar: bool
         Whether or not to log to rollbar.
     """
@@ -101,6 +102,16 @@ def run_checkpoint_bot(
     # to reduce the probability of needing to mint a checkpoint.
     config = get_hyperdrive_pool_config(hyperdrive_contract)
     checkpoint_duration = config.checkpoint_duration
+
+    # Rollbar assumes any number longer than 2 integers is "data" and groups them together.
+    # We want to ensure that the pool name is always in different groups, so we add
+    # an underscore to any integers within the position duration string.
+    # e.g.
+    # `ERC4626Hyperdrive_14day` -> `ERC4_6_2_6_Hyperdrive_1_4_day`
+    # `RETHHyperdrive_30day` -> `RETHHyperdrive_3_0_day`
+    # TODO this might be done better on the rollbar side with creating a grouping fingerprint
+    # TODO ERC4626 gets split up here, may want to only do this for the position duration string.
+    pool_name = "".join([c + "_" if c.isdigit() else c for c in pool_name])
 
     while True:
         # Check if we've reached the block to exit
@@ -125,7 +136,6 @@ def run_checkpoint_bot(
             f"Pool {pool_name} for checkpointTime={checkpoint_time}: "
             "Checking if checkpoint needed. "
             f"{timestamp=} {checkpoint_portion_elapsed=} "
-            f"{enough_time_has_elapsed=} {checkpoint_doesnt_exist=}"
         )
         logging.info(logging_str)
         if log_to_rollbar:
@@ -142,6 +152,11 @@ def run_checkpoint_bot(
                     message=logging_str,
                     log_level=logging.INFO,
                 )
+
+            # To prevent race conditions with the checkpoint bot submitting transactions
+            # for multiple pools simultaneously, we wait a random amount of time before
+            # actually submitting a checkpoint
+            time.sleep(random.uniform(0, 5))
 
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
@@ -170,8 +185,6 @@ def run_checkpoint_bot(
                         rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}",
                     )
                 # Catch all errors here and retry next iteration
-                # TODO adjust wait period
-                time.sleep(1)
                 continue
             logging_str = (
                 f"Pool {pool_name} for {checkpoint_time=}: "

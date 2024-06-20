@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
-from numpy.random._generator import Generator
+from numpy.random import Generator
 from web3.datastructures import AttributeDict, MutableAttributeDict
 
 
