@@ -149,7 +149,9 @@ async def async_execute_agent_trades(
     # To do this, we need to manually set the nonce, so we get the base transaction count here
     # and pass in an incrementing nonce per call
     # TODO figure out which exception here to retry on
-    base_nonce = retry_call(DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, account.address)
+    base_nonce = retry_call(
+        DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, account.address, "pending"
+    )
 
     # Here, gather returns results based on original order of trades due to nonce getting explicitly set based
     # on iterating through the list
@@ -234,7 +236,9 @@ async def async_execute_single_trade(
 
     # TODO we likely need to bookkeep nonces here to avoid a race condition when this function
     # is being called asynchronously
-    nonce = retry_call(DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, account.address)
+    nonce = retry_call(
+        DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, account.address, "pending"
+    )
 
     try:
         receipt_or_exception = await _async_match_contract_call_to_trade(
