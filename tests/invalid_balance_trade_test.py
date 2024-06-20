@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import pytest
 from fixedpointmath import FixedPoint
 from utils import expect_failure_with_funded_bot, expect_failure_with_non_funded_bot
-from web3.exceptions import ContractCustomError, ContractLogicError, ContractPanicError
+from web3.exceptions import ContractCustomError, ContractPanicError
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
