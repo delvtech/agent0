@@ -476,7 +476,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on add liquidity
             assert exc.function_name_or_signature == "addLiquidity"
-            # This throws a contract logic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
@@ -497,7 +496,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on open long
             assert exc.function_name_or_signature == "openLong"
-            # This throws a contract logic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
@@ -518,7 +516,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on open short
             assert exc.function_name_or_signature == "openShort"
-            # This throws a contract panic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
@@ -539,7 +536,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name_or_signature == "removeLiquidity"
-            # This throws panic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
             assert "InsufficientBalance raised" in exc.orig_exception.args[1]
@@ -559,10 +555,9 @@ class TestInvalidTrades:
             assert "long token not found in wallet" in exc.args[0]
             # Fails on close long
             assert exc.function_name_or_signature == "closeLong"
-            # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractLogicError)
-            assert exc.orig_exception.args[0] == "execution reverted"
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_close_short_from_zero(
@@ -579,10 +574,9 @@ class TestInvalidTrades:
             assert "short token not found in wallet" in exc.args[0]
             # Fails on close long
             assert exc.function_name_or_signature == "closeShort"
-            # This throws panic error under the hood
             assert exc.orig_exception is not None
-            assert isinstance(exc.orig_exception, ContractLogicError)
-            assert exc.orig_exception.args[0] == "execution reverted"
+            assert isinstance(exc.orig_exception, ContractCustomError)
+            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
     def test_invalid_redeem_withdraw_share_from_zero(
@@ -616,7 +610,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name_or_signature == "removeLiquidity"
-            # This throws panic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
             assert "InsufficientBalance raised" in exc.orig_exception.args[1]
@@ -635,7 +628,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on closeLong
             assert exc.function_name_or_signature == "closeLong"
-            # This throws panic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
             assert "InsufficientBalance raised" in exc.orig_exception.args[1]
@@ -654,7 +646,6 @@ class TestInvalidTrades:
             assert "Invalid balance:" in exc.args[0]
             # Fails on closeShort
             assert exc.function_name_or_signature == "closeShort"
-            # This throws panic error under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
             assert "InsufficientBalance raised" in exc.orig_exception.args[1]

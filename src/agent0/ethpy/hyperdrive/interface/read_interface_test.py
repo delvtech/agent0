@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
+from web3.constants import ADDRESS_ZERO
 
 from agent0.hypertypes import PoolConfig
 from agent0.hypertypes.fixedpoint_types import FeesFP
@@ -230,6 +231,7 @@ class TestHyperdriveReadInterface:
             "governance": deploy_account.address,
             "fee_collector": deploy_account.address,
             "sweep_collector": deploy_account.address,
+            "checkpoint_rewarder": ADDRESS_ZERO,
         }
         expected_pool_config["fees"] = FeesFP(
             curve=FixedPoint("0.01"),  # 1%,
