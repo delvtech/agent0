@@ -20,7 +20,7 @@ rpc_uri = "http://uri.to.sepolia.testnet"
 # The block number to fork at. If None, will fork at latest.
 fork_block_number: int | None = None
 # The address of the registry on the chain to find the deployed hyperdrive pool.
-registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
+registry_address = "0x03f6554299acf544ac646305800f57db544b837a"
 
 # %%
 # Launch a local anvil chain forked from the rpc uri.

@@ -31,7 +31,7 @@ from agent0.core.base.make_key import make_private_key
 # In addition to explicitly defining a contract address, we can also query the deployed registry to
 # look up registered hyperdrive pools. For example, we can define the registry address on Sepolia testnet,
 # then query it for the list of registered pools:
-# registry_address = "0xba5156E697d39a03EDA824C19f375383F6b759EA"
+# registry_address = "0x03f6554299acf544ac646305800f57db544b837a"
 # hyperdrive_address = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)["sdai_14_day"]
 
 # For this example, we instead launch a chain and local hyperdrive, and connect the remote chains to these resources.
