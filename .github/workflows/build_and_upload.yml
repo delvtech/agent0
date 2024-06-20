@@ -87,6 +87,7 @@ jobs:
       - name: Upload dependency list to release
         shell: bash
         run: |
-          gh release upload ${{github.event.release.tag_name}} ./frozen-requirements.txt
+          echo "LATEST_TAG=$(git describe --abbrev=0 --tags)"
+          gh release upload $LATEST_TAG ./frozen-requirements.txt
       - name: Upload to pypi
         uses: pypa/gh-action-pypi-publish@release/v1
