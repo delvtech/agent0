@@ -7313,7 +7313,7 @@ class HyperdriveFactoryContract(Contract):
 
         # otherwise use the account provided.
         deployment_tx = constructor_fn.build_transaction()
-        current_nonce = w3.eth.get_transaction_count(account.address)
+        current_nonce = w3.eth.get_transaction_count(account.address, "pending")
         deployment_tx.update({"nonce": current_nonce})
 
         # Sign the transaction with local account private key
