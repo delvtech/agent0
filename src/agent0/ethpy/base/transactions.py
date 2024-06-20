@@ -427,7 +427,7 @@ def build_transaction(
         txn_options_priority_fee_multiple = DEFAULT_PRIORITY_FEE_MULTIPLE
     signer_checksum_address = Web3.to_checksum_address(signer.address)
     # TODO figure out which exception here to retry on
-    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
+    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
     if nonce is None:
         nonce = base_nonce
     # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
@@ -954,7 +954,7 @@ async def async_eth_transfer(
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
     signer_checksum_address = Web3.to_checksum_address(signer.address)
-    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
+    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
     if nonce is None:
         nonce = base_nonce
     # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
@@ -1024,7 +1024,7 @@ def eth_transfer(
     signer_checksum_address = Web3.to_checksum_address(signer.address)
     if nonce is None:
         # TODO figure out which exception here to retry on
-        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address)
+        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
     unsent_txn: TxParams = {
         "from": signer_checksum_address,
         "to": to_address,
