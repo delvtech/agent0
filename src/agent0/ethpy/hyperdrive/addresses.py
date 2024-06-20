@@ -79,7 +79,7 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     # Call registry contract to get registered pools.
     num_instances = registry_contract.functions.getNumberOfInstances().call()
     hyperdrive_addresses = registry_contract.functions.getInstancesInRange(0, num_instances).call()
-    hyperdrive_info = registry_contract.functions.getInstanceInfo(hyperdrive_addresses).call()
+    hyperdrive_info = registry_contract.functions.getInstanceInfosWithMetadata(hyperdrive_addresses).call()
 
     if len(hyperdrive_addresses) != len(hyperdrive_info):
         raise AssertionError(

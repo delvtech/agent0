@@ -104,6 +104,7 @@ def deploy_hyperdrive_factory(
     factory_deploy_config.hyperdriveGovernance = deploy_account_addr
     factory_deploy_config.feeCollector = deploy_account_addr
     factory_deploy_config.sweepCollector = deploy_account_addr
+    factory_deploy_config.checkpointRewarder = ADDRESS_ZERO
 
     # Deploy the factory and base token contracts
     return _deploy_hyperdrive_factory(
@@ -177,6 +178,7 @@ def deploy_hyperdrive_from_factory(
     pool_deploy_config.sweepCollector = deploy_account_addr
     pool_deploy_config.linkerFactory = deployed_factory.factory_deploy_config.linkerFactory
     pool_deploy_config.linkerCodeHash = deployed_factory.factory_deploy_config.linkerCodeHash
+    pool_deploy_config.checkpointRewarder = deployed_factory.factory_deploy_config.checkpointRewarder
 
     # Mint base and approve the initial liquidity amount for the hyperdrive factory
     _mint_and_approve(
@@ -297,7 +299,11 @@ def _deploy_hyperdrive_factory(
     """
     deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
     # Deploy forwarder factory
-    forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(w3=web3, account=deploy_account_addr)
+    forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=ERC20ForwarderFactoryContract.ConstructorArgs(name="ERC20ForwarderFactory"),
+    )
     # Set config from forwarder factory contract here
     factory_deploy_config.linkerFactory = forwarder_factory_contract.address
     factory_deploy_config.linkerCodeHash = forwarder_factory_contract.functions.ERC20LINK_HASH().call()
@@ -337,6 +343,7 @@ def _deploy_hyperdrive_factory(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
+            name="HyperdriveDeployerCoordinator",
             factory=factory_contract.address,
             coreDeployer=core_deployer_contract.address,
             target0Deployer=target0_contract.address,
@@ -573,6 +580,7 @@ def _deploy_and_initialize_hyperdrive_pool(
             raise ValueError(f"Failed calling deployTarget on target {target_index}.\n{receipt=}")
 
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
+        name="agent0_erc4626",
         deploymentId=deployment_id,
         deployerCoordinator=deployer_coordinator_address,
         config=pool_deploy_config,

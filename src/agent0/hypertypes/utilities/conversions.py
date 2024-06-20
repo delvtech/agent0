@@ -223,6 +223,7 @@ def fixedpoint_to_pool_config(
         governance=dict_pool_config["governance"],
         feeCollector=dict_pool_config["feeCollector"],
         sweepCollector=dict_pool_config["sweepCollector"],
+        checkpointRewarder=dict_pool_config["checkpointRewarder"],
         fees=Fees(
             curve=dict_pool_config["fees"][0],
             flat=dict_pool_config["fees"][1],
