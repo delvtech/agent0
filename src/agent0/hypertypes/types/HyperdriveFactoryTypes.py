@@ -35,6 +35,7 @@ class FactoryConfig:
     defaultPausers: list[str]
     feeCollector: str
     sweepCollector: str
+    checkpointRewarder: str
     checkpointDurationResolution: int
     minCheckpointDuration: int
     maxCheckpointDuration: int
@@ -61,6 +62,15 @@ CheckpointDurationResolutionUpdated = ABIEvent(
     type="event",
 )
 
+CheckpointRewarderUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newCheckpointRewarder", type="address"),
+    ],
+    name="CheckpointRewarderUpdated",
+    type="event",
+)
+
 DefaultPausersUpdated = ABIEvent(
     anonymous=False,
     inputs=[
@@ -75,6 +85,7 @@ Deployed = ABIEvent(
     inputs=[
         ABIEventParams(indexed=True, name="deployerCoordinator", type="address"),
         ABIEventParams(indexed=False, name="hyperdrive", type="address"),
+        ABIEventParams(indexed=False, name="name", type="string"),
         ABIEventParams(indexed=False, name="config", type="tuple"),
         ABIEventParams(indexed=False, name="extraData", type="bytes"),
     ],

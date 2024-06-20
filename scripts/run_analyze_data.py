@@ -27,7 +27,7 @@ if __name__ == "__main__":
         # This is the start block needed based on the devnet image, which corresponds
         # to the block that the contract was deployed.
         # TODO ideally would gather this from the deployer
-        start_block=48,
+        start_block=50,
         rpc_uri=rpc_uri,
         hyperdrive_addresses=hyperdrive_addrs,
     )

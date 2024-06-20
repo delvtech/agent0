@@ -7,6 +7,7 @@ import time
 
 import requests
 from eth_typing import ChecksumAddress
+from hexbytes import HexBytes
 from web3 import Web3
 
 from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract, MockERC4626Contract
@@ -79,17 +80,24 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     # Call registry contract to get registered pools.
     num_instances = registry_contract.functions.getNumberOfInstances().call()
     hyperdrive_addresses = registry_contract.functions.getInstancesInRange(0, num_instances).call()
-    hyperdrive_info = registry_contract.functions.getInstanceInfo(hyperdrive_addresses).call()
+    hyperdrive_infos = registry_contract.functions.getInstanceInfosWithMetadata(hyperdrive_addresses).call()
 
-    if len(hyperdrive_addresses) != len(hyperdrive_info):
+    # TODO there's a bug in the registry that sets the `name` field of instances as an encoded hex string
+    # We decode here if we find this case
+    for info in hyperdrive_infos:
+        if info.name.startswith("0x"):
+            # The replace is to strip trailing 0 bytes
+            info.name = HexBytes(info.name).decode("utf-8").replace("\x00", "")
+
+    if len(hyperdrive_addresses) != len(hyperdrive_infos):
         raise AssertionError(
             f"Number of hyperdrive addresses ({len(hyperdrive_addresses)}) does not match number "
-            f"of hyperdrive info ({len(hyperdrive_info)})."
+            f"of hyperdrive info ({len(hyperdrive_infos)})."
         )
 
     out_addresses = {}
 
-    for address, info in zip(hyperdrive_addresses, hyperdrive_info):
+    for address, info in zip(hyperdrive_addresses, hyperdrive_infos):
         # Check versions
         hyperdrive_version = info.version
         expected_version = get_expected_hyperdrive_version()
@@ -101,18 +109,12 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
                 hyperdrive_version,
             )
 
-        # Generate the logical name of the hyperdrive pool
-        # Need position duration
-        # TODO hyperdrive info should eventually contain a unique name for the pool we can use.
-        hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(
-            web3.to_checksum_address(address)
-        )
-        pool_config = get_hyperdrive_pool_config(hyperdrive_contract)
-        # Convert seconds to days
-        position_duration = str(pool_config.position_duration // (60 * 60 * 24))
-        pool_name = info.name + "_" + position_duration + "day"
-
-        out_addresses[pool_name] = address
+        if info.name not in out_addresses:
+            out_addresses[info.name] = address
+        else:
+            raise ValueError(
+                f"Hyperdrive pool with name {info.name} already exists at address {out_addresses[info.name]}."
+            )
 
     return out_addresses
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
+from web3 import Web3
 
 from agent0.chainsync.db.hyperdrive import (
     get_checkpoint_info,
@@ -176,7 +177,7 @@ class LocalHyperdrive(Hyperdrive):
         config: Config | None = None,
         name: str | None = None,
         deploy: bool = True,
-        hyperdrive_address: ChecksumAddress | None = None,
+        hyperdrive_address: ChecksumAddress | str | None = None,
     ):
         """Constructor for the interactive hyperdrive agent.
 
@@ -184,7 +185,7 @@ class LocalHyperdrive(Hyperdrive):
         ---------
         chain: LocalChain
             The local chain object to launch hyperdrive on.
-        hyperdrive_address: ChecksumAddress | None, optional
+        hyperdrive_address: ChecksumAddress | str | None, optional
             The address of the hyperdrive contract to connect to if `deploy` is False.
             Defaults to deploying a new hyperdrive.
         config: Config | None
@@ -218,6 +219,9 @@ class LocalHyperdrive(Hyperdrive):
         else:
             if hyperdrive_address is None:
                 raise ValueError("Must specify a hyperdrive address if not deploying a Hyperdrive contract.")
+
+        if isinstance(hyperdrive_address, str):
+            hyperdrive_address = Web3.to_checksum_address(hyperdrive_address)
 
         self._initialize(chain, hyperdrive_address, name)
 
@@ -310,6 +314,7 @@ class LocalHyperdrive(Hyperdrive):
             defaultPausers=[],  # We don't support pausers when we deploy
             feeCollector="",  # will be determined in the deploy function
             sweepCollector="",  # will be determined in the deploy function
+            checkpointRewarder="",  # will be determined in the deploy function
             checkpointDurationResolution=config.factory_checkpoint_duration_resolution,
             minCheckpointDuration=config.factory_min_checkpoint_duration,
             maxCheckpointDuration=config.factory_max_checkpoint_duration,
@@ -341,6 +346,7 @@ class LocalHyperdrive(Hyperdrive):
             governance="",  # will be determined in the deploy function
             feeCollector="",  # will be determined in the deploy function
             sweepCollector="",  # will be determined in the deploy function
+            checkpointRewarder="",  # will be determined in the deploy function
             fees=config._fees,  # pylint: disable=protected-access
         )
 

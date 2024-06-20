@@ -636,6 +636,33 @@ class IHyperdriveIsPauserContractFunction(ContractFunction):
         return cast(bool, rename_returned_types(structs, return_types, raw_values))
 
 
+class IHyperdriveKindContractFunction(ContractFunction):
+    """ContractFunction for the kind method."""
+
+    def __call__(self) -> IHyperdriveKindContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
 class IHyperdriveLoadContractFunction(ContractFunction):
     """ContractFunction for the load method."""
 
@@ -1041,6 +1068,28 @@ class IHyperdriveSetApprovalForAllContractFunction(ContractFunction):
 
     def __call__(self, operator: str, approved: bool) -> IHyperdriveSetApprovalForAllContractFunction:  # type: ignore
         clone = super().__call__(dataclass_to_tuple(operator), dataclass_to_tuple(approved))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> None:
+        """returns None."""
+        # Define the expected return types from the smart contract call
+
+        # Call the function
+
+
+class IHyperdriveSetCheckpointRewarderContractFunction(ContractFunction):
+    """ContractFunction for the setCheckpointRewarder method."""
+
+    def __call__(self, checkpointRewarder: str) -> IHyperdriveSetCheckpointRewarderContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(checkpointRewarder))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1481,6 +1530,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
 
     isPauser: IHyperdriveIsPauserContractFunction
 
+    kind: IHyperdriveKindContractFunction
+
     load: IHyperdriveLoadContractFunction
 
     name: IHyperdriveNameContractFunction
@@ -1506,6 +1557,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
     setApprovalBridge: IHyperdriveSetApprovalBridgeContractFunction
 
     setApprovalForAll: IHyperdriveSetApprovalForAllContractFunction
+
+    setCheckpointRewarder: IHyperdriveSetCheckpointRewarderContractFunction
 
     setFeeCollector: IHyperdriveSetFeeCollectorContractFunction
 
@@ -1713,6 +1766,14 @@ class IHyperdriveContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="isPauser",
         )
+        self.kind = IHyperdriveKindContractFunction.factory(
+            "kind",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="kind",
+        )
         self.load = IHyperdriveLoadContractFunction.factory(
             "load",
             w3=w3,
@@ -1816,6 +1877,14 @@ class IHyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="setApprovalForAll",
+        )
+        self.setCheckpointRewarder = IHyperdriveSetCheckpointRewarderContractFunction.factory(
+            "setCheckpointRewarder",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="setCheckpointRewarder",
         )
         self.setFeeCollector = IHyperdriveSetFeeCollectorContractFunction.factory(
             "setFeeCollector",
@@ -2152,6 +2221,82 @@ class IHyperdriveApprovalForAllContractEvent(ContractEvent):
     @classmethod
     def create_filter(  # type: ignore
         cls: Type["IHyperdriveApprovalForAllContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
+class IHyperdriveCheckpointRewarderUpdatedContractEvent(ContractEvent):
+    """ContractEvent for CheckpointRewarderUpdated."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "IHyperdriveCheckpointRewarderUpdatedContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["IHyperdriveCheckpointRewarderUpdatedContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "IHyperdriveCheckpointRewarderUpdatedContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["IHyperdriveCheckpointRewarderUpdatedContractEvent"],
         *,  # PEP 3102
         argument_filters: dict[str, Any] | None = None,
         fromBlock: BlockIdentifier | None = None,
@@ -3392,6 +3537,8 @@ class IHyperdriveContractEvents(ContractEvents):
 
     ApprovalForAll: IHyperdriveApprovalForAllContractEvent
 
+    CheckpointRewarderUpdated: IHyperdriveCheckpointRewarderUpdatedContractEvent
+
     CloseLong: IHyperdriveCloseLongContractEvent
 
     CloseShort: IHyperdriveCloseShortContractEvent
@@ -3447,6 +3594,16 @@ class IHyperdriveContractEvents(ContractEvents):
             IHyperdriveApprovalForAllContractEvent,
             IHyperdriveApprovalForAllContractEvent.factory(
                 "ApprovalForAll", w3=w3, contract_abi=abi, address=address, event_name="ApprovalForAll"
+            ),
+        )
+        self.CheckpointRewarderUpdated = cast(
+            IHyperdriveCheckpointRewarderUpdatedContractEvent,
+            IHyperdriveCheckpointRewarderUpdatedContractEvent.factory(
+                "CheckpointRewarderUpdated",
+                w3=w3,
+                contract_abi=abi,
+                address=address,
+                event_name="CheckpointRewarderUpdated",
             ),
         )
         self.CloseLong = cast(
@@ -6040,6 +6197,7 @@ ihyperdrive_abi: ABI = cast(
                         {"name": "governance", "type": "address", "internalType": "address"},
                         {"name": "feeCollector", "type": "address", "internalType": "address"},
                         {"name": "sweepCollector", "type": "address", "internalType": "address"},
+                        {"name": "checkpointRewarder", "type": "address", "internalType": "address"},
                         {
                             "name": "fees",
                             "type": "tuple",
@@ -6149,6 +6307,13 @@ ihyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "kind",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "string", "internalType": "string"}],
+            "stateMutability": "pure",
+        },
+        {
+            "type": "function",
             "name": "load",
             "inputs": [{"name": "_slots", "type": "uint256[]", "internalType": "uint256[]"}],
             "outputs": [{"name": "", "type": "bytes32[]", "internalType": "bytes32[]"}],
@@ -6166,7 +6331,7 @@ ihyperdrive_abi: ABI = cast(
             "name": "name",
             "inputs": [],
             "outputs": [{"name": "", "type": "string", "internalType": "string"}],
-            "stateMutability": "pure",
+            "stateMutability": "view",
         },
         {
             "type": "function",
@@ -6337,6 +6502,13 @@ ihyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "setCheckpointRewarder",
+            "inputs": [{"name": "_checkpointRewarder", "type": "address", "internalType": "address"}],
+            "outputs": [],
+            "stateMutability": "nonpayable",
+        },
+        {
+            "type": "function",
             "name": "setFeeCollector",
             "inputs": [{"name": "_who", "type": "address", "internalType": "address"}],
             "outputs": [],
@@ -6485,6 +6657,14 @@ ihyperdrive_abi: ABI = cast(
                 {"name": "account", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "operator", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "approved", "type": "bool", "indexed": False, "internalType": "bool"},
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "CheckpointRewarderUpdated",
+            "inputs": [
+                {"name": "newCheckpointRewarder", "type": "address", "indexed": True, "internalType": "address"}
             ],
             "anonymous": False,
         },
