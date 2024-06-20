@@ -26,7 +26,15 @@ class FactoryInfo:
     """FactoryInfo struct."""
 
     data: int
+
+
+@dataclass
+class FactoryInfoWithMetadata:
+    """FactoryInfoWithMetadata struct."""
+
+    data: int
     name: str
+    kind: str
     version: str
 
 
@@ -36,7 +44,16 @@ class InstanceInfo:
 
     data: int
     factory: str
+
+
+@dataclass
+class InstanceInfoWithMetadata:
+    """InstanceInfoWithMetadata struct."""
+
+    data: int
+    factory: str
     name: str
+    kind: str
     version: str
 
 

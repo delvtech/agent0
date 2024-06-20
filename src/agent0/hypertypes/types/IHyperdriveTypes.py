@@ -87,6 +87,7 @@ class PoolConfig:
     governance: str
     feeCollector: str
     sweepCollector: str
+    checkpointRewarder: str
     fees: Fees
 
 
@@ -136,6 +137,7 @@ class PoolDeployConfig:
     governance: str
     feeCollector: str
     sweepCollector: str
+    checkpointRewarder: str
     fees: Fees
 
 
@@ -173,6 +175,15 @@ ApprovalForAll = ABIEvent(
         ABIEventParams(indexed=False, name="approved", type="bool"),
     ],
     name="ApprovalForAll",
+    type="event",
+)
+
+CheckpointRewarderUpdated = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="newCheckpointRewarder", type="address"),
+    ],
+    name="CheckpointRewarderUpdated",
     type="event",
 )
 
