@@ -6,7 +6,7 @@ from typing import Literal, overload
 
 import numpy as np
 from fixedpointmath import FixedPoint
-from numpy.random._generator import Generator
+from numpy.random import Generator
 
 from agent0.core.hyperdrive import HyperdriveActionType
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive

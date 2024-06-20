@@ -433,6 +433,8 @@ class Random(HyperdriveBasePolicy):
             A list with a single Trade element for redeeming the LP withdraw shares.
         """
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
+        # TODO we may want to use a different mean/std here, as this is based on the agent's base balance
+        # but we're trying to redeem withdraw shares here.
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
@@ -440,10 +442,10 @@ class Random(HyperdriveBasePolicy):
             wallet.withdraw_shares,
             interface.current_pool_state.pool_info.withdrawal_shares_ready_to_withdraw,
         )
-        # minimum_transaction_amount <= trade_amount <= withdraw_shares
-        trade_amount = max(
-            interface.pool_config.minimum_transaction_amount, min(shares_available_to_withdraw, initial_trade_amount)
-        )
+
+        # trade_amount <= withdraw_shares
+        trade_amount = min(shares_available_to_withdraw, initial_trade_amount)
+
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             redeem_withdraw_shares_trade(

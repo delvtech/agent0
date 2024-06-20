@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 from .base import BasePolicy, MarketInterface, Wallet
 
 if TYPE_CHECKING:
-    from numpy.random._generator import Generator
-
     from agent0.core.base.types import Trade
 
 

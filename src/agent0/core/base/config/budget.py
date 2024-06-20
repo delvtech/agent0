@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from fixedpointmath import FixedPoint, clip
-from numpy.random._generator import Generator
+from numpy.random import Generator
 
 
 @dataclass
