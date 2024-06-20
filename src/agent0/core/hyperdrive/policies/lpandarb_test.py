@@ -380,3 +380,39 @@ def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agen
     assert len(action_result) == 2  # LP & Arb (no closing trades)
     assert isinstance(action_result[0], AddLiquidity)  # LP first
     assert isinstance(action_result[1], OpenShort)  # then arb
+
+
+@pytest.mark.anvil
+def test_matured_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: LocalHyperdriveAgent):
+    """Don't touch the matured long."""
+    # report starting fixed rate
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
+
+    # arbitrage it back
+    arbitrage_andy.open_long(base=FixedPoint(100_000))
+
+    interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS * 2), create_checkpoints=False)
+
+    # check Andy's trades to make sure he doesn't CloseLong
+    event = arbitrage_andy.execute_policy_action()
+    event = event[0] if isinstance(event, list) else event
+    logging.info("event is %s", event)
+    assert not isinstance(event, CloseLong)
+
+
+@pytest.mark.anvil
+def test_matured_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: LocalHyperdriveAgent):
+    """Don't touch the matured short."""
+    # report starting fixed rate
+    logging.info("starting fixed rate is %s", interactive_hyperdrive.interface.calc_spot_rate())
+
+    # arbitrage it back
+    arbitrage_andy.open_short(bonds=FixedPoint(100_000))
+
+    interactive_hyperdrive.chain.advance_time(int(YEAR_IN_SECONDS * 2), create_checkpoints=False)
+
+    # check Andy's trades to make sure he doesn't CloseShort
+    event = arbitrage_andy.execute_policy_action()
+    event = event[0] if isinstance(event, list) else event
+    logging.info("event is %s", event)
+    assert not isinstance(event, CloseShort)
