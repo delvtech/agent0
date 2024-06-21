@@ -10,7 +10,8 @@ jobs:
     name: build linux wheel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout agent0
+        uses: actions/checkout@v4
         with:
           token: ${{github.token}}
 
@@ -69,6 +70,11 @@ jobs:
     name: generate dependency file
     runs-on: ubuntu-latest
     steps:
+      - name: checkout agent0
+        uses: actions/checkout@v4
+        with:
+          token: ${{github.token}}
+
       - name: set up python
         uses: actions/setup-python@v4
         with:
