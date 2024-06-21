@@ -1005,15 +1005,13 @@ class HyperdriveAgent:
 
     def _get_positions(
         self,
-        pool_filter: Hyperdrive | list[Hyperdrive] | None,
+        pool_filter: Hyperdrive | list[Hyperdrive],
         show_closed_positions: bool,
         calc_pnl: bool,
         coerce_float: bool,
     ) -> pd.DataFrame:
         # Query the snapshot for the most recent positions.
-        if pool_filter is None:
-            hyperdrive_address = None
-        elif isinstance(pool_filter, list):
+        if isinstance(pool_filter, list):
             hyperdrive_address = [str(pool.hyperdrive_address) for pool in pool_filter]
         else:
             hyperdrive_address = str(pool_filter.hyperdrive_address)
@@ -1031,13 +1029,11 @@ class HyperdriveAgent:
         # If the config's calc_pnl is not set, but we pass in `calc_pnl = True` to this function,
         # we do a one off calculation to get the pnl here.
         if not self.chain.config.calc_pnl and calc_pnl:
-            if pool_filter is None:
-                # FIXME
-                pass
             if isinstance(pool_filter, list):
                 # FIXME
                 pass
-            position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, pool_filter.interface)
+            else:
+                position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, pool_filter.interface)
 
         # Add usernames
         position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")

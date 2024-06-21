@@ -1305,6 +1305,16 @@ def test_lazy_calc_pnl():
     positions = lazy_calc_pnl_agent.get_positions(calc_pnl=False)
     # Should have 6 positions, 3 per pool
     assert len(positions) == 6
+    # The unrealized value and pnl should be nans
+    assert positions[["unrealized_value", "pnl"]].isna().all().all()
+
+    # PNLs between the two agents should be identical for both if we calc pnl
+    calc_pnl_positions = calc_pnl_agent.get_positions()
+    lazy_calc_pnl_positions = lazy_calc_pnl_agent.get_positions(calc_pnl=True)
+    # TODO the comparison below assumes both get_positions will return in the same order
+    #
+    pass
+
     pass
 
     # Run get_positions from both agents and compare lazy vs non-lazy
