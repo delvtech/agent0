@@ -535,6 +535,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+        calc_pnl: bool
+            Whether to return the pnl for the current position. Only used if the chain config's `calc_pnl` is False.
         coerce_float: bool, optional
             Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
         registry_address: str, optional
@@ -545,8 +547,12 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
+        # pylint: disable=too-many-arguments
+
         if registry_address is not None:
             raise ValueError("registry_address not used with local agents")
+
+        pool_filter_arg: Hyperdrive | list[Hyperdrive]
         # Explicit type checking
         if pool_filter is not None:
             if isinstance(pool_filter, list):
@@ -555,14 +561,15 @@ class LocalHyperdriveAgent(HyperdriveAgent):
                         raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
             elif not isinstance(pool_filter, LocalHyperdrive):
                 raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+            pool_filter_arg = pool_filter
         else:
             # TODO Typing is complaining list[LocalHyperdrive] is not a list[Hyperdrive]
             # but LocalHyperdrive is a subclass of Hyperdrive
             # Proper fix here is to switch `list` to `Sequence`
-            pool_filter: list[Hyperdrive] = self.chain._deployed_hyperdrive_pools  # type: ignore # pylint: disable=protected-access
+            pool_filter_arg = self.chain._deployed_hyperdrive_pools  # type: ignore # pylint: disable=protected-access
 
         return self._get_positions(
-            pool_filter=pool_filter,
+            pool_filter=pool_filter_arg,
             show_closed_positions=show_closed_positions,
             calc_pnl=calc_pnl,
             coerce_float=coerce_float,
