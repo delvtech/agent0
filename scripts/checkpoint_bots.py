@@ -9,6 +9,7 @@ import logging
 import os
 import random
 import sys
+import threading
 import time
 from functools import partial
 from typing import NamedTuple, Sequence
@@ -17,6 +18,8 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
+from web3 import Web3
+from web3.types import Nonce
 
 from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
@@ -33,6 +36,42 @@ from agent0.utils import async_runner
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
 CHECKPOINT_WAITING_PERIOD = 0.5
+
+
+# Sets up async nonce manager
+CURRENT_NONCE: int  # This global variable gets initialized in `main`
+NONCE_LOCK = threading.Lock()
+
+
+def async_get_nonce(web3: Web3, account: LocalAccount) -> Nonce:
+    """Handles getting nonce from multiple threads.
+
+    Arguments
+    ---------
+    web3: Web3
+        The web3 instance.
+    account: LocalAccount
+        The account to get the nonce from.
+
+    Returns
+    -------
+    int
+        The nonce to use.
+
+    """
+    # Reference global variable here for handling nonce
+    global CURRENT_NONCE  # pylint: disable=global-statement
+
+    with NONCE_LOCK:
+        base_nonce = web3.eth.get_transaction_count(account.address, "pending")
+        if base_nonce > CURRENT_NONCE:
+            out_nonce = base_nonce
+            CURRENT_NONCE = base_nonce + 1
+        else:
+            out_nonce = CURRENT_NONCE
+            CURRENT_NONCE += 1
+
+    return Nonce(out_nonce)
 
 
 def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_time: int) -> bool:
@@ -166,12 +205,15 @@ def run_checkpoint_bot(
                 # 0 is the max iterations for distribute excess idle, where it will default to
                 # the default max iterations
                 fn_args = (checkpoint_time, 0)
+                # Call the thread safe get nonce function for this transaction's nonce
+                nonce = async_get_nonce(web3, sender)
                 receipt = smart_contract_transact(
                     web3,
                     hyperdrive_contract,
                     sender,
                     "checkpoint",
                     *fn_args,
+                    nonce=nonce,
                 )
             except Exception as e:  # pylint: disable=broad-except
                 logging_str = (
@@ -240,6 +282,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         The argv values returned from argparser.
     """
     # pylint: disable=too-many-branches
+
+    # We reference the global variable here, and initialize this variable
+    global CURRENT_NONCE  # pylint: disable=global-statement
+    CURRENT_NONCE = 0
 
     parsed_args = parse_arguments(argv)
 
