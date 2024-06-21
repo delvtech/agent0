@@ -1020,7 +1020,7 @@ class HyperdriveAgent:
 
         position_snapshot = get_position_snapshot(
             session=self.chain.db_session,
-            start_block=-1,
+            latest_entry=True,
             wallet_address=self.address,
             hyperdrive_address=hyperdrive_address,
             coerce_float=coerce_float,

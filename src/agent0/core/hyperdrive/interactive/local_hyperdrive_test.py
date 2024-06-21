@@ -1256,3 +1256,58 @@ def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_str
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     assert isinstance(interactive_hyperdrive.interface.current_pool_state.pool_config.time_stretch, FixedPoint)
+
+
+@pytest.mark.anvil
+def test_lazy_calc_pnl():
+    """Tests lazy calc pnl values."""
+    # Spin up 2 identical chains, pools, and agents, with trades.
+    calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True))
+    lazy_calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False))
+
+    # Since we added support for querying from multiple pools, we need to create multiple pools here
+    calc_pnl_pool_1 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
+    calc_pnl_pool_2 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
+    lazy_calc_pnl_pool_1 = LocalHyperdrive(lazy_calc_pnl_chain, LocalHyperdrive.Config())
+    lazy_calc_pnl_pool_2 = LocalHyperdrive(lazy_calc_pnl_chain, LocalHyperdrive.Config())
+
+    calc_pnl_agent = calc_pnl_chain.init_agent(
+        eth=FixedPoint(10),
+        name="alice",
+    )
+    lazy_calc_pnl_agent = lazy_calc_pnl_chain.init_agent(
+        eth=FixedPoint(10),
+        name="bob",
+    )
+
+    calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=calc_pnl_pool_1)
+    calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=calc_pnl_pool_2)
+    lazy_calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=lazy_calc_pnl_pool_1)
+    lazy_calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=lazy_calc_pnl_pool_2)
+
+    # Make identical trades.
+    _ = calc_pnl_agent.add_liquidity(FixedPoint(1_000), pool=calc_pnl_pool_1)
+    _ = calc_pnl_agent.add_liquidity(FixedPoint(2_000), pool=calc_pnl_pool_2)
+    _ = lazy_calc_pnl_agent.add_liquidity(FixedPoint(1_000), pool=lazy_calc_pnl_pool_1)
+    _ = lazy_calc_pnl_agent.add_liquidity(FixedPoint(2_000), pool=lazy_calc_pnl_pool_2)
+
+    _ = calc_pnl_agent.open_long(FixedPoint(1_000), pool=calc_pnl_pool_1)
+    _ = calc_pnl_agent.open_long(FixedPoint(2_000), pool=calc_pnl_pool_2)
+    _ = lazy_calc_pnl_agent.open_long(FixedPoint(1_000), pool=lazy_calc_pnl_pool_1)
+    _ = lazy_calc_pnl_agent.open_long(FixedPoint(2_000), pool=lazy_calc_pnl_pool_2)
+
+    _ = calc_pnl_agent.open_short(FixedPoint(1_000), pool=calc_pnl_pool_1)
+    _ = calc_pnl_agent.open_short(FixedPoint(2_000), pool=calc_pnl_pool_2)
+    _ = lazy_calc_pnl_agent.open_short(FixedPoint(1_000), pool=lazy_calc_pnl_pool_1)
+    _ = lazy_calc_pnl_agent.open_short(FixedPoint(2_000), pool=lazy_calc_pnl_pool_2)
+
+    # Lazy calc pnl agent shouldn't have unrealized value or pnl columns
+    positions = lazy_calc_pnl_agent.get_positions(calc_pnl=False)
+    # Should have 6 positions, 3 per pool
+    assert len(positions) == 6
+    pass
+
+    # Run get_positions from both agents and compare lazy vs non-lazy
+
+    calc_pnl_chain.cleanup()
+    lazy_calc_pnl_chain.cleanup()

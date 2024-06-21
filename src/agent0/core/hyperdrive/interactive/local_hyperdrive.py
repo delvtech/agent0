@@ -517,7 +517,7 @@ class LocalHyperdrive(Hyperdrive):
         position_snapshot = get_position_snapshot(
             self.chain.db_session,
             hyperdrive_address=self.interface.hyperdrive_address,
-            start_block=-1,
+            latest_entry=True,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
         if not show_closed_positions:
