@@ -8,7 +8,9 @@ from decimal import Decimal
 
 import pandas as pd
 from fixedpointmath import FixedPoint
+from sqlalchemy.orm import Session
 
+from agent0.chainsync.db.hyperdrive import get_checkpoint_info
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state import PoolState
 
@@ -157,7 +159,6 @@ def calc_closeout_value(
     current_positions: pd.DataFrame,
     checkpoint_info: pd.DataFrame,
     interface: HyperdriveReadInterface,
-    block_number: int,
 ) -> pd.Series:
     """Calculate closeout value of agent positions.
 
@@ -169,8 +170,6 @@ def calc_closeout_value(
         A dataframe resulting from `get_checkpoint_info` that describes all checkpoints.
     interface: HyperdriveReadInterface
         The hyperdrive read interface.
-    block_number: int
-        The block number to calculate closeout value on.
 
     Returns
     -------
@@ -197,3 +196,34 @@ def calc_closeout_value(
         checkpoint_share_prices=checkpoint_share_prices,
         axis=1,
     )
+
+
+def fill_pnl_values(in_df: pd.DataFrame, db_session: Session, interface: HyperdriveReadInterface) -> pd.DataFrame:
+    """Fills in the unrealized and realized pnl for each position.
+
+    Arguments
+    ---------
+    in_df: pd.DataFrame
+        A dataframe of positions from `get_current_positions`.
+    db_session: Session
+        The database session.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface attached to a hyperdrive pool.
+
+    Returns
+    -------
+    pd.DataFrame
+        The `in_df` with unrealized value and pnl columns added.
+    """
+
+    checkpoint_info = get_checkpoint_info(
+        db_session, hyperdrive_address=interface.hyperdrive_address, coerce_float=False
+    )
+    values_df = calc_closeout_value(
+        in_df,
+        checkpoint_info,
+        interface,
+    )
+    in_df["unrealized_value"] = values_df
+    in_df["pnl"] = in_df["unrealized_value"] + in_df["realized_value"]
+    return in_df

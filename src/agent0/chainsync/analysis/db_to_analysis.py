@@ -7,14 +7,13 @@ from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.hyperdrive import (
     PositionSnapshot,
-    get_checkpoint_info,
     get_current_positions,
     get_latest_block_number_from_positions_snapshot_table,
 )
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
-from .calc_position_value import calc_closeout_value
+from .calc_position_value import fill_pnl_values
 
 pd.set_option("display.max_columns", None)
 
@@ -89,8 +88,6 @@ def snapshot_positions_to_db(
         if query_block_number <= last_snapshot_block:
             continue
 
-        hyperdrive_address = interface.hyperdrive_address
-
         # Calculate all open positions for the end block
         # We need to keep zero balances to keep track of
         # the pnl after close, and to keep a record for
@@ -98,7 +95,7 @@ def snapshot_positions_to_db(
         current_pool_positions = get_current_positions(
             db_session,
             wallet_addr=wallet_addr,
-            hyperdrive_address=hyperdrive_address,
+            hyperdrive_address=interface.hyperdrive_address,
             query_block=query_block_number + 1,  # Query block numbers are not inclusive
             show_closed_positions=True,
             coerce_float=False,
@@ -108,19 +105,7 @@ def snapshot_positions_to_db(
             current_pool_positions["block_number"] = query_block_number
             # Calculate pnl for these positions if flag is set
             if calc_pnl:
-                checkpoint_info = get_checkpoint_info(
-                    db_session, hyperdrive_address=hyperdrive_address, coerce_float=False
-                )
-                values_df = calc_closeout_value(
-                    current_pool_positions,
-                    checkpoint_info,
-                    interface,
-                    query_block_number,
-                )
-                current_pool_positions["unrealized_value"] = values_df
-                current_pool_positions["pnl"] = (
-                    current_pool_positions["unrealized_value"] + current_pool_positions["realized_value"]
-                )
+                current_pool_positions = fill_pnl_values(current_pool_positions, db_session, interface)
             all_pool_positions.append(current_pool_positions)
 
     if len(all_pool_positions) > 0:

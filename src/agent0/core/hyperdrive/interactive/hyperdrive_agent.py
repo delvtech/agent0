@@ -13,7 +13,7 @@ from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
 
-from agent0.chainsync.analysis import snapshot_positions_to_db
+from agent0.chainsync.analysis import fill_pnl_values, snapshot_positions_to_db
 from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     checkpoint_events_to_db,
@@ -967,6 +967,7 @@ class HyperdriveAgent:
         self,
         pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
         show_closed_positions: bool = False,
+        calc_pnl: bool = False,
         coerce_float: bool = False,
     ) -> pd.DataFrame:
         """Returns all of the agent's positions across all hyperdrive pools.
@@ -979,6 +980,8 @@ class HyperdriveAgent:
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
+        calc_pnl: bool
+            Whether to return the pnl for the current position. Only used if the chain config's `calc_pnl` is False.
         coerce_float: bool, optional
             Whether to coerce underlying Decimal values to float when as_df is True. Defaults to False.
 
@@ -994,11 +997,18 @@ class HyperdriveAgent:
         self._sync_events(pool_filter)
         self._sync_snapshot(pool_filter)
         return self._get_positions(
-            pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
+            pool_filter=pool_filter,
+            show_closed_positions=show_closed_positions,
+            calc_pnl=calc_pnl,
+            coerce_float=coerce_float,
         )
 
     def _get_positions(
-        self, pool_filter: Hyperdrive | list[Hyperdrive] | None, show_closed_positions: bool, coerce_float: bool
+        self,
+        pool_filter: Hyperdrive | list[Hyperdrive] | None,
+        show_closed_positions: bool,
+        calc_pnl: bool,
+        coerce_float: bool,
     ) -> pd.DataFrame:
         # Query the snapshot for the most recent positions.
         if pool_filter is None:
@@ -1017,6 +1027,18 @@ class HyperdriveAgent:
         ).drop("id", axis=1)
         if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
+
+        # If the config's calc_pnl is not set, but we pass in `calc_pnl = True` to this function,
+        # we do a one off calculation to get the pnl here.
+        if not self.chain.config.calc_pnl and calc_pnl:
+            if pool_filter is None:
+                # FIXME
+                pass
+            if isinstance(pool_filter, list):
+                # FIXME
+                pass
+            position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, pool_filter.interface)
+
         # Add usernames
         position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
         position_snapshot = self.chain._add_hyperdrive_name_to_dataframe(position_snapshot, "hyperdrive_address")

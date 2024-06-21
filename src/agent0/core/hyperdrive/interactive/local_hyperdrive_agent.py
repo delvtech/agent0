@@ -521,6 +521,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         self,
         pool_filter: Hyperdrive | list[Hyperdrive] | None = None,
         show_closed_positions: bool = False,
+        calc_pnl: bool = False,
         coerce_float: bool = False,
         registry_address: str | None = None,
     ) -> pd.DataFrame:
@@ -555,7 +556,10 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             elif not isinstance(pool_filter, LocalHyperdrive):
                 raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
         return self._get_positions(
-            pool_filter=pool_filter, show_closed_positions=show_closed_positions, coerce_float=coerce_float
+            pool_filter=pool_filter,
+            show_closed_positions=show_closed_positions,
+            calc_pnl=calc_pnl,
+            coerce_float=coerce_float,
         )
 
     def get_trade_events(
