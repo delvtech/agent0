@@ -33,12 +33,6 @@ jobs:
           name: wheels-linux
           path: dist/*.whl
 
-      - name: Upload the package versions as an artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frozen-dependencies
-          path: dist/frozen-requirements.txt
-
   build-sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
@@ -67,6 +61,36 @@ jobs:
           pattern: wheels-*
           path: dist
           merge-multiple: true
+      - name: Upload to pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  generate-dependencies:
+    needs: [upload_pypi]
+    name: generate dependency file
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          token: ${{github.token}}
+
+      - name: generate dependency file
+        shell: bash
+        run: source scripts/generate_deps.sh
+
+      - name: upload dependency file
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen-dependencies
+          path: dist/frozen-requirements.txt
+
+  upload-dependencies:
+    needs: [generate-dependencies]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Download dependency list artifact
         uses: actions/download-artifact@v4
         with:
@@ -77,6 +101,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release upload ${{ github.ref_name }} ./frozen-requirements.txt
-      - name: Upload to pypi
-        uses: pypa/gh-action-pypi-publish@release/v1
+          gh release upload ${{ github.ref_name }} ./dist/frozen-requirements.txt
