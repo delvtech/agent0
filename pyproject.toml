@@ -1,6 +1,6 @@
 [project]
 name = "agent0"
-version = "0.21.5"
+version = "0.21.6"
 # Authors are the current, primary stewards of the repo
 # contributors can be found on github
 authors = [
