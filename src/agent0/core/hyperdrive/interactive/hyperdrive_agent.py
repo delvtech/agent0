@@ -190,7 +190,7 @@ class HyperdriveAgent:
 
         if eth > FixedPoint(0):
             # Eth is a set balance call
-            eth_balance = FixedPoint(scaled_value=get_account_balance(self.chain._web3, self.account.address))
+            eth_balance = self.get_eth()
             new_eth_balance = eth_balance + eth
             _ = set_anvil_account_balance(self.chain._web3, self.account.address, new_eth_balance.scaled_value)
 
@@ -822,6 +822,16 @@ class HyperdriveAgent:
     ################
     # Analysis
     ################
+
+    def get_eth(self) -> FixedPoint:
+        """Returns the ETH balance of the agent.
+
+        Returns
+        -------
+        FixedPoint
+            Returns the ETH balance of the agent.
+        """
+        return FixedPoint(scaled_value=get_account_balance(self.chain._web3, self.address))
 
     def get_wallet(self, pool: Hyperdrive | None = None) -> HyperdriveWallet:
         """Returns the wallet object for the agent for the given hyperdrive pool.
