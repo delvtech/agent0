@@ -1030,8 +1030,16 @@ class HyperdriveAgent:
         # we do a one off calculation to get the pnl here.
         if not self.chain.config.calc_pnl and calc_pnl:
             if isinstance(pool_filter, list):
-                # FIXME
-                pass
+                out = []
+                for pool in pool_filter:
+                    out.append(
+                        fill_pnl_values(
+                            position_snapshot[position_snapshot["hyperdrive_address"] == pool.hyperdrive_address],
+                            self.chain.db_session,
+                            pool.interface,
+                        )
+                    )
+                position_snapshot = pd.concat(out, axis=0)
             else:
                 position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, pool_filter.interface)
 
