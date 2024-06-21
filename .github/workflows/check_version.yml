@@ -22,7 +22,7 @@ jobs:
       version_changed: ${{ steps.check.outputs.version_changed }}
       only_patch_version_changed: ${{ steps.check.outputs.only_patch_version_changed }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
           submodules: recursive
