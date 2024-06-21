@@ -503,8 +503,10 @@ class LocalHyperdrive(Hyperdrive):
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
             Defaults to False.
-        calc_pnl: bool
-            Whether to return the pnl for the current position. Only used if the chain config's `calc_pnl` is False.
+        calc_pnl: bool, optional
+            If the chain config's `calc_pnl` flag is False, passing in `calc_pnl=True` to this function allows for
+            a one-off pnl calculation for the current positions. Ignored if the chain's `calc_pnl` flag is set to True,
+            as every position snapshot will return pnl information.
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
             Defaults to False.
