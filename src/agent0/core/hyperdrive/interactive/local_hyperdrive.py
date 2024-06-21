@@ -10,6 +10,7 @@ from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
 from web3 import Web3
 
+from agent0.chainsync.analysis import fill_pnl_values
 from agent0.chainsync.db.hyperdrive import (
     get_checkpoint_info,
     get_pool_config,
@@ -483,7 +484,12 @@ class LocalHyperdrive(Hyperdrive):
             self.chain.db_session, hyperdrive_address=self.hyperdrive_address, coerce_float=coerce_float
         )
 
-    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+    def get_positions(
+        self,
+        show_closed_positions: bool = False,
+        calc_pnl: bool = False,
+        coerce_float: bool = False,
+    ) -> pd.DataFrame:
         """Gets all current positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
 
@@ -497,6 +503,10 @@ class LocalHyperdrive(Hyperdrive):
             When False, will only return currently open positions. Useful for gathering currently open positions.
             When True, will also return any closed positions. Useful for calculating overall pnl of all positions.
             Defaults to False.
+        calc_pnl: bool, optional
+            If the chain config's `calc_pnl` flag is False, passing in `calc_pnl=True` to this function allows for
+            a one-off pnl calculation for the current positions. Ignored if the chain's `calc_pnl` flag is set to True,
+            as every position snapshot will return pnl information.
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
             Defaults to False.
@@ -509,11 +519,17 @@ class LocalHyperdrive(Hyperdrive):
         position_snapshot = get_position_snapshot(
             self.chain.db_session,
             hyperdrive_address=self.interface.hyperdrive_address,
-            start_block=-1,
+            latest_entry=True,
             coerce_float=coerce_float,
         ).drop("id", axis=1)
         if not show_closed_positions:
             position_snapshot = position_snapshot[position_snapshot["token_balance"] != 0].reset_index(drop=True)
+
+        # If the config's calc_pnl is not set, but we pass in `calc_pnl = True` to this function,
+        # we do a one off calculation to get the pnl here.
+        if not self.calc_pnl and calc_pnl:
+            position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, self.interface)
+
         # Add usernames
         position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
         # Add logical name for pool

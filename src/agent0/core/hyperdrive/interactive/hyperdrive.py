@@ -163,7 +163,9 @@ class Hyperdrive:
 
         self._initialize(chain, hyperdrive_address, name)
 
-    def get_positions(self, show_closed_positions: bool = False, coerce_float: bool = False) -> pd.DataFrame:
+    def get_positions(
+        self, show_closed_positions: bool = False, calc_pnl: bool = False, coerce_float: bool = False
+    ) -> pd.DataFrame:
         """Gets all current positions of this pool and their corresponding pnl
         and returns as a pandas dataframe.
 
@@ -175,6 +177,10 @@ class Hyperdrive:
         ---------
         coerce_float: bool
             If True, will coerce underlying Decimals to floats.
+        calc_pnl: bool, optional
+            If the chain config's `calc_pnl` flag is False, passing in `calc_pnl=True` to this function allows for
+            a one-off pnl calculation for the current positions. Ignored if the chain's `calc_pnl` flag is set to True,
+            as every position snapshot will return pnl information.
         show_closed_positions: bool
             Whether to show positions closed positions (i.e., positions with zero balance). Defaults to False.
             When False, will only return currently open positions. Useful for gathering currently open positions.

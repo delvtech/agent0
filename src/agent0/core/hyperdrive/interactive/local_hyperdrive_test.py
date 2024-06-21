@@ -1256,3 +1256,96 @@ def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_str
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
     assert isinstance(interactive_hyperdrive.interface.current_pool_state.pool_config.time_stretch, FixedPoint)
+
+
+@pytest.mark.anvil
+def test_lazy_calc_pnl():
+    """Tests lazy calc pnl values."""
+    # Spin up 2 identical chains, pools, and agents, with trades.
+    calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True))
+    lazy_calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False))
+
+    # Since we added support for querying from multiple pools, we need to create multiple pools here
+    calc_pnl_pool_1 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
+    calc_pnl_pool_2 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
+    lazy_calc_pnl_pool_1 = LocalHyperdrive(lazy_calc_pnl_chain, LocalHyperdrive.Config())
+    lazy_calc_pnl_pool_2 = LocalHyperdrive(lazy_calc_pnl_chain, LocalHyperdrive.Config())
+
+    calc_pnl_agent = calc_pnl_chain.init_agent(
+        eth=FixedPoint(10),
+        name="alice",
+    )
+    lazy_calc_pnl_agent = lazy_calc_pnl_chain.init_agent(
+        eth=FixedPoint(10),
+        name="bob",
+    )
+
+    calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=calc_pnl_pool_1)
+    calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=calc_pnl_pool_2)
+    lazy_calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=lazy_calc_pnl_pool_1)
+    lazy_calc_pnl_agent.add_funds(base=FixedPoint(100_000), pool=lazy_calc_pnl_pool_2)
+
+    # Make identical trades.
+    _ = calc_pnl_agent.add_liquidity(FixedPoint(1_000), pool=calc_pnl_pool_1)
+    _ = calc_pnl_agent.add_liquidity(FixedPoint(2_000), pool=calc_pnl_pool_2)
+    _ = lazy_calc_pnl_agent.add_liquidity(FixedPoint(1_000), pool=lazy_calc_pnl_pool_1)
+    _ = lazy_calc_pnl_agent.add_liquidity(FixedPoint(2_000), pool=lazy_calc_pnl_pool_2)
+
+    _ = calc_pnl_agent.open_long(FixedPoint(1_000), pool=calc_pnl_pool_1)
+    _ = calc_pnl_agent.open_long(FixedPoint(2_000), pool=calc_pnl_pool_2)
+    _ = lazy_calc_pnl_agent.open_long(FixedPoint(1_000), pool=lazy_calc_pnl_pool_1)
+    _ = lazy_calc_pnl_agent.open_long(FixedPoint(2_000), pool=lazy_calc_pnl_pool_2)
+
+    _ = calc_pnl_agent.open_short(FixedPoint(1_000), pool=calc_pnl_pool_1)
+    _ = calc_pnl_agent.open_short(FixedPoint(2_000), pool=calc_pnl_pool_2)
+    _ = lazy_calc_pnl_agent.open_short(FixedPoint(1_000), pool=lazy_calc_pnl_pool_1)
+    _ = lazy_calc_pnl_agent.open_short(FixedPoint(2_000), pool=lazy_calc_pnl_pool_2)
+
+    # Lazy calc pnl agent shouldn't have unrealized value or pnl columns
+    positions = lazy_calc_pnl_agent.get_positions(show_closed_positions=True, calc_pnl=False)
+    # Should have 6 positions, 3 per pool
+    assert len(positions) == 6
+    # The unrealized value and pnl should be nans
+    assert positions[["unrealized_value", "pnl"]].isna().all().all()
+
+    # PNLs between the two agents should be identical for both if we calc pnl
+    calc_pnl_positions = calc_pnl_agent.get_positions(show_closed_positions=True)
+    lazy_calc_pnl_positions = lazy_calc_pnl_agent.get_positions(show_closed_positions=True, calc_pnl=True)
+    # To ensure the positions are identical between the two positions,
+    # we sort by token_id and token_balance
+    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
+        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
+    )
+
+    # Lazy calc pnl from pool shouldn't have unrealized value or pnl columns
+    positions = lazy_calc_pnl_pool_1.get_positions(show_closed_positions=True, calc_pnl=False)
+    # Should have 4 positions, 3 from the agent's trades, and 1 from initializer
+    assert len(positions) == 4
+    # The unrealized value and pnl should be nans
+    assert positions[["unrealized_value", "pnl"]].isna().all().all()
+
+    positions = lazy_calc_pnl_pool_2.get_positions(show_closed_positions=True, calc_pnl=False)
+    # Should have 4 positions, 3 from the agent's trades, and 1 from initializer
+    assert len(positions) == 4
+    # The unrealized value and pnl should be nans
+    assert positions[["unrealized_value", "pnl"]].isna().all().all()
+
+    # PNLs called from pools should be identical if we calc pnl
+    calc_pnl_positions = calc_pnl_pool_1.get_positions(show_closed_positions=True)
+    lazy_calc_pnl_positions = lazy_calc_pnl_pool_1.get_positions(show_closed_positions=True, calc_pnl=True)
+    # To ensure the positions are identical between the two positions,
+    # we sort by token_id and token_balance
+    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
+        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
+    )
+
+    calc_pnl_positions = calc_pnl_pool_2.get_positions(show_closed_positions=True)
+    lazy_calc_pnl_positions = lazy_calc_pnl_pool_2.get_positions(show_closed_positions=True, calc_pnl=True)
+    # To ensure the positions are identical between the two positions,
+    # we sort by token_id and token_balance
+    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
+        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
+    )
+
+    calc_pnl_chain.cleanup()
+    lazy_calc_pnl_chain.cleanup()

@@ -606,6 +606,7 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
 def get_position_snapshot(
     session: Session,
     hyperdrive_address: str | list[str] | None = None,
+    latest_entry: bool = False,
     start_block: int | None = None,
     end_block: int | None = None,
     wallet_address: list[str] | str | None = None,
@@ -619,14 +620,16 @@ def get_position_snapshot(
         The initialized session object.
     hyperdrive_address: str | list[str] | None, optional
         The hyperdrive pool address(es) to filter the query on. Defaults to returning all position snapshots.
+    latest_entry: bool, optional
+        If true, will return the latest entry for every pool. Defaults to False.
     start_block: int | None, optional
         The starting block to filter the query on. start_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
-        Defaults to first entry.
+        Defaults to first entry. Not used if `latest_entry` is True.
     end_block: int | None, optional
         The ending block to filter the query on. end_block integers
         matches python slicing notation, e.g., list[:3], list[:-3].
-        Defaults to last entry.
+        Defaults to last entry. Not used if `latest_entry` is True.
     wallet_address: list[str] | None, optional
         The wallet addresses to filter the query on. Returns all if None.
     coerce_float: bool, optional
@@ -645,27 +648,43 @@ def get_position_snapshot(
     elif hyperdrive_address is not None:
         query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
 
-    latest_block = get_latest_block_number_from_table(PositionSnapshot, session)
-    if start_block is None:
-        start_block = 0
-    if end_block is None:
-        end_block = latest_block + 1
+    # If using latest entry, we gather everything then do a distinct on call
+    if not latest_entry:
+        latest_block = get_latest_block_number_from_table(PositionSnapshot, session)
+        if start_block is None:
+            start_block = 0
+        if end_block is None:
+            end_block = latest_block + 1
+        # Support for negative indices
+        if start_block < 0:
+            start_block = latest_block + start_block + 1
+        if end_block < 0:
+            end_block = latest_block + end_block + 1
+        query = query.filter(PositionSnapshot.block_number >= start_block)
+        query = query.filter(PositionSnapshot.block_number < end_block)
 
-    # Support for negative indices
-    if start_block < 0:
-        start_block = latest_block + start_block + 1
-    if end_block < 0:
-        end_block = latest_block + end_block + 1
-
-    query = query.filter(PositionSnapshot.block_number >= start_block)
-    query = query.filter(PositionSnapshot.block_number < end_block)
     if isinstance(wallet_address, list):
         query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
     elif wallet_address is not None:
         query = query.filter(PositionSnapshot.wallet_address == wallet_address)
 
-    # Always sort by block in order
-    query = query.order_by(PositionSnapshot.block_number)
+    if latest_entry:
+        # We use a distinct by/order by here to get the last block
+        # for each hyperdrive address, wallet address, and token_id
+        query = query.distinct(
+            PositionSnapshot.hyperdrive_address,
+            PositionSnapshot.wallet_address,
+            PositionSnapshot.token_id,
+        )
+        query = query.order_by(
+            PositionSnapshot.hyperdrive_address,
+            PositionSnapshot.wallet_address,
+            PositionSnapshot.token_id,
+            PositionSnapshot.block_number.desc(),
+        )
+    else:
+        # Always sort by block in order
+        query = query.order_by(PositionSnapshot.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 

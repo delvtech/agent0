@@ -94,12 +94,10 @@ def build_pool_dashboard(
     # Adds user lookup to the ticker
     out_dfs["display_ticker"] = build_ticker_for_pool_page(trade_events, user_map, block_to_timestamp)
 
-    # Since this table is updated every block, we try and lag behind one block
-    # for position snapshots to avoid getting a currently updating block.
     latest_wallet_pnl = get_position_snapshot(
         session,
         hyperdrive_address=hyperdrive_address,
-        start_block=-1,
+        latest_entry=True,
         end_block=None,
         coerce_float=False,
     )
@@ -178,12 +176,10 @@ def build_wallet_dashboard(
         trade_events, user_map, hyperdrive_addr_mapping, block_to_timestamp
     )
 
-    # Since this table is updated every block, we try and lag behind one block
-    # for position snapshots to avoid getting a currently updating block.
     position_snapshot = get_position_snapshot(
         session,
         wallet_address=wallet_addresses,
-        start_block=-1,
+        latest_entry=True,
         end_block=None,
         coerce_float=False,
     )
