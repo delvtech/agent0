@@ -53,7 +53,8 @@ def calc_single_closeout(
     interface: HyperdriveReadInterface,
     hyperdrive_state: PoolState,
     checkpoint_share_prices: pd.Series,
-) -> Decimal:
+    coerce_float: bool,
+) -> Decimal | float:
     """Calculate the closeout value for a single position.
 
     Arguments
@@ -66,12 +67,16 @@ def calc_single_closeout(
         The hyperdrive pool state.
     checkpoint_share_prices: pd.Series
         A series with the index as checkpoint time and the value as the share prices.
+    coerce_float: bool
+        If True, will coerce underlying Decimals to floats.
 
     Returns
     -------
-    Decimal
-        The closeout position value.
+    Decimal | float
+        The closeout position value. Type depends on the coerce_float argument.
     """
+    # pylint: disable=too-many-branches
+
     # If no balance, value is 0
     if position["token_balance"] == 0:
         return Decimal(0)
@@ -83,17 +88,15 @@ def calc_single_closeout(
     if token_type in ["LONG", "SHORT"]:
         maturity = int(position["maturity_time"])
 
-    out_value = Decimal("nan")
+    fp_out_value: FixedPoint = FixedPoint("nan")
     if token_type == "LONG":
         try:
             # Suppress any errors coming from rust here, we already log it as info
             with _suppress_stdout_stderr():
-                out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
+                fp_out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.info("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
-        # FixedPoint to Decimal
-        out_value = Decimal(str(out_value))
 
     elif token_type == "SHORT":
         # Get the open share price from the checkpoint lookup
@@ -131,7 +134,7 @@ def calc_single_closeout(
         try:
             # Suppress any errors coming from rust here, we already log it as info
             with _suppress_stdout_stderr():
-                out_value = interface.calc_close_short(
+                fp_out_value = interface.calc_close_short(
                     amount,
                     open_vault_share_price=open_share_price,
                     close_vault_share_price=close_share_price,
@@ -141,17 +144,21 @@ def calc_single_closeout(
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.info("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
-        out_value = Decimal(str(out_value))
 
     # For PNL, we assume all withdrawal shares are redeemable
     # even if there are no withdrawal shares available to withdraw
     # Hence, we don't use preview transaction here
     elif token_type in ["LP", "WITHDRAWAL_SHARE"]:
-        out_value = amount * hyperdrive_state.pool_info.lp_share_price
-        out_value = Decimal(str(out_value))
+        fp_out_value = amount * hyperdrive_state.pool_info.lp_share_price
     else:
         # Should never get here
         raise ValueError(f"Unexpected token type: {token_type}")
+
+    if coerce_float:
+        out_value = float(fp_out_value)
+    else:
+        out_value = Decimal(str(fp_out_value))
+
     return out_value
 
 
@@ -159,6 +166,7 @@ def calc_closeout_value(
     current_positions: pd.DataFrame,
     checkpoint_info: pd.DataFrame,
     interface: HyperdriveReadInterface,
+    coerce_float: bool,
 ) -> pd.Series:
     """Calculate closeout value of agent positions.
 
@@ -170,6 +178,8 @@ def calc_closeout_value(
         A dataframe resulting from `get_checkpoint_info` that describes all checkpoints.
     interface: HyperdriveReadInterface
         The hyperdrive read interface.
+    coerce_float: bool
+        If True, will coerce underlying Decimals to floats.
 
     Returns
     -------
@@ -194,11 +204,14 @@ def calc_closeout_value(
         interface=interface,
         hyperdrive_state=hyperdrive_state,
         checkpoint_share_prices=checkpoint_share_prices,
+        coerce_float=coerce_float,
         axis=1,
     )
 
 
-def fill_pnl_values(in_df: pd.DataFrame, db_session: Session, interface: HyperdriveReadInterface) -> pd.DataFrame:
+def fill_pnl_values(
+    in_df: pd.DataFrame, db_session: Session, interface: HyperdriveReadInterface, coerce_float: bool
+) -> pd.DataFrame:
     """Fills in the unrealized and realized pnl for each position.
 
     Arguments
@@ -209,12 +222,17 @@ def fill_pnl_values(in_df: pd.DataFrame, db_session: Session, interface: Hyperdr
         The database session.
     interface: HyperdriveReadInterface
         The hyperdrive read interface attached to a hyperdrive pool.
+    coerce_float: bool
+        If True, will coerce all numeric columns to float.
 
     Returns
     -------
     pd.DataFrame
         The `in_df` with unrealized value and pnl columns added.
     """
+
+    if len(in_df) == 0:
+        return in_df
 
     checkpoint_info = get_checkpoint_info(
         db_session, hyperdrive_address=interface.hyperdrive_address, coerce_float=False
@@ -223,6 +241,7 @@ def fill_pnl_values(in_df: pd.DataFrame, db_session: Session, interface: Hyperdr
         in_df,
         checkpoint_info,
         interface,
+        coerce_float=coerce_float,
     )
     in_df["unrealized_value"] = values_df
     in_df["pnl"] = in_df["unrealized_value"] + in_df["realized_value"]

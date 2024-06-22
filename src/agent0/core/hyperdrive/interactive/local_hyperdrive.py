@@ -528,7 +528,12 @@ class LocalHyperdrive(Hyperdrive):
         # If the config's calc_pnl is not set, but we pass in `calc_pnl = True` to this function,
         # we do a one off calculation to get the pnl here.
         if not self.calc_pnl and calc_pnl:
-            position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, self.interface)
+            position_snapshot = fill_pnl_values(
+                position_snapshot,
+                self.chain.db_session,
+                self.interface,
+                coerce_float=coerce_float,
+            )
 
         # Add usernames
         position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")

@@ -105,7 +105,9 @@ def snapshot_positions_to_db(
             current_pool_positions["block_number"] = query_block_number
             # Calculate pnl for these positions if flag is set
             if calc_pnl:
-                current_pool_positions = fill_pnl_values(current_pool_positions, db_session, interface)
+                current_pool_positions = fill_pnl_values(
+                    current_pool_positions, db_session, interface, coerce_float=False
+                )
             all_pool_positions.append(current_pool_positions)
 
     if len(all_pool_positions) > 0:
