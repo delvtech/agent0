@@ -1039,11 +1039,17 @@ class HyperdriveAgent:
                             position_snapshot[position_snapshot["hyperdrive_address"] == pool.hyperdrive_address],
                             self.chain.db_session,
                             pool.interface,
+                            coerce_float=coerce_float,
                         )
                     )
                 position_snapshot = pd.concat(out, axis=0)
             else:
-                position_snapshot = fill_pnl_values(position_snapshot, self.chain.db_session, pool_filter.interface)
+                position_snapshot = fill_pnl_values(
+                    position_snapshot,
+                    self.chain.db_session,
+                    pool_filter.interface,
+                    coerce_float=coerce_float,
+                )
 
         # Add usernames
         position_snapshot = self.chain._add_username_to_dataframe(position_snapshot, "wallet_address")
