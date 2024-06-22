@@ -216,6 +216,9 @@ def fill_pnl_values(in_df: pd.DataFrame, db_session: Session, interface: Hyperdr
         The `in_df` with unrealized value and pnl columns added.
     """
 
+    if len(in_df) == 0:
+        return in_df
+
     checkpoint_info = get_checkpoint_info(
         db_session, hyperdrive_address=interface.hyperdrive_address, coerce_float=False
     )
