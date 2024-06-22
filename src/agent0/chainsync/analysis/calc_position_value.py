@@ -166,7 +166,7 @@ def calc_closeout_value(
     current_positions: pd.DataFrame,
     checkpoint_info: pd.DataFrame,
     interface: HyperdriveReadInterface,
-    coerce_float: bool = False,
+    coerce_float: bool,
 ) -> pd.Series:
     """Calculate closeout value of agent positions.
 
