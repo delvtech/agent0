@@ -48,7 +48,6 @@ class FullHyperdriveEnv(gym.Env):
         max_positions_per_type: int = 10
         base_reward_scale: float = 0.0
         position_reward_scale: float = 1
-        window_size: int = 10
         episode_length: int = 200
         # The threshold for the probability of opening and closing orders
         open_threshold: float = 0.5
