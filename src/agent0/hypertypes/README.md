@@ -41,6 +41,13 @@ HyperdriveRegistry.sol
 IHyperdrive.sol
 LPMath.sol
 MockERC4626.sol
+MockLido.sol
+StETHHyperdriveCoreDeployer.sol
+StETHHyperdriveDeployerCoordinator.sol
+StETHTarget0Deployer.sol
+StETHTarget1deployer.sol
+StETHTarget2Deployer.sol
+StETHTarget3Deployer.sol
 ```
 
 You then can update the generated `hypertypes` python package by running `pypechain` on this folder:
