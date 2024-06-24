@@ -8,7 +8,7 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
-<img src="icons/agent0-dark.svg" width="800" alt="agent0"><br>
+<img src="https://github.com/delvtech/agent0/tree/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
 
 # [DELV](https://delv.tech) repo for market simulation and analysis
 
@@ -52,15 +52,17 @@ pool_info = hyperdrive.get_pool_info(coerce_float=True)
 pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
 ```
 
-See our [tutorial notebook](examples/tutorial.ipynb) and [examples notebook](examples/short_examples.ipynb) for more information, including details on executing trades on remote chains.
+See our [tutorial notebook](https://github.com/delvtech/agent0/tree/main/examples/tutorial.ipynb) and 
+[examples notebook](https://github.com/delvtech/agent0/tree/main/examples/short_examples.ipynb) for more information, 
+including details on executing trades on remote chains.
 
 ## Install
 
-Please refer to [INSTALL.md](INSTALL.md) for more advanced install options.
+Please refer to [INSTALL.md](https://github.com/delvtech/agent0/tree/main/INSTALL.md) for more advanced install options.
 
 ## Deployment
 
-Please refer to [BUILD.md](BUILD.md).
+Please refer to [BUILD.md](https://github.com/delvtech/agent0/tree/main/BUILD.md).
 
 ## Testing
 
@@ -73,7 +75,7 @@ General integration-level tests are in the `tests` folder, while more isolated o
 
 ## Contributions
 
-Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+Please refer to [CONTRIBUTING.md](https://github.com/delvtech/agent0/tree/main/CONTRIBUTING.md).
 
 ## Coverage
 
