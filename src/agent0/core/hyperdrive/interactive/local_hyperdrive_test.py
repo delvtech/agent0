@@ -1349,3 +1349,38 @@ def test_lazy_calc_pnl():
 
     calc_pnl_chain.cleanup()
     lazy_calc_pnl_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_fork():
+    """Tests forking a chain."""
+
+    # Set up orig chain
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
+    agent = chain.init_agent(
+        base=FixedPoint(10_000),
+        eth=FixedPoint(10),
+        pool=pool,
+    )
+    _ = agent.add_liquidity(FixedPoint(1_000))
+
+    fork_chain = LocalChain(
+        fork_uri=chain.rpc_uri,
+        config=LocalChain.Config(chain_port=6002, db_port=6003),
+    )
+    # Set deploy = False since we're attaching to an existing chain
+    fork_pool = LocalHyperdrive(
+        fork_chain,
+        deploy=False,
+        hyperdrive_address=pool.hyperdrive_address,
+    )
+    fork_agent = fork_chain.init_agent(
+        public_address=agent.address,
+    )
+    trade_events = fork_agent.get_trade_events(pool_filter=fork_pool)
+    assert len(trade_events) == 1
+    assert trade_events.iloc[0]["event_type"] == "AddLiquidity"
+
+    chain.cleanup()
+    fork_chain.cleanup()
