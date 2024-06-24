@@ -201,7 +201,9 @@ class LocalHyperdrive(Hyperdrive):
             In the case of attaching to an existing hyperdrive contract from a fork with `deploy = False`,
             this flag allows for backfilling the database tables from when the pool was deployed.
             This flag doesn't have any effect if `deploy = True`.
+            NOTE: setting this flag to True can make this call take a long time.
         """
+        # pylint: too-many-branches
 
         # We don't call super's init since we do specific type checking
         # in Hyperdrive's init. Instead, we call _initialize
@@ -248,11 +250,14 @@ class LocalHyperdrive(Hyperdrive):
 
         if deploy:
             self._data_start_block = self._deploy_block_number
+            self._analysis_start_block = self._deploy_block_number
         else:
             if backfill_data:
                 self._data_start_block = self._deploy_block_number
             else:
                 self._data_start_block = chain.block_number()
+            # Always start analysis at the current block
+            self._analysis_start_block = chain.block_number()
 
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
@@ -285,9 +290,12 @@ class LocalHyperdrive(Hyperdrive):
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        self._run_blocking_data_pipeline()
+        if backfill_data:
+            self._run_blocking_data_pipeline(progress_bar=True)
+        else:
+            self._run_blocking_data_pipeline()
 
-    def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
+    def _run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
         # TODO these functions are not thread safe, need to fix if we expose async functions
         # Runs the data pipeline synchronously
 
@@ -296,17 +304,22 @@ class LocalHyperdrive(Hyperdrive):
         # call with skipping blocks wrote a row, as the data pipeline checks the latest
         # block entry and starts from there.
         if start_block is None:
-            start_block = self._data_start_block
+            data_start_block = self._data_start_block
+            analysis_start_block = self._analysis_start_block
+        else:
+            data_start_block = start_block
+            analysis_start_block = start_block
 
         acquire_data(
-            start_block=start_block,  # Start block is the block hyperdrive was deployed
+            start_block=data_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
+            progress_bar=progress_bar,
         )
         analyze_data(
-            start_block=start_block,
+            start_block=analysis_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
             exit_on_catch_up=True,
