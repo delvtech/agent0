@@ -234,6 +234,8 @@ def fill_pnl_values(
     if len(in_df) == 0:
         return in_df
 
+    out_df = in_df.copy()
+
     checkpoint_info = get_checkpoint_info(
         db_session, hyperdrive_address=interface.hyperdrive_address, coerce_float=False
     )
@@ -243,6 +245,6 @@ def fill_pnl_values(
         interface,
         coerce_float=coerce_float,
     )
-    in_df["unrealized_value"] = values_df
-    in_df["pnl"] = in_df["unrealized_value"] + in_df["realized_value"]
-    return in_df
+    out_df["unrealized_value"] = values_df
+    out_df["pnl"] = in_df["unrealized_value"] + in_df["realized_value"]
+    return out_df
