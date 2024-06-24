@@ -17,7 +17,7 @@ This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https
 ## Quickstart
 
 This repo contains general purpose code for interacting with Ethereum smart contracts.
-However, it was bulit for the primary use case of trading on [Hyperdrive](https://hyperdrive.delv.tech) markets.
+However, it was built for the primary use case of trading on [Hyperdrive](https://hyperdrive.delv.tech) markets.
 
 First, install [Foundry](https://book.getfoundry.sh/getting-started/installation) and [Docker](https://docs.docker.com/engine/install/).
 
