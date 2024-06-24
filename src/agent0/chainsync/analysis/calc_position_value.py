@@ -246,5 +246,5 @@ def fill_pnl_values(
         coerce_float=coerce_float,
     )
     out_df["unrealized_value"] = values_df
-    out_df["pnl"] = in_df["unrealized_value"] + in_df["realized_value"]
+    out_df["pnl"] = out_df["unrealized_value"] + out_df["realized_value"]
     return out_df
