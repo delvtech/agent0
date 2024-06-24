@@ -1312,10 +1312,14 @@ def test_lazy_calc_pnl():
     calc_pnl_positions = calc_pnl_agent.get_positions(show_closed_positions=True)
     lazy_calc_pnl_positions = lazy_calc_pnl_agent.get_positions(show_closed_positions=True, calc_pnl=True)
     # To ensure the positions are identical between the two positions,
-    # we sort by token_id and token_balance
-    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
-        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
-    )
+    # we sort by token_id and token_balance, then reset index
+    calc_pnl_comp_values = calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    lazy_calc_pnl_comp_values = lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    assert calc_pnl_comp_values.equals(lazy_calc_pnl_comp_values)
 
     # Lazy calc pnl from pool shouldn't have unrealized value or pnl columns
     positions = lazy_calc_pnl_pool_1.get_positions(show_closed_positions=True, calc_pnl=False)
