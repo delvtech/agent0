@@ -480,7 +480,7 @@ class FullHyperdriveEnv(gym.Env):
         self._step_count += 1
         terminated = False
 
-        if self._step_count > self.gym_config.episode_length:
+        if self._step_count >= self.gym_config.episode_length:
             terminated = True
 
         # TODO when does the episode stop?
