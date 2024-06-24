@@ -1262,8 +1262,12 @@ def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_str
 def test_lazy_calc_pnl():
     """Tests lazy calc pnl values."""
     # Spin up 2 identical chains, pools, and agents, with trades.
-    calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True))
-    lazy_calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False))
+    calc_pnl_chain = LocalChain(
+        config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True, chain_genesis_timestamp=1719258840)
+    )
+    lazy_calc_pnl_chain = LocalChain(
+        config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False, chain_genesis_timestamp=1719258840)
+    )
 
     # Since we added support for querying from multiple pools, we need to create multiple pools here
     calc_pnl_pool_1 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
@@ -1334,18 +1338,26 @@ def test_lazy_calc_pnl():
     calc_pnl_positions = calc_pnl_pool_1.get_positions(show_closed_positions=True)
     lazy_calc_pnl_positions = lazy_calc_pnl_pool_1.get_positions(show_closed_positions=True, calc_pnl=True)
     # To ensure the positions are identical between the two positions,
-    # we sort by token_id and token_balance
-    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
-        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
-    )
+    # we sort by token_id and token_balance, then reset the index
+    calc_pnl_comp_values = calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    lazy_calc_pnl_comp_values = lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    assert calc_pnl_comp_values.equals(lazy_calc_pnl_comp_values)
 
     calc_pnl_positions = calc_pnl_pool_2.get_positions(show_closed_positions=True)
     lazy_calc_pnl_positions = lazy_calc_pnl_pool_2.get_positions(show_closed_positions=True, calc_pnl=True)
     # To ensure the positions are identical between the two positions,
-    # we sort by token_id and token_balance
-    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
-        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
-    )
+    # we sort by token_id and token_balance, then reset index
+    calc_pnl_comp_values = calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    lazy_calc_pnl_comp_values = lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    assert calc_pnl_comp_values.equals(lazy_calc_pnl_comp_values)
 
     calc_pnl_chain.cleanup()
     lazy_calc_pnl_chain.cleanup()
