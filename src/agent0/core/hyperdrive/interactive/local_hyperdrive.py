@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
 
@@ -179,7 +180,7 @@ class LocalHyperdrive(Hyperdrive):
         name: str | None = None,
         deploy: bool = True,
         hyperdrive_address: ChecksumAddress | str | None = None,
-        backfill_data: bool = False,
+        backfill_data_block: int | None = None,
     ):
         """Constructor for the interactive hyperdrive agent.
 
@@ -197,13 +198,15 @@ class LocalHyperdrive(Hyperdrive):
         deploy: bool, optional
             If True, will deploy a new hyperdrive contract.
             If False, will connect to an existing hyperdrive contract (in cases of forking)
-        backfill_data: bool, optional
+        backfill_data_block: int | None, optional
             In the case of attaching to an existing hyperdrive contract from a fork with `deploy = False`,
-            this flag allows for backfilling the database tables from when the pool was deployed.
-            This flag doesn't have any effect if `deploy = True`.
-            NOTE: setting this flag to True can make this call take a long time.
+            this parameter controls the block to start backfilling the data from.
+            The default is to not backfill and start from the current block.
+            0 means backfill from the earliest time possible (i.e., when the pool was deployed).
+            Otherwise, will backfill from the provided block number.
+            NOTE: backfilling can be slow.
         """
-        # pylint: too-many-branches
+        # pylint: disable=too-many-branches
 
         # We don't call super's init since we do specific type checking
         # in Hyperdrive's init. Instead, we call _initialize
@@ -252,10 +255,10 @@ class LocalHyperdrive(Hyperdrive):
             self._data_start_block = self._deploy_block_number
             self._analysis_start_block = self._deploy_block_number
         else:
-            if backfill_data:
-                self._data_start_block = self._deploy_block_number
-            else:
+            if backfill_data_block is None:
                 self._data_start_block = chain.block_number()
+            else:
+                self._data_start_block = max(self._deploy_block_number, backfill_data_block)
             # Always start analysis at the current block
             self._analysis_start_block = chain.block_number()
 
@@ -290,7 +293,8 @@ class LocalHyperdrive(Hyperdrive):
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        if backfill_data:
+        if backfill_data_block is not None:
+            logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
             self._run_blocking_data_pipeline(progress_bar=True)
         else:
             self._run_blocking_data_pipeline()
