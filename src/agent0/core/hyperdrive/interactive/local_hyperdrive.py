@@ -179,6 +179,7 @@ class LocalHyperdrive(Hyperdrive):
         name: str | None = None,
         deploy: bool = True,
         hyperdrive_address: ChecksumAddress | str | None = None,
+        backfill_data: bool = False,
     ):
         """Constructor for the interactive hyperdrive agent.
 
@@ -196,6 +197,10 @@ class LocalHyperdrive(Hyperdrive):
         deploy: bool, optional
             If True, will deploy a new hyperdrive contract.
             If False, will connect to an existing hyperdrive contract (in cases of forking)
+        backfill_data: bool, optional
+            In the case of attaching to an existing hyperdrive contract from a fork with `deploy = False`,
+            this flag allows for backfilling the database tables from when the pool was deployed.
+            This flag doesn't have any effect if `deploy = True`.
         """
 
         # We don't call super's init since we do specific type checking
@@ -217,6 +222,7 @@ class LocalHyperdrive(Hyperdrive):
                 self.config, chain
             )
             hyperdrive_address = self._deployed_hyperdrive_pool.hyperdrive_contract.address
+
         else:
             if hyperdrive_address is None:
                 raise ValueError("Must specify a hyperdrive address if not deploying a Hyperdrive contract.")
@@ -230,7 +236,23 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
+        deploy_event = self.interface.hyperdrive_contract.events.Initialize.get_logs(fromBlock="earliest")
+        deploy_event = list(deploy_event)
+        if len(deploy_event) == 0:
+            # TODO handle this case more gracefully by e.g., finding the earliest event
+            # that exists from this contract.
+            raise ValueError(f"Deploy event not found for pool {self.name} ({hyperdrive_address}).")
+        if len(deploy_event) > 1:
+            raise AssertionError("Multiple deploy events found.")
+        self._deploy_block_number = deploy_event[0]["blockNumber"]
+
+        if deploy:
+            self._data_start_block = self._deploy_block_number
+        else:
+            if backfill_data:
+                self._data_start_block = self._deploy_block_number
+            else:
+                self._data_start_block = chain.block_number()
 
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
@@ -274,7 +296,7 @@ class LocalHyperdrive(Hyperdrive):
         # call with skipping blocks wrote a row, as the data pipeline checks the latest
         # block entry and starts from there.
         if start_block is None:
-            start_block = self._deploy_block_number
+            start_block = self._data_start_block
 
         acquire_data(
             start_block=start_block,  # Start block is the block hyperdrive was deployed
@@ -450,19 +472,6 @@ class LocalHyperdrive(Hyperdrive):
         if len(pool_config) == 0:
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
-
-    def backfill_pool_info(self, from_block: int) -> None:
-        """Backfills pool info from a give block.
-
-        In the case of forking, pool info is only available from the time of the fork.
-        This function allows for a user to explicitly backfill pool from a given block.
-
-        Arguments
-        ---------
-        from_block: int
-            The block number to start backfilling from.
-        """
-        pass
 
     def get_pool_info(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.

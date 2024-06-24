@@ -1407,12 +1407,14 @@ def test_fork_backfill_pool_info():
         config=LocalChain.Config(chain_port=6002, db_port=6003),
     )
     # Set deploy = False since we're attaching to an existing chain
+    # We set backfill data to True
     fork_pool = LocalHyperdrive(
         fork_chain,
         deploy=False,
         hyperdrive_address=pool.hyperdrive_address,
+        backfill_data=True,
     )
-    pass
+    assert fork_pool.get_pool_info().equals(pool.get_pool_info())
 
     chain.cleanup()
     fork_chain.cleanup()
