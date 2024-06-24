@@ -180,7 +180,7 @@ class LocalHyperdrive(Hyperdrive):
         name: str | None = None,
         deploy: bool = True,
         hyperdrive_address: ChecksumAddress | str | None = None,
-        backfill_data_block: int | None = None,
+        backfill_data_start_block: int | None = None,
     ):
         """Constructor for the interactive hyperdrive agent.
 
@@ -198,7 +198,7 @@ class LocalHyperdrive(Hyperdrive):
         deploy: bool, optional
             If True, will deploy a new hyperdrive contract.
             If False, will connect to an existing hyperdrive contract (in cases of forking)
-        backfill_data_block: int | None, optional
+        backfill_data_start_block: int | None, optional
             In the case of attaching to an existing hyperdrive contract from a fork with `deploy = False`,
             this parameter controls the block to start backfilling the data from.
             The default is to not backfill and start from the current block.
@@ -255,10 +255,10 @@ class LocalHyperdrive(Hyperdrive):
             self._data_start_block = self._deploy_block_number
             self._analysis_start_block = self._deploy_block_number
         else:
-            if backfill_data_block is None:
+            if backfill_data_start_block is None:
                 self._data_start_block = chain.block_number()
             else:
-                self._data_start_block = max(self._deploy_block_number, backfill_data_block)
+                self._data_start_block = max(self._deploy_block_number, backfill_data_start_block)
             # Always start analysis at the current block
             self._analysis_start_block = chain.block_number()
 
@@ -293,7 +293,7 @@ class LocalHyperdrive(Hyperdrive):
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        if backfill_data_block is not None:
+        if backfill_data_start_block is not None:
             logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
             self._run_blocking_data_pipeline(progress_bar=True)
         else:

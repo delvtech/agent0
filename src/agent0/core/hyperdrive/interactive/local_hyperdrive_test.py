@@ -1387,8 +1387,8 @@ def test_fork():
 
 
 @pytest.mark.anvil
-def test_fork_backfill_pool_info():
-    """Tests forking a chain."""
+def test_fork_backfill():
+    """Tests backfilling data from a forked chain."""
 
     # Set up orig chain
     chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
@@ -1412,7 +1412,7 @@ def test_fork_backfill_pool_info():
         fork_chain,
         deploy=False,
         hyperdrive_address=pool.hyperdrive_address,
-        backfill_data=True,
+        backfill_data_start_block=0,
     )
     assert fork_pool.get_pool_info().equals(pool.get_pool_info())
 
