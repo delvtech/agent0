@@ -8,6 +8,7 @@ from typing import Callable
 
 from eth_typing import BlockNumber, ChecksumAddress
 from sqlalchemy.orm import Session
+from tqdm import tqdm
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
@@ -28,7 +29,7 @@ _SLEEP_AMOUNT = 1
 # pylint: disable=too-many-branches
 def acquire_data(
     start_block: int = 0,
-    lookback_block_limit: int = 1000,
+    lookback_block_limit: int = 3000,
     interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
     hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None = None,
@@ -37,6 +38,7 @@ def acquire_data(
     exit_on_catch_up: bool = False,
     exit_callback_fn: Callable[[], bool] | None = None,
     suppress_logs: bool = False,
+    progress_bar: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
@@ -71,6 +73,8 @@ def acquire_data(
         Defaults to not set.
     suppress_logs: bool, optional
         If true, will suppress info logging from this function. Defaults to False.
+    progress_bar: bool, optional
+        If true, will show a progress bar. Defaults to False.
     """
     # TODO implement logger instead of global logging to suppress based on module name.
 
@@ -138,7 +142,7 @@ def acquire_data(
             time.sleep(_SLEEP_AMOUNT)
             continue
         # Backfilling for blocks that need updating
-        for block_int in range(curr_write_block, latest_mined_block + 1):
+        for block_int in tqdm(range(curr_write_block, latest_mined_block + 1), disable=not progress_bar):
             block_number: BlockNumber = BlockNumber(block_int)
             # Only print every 10 blocks
             if not suppress_logs and (block_number % 10) == 0:

@@ -1312,10 +1312,14 @@ def test_lazy_calc_pnl():
     calc_pnl_positions = calc_pnl_agent.get_positions(show_closed_positions=True)
     lazy_calc_pnl_positions = lazy_calc_pnl_agent.get_positions(show_closed_positions=True, calc_pnl=True)
     # To ensure the positions are identical between the two positions,
-    # we sort by token_id and token_balance
-    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
-        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
-    )
+    # we sort by token_id and token_balance, then reset index
+    calc_pnl_comp_values = calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    lazy_calc_pnl_comp_values = lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    assert calc_pnl_comp_values.equals(lazy_calc_pnl_comp_values)
 
     # Lazy calc pnl from pool shouldn't have unrealized value or pnl columns
     positions = lazy_calc_pnl_pool_1.get_positions(show_closed_positions=True, calc_pnl=False)
@@ -1334,18 +1338,95 @@ def test_lazy_calc_pnl():
     calc_pnl_positions = calc_pnl_pool_1.get_positions(show_closed_positions=True)
     lazy_calc_pnl_positions = lazy_calc_pnl_pool_1.get_positions(show_closed_positions=True, calc_pnl=True)
     # To ensure the positions are identical between the two positions,
-    # we sort by token_id and token_balance
-    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
-        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
-    )
+    # we sort by token_id and token_balance, then reset the index
+    calc_pnl_comp_values = calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    lazy_calc_pnl_comp_values = lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    assert calc_pnl_comp_values.equals(lazy_calc_pnl_comp_values)
 
     calc_pnl_positions = calc_pnl_pool_2.get_positions(show_closed_positions=True)
     lazy_calc_pnl_positions = lazy_calc_pnl_pool_2.get_positions(show_closed_positions=True, calc_pnl=True)
     # To ensure the positions are identical between the two positions,
-    # we sort by token_id and token_balance
-    assert calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]].equals(
-        lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[["unrealized_value", "pnl"]]
-    )
+    # we sort by token_id and token_balance, then reset index
+    calc_pnl_comp_values = calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    lazy_calc_pnl_comp_values = lazy_calc_pnl_positions.sort_values(["token_id", "token_balance"])[
+        ["unrealized_value", "pnl"]
+    ].reset_index(drop=True)
+    assert calc_pnl_comp_values.equals(lazy_calc_pnl_comp_values)
 
     calc_pnl_chain.cleanup()
     lazy_calc_pnl_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_fork():
+    """Tests forking a chain."""
+
+    # Set up orig chain
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
+    agent = chain.init_agent(
+        base=FixedPoint(10_000),
+        eth=FixedPoint(10),
+        pool=pool,
+    )
+    _ = agent.add_liquidity(FixedPoint(1_000))
+
+    fork_chain = LocalChain(
+        fork_uri=chain.rpc_uri,
+        config=LocalChain.Config(chain_port=6002, db_port=6003),
+    )
+    # Set deploy = False since we're attaching to an existing chain
+    fork_pool = LocalHyperdrive(
+        fork_chain,
+        deploy=False,
+        hyperdrive_address=pool.hyperdrive_address,
+    )
+    fork_agent = fork_chain.init_agent(
+        public_address=agent.address,
+    )
+    trade_events = fork_agent.get_trade_events(pool_filter=fork_pool)
+    assert len(trade_events) == 1
+    assert trade_events.iloc[0]["event_type"] == "AddLiquidity"
+
+    chain.cleanup()
+    fork_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_fork_backfill():
+    """Tests backfilling data from a forked chain."""
+
+    # Set up orig chain
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
+    agent = chain.init_agent(
+        base=FixedPoint(10_000),
+        eth=FixedPoint(10),
+        pool=pool,
+    )
+    _ = agent.add_liquidity(FixedPoint(1_000))
+    _ = agent.open_long(FixedPoint(1_000))
+    _ = agent.open_short(FixedPoint(1_000))
+
+    fork_chain = LocalChain(
+        fork_uri=chain.rpc_uri,
+        config=LocalChain.Config(chain_port=6002, db_port=6003),
+    )
+    # Set deploy = False since we're attaching to an existing chain
+    # We set backfill data start block to backfill all data
+    fork_pool = LocalHyperdrive(
+        fork_chain,
+        deploy=False,
+        hyperdrive_address=pool.hyperdrive_address,
+        backfill_data_start_block=0,
+    )
+    assert fork_pool.get_pool_info().equals(pool.get_pool_info())
+
+    chain.cleanup()
+    fork_chain.cleanup()

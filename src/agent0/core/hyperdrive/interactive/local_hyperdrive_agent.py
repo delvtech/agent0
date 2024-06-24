@@ -80,10 +80,9 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if pool is not None and not isinstance(pool, LocalHyperdrive):
             raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
 
-        if public_address is not None:
-            raise ValueError("LocalHyperdriveAgent does not support public_address")
-
-        agent_private_key = make_private_key() if private_key is None else private_key
+        agent_private_key = None
+        if public_address is None:
+            agent_private_key = make_private_key() if private_key is None else private_key
 
         super().__init__(
             name=name,
@@ -92,7 +91,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             policy=policy,
             policy_config=policy_config,
             private_key=agent_private_key,
-            public_address=None,
+            public_address=public_address,
         )
 
         self.chain = chain

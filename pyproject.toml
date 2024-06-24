@@ -53,6 +53,7 @@ dependencies = [
     "sqlalchemy",
     "sqlalchemy-utils",
     "streamlit",
+    "tqdm",
     "web3",
 ]
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
 
@@ -179,6 +180,7 @@ class LocalHyperdrive(Hyperdrive):
         name: str | None = None,
         deploy: bool = True,
         hyperdrive_address: ChecksumAddress | str | None = None,
+        backfill_data_start_block: int | None = None,
     ):
         """Constructor for the interactive hyperdrive agent.
 
@@ -196,7 +198,15 @@ class LocalHyperdrive(Hyperdrive):
         deploy: bool, optional
             If True, will deploy a new hyperdrive contract.
             If False, will connect to an existing hyperdrive contract (in cases of forking)
+        backfill_data_start_block: int | None, optional
+            In the case of attaching to an existing hyperdrive contract from a fork with `deploy = False`,
+            this parameter controls the block to start backfilling the data from.
+            The default is to not backfill and start from the current block.
+            0 means backfill from the earliest time possible (i.e., when the pool was deployed).
+            Otherwise, will backfill from the provided block number.
+            NOTE: backfilling can be slow.
         """
+        # pylint: disable=too-many-branches
 
         # We don't call super's init since we do specific type checking
         # in Hyperdrive's init. Instead, we call _initialize
@@ -217,6 +227,7 @@ class LocalHyperdrive(Hyperdrive):
                 self.config, chain
             )
             hyperdrive_address = self._deployed_hyperdrive_pool.hyperdrive_contract.address
+
         else:
             if hyperdrive_address is None:
                 raise ValueError("Must specify a hyperdrive address if not deploying a Hyperdrive contract.")
@@ -230,7 +241,26 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        self._deploy_block_number = self.interface.get_block_number(self.interface.get_current_block())
+        deploy_event = self.interface.hyperdrive_contract.events.Initialize.get_logs(fromBlock="earliest")
+        deploy_event = list(deploy_event)
+        if len(deploy_event) == 0:
+            # TODO handle this case more gracefully by e.g., finding the earliest event
+            # that exists from this contract.
+            raise ValueError(f"Deploy event not found for pool {self.name} ({hyperdrive_address}).")
+        if len(deploy_event) > 1:
+            raise AssertionError("Multiple deploy events found.")
+        self._deploy_block_number = deploy_event[0]["blockNumber"]
+
+        if deploy:
+            self._data_start_block = self._deploy_block_number
+            self._analysis_start_block = self._deploy_block_number
+        else:
+            if backfill_data_start_block is None:
+                self._data_start_block = chain.block_number()
+            else:
+                self._data_start_block = max(self._deploy_block_number, backfill_data_start_block)
+            # Always start analysis at the current block
+            self._analysis_start_block = chain.block_number()
 
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
@@ -263,9 +293,13 @@ class LocalHyperdrive(Hyperdrive):
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
 
-        self._run_blocking_data_pipeline()
+        if backfill_data_start_block is not None:
+            logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
+            self._run_blocking_data_pipeline(progress_bar=True)
+        else:
+            self._run_blocking_data_pipeline()
 
-    def _run_blocking_data_pipeline(self, start_block: int | None = None) -> None:
+    def _run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
         # TODO these functions are not thread safe, need to fix if we expose async functions
         # Runs the data pipeline synchronously
 
@@ -274,17 +308,22 @@ class LocalHyperdrive(Hyperdrive):
         # call with skipping blocks wrote a row, as the data pipeline checks the latest
         # block entry and starts from there.
         if start_block is None:
-            start_block = self._deploy_block_number
+            data_start_block = self._data_start_block
+            analysis_start_block = self._analysis_start_block
+        else:
+            data_start_block = start_block
+            analysis_start_block = start_block
 
         acquire_data(
-            start_block=start_block,  # Start block is the block hyperdrive was deployed
+            start_block=data_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
             exit_on_catch_up=True,
             suppress_logs=True,
+            progress_bar=progress_bar,
         )
         analyze_data(
-            start_block=start_block,
+            start_block=analysis_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
             exit_on_catch_up=True,
