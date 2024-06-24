@@ -1419,7 +1419,7 @@ def test_fork_backfill():
         config=LocalChain.Config(chain_port=6002, db_port=6003),
     )
     # Set deploy = False since we're attaching to an existing chain
-    # We set backfill data to True
+    # We set backfill data start block to backfill all data
     fork_pool = LocalHyperdrive(
         fork_chain,
         deploy=False,
