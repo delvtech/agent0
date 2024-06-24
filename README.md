@@ -8,7 +8,7 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
-<img src="https://github.com/delvtech/agent0/tree/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
+<img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
 
 # [DELV](https://delv.tech) repo for market simulation and analysis
 
