@@ -1262,12 +1262,8 @@ def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_str
 def test_lazy_calc_pnl():
     """Tests lazy calc pnl values."""
     # Spin up 2 identical chains, pools, and agents, with trades.
-    calc_pnl_chain = LocalChain(
-        config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True, chain_genesis_timestamp=1719258840)
-    )
-    lazy_calc_pnl_chain = LocalChain(
-        config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False, chain_genesis_timestamp=1719258840)
-    )
+    calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True))
+    lazy_calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False))
 
     # Since we added support for querying from multiple pools, we need to create multiple pools here
     calc_pnl_pool_1 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
