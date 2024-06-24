@@ -451,6 +451,19 @@ class LocalHyperdrive(Hyperdrive):
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
 
+    def backfill_pool_info(self, from_block: int) -> None:
+        """Backfills pool info from a give block.
+
+        In the case of forking, pool info is only available from the time of the fork.
+        This function allows for a user to explicitly backfill pool from a given block.
+
+        Arguments
+        ---------
+        from_block: int
+            The block number to start backfilling from.
+        """
+        pass
+
     def get_pool_info(self, coerce_float: bool = False) -> pd.DataFrame:
         """Get the pool info (and additional info) per block and returns as a pandas dataframe.
 

@@ -1384,3 +1384,35 @@ def test_fork():
 
     chain.cleanup()
     fork_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_fork_backfill_pool_info():
+    """Tests forking a chain."""
+
+    # Set up orig chain
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
+    agent = chain.init_agent(
+        base=FixedPoint(10_000),
+        eth=FixedPoint(10),
+        pool=pool,
+    )
+    _ = agent.add_liquidity(FixedPoint(1_000))
+    _ = agent.open_long(FixedPoint(1_000))
+    _ = agent.open_short(FixedPoint(1_000))
+
+    fork_chain = LocalChain(
+        fork_uri=chain.rpc_uri,
+        config=LocalChain.Config(chain_port=6002, db_port=6003),
+    )
+    # Set deploy = False since we're attaching to an existing chain
+    fork_pool = LocalHyperdrive(
+        fork_chain,
+        deploy=False,
+        hyperdrive_address=pool.hyperdrive_address,
+    )
+    pass
+
+    chain.cleanup()
+    fork_chain.cleanup()
