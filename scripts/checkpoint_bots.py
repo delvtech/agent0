@@ -23,7 +23,7 @@ from web3.types import Nonce
 
 from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
-from agent0.ethpy.base import smart_contract_transact
+from agent0.ethpy.base import smart_contract_preview_transaction, smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.hypertypes import IHyperdriveContract
@@ -207,6 +207,16 @@ def run_checkpoint_bot(
                 fn_args = (checkpoint_time, 0)
                 # Call the thread safe get nonce function for this transaction's nonce
                 nonce = async_get_nonce(web3, sender)
+
+                # Try preview call
+                _ = smart_contract_preview_transaction(
+                    hyperdrive_contract,
+                    sender.address,
+                    "checkpoint",
+                    *fn_args,
+                    nonce=nonce,
+                )
+
                 receipt = smart_contract_transact(
                     web3,
                     hyperdrive_contract,

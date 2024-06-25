@@ -152,6 +152,7 @@ def smart_contract_preview_transaction(
     block_number: BlockNumber | None = None,
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
+    nonce: int | None = None,
     **fn_kwargs,
 ) -> dict[str, Any]:
     """Return the values from a transaction without actually submitting the transaction.
@@ -172,6 +173,8 @@ def smart_contract_preview_transaction(
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
         The value field for the transaction.
+    nonce: int | None
+        The nonce field for the transaction.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -197,10 +200,12 @@ def smart_contract_preview_transaction(
 
     # This is the additional transaction argument passed into function.call
     # that may contain additional call arguments such as max_gas, nonce, etc.
+    transaction_kwargs = TxParams({"from": signer_address})
+
     if txn_options_value is not None:
-        transaction_kwargs = TxParams({"from": signer_address, "value": Wei(txn_options_value)})
-    else:
-        transaction_kwargs = TxParams({"from": signer_address})
+        transaction_kwargs["value"] = Wei(txn_options_value)
+    if nonce is not None:
+        transaction_kwargs["nonce"] = Nonce(nonce)
 
     raw_txn = {}
     # We build the raw transaction here in case of error, where we want to attach the raw txn to the crash report.
