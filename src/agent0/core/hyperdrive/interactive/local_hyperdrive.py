@@ -370,6 +370,7 @@ class LocalHyperdrive(Hyperdrive):
         self, config: Config, chain: LocalChain
     ) -> tuple[DeployedHyperdriveFactory, DeployedHyperdrivePool]:
         # sanity check (also for type checking), should get set in __post_init__
+        assert config.minimum_share_reserves is not None
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
             deployerCoordinatorManager="",  # will be determined in the deploy function
