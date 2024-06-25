@@ -171,6 +171,11 @@ def deploy_base_and_vault(
                     maxMintAmount=UINT256_MAX,
                 ),
             )
+            # We fund lido with 1 eth to start to avoid reverts when we
+            # initialize the pool
+
+            # TODO this is done via "submit" in rust, how to do that here?
+            _ = set_anvil_account_balance(web3, vault_contract.address, FixedPoint(1).scaled_value)
 
     return DeployedBaseAndVault(
         deployer_account=deploy_account,
@@ -709,8 +714,14 @@ def _deploy_and_initialize_hyperdrive_pool(
         if receipt["status"] != 1:
             raise ValueError(f"Failed calling deployTarget on target {target_index}.\n{receipt=}")
 
+    match deploy_type:
+        case HyperdriveDeployType.ERC4626:
+            name = "agent0_erc4626"
+        case HyperdriveDeployType.STETH:
+            name = "agent0_steth"
+
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
-        name="agent0_erc4626",
+        name=name,
         deploymentId=deployment_id,
         deployerCoordinator=deployer_coordinator_address,
         config=pool_deploy_config,
