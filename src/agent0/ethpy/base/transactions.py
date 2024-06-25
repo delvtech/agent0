@@ -497,8 +497,7 @@ async def _async_send_transaction_and_wait_for_receipt(
 
     # Error checking when transaction doesn't throw an error, but instead
     # has errors in the tx_receipt
-    # The block number of this call failing is the previous block
-    block_number = tx_receipt.get("blockNumber") - 1
+    block_number = tx_receipt.get("blockNumber")
     # Check status here
     status = tx_receipt.get("status", None)
     # Set block number as the second argument
@@ -511,11 +510,14 @@ async def _async_send_transaction_and_wait_for_receipt(
             # Tracing doesn't exist in typing for some reason.
             # Doing this in error checking with try/catch.
             trace = web3.tracing.trace_transaction(tx_receipt["transactionHash"])  # type: ignore
-            # Trace gives a list of values, the last one should contain the error
-            error_message = trace[-1].get("error", None)
-            # If no trace, add back in status == 0 error
-            if error_message is None:
-                error_message = f"Receipt has status of 0. No trace found: {trace=}"
+            if len(trace) == 0:
+                error_message = "Receipt has status of 0. No trace found."
+            else:
+                # Trace gives a list of values, the last one should contain the error
+                error_message = trace[-1].get("error", None)
+                # If no trace, add back in status == 0 error
+                if error_message is None:
+                    error_message = f"Receipt has status of 0. No trace error found. {trace=}"
         # TODO does this need to be BaseException?
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Don't crash in crash reporting
