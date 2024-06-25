@@ -114,8 +114,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-# @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
-@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.STETH])
+@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
 def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # TODO DRY this up, e.g., doing the same calls while swapping the agent.
@@ -182,7 +181,11 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
 
     # Add liquidity to 111_111 total
     add_liquidity_event_0 = hyperdrive_agent_0.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event_0.as_base
+    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
+        assert add_liquidity_event_0.as_base
+    else:
+        assert not add_liquidity_event_0.as_base
+
     assert add_liquidity_event_0.amount == FixedPoint(111_111)
     assert hyperdrive_agent_0.get_wallet().lp_tokens == add_liquidity_event_0.lp_amount
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
@@ -190,14 +193,21 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     # _ensure_db_wallet_matches_agent_wallet_and_chain(interactive_hyperdrive_1, hyperdrive_agent0)
 
     add_liquidity_event_1 = hyperdrive_agent_1.add_liquidity(base=FixedPoint(111_111))
-    assert add_liquidity_event_1.as_base
+    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
+        assert add_liquidity_event_1.as_base
+    else:
+        assert not add_liquidity_event_1.as_base
+
     assert add_liquidity_event_1.amount == FixedPoint(111_111)
     assert hyperdrive_agent_1.get_wallet().lp_tokens == add_liquidity_event_1.lp_amount
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
     # Open long
     open_long_event_0 = hyperdrive_agent_0.open_long(base=FixedPoint(22_222))
-    assert open_long_event_0.as_base
+    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
+        assert open_long_event_0.as_base
+    else:
+        assert not open_long_event_0.as_base
     assert open_long_event_0.amount == FixedPoint(22_222)
     agent_0_longs = list(hyperdrive_agent_0.get_wallet().longs.values())
     assert len(agent_0_longs) == 1
@@ -206,7 +216,10 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
 
     open_long_event_1 = hyperdrive_agent_1.open_long(base=FixedPoint(22_222))
-    assert open_long_event_1.as_base
+    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
+        assert open_long_event_1.as_base
+    else:
+        assert not open_long_event_1.as_base
     assert open_long_event_1.amount == FixedPoint(22_222)
     agent_1_longs = list(hyperdrive_agent_1.get_wallet().longs.values())
     assert len(agent_1_longs) == 1
@@ -898,6 +911,8 @@ def test_access_deployer_liquidity(fast_chain_fixture: LocalChain):
         == larry.get_wallet().lp_tokens
     )
     # Hyperdrive pool steals 2 * minimumShareReserves from the initial deployer's liquidity
+    # Type narrowing, this value should be set in post init
+    assert config.minimum_share_reserves is not None
     assert larry.get_wallet().lp_tokens == config.initial_liquidity - 2 * config.minimum_share_reserves
 
 
