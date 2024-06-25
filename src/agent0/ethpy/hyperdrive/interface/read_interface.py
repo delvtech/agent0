@@ -167,6 +167,12 @@ class HyperdriveReadInterface:
         else:
             self.base_is_eth = False
 
+        # We look for the vault shares token symbol to determine if the yield contract is steth
+        if self.vault_shares_token_contract.functions.symbol().call() == "stETH":
+            self.yield_is_steth = True
+        else:
+            self.yield_is_steth = False
+
         self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
             web3.to_checksum_address(base_token_contract_address)
         )
