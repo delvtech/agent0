@@ -25,6 +25,7 @@ from agent0.ethpy.hyperdrive import (
     DeployedHyperdriveFactory,
     DeployedHyperdrivePool,
     HyperdriveDeployType,
+    deploy_base_and_vault,
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
@@ -401,18 +402,28 @@ class LocalHyperdrive(Hyperdrive):
 
         # TODO move deploying factory to be part of a parent, where deploying hyperdrive
         # only uses the factory
+        deployed_base_and_vault = deploy_base_and_vault(
+            chain._web3,
+            config.deploy_type,
+            chain.get_deployer_account(),
+            config.initial_variable_rate,
+        )
 
         deployed_hyperdrive_factory = deploy_hyperdrive_factory(
-            chain.rpc_uri, chain.get_deployer_account(), factory_deploy_config
+            chain._web3,
+            chain.get_deployer_account(),
+            deployed_base_and_vault,
+            config.deploy_type,
+            factory_deploy_config,
         )
 
         deployed_hyperdrive_pool = deploy_hyperdrive_from_factory(
-            chain.rpc_uri,
+            chain._web3,
             chain.get_deployer_account(),
+            deployed_base_and_vault,
             deployed_hyperdrive_factory,
             config.deploy_type,
             config.initial_liquidity,
-            config.initial_variable_rate,
             config.initial_fixed_apr,
             config.initial_time_stretch_apr,
             pool_deploy_config,

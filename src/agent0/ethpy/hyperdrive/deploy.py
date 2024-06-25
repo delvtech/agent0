@@ -52,6 +52,10 @@ from agent0.hypertypes.types.ERC4626Target0DeployerContract import erc4626target
 from agent0.hypertypes.types.ERC4626Target1DeployerContract import erc4626target1deployer_bytecode
 from agent0.hypertypes.types.ERC4626Target2DeployerContract import erc4626target2deployer_bytecode
 from agent0.hypertypes.types.ERC4626Target3DeployerContract import erc4626target3deployer_bytecode
+from agent0.hypertypes.types.StETHTarget0DeployerContract import stethtarget0deployer_bytecode
+from agent0.hypertypes.types.StETHTarget1DeployerContract import stethtarget1deployer_bytecode
+from agent0.hypertypes.types.StETHTarget2DeployerContract import stethtarget2deployer_bytecode
+from agent0.hypertypes.types.StETHTarget3DeployerContract import stethtarget3deployer_bytecode
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -61,12 +65,20 @@ from agent0.hypertypes.types.ERC4626Target3DeployerContract import erc4626target
 UINT256_MAX = int(2**256 - 1)
 
 
+class DeployedBaseAndVault(NamedTuple):
+    """Collection of attributes associated with a locally deployed Hyperdrive factory."""
+
+    deployer_account: LocalAccount
+    base_token_contract: Contract
+    vault_shares_token_contract: Contract
+
+
 class DeployedHyperdriveFactory(NamedTuple):
     """Collection of attributes associated with a locally deployed Hyperdrive factory."""
 
     deployer_account: LocalAccount
     factory_contract: HyperdriveFactoryContract
-    deployer_coordinator_contract: ERC4626HyperdriveDeployerCoordinatorContract
+    deployer_coordinator_contract: Contract
     registry_contract: HyperdriveRegistryContract
     factory_deploy_config: FactoryConfig
 
@@ -90,19 +102,102 @@ class HyperdriveDeployType(Enum):
     STETH = 1
 
 
+def deploy_base_and_vault(
+    web3: Web3,
+    deploy_type: HyperdriveDeployType,
+    deploy_account: LocalAccount,
+    initial_variable_rate: FixedPoint,
+) -> DeployedBaseAndVault:
+    """Deploys the underlying base and vault contracts
+
+    Arguments
+    ---------
+    web3: Web3
+        Web3 provider object.
+    deploy_type: HyperdriveDeployType
+        The deploy type for the hyperdrive pool.
+    deploy_account: LocalAccount
+        The account that's deploying the contract.
+    initial_variable_rate: FixedPoint
+        The starting variable rate for an underlying vault.
+
+    Returns
+    -------
+    DeployedBaseAndVault
+        Containing the deployed base and vault contracts.
+    """
+    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
+
+    match deploy_type:
+        case HyperdriveDeployType.ERC4626:
+            # Deploy base contract
+            base_token_contract = ERC20MintableContract.deploy(
+                w3=web3,
+                account=deploy_account_addr,
+                constructorArgs=ERC20MintableContract.ConstructorArgs(
+                    name="Base",
+                    symbol="BASE",
+                    decimals=18,
+                    admin=ADDRESS_ZERO,
+                    isCompetitionMode_=False,
+                    maxMintAmount_=UINT256_MAX,
+                ),
+            )
+            # Deploy the vault contract
+            vault_contract = MockERC4626Contract.deploy(
+                w3=web3,
+                account=deploy_account_addr,
+                constructorArgs=MockERC4626Contract.ConstructorArgs(
+                    asset=base_token_contract.address,
+                    name="Delvnet ERC4626 Yield Source",
+                    symbol="ERC4626",
+                    initialRate=initial_variable_rate.scaled_value,
+                    admin=ADDRESS_ZERO,
+                    isCompetitionMode=False,
+                    maxMintAmount=UINT256_MAX,
+                ),
+            )
+
+        case HyperdriveDeployType.STETH:
+            # No need to deploy eth contract
+            base_token_contract = web3.eth.contract(address=Web3.to_checksum_address(ETH_CONTRACT_ADDRESS))
+            vault_contract = MockLidoContract.deploy(
+                w3=web3,
+                account=deploy_account_addr,
+                constructorArgs=MockLidoContract.ConstructorArgs(
+                    initialRate=initial_variable_rate.scaled_value,
+                    admin=ADDRESS_ZERO,
+                    isCompetitionMode=False,
+                    maxMintAmount=UINT256_MAX,
+                ),
+            )
+
+    return DeployedBaseAndVault(
+        deployer_account=deploy_account,
+        base_token_contract=base_token_contract,
+        vault_shares_token_contract=vault_contract,
+    )
+
+
 def deploy_hyperdrive_factory(
-    rpc_uri: str,
+    web3: Web3,
     deployer_account: LocalAccount,
+    deployed_base_and_vault: DeployedBaseAndVault,
+    deploy_type: HyperdriveDeployType,
     factory_deploy_config: FactoryConfig,
 ) -> DeployedHyperdriveFactory:
     """Deploys the hyperdrive factory and supporting contracts on the rpc_uri chain.
 
     Arguments
     ---------
-    rpc_uri: str
-        The URI of the RPC node.
+    web3: Web3
+        Web3 provider object.
     deployer_account: LocalAccount
         The account that's deploying the contract.
+    deployed_base_and_vault: DeployedBaseAndVault
+        The base and vault contracts that were deployed on the local chain.
+    deploy_type: HyperdriveDeployType
+        The deploy type for the hyperdrive pool.
     factory_deploy_config: FactoryConfig
         The factory configuration for initializing the hyperdrive factory.
         The type is generated from the Hyperdrive ABI using Pypechain.
@@ -113,8 +208,6 @@ def deploy_hyperdrive_factory(
         Containing the deployed factory, the deploy coordinator contracts, the updated
         factory config, and the hyperdrive registry contract.
     """
-    # Contract calls use the web3.py interface
-    web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
     # Create the pre-funded account on the Delv devnet
     deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
 
@@ -130,17 +223,19 @@ def deploy_hyperdrive_factory(
     return _deploy_hyperdrive_factory(
         web3,
         deployer_account,
+        deployed_base_and_vault,
+        deploy_type,
         factory_deploy_config,
     )
 
 
 def deploy_hyperdrive_from_factory(
-    rpc_uri: str,
+    web3: Web3,
     deployer_account: LocalAccount,
+    deployed_base_and_vault: DeployedBaseAndVault,
     deployed_factory: DeployedHyperdriveFactory,
     deploy_type: HyperdriveDeployType,
     initial_liquidity: FixedPoint,
-    initial_variable_rate: FixedPoint,
     initial_fixed_apr: FixedPoint,
     initial_time_stretch_apr: FixedPoint,
     pool_deploy_config: PoolDeployConfig,
@@ -149,18 +244,18 @@ def deploy_hyperdrive_from_factory(
 
     Arguments
     ---------
-    rpc_uri: str
-        The URI of the local RPC node.
+    web3: Web3
+        Web3 provider object.
     deployer_account: LocalAccount
         The local account deploying Hyperdrive.
+    deployed_base_and_vault: DeployedBaseAndVault
+        The base and vault contracts that were deployed on the local chain.
     deployed_factory: DeployedHyperdriveFactory
         The factory and supporting contracts that were deployed on the local chain.
     deploy_type: HyperdriveDeployType
         The deploy type for the hyperdrive pool.
     initial_liquidity: FixedPoint
         The amount of money to be provided by the `deployer_account` for initial pool liquidity.
-    initial_variable_rate: FixedPoint
-        The starting variable rate for an underlying vault.
     initial_fixed_apr: FixedPoint
         The fixed rate of the pool on initialization.
     initial_time_stretch_apr: FixedPoint
@@ -184,16 +279,10 @@ def deploy_hyperdrive_from_factory(
             deploy_block_number: int
                 The block number hyperdrive was deployed at.
     """
-
-    # Contract calls use the web3.py interface
-    web3 = initialize_web3_with_http_provider(rpc_uri, reset_provider=False)
-
-    # Create the pre-funded account on the Delv devnet
     deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
 
-    base_token_contract, vault_contract = _deploy_base_and_vault(
-        web3, deploy_type, deployer_account, initial_variable_rate
-    )
+    base_token_contract = deployed_base_and_vault.base_token_contract
+    vault_contract = deployed_base_and_vault.vault_shares_token_contract
 
     # Update pool deploy config with factory settings
     pool_deploy_config.baseToken = base_token_contract.address
@@ -219,6 +308,7 @@ def deploy_hyperdrive_from_factory(
         _deploy_and_initialize_hyperdrive_pool(
             web3,
             deployed_factory.deployer_coordinator_contract.address,
+            deploy_type,
             deployer_account,
             initial_liquidity,
             initial_fixed_apr,
@@ -295,57 +385,13 @@ def _initialize_deployment_account(web3: Web3, account_private_key: str) -> Loca
     return account
 
 
-def _deploy_hyperdrive_factory(
+def _deploy_erc4626_deployer(
     web3: Web3,
-    deployer_account: LocalAccount,
-    factory_deploy_config: FactoryConfig,
-) -> DeployedHyperdriveFactory:
-    """Deploys the hyperdrive factory contract on the rpc_uri chain.
-
-    Arguments
-    ---------
-    web3: Web3
-        Web3 provider object.
-    deployer_account: LocalAccount
-        The account that's deploying the contract.
-    factory_deploy_config: FactoryConfig
-        The factory configuration for initializing the hyperdrive factory.
-        The type is generated from the Hyperdrive ABI using Pypechain.
-
-    Returns
-    -------
-    tuple[
-        HyperdriveFactoryContract,
-        ERC4626HyperdriveDeployerCoordinatorContract,
-        FactoryConfig,
-    ]
-        Containing the deployed factory, the deploy coordinator contracts, and the updated
-        factory config
-    """
-    deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
-    # Deploy forwarder factory
-    forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-        constructorArgs=ERC20ForwarderFactoryContract.ConstructorArgs(name="ERC20ForwarderFactory"),
-    )
-    # Set config from forwarder factory contract here
-    factory_deploy_config.linkerFactory = forwarder_factory_contract.address
-    factory_deploy_config.linkerCodeHash = forwarder_factory_contract.functions.ERC20LINK_HASH().call()
-    # Deploy hyperdrive factory
-    factory_contract = HyperdriveFactoryContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
-    )
-
-    lp_math_contract = LPMathContract.deploy(w3=web3, account=deploy_account_addr)
-    # Deploying the target deployer contracts requires linking to the LPMath contract.
-    # We do this by replacing the `linked_str` pattern with address of lp_math_contract.
-    # The `linked_str` pattern is the identifier of the LP Math contract for
-    # "contracts/src/libraries/LPMath.sol"
-    linked_str = "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__"
-    linked_contract_addr = lp_math_contract.address[2:].lower()
+    deploy_account_addr: ChecksumAddress,
+    factory_contract_address: ChecksumAddress,
+    linked_str: str,
+    linked_contract_addr: str,
+) -> ERC4626HyperdriveDeployerCoordinatorContract:
     ERC4626Target0DeployerContract.bytecode = HexBytes(
         str(erc4626target0deployer_bytecode).replace(linked_str, linked_contract_addr)
     )
@@ -364,12 +410,12 @@ def _deploy_hyperdrive_factory(
     target1_contract = ERC4626Target1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target2_contract = ERC4626Target2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target3_contract = ERC4626Target3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    deployer_coordinator_contract = ERC4626HyperdriveDeployerCoordinatorContract.deploy(
+    return ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
         constructorArgs=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
-            name="HyperdriveDeployerCoordinator",
-            factory=factory_contract.address,
+            name="ERC4626HyperdriveDeployerCoordinator",
+            factory=factory_contract_address,
             coreDeployer=core_deployer_contract.address,
             target0Deployer=target0_contract.address,
             target1Deployer=target1_contract.address,
@@ -377,20 +423,92 @@ def _deploy_hyperdrive_factory(
             target3Deployer=target3_contract.address,
         ),
     )
-    add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(
-        deployer_coordinator_contract.address
+
+
+def _deploy_steth_deployer(
+    web3: Web3,
+    deploy_account_addr: ChecksumAddress,
+    factory_contract_address: ChecksumAddress,
+    lido_address: ChecksumAddress,
+    linked_str: str,
+    linked_contract_addr: str,
+) -> StETHHyperdriveDeployerCoordinatorContract:
+    StETHTarget0DeployerContract.bytecode = HexBytes(
+        str(stethtarget0deployer_bytecode).replace(linked_str, linked_contract_addr)
     )
-    function_name = add_deployer_coordinator_function.fn_name
-    function_args = add_deployer_coordinator_function.args
-    receipt = smart_contract_transact(
-        web3,
-        factory_contract,
-        deployer_account,
-        function_name,
-        *function_args,
+    StETHTarget1DeployerContract.bytecode = HexBytes(
+        str(stethtarget1deployer_bytecode).replace(linked_str, linked_contract_addr)
     )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
+    StETHTarget2DeployerContract.bytecode = HexBytes(
+        str(stethtarget2deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
+    StETHTarget3DeployerContract.bytecode = HexBytes(
+        str(stethtarget3deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
+
+    core_deployer_contract = StETHHyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target0_contract = StETHTarget0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target1_contract = StETHTarget1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target2_contract = StETHTarget2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target3_contract = StETHTarget3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    return StETHHyperdriveDeployerCoordinatorContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=StETHHyperdriveDeployerCoordinatorContract.ConstructorArgs(
+            name="StETHHyperdriveDeployerCoordinator",
+            factory=factory_contract_address,
+            coreDeployer=core_deployer_contract.address,
+            target0Deployer=target0_contract.address,
+            target1Deployer=target1_contract.address,
+            target2Deployer=target2_contract.address,
+            target3Deployer=target3_contract.address,
+            lido=lido_address,
+        ),
+    )
+
+
+def _deploy_hyperdrive_factory(
+    web3: Web3,
+    deployer_account: LocalAccount,
+    deployed_base_and_vault: DeployedBaseAndVault,
+    deploy_type: HyperdriveDeployType,
+    factory_deploy_config: FactoryConfig,
+) -> DeployedHyperdriveFactory:
+    """Deploys the hyperdrive factory contract on the rpc_uri chain.
+
+    Arguments
+    ---------
+    web3: Web3
+        Web3 provider object.
+    deployer_account: LocalAccount
+        The account that's deploying the contract.
+    deploy_type: HyperdriveDeployType
+        The deploy type for the hyperdrive pool.
+    factory_deploy_config: FactoryConfig
+        The factory configuration for initializing the hyperdrive factory.
+        The type is generated from the Hyperdrive ABI using Pypechain.
+
+    Returns
+    -------
+    DeloyedHyperdriveFactory
+        Contains information on the deployed hyperdrive factory
+    """
+    deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
+    # Deploy forwarder factory
+    forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=ERC20ForwarderFactoryContract.ConstructorArgs(name="ERC20ForwarderFactory"),
+    )
+    # Set config from forwarder factory contract here
+    factory_deploy_config.linkerFactory = forwarder_factory_contract.address
+    factory_deploy_config.linkerCodeHash = forwarder_factory_contract.functions.ERC20LINK_HASH().call()
+    # Deploy hyperdrive factory
+    factory_contract = HyperdriveFactoryContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
+    )
 
     # Deploy the Hyperdrive registry contract
     registry_contract = HyperdriveRegistryContract.deploy(
@@ -413,6 +531,44 @@ def _deploy_hyperdrive_factory(
     if receipt["status"] != 1:
         raise ValueError(f"Failed to register Hyperdrive factory.\n{receipt=}")
 
+    lp_math_contract = LPMathContract.deploy(w3=web3, account=deploy_account_addr)
+    # Deploying the target deployer contracts requires linking to the LPMath contract.
+    # We do this by replacing the `linked_str` pattern with address of lp_math_contract.
+    # The `linked_str` pattern is the identifier of the LP Math contract for
+    # "contracts/src/libraries/LPMath.sol"
+    linked_str = "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__"
+    linked_contract_addr = lp_math_contract.address[2:].lower()
+
+    match deploy_type:
+        case HyperdriveDeployType.ERC4626:
+            deployer_coordinator_contract = _deploy_erc4626_deployer(
+                web3, deploy_account_addr, factory_contract.address, linked_str, linked_contract_addr
+            )
+        case HyperdriveDeployType.STETH:
+            deployer_coordinator_contract = _deploy_steth_deployer(
+                web3,
+                deploy_account_addr,
+                factory_contract.address,
+                deployed_base_and_vault.vault_shares_token_contract.address,
+                linked_str,
+                linked_contract_addr,
+            )
+
+    add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(
+        deployer_coordinator_contract.address
+    )
+    function_name = add_deployer_coordinator_function.fn_name
+    function_args = add_deployer_coordinator_function.args
+    receipt = smart_contract_transact(
+        web3,
+        factory_contract,
+        deployer_account,
+        function_name,
+        *function_args,
+    )
+    if receipt["status"] != 1:
+        raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
+
     return DeployedHyperdriveFactory(
         deployer_account=deployer_account,
         factory_contract=factory_contract,
@@ -420,76 +576,6 @@ def _deploy_hyperdrive_factory(
         factory_deploy_config=factory_deploy_config,
         registry_contract=registry_contract,
     )
-
-
-def _deploy_base_and_vault(
-    web3: Web3, deploy_type: HyperdriveDeployType, deploy_account: LocalAccount, initial_variable_rate: FixedPoint
-) -> tuple[Contract, Contract]:
-    """Deploys the underlying base and vault contracts
-
-    Arguments
-    ---------
-    web3: Web3
-        Web3 provider object.
-    deploy_type: HyperdriveDeployType
-        The deploy type for the hyperdrive pool.
-    deploy_account: LocalAccount
-        The account that's deploying the contract.
-    initial_variable_rate: FixedPoint
-        The starting variable rate for an underlying vault.
-
-    Returns
-    -------
-    tuple[Contract, Contract]
-        Containing the deployed base and vault contracts.
-    """
-    deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
-
-    match deploy_type:
-        case HyperdriveDeployType.ERC4626:
-            # Deploy base contract
-            base_token_contract = ERC20MintableContract.deploy(
-                w3=web3,
-                account=deploy_account_addr,
-                constructorArgs=ERC20MintableContract.ConstructorArgs(
-                    name="Base",
-                    symbol="BASE",
-                    decimals=18,
-                    admin=ADDRESS_ZERO,
-                    isCompetitionMode_=False,
-                    maxMintAmount_=UINT256_MAX,
-                ),
-            )
-            # Deploy the vault contract
-            vault_contract = MockERC4626Contract.deploy(
-                w3=web3,
-                account=deploy_account_addr,
-                constructorArgs=MockERC4626Contract.ConstructorArgs(
-                    asset=base_token_contract.address,
-                    name="Delvnet ERC4626 Yield Source",
-                    symbol="ERC4626",
-                    initialRate=initial_variable_rate.scaled_value,
-                    admin=ADDRESS_ZERO,
-                    isCompetitionMode=False,
-                    maxMintAmount=UINT256_MAX,
-                ),
-            )
-
-        case HyperdriveDeployType.STETH:
-            # No need to deploy eth contract
-            base_token_contract = web3.eth.contract(address=Web3.to_checksum_address(ETH_CONTRACT_ADDRESS))
-            vault_contract = MockLidoContract.deploy(
-                w3=web3,
-                account=deploy_account_addr,
-                constructorArgs=MockLidoContract.ConstructorArgs(
-                    initialRate=initial_variable_rate.scaled_value,
-                    admin=ADDRESS_ZERO,
-                    isCompetitionMode=False,
-                    maxMintAmount=UINT256_MAX,
-                ),
-            )
-
-    return base_token_contract, vault_contract
 
 
 def _mint_and_approve(
@@ -544,6 +630,7 @@ def _mint_and_approve(
 def _deploy_and_initialize_hyperdrive_pool(
     web3: Web3,
     deployer_coordinator_address: ChecksumAddress,
+    deploy_type: HyperdriveDeployType,
     deploy_account: LocalAccount,
     initial_liquidity: FixedPoint,
     initial_fixed_apr: FixedPoint,

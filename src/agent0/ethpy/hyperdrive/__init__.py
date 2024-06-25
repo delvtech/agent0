@@ -10,6 +10,7 @@ from .deploy import (
     DeployedHyperdriveFactory,
     DeployedHyperdrivePool,
     HyperdriveDeployType,
+    deploy_base_and_vault,
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
