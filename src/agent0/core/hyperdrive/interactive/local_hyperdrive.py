@@ -116,7 +116,7 @@ class LocalHyperdrive(Hyperdrive):
         # Pool Deploy Config variables
         deploy_type: HyperdriveDeployType = HyperdriveDeployType.ERC4626
         """The type of deployment to use. If not specified, it will default to ERC4626."""
-        minimum_share_reserves: FixedPoint = FixedPoint(10)
+        minimum_share_reserves: FixedPoint | None = None
         """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         """The minimum amount of tokens that a position can be opened or closed with."""
@@ -150,6 +150,19 @@ class LocalHyperdrive(Hyperdrive):
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
+            # Set defaults for minimum share reserves based on deploy type
+            if self.minimum_share_reserves is None:
+                match self.deploy_type:
+                    case HyperdriveDeployType.STETH:
+                        self.minimum_share_reserves = FixedPoint("0.001")
+                    case _:
+                        self.minimum_share_reserves = FixedPoint("10")
+
+            # Steth deployment minimum share reserves must be 0.001
+            # in the steth deployer coordinator.
+            # Adding useful error message here
+            if self.deploy_type == HyperdriveDeployType.STETH and self.minimum_share_reserves != FixedPoint("0.001"):
+                raise ValueError("Minimum share reserves must be 0.001 for steth deployment")
 
         @property
         def _factory_min_fees(self) -> Fees:

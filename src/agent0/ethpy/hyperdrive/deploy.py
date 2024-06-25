@@ -17,7 +17,6 @@ from web3.contract.contract import Contract
 from agent0.ethpy.base import (
     ETH_CONTRACT_ADDRESS,
     get_account_balance,
-    initialize_web3_with_http_provider,
     set_anvil_account_balance,
     smart_contract_transact,
 )
@@ -173,9 +172,19 @@ def deploy_base_and_vault(
             )
             # We fund lido with 1 eth to start to avoid reverts when we
             # initialize the pool
-
-            # TODO this is done via "submit" in rust, how to do that here?
-            _ = set_anvil_account_balance(web3, vault_contract.address, FixedPoint(1).scaled_value)
+            lido_submit_func = vault_contract.functions.submit(ADDRESS_ZERO)
+            function_name = lido_submit_func.fn_name
+            function_args = lido_submit_func.args
+            tx_receipt = smart_contract_transact(
+                web3,
+                vault_contract,
+                deploy_account,
+                function_name,
+                *function_args,
+                txn_options_value=FixedPoint(1).scaled_value,
+            )
+            if tx_receipt["status"] != 1:
+                raise ValueError(f"Failed to fund lido: {tx_receipt}")
 
     return DeployedBaseAndVault(
         deployer_account=deploy_account,
@@ -717,8 +726,11 @@ def _deploy_and_initialize_hyperdrive_pool(
     match deploy_type:
         case HyperdriveDeployType.ERC4626:
             name = "agent0_erc4626"
+            txn_option_value = None
         case HyperdriveDeployType.STETH:
             name = "agent0_steth"
+            # Transaction to `deployAndInitialize` needs value field since it's transfering eth
+            txn_option_value = initial_liquidity.scaled_value
 
     deploy_and_init_function = factory_contract.functions.deployAndInitialize(
         name=name,
@@ -745,6 +757,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         deploy_account,
         function_name,
         *function_args,
+        txn_options_value=txn_option_value,
     )
     logs = get_transaction_logs(factory_contract, tx_receipt)
     hyperdrive_address: str | None = None
