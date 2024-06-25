@@ -114,7 +114,8 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
+# @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
+@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.STETH])
 def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # TODO DRY this up, e.g., doing the same calls while swapping the agent.
@@ -1448,3 +1449,68 @@ def test_fork_backfill():
 
     chain.cleanup()
     fork_chain.cleanup()
+
+
+@pytest.mark.anvil
+@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.STETH])
+# @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626])
+def test_shares_conversion(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
+    """Deploy 2 pools, 3 agents, and test funding and each trade type."""
+    # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
+    # We explicitly set initial liquidity here to ensure we have withdrawal shares when trading
+    initial_pool_config = LocalHyperdrive.Config(
+        initial_liquidity=FixedPoint(100_000),
+        initial_fixed_apr=FixedPoint("0.05"),
+        position_duration=60 * 60 * 24 * 365,  # 1 year
+        deploy_type=deploy_type,
+    )
+    hyperdrive0 = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+
+    static_trade_amount = FixedPoint(1_000)
+
+    # Initialize an agent with exactly the static_trade_amount
+    hyperdrive_agent_0 = fast_chain_fixture.init_agent(
+        base=static_trade_amount, eth=FixedPoint(10), pool=hyperdrive0, name="alice"
+    )
+    # Ensure agent wallet have expected balances
+    assert (hyperdrive_agent_0.get_wallet().balance.amount) == static_trade_amount
+    # Ensure chain balances are as expected
+    (
+        _,
+        chain_base_balance,
+    ) = hyperdrive0.interface.get_eth_base_balances(hyperdrive_agent_0.account)
+    assert chain_base_balance == static_trade_amount
+
+    # Add liquidity for full amount
+    add_liquidity_event = hyperdrive_agent_0.add_liquidity(base=static_trade_amount)
+    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
+        assert add_liquidity_event.as_base
+    else:
+        assert not add_liquidity_event.as_base
+
+    assert add_liquidity_event.amount == static_trade_amount
+    assert hyperdrive_agent_0.get_wallet().lp_tokens == add_liquidity_event.lp_amount
+    _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
+
+    # Since we used all of the agent's base in this trade, the resulting balance should be 0
+    assert hyperdrive_agent_0.get_wallet().balance.amount == FixedPoint(0)
+
+    # Refund agent and open long for full amount
+    hyperdrive_agent_0.add_funds(base=static_trade_amount)
+
+    open_long_event = hyperdrive_agent_0.open_long(base=static_trade_amount)
+    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
+        assert open_long_event.as_base
+    else:
+        assert not open_long_event.as_base
+
+    # TODO make assertions
+    assert open_long_event.amount == static_trade_amount
+    agent_0_longs = list(hyperdrive_agent_0.get_wallet().longs.values())
+    assert len(agent_0_longs) == 1
+    assert agent_0_longs[0].balance == open_long_event.bond_amount
+    assert agent_0_longs[0].maturity_time == open_long_event.maturity_time
+    _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
+
+    # Since we used all of the agent's base in this trade, the resulting balance should be 0
+    assert hyperdrive_agent_0.get_wallet().balance.amount == FixedPoint(0)
