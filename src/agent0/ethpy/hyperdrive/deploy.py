@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import NamedTuple
 
 from eth_account.account import Account
@@ -12,9 +13,14 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
-from web3.types import TxReceipt
 
-from agent0.ethpy.base import initialize_web3_with_http_provider
+from agent0.ethpy.base import (
+    ETH_CONTRACT_ADDRESS,
+    get_account_balance,
+    initialize_web3_with_http_provider,
+    set_anvil_account_balance,
+    smart_contract_transact,
+)
 from agent0.ethpy.base.receipts import get_transaction_logs
 from agent0.ethpy.base.transactions import smart_contract_transact
 from agent0.hypertypes import (
@@ -32,8 +38,15 @@ from agent0.hypertypes import (
     IHyperdriveContract,
     LPMathContract,
     MockERC4626Contract,
+    MockLidoContract,
     Options,
     PoolDeployConfig,
+    StETHHyperdriveCoreDeployerContract,
+    StETHHyperdriveDeployerCoordinatorContract,
+    StETHTarget0DeployerContract,
+    StETHTarget1DeployerContract,
+    StETHTarget2DeployerContract,
+    StETHTarget3DeployerContract,
 )
 from agent0.hypertypes.types.ERC4626Target0DeployerContract import erc4626target0deployer_bytecode
 from agent0.hypertypes.types.ERC4626Target1DeployerContract import erc4626target1deployer_bytecode
@@ -68,6 +81,13 @@ class DeployedHyperdrivePool(NamedTuple):
     vault_shares_token_contract: Contract
     deploy_block_number: int
     pool_deploy_config: PoolDeployConfig
+
+
+class HyperdriveDeployType(Enum):
+    """The deploy type for the hyperdrive pool."""
+
+    ERC4626 = 0
+    STETH = 1
 
 
 def deploy_hyperdrive_factory(
@@ -118,6 +138,7 @@ def deploy_hyperdrive_from_factory(
     rpc_uri: str,
     deployer_account: LocalAccount,
     deployed_factory: DeployedHyperdriveFactory,
+    deploy_type: HyperdriveDeployType,
     initial_liquidity: FixedPoint,
     initial_variable_rate: FixedPoint,
     initial_fixed_apr: FixedPoint,
@@ -134,6 +155,8 @@ def deploy_hyperdrive_from_factory(
         The local account deploying Hyperdrive.
     deployed_factory: DeployedHyperdriveFactory
         The factory and supporting contracts that were deployed on the local chain.
+    deploy_type: HyperdriveDeployType
+        The deploy type for the hyperdrive pool.
     initial_liquidity: FixedPoint
         The amount of money to be provided by the `deployer_account` for initial pool liquidity.
     initial_variable_rate: FixedPoint
@@ -168,7 +191,9 @@ def deploy_hyperdrive_from_factory(
     # Create the pre-funded account on the Delv devnet
     deploy_account_addr = Web3.to_checksum_address(deployer_account.address)
 
-    base_token_contract, vault_contract = _deploy_base_and_vault(web3, deployer_account, initial_variable_rate)
+    base_token_contract, vault_contract = _deploy_base_and_vault(
+        web3, deploy_type, deployer_account, initial_variable_rate
+    )
 
     # Update pool deploy config with factory settings
     pool_deploy_config.baseToken = base_token_contract.address
@@ -398,14 +423,16 @@ def _deploy_hyperdrive_factory(
 
 
 def _deploy_base_and_vault(
-    web3: Web3, deploy_account: LocalAccount, initial_variable_rate: FixedPoint
-) -> tuple[ERC20MintableContract, MockERC4626Contract]:
+    web3: Web3, deploy_type: HyperdriveDeployType, deploy_account: LocalAccount, initial_variable_rate: FixedPoint
+) -> tuple[Contract, Contract]:
     """Deploys the underlying base and vault contracts
 
     Arguments
     ---------
     web3: Web3
         Web3 provider object.
+    deploy_type: HyperdriveDeployType
+        The deploy type for the hyperdrive pool.
     deploy_account: LocalAccount
         The account that's deploying the contract.
     initial_variable_rate: FixedPoint
@@ -413,50 +440,65 @@ def _deploy_base_and_vault(
 
     Returns
     -------
-    tuple[
-        ERC20MintableContract,
-        MockERC4626Contract,
-    ]
+    tuple[Contract, Contract]
         Containing the deployed base and vault contracts.
     """
     deploy_account_addr = Web3.to_checksum_address(deploy_account.address)
-    # Deploy base contract
-    base_token_contract = ERC20MintableContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-        constructorArgs=ERC20MintableContract.ConstructorArgs(
-            name="Base",
-            symbol="BASE",
-            decimals=18,
-            admin=ADDRESS_ZERO,
-            isCompetitionMode_=False,
-            maxMintAmount_=UINT256_MAX,
-        ),
-    )
-    # Deploy the vault contract
-    vault_contract = MockERC4626Contract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-        constructorArgs=MockERC4626Contract.ConstructorArgs(
-            asset=base_token_contract.address,
-            name="Delvnet Yield Source",
-            symbol="DELV",
-            initialRate=initial_variable_rate.scaled_value,
-            admin=ADDRESS_ZERO,
-            isCompetitionMode=False,
-            maxMintAmount=UINT256_MAX,
-        ),
-    )
+
+    match deploy_type:
+        case HyperdriveDeployType.ERC4626:
+            # Deploy base contract
+            base_token_contract = ERC20MintableContract.deploy(
+                w3=web3,
+                account=deploy_account_addr,
+                constructorArgs=ERC20MintableContract.ConstructorArgs(
+                    name="Base",
+                    symbol="BASE",
+                    decimals=18,
+                    admin=ADDRESS_ZERO,
+                    isCompetitionMode_=False,
+                    maxMintAmount_=UINT256_MAX,
+                ),
+            )
+            # Deploy the vault contract
+            vault_contract = MockERC4626Contract.deploy(
+                w3=web3,
+                account=deploy_account_addr,
+                constructorArgs=MockERC4626Contract.ConstructorArgs(
+                    asset=base_token_contract.address,
+                    name="Delvnet ERC4626 Yield Source",
+                    symbol="ERC4626",
+                    initialRate=initial_variable_rate.scaled_value,
+                    admin=ADDRESS_ZERO,
+                    isCompetitionMode=False,
+                    maxMintAmount=UINT256_MAX,
+                ),
+            )
+
+        case HyperdriveDeployType.STETH:
+            # No need to deploy eth contract
+            base_token_contract = web3.eth.contract(address=Web3.to_checksum_address(ETH_CONTRACT_ADDRESS))
+            vault_contract = MockLidoContract.deploy(
+                w3=web3,
+                account=deploy_account_addr,
+                constructorArgs=MockLidoContract.ConstructorArgs(
+                    initialRate=initial_variable_rate.scaled_value,
+                    admin=ADDRESS_ZERO,
+                    isCompetitionMode=False,
+                    maxMintAmount=UINT256_MAX,
+                ),
+            )
+
     return base_token_contract, vault_contract
 
 
 def _mint_and_approve(
     web3,
     funding_account: LocalAccount,
-    funding_contract: ERC20MintableContract,
-    contract_to_approve: ERC4626HyperdriveDeployerCoordinatorContract,
+    funding_contract: Contract,
+    contract_to_approve: Contract,
     mint_amount: FixedPoint,
-) -> tuple[TxReceipt, TxReceipt]:
+) -> None:
     """Mint tokens from the funding_contract and approve spending with the contract_to_approve
 
     Arguments
@@ -472,30 +514,31 @@ def _mint_and_approve(
     mint_amount: FixedPoint
         The amount to mint and approve.
 
-    Returns
-    -------
-    tuple[TxReceipt, TxReceipt]
-        The (mint, approval) transaction receipts.
-
     """
-    # Need to pass signature instead of function name since there are multiple mint functions
-    mint_tx_receipt = smart_contract_transact(
-        web3,
-        funding_contract,
-        funding_account,
-        "mint(address,uint256)",
-        Web3.to_checksum_address(funding_account.address),
-        mint_amount.scaled_value,
-    )
-    approve_tx_receipt = smart_contract_transact(
-        web3,
-        funding_contract,
-        funding_account,
-        "approve",
-        contract_to_approve.address,
-        mint_amount.scaled_value,
-    )
-    return mint_tx_receipt, approve_tx_receipt
+    if funding_contract.address == ETH_CONTRACT_ADDRESS:
+        # No need to approve, but we still need to ensure there's enough eth to fund
+        eth_balance = FixedPoint(scaled_value=get_account_balance(web3, funding_account.address))
+        new_eth_balance = eth_balance + mint_amount
+        _ = set_anvil_account_balance(web3, funding_account.address, new_eth_balance.scaled_value)
+
+    else:
+        # Need to pass signature instead of function name since there are multiple mint functions
+        _ = smart_contract_transact(
+            web3,
+            funding_contract,
+            funding_account,
+            "mint(address,uint256)",
+            Web3.to_checksum_address(funding_account.address),
+            mint_amount.scaled_value,
+        )
+        _ = smart_contract_transact(
+            web3,
+            funding_contract,
+            funding_account,
+            "approve",
+            contract_to_approve.address,
+            mint_amount.scaled_value,
+        )
 
 
 def _deploy_and_initialize_hyperdrive_pool(

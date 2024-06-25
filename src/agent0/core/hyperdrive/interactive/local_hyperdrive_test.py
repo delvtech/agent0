@@ -114,7 +114,9 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-def test_funding_and_trades(fast_chain_fixture: LocalChain):
+# @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
+@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.STETH])
+def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # TODO DRY this up, e.g., doing the same calls while swapping the agent.
 
@@ -124,6 +126,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain):
         initial_liquidity=FixedPoint(1_000),
         initial_fixed_apr=FixedPoint("0.05"),
         position_duration=60 * 60 * 24 * 365,  # 1 year
+        deploy_type=deploy_type,
     )
     # Launches 2 pools on the same local chain
     hyperdrive0 = LocalHyperdrive(fast_chain_fixture, initial_pool_config)

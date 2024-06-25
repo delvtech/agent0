@@ -9,6 +9,7 @@ from .assets import BASE_TOKEN_SYMBOL, AssetIdPrefix, decode_asset_id, encode_as
 from .deploy import (
     DeployedHyperdriveFactory,
     DeployedHyperdrivePool,
+    HyperdriveDeployType,
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )

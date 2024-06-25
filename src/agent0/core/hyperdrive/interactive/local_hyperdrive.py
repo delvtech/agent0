@@ -24,6 +24,7 @@ from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.ethpy.hyperdrive import (
     DeployedHyperdriveFactory,
     DeployedHyperdrivePool,
+    HyperdriveDeployType,
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
@@ -42,6 +43,12 @@ if TYPE_CHECKING:
 
 class LocalHyperdrive(Hyperdrive):
     """Interactive Hyperdrive class that supports an interactive interface for running tests and experiments."""
+
+    # pylint: disable=too-many-instance-attributes
+
+    # We add a link to the `DeployType` here for access from this hyperdrive object,
+    # e.g., `LocalHyperdrive.DeployType.ERC4626`
+    DeployType = HyperdriveDeployType
 
     # Lots of attributes in config
     # pylint: disable=too-many-instance-attributes
@@ -106,6 +113,8 @@ class LocalHyperdrive(Hyperdrive):
         """The upper bound on the governance zombie fee that governance can set."""
 
         # Pool Deploy Config variables
+        deploy_type: HyperdriveDeployType = HyperdriveDeployType.ERC4626
+        """The type of deployment to use. If not specified, it will default to ERC4626."""
         minimum_share_reserves: FixedPoint = FixedPoint(10)
         """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
@@ -401,6 +410,7 @@ class LocalHyperdrive(Hyperdrive):
             chain.rpc_uri,
             chain.get_deployer_account(),
             deployed_hyperdrive_factory,
+            config.deploy_type,
             config.initial_liquidity,
             config.initial_variable_rate,
             config.initial_fixed_apr,

@@ -15,3 +15,5 @@ from .transactions import (
     smart_contract_transact,
 )
 from .web3_setup import initialize_web3_with_http_provider
+
+ETH_CONTRACT_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"

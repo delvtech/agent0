@@ -9,7 +9,7 @@ from fixedpointmath import FixedPoint
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
-from agent0.ethpy.base import initialize_web3_with_http_provider
+from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
 from agent0.ethpy.hyperdrive.get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from agent0.ethpy.hyperdrive.state import PoolState
 from agent0.ethpy.hyperdrive.transactions import (
@@ -155,7 +155,7 @@ class HyperdriveReadInterface:
 
         # Agent0 doesn't support eth as base, so if it is, we use the yield token as the base, and
         # calls to trades will use "as_base=False"
-        if base_token_contract_address == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
+        if base_token_contract_address == ETH_CONTRACT_ADDRESS:
             self.base_is_eth = True
             # If the base token is eth, we use the yield token as the base token (e.g., steth)
             # and pass in "as_base=False" to the contract calls.
