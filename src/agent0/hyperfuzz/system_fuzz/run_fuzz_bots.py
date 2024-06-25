@@ -337,12 +337,16 @@ def run_fuzz_bots(
         if random_variable_rate:
             # This will change an underlying yield source twice if pools share the same underlying
             # yield source
+            if lp_share_price_test:
+                variable_rate_range = LP_SHARE_PRICE_VARIABLE_RATE_RANGE
+            else:
+                variable_rate_range = VARIABLE_RATE_RANGE
             for hyperdrive_pool in hyperdrive_pools:
                 if isinstance(hyperdrive_pool, LocalHyperdrive):
                     # RNG should always exist, config's post_init should always
                     # initialize an rng object
                     assert hyperdrive_pool.chain.config.rng is not None
-                    random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*VARIABLE_RATE_RANGE))
+                    random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*variable_rate_range))
                     hyperdrive_pool.set_variable_rate(random_rate)
                 else:
                     raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")
