@@ -16,7 +16,6 @@ from .deploy import (
 )
 from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from .interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
-from .receipt_breakdown import ReceiptBreakdown
 from .transactions import (
     get_event_history_from_chain,
     get_hyperdrive_checkpoint,

@@ -1,5 +1,7 @@
 """Defines the output hyperdrive events as dataclasses"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from eth_typing import ChecksumAddress
@@ -9,8 +11,13 @@ from fixedpointmath import FixedPoint
 # pylint: disable=too-many-instance-attributes
 
 
-@dataclass
-class OpenLong:
+@dataclass(kw_only=True)
+class BaseHyperdriveEvent:
+    """The base hyperdrive event."""
+
+
+@dataclass(kw_only=True)
+class OpenLong(BaseHyperdriveEvent):
     """Dataclass mirroring OpenLong event in Hyperdrive."""
 
     trader: ChecksumAddress
@@ -32,8 +39,8 @@ class OpenLong:
     __name__: str = "OpenLong"
 
 
-@dataclass
-class CloseLong:
+@dataclass(kw_only=True)
+class CloseLong(BaseHyperdriveEvent):
     """Dataclass mirroring CloseLong event in Hyperdrive."""
 
     trader: ChecksumAddress
@@ -57,8 +64,8 @@ class CloseLong:
     __name__: str = "CloseLong"
 
 
-@dataclass
-class OpenShort:
+@dataclass(kw_only=True)
+class OpenShort(BaseHyperdriveEvent):
     # pylint: disable=too-many-instance-attributes
     """Dataclass mirroring OpenShort event in Hyperdrive."""
     trader: ChecksumAddress
@@ -82,8 +89,8 @@ class OpenShort:
     __name__: str = "OpenShort"
 
 
-@dataclass
-class CloseShort:
+@dataclass(kw_only=True)
+class CloseShort(BaseHyperdriveEvent):
     """Dataclass mirroring CloseShort event in Hyperdrive."""
 
     trader: ChecksumAddress
@@ -109,8 +116,8 @@ class CloseShort:
     __name__: str = "CloseShort"
 
 
-@dataclass
-class AddLiquidity:
+@dataclass(kw_only=True)
+class AddLiquidity(BaseHyperdriveEvent):
     """Dataclass mirroring AddLiquidity event in Hyperdrive."""
 
     provider: ChecksumAddress
@@ -130,8 +137,8 @@ class AddLiquidity:
     __name__: str = "AddLiquidity"
 
 
-@dataclass
-class RemoveLiquidity:
+@dataclass(kw_only=True)
+class RemoveLiquidity(BaseHyperdriveEvent):
     """Dataclass mirroring RemoveLiquidity event in Hyperdrive."""
 
     provider: ChecksumAddress
@@ -155,8 +162,8 @@ class RemoveLiquidity:
     __name__: str = "RemoveLiquidity"
 
 
-@dataclass
-class RedeemWithdrawalShares:
+@dataclass(kw_only=True)
+class RedeemWithdrawalShares(BaseHyperdriveEvent):
     """Dataclass mirroring RedeemWithdrawalShares event in Hyperdrive."""
 
     provider: ChecksumAddress
@@ -176,8 +183,8 @@ class RedeemWithdrawalShares:
     __name__: str = "RedeemWithdrawalShares"
 
 
-@dataclass
-class CreateCheckpoint:
+@dataclass(kw_only=True)
+class CreateCheckpoint(BaseHyperdriveEvent):
     """Dataclass mirroring CreateCheckpoint event in Hyperdrive."""
 
     checkpoint_time: int
