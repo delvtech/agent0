@@ -273,7 +273,7 @@ def parse_logs_to_event(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn
             trader=Web3.to_checksum_address(event_args_dict["trader"]),
             destination=Web3.to_checksum_address(event_args_dict["destination"]),
             asset_id=event_args_dict["asset_id"],
-            maturity_time=event_args_dict["maturity_time_seconds"],
+            maturity_time=event_args_dict["maturity_time"],
             amount=event_args_dict["amount"],
             vault_share_price=event_args_dict["vault_share_price"],
             as_base=event_args_dict["as_base"],
