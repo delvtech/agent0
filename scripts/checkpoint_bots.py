@@ -468,4 +468,9 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 # Run the checkpoint bot.
 if __name__ == "__main__":
-    main()
+    # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
+    try:
+        main()
+    except Exception as e:
+        log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in checkpoint bots.")
+        raise e

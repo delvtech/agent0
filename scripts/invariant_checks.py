@@ -21,7 +21,7 @@ from typing import NamedTuple, Sequence
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -190,4 +190,9 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 
 if __name__ == "__main__":
-    main()
+    # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
+    try:
+        main()
+    except Exception as e:  # pylint: disable=broad-except
+        log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in invariant checks.")
+        raise e
