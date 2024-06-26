@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Literal, cast, overload
 
 from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
+from web3 import Web3
 from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
-from agent0.ethpy.base import UnknownBlockError, get_transaction_logs
+from agent0.ethpy.base import get_transaction_logs
 from agent0.hypertypes import IHyperdriveContract
 from agent0.hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from agent0.hypertypes.utilities.conversions import (
@@ -19,7 +20,17 @@ from agent0.hypertypes.utilities.conversions import (
     pool_info_to_fixedpoint,
 )
 
-from .receipt_breakdown import ReceiptBreakdown
+from .event_types import (
+    AddLiquidity,
+    BaseHyperdriveEvent,
+    CloseLong,
+    CloseShort,
+    CreateCheckpoint,
+    OpenLong,
+    OpenShort,
+    RedeemWithdrawalShares,
+    RemoveLiquidity,
+)
 
 
 def get_hyperdrive_pool_config(hyperdrive_contract: IHyperdriveContract) -> PoolConfigFP:
@@ -105,7 +116,55 @@ def get_hyperdrive_checkpoint_exposure(
     return FixedPoint(scaled_value=exposure)
 
 
-def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> ReceiptBreakdown:
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["createCheckpoint"]
+) -> CreateCheckpoint: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["openLong"]
+) -> OpenLong: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["closeLong"]
+) -> CloseLong: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["openShort"]
+) -> OpenShort: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["closeShort"]
+) -> CloseShort: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["addLiquidity"]
+) -> AddLiquidity: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["removeLiquidity"]
+) -> RemoveLiquidity: ...
+
+
+@overload
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["redeemWithdrawalShares"]
+) -> RedeemWithdrawalShares: ...
+
+
+def parse_logs_to_event(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> BaseHyperdriveEvent:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
     Arguments
@@ -119,17 +178,18 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
 
     Returns
     -------
-    ReceiptBreakdown
-        A dataclass containing the maturity time and the absolute values for token quantities changed
+    BaseHyperdriveEvent
+        A dataclass that maps to the emitted Hyperdrive events
     """
-    # Sometimes, smart contract transact fails with status 0 with no error message
-    # We throw custom error to catch in trades loop, ignore, and move on
-    # TODO need to track down why this call fails and handle better
+    # pylint: disable=too-many-branches
+
+    # Sanity check, these status should be checked in smart_contract_transact
     status = tx_receipt.get("status", None)
     if status is None:
         raise AssertionError("Receipt did not return status")
     if status == 0:
-        raise UnknownBlockError("Receipt has status of 0", f"{tx_receipt=}")
+        raise AssertionError("Receipt has status of 0")
+
     hyperdrive_event_logs = get_transaction_logs(
         hyperdrive_contract,
         tx_receipt,
@@ -141,8 +201,8 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         raise AssertionError("Too many logs found")
     log_args = hyperdrive_event_logs[0]["args"]
 
-    trade_result = ReceiptBreakdown()
-    values = ["trader", "destination", "provider", "assetId", "checkpointTime", "asBase"]
+    # Convert solidity types to python types
+    values = ["trader", "destination", "provider", "assetId", "checkpointTime", "asBase", "maturityTime"]
     fixedpoint_values = [
         "amount",
         "bondAmount",
@@ -157,113 +217,98 @@ def parse_logs(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: st
         "maturedLongs",
     ]
 
-    if "maturityTime" in log_args:
-        trade_result.maturity_time_seconds = log_args["maturityTime"]
-
+    event_args_dict = {}
     for value in values:
-        if value in log_args and hasattr(trade_result, camel_to_snake(value)):
-            setattr(trade_result, camel_to_snake(value), log_args[value])
+        if value in log_args:
+            event_args_dict[camel_to_snake(value)] = log_args[value]
 
     for value in fixedpoint_values:
-        if value in log_args and hasattr(trade_result, camel_to_snake(value)):
-            setattr(trade_result, camel_to_snake(value), FixedPoint(scaled_value=log_args[value]))
+        if value in log_args:
+            event_args_dict[camel_to_snake(value)] = FixedPoint(scaled_value=log_args[value])
 
-    return trade_result
-
-
-def get_event_history_from_chain(
-    hyperdrive_contract: Contract, from_block: int, to_block: int, wallet_addr: str | None = None
-) -> dict:
-    """Helper function to query event logs directly from the chain.
-    Useful for debugging open positions of wallet addresses.
-    This might be creating unnecessary filters if ran, so only use for debugging
-
-    Arguments
-    ---------
-    hyperdrive_contract: Contract
-        The deployed hyperdrive contract instance.
-    from_block: int
-        The starting block to query
-    to_block: int
-        The end block to query. If from_block == to_block, will query the specified block number
-    wallet_addr: str | None, optional
-        The wallet address to filter events on. If None, will return all.
-
-    Returns
-    -------
-    dict
-        A dictionary of event logs, keyed by the event name. Specifically:
-        # TODO figure out return type of web3 call
-        "addLiquidity": list[Unknown]
-        "removeLiquidity": list[Unknown]
-        "redeemWithdrawalShares": list[Unknown]
-        "openLong": list[Unknown]
-        "closeLong": list[Unknown]
-        "openShort": list[Unknown]
-        "closeShort": list[Unknown]
-        "total_events": int
-    """
-    # TODO clean up this function
-    # pylint: disable=too-many-locals
-
-    # Build arguments
-    lp_addr_filter = {}
-    trade_addr_filter = {}
-    if wallet_addr is not None:
-        lp_addr_filter = {"provider": wallet_addr}
-        trade_addr_filter = {"trader": wallet_addr}
-    lp_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": lp_addr_filter}
-    trade_filter_args = {"fromBlock": from_block, "toBlock": to_block, "argument_filters": trade_addr_filter}
-
-    # Create filter on events
-    # Typing doesn't know about create_filter function with various events
-    add_lp_event_filter = hyperdrive_contract.events.AddLiquidity.create_filter(**lp_filter_args)  # type: ignore
-    remove_lp_event_filter = hyperdrive_contract.events.RemoveLiquidity.create_filter(  # type:ignore
-        **lp_filter_args
-    )
-    withdraw_event_filter = hyperdrive_contract.events.RedeemWithdrawalShares.create_filter(  # type:ignore
-        **lp_filter_args
-    )
-    open_long_event_filter = hyperdrive_contract.events.OpenLong.create_filter(  # type:ignore
-        **trade_filter_args
-    )
-    close_long_event_filter = hyperdrive_contract.events.CloseLong.create_filter(  # type:ignore
-        **trade_filter_args
-    )
-    open_short_event_filter = hyperdrive_contract.events.OpenShort.create_filter(  # type:ignore
-        **trade_filter_args
-    )
-    close_short_event_filter = hyperdrive_contract.events.CloseShort.create_filter(  # type:ignore
-        **trade_filter_args
-    )
-
-    # Retrieve all entries
-    add_lp_events = add_lp_event_filter.get_all_entries()
-    remove_lp_events = remove_lp_event_filter.get_all_entries()
-    withdraw_events = withdraw_event_filter.get_all_entries()
-    open_long_events = open_long_event_filter.get_all_entries()
-    close_long_events = close_long_event_filter.get_all_entries()
-    open_short_events = open_short_event_filter.get_all_entries()
-    close_short_events = close_short_event_filter.get_all_entries()
-
-    # Calculate total events on chain
-    total_events = (
-        len(add_lp_events)
-        + len(remove_lp_events)
-        + len(withdraw_events)
-        + len(open_long_events)
-        + len(close_long_events)
-        + len(open_short_events)
-        + len(close_short_events)
-    )
-
-    return {
-        "addLiquidity": add_lp_events,
-        "removeLiquidity": remove_lp_events,
-        "redeemWithdrawalShares": withdraw_events,
-        "openLong": open_long_events,
-        "closeLong": close_long_events,
-        "openShort": open_short_events,
-        "closeShort": close_short_events,
-        "total_events": total_events,
-    }
+    # Build event objects based on fn_name
+    if fn_name == "createCheckpoint":
+        out_event = CreateCheckpoint(
+            checkpoint_time=event_args_dict["checkpoint_time"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            checkpoint_vault_share_price=event_args_dict["checkpoint_vault_share_price"],
+            matured_shorts=event_args_dict["matured_shorts"],
+            matured_longs=event_args_dict["matured_longs"],
+            lp_share_price=event_args_dict["lp_share_price"],
+        )
+    elif fn_name == "openLong":
+        out_event = OpenLong(
+            trader=Web3.to_checksum_address(event_args_dict["trader"]),
+            asset_id=event_args_dict["asset_id"],
+            maturity_time=event_args_dict["maturity_time"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+            bond_amount=event_args_dict["bond_amount"],
+        )
+    elif fn_name == "closeLong":
+        out_event = CloseLong(
+            trader=Web3.to_checksum_address(event_args_dict["trader"]),
+            destination=Web3.to_checksum_address(event_args_dict["destination"]),
+            asset_id=event_args_dict["asset_id"],
+            maturity_time=event_args_dict["maturity_time"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+            bond_amount=event_args_dict["bond_amount"],
+        )
+    elif fn_name == "openShort":
+        out_event = OpenShort(
+            trader=Web3.to_checksum_address(event_args_dict["trader"]),
+            asset_id=event_args_dict["asset_id"],
+            maturity_time=event_args_dict["maturity_time"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+            base_proceeds=event_args_dict["base_proceeds"],
+            bond_amount=event_args_dict["bond_amount"],
+        )
+    elif fn_name == "closeShort":
+        out_event = CloseShort(
+            trader=Web3.to_checksum_address(event_args_dict["trader"]),
+            destination=Web3.to_checksum_address(event_args_dict["destination"]),
+            asset_id=event_args_dict["asset_id"],
+            maturity_time=event_args_dict["maturity_time_seconds"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+            base_payment=event_args_dict["base_payment"],
+            bond_amount=event_args_dict["bond_amount"],
+        )
+    elif fn_name == "addLiquidity":
+        out_event = AddLiquidity(
+            provider=Web3.to_checksum_address(event_args_dict["provider"]),
+            lp_amount=event_args_dict["lp_amount"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+            lp_share_price=event_args_dict["lp_share_price"],
+        )
+    elif fn_name == "removeLiquidity":
+        out_event = RemoveLiquidity(
+            provider=Web3.to_checksum_address(event_args_dict["provider"]),
+            destination=Web3.to_checksum_address(event_args_dict["destination"]),
+            lp_amount=event_args_dict["lp_amount"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+            withdrawal_share_amount=event_args_dict["withdrawal_share_amount"],
+            lp_share_price=event_args_dict["lp_share_price"],
+        )
+    elif fn_name == "redeemWithdrawalShares":
+        out_event = RedeemWithdrawalShares(
+            provider=Web3.to_checksum_address(event_args_dict["provider"]),
+            destination=Web3.to_checksum_address(event_args_dict["destination"]),
+            withdrawal_share_amount=event_args_dict["withdrawal_share_amount"],
+            amount=event_args_dict["amount"],
+            vault_share_price=event_args_dict["vault_share_price"],
+            as_base=event_args_dict["as_base"],
+        )
+    else:
+        raise AssertionError("Unknown function name", f"{fn_name=}")
+    return out_event

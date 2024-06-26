@@ -17,10 +17,9 @@ from .deploy import (
 from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
 from .interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from .transactions import (
-    get_event_history_from_chain,
     get_hyperdrive_checkpoint,
     get_hyperdrive_checkpoint_exposure,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
-    parse_logs,
+    parse_logs_to_event,
 )

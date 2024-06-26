@@ -24,7 +24,16 @@ if TYPE_CHECKING:
     from web3 import Web3
     from web3.types import Nonce
 
-    from agent0.ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
+    from agent0.ethpy.hyperdrive.event_types import (
+        AddLiquidity,
+        CloseLong,
+        CloseShort,
+        CreateCheckpoint,
+        OpenLong,
+        OpenShort,
+        RedeemWithdrawalShares,
+        RemoveLiquidity,
+    )
 
 # We have no control over the number of arguments since it is specified by the smart contracts
 # pylint: disable=too-many-arguments
@@ -98,7 +107,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         checkpoint_time: int | None = None,
         gas_limit: int | None = None,
         write_retry_count: int | None = None,
-    ) -> ReceiptBreakdown:
+    ) -> CreateCheckpoint:
         """Create a Hyperdrive checkpoint.
 
         Arguments
@@ -117,7 +126,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
+        CreateCheckpoint
             A dataclass containing the output event of the contract call.
         """
         return _create_checkpoint(
@@ -154,7 +163,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> OpenLong:
         """Contract call to open a long position.
 
         Arguments
@@ -181,8 +190,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
+        OpenLong
+            A dataclass containing the output event of the contract call.
         """
         return await _async_open_long(
             interface=self,
@@ -209,7 +218,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> CloseLong:
         """Contract call to close a long position.
 
         Arguments
@@ -238,8 +247,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
+        CloseLong
+            A dataclass containing the output event of the contract call.
         """
         return await _async_close_long(
             interface=self,
@@ -264,7 +273,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> OpenShort:
         """Contract call to open a short position.
 
         Arguments
@@ -291,8 +300,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
+        OpenShort
+            A dataclass containing the output event of the contract call.
         """
         return await _async_open_short(
             interface=self,
@@ -319,7 +328,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> CloseShort:
         """Contract call to close a short position.
 
         Arguments
@@ -348,8 +357,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the maturity time and the absolute values for token quantities changed.
+        CloseShort
+            A dataclass containing the output event of the contract call.
         """
         return await _async_close_short(
             interface=self,
@@ -378,7 +387,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> AddLiquidity:
         """Contract call to add liquidity to the Hyperdrive pool.
 
         Arguments
@@ -409,8 +418,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed.
+        AddLiquidity
+            A dataclass containing the output event of the contract call.
         """
         return await _async_add_liquidity(
             interface=self,
@@ -435,7 +444,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> RemoveLiquidity:
         """Contract call to remove liquidity from the Hyperdrive pool.
 
         Arguments
@@ -458,8 +467,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed.
+        RemoveLiquidity
+            A dataclass containing the output event of the contract call.
         """
         return await _async_remove_liquidity(
             interface=self,
@@ -481,7 +490,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce: Nonce | None = None,
         preview_before_trade: bool = False,
-    ) -> ReceiptBreakdown:
+    ) -> RedeemWithdrawalShares:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
 
         This should be done after closing liquidity.
@@ -512,8 +521,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Returns
         -------
-        ReceiptBreakdown
-            A dataclass containing the absolute values for token quantities changed.
+        RedeemWithdrawalShares
+            A dataclass containing the output event of the contract call.
         """
         return await _async_redeem_withdraw_shares(
             interface=self,
