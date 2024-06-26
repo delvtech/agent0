@@ -40,19 +40,16 @@ if TYPE_CHECKING:
 # Is very thorough module.
 # pylint: disable=too-many-lines
 # pylint: disable=protected-access
+# pylint: disable=too-many-instance-attributes
 
 
 class LocalHyperdrive(Hyperdrive):
     """Interactive Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
-    # pylint: disable=too-many-instance-attributes
-
     # We add a link to the `DeployType` here for access from this hyperdrive object,
     # e.g., `LocalHyperdrive.DeployType.ERC4626`
     DeployType = HyperdriveDeployType
 
-    # Lots of attributes in config
-    # pylint: disable=too-many-instance-attributes
     @dataclass(kw_only=True)
     class Config(Hyperdrive.Config):
         """The configuration for the local hyperdrive pool."""

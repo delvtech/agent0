@@ -21,7 +21,6 @@ from agent0.ethpy.base import (
     smart_contract_transact,
 )
 from agent0.ethpy.base.receipts import get_transaction_logs
-from agent0.ethpy.base.transactions import smart_contract_transact
 from agent0.hypertypes import (
     ERC20ForwarderFactoryContract,
     ERC20MintableContract,
