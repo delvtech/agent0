@@ -8,9 +8,9 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
 from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0.ethpy.hyperdrive.event_types import AddLiquidity, CloseLong, CloseShort, OpenLong, OpenShort
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name

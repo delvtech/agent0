@@ -26,8 +26,8 @@ from fixedpointmath import FixedPoint, isclose
 from tabulate import tabulate
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.core.hyperdrive.utilities.predict import TradeDeltas, predict_long, predict_short
+from agent0.ethpy.hyperdrive.event_types import OpenLong, OpenShort
 
 # it's just a test
 # pylint: disable=logging-fstring-interpolation

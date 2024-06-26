@@ -15,6 +15,9 @@ from fixedpointmath import FixedPoint
 class BaseHyperdriveEvent:
     """The base hyperdrive event."""
 
+    # Expose the name of the object
+    __name__: str = "BaseHyperdriveEvent"
+
 
 @dataclass(kw_only=True)
 class OpenLong(BaseHyperdriveEvent):

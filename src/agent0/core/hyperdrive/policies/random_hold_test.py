@@ -6,8 +6,8 @@ import pytest
 from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.interactive.event_types import CloseLong, CloseShort
 from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0.ethpy.hyperdrive.event_types import CloseLong, CloseShort
 
 # pylint: disable=too-many-locals
 

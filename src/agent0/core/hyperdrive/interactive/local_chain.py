@@ -22,9 +22,9 @@ from web3.types import RPCEndpoint
 from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
+from agent0.ethpy.hyperdrive.event_types import CreateCheckpoint
 
 from .chain import Chain
-from .event_types import CreateCheckpoint
 from .local_hyperdrive import LocalHyperdrive
 from .local_hyperdrive_agent import LocalHyperdriveAgent
 

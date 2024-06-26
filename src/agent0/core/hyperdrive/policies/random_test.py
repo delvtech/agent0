@@ -7,7 +7,8 @@ from fixedpointmath import FixedPoint
 
 from agent0.core.hyperdrive import HyperdriveActionType
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.core.hyperdrive.interactive.event_types import (
+from agent0.core.hyperdrive.policies import PolicyZoo
+from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
     CloseLong,
     CloseShort,
@@ -16,7 +17,6 @@ from agent0.core.hyperdrive.interactive.event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from agent0.core.hyperdrive.policies import PolicyZoo
 
 
 @pytest.mark.anvil

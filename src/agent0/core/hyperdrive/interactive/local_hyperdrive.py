@@ -29,9 +29,9 @@ from agent0.ethpy.hyperdrive import (
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
+from agent0.ethpy.hyperdrive.event_types import CreateCheckpoint
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
-from .event_types import CreateCheckpoint
 from .hyperdrive import Hyperdrive
 
 if TYPE_CHECKING:
