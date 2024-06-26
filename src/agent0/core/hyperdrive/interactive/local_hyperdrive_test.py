@@ -196,6 +196,7 @@ def _ensure_event_matches_wallet_delta(
 @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
 def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
+    # pylint: disable=too-many-branches
     # TODO DRY this up, e.g., doing the same calls while swapping the agent.
 
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
