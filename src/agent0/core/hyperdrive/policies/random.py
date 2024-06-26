@@ -171,7 +171,7 @@ class Random(HyperdriveBasePolicy):
             # TODO get these parameters from config
             log_hyperdrive_crash_report(
                 crash_report,
-                logging.ERROR,
+                logging.WARNING,
                 crash_report_to_file=True,
                 crash_report_file_prefix="",
                 log_to_rollbar=True,
@@ -277,7 +277,7 @@ class Random(HyperdriveBasePolicy):
             # TODO get these parameters from config
             log_hyperdrive_crash_report(
                 crash_report,
-                logging.ERROR,
+                logging.WARNING,
                 crash_report_to_file=True,
                 crash_report_file_prefix="",
                 log_to_rollbar=True,

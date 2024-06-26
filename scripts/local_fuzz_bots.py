@@ -14,12 +14,25 @@ from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
+from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
-    if isinstance(exc, ContractCallException):
+    # Ignored fuzz exceptions
+    if isinstance(exc, FuzzAssertionException):
+        # LP rate invariance check
+        if (
+            len(exc.args) > 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "lp_rate=" in exc.args[1]
+            and "is expected to be >= vault_rate=" in exc.args[1]
+        ):
+            return True
+
+    # Contract call exceptions
+    elif isinstance(exc, ContractCallException):
         orig_exception = exc.orig_exception
         if orig_exception is None:
             return False
