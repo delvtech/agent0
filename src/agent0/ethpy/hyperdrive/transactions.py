@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
 from web3 import Web3
-from web3.contract.contract import Contract
 from web3.types import Timestamp, TxReceipt
 
 from agent0.ethpy.base import get_transaction_logs
@@ -31,6 +30,9 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
+
+if TYPE_CHECKING:
+    from .interface import HyperdriveReadInterface
 
 
 def get_hyperdrive_pool_config(hyperdrive_contract: IHyperdriveContract) -> PoolConfigFP:
@@ -118,61 +120,65 @@ def get_hyperdrive_checkpoint_exposure(
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["createCheckpoint"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["createCheckpoint"]
 ) -> CreateCheckpoint: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["openLong"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["openLong"]
 ) -> OpenLong: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["closeLong"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["closeLong"]
 ) -> CloseLong: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["openShort"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["openShort"]
 ) -> OpenShort: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["closeShort"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["closeShort"]
 ) -> CloseShort: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["addLiquidity"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["addLiquidity"]
 ) -> AddLiquidity: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["removeLiquidity"]
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["removeLiquidity"]
 ) -> RemoveLiquidity: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: Literal["redeemWithdrawalShares"]
+    tx_receipt: TxReceipt,
+    hyperdrive_interface: HyperdriveReadInterface,
+    fn_name: Literal["redeemWithdrawalShares"],
 ) -> RedeemWithdrawalShares: ...
 
 
-def parse_logs_to_event(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn_name: str) -> BaseHyperdriveEvent:
+def parse_logs_to_event(
+    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: str
+) -> BaseHyperdriveEvent:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
     Arguments
     ---------
     tx_receipt: TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
-    hyperdrive_contract: Contract
-        The deployed Hyperdrive web3 contract
+    hyperdrive_interface: HyperdriveReadInterface
+        The interface to the Hyperdrive contract.
     fn_name: str
         This function must exist in the compiled contract's ABI
 
@@ -191,7 +197,7 @@ def parse_logs_to_event(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn
         raise AssertionError("Receipt has status of 0")
 
     hyperdrive_event_logs = get_transaction_logs(
-        hyperdrive_contract,
+        hyperdrive_interface.hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
@@ -225,6 +231,19 @@ def parse_logs_to_event(tx_receipt: TxReceipt, hyperdrive_contract: Contract, fn
     for value in fixedpoint_values:
         if value in log_args:
             event_args_dict[camel_to_snake(value)] = FixedPoint(scaled_value=log_args[value])
+
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if hyperdrive_interface.vault_is_steth:
+        # The vault share price should be in every event
+        if "vault_share_price" not in event_args_dict:
+            raise AssertionError("vault_share_price not found in event.")
+        vault_share_price = event_args_dict["vault_share_price"]
+        if "amount" in event_args_dict:
+            event_args_dict["amount"] *= vault_share_price
+        if "base_proceeds" in event_args_dict:
+            event_args_dict["base_proceeds"] *= vault_share_price
+        if "base_payment" in event_args_dict:
+            event_args_dict["base_payment"] *= vault_share_price
 
     # Build event objects based on fn_name
     if fn_name == "createCheckpoint":

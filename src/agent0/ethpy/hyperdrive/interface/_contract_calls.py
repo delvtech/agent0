@@ -155,7 +155,7 @@ def _create_checkpoint(
         timeout=interface.txn_receipt_timeout,
         txn_options_gas=gas_limit,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "createCheckpoint")
+    trade_result = parse_logs_to_event(tx_receipt, interface, "createCheckpoint")
     return trade_result
 
 
@@ -203,6 +203,11 @@ async def _async_open_long(
         as_base_option = False
     else:
         as_base_option = True
+
+    # Convert the trade amount from steth to lido shares
+    # before passing into hyperdrive
+    if interface.vault_is_steth:
+        trade_amount = trade_amount / interface.current_pool_state.pool_info.vault_share_price
 
     fn_args = (
         trade_amount.scaled_value,
@@ -260,7 +265,7 @@ async def _async_open_long(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "openLong")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "openLong")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -345,7 +350,7 @@ async def _async_close_long(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "closeLong")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "closeLong")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -434,7 +439,7 @@ async def _async_open_short(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "openShort")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "openShort")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -518,7 +523,7 @@ async def _async_close_short(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "closeShort")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "closeShort")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -552,6 +557,11 @@ async def _async_add_liquidity(
         as_base_option = False
     else:
         as_base_option = True
+
+    # Convert the trade amount from steth to lido shares
+    # before passing into hyperdrive
+    if interface.vault_is_steth:
+        trade_amount = trade_amount / interface.current_pool_state.pool_info.vault_share_price
 
     fn_args = (
         trade_amount.scaled_value,
@@ -593,7 +603,7 @@ async def _async_add_liquidity(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "addLiquidity")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -658,7 +668,7 @@ async def _async_remove_liquidity(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "removeLiquidity")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -730,7 +740,7 @@ async def _async_redeem_withdraw_shares(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")
+        trade_result = parse_logs_to_event(tx_receipt, interface, "redeemWithdrawalShares")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
