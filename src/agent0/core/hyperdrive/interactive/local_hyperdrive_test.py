@@ -46,7 +46,7 @@ YEAR_IN_SECONDS = 31_536_000
 
 # Long test file
 # pylint: disable=too-many-lines
-
+# pylint: disable=too-many-branches
 # pylint: disable=protected-access
 
 
@@ -122,7 +122,6 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
         assert FixedPoint(scaled_value=short_from_chain) == FixedPoint(short_df["token_balance"])
 
 
-# pylint: disable=too-many-branches
 def _ensure_event_matches_wallet_delta(
     trade_input: FixedPoint,
     wallet_before: HyperdriveWallet,
@@ -139,7 +138,6 @@ def _ensure_event_matches_wallet_delta(
         event_comparison_epsilon = FixedPoint(scaled_value=10)
         chain_balance_comparison_epsilon = FixedPoint(scaled_value=int(3e6))
 
-    # pylint: disable=too-many-branches
     if isinstance(event, AddLiquidity):
         assert isclose(trade_input, event.amount, abs_tol=event_comparison_epsilon)
         assert isclose(
@@ -238,7 +236,6 @@ def _ensure_event_matches_wallet_delta(
 @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
 def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
-    # pylint: disable=too-many-branches
     # TODO DRY this up, e.g., doing the same calls while swapping the agent.
 
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed
