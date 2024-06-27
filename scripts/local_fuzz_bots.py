@@ -82,6 +82,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     """
     # TODO consolidate setup into single function and clean up.
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
 
     parsed_args = parse_arguments(argv)
 
