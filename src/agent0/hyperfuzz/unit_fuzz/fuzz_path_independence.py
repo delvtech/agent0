@@ -72,6 +72,7 @@ def fuzz_path_independence(
     effective_share_reserves_epsilon: float,
     present_value_epsilon: float,
     chain_config: LocalChain.Config,
+    steth: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
@@ -89,6 +90,8 @@ def fuzz_path_independence(
         The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    steth: bool
+        Whether to use steth instead of erc4626
     """
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
@@ -108,6 +111,7 @@ def fuzz_path_independence(
         governance_lp_fee=FixedPoint(0),
         governance_zombie_fee=FixedPoint(0),
         fuzz_test_name="fuzz_path_independence",
+        steth=steth,
     )
 
     # Open some trades

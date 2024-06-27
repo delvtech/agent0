@@ -21,6 +21,7 @@ def setup_fuzz(
     governance_lp_fee: FixedPoint | None = None,
     governance_zombie_fee: FixedPoint | None = None,
     var_interest: FixedPoint | None = None,
+    steth: bool = False,
 ) -> tuple[LocalChain, int, Generator, LocalHyperdrive]:
     """Setup the fuzz experiment.
 
@@ -45,6 +46,8 @@ def setup_fuzz(
     var_interest: FixedPoint | None, optional
         The variable interest rate. Defaults to using the default variable interest rate
         defined in interactive hyperdrive.
+    steth: bool, optional
+        If True, use steth. Defaults to False.
 
     Returns
     -------
@@ -93,6 +96,7 @@ def setup_fuzz(
         checkpoint_duration=60 * 60 * 24,  # 1 day
         # TODO calc_max_short doesn't work with a week position duration, setting to 30 days
         position_duration=60 * 60 * 24 * 30,  # 30 days
+        deploy_type=LocalHyperdrive.DeployType.STETH if steth else LocalHyperdrive.DeployType.ERC4626,
     )
 
     if curve_fee is not None:

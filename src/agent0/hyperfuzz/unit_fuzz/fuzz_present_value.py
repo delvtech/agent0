@@ -55,6 +55,7 @@ def main(argv: Sequence[str] | None = None):
 def fuzz_present_value(
     test_epsilon: float,
     chain_config: LocalChain.Config,
+    steth: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
@@ -64,6 +65,8 @@ def fuzz_present_value(
         The allowed error for present value equality tests.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    steth: bool
+        Whether to use steth instead of erc4626
     """
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
         chain_config,
@@ -72,6 +75,7 @@ def fuzz_present_value(
         governance_lp_fee=FixedPoint(0),
         governance_zombie_fee=FixedPoint(0),
         fuzz_test_name="fuzz_present_value",
+        steth=steth,
     )
 
     initial_pool_state = interactive_hyperdrive.interface.current_pool_state

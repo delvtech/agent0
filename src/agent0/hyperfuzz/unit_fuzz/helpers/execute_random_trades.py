@@ -63,7 +63,9 @@ def execute_random_trades(
     for trade_index, trade_type in enumerate([rng.choice(available_actions, size=1)[0] for _ in range(num_trades)]):
         trade_amount = _get_open_trade_amount(trade_type, rng, interactive_hyperdrive)
         # the short trade amount is technically bonds, but we know that will be less than the required base
-        agent = chain.init_agent(base=trade_amount, eth=FixedPoint(100), pool=interactive_hyperdrive)
+        # We add a little bit more than the trade amount, as steth can accrue interest which can overestimate
+        # the trade amount
+        agent = chain.init_agent(base=trade_amount + FixedPoint(1), eth=FixedPoint(100), pool=interactive_hyperdrive)
         trade_event = _execute_trade(trade_type, trade_amount, agent)
         trade_events.append((agent, trade_event))
         if advance_time:
