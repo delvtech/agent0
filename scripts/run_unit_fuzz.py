@@ -18,6 +18,7 @@ from agent0.hyperfuzz.unit_fuzz import (
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
 
 # pylint: disable=too-many-statements
+# pylint: disable=too-many-branches
 
 
 def main(argv: Sequence[str] | None = None):
