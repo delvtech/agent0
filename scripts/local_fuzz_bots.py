@@ -24,7 +24,7 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
     if isinstance(exc, FuzzAssertionException):
         # LP rate invariance check
         if (
-            len(exc.args) > 2
+            len(exc.args) >= 2
             and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
             and "lp_rate=" in exc.args[1]
             and "is expected to be >= vault_rate=" in exc.args[1]

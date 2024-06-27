@@ -294,14 +294,18 @@ def run_fuzz_bots(
                 if latest_block_number is None:
                     raise AssertionError("Block has no number.")
                 # pylint: disable=protected-access
-                run_invariant_checks(
-                    latest_block=latest_block,
-                    interface=hyperdrive_pool.interface,
-                    raise_error_on_failure=raise_error_on_failed_invariance_checks,
-                    log_to_rollbar=log_to_rollbar,
-                    lp_share_price_test=lp_share_price_test,
-                    crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
-                )
+                try:
+                    run_invariant_checks(
+                        latest_block=latest_block,
+                        interface=hyperdrive_pool.interface,
+                        raise_error_on_failure=raise_error_on_failed_invariance_checks,
+                        log_to_rollbar=log_to_rollbar,
+                        lp_share_price_test=lp_share_price_test,
+                        crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
+                    )
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                        raise exc
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
