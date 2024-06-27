@@ -186,6 +186,7 @@ def run_checkpoint_bot(
             f"Pool {pool_name} for checkpointTime={checkpoint_time}: "
             "Checking if checkpoint needed. "
             f"{timestamp=} {checkpoint_portion_elapsed=} "
+            f"{checkpoint_bot_eth_balance=}"
         )
         logging.info(logging_str)
         if log_to_rollbar:
