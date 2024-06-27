@@ -62,10 +62,6 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             and isinstance(orig_exception[0], UnknownBlockError)
             and len(orig_exception[0].args) > 0
             and "Receipt has status of 0" in orig_exception[0].args[0]
-            # Ensure the second preview was successful to ignore
-            and isinstance(orig_exception[1], AssertionError)
-            and len(orig_exception[1].args) > 1
-            and "Preview was successful" in orig_exception[1].args[1]
         ):
             return True
 
