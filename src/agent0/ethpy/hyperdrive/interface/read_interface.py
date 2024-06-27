@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from fixedpointmath import FixedPoint
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
-from web3.types import BlockData, BlockIdentifier, EventData, Timestamp
+from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
 from agent0.ethpy.hyperdrive.get_expected_hyperdrive_version import get_expected_hyperdrive_version
@@ -540,7 +540,7 @@ class HyperdriveReadInterface:
 
     def get_transfer_single_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted TransferSingle events from the Hyperdrive contract.
 
         Arguments
@@ -552,14 +552,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_transfer_single_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_transfer_single_events(self, from_block, argument_filters)
 
     def get_checkpoint_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted CreateCheckpoint events from the Hyperdrive contract.
 
         Arguments
@@ -571,14 +571,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_checkpoint_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_checkpoint_events(self, from_block, argument_filters)
 
     def get_initialize_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted Initialize events from the Hyperdrive contract.
 
         Arguments
@@ -590,14 +590,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_initialize_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_initialize_events(self, from_block, argument_filters)
 
     def get_open_long_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted OpenLong events from the Hyperdrive contract.
 
         Arguments
@@ -609,14 +609,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_open_long_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_open_long_events(self, from_block, argument_filters)
 
     def get_close_long_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted CloseLong events from the Hyperdrive contract.
 
         Arguments
@@ -628,14 +628,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_close_long_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_close_long_events(self, from_block, argument_filters)
 
     def get_open_short_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
 
         Arguments
@@ -647,14 +647,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_open_short_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_open_short_events(self, from_block, argument_filters)
 
     def get_close_short_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
 
         Arguments
@@ -666,14 +666,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_close_short_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_close_short_events(self, from_block, argument_filters)
 
     def get_add_liquidity_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted AddLiquidity events from the Hyperdrive contract.
 
         Arguments
@@ -685,14 +685,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_add_liquidity_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_add_liquidity_events(self, from_block, argument_filters)
 
     def get_remove_liquidity_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted RemoveLiquidity events from the Hyperdrive contract.
 
         Arguments
@@ -704,14 +704,14 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_remove_liquidity_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_remove_liquidity_events(self, from_block, argument_filters)
 
     def get_redeem_withdrawal_shares_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
-    ) -> list[EventData]:
+    ) -> list[dict[str, Any]]:
         """Get the emitted RedeemWithdrawalShares events from the Hyperdrive contract.
 
         Arguments
@@ -723,10 +723,10 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        list[EventData]
+        list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_redeem_withdrawal_shares_events(self.hyperdrive_contract, from_block, argument_filters)
+        return _get_redeem_withdrawal_shares_events(self, from_block, argument_filters)
 
     def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Return the pool config position duration as a fraction of a year.
