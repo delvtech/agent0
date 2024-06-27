@@ -178,7 +178,11 @@ def convert_trade_events(events: list[EventData], wallet_addr: str | None) -> pd
         else:
             # TODO need to implement transfers to test this case
             # We raise not implemented for now
-            raise NotImplementedError("Not implemented for wallet_addr=None")
+            raise NotImplementedError(
+                "Transfer single event found without corresponding hyperdrive trade event. "
+                "Likely a transfer of a token to/from another wallet."
+                "Not implemented when converting events without a provided wallet_addr"
+            )
 
         # See if it's a receive or send of tokens
         send_idx = transfer_events_df["from"] == wallet_addr
