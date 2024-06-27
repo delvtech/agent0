@@ -23,6 +23,7 @@ from agent0.core.test_utils import CycleTradesPolicy
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
+    BaseHyperdriveEvent,
     CloseLong,
     CloseShort,
     OpenLong,
@@ -125,7 +126,7 @@ def _ensure_event_matches_wallet_delta(
     trade_input: FixedPoint,
     wallet_before: HyperdriveWallet,
     wallet_after: HyperdriveWallet,
-    event: OpenLong | CloseLong | OpenShort | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares,
+    event: BaseHyperdriveEvent,
 ):
     # pylint: disable=too-many-branches
     if isinstance(event, AddLiquidity):
