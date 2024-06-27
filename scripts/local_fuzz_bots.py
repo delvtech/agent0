@@ -113,6 +113,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             chain_port = 33333
         elif not parsed_args.lp_share_price_test and not parsed_args.steth:
             chain_port = 44444
+        else:
+            assert False
     else:
         chain_port = parsed_args.chain_port
 
@@ -125,6 +127,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         db_port = 77777
     elif not parsed_args.lp_share_price_test and not parsed_args.steth:
         db_port = 88888
+    else:
+        assert False
 
     # Negative timestamp means default
     if parsed_args.genesis_timestamp < 0:
