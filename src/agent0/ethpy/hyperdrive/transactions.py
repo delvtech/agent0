@@ -120,64 +120,62 @@ def get_hyperdrive_checkpoint_exposure(
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["createCheckpoint"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["createCheckpoint"]
 ) -> CreateCheckpoint: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["openLong"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["openLong"]
 ) -> OpenLong: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["closeLong"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["closeLong"]
 ) -> CloseLong: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["openShort"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["openShort"]
 ) -> OpenShort: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["closeShort"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["closeShort"]
 ) -> CloseShort: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["addLiquidity"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["addLiquidity"]
 ) -> AddLiquidity: ...
 
 
 @overload
 def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: Literal["removeLiquidity"]
+    tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: Literal["removeLiquidity"]
 ) -> RemoveLiquidity: ...
 
 
 @overload
 def parse_logs_to_event(
     tx_receipt: TxReceipt,
-    hyperdrive_interface: HyperdriveReadInterface,
+    interface: HyperdriveReadInterface,
     fn_name: Literal["redeemWithdrawalShares"],
 ) -> RedeemWithdrawalShares: ...
 
 
-def parse_logs_to_event(
-    tx_receipt: TxReceipt, hyperdrive_interface: HyperdriveReadInterface, fn_name: str
-) -> BaseHyperdriveEvent:
+def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterface, fn_name: str) -> BaseHyperdriveEvent:
     """Decode a Hyperdrive contract transaction receipt to get the changes to the agent's funds.
 
     Arguments
     ---------
     tx_receipt: TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
-    hyperdrive_interface: HyperdriveReadInterface
+    interface: HyperdriveReadInterface
         The interface to the Hyperdrive contract.
     fn_name: str
         This function must exist in the compiled contract's ABI
@@ -197,7 +195,7 @@ def parse_logs_to_event(
         raise AssertionError("Receipt has status of 0")
 
     hyperdrive_event_logs = get_transaction_logs(
-        hyperdrive_interface.hyperdrive_contract,
+        interface.hyperdrive_contract,
         tx_receipt,
         event_names=[fn_name[0].capitalize() + fn_name[1:]],
     )
@@ -233,7 +231,7 @@ def parse_logs_to_event(
             event_args_dict[camel_to_snake(value)] = FixedPoint(scaled_value=log_args[value])
 
     # If hyperdrive is steth, convert the amount from lido shares to steth
-    if hyperdrive_interface.vault_is_steth:
+    if interface.vault_is_steth:
         # The vault share price should be in every event
         if "vault_share_price" not in event_args_dict:
             raise AssertionError("vault_share_price not found in event.")
