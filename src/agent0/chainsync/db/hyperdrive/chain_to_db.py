@@ -210,7 +210,7 @@ def trade_events_to_db(
             provider_arg_filter = None
 
         all_events.extend(
-            interface.get_transfer_single_events(
+            interface.get_initialize_events(
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
             )
