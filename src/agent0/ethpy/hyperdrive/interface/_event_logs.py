@@ -69,7 +69,7 @@ def _get_open_short_events(
     argument_filters: dict[str, Any] | None = None,
 ) -> list[EventData]:
     """See API for documentation."""
-    return list(hyperdrive_contract.events.OpenLong.get_logs(fromBlock=from_block, argument_filters=argument_filters))
+    return list(hyperdrive_contract.events.OpenShort.get_logs(fromBlock=from_block, argument_filters=argument_filters))
 
 
 def _get_close_short_events(
@@ -78,7 +78,7 @@ def _get_close_short_events(
     argument_filters: dict[str, Any] | None = None,
 ) -> list[EventData]:
     """See API for documentation."""
-    return list(hyperdrive_contract.events.CloseLong.get_logs(fromBlock=from_block, argument_filters=argument_filters))
+    return list(hyperdrive_contract.events.CloseShort.get_logs(fromBlock=from_block, argument_filters=argument_filters))
 
 
 def _get_add_liquidity_events(
@@ -87,7 +87,9 @@ def _get_add_liquidity_events(
     argument_filters: dict[str, Any] | None = None,
 ) -> list[EventData]:
     """See API for documentation."""
-    return list(hyperdrive_contract.events.OpenLong.get_logs(fromBlock=from_block, argument_filters=argument_filters))
+    return list(
+        hyperdrive_contract.events.AddLiquidity.get_logs(fromBlock=from_block, argument_filters=argument_filters)
+    )
 
 
 def _get_remove_liquidity_events(
@@ -96,7 +98,9 @@ def _get_remove_liquidity_events(
     argument_filters: dict[str, Any] | None = None,
 ) -> list[EventData]:
     """See API for documentation."""
-    return list(hyperdrive_contract.events.CloseLong.get_logs(fromBlock=from_block, argument_filters=argument_filters))
+    return list(
+        hyperdrive_contract.events.RemoveLiquidity.get_logs(fromBlock=from_block, argument_filters=argument_filters)
+    )
 
 
 def _get_redeem_withdrawal_shares_events(
