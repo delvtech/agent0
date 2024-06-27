@@ -57,7 +57,11 @@ def main(argv: Sequence[str] | None = None):
                 # Try 5 times when creating checkpoints for advancing time transactions
                 advance_time_create_checkpoint_retry_count=5,
             )
-            long_maturity_vals_epsilon = 1e-14
+            # Different epsilons for steth/nonsteth to account for imprecision in base for steth
+            if parsed_args.steth:
+                long_maturity_vals_epsilon = 3e-12
+            else:
+                long_maturity_vals_epsilon = 1e-14
             short_maturity_vals_epsilon = 1e-9
             fuzz_long_short_maturity_values(
                 num_trades,
