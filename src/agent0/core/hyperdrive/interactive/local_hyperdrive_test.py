@@ -269,11 +269,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     else:
         assert not add_liquidity_event_0.as_base
 
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(FixedPoint(111_111), wallet_before, wallet_after, add_liquidity_event_0)
-
+    _ensure_event_matches_wallet_delta(FixedPoint(111_111), wallet_before, wallet_after, add_liquidity_event_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -284,10 +280,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
         assert add_liquidity_event_1.as_base
     else:
         assert not add_liquidity_event_1.as_base
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(FixedPoint(111_111), wallet_before, wallet_after, add_liquidity_event_1)
+    _ensure_event_matches_wallet_delta(FixedPoint(111_111), wallet_before, wallet_after, add_liquidity_event_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
@@ -300,10 +293,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     else:
         assert not open_long_event_0.as_base
     assert len(wallet_after.longs) == 1
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(FixedPoint(22_222), wallet_before, wallet_after, open_long_event_0)
+    _ensure_event_matches_wallet_delta(FixedPoint(22_222), wallet_before, wallet_after, open_long_event_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -314,10 +304,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
         assert open_long_event_1.as_base
     else:
         assert not open_long_event_1.as_base
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(FixedPoint(22_222), wallet_before, wallet_after, open_long_event_1)
+    _ensure_event_matches_wallet_delta(FixedPoint(22_222), wallet_before, wallet_after, open_long_event_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
@@ -326,12 +313,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     remove_liquidity_event_0 = hyperdrive_agent_0.remove_liquidity(shares=add_liquidity_event_0.lp_amount)
     wallet_after = hyperdrive_agent_0.get_wallet()
     assert wallet_after.lp_tokens == FixedPoint(0)
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            add_liquidity_event_0.lp_amount, wallet_before, wallet_after, remove_liquidity_event_0
-        )
+    _ensure_event_matches_wallet_delta(
+        add_liquidity_event_0.lp_amount, wallet_before, wallet_after, remove_liquidity_event_0
+    )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -339,12 +323,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     remove_liquidity_event_1 = hyperdrive_agent_1.remove_liquidity(shares=add_liquidity_event_1.lp_amount)
     wallet_after = hyperdrive_agent_1.get_wallet()
     assert hyperdrive_agent_1.get_wallet().lp_tokens == FixedPoint(0)
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            add_liquidity_event_1.lp_amount, wallet_before, wallet_after, remove_liquidity_event_1
-        )
+    _ensure_event_matches_wallet_delta(
+        add_liquidity_event_1.lp_amount, wallet_before, wallet_after, remove_liquidity_event_1
+    )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
@@ -366,10 +347,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     open_short_event_0 = hyperdrive_agent_0.open_short(bonds=FixedPoint(333))
     wallet_after = hyperdrive_agent_0.get_wallet()
     assert len(wallet_after.shorts) == 1
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(FixedPoint(333), wallet_before, wallet_after, open_short_event_0)
+    _ensure_event_matches_wallet_delta(FixedPoint(333), wallet_before, wallet_after, open_short_event_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -378,10 +356,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     open_short_event_1 = hyperdrive_agent_1.open_short(bonds=FixedPoint(333))
     wallet_after = hyperdrive_agent_1.get_wallet()
     assert len(wallet_after.shorts) == 1
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(FixedPoint(333), wallet_before, wallet_after, open_short_event_1)
+    _ensure_event_matches_wallet_delta(FixedPoint(333), wallet_before, wallet_after, open_short_event_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
@@ -392,12 +367,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     )
     wallet_after = hyperdrive_agent_0.get_wallet()
     assert len(wallet_after.longs) == 0
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            open_long_event_0.bond_amount, wallet_before, wallet_after, close_long_event_0
-        )
+    _ensure_event_matches_wallet_delta(open_long_event_0.bond_amount, wallet_before, wallet_after, close_long_event_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -408,12 +378,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     )
     wallet_after = hyperdrive_agent_1.get_wallet()
     assert len(hyperdrive_agent_1.get_wallet().longs) == 0
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            open_long_event_1.bond_amount, wallet_before, wallet_after, close_long_event_1
-        )
+    _ensure_event_matches_wallet_delta(open_long_event_1.bond_amount, wallet_before, wallet_after, close_long_event_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
@@ -424,12 +389,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     )
     wallet_after = hyperdrive_agent_0.get_wallet()
     assert len(wallet_after.shorts) == 0
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            open_short_event_0.bond_amount, wallet_before, wallet_after, close_short_event_0
-        )
+    _ensure_event_matches_wallet_delta(open_short_event_0.bond_amount, wallet_before, wallet_after, close_short_event_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -440,12 +400,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     )
     wallet_after = hyperdrive_agent_1.get_wallet()
     assert len(wallet_after.shorts) == 0
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            open_short_event_1.bond_amount, wallet_before, wallet_after, close_short_event_1
-        )
+    _ensure_event_matches_wallet_delta(open_short_event_1.bond_amount, wallet_before, wallet_after, close_short_event_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
@@ -454,12 +409,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     redeem_event_0 = hyperdrive_agent_0.redeem_withdrawal_share(shares=remove_liquidity_event_0.withdrawal_share_amount)
     wallet_after = hyperdrive_agent_0.get_wallet()
     assert wallet_after.withdraw_shares == FixedPoint(0)
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            remove_liquidity_event_0.withdrawal_share_amount, wallet_before, wallet_after, redeem_event_0
-        )
+    _ensure_event_matches_wallet_delta(
+        remove_liquidity_event_0.withdrawal_share_amount, wallet_before, wallet_after, redeem_event_0
+    )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
@@ -468,12 +420,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     redeem_event_1 = hyperdrive_agent_1.redeem_withdrawal_share(shares=remove_liquidity_event_1.withdrawal_share_amount)
     wallet_after = hyperdrive_agent_1.get_wallet()
     assert wallet_after.withdraw_shares == FixedPoint(0)
-    # TODO the check below breaks for steth due to necessary shares conversion
-    # https://github.com/delvtech/agent0/issues/1545
-    if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        _ensure_event_matches_wallet_delta(
-            remove_liquidity_event_1.withdrawal_share_amount, wallet_before, wallet_after, redeem_event_1
-        )
+    _ensure_event_matches_wallet_delta(
+        remove_liquidity_event_1.withdrawal_share_amount, wallet_before, wallet_after, redeem_event_1
+    )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
