@@ -82,6 +82,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     """
     # TODO consolidate setup into single function and clean up.
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
 
     parsed_args = parse_arguments(argv)
 
@@ -105,18 +106,30 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Negative chain port means default
     if parsed_args.chain_port < 0:
-        if parsed_args.lp_share_price_test:
-            chain_port = 11111
+        if parsed_args.lp_share_price_test and parsed_args.steth:
+            chain_port = 1111
+        elif parsed_args.lp_share_price_test and not parsed_args.steth:
+            chain_port = 2222
+        elif not parsed_args.lp_share_price_test and parsed_args.steth:
+            chain_port = 3333
+        elif not parsed_args.lp_share_price_test and not parsed_args.steth:
+            chain_port = 4444
         else:
-            chain_port = 33333
+            assert False
     else:
         chain_port = parsed_args.chain_port
 
     # Set different ports if we're doing lp share price test
-    if parsed_args.lp_share_price_test:
-        db_port = 22222
+    if parsed_args.lp_share_price_test and parsed_args.steth:
+        db_port = 5555
+    elif parsed_args.lp_share_price_test and not parsed_args.steth:
+        db_port = 6666
+    elif not parsed_args.lp_share_price_test and parsed_args.steth:
+        db_port = 7777
+    elif not parsed_args.lp_share_price_test and not parsed_args.steth:
+        db_port = 8888
     else:
-        db_port = 44444
+        assert False
 
     # Negative timestamp means default
     if parsed_args.genesis_timestamp < 0:

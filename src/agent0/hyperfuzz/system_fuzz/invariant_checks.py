@@ -377,17 +377,21 @@ def _check_lp_share_price(
     # Determine if matured positions were closed this timestamp
     # We look for close events on this block
     # -1 to get events from current block
-    trade_events = []
+    trade_events: list[dict[str, Any]] = []
     trade_events.extend(interface.get_close_short_events(from_block=pool_state.block_number - 1))
     trade_events.extend(interface.get_close_long_events(from_block=pool_state.block_number - 1))
 
     closing_mature_position = False
     for event in trade_events:
         # maturityTime should always be part of close short/long
-        assert "maturityTime" in event.args
+        assert "args" in event
+        assert "maturityTime" in event["args"]
+        assert "blockNumber" in event
         # Race condition, filter only on events from the current block
         # Check if any matured positions were closed
-        if (event.blockNumber == pool_state.block_number) and (pool_state.block_time >= event.args.maturityTime):
+        if (event["blockNumber"] == pool_state.block_number) and (
+            pool_state.block_time >= event["args"]["maturityTime"]
+        ):
             closing_mature_position = True
             break
 

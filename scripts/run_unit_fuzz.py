@@ -18,6 +18,7 @@ from agent0.hyperfuzz.unit_fuzz import (
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
 
 # pylint: disable=too-many-statements
+# pylint: disable=too-many-branches
 
 
 def main(argv: Sequence[str] | None = None):
@@ -38,13 +39,18 @@ def main(argv: Sequence[str] | None = None):
     num_trades = 10
     num_paths_checked = 20
 
+    if parsed_args.steth:
+        steth_port_add = 1000
+    else:
+        steth_port_add = 0
+
     num_checks = 0
     while True:
         try:
             print("Running long short maturity test")
             chain_config = LocalChain.Config(
-                db_port=5434,
-                chain_port=10001,
+                db_port=5434 + steth_port_add,
+                chain_port=10001 + steth_port_add,
                 log_filename=".logging/fuzz_long_short_maturity_values.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
@@ -69,8 +75,8 @@ def main(argv: Sequence[str] | None = None):
         try:
             print("Running path independence test")
             chain_config = LocalChain.Config(
-                db_port=5435,
-                chain_port=10002,
+                db_port=5435 + steth_port_add,
+                chain_port=10002 + steth_port_add,
                 log_filename=".logging/fuzz_path_independence.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
@@ -98,8 +104,8 @@ def main(argv: Sequence[str] | None = None):
         try:
             print("Running fuzz profit test")
             chain_config = LocalChain.Config(
-                db_port=5436,
-                chain_port=10003,
+                db_port=5436 + steth_port_add,
+                chain_port=10003 + steth_port_add,
                 log_filename=".logging/fuzz_profit_check.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
@@ -116,8 +122,8 @@ def main(argv: Sequence[str] | None = None):
         try:
             print("Running fuzz present value test")
             chain_config = LocalChain.Config(
-                db_port=5437,
-                chain_port=10004,
+                db_port=5437 + steth_port_add,
+                chain_port=10004 + steth_port_add,
                 log_filename=".logging/fuzz_present_value.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
