@@ -85,7 +85,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     parsed_args = parse_arguments(argv)
 
-    log_to_rollbar = initialize_rollbar("localfuzzbots")
+    if parsed_args.steth:
+        log_to_rollbar = initialize_rollbar("steth_localfuzzbots")
+    else:
+        log_to_rollbar = initialize_rollbar("erc4626_localfuzzbots")
 
     # Negative rng_seed means default
     if parsed_args.rng_seed < 0:
