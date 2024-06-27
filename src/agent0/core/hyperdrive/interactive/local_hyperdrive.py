@@ -24,6 +24,8 @@ from agent0.chainsync.exec import acquire_data, analyze_data
 from agent0.ethpy.hyperdrive import (
     DeployedHyperdriveFactory,
     DeployedHyperdrivePool,
+    HyperdriveDeployType,
+    deploy_base_and_vault,
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
@@ -38,13 +40,16 @@ if TYPE_CHECKING:
 # Is very thorough module.
 # pylint: disable=too-many-lines
 # pylint: disable=protected-access
+# pylint: disable=too-many-instance-attributes
 
 
 class LocalHyperdrive(Hyperdrive):
     """Interactive Hyperdrive class that supports an interactive interface for running tests and experiments."""
 
-    # Lots of attributes in config
-    # pylint: disable=too-many-instance-attributes
+    # We add a link to the `DeployType` here for access from this hyperdrive object,
+    # e.g., `LocalHyperdrive.DeployType.ERC4626`
+    DeployType = HyperdriveDeployType
+
     @dataclass(kw_only=True)
     class Config(Hyperdrive.Config):
         """The configuration for the local hyperdrive pool."""
@@ -106,7 +111,9 @@ class LocalHyperdrive(Hyperdrive):
         """The upper bound on the governance zombie fee that governance can set."""
 
         # Pool Deploy Config variables
-        minimum_share_reserves: FixedPoint = FixedPoint(10)
+        deploy_type: HyperdriveDeployType = HyperdriveDeployType.ERC4626
+        """The type of deployment to use. If not specified, it will default to ERC4626."""
+        minimum_share_reserves: FixedPoint | None = None
         """The minimum share reserves."""
         minimum_transaction_amount: FixedPoint = FixedPoint("0.001")
         """The minimum amount of tokens that a position can be opened or closed with."""
@@ -140,6 +147,19 @@ class LocalHyperdrive(Hyperdrive):
                 raise ValueError("Checkpoint duration must be less than or equal to position duration")
             if self.position_duration % self.checkpoint_duration != 0:
                 raise ValueError("Position duration must be a multiple of checkpoint duration")
+            # Set defaults for minimum share reserves based on deploy type
+            if self.minimum_share_reserves is None:
+                match self.deploy_type:
+                    case HyperdriveDeployType.STETH:
+                        self.minimum_share_reserves = FixedPoint("0.001")
+                    case _:
+                        self.minimum_share_reserves = FixedPoint("10")
+
+            # Steth deployment minimum share reserves must be 0.001
+            # in the steth deployer coordinator.
+            # Adding useful error message here
+            if self.deploy_type == HyperdriveDeployType.STETH and self.minimum_share_reserves != FixedPoint("0.001"):
+                raise ValueError("Minimum share reserves must be 0.001 for steth deployment")
 
         @property
         def _factory_min_fees(self) -> Fees:
@@ -347,6 +367,7 @@ class LocalHyperdrive(Hyperdrive):
         self, config: Config, chain: LocalChain
     ) -> tuple[DeployedHyperdriveFactory, DeployedHyperdrivePool]:
         # sanity check (also for type checking), should get set in __post_init__
+        assert config.minimum_share_reserves is not None
         factory_deploy_config = FactoryConfig(
             governance="",  # will be determined in the deploy function
             deployerCoordinatorManager="",  # will be determined in the deploy function
@@ -392,17 +413,28 @@ class LocalHyperdrive(Hyperdrive):
 
         # TODO move deploying factory to be part of a parent, where deploying hyperdrive
         # only uses the factory
+        deployed_base_and_vault = deploy_base_and_vault(
+            chain._web3,
+            config.deploy_type,
+            chain.get_deployer_account(),
+            config.initial_variable_rate,
+        )
 
         deployed_hyperdrive_factory = deploy_hyperdrive_factory(
-            chain.rpc_uri, chain.get_deployer_account(), factory_deploy_config
+            chain._web3,
+            chain.get_deployer_account(),
+            deployed_base_and_vault,
+            config.deploy_type,
+            factory_deploy_config,
         )
 
         deployed_hyperdrive_pool = deploy_hyperdrive_from_factory(
-            chain.rpc_uri,
+            chain._web3,
             chain.get_deployer_account(),
+            deployed_base_and_vault,
             deployed_hyperdrive_factory,
+            config.deploy_type,
             config.initial_liquidity,
-            config.initial_variable_rate,
             config.initial_fixed_apr,
             config.initial_time_stretch_apr,
             pool_deploy_config,
