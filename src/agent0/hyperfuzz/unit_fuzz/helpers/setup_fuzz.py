@@ -68,7 +68,7 @@ def setup_fuzz(
     # Parameters for pool initialization.
     # Using a day for checkpoint duration to speed things up
     if crash_log_level is None:
-        crash_log_level = logging.CRITICAL
+        crash_log_level = logging.ERROR
 
     # Randomly generate a seed to track it in crash reporting
     random_seed = np.random.randint(low=1, high=99999999)
