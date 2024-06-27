@@ -106,13 +106,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Negative chain port means default
     if parsed_args.chain_port < 0:
         if parsed_args.lp_share_price_test and parsed_args.steth:
-            chain_port = 11111
+            chain_port = 1111
         elif parsed_args.lp_share_price_test and not parsed_args.steth:
-            chain_port = 22222
+            chain_port = 2222
         elif not parsed_args.lp_share_price_test and parsed_args.steth:
-            chain_port = 33333
+            chain_port = 3333
         elif not parsed_args.lp_share_price_test and not parsed_args.steth:
-            chain_port = 44444
+            chain_port = 4444
         else:
             assert False
     else:
@@ -120,13 +120,13 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Set different ports if we're doing lp share price test
     if parsed_args.lp_share_price_test and parsed_args.steth:
-        db_port = 55555
+        db_port = 5555
     elif parsed_args.lp_share_price_test and not parsed_args.steth:
-        db_port = 66666
+        db_port = 6666
     elif not parsed_args.lp_share_price_test and parsed_args.steth:
-        db_port = 77777
+        db_port = 7777
     elif not parsed_args.lp_share_price_test and not parsed_args.steth:
-        db_port = 88888
+        db_port = 8888
     else:
         assert False
 
