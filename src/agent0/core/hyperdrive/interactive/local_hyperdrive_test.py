@@ -122,6 +122,7 @@ def _ensure_db_wallet_matches_agent_wallet_and_chain(in_hyperdrive: LocalHyperdr
         assert FixedPoint(scaled_value=short_from_chain) == FixedPoint(short_df["token_balance"])
 
 
+# pylint: disable=too-many-branches
 def _ensure_event_matches_wallet_delta(
     trade_input: FixedPoint,
     wallet_before: HyperdriveWallet,
@@ -129,7 +130,6 @@ def _ensure_event_matches_wallet_delta(
     event: BaseHyperdriveEvent,
     deploy_type: LocalHyperdrive.DeployType,
 ):
-    # pylint: disable=too-many-branches
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
         # We expect exact matches for erc4626
         event_comparison_epsilon = FixedPoint(0)
@@ -235,8 +235,7 @@ def _ensure_event_matches_wallet_delta(
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-# @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
-@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.STETH])
+@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
 def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # pylint: disable=too-many-branches
