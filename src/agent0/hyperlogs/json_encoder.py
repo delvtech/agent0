@@ -5,6 +5,7 @@ from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from pathlib import PosixPath
 from traceback import format_tb
 from types import TracebackType
 from typing import Any
@@ -67,6 +68,8 @@ class ExtendedJSONEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, pd.DataFrame):
             return o.to_dict(orient="records")
+        if isinstance(o, PosixPath):
+            return str(o)
         if is_dataclass(o):
             # We know o is an object here, not a type.
             out = asdict(o)  # type: ignore

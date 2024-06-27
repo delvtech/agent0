@@ -57,6 +57,7 @@ def fuzz_long_short_maturity_values(
     long_maturity_vals_epsilon: float,
     short_maturity_vals_epsilon: float,
     chain_config: LocalChain.Config | None = None,
+    steth: bool = False,
 ):
     """Does fuzzy invariant checks on closing longs and shorts past maturity.
 
@@ -70,6 +71,8 @@ def fuzz_long_short_maturity_values(
         The allowed error for maturity values equality tests for shorts.
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    steth: bool
+        Whether to use steth instead of erc4626
     """
 
     # Parameters for local chain initialization, defines defaults in constructor
@@ -77,8 +80,7 @@ def fuzz_long_short_maturity_values(
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
-        chain_config,
-        fuzz_test_name="fuzz_long_short_maturity_values",
+        chain_config, fuzz_test_name="fuzz_long_short_maturity_values", steth=steth
     )
     signer = chain.init_agent(eth=FixedPoint(100), pool=interactive_hyperdrive)
 
@@ -305,7 +307,6 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        assert close_trade_event.as_base
         actual_long_base_amount = close_trade_event.amount
         expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
@@ -345,7 +346,6 @@ def invariant_check(
             - share_reserves_delta_plus_flat_fee
         )
 
-        assert close_trade_event.as_base
         actual_short_base_amount = close_trade_event.amount
         if not isclose(
             actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(short_maturity_vals_epsilon))

@@ -85,7 +85,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     parsed_args = parse_arguments(argv)
 
-    log_to_rollbar = initialize_rollbar("localfuzzbots")
+    if parsed_args.steth:
+        log_to_rollbar = initialize_rollbar("steth_localfuzzbots")
+    else:
+        log_to_rollbar = initialize_rollbar("erc4626_localfuzzbots")
 
     # Negative rng_seed means default
     if parsed_args.rng_seed < 0:
@@ -145,7 +148,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         chain = LocalChain(local_chain_config)
 
         # Fuzz over config values
-        hyperdrive_config = generate_fuzz_hyperdrive_config(rng, lp_share_price_test=parsed_args.lp_share_price_test)
+        hyperdrive_config = generate_fuzz_hyperdrive_config(
+            rng, lp_share_price_test=parsed_args.lp_share_price_test, steth=parsed_args.steth
+        )
         hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
 
         raise_error_on_fail = False
@@ -186,6 +191,7 @@ class Args(NamedTuple):
     chain_port: int
     genesis_timestamp: int
     rng_seed: int
+    steth: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -208,6 +214,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         chain_port=namespace.chain_port,
         genesis_timestamp=namespace.genesis_timestamp,
         rng_seed=namespace.rng_seed,
+        steth=namespace.steth,
     )
 
 
@@ -260,6 +267,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=-1,
         help="The random seed to use for the fuzz run.",
+    )
+    parser.add_argument(
+        "--steth",
+        default=False,
+        action="store_true",
+        help="Runs fuzz testing on the steth hyperdrive",
     )
 
     # Use system arguments if none were passed

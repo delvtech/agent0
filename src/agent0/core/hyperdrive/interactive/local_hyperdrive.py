@@ -155,11 +155,16 @@ class LocalHyperdrive(Hyperdrive):
                     case _:
                         self.minimum_share_reserves = FixedPoint("10")
 
-            # Steth deployment minimum share reserves must be 0.001
+            # Steth deployment minimum share reserves and minimum transaction amount must be 0.001
             # in the steth deployer coordinator.
             # Adding useful error message here
             if self.deploy_type == HyperdriveDeployType.STETH and self.minimum_share_reserves != FixedPoint("0.001"):
                 raise ValueError("Minimum share reserves must be 0.001 for steth deployment")
+
+            if self.deploy_type == HyperdriveDeployType.STETH and self.minimum_transaction_amount != FixedPoint(
+                "0.001"
+            ):
+                raise ValueError("Minimum transaction amount must be 0.001 for steth deployment")
 
         @property
         def _factory_min_fees(self) -> Fees:

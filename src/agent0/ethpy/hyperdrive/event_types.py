@@ -19,6 +19,25 @@ class BaseHyperdriveEvent:
     __name__: str = "BaseHyperdriveEvent"
 
 
+# This class isn't used in agent0, but we add it here for documentation
+@dataclass(kw_only=True)
+class Initialize(BaseHyperdriveEvent):
+    """Dataclass mirroring Initialize event in Hyperdrive."""
+
+    provider: ChecksumAddress
+    """The address of the provider."""
+    lp_amount: FixedPoint
+    """The amount of liquidity added in units of lp."""
+    amount: FixedPoint
+    """The amount of liquidity added, units dependent on `as_base` flag."""
+    vault_share_price: FixedPoint
+    """The share price at the time of this trade."""
+    as_base: bool
+    """If the input amount for the trade was in base or shares."""
+    apr: FixedPoint
+    """The initial apr of the pool."""
+
+
 @dataclass(kw_only=True)
 class OpenLong(BaseHyperdriveEvent):
     """Dataclass mirroring OpenLong event in Hyperdrive."""

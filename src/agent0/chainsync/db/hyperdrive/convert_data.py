@@ -9,7 +9,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from fixedpointmath import FixedPoint
-from web3.types import EventData
 
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
 from agent0.hypertypes.utilities.conversions import camel_to_snake
@@ -17,33 +16,21 @@ from agent0.hypertypes.utilities.conversions import camel_to_snake
 from .schema import PoolConfig, PoolInfo
 
 
-def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
-    out = dict(in_val)
-    # The args field is also an attribute dict, change to dict
-    out["args"] = dict(in_val["args"])
-
-    # Convert transaction hash to string
-    out["transactionHash"] = in_val["transactionHash"].hex()
-    # Get token id field from args.
-    # This field is `assetId` for open/close long/short
-    return out
-
-
-def convert_checkpoint_events(events: list[EventData]) -> pd.DataFrame:
+def convert_checkpoint_events(events: list[dict[str, Any]]) -> pd.DataFrame:
     """Convert hyperdrive trade events to database schema objects.
 
     Arguments
     ---------
-    events: list[EventData]
-        A list of web3 EventData objects from `get_logs` to insert into postgres.
+    events: list[dict[str, Any]]
+        A list of event dictionary objects from `get_logs` to insert into postgres.
 
     Returns
     -------
     DataFrame
         A DataFrame that matches the db schema of checkpoint events.
     """
-    # Convert list of event data to list of dictionaries to allow conversion to dataframe
-    events_df = pd.DataFrame([_event_data_to_dict(event) for event in events])
+    # Convert event data to dataframe
+    events_df = pd.DataFrame(events)
 
     # If no events, we just return
     if len(events_df) == 0:
@@ -83,13 +70,13 @@ def convert_checkpoint_events(events: list[EventData]) -> pd.DataFrame:
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-locals
-def convert_trade_events(events: list[EventData], wallet_addr: str | None) -> pd.DataFrame:
+def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) -> pd.DataFrame:
     """Convert hyperdrive trade events to database schema objects.
 
     Arguments
     ---------
-    events: list[EventData]
-        A list of web3 EventData objects from `get_logs` to insert into postgres.
+    events: list[dict[str, Any]]
+        A list of event dictionary objects from `get_logs` to insert into postgres.
     wallet_addr: str | None
         The wallet address that events are associated with for transfer events.
         If None, will assume we want all events to the database.
@@ -100,8 +87,8 @@ def convert_trade_events(events: list[EventData], wallet_addr: str | None) -> pd
         A DataFrame that matches the db schema of trade events.
     """
 
-    # Convert attribute dictionary event data to dictionary to allow conversion to dataframe
-    events_df = pd.DataFrame([_event_data_to_dict(event) for event in events])
+    # Convert event data to dataframe
+    events_df = pd.DataFrame(events)
 
     # If no events, we just return
     if len(events_df) == 0:

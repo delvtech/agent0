@@ -53,13 +53,15 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
+def fuzz_profit_check(chain_config: LocalChain.Config | None = None, steth: bool = False):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
     ----------
     chain_config: LocalChain.Config, optional
         Configuration options for the local chain.
+    steth: bool
+        Whether to use steth instead of erc4626
     """
     # pylint: disable=too-many-statements
 
@@ -72,6 +74,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None):
         governance_lp_fee=FixedPoint(0),
         governance_zombie_fee=FixedPoint(0),
         var_interest=FixedPoint(0.0),
+        steth=steth,
     )
 
     # Get a random trade amount
@@ -289,9 +292,7 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     exception_data: dict[str, Any] = {}
 
     # Check long trade
-    assert check_data["long_events"]["close"].as_base
     base_amount_returned: FixedPoint = check_data["long_events"]["close"].amount
-    assert check_data["long_events"]["open"].as_base
     base_amount_provided: FixedPoint = check_data["long_events"]["open"].amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
@@ -318,9 +319,7 @@ def invariant_check(check_data: dict[str, Any]) -> None:
         failed = True
 
     # Check short trade
-    assert check_data["short_events"]["close"].as_base
     base_amount_returned: FixedPoint = check_data["short_events"]["close"].amount
-    assert check_data["short_events"]["open"].as_base
     base_amount_provided: FixedPoint = check_data["short_events"]["open"].amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)

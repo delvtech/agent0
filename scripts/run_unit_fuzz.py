@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
-import traceback
 from typing import NamedTuple, Sequence
 
 from agent0.core.hyperdrive.interactive import LocalChain
@@ -15,7 +15,9 @@ from agent0.hyperfuzz.unit_fuzz import (
     fuzz_present_value,
     fuzz_profit_check,
 )
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
+
+# pylint: disable=too-many-statements
 
 
 def main(argv: Sequence[str] | None = None):
@@ -28,7 +30,10 @@ def main(argv: Sequence[str] | None = None):
     """
     parsed_args = parse_arguments(argv)
 
-    initialize_rollbar("interactivefuzz")
+    if parsed_args.steth:
+        _ = initialize_rollbar("steth_unitfuzz")
+    else:
+        _ = initialize_rollbar("erc4626_unitfuzz")
 
     num_trades = 10
     num_paths_checked = 20
@@ -49,14 +54,17 @@ def main(argv: Sequence[str] | None = None):
             long_maturity_vals_epsilon = 1e-14
             short_maturity_vals_epsilon = 1e-9
             fuzz_long_short_maturity_values(
-                num_trades, long_maturity_vals_epsilon, short_maturity_vals_epsilon, chain_config
+                num_trades,
+                long_maturity_vals_epsilon,
+                short_maturity_vals_epsilon,
+                chain_config,
+                parsed_args.steth,
             )
         except FuzzAssertionException:
             pass
-        # We catch other exceptions here, for some reason rollbar needs to be continuously running in order
-        # to log.
-        except Exception:  # pylint: disable=broad-except
-            print("Unexpected error:\n", traceback.print_exc())
+        except Exception as e:  # pylint: disable=broad-except
+            print("Unexpected error:\n", repr(e))
+            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
         try:
             print("Running path independence test")
@@ -79,10 +87,13 @@ def main(argv: Sequence[str] | None = None):
                 effective_share_reserves_epsilon=effective_share_reserves_epsilon,
                 present_value_epsilon=present_value_epsilon,
                 chain_config=chain_config,
+                steth=parsed_args.steth,
             )
         except FuzzAssertionException:
             pass
-        # No need to catch other exceptions here, the test itself catches them
+        except Exception as e:  # pylint: disable=broad-except
+            print("Unexpected error:\n", repr(e))
+            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
         try:
             print("Running fuzz profit test")
@@ -95,11 +106,12 @@ def main(argv: Sequence[str] | None = None):
                 # Try 5 times when creating checkpoints for advancing time transactions
                 advance_time_create_checkpoint_retry_count=5,
             )
-            fuzz_profit_check(chain_config)
+            fuzz_profit_check(chain_config, parsed_args.steth)
         except FuzzAssertionException:
             pass
-        except Exception:  # pylint: disable=broad-except
-            print("Unexpected error:\n", traceback.print_exc())
+        except Exception as e:  # pylint: disable=broad-except
+            print("Unexpected error:\n", repr(e))
+            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
         try:
             print("Running fuzz present value test")
@@ -113,11 +125,12 @@ def main(argv: Sequence[str] | None = None):
                 advance_time_create_checkpoint_retry_count=5,
             )
             present_value_epsilon = 0.01
-            fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config)
+            fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config, steth=parsed_args.steth)
         except FuzzAssertionException:
             pass
-        except Exception:  # pylint: disable=broad-except
-            print("Unexpected error:\n", traceback.print_exc())
+        except Exception as e:  # pylint: disable=broad-except
+            print("Unexpected error:\n", repr(e))
+            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
         num_checks += 1
         if parsed_args.number_of_runs > 0 and num_checks >= parsed_args.number_of_runs:
@@ -128,6 +141,7 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     number_of_runs: int
+    steth: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -145,6 +159,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         number_of_runs=namespace.number_of_runs,
+        steth=namespace.steth,
     )
 
 
@@ -167,6 +182,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=0,
         help="The number times to run the tests. If not set, will run forever.",
+    )
+    parser.add_argument(
+        "--steth",
+        default=False,
+        action="store_true",
+        help="Runs fuzz testing on the steth hyperdrive",
     )
     # Use system arguments if none were passed
     if argv is None:

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime, timezone
+from typing import Any
 
 from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
-from web3.types import EventData
 
 from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -122,7 +122,7 @@ def checkpoint_events_to_db(
     assert len(interfaces) > 0
 
     # Gather all events we care about here
-    all_events: list[EventData] = []
+    all_events: list[dict[str, Any]] = []
 
     for interface in interfaces:
         # Get the earliest block to get events from.
@@ -162,7 +162,7 @@ def trade_events_to_db(
     assert len(interfaces) > 0
 
     # Gather all events we care about here
-    all_events: list[EventData] = []
+    all_events: list[dict[str, Any]] = []
 
     for interface in interfaces:
         # Get the earliest block to get events from
