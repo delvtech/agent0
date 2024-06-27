@@ -50,7 +50,7 @@ LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
 
 # pylint: disable=too-many-locals
-def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -> LocalHyperdrive.Config:
+def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool, steth: bool) -> LocalHyperdrive.Config:
     """Fuzz over hyperdrive config.
 
     Arguments
@@ -59,6 +59,8 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -
         Random number generator.
     lp_share_price_test: bool
         If True, uses lp share price test fuzz parameters.
+    steth: bool
+        If True, uses steth instead of erc4626
 
     Returns
     -------
@@ -104,14 +106,22 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -
     # Generate flat fee in terms of APR
     flat_fee = FixedPoint(rng.uniform(*flat_fee_range) * (position_duration / ONE_YEAR_IN_SECONDS))
 
+    # Steth expects an exact minimum share reserves and minimum transaction amount.
+    if steth:
+        minimum_share_reserves = FixedPoint("0.001")
+        minimum_transaction_amount = FixedPoint("0.001")
+    else:
+        minimum_share_reserves = FixedPoint(rng.uniform(*MINIMUM_SHARE_RESERVES_RANGE))
+        minimum_transaction_amount = FixedPoint(rng.uniform(*MINIMUM_TRANSACTION_AMOUNT_RANGE))
+
     return LocalHyperdrive.Config(
         # Initial hyperdrive config
         initial_liquidity=FixedPoint(rng.uniform(*INITIAL_LIQUIDITY_RANGE)),
         initial_fixed_apr=initial_time_stretch_apr,
         initial_time_stretch_apr=initial_time_stretch_apr,
         initial_variable_rate=FixedPoint(rng.uniform(*variable_rate_range)),
-        minimum_share_reserves=FixedPoint(rng.uniform(*MINIMUM_SHARE_RESERVES_RANGE)),
-        minimum_transaction_amount=FixedPoint(rng.uniform(*MINIMUM_TRANSACTION_AMOUNT_RANGE)),
+        minimum_share_reserves=minimum_share_reserves,
+        minimum_transaction_amount=minimum_transaction_amount,
         circuit_breaker_delta=FixedPoint(rng.uniform(*CIRCUIT_BREAKER_DELTA_RANGE)),
         position_duration=position_duration,
         checkpoint_duration=checkpoint_duration,
@@ -119,6 +129,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool) -
         flat_fee=flat_fee,
         governance_lp_fee=FixedPoint(rng.uniform(*governance_lp_fee_range)),
         governance_zombie_fee=FixedPoint(rng.uniform(*governance_zombie_fee_range)),
+        deploy_type=LocalHyperdrive.DeployType.ERC4626 if not steth else LocalHyperdrive.DeployType.STETH,
     )
 
 
