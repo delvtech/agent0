@@ -113,10 +113,8 @@ class FullHyperdriveEnv(gym.Env):
             chain_port = 10002
 
         local_chain_config = LocalChain.Config(
-            block_timestamp_interval=12,
-            db_port=db_port,
-            chain_port=chain_port,
-            calc_pnl=False)
+            block_timestamp_interval=12, db_port=db_port, chain_port=chain_port, calc_pnl=False
+        )
 
         initial_pool_config = LocalHyperdrive.Config()
         self.chain = LocalChain(local_chain_config)
@@ -553,9 +551,8 @@ class FullHyperdriveEnv(gym.Env):
         # The total delta for this episode
 
         current_wallet = self.interactive_hyperdrive.get_positions(
-            show_closed_positions=True,
-            calc_pnl=True,
-            coerce_float=True)
+            show_closed_positions=True, calc_pnl=True, coerce_float=True
+        )
         # Filter by rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
         # The rl_bot_wallet shows the pnl of all positions
