@@ -672,8 +672,14 @@ async def async_smart_contract_transact(
             raise AssertionError("Preview was successful.")  # pylint: disable=raise-missing-from
 
         except Exception as preview_err:  # pylint: disable=broad-except
-            # We add a message to the preview error saying what this error is
-            preview_err.args = ("Previewing transaction on transaction failure:",) + preview_err.args
+            if isinstance(preview_err, ContractCallException):
+                # We add a message to the preview error saying what this error is
+                preview_err.args = ("Previewing transaction on transaction failure:",) + (
+                    repr(preview_err.orig_exception),
+                )
+            else:
+                preview_err.args = ("Previewing transaction on transaction failure:",) + (repr(preview_err),)
+
             # We report both the exception from the transaction and the exception from the preview
             orig_exception.append(preview_err)
 
