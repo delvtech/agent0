@@ -12,10 +12,9 @@ from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.agent import TradeResult
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.hyperdrive import ReceiptBreakdown
-
-from .event_types import (
+from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
+    BaseHyperdriveEvent,
     CloseLong,
     CloseShort,
     OpenLong,
@@ -23,6 +22,7 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
+
 from .hyperdrive_agent import HyperdriveAgent
 from .local_hyperdrive import LocalHyperdrive
 
@@ -412,9 +412,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def execute_policy_action(
-        self, pool: Hyperdrive | None = None
-    ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
+    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
         """Executes the underlying policy action (if set).
 
         Arguments
@@ -444,9 +442,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def liquidate(
-        self, randomize: bool = False, pool: Hyperdrive | None = None
-    ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
+    def liquidate(self, randomize: bool = False, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
         """Liquidate all of the agent's positions.
 
         Arguments
@@ -483,16 +479,16 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[True]
-    ) -> ReceiptBreakdown: ...
+    ) -> BaseHyperdriveEvent: ...
 
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[False]
-    ) -> ReceiptBreakdown | None: ...
+    ) -> BaseHyperdriveEvent | None: ...
 
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: bool
-    ) -> ReceiptBreakdown | None:
+    ) -> BaseHyperdriveEvent | None:
         # We add specific data to the trade result from interactive hyperdrive
         if not trade_result.trade_successful:
             assert trade_result.exception is not None

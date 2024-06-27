@@ -369,9 +369,7 @@ def _check_lp_share_price(
 
     # Determine if a checkpoint was minted on the current block
     # -1 to get events from current block
-    checkpoint_events = interface.hyperdrive_contract.events.CreateCheckpoint.get_logs(
-        fromBlock=pool_state.block_number - 1
-    )
+    checkpoint_events = interface.get_checkpoint_events(from_block=pool_state.block_number - 1)
     currently_minting_checkpoint = False
     if len(list(checkpoint_events)) > 0:
         currently_minting_checkpoint = True
@@ -380,8 +378,8 @@ def _check_lp_share_price(
     # We look for close events on this block
     # -1 to get events from current block
     trade_events = []
-    trade_events.extend(interface.hyperdrive_contract.events.CloseShort.get_logs(fromBlock=pool_state.block_number - 1))
-    trade_events.extend(interface.hyperdrive_contract.events.CloseLong.get_logs(fromBlock=pool_state.block_number - 1))
+    trade_events.extend(interface.get_close_short_events(from_block=pool_state.block_number - 1))
+    trade_events.extend(interface.get_close_long_events(from_block=pool_state.block_number - 1))
 
     closing_mature_position = False
     for event in trade_events:

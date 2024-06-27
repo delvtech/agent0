@@ -15,7 +15,7 @@ from agent0.ethpy.base import (
     smart_contract_transact,
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
-from agent0.ethpy.hyperdrive.transactions import parse_logs
+from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
 from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
 
 if TYPE_CHECKING:
@@ -23,7 +23,16 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber
     from web3.types import Nonce
 
-    from agent0.ethpy.hyperdrive.receipt_breakdown import ReceiptBreakdown
+    from agent0.ethpy.hyperdrive.event_types import (
+        AddLiquidity,
+        CloseLong,
+        CloseShort,
+        CreateCheckpoint,
+        OpenLong,
+        OpenShort,
+        RedeemWithdrawalShares,
+        RemoveLiquidity,
+    )
 
     from .read_interface import HyperdriveReadInterface
     from .read_write_interface import HyperdriveReadWriteInterface
@@ -119,7 +128,7 @@ def _create_checkpoint(
     checkpoint_time: int | None = None,
     gas_limit: int | None = None,
     write_retry_count: int | None = None,
-) -> ReceiptBreakdown:
+) -> CreateCheckpoint:
     """See API for documentation."""
 
     if write_retry_count is None:
@@ -146,7 +155,7 @@ def _create_checkpoint(
         timeout=interface.txn_receipt_timeout,
         txn_options_gas=gas_limit,
     )
-    trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "createCheckpoint")
+    trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "createCheckpoint")
     return trade_result
 
 
@@ -179,7 +188,7 @@ async def _async_open_long(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> OpenLong:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     # min_vault_share_price: int
@@ -251,7 +260,7 @@ async def _async_open_long(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openLong")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "openLong")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -271,7 +280,7 @@ async def _async_close_long(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> CloseLong:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -336,7 +345,7 @@ async def _async_close_long(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeLong")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "closeLong")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -355,7 +364,7 @@ async def _async_open_short(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> OpenShort:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
@@ -425,7 +434,7 @@ async def _async_open_short(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "openShort")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "openShort")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -444,7 +453,7 @@ async def _async_close_short(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> CloseShort:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -509,7 +518,7 @@ async def _async_close_short(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "closeShort")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "closeShort")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -529,7 +538,7 @@ async def _async_add_liquidity(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> AddLiquidity:
     """See API for documentation."""
     # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
     if slippage_tolerance is not None:
@@ -584,7 +593,7 @@ async def _async_add_liquidity(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "addLiquidity")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -601,7 +610,7 @@ async def _async_remove_liquidity(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> RemoveLiquidity:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -649,7 +658,7 @@ async def _async_remove_liquidity(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "removeLiquidity")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)
@@ -666,7 +675,7 @@ async def _async_redeem_withdraw_shares(
     txn_options_priority_fee_multiple: float | None = None,
     nonce: Nonce | None = None,
     preview_before_trade: bool = False,
-) -> ReceiptBreakdown:
+) -> RedeemWithdrawalShares:
     """See API for documentation."""
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -721,7 +730,7 @@ async def _async_redeem_withdraw_shares(
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             timeout=interface.txn_receipt_timeout,
         )
-        trade_result = parse_logs(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")
+        trade_result = parse_logs_to_event(tx_receipt, interface.hyperdrive_contract, "redeemWithdrawalShares")
     except Exception as exc:
         # We add the preview block as an arg to the exception
         exc.args += (f"Call previewed in block {current_block}",)

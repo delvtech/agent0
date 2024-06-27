@@ -29,9 +29,9 @@ from agent0.ethpy.hyperdrive import (
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
+from agent0.ethpy.hyperdrive.event_types import CreateCheckpoint
 from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
-from .event_types import CreateCheckpoint
 from .hyperdrive import Hyperdrive
 
 if TYPE_CHECKING:
@@ -261,7 +261,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        deploy_event = self.interface.hyperdrive_contract.events.Initialize.get_logs(fromBlock="earliest")
+        deploy_event = self.interface.get_initialize_events(from_block="earliest")
         deploy_event = list(deploy_event)
         if len(deploy_event) == 0:
             # TODO handle this case more gracefully by e.g., finding the earliest event

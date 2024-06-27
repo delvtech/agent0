@@ -28,7 +28,8 @@ from agent0.core.hyperdrive.crash_report import (
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
-from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface, ReceiptBreakdown
+from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
+from agent0.ethpy.hyperdrive.event_types import BaseHyperdriveEvent
 from agent0.utils import retry_call
 
 
@@ -162,7 +163,7 @@ async def async_execute_agent_trades(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test the limit number of trades an agent can make in one block
-    receipt_or_exception: list[ReceiptBreakdown | BaseException] = await asyncio.gather(
+    event_or_exception: list[BaseHyperdriveEvent | BaseException] = await asyncio.gather(
         *[
             _async_match_contract_call_to_trade(
                 account,
@@ -177,7 +178,7 @@ async def async_execute_agent_trades(
         return_exceptions=True,
     )
 
-    trade_results = _handle_contract_call_to_trade(receipt_or_exception, trades, interface, account, wallet, policy)
+    trade_results = _handle_contract_call_to_trade(event_or_exception, trades, interface, account, wallet, policy)
 
     # TODO to avoid adding a post action in base policy, we only call post action
     # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
@@ -275,7 +276,7 @@ async def async_execute_single_trade(
 
 
 def _handle_contract_call_to_trade(
-    receipt_or_exception: list[ReceiptBreakdown | BaseException],
+    event_or_exception: list[BaseHyperdriveEvent | BaseException],
     trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadInterface,
     account: LocalAccount,
@@ -286,7 +287,7 @@ def _handle_contract_call_to_trade(
 
     Arguments
     ---------
-    wallet_deltas_or_exception: list[tuple[HyperdriveWalletDeltas, ReceiptBreakdown] | BaseException]
+    event_or_exception: list[BaseHyperdriveEvent | BaseException]
         The results of executing trades. This argument is either the output of
         _async_match_contract_call_to_trade or an exception to crash report.
     trades: list[HyperdriveMarketAction]
@@ -307,10 +308,10 @@ def _handle_contract_call_to_trade(
     """
 
     # Sanity check
-    if len(receipt_or_exception) != len(trades):
+    if len(event_or_exception) != len(trades):
         raise AssertionError(
             "The number of wallet deltas should match the number of trades, but does not."
-            f"\n{receipt_or_exception=}\n{trades=}"
+            f"\n{event_or_exception=}\n{trades=}"
         )
 
     trade_results: list[TradeResult] = []
@@ -318,7 +319,7 @@ def _handle_contract_call_to_trade(
     # of execution, we incrementally update the wallet. Updating the wallet
     # while iterating will ensure the invalid balance check has the most
     # up to date wallet for checking balances.
-    for result, trade_object in zip(receipt_or_exception, trades):
+    for result, trade_object in zip(event_or_exception, trades):
         if isinstance(result, Exception):
             trade_result = build_crash_trade_result(result, interface, account, wallet, policy, trade_object)
             # We check for common errors and allow for custom handling of various errors.
@@ -329,11 +330,11 @@ def _handle_contract_call_to_trade(
             trade_result = check_for_slippage(trade_result)
             trade_result = check_for_min_txn_amount(trade_result)
         else:
-            if not isinstance(result, ReceiptBreakdown):
+            if not isinstance(result, BaseHyperdriveEvent):
                 raise TypeError("The trade result is not the correct type.")
             tx_receipt = result
             trade_result = TradeResult(
-                trade_successful=True, account=account, trade_object=trade_object, tx_receipt=tx_receipt
+                trade_successful=True, account=account, trade_object=trade_object, hyperdrive_event=tx_receipt
             )
         trade_results.append(trade_result)
 
@@ -346,7 +347,7 @@ async def _async_match_contract_call_to_trade(
     trade_envelope: Trade[HyperdriveMarketAction],
     nonce: Nonce,
     preview_before_trade: bool,
-) -> ReceiptBreakdown:
+) -> BaseHyperdriveEvent:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments
@@ -364,7 +365,7 @@ async def _async_match_contract_call_to_trade(
 
     Returns
     -------
-    ReceiptBreakdown
+    BaseHyperdriveEvent
         The result of executing the trade.
     """
     trade = trade_envelope.market_action

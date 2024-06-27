@@ -9,6 +9,7 @@ from fixedpointmath import FixedPoint
 
 from agent0.core.base.types import Trade
 from agent0.core.hyperdrive.agent import HyperdriveActionType, close_long_trade, close_short_trade
+from agent0.ethpy.hyperdrive.event_types import OpenLong, OpenShort
 
 from .random import Random
 
@@ -253,7 +254,7 @@ class RandomHold(Random):
 
         # Get the relevant fields from the trade results,
         result = trade_results[0]
-        tx_receipt = result.tx_receipt
+        hyperdrive_event = result.hyperdrive_event
         assert result.trade_object is not None
         result_action_type = result.trade_object.market_action.action_type
 
@@ -266,14 +267,15 @@ class RandomHold(Random):
             current_block_time = interface.get_block_timestamp(interface.get_current_block())
             close_time = current_block_time + self.generate_random_hold_time(interface)
             # Open longs/shorts, if successful, should have a transaction receipt
-            assert tx_receipt is not None
-            maturity_time = tx_receipt.maturity_time_seconds
+            assert hyperdrive_event is not None
+            assert isinstance(hyperdrive_event, (OpenLong, OpenShort))
+            maturity_time = hyperdrive_event.maturity_time
             # Receipt breakdown defaults to 0 maturity time, so we ensure the tx receipt actually
             # returns a maturity time here
             assert maturity_time > 0
             # All closing positions take bonds as the argument, so we always get the bond amount
             # in bookkeeping from the tx receipt
-            bond_amount = tx_receipt.bond_amount
+            bond_amount = hyperdrive_event.bond_amount
             assert bond_amount > 0
 
             self.open_positions.append(

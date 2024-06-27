@@ -24,7 +24,6 @@ from agent0.chainsync.db.hyperdrive import (
 )
 from agent0.core.base import Quantity, TokenType
 from agent0.core.hyperdrive.agent import (
-    HyperdriveActionType,
     HyperdriveWallet,
     TradeResult,
     add_liquidity_trade,
@@ -38,12 +37,10 @@ from agent0.core.hyperdrive.agent import (
 from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.core.test_utils import assert_never
 from agent0.ethpy.base import get_account_balance, set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive import ReceiptBreakdown
-
-from .event_types import (
+from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
+    BaseHyperdriveEvent,
     CloseLong,
     CloseShort,
     OpenLong,
@@ -51,6 +48,7 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
+
 from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
 
 if TYPE_CHECKING:
@@ -300,8 +298,10 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_LONG, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, OpenLong)
+        return hyperdrive_event
 
     def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
         """Closes a long for this agent.
@@ -341,8 +341,10 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_LONG, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, CloseLong)
+        return hyperdrive_event
 
     def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
         """Opens a short for this agent.
@@ -379,8 +381,10 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.OPEN_SHORT, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, OpenShort)
+        return hyperdrive_event
 
     def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
         """Closes a short for this agent.
@@ -419,8 +423,10 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.CLOSE_SHORT, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, CloseShort)
+        return hyperdrive_event
 
     def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
         """Adds liquidity for this agent.
@@ -457,8 +463,10 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.ADD_LIQUIDITY, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, AddLiquidity)
+        return hyperdrive_event
 
     def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
         """Removes liquidity for this agent.
@@ -495,8 +503,10 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REMOVE_LIQUIDITY, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, RemoveLiquidity)
+        return hyperdrive_event
 
     def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
         """Redeems withdrawal shares for this agent.
@@ -533,12 +543,12 @@ class HyperdriveAgent:
                 self._active_policy,
             )
         )
-        tx_receipt = self._handle_trade_result(trade_results, pool, always_throw_exception=True)
-        return self._build_event_obj_from_tx_receipt(HyperdriveActionType.REDEEM_WITHDRAW_SHARE, tx_receipt)
+        hyperdrive_event = self._handle_trade_result(trade_results, pool, always_throw_exception=True)
+        # Type narrowing
+        assert isinstance(hyperdrive_event, RedeemWithdrawalShares)
+        return hyperdrive_event
 
-    def execute_policy_action(
-        self, pool: Hyperdrive | None = None
-    ) -> list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]:
+    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
         """Executes the underlying policy action (if set).
 
         Arguments
@@ -548,7 +558,7 @@ class HyperdriveAgent:
 
         Returns
         -------
-        list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
+        list[BaseHyperdriveEvent]
             Events of the executed actions.
         """
         if self.account is None:
@@ -577,17 +587,12 @@ class HyperdriveAgent:
         out_events = []
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
-            if tx_receipt is not None:
-                assert trade_result.trade_object is not None
-                action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-                out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
-        # Build event from tx_receipt
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
+            if hyperdrive_event is not None:
+                out_events.append(hyperdrive_event)
         return out_events
 
-    def liquidate(
-        self, randomize: bool = False, pool: Hyperdrive | None = None
-    ) -> list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]:
+    def liquidate(self, randomize: bool = False, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
         """Liquidate all of the agent's positions.
 
         Arguments
@@ -629,12 +634,9 @@ class HyperdriveAgent:
 
         # The underlying policy can execute multiple actions in one step
         for trade_result in trade_results:
-            tx_receipt = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
-            if tx_receipt is not None:
-                assert trade_result.trade_object is not None
-                action_type: HyperdriveActionType = trade_result.trade_object.market_action.action_type
-                out_events.append(self._build_event_obj_from_tx_receipt(action_type, tx_receipt))
-        # Build event from tx_receipt
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
+            if hyperdrive_event is not None:
+                out_events.append(hyperdrive_event)
         return out_events
 
     # Helper functions for trades
@@ -642,16 +644,16 @@ class HyperdriveAgent:
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[True]
-    ) -> ReceiptBreakdown: ...
+    ) -> BaseHyperdriveEvent: ...
 
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[False]
-    ) -> ReceiptBreakdown | None: ...
+    ) -> BaseHyperdriveEvent | None: ...
 
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: bool
-    ) -> ReceiptBreakdown | None:
+    ) -> BaseHyperdriveEvent | None:
         if not trade_result.trade_successful:
             # Defaults to CRITICAL
             assert trade_result.exception is not None
@@ -676,148 +678,9 @@ class HyperdriveAgent:
 
         if not trade_result.trade_successful:
             return None
-        tx_receipt = trade_result.tx_receipt
-        assert tx_receipt is not None
-        return tx_receipt
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.INITIALIZE_MARKET], tx_receipt: ReceiptBreakdown
-    ) -> None: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.OPEN_LONG], tx_receipt: ReceiptBreakdown
-    ) -> OpenLong: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.CLOSE_LONG], tx_receipt: ReceiptBreakdown
-    ) -> CloseLong: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.OPEN_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> OpenShort: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.CLOSE_SHORT], tx_receipt: ReceiptBreakdown
-    ) -> CloseShort: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.ADD_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> AddLiquidity: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.REMOVE_LIQUIDITY], tx_receipt: ReceiptBreakdown
-    ) -> RemoveLiquidity: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: Literal[HyperdriveActionType.REDEEM_WITHDRAW_SHARE], tx_receipt: ReceiptBreakdown
-    ) -> RedeemWithdrawalShares: ...
-
-    @overload
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> (
-        OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None
-    ): ...
-
-    def _build_event_obj_from_tx_receipt(
-        self, trade_type: HyperdriveActionType, tx_receipt: ReceiptBreakdown
-    ) -> OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares | None:
-        # pylint: disable=too-many-return-statements
-        # ruff: noqa: PLR0911 (too many return statements)
-        match trade_type:
-            case HyperdriveActionType.INITIALIZE_MARKET:
-                raise ValueError(f"{trade_type} not supported!")
-
-            case HyperdriveActionType.OPEN_LONG:
-                return OpenLong(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.CLOSE_LONG:
-                return CloseLong(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    destination=Web3.to_checksum_address(tx_receipt.destination),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.OPEN_SHORT:
-                return OpenShort(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                    base_proceeds=tx_receipt.base_proceeds,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.CLOSE_SHORT:
-                return CloseShort(
-                    trader=Web3.to_checksum_address(tx_receipt.trader),
-                    destination=Web3.to_checksum_address(tx_receipt.destination),
-                    asset_id=tx_receipt.asset_id,
-                    maturity_time=tx_receipt.maturity_time_seconds,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                    base_payment=tx_receipt.base_payment,
-                    bond_amount=tx_receipt.bond_amount,
-                )
-
-            case HyperdriveActionType.ADD_LIQUIDITY:
-                return AddLiquidity(
-                    provider=Web3.to_checksum_address(tx_receipt.provider),
-                    lp_amount=tx_receipt.lp_amount,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                    lp_share_price=tx_receipt.lp_share_price,
-                )
-
-            case HyperdriveActionType.REMOVE_LIQUIDITY:
-                return RemoveLiquidity(
-                    provider=Web3.to_checksum_address(tx_receipt.provider),
-                    destination=Web3.to_checksum_address(tx_receipt.destination),
-                    lp_amount=tx_receipt.lp_amount,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                    withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-                    lp_share_price=tx_receipt.lp_share_price,
-                )
-
-            case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-                return RedeemWithdrawalShares(
-                    provider=Web3.to_checksum_address(tx_receipt.provider),
-                    destination=Web3.to_checksum_address(tx_receipt.destination),
-                    withdrawal_share_amount=tx_receipt.withdrawal_share_amount,
-                    amount=tx_receipt.amount,
-                    vault_share_price=tx_receipt.vault_share_price,
-                    as_base=tx_receipt.as_base,
-                )
-
-            case _:
-                assert_never(trade_type)
+        hyperdrive_event = trade_result.hyperdrive_event
+        assert hyperdrive_event is not None
+        return hyperdrive_event
 
     ################
     # Analysis

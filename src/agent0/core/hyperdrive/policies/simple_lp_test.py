@@ -8,7 +8,7 @@ import pytest
 from fixedpointmath import FixedPoint, isclose
 
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
-from agent0.core.hyperdrive.interactive.event_types import AddLiquidity, RemoveLiquidity
+from agent0.ethpy.hyperdrive.event_types import AddLiquidity, RemoveLiquidity
 
 # pylint: disable=too-many-locals
 

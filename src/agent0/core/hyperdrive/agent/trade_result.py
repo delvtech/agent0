@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     from agent0.core.base import Trade
     from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-    from agent0.ethpy.hyperdrive import ReceiptBreakdown
+    from agent0.ethpy.hyperdrive.event_types import BaseHyperdriveEvent
 
     from .hyperdrive_actions import HyperdriveMarketAction
     from .hyperdrive_wallet import HyperdriveWallet
@@ -34,7 +34,7 @@ class TradeResult:
     """The policy that was executing the trade."""
     trade_object: Trade[HyperdriveMarketAction] | None = None
     """The trade object for the trade."""
-    tx_receipt: ReceiptBreakdown | None = None
+    hyperdrive_event: BaseHyperdriveEvent | None = None
     """The transaction receipt of the trade."""
     contract_call: dict[str, Any] | None = None
     """A dictionary detailing the underlying contract call."""

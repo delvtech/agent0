@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from numpy.random import Generator
 
-from agent0.core.hyperdrive.interactive.event_types import OpenLong, OpenShort
 from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
+from agent0.ethpy.hyperdrive.event_types import OpenLong, OpenShort
 
 
 def permute_trade_events(
