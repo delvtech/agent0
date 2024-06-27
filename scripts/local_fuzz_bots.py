@@ -105,18 +105,26 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Negative chain port means default
     if parsed_args.chain_port < 0:
-        if parsed_args.lp_share_price_test:
+        if parsed_args.lp_share_price_test and parsed_args.steth:
             chain_port = 11111
-        else:
+        elif parsed_args.lp_share_price_test and not parsed_args.steth:
+            chain_port = 22222
+        elif not parsed_args.lp_share_price_test and parsed_args.steth:
             chain_port = 33333
+        elif not parsed_args.lp_share_price_test and not parsed_args.steth:
+            chain_port = 44444
     else:
         chain_port = parsed_args.chain_port
 
     # Set different ports if we're doing lp share price test
-    if parsed_args.lp_share_price_test:
-        db_port = 22222
-    else:
-        db_port = 44444
+    if parsed_args.lp_share_price_test and parsed_args.steth:
+        db_port = 55555
+    elif parsed_args.lp_share_price_test and not parsed_args.steth:
+        db_port = 66666
+    elif not parsed_args.lp_share_price_test and parsed_args.steth:
+        db_port = 77777
+    elif not parsed_args.lp_share_price_test and not parsed_args.steth:
+        db_port = 88888
 
     # Negative timestamp means default
     if parsed_args.genesis_timestamp < 0:
