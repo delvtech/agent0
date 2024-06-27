@@ -18,7 +18,10 @@ from agent0.chainsync.dashboard import build_pool_dashboard, build_wallet_dashbo
 from agent0.core.base import Trade
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
-from agent0.core.hyperdrive.interactive.event_types import (
+from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
+from agent0.core.test_utils import CycleTradesPolicy
+from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
+from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
     CloseLong,
     CloseShort,
@@ -27,9 +30,6 @@ from agent0.core.hyperdrive.interactive.event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
-from agent0.core.test_utils import CycleTradesPolicy
-from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 
 from .local_chain import LocalChain
 from .local_hyperdrive import LocalHyperdrive
