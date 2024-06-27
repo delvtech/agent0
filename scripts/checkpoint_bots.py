@@ -23,7 +23,7 @@ from web3.types import Nonce
 
 from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
-from agent0.ethpy.base import smart_contract_preview_transaction, smart_contract_transact
+from agent0.ethpy.base import get_account_balance, smart_contract_preview_transaction, smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.hypertypes import IHyperdriveContract
@@ -36,6 +36,9 @@ from agent0.utils import async_runner
 # The portion of the checkpoint that the bot will wait before attempting to
 # mint a new checkpoint.
 CHECKPOINT_WAITING_PERIOD = 0.5
+
+# The threshold for warning low funds
+CHECKPOINT_BOT_LOW_ETH_THRESHOLD = FixedPoint(0.1)
 
 
 # Sets up async nonce manager
@@ -157,6 +160,14 @@ def run_checkpoint_bot(
         if block_to_exit is not None and chain.block_number() >= block_to_exit:
             logging.info("Exiting checkpoint bot...")
             break
+
+        # We check for low funds in checkpoint bot
+        checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(web3, sender.address))
+        if checkpoint_bot_eth_balance <= CHECKPOINT_BOT_LOW_ETH_THRESHOLD:
+            log_rollbar_message(
+                message=f"Low funds in checkpoint bot: {checkpoint_bot_eth_balance=}",
+                log_level=logging.WARNING,
+            )
 
         # Get the latest block time and check to see if a new checkpoint should
         # be minted. This bot waits for a portion of the checkpoint to reduce
@@ -471,6 +482,6 @@ if __name__ == "__main__":
     # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
     try:
         main()
-    except Exception as e:
-        log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in checkpoint bots.")
-        raise e
+    except Exception as exc:
+        log_rollbar_exception(exc, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in checkpoint bots.")
+        raise exc
