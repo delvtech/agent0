@@ -39,6 +39,7 @@ CHECKPOINT_WAITING_PERIOD = 0.5
 
 # The threshold for warning low funds
 CHECKPOINT_BOT_LOW_ETH_THRESHOLD = FixedPoint(0.1)
+FAIL_COUNT_THRESHOLD = 10
 
 
 # Sets up async nonce manager
@@ -155,6 +156,8 @@ def run_checkpoint_bot(
     # TODO ERC4626 gets split up here, may want to only do this for the position duration string.
     pool_name = "".join([c + "_" if c.isdigit() else c for c in pool_name])
 
+    fail_count = 0
+
     while True:
         # Check if we've reached the block to exit
         if block_to_exit is not None and chain.block_number() >= block_to_exit:
@@ -237,17 +240,26 @@ def run_checkpoint_bot(
                     *fn_args,
                     nonce=nonce,
                 )
+                # Reset fail count on successful transaction
+                fail_count = 0
             except Exception as e:  # pylint: disable=broad-except
-                logging_str = (
-                    f"Pool {pool_name} for {checkpoint_time=}: checkpoint transaction failed, retrying. {repr(e)}.",
-                )
-                logging.warning(logging_str)
+                if fail_count < FAIL_COUNT_THRESHOLD:
+                    logging_str = f"Checkpoint transaction failed."
+                    log_level = logging.WARNING
+                    logging.warning(logging_str + f" {repr(e)}")
+                else:
+                    logging_str = f"Checkpoint transaction failed over {FAIL_COUNT_THRESHOLD} times."
+                    log_level = logging.CRITICAL
+                    logging.critical(logging_str + f" {repr(e)}")
+
                 if log_to_rollbar:
                     log_rollbar_exception(
                         exception=e,
-                        log_level=logging.WARNING,
-                        rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}",
+                        log_level=log_level,
+                        rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}: {logging_str}",
                     )
+
+                fail_count += 1
                 # Catch all errors here and retry next iteration
                 continue
             logging_str = (
