@@ -121,7 +121,7 @@ def run_invariant_checks(
     if crash_report_additional_info is not None:
         exception_data_template.update(crash_report_additional_info)
 
-    exceptions: list[FuzzAssertionException] = []
+    out_exceptions: list[FuzzAssertionException] = []
     for failed, message, data, log_level in results:
         if not failed:
             continue
@@ -136,7 +136,7 @@ def run_invariant_checks(
         assert log_level is not None
         logging.log(log_level, "\n".join(exception_message))
         error = FuzzAssertionException(*exception_message, exception_data=exception_data)
-        exceptions.append(error)
+        out_exceptions.append(error)
         report = build_crash_trade_result(error, interface, additional_info=error.exception_data, pool_state=pool_state)
         report.anvil_state = get_anvil_state_dump(interface.web3)
         rollbar_data = error.exception_data
@@ -157,7 +157,7 @@ def run_invariant_checks(
             rollbar_data=rollbar_data,
             rollbar_log_prefix=rollbar_log_prefix,
         )
-    return exceptions
+    return out_exceptions
 
 
 class InvariantCheckResults(NamedTuple):
