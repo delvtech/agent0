@@ -205,10 +205,9 @@ def _check_base_balances(pool_state: PoolState, is_steth: bool) -> InvariantChec
 def _check_previous_checkpoint_exists(
     interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
-    # TODO Fix this test to check if previous checkpoint should never be 0
-    # TODO add case for first checkpoint
+    # This test checks if previous checkpoint was minted, and fails if that checkpoint can't be found
+    # (with the exception of the first checkpoint)
 
-    # Previous checkpoint should always exist
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
