@@ -322,7 +322,7 @@ class Chain:
     def block_data(self, block_identifier: BlockIdentifier = "latest") -> BlockData:
         """Get the current block on the chain.
 
-        Parameters
+        Arguments
         ----------
         block_identifier
             The identifier of the block to get. Defaults to 'latest'.
