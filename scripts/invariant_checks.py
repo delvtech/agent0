@@ -89,7 +89,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         # If a block hasn't ticked, we sleep
         if batch_check_start_block > batch_check_end_block:
             # take a nap
-            time.sleep(1)
+            time.sleep(3)
             continue
 
         # Look at the number of blocks we need to iterate through
