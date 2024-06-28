@@ -89,11 +89,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
             last_pool_check_block_number = latest_block_number
 
-        # TODO ensure we check on every block, and wait for a new mined block
+        # Ensure we check on every block, and wait for a new mined block
         # Throw a critical if it gets behind
         if not latest_block_number > last_executed_block_number:
             # take a nap
-            time.sleep(parsed_args.invariance_check_sleep_time)
+            time.sleep(1)
             continue
 
         # Update block number
@@ -130,7 +130,6 @@ def main(argv: Sequence[str] | None = None) -> None:
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
-    invariance_check_sleep_time: int
     pool_check_sleep_blocks: int
     infra: bool
     registry_addr: str
@@ -151,7 +150,6 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        invariance_check_sleep_time=namespace.invariance_check_sleep_time,
         pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
@@ -173,12 +171,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
-    parser.add_argument(
-        "--invariance-check-sleep-time",
-        type=int,
-        default=5,
-        help="Sleep time between invariance checks, in seconds.",
-    )
 
     parser.add_argument(
         "--pool-check-sleep-blocks",
