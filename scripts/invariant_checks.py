@@ -12,16 +12,19 @@ and checking Hyperdrive invariants.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
 import time
+from functools import partial
 from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
+from agent0.utils import async_runner
 
 LOOKBACK_BLOCK_LIMIT = 1000
 
@@ -97,8 +100,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         last_executed_block_number = latest_block_number
         # Loop through all deployed pools and run invariant checks
 
+        print(f"{start_block_number=} {latest_block_number=}")
         for check_block in range(start_block_number, latest_block_number + 1):
-            print(check_block)
+            print(f"{check_block=}")
             if (latest_block_number - start_block_number) > LOOKBACK_BLOCK_LIMIT:
                 error_message = "Unable to keep up with invariant checks."
                 logging.error(error_message)
@@ -106,18 +110,19 @@ def main(argv: Sequence[str] | None = None) -> None:
                 break
 
             check_block_data = chain.block_data(block_identifier=check_block)
-            for hyperdrive_obj in deployed_pools:
-                name = hyperdrive_obj.name
-                logging.info("Running invariance check on %s", name)
-                # This returns the list of all exceptions for failed checks,
-                # we ignore them here since we don't want to stop the script,
-                # we just log them.
-                _ = run_invariant_checks(
+            partials = [
+                partial(
+                    run_invariant_checks,
                     check_block_data=check_block_data,
                     interface=hyperdrive_obj.interface,
                     log_to_rollbar=log_to_rollbar,
-                    pool_name=name,
+                    pool_name=hyperdrive_obj.name,
                 )
+                for hyperdrive_obj in deployed_pools
+            ]
+
+            logging.info("Running invariant checks for block %s on pools %s", check_block, deployed_pools)
+            asyncio.run(async_runner(return_exceptions=False, funcs=partials))
 
         start_block_number = latest_block_number + 1
 
