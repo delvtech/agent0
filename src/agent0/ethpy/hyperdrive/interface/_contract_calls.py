@@ -16,7 +16,7 @@ from agent0.ethpy.base import (
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
-from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
+from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
@@ -53,21 +53,28 @@ def _get_total_supply_withdrawal_shares(
     return FixedPoint(scaled_value=int(total_supply_withdrawal_shares))
 
 
-def _get_variable_rate(yield_contract: MockERC4626Contract, block_number: BlockNumber | None = None) -> FixedPoint:
+def _get_variable_rate(
+    yield_contract: MockERC4626Contract | MockLidoContract, block_number: BlockNumber | None = None
+) -> FixedPoint:
     """See API for documentation."""
     rate = yield_contract.functions.getRate().call(block_identifier=block_number or "latest")
     return FixedPoint(scaled_value=rate)
 
 
 def _get_vault_shares(
-    yield_contract: MockERC4626Contract,
+    interface: HyperdriveReadInterface,
     hyperdrive_contract: IHyperdriveContract,
     block_number: BlockNumber | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    vault_shares = yield_contract.functions.balanceOf(hyperdrive_contract.address).call(
-        block_identifier=block_number or "latest"
-    )
+    if interface.vault_is_steth:
+        vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
+            block_identifier=block_number or "latest"
+        )
+    else:
+        vault_shares = interface.vault_shares_token_contract.functions.balanceOf(hyperdrive_contract.address).call(
+            block_identifier=block_number or "latest"
+        )
     return FixedPoint(scaled_value=vault_shares)
 
 
