@@ -65,7 +65,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # Keeps track of the last time we checked for a new pool
-    last_pool_check_block_number = 0
+    # Set this to a negative number to ensure we always check on the first iteration
+    # We only use this as a float to define negative infinity
+    last_pool_check_block_number: int | float = float("-inf")
     # Keeps track of the last time we executed an invariant check
     batch_check_start_block = chain.block_number()
 
