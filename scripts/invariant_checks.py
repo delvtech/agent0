@@ -100,9 +100,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         last_executed_block_number = latest_block_number
         # Loop through all deployed pools and run invariant checks
 
-        print(f"{start_block_number=} {latest_block_number=}")
         for check_block in range(start_block_number, latest_block_number + 1):
-            print(f"{check_block=}")
             if (latest_block_number - start_block_number) > LOOKBACK_BLOCK_LIMIT:
                 error_message = "Unable to keep up with invariant checks."
                 logging.error(error_message)
