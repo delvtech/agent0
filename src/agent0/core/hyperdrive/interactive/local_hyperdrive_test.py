@@ -129,6 +129,7 @@ def _ensure_event_matches_wallet_delta(
     event: BaseHyperdriveEvent,
     deploy_type: LocalHyperdrive.DeployType,
 ):
+    # pylint: disable=too-many-statements
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
         # We expect exact matches for erc4626
         event_comparison_epsilon = FixedPoint(0)
