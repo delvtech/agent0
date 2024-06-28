@@ -12,16 +12,21 @@ and checking Hyperdrive invariants.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
 import time
+from functools import partial
 from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
+from agent0.utils import async_runner
+
+LOOKBACK_BLOCK_LIMIT = 1000
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -59,52 +64,69 @@ def main(argv: Sequence[str] | None = None) -> None:
     rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
-    # We calculate how many blocks we should wait before checking for a new pool
-    last_executed_block_number = (
-        -parsed_args.pool_check_sleep_blocks - 1
-    )  # no matter what we will run the check the first time
-    last_pool_check_block_number = 0
-    # Get deployed pools on first iteration
+    # Keeps track of the last time we executed an invariant check
+    batch_check_start_block = chain.block_number()
+
+    # Check pools on first iteration
+    logging.info("Checking for new pools...")
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
+
+    # Keeps track of the last time we checked for a new pool
+    last_pool_check_block_number = batch_check_start_block
 
     # Run the loop forever
     while True:
-        # Check for new pools
-        latest_block = chain.block_data()
-        latest_block_number = latest_block.get("number", None)
-        if latest_block_number is None:
-            raise AssertionError("Block has no number.")
+        # The batch_check_end_block is inclusive
+        # (i.e., we do batch_check_end_block + 1 in the loop range)
+        batch_check_end_block = chain.block_number()
 
-        if latest_block_number > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
+        # Check if we need to check for new pools
+        if batch_check_end_block > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
             logging.info("Checking for new pools...")
-            # First iteration, get list of deployed pools
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-            last_pool_check_block_number = latest_block_number
+            last_pool_check_block_number = batch_check_end_block
 
-        if not latest_block_number > last_executed_block_number:
+        # If a block hasn't ticked, we sleep
+        if batch_check_start_block > batch_check_end_block:
             # take a nap
-            time.sleep(parsed_args.invariance_check_sleep_time)
+            time.sleep(3)
             continue
 
-        # Update block number
-        last_executed_block_number = latest_block_number
+        # Look at the number of blocks we need to iterate through
+        # If it's past the limit, log an error and catch up by
+        # skipping to the latest block
+        if (batch_check_end_block - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
+            error_message = "Unable to keep up with invariant checks. Skipping check blocks."
+            logging.error(error_message)
+            log_rollbar_message(error_message, logging.ERROR)
+            batch_check_start_block = batch_check_end_block
+
         # Loop through all deployed pools and run invariant checks
-        for hyperdrive_obj in deployed_pools:
-            name = hyperdrive_obj.name
-            logging.info("Running invariance check on %s", name)
-            run_invariant_checks(
-                latest_block=latest_block,
-                interface=hyperdrive_obj.interface,
-                raise_error_on_failure=False,
-                log_to_rollbar=log_to_rollbar,
-                pool_name=name,
+        print(f"Running invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)")
+        for check_block in range(batch_check_start_block, batch_check_end_block + 1):
+            check_block_data = chain.block_data(block_identifier=check_block)
+            partials = [
+                partial(
+                    run_invariant_checks,
+                    check_block_data=check_block_data,
+                    interface=hyperdrive_obj.interface,
+                    log_to_rollbar=log_to_rollbar,
+                    pool_name=hyperdrive_obj.name,
+                )
+                for hyperdrive_obj in deployed_pools
+            ]
+
+            logging.info(
+                "Running invariant checks for block %s on pools %s", check_block, [pool.name for pool in deployed_pools]
             )
+            asyncio.run(async_runner(return_exceptions=False, funcs=partials))
+
+        batch_check_start_block = batch_check_end_block + 1
 
 
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
-    invariance_check_sleep_time: int
     pool_check_sleep_blocks: int
     infra: bool
     registry_addr: str
@@ -125,7 +147,6 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        invariance_check_sleep_time=namespace.invariance_check_sleep_time,
         pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
@@ -147,12 +168,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
-    parser.add_argument(
-        "--invariance-check-sleep-time",
-        type=int,
-        default=5,
-        help="Sleep time between invariance checks, in seconds.",
-    )
 
     parser.add_argument(
         "--pool-check-sleep-blocks",

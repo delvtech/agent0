@@ -209,6 +209,32 @@ class HyperdriveReadInterface:
         self._current_pool_state = None
         self.last_state_block_number = -1
 
+        # Best effort to find initialize event and set deploy block
+        self._deploy_block: None | int = None
+        self._deploy_block_checked = False
+
+    def get_deploy_block(self) -> int | None:
+        """Get the block that the Hyperdrive contract was deployed on.
+
+        NOTE: The deploy event may get lost on e.g., anvil, so we ensure we only check once
+
+        Returns
+        -------
+        int | None
+            The block that the Hyperdrive contract was deployed on. Returns None if it can't be found.
+        """
+        if not self._deploy_block_checked:
+            self._deploy_block_checked = True
+            initialize_event = self.get_initialize_events("earliest")
+            if len(initialize_event) == 0:
+                logging.warning("Initialize event not found, can't set deploy_block")
+            elif len(initialize_event) == 1:
+                self._deploy_block = initialize_event[0]["blockNumber"]
+            else:
+                raise ValueError("Multiple initialize events found")
+
+        return self._deploy_block
+
     @property
     def current_pool_state(self) -> PoolState:
         """The current state of the pool.

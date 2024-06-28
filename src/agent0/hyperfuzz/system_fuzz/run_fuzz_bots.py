@@ -12,6 +12,7 @@ from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
+from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 
 ONE_HOUR_IN_SECONDS = 60 * 60
@@ -294,18 +295,24 @@ def run_fuzz_bots(
                 if latest_block_number is None:
                     raise AssertionError("Block has no number.")
                 # pylint: disable=protected-access
-                try:
-                    run_invariant_checks(
-                        latest_block=latest_block,
-                        interface=hyperdrive_pool.interface,
-                        raise_error_on_failure=raise_error_on_failed_invariance_checks,
-                        log_to_rollbar=log_to_rollbar,
-                        lp_share_price_test=lp_share_price_test,
-                        crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
-                    )
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
-                        raise exc
+                fuzz_exceptions = run_invariant_checks(
+                    check_block_data=latest_block,
+                    interface=hyperdrive_pool.interface,
+                    log_to_rollbar=log_to_rollbar,
+                    lp_share_price_test=lp_share_price_test,
+                    crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
+                )
+                if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
+                    # If we have an ignore function, we filter exceptions
+                    if ignore_raise_error_func is not None:
+                        fuzz_exceptions = [e for e in fuzz_exceptions if not ignore_raise_error_func(e)]
+                    # Do nothing if no exceptions
+                    # If single failure, we raise it by itself
+                    if len(fuzz_exceptions) == 1:
+                        raise fuzz_exceptions[0]
+                    if len(fuzz_exceptions) > 1:
+                        # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
+                        raise FuzzAssertionException(*fuzz_exceptions)
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0

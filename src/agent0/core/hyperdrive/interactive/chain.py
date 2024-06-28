@@ -16,7 +16,7 @@ from docker import DockerClient
 from docker.errors import NotFound
 from docker.models.containers import Container
 from numpy.random import Generator
-from web3.types import BlockData, Timestamp
+from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.dashboard.usernames import build_user_mapping
@@ -319,15 +319,20 @@ class Chain:
         """
         return self._web3.eth.get_block_number()
 
-    def block_data(self) -> BlockData:
+    def block_data(self, block_identifier: BlockIdentifier = "latest") -> BlockData:
         """Get the current block on the chain.
+
+        Arguments
+        ----------
+        block_identifier
+            The identifier of the block to get. Defaults to 'latest'.
 
         Returns
         -------
         int
             The current block number
         """
-        return self._web3.eth.get_block("latest")
+        return self._web3.eth.get_block(block_identifier)
 
     def block_time(self) -> Timestamp:
         """Get the current block time on the chain.

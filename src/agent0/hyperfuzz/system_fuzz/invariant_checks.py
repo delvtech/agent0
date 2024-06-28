@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, NamedTuple, Sequence
+from typing import Any, NamedTuple
 
-from fixedpointmath import FixedPoint, isclose
-from hexbytes import HexBytes
+from fixedpointmath import FixedPoint
 from web3.exceptions import BlockNotFound
-from web3.types import BlockData
+from web3.types import BlockData, Timestamp
 
 from agent0.core.hyperdrive.crash_report import (
     build_crash_trade_result,
@@ -17,6 +16,7 @@ from agent0.core.hyperdrive.crash_report import (
 )
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state.pool_state import PoolState
+from agent0.ethpy.hyperdrive.transactions import get_hyperdrive_checkpoint
 from agent0.hyperfuzz import FuzzAssertionException
 
 LP_SHARE_PRICE_EPSILON = 1e-4
@@ -24,14 +24,13 @@ TOTAL_SHARES_EPSILON = 1e-9
 
 
 def run_invariant_checks(
-    latest_block: BlockData,
+    check_block_data: BlockData,
     interface: HyperdriveReadInterface,
-    raise_error_on_failure: bool = False,
     log_to_rollbar: bool = True,
     pool_name: str | None = None,
     lp_share_price_test: bool | None = None,
     crash_report_additional_info: dict[str, Any] | None = None,
-) -> None:
+) -> list[FuzzAssertionException]:
     """Run the invariant checks.
 
     # Invariance checks (these should be True):
@@ -41,17 +40,14 @@ def run_invariant_checks(
     - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
     - present value is greater than idle shares
     - the lp share price doesn't exceed an amount from block to block
-    - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
-    - initializer's lp pnl should always be at or above the variable rate.
+    - the previous checkpoint should always exist, except for the first checkpoint
 
     Arguments
     ---------
-    latest_block: BlockData
+    check_block_data: BlockData
         The current block to be tested.
     interface: HyperdriveReadInterface
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
-    raise_error_on_failure: bool
-        If True, raise an error if any invariant check fails.
     log_to_rollbar: bool
         If True, log to rollbar if any invariant check fails.
     pool_name: str | None
@@ -61,31 +57,48 @@ def run_invariant_checks(
         If None (default), runs all tests.
     crash_report_additional_info: dict[str, Any] | None
         Additional information to include in the crash report.
+
+    Returns
+    -------
+    list[FuzzAssertionException]
+        A list of FuzzAssertionExceptions, one for each failed invariant check.
     """
     # TODO cleanup
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
 
     # Get the variables to check & check each invariant
-    pool_state = interface.get_hyperdrive_state(latest_block)
-    any_check_failed = False
-    exception_message: list[str] = ["Continuous Fuzz Bots Invariant Checks"]
-    exception_data: dict[str, Any] = {}
-    if crash_report_additional_info is not None:
-        exception_data.update(crash_report_additional_info)
+    pool_state = interface.get_hyperdrive_state(check_block_data)
 
     results: list[InvariantCheckResults]
     if lp_share_price_test is None:
+        # Available log levels:
+        # Critical (pager duty)
+        # Error (not pager duty, important)
+        # Warning (not pager duty, may be important)
+        # Info (not important)
+
         results = [
+            # Critical if lp share price is down,
+            # Warn if lp share price is up
             _check_lp_share_price(interface, pool_state),
+            # Warning
             _check_eth_balances(pool_state),
+            # Info
             _check_base_balances(pool_state, interface.base_is_eth),
+            # Critical (after diving down into steth failure)
             _check_total_shares(pool_state),
+            # Critical
             _check_minimum_share_reserves(pool_state),
+            # Critical
             _check_solvency(pool_state),
+            # Critical
             _check_present_value_greater_than_idle_shares(interface, pool_state),
-            _check_checkpointing_should_never_fail(interface, pool_state),
-            _check_initial_lp_profitable(pool_state),
+            # Critical (after fixing)
+            _check_previous_checkpoint_exists(interface, pool_state),
+            # TODO
+            # If at any point, we can open a long to make share price to 1
+            # Get spot price after long
         ]
     else:
         if lp_share_price_test:
@@ -100,21 +113,30 @@ def run_invariant_checks(
                 _check_minimum_share_reserves(pool_state),
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
-                _check_checkpointing_should_never_fail(interface, pool_state),
-                _check_initial_lp_profitable(pool_state),
+                _check_previous_checkpoint_exists(interface, pool_state),
             ]
 
-    for failed, message, data in results:
-        any_check_failed = failed | any_check_failed
+    exception_message_base = ["Continuous Fuzz Bots Invariant Checks"]
+    exception_data_template: dict[str, Any] = {}
+    if crash_report_additional_info is not None:
+        exception_data_template.update(crash_report_additional_info)
+
+    out_exceptions: list[FuzzAssertionException] = []
+    for failed, message, data, log_level in results:
+        if not failed:
+            continue
+        exception_message = exception_message_base.copy()
         if message:
             exception_message.append(message)
+        exception_data = exception_data_template.copy()
         exception_data.update(data)
         exception_data["block_number"] = pool_state.block_number
 
-    # Log additional information if any test failed
-    if any_check_failed:
-        logging.critical("\n".join(exception_message))
+        # Log exception to rollbar
+        assert log_level is not None
+        logging.log(log_level, "\n".join(exception_message))
         error = FuzzAssertionException(*exception_message, exception_data=exception_data)
+        out_exceptions.append(error)
         report = build_crash_trade_result(error, interface, additional_info=error.exception_data, pool_state=pool_state)
         report.anvil_state = get_anvil_state_dump(interface.web3)
         rollbar_data = error.exception_data
@@ -128,14 +150,14 @@ def run_invariant_checks(
 
         log_hyperdrive_crash_report(
             report,
+            log_level=log_level,
             crash_report_to_file=True,
             crash_report_file_prefix=crash_report_file_prefix,
             log_to_rollbar=log_to_rollbar,
             rollbar_data=rollbar_data,
             rollbar_log_prefix=rollbar_log_prefix,
         )
-        if raise_error_on_failure:
-            raise error
+    return out_exceptions
 
 
 class InvariantCheckResults(NamedTuple):
@@ -144,6 +166,7 @@ class InvariantCheckResults(NamedTuple):
     failed: bool
     exception_message: str | None
     exception_data: dict[str, Any]
+    log_level: int | None
 
 
 def _check_eth_balances(pool_state: PoolState) -> InvariantCheckResults:
@@ -151,13 +174,15 @@ def _check_eth_balances(pool_state: PoolState) -> InvariantCheckResults:
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
+    log_level = None
 
     if pool_state.hyperdrive_eth_balance != FixedPoint(0):
         exception_message = f"{pool_state.hyperdrive_eth_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
         failed = True
+        log_level = logging.WARNING
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
 def _check_base_balances(pool_state: PoolState, is_steth: bool) -> InvariantCheckResults:
@@ -165,49 +190,54 @@ def _check_base_balances(pool_state: PoolState, is_steth: bool) -> InvariantChec
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
+    log_level = None
 
     # We ignore this test for steth, as the base token here is actually the yield token
     if pool_state.hyperdrive_base_balance != FixedPoint(0) and not is_steth:
         exception_message = f"{pool_state.hyperdrive_base_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         failed = True
+        log_level = logging.INFO
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
-def _check_checkpointing_should_never_fail(
+def _check_previous_checkpoint_exists(
     interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
-    # Creating a checkpoint should never fail
-    # TODO: add get_block_transactions() to interface
-    # NOTE: This wold be prone to false positives.
-    #   If the transaction would have failed anyway, then we don't know
-    #   that it failed bc of checkpoint failure or bc e.g., open long was for too much
+    # This test checks if previous checkpoint was minted, and fails if that checkpoint can't be found
+    # (with the exception of the first checkpoint)
+
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
+    log_level = None
 
+    # Calculate the checkpoint time wrt the current block
     block = pool_state.block
+    checkpoint_duration = interface.pool_config.checkpoint_duration
+    current_checkpoint_time = interface.calc_checkpoint_id(checkpoint_duration, interface.get_block_timestamp(block))
+    previous_checkpoint_time = current_checkpoint_time - checkpoint_duration
 
-    transactions = block.get("transactions", None)
-    if transactions is not None and isinstance(transactions, Sequence):
-        # If any transaction is to hyperdrive then assert a checkpoint happened
-        for transaction in transactions:
-            if isinstance(transaction, HexBytes):
-                # If hexbytes, there was no trade
-                continue
-            txn_to = transaction.get("to", None)
-            if txn_to is None:
-                raise AssertionError("Transaction did not have a 'to' key.")
-            if txn_to == interface.hyperdrive_contract.address and pool_state.checkpoint.vault_share_price <= 0:
-                exception_message = (
-                    f"A transaction was created but no checkpoint was minted.\n"
-                    f"{pool_state.checkpoint.vault_share_price=}\n"
-                    f"{transaction=}\n"
-                )
-                failed = True
+    # If deploy block is set and the previous checkpoint time was before hyperdrive was deployed,
+    # we ignore this test
+    deploy_block = interface.get_deploy_block()
+    if deploy_block is not None and (
+        previous_checkpoint_time < interface.get_block_timestamp(interface.get_block(deploy_block))
+    ):
+        return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    previous_checkpoint = get_hyperdrive_checkpoint(
+        interface.hyperdrive_contract, Timestamp(previous_checkpoint_time), pool_state.block_number
+    )
+
+    if previous_checkpoint.vault_share_price <= FixedPoint(0):
+        exception_message = f"Previous checkpoint doesn't exist: {previous_checkpoint_time=}"
+        exception_data["invariance_check:previous_checkpoint_time"] = previous_checkpoint
+        failed = True
+        log_level = logging.CRITICAL
+
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
 def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
@@ -215,6 +245,7 @@ def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
+    log_level = None
 
     solvency = (
         pool_state.pool_info.share_reserves
@@ -229,8 +260,9 @@ def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
         )
         exception_data["invariance_check:solvency"] = solvency
         failed = True
+        log_level = logging.CRITICAL
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level)
 
 
 def _check_minimum_share_reserves(pool_state: PoolState) -> InvariantCheckResults:
@@ -238,6 +270,7 @@ def _check_minimum_share_reserves(pool_state: PoolState) -> InvariantCheckResult
     failed = False
     exception_message = ""
     exception_data: dict[str, Any] = {}
+    log_level = logging.CRITICAL
 
     current_share_reserves = pool_state.pool_info.share_reserves
     minimum_share_reserves = pool_state.pool_config.minimum_share_reserves
@@ -252,7 +285,7 @@ def _check_minimum_share_reserves(pool_state: PoolState) -> InvariantCheckResult
         exception_data["invariance_check:minimum_share_reserves"] = minimum_share_reserves
         failed = True
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
 def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
@@ -260,6 +293,7 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
     failed = False
     exception_message = ""
     exception_data: dict[str, Any] = {}
+    log_level = None
 
     expected_vault_shares = (
         pool_state.pool_info.share_reserves
@@ -285,8 +319,9 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
         exception_data["invariance_check:actual_vault_shares"] = actual_vault_shares
         exception_data["invariance_check:vault_shares_difference_in_wei"] = difference_in_wei
         failed = True
+        log_level = logging.CRITICAL
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level)
 
 
 def _check_present_value_greater_than_idle_shares(
@@ -309,6 +344,7 @@ def _check_present_value_greater_than_idle_shares(
     failed = False
     exception_message = ""
     exception_data: dict[str, Any] = {}
+    log_level = None
 
     # Rust calls here can fail, we log if it does
     try:
@@ -316,7 +352,9 @@ def _check_present_value_greater_than_idle_shares(
         idle_shares = interface.get_idle_shares(pool_state)
     # Catching rust panics here
     except BaseException as e:  # pylint: disable=broad-except
-        return InvariantCheckResults(False, repr(e), exception_data)
+        return InvariantCheckResults(
+            failed=True, exception_message=repr(e), exception_data=exception_data, log_level=logging.CRITICAL
+        )
 
     if not present_value >= idle_shares:
         difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
@@ -325,8 +363,9 @@ def _check_present_value_greater_than_idle_shares(
         exception_data["invariance_check:current_present_value"] = present_value
         exception_data["invariance_check:present_value_difference_in_wei"] = difference_in_wei
         failed = True
+        log_level = logging.CRITICAL
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level)
 
 
 def _check_lp_share_price(
@@ -342,6 +381,7 @@ def _check_lp_share_price(
     failed = False
     exception_message = ""
     exception_data: dict[str, Any] = {}
+    log_level = None
 
     block_number = pool_state.block_number
 
@@ -354,7 +394,10 @@ def _check_lp_share_price(
     try:
         previous_pool_state = interface.get_hyperdrive_state(interface.get_block(block_number - 1))
     except BlockNotFound:
-        return InvariantCheckResults(False, exception_message, exception_data)
+        # Not a failure
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
 
     block_time_delta = pool_state.block_time - previous_pool_state.block_time
     normalized_test_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
@@ -395,56 +438,32 @@ def _check_lp_share_price(
             closing_mature_position = True
             break
 
-    # Full check
+    # We check if lp share price jumps higher than expected
+    # if we're doing a full check. In this case, we warn
+    difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
     if not currently_minting_checkpoint and not closing_mature_position:
-        if not isclose(previous_lp_share_price, current_lp_share_price, abs_tol=test_tolerance):
+        if (current_lp_share_price - previous_lp_share_price) >= test_tolerance:
             failed = True
-    # Relaxed check
-    else:
-        if (previous_lp_share_price - current_lp_share_price) >= test_tolerance:
-            failed = True
+            exception_message = (
+                "LP share price went up more than expected: "
+                f"{previous_lp_share_price=}, {current_lp_share_price=}, {difference_in_wei=}"
+            )
+            log_level = logging.WARNING
+
+    # We always check if lp share price jumps lower than expected.
+    # In this case, we throw critical.
+    if (previous_lp_share_price - current_lp_share_price) >= test_tolerance:
+        failed = True
+        exception_message = (
+            "LP share price went down more than expected: "
+            f"{previous_lp_share_price=}, {current_lp_share_price=}, {difference_in_wei=}"
+        )
+        log_level = logging.CRITICAL
 
     if failed:
-        difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
-        exception_message = f"{previous_lp_share_price=} != {current_lp_share_price=}, {difference_in_wei=}"
         exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
         exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
-
-
-def _check_initial_lp_profitable(pool_state: PoolState, epsilon: FixedPoint | None = None) -> InvariantCheckResults:
-
-    if epsilon is None:
-        epsilon = FixedPoint("0.005")
-
-    failed = False
-    exception_message = ""
-    exception_data: dict[str, Any] = {}
-
-    # We compare the rate of lp share price vs the rate of vault share price
-    # For this, we need to get the initial and current prices of both
-    initial_vault_share_price = pool_state.pool_config.initial_vault_share_price
-    current_vault_share_price = pool_state.pool_info.vault_share_price
-
-    # LP Share price is always 1 at initialization
-    initial_lp_share_price = FixedPoint(1)
-    current_lp_share_price = pool_state.pool_info.lp_share_price
-
-    # We calculate both rates and compare
-    # The rate calculated here is for the time range of how long the pool has deployed
-    vault_rate = (current_vault_share_price - initial_vault_share_price) / initial_vault_share_price
-    lp_rate = (current_lp_share_price - initial_lp_share_price) / initial_lp_share_price
-
-    difference_in_wei = lp_rate.scaled_value - vault_rate.scaled_value
-
-    if difference_in_wei < (-epsilon.scaled_value):
-        exception_message = f"{lp_rate=} is expected to be >= {vault_rate=}, {difference_in_wei=}"
-        exception_data["invariance_check:lp_rate"] = lp_rate
-        exception_data["invariance_check:vault_rate"] = vault_rate
-        exception_data["invariance_check:lp_vault_rate_difference_in_wei"] = difference_in_wei
-        failed = True
-
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level)
