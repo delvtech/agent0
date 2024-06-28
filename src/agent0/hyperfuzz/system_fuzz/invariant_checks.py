@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, NamedTuple, Sequence
+from typing import Any, NamedTuple
 
-from fixedpointmath import FixedPoint, isclose
-from hexbytes import HexBytes
+from fixedpointmath import FixedPoint
 from web3.exceptions import BlockNotFound
-from web3.types import BlockData
+from web3.types import BlockData, Timestamp
 
 from agent0.core.hyperdrive.crash_report import (
     build_crash_trade_result,
@@ -17,6 +16,7 @@ from agent0.core.hyperdrive.crash_report import (
 )
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state.pool_state import PoolState
+from agent0.ethpy.hyperdrive.transactions import get_hyperdrive_checkpoint
 from agent0.hyperfuzz import FuzzAssertionException
 
 LP_SHARE_PRICE_EPSILON = 1e-4
@@ -40,8 +40,7 @@ def run_invariant_checks(
     - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
     - present value is greater than idle shares
     - the lp share price doesn't exceed an amount from block to block
-    - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
-    - initializer's lp pnl should always be at or above the variable rate.
+    - the previous checkpoint should always exist, except for the first checkpoint
 
     Arguments
     ---------
@@ -96,7 +95,7 @@ def run_invariant_checks(
             # Critical
             _check_present_value_greater_than_idle_shares(interface, pool_state),
             # Critical (after fixing)
-            _check_checkpointing_should_never_fail(interface, pool_state),
+            _check_previous_checkpoint_exists(interface, pool_state),
             # TODO
             # If at any point, we can open a long to make share price to 1
             # Get spot price after long
@@ -114,7 +113,7 @@ def run_invariant_checks(
                 _check_minimum_share_reserves(pool_state),
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
-                _check_checkpointing_should_never_fail(interface, pool_state),
+                _check_previous_checkpoint_exists(interface, pool_state),
             ]
 
     exception_message_base = ["Continuous Fuzz Bots Invariant Checks"]
@@ -134,6 +133,7 @@ def run_invariant_checks(
         exception_data["block_number"] = pool_state.block_number
 
         # Log exception to rollbar
+        assert log_level is not None
         logging.log(log_level, "\n".join(exception_message))
         error = FuzzAssertionException(*exception_message, exception_data=exception_data)
         exceptions.append(error)
@@ -202,43 +202,42 @@ def _check_base_balances(pool_state: PoolState, is_steth: bool) -> InvariantChec
     return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
-def _check_checkpointing_should_never_fail(
+def _check_previous_checkpoint_exists(
     interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
     # TODO Fix this test to check if previous checkpoint should never be 0
     # TODO add case for first checkpoint
 
-    # Creating a checkpoint should never fail
-    # TODO: add get_block_transactions() to interface
-    # NOTE: This wold be prone to false positives.
-    #   If the transaction would have failed anyway, then we don't know
-    #   that it failed bc of checkpoint failure or bc e.g., open long was for too much
+    # Previous checkpoint should always exist
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
+    log_level = None
 
+    # Calculate the checkpoint time wrt the current block
     block = pool_state.block
+    checkpoint_duration = interface.pool_config.checkpoint_duration
+    current_checkpoint_time = interface.calc_checkpoint_id(checkpoint_duration, interface.get_block_timestamp(block))
+    previous_checkpoint_time = current_checkpoint_time - checkpoint_duration
 
-    transactions = block.get("transactions", None)
-    if transactions is not None and isinstance(transactions, Sequence):
-        # If any transaction is to hyperdrive then assert a checkpoint happened
-        for transaction in transactions:
-            if isinstance(transaction, HexBytes):
-                # If hexbytes, there was no trade
-                continue
-            txn_to = transaction.get("to", None)
-            if txn_to is None:
-                raise AssertionError("Transaction did not have a 'to' key.")
-            if txn_to == interface.hyperdrive_contract.address and pool_state.checkpoint.vault_share_price <= 0:
-                # Check here if transaction was successful
-                exception_message = (
-                    f"A transaction was created but no checkpoint was minted.\n"
-                    f"{pool_state.checkpoint.vault_share_price=}\n"
-                    f"{transaction=}\n"
-                )
-                failed = True
+    # If deploy block is set and the previous checkpoint time was before hyperdrive was deployed,
+    # we ignore this test
+    if interface.deploy_block is not None and (
+        previous_checkpoint_time < interface.get_block_timestamp(interface.get_block(interface.deploy_block))
+    ):
+        return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
 
-    return InvariantCheckResults(failed, exception_message, exception_data)
+    previous_checkpoint = get_hyperdrive_checkpoint(
+        interface.hyperdrive_contract, Timestamp(previous_checkpoint_time), pool_state.block_number
+    )
+
+    if previous_checkpoint.vault_share_price <= FixedPoint(0):
+        exception_message = f"Previous checkpoint doesn't exist: {previous_checkpoint_time=}"
+        exception_data["invariance_check:previous_checkpoint_time"] = previous_checkpoint
+        failed = True
+        log_level = logging.CRITICAL
+
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
 def _check_solvency(pool_state: PoolState) -> InvariantCheckResults:
