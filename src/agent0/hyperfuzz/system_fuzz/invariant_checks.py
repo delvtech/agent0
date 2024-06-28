@@ -221,8 +221,9 @@ def _check_previous_checkpoint_exists(
 
     # If deploy block is set and the previous checkpoint time was before hyperdrive was deployed,
     # we ignore this test
-    if interface.deploy_block is not None and (
-        previous_checkpoint_time < interface.get_block_timestamp(interface.get_block(interface.deploy_block))
+    deploy_block = interface.get_deploy_block()
+    if deploy_block is not None and (
+        previous_checkpoint_time < interface.get_block_timestamp(interface.get_block(deploy_block))
     ):
         return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
 
