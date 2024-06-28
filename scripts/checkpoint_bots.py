@@ -244,7 +244,7 @@ def run_checkpoint_bot(
                 fail_count = 0
             except Exception as e:  # pylint: disable=broad-except
                 if fail_count < FAIL_COUNT_THRESHOLD:
-                    logging_str = f"Checkpoint transaction failed."
+                    logging_str = "Checkpoint transaction failed."
                     log_level = logging.WARNING
                     logging.warning(logging_str + f" {repr(e)}")
                 else:
