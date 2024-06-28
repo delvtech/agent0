@@ -351,7 +351,9 @@ def _check_present_value_greater_than_idle_shares(
         idle_shares = interface.get_idle_shares(pool_state)
     # Catching rust panics here
     except BaseException as e:  # pylint: disable=broad-except
-        return InvariantCheckResults(True, repr(e), exception_data, log_level=logging.CRITICAL)
+        return InvariantCheckResults(
+            failed=True, exception_message=repr(e), exception_data=exception_data, log_level=logging.CRITICAL
+        )
 
     if not present_value >= idle_shares:
         difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
@@ -392,7 +394,9 @@ def _check_lp_share_price(
         previous_pool_state = interface.get_hyperdrive_state(interface.get_block(block_number - 1))
     except BlockNotFound:
         # Not a failure
-        return InvariantCheckResults(False, exception_message, exception_data, log_level)
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
 
     block_time_delta = pool_state.block_time - previous_pool_state.block_time
     normalized_test_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
