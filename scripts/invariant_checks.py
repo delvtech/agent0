@@ -68,21 +68,22 @@ def main(argv: Sequence[str] | None = None) -> None:
     last_pool_check_block_number = 0
     # Keeps track of the last time we executed an invariant check
     # Start from the current block - 1 to ensure we check on the first iteration
-    batch_check_start_block = chain.block_number() - 1
+    batch_check_start_block = chain.block_number()
 
     # Run the loop forever
     while True:
-        # Check for new pools
-        latest_block_number = chain.block_number()
+        # The batch_check_end_block is inclusive
+        # (i.e., we do batch_check_end_block + 1 in the loop range)
+        batch_check_end_block = chain.block_number()
 
         # Check if we need to check for new pools
-        if latest_block_number > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
+        if batch_check_end_block > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
             logging.info("Checking for new pools...")
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-            last_pool_check_block_number = latest_block_number
+            last_pool_check_block_number = batch_check_end_block
 
         # If a block hasn't ticked, we sleep
-        if batch_check_start_block >= latest_block_number:
+        if batch_check_start_block > batch_check_end_block:
             # take a nap
             time.sleep(1)
             continue
@@ -90,14 +91,15 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Look at the number of blocks we need to iterate through
         # If it's past the limit, log an error and catch up by
         # skipping to the latest block
-        if (latest_block_number - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
+        if (batch_check_end_block - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
             error_message = "Unable to keep up with invariant checks. Skipping check blocks."
             logging.error(error_message)
             log_rollbar_message(error_message, logging.ERROR)
-            batch_check_start_block = latest_block_number
+            batch_check_start_block = batch_check_end_block
 
         # Loop through all deployed pools and run invariant checks
-        for check_block in range(batch_check_start_block, latest_block_number + 1):
+        print(f"Running invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)")
+        for check_block in range(batch_check_start_block, batch_check_end_block + 1):
             check_block_data = chain.block_data(block_identifier=check_block)
             partials = [
                 partial(
@@ -110,10 +112,12 @@ def main(argv: Sequence[str] | None = None) -> None:
                 for hyperdrive_obj in deployed_pools
             ]
 
-            logging.info("Running invariant checks for block %s on pools %s", check_block, deployed_pools)
+            logging.info(
+                "Running invariant checks for block %s on pools %s", check_block, [pool.name for pool in deployed_pools]
+            )
             asyncio.run(async_runner(return_exceptions=False, funcs=partials))
 
-        batch_check_start_block = latest_block_number + 1
+        batch_check_start_block = batch_check_end_block + 1
 
 
 class Args(NamedTuple):
