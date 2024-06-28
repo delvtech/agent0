@@ -27,7 +27,7 @@ Approval = ABIEvent(
     inputs=[
         ABIEventParams(indexed=True, name="owner", type="address"),
         ABIEventParams(indexed=True, name="spender", type="address"),
-        ABIEventParams(indexed=False, name="amount", type="uint256"),
+        ABIEventParams(indexed=False, name="value", type="uint256"),
     ],
     name="Approval",
     type="event",
@@ -89,9 +89,20 @@ Transfer = ABIEvent(
     inputs=[
         ABIEventParams(indexed=True, name="from", type="address"),
         ABIEventParams(indexed=True, name="to", type="address"),
-        ABIEventParams(indexed=False, name="amount", type="uint256"),
+        ABIEventParams(indexed=False, name="value", type="uint256"),
     ],
     name="Transfer",
+    type="event",
+)
+
+TransferShares = ABIEvent(
+    anonymous=False,
+    inputs=[
+        ABIEventParams(indexed=True, name="from", type="address"),
+        ABIEventParams(indexed=True, name="to", type="address"),
+        ABIEventParams(indexed=False, name="sharesValue", type="uint256"),
+    ],
+    name="TransferShares",
     type="event",
 )
 
@@ -124,3 +135,62 @@ class ErrorParams:
     name: str
     solidity_type: str
     python_type: str
+
+
+ERC20InsufficientAllowanceError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="spender", python_type="str", solidity_type="address"),
+        ErrorParams(name="allowance", python_type="int", solidity_type="uint256"),
+        ErrorParams(name="needed", python_type="int", solidity_type="uint256"),
+    ],
+    name="ERC20InsufficientAllowance",
+    selector="0xfb8f41b2",
+    signature="ERC20InsufficientAllowance(address,uint256,uint256)",
+)
+
+ERC20InsufficientBalanceError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="sender", python_type="str", solidity_type="address"),
+        ErrorParams(name="balance", python_type="int", solidity_type="uint256"),
+        ErrorParams(name="needed", python_type="int", solidity_type="uint256"),
+    ],
+    name="ERC20InsufficientBalance",
+    selector="0xe450d38c",
+    signature="ERC20InsufficientBalance(address,uint256,uint256)",
+)
+
+ERC20InvalidApproverError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="approver", python_type="str", solidity_type="address"),
+    ],
+    name="ERC20InvalidApprover",
+    selector="0xe602df05",
+    signature="ERC20InvalidApprover(address)",
+)
+
+ERC20InvalidReceiverError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="receiver", python_type="str", solidity_type="address"),
+    ],
+    name="ERC20InvalidReceiver",
+    selector="0xec442f05",
+    signature="ERC20InvalidReceiver(address)",
+)
+
+ERC20InvalidSenderError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="sender", python_type="str", solidity_type="address"),
+    ],
+    name="ERC20InvalidSender",
+    selector="0x96c6fd1e",
+    signature="ERC20InvalidSender(address)",
+)
+
+ERC20InvalidSpenderError = ErrorInfo(
+    inputs=[
+        ErrorParams(name="spender", python_type="str", solidity_type="address"),
+    ],
+    name="ERC20InvalidSpender",
+    selector="0x94280d62",
+    signature="ERC20InvalidSpender(address)",
+)

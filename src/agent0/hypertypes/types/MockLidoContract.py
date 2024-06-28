@@ -28,6 +28,8 @@ from __future__ import annotations
 
 from typing import Any, Iterable, NamedTuple, Sequence, Type, cast, overload
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress, HexStr
 from hexbytes import HexBytes
@@ -43,45 +45,18 @@ from web3.contract.contract import (
     ContractFunctions,
 )
 from web3.exceptions import FallbackNotFound
-from web3.types import ABI, BlockIdentifier, CallOverride, EventData, TxParams
+from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
-from .utilities import dataclass_to_tuple, rename_returned_types, try_bytecode_hexbytes
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
 
 structs = {}
-
-
-class MockLidoDOMAIN_SEPARATORContractFunction(ContractFunction):
-    """ContractFunction for the DOMAIN_SEPARATOR method."""
-
-    def __call__(self) -> MockLidoDOMAIN_SEPARATORContractFunction:  # type: ignore
-        clone = super().__call__()
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> bytes:
-        """returns bytes."""
-        # Define the expected return types from the smart contract call
-
-        return_types = bytes
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(bytes, rename_returned_types(structs, return_types, raw_values))
 
 
 class MockLidoAllowanceContractFunction(ContractFunction):
     """ContractFunction for the allowance method."""
 
-    def __call__(self, arg1: str, arg2: str) -> MockLidoAllowanceContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(arg1), dataclass_to_tuple(arg2))
+    def __call__(self, owner: str, spender: str) -> MockLidoAllowanceContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(owner), dataclass_to_tuple(spender))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -107,8 +82,8 @@ class MockLidoAllowanceContractFunction(ContractFunction):
 class MockLidoApproveContractFunction(ContractFunction):
     """ContractFunction for the approve method."""
 
-    def __call__(self, spender: str, amount: int) -> MockLidoApproveContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(spender), dataclass_to_tuple(amount))
+    def __call__(self, spender: str, value: int) -> MockLidoApproveContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(spender), dataclass_to_tuple(value))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -161,8 +136,8 @@ class MockLidoAuthorityContractFunction(ContractFunction):
 class MockLidoBalanceOfContractFunction(ContractFunction):
     """ContractFunction for the balanceOf method."""
 
-    def __call__(self, arg1: str) -> MockLidoBalanceOfContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(arg1))
+    def __call__(self, owner: str) -> MockLidoBalanceOfContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(owner))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -209,8 +184,8 @@ class MockLidoBurnContractFunction0(ContractFunction):
 class MockLidoBurnContractFunction1(ContractFunction):
     """ContractFunction for the burn method."""
 
-    def __call__(self, destination: str, amount: int) -> MockLidoBurnContractFunction:  # type: ignore
-        super().__call__(dataclass_to_tuple(destination), dataclass_to_tuple(amount))  # type: ignore
+    def __call__(self, target: str, amount: int) -> MockLidoBurnContractFunction:  # type: ignore
+        super().__call__(dataclass_to_tuple(target), dataclass_to_tuple(amount))  # type: ignore
         return cast(MockLidoBurnContractFunction, self)
 
     def call(
@@ -239,7 +214,7 @@ class MockLidoBurnContractFunction(ContractFunction):
         ...
 
     @overload
-    def __call__(self, destination: str, amount: int) -> MockLidoBurnContractFunction1:  # type: ignore
+    def __call__(self, target: str, amount: int) -> MockLidoBurnContractFunction1:  # type: ignore
         ...
 
     def __call__(self, *args) -> MockLidoBurnContractFunction:  # type: ignore
@@ -711,8 +686,8 @@ class MockLidoMaxMintAmountContractFunction(ContractFunction):
 class MockLidoMintContractFunction0(ContractFunction):
     """ContractFunction for the mint method."""
 
-    def __call__(self, destination: str, amount: int) -> MockLidoMintContractFunction:  # type: ignore
-        super().__call__(dataclass_to_tuple(destination), dataclass_to_tuple(amount))  # type: ignore
+    def __call__(self, recipient: str, amount: int) -> MockLidoMintContractFunction:  # type: ignore
+        super().__call__(dataclass_to_tuple(recipient), dataclass_to_tuple(amount))  # type: ignore
         return cast(MockLidoMintContractFunction, self)
 
     def call(
@@ -758,7 +733,7 @@ class MockLidoMintContractFunction(ContractFunction):
     # pylint: disable=function-redefined
 
     @overload
-    def __call__(self, destination: str, amount: int) -> MockLidoMintContractFunction0:  # type: ignore
+    def __call__(self, recipient: str, amount: int) -> MockLidoMintContractFunction0:  # type: ignore
         ...
 
     @overload
@@ -799,33 +774,6 @@ class MockLidoNameContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
-class MockLidoNoncesContractFunction(ContractFunction):
-    """ContractFunction for the nonces method."""
-
-    def __call__(self, arg1: str) -> MockLidoNoncesContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(arg1))
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> int:
-        """returns int."""
-        # Define the expected return types from the smart contract call
-
-        return_types = int
-
-        # Call the function
-
-        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
-        return cast(int, rename_returned_types(structs, return_types, raw_values))
-
-
 class MockLidoOwnerContractFunction(ContractFunction):
     """ContractFunction for the owner method."""
 
@@ -851,36 +799,6 @@ class MockLidoOwnerContractFunction(ContractFunction):
 
         raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
         return cast(str, rename_returned_types(structs, return_types, raw_values))
-
-
-class MockLidoPermitContractFunction(ContractFunction):
-    """ContractFunction for the permit method."""
-
-    def __call__(self, owner: str, spender: str, value: int, deadline: int, v: int, r: bytes, s: bytes) -> MockLidoPermitContractFunction:  # type: ignore
-        clone = super().__call__(
-            dataclass_to_tuple(owner),
-            dataclass_to_tuple(spender),
-            dataclass_to_tuple(value),
-            dataclass_to_tuple(deadline),
-            dataclass_to_tuple(v),
-            dataclass_to_tuple(r),
-            dataclass_to_tuple(s),
-        )
-        self.kwargs = clone.kwargs
-        self.args = clone.args
-        return self
-
-    def call(
-        self,
-        transaction: TxParams | None = None,
-        block_identifier: BlockIdentifier = "latest",
-        state_override: CallOverride | None = None,
-        ccip_read_enabled: bool | None = None,
-    ) -> None:
-        """returns None."""
-        # Define the expected return types from the smart contract call
-
-        # Call the function
 
 
 class MockLidoSetAuthorityContractFunction(ContractFunction):
@@ -1062,8 +980,8 @@ class MockLidoSetUserRoleContractFunction(ContractFunction):
 class MockLidoSharesOfContractFunction(ContractFunction):
     """ContractFunction for the sharesOf method."""
 
-    def __call__(self, account: str) -> MockLidoSharesOfContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(account))
+    def __call__(self, arg1: str) -> MockLidoSharesOfContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(arg1))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1170,8 +1088,8 @@ class MockLidoTotalSupplyContractFunction(ContractFunction):
 class MockLidoTransferContractFunction(ContractFunction):
     """ContractFunction for the transfer method."""
 
-    def __call__(self, to: str, amount: int) -> MockLidoTransferContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(to), dataclass_to_tuple(amount))
+    def __call__(self, recipient: str, amount: int) -> MockLidoTransferContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(recipient), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1197,8 +1115,8 @@ class MockLidoTransferContractFunction(ContractFunction):
 class MockLidoTransferFromContractFunction(ContractFunction):
     """ContractFunction for the transferFrom method."""
 
-    def __call__(self, _from: str, to: str, amount: int) -> MockLidoTransferFromContractFunction:  # type: ignore
-        clone = super().__call__(dataclass_to_tuple(_from), dataclass_to_tuple(to), dataclass_to_tuple(amount))
+    def __call__(self, sender: str, recipient: str, amount: int) -> MockLidoTransferFromContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(sender), dataclass_to_tuple(recipient), dataclass_to_tuple(amount))
         self.kwargs = clone.kwargs
         self.args = clone.args
         return self
@@ -1302,8 +1220,6 @@ class MockLidoTransferSharesFromContractFunction(ContractFunction):
 class MockLidoContractFunctions(ContractFunctions):
     """ContractFunctions for the MockLido contract."""
 
-    DOMAIN_SEPARATOR: MockLidoDOMAIN_SEPARATORContractFunction
-
     allowance: MockLidoAllowanceContractFunction
 
     approve: MockLidoApproveContractFunction
@@ -1352,11 +1268,7 @@ class MockLidoContractFunctions(ContractFunctions):
 
     name: MockLidoNameContractFunction
 
-    nonces: MockLidoNoncesContractFunction
-
     owner: MockLidoOwnerContractFunction
-
-    permit: MockLidoPermitContractFunction
 
     setAuthority: MockLidoSetAuthorityContractFunction
 
@@ -1400,14 +1312,6 @@ class MockLidoContractFunctions(ContractFunctions):
         decode_tuples: bool | None = False,
     ) -> None:
         super().__init__(abi, w3, address, decode_tuples)
-        self.DOMAIN_SEPARATOR = MockLidoDOMAIN_SEPARATORContractFunction.factory(
-            "DOMAIN_SEPARATOR",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="DOMAIN_SEPARATOR",
-        )
         self.allowance = MockLidoAllowanceContractFunction.factory(
             "allowance",
             w3=w3,
@@ -1600,14 +1504,6 @@ class MockLidoContractFunctions(ContractFunctions):
             decode_tuples=decode_tuples,
             function_identifier="name",
         )
-        self.nonces = MockLidoNoncesContractFunction.factory(
-            "nonces",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="nonces",
-        )
         self.owner = MockLidoOwnerContractFunction.factory(
             "owner",
             w3=w3,
@@ -1615,14 +1511,6 @@ class MockLidoContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="owner",
-        )
-        self.permit = MockLidoPermitContractFunction.factory(
-            "permit",
-            w3=w3,
-            contract_abi=abi,
-            address=address,
-            decode_tuples=decode_tuples,
-            function_identifier="permit",
         )
         self.setAuthority = MockLidoSetAuthorityContractFunction.factory(
             "setAuthority",
@@ -2294,6 +2182,82 @@ class MockLidoTransferContractEvent(ContractEvent):
         )
 
 
+class MockLidoTransferSharesContractEvent(ContractEvent):
+    """ContractEvent for TransferShares."""
+
+    # super() get_logs and create_filter methods are generic, while our version adds values & types
+    # pylint: disable=arguments-differ
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(self, *argument_names: tuple[str]) -> None:
+        super().__init__(*argument_names)
+
+    def get_logs(  # type: ignore
+        self: "MockLidoTransferSharesContractEvent",
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    @classmethod
+    def get_logs(  # type: ignore
+        cls: Type["MockLidoTransferSharesContractEvent"],
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier | None = None,
+        block_hash: HexBytes | None = None,
+    ) -> Iterable[EventData]:
+        return cast(
+            Iterable[EventData],
+            super().get_logs(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, block_hash=block_hash
+            ),
+        )
+
+    def create_filter(  # type: ignore
+        self: "MockLidoTransferSharesContractEvent",
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+    @classmethod
+    def create_filter(  # type: ignore
+        cls: Type["MockLidoTransferSharesContractEvent"],
+        *,  # PEP 3102
+        argument_filters: dict[str, Any] | None = None,
+        fromBlock: BlockIdentifier | None = None,
+        toBlock: BlockIdentifier = "latest",
+        address: ChecksumAddress | None = None,
+        topics: Sequence[Any] | None = None,
+    ) -> LogFilter:
+        return cast(
+            LogFilter,
+            super().create_filter(
+                argument_filters=argument_filters, fromBlock=fromBlock, toBlock=toBlock, address=address, topics=topics
+            ),
+        )
+
+
 class MockLidoUserRoleUpdatedContractEvent(ContractEvent):
     """ContractEvent for UserRoleUpdated."""
 
@@ -2387,6 +2351,8 @@ class MockLidoContractEvents(ContractEvents):
 
     Transfer: MockLidoTransferContractEvent
 
+    TransferShares: MockLidoTransferSharesContractEvent
+
     UserRoleUpdated: MockLidoUserRoleUpdatedContractEvent
 
     def __init__(
@@ -2446,12 +2412,400 @@ class MockLidoContractEvents(ContractEvents):
                 "Transfer", w3=w3, contract_abi=abi, address=address, event_name="Transfer"
             ),
         )
+        self.TransferShares = cast(
+            MockLidoTransferSharesContractEvent,
+            MockLidoTransferSharesContractEvent.factory(
+                "TransferShares", w3=w3, contract_abi=abi, address=address, event_name="TransferShares"
+            ),
+        )
         self.UserRoleUpdated = cast(
             MockLidoUserRoleUpdatedContractEvent,
             MockLidoUserRoleUpdatedContractEvent.factory(
                 "UserRoleUpdated", w3=w3, contract_abi=abi, address=address, event_name="UserRoleUpdated"
             ),
         )
+
+
+class MockLidoERC20InsufficientAllowanceContractError:
+    """ContractError for ERC20InsufficientAllowance."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "MockLidoERC20InsufficientAllowanceContractError",
+    ) -> None:
+        self.selector = "0xfb8f41b2"
+        self.signature = "ERC20InsufficientAllowance(address,uint256,uint256)"
+
+    def decode_error_data(  # type: ignore
+        self: "MockLidoERC20InsufficientAllowanceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InsufficientAllowance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["MockLidoERC20InsufficientAllowanceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InsufficientAllowance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class MockLidoERC20InsufficientBalanceContractError:
+    """ContractError for ERC20InsufficientBalance."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "MockLidoERC20InsufficientBalanceContractError",
+    ) -> None:
+        self.selector = "0xe450d38c"
+        self.signature = "ERC20InsufficientBalance(address,uint256,uint256)"
+
+    def decode_error_data(  # type: ignore
+        self: "MockLidoERC20InsufficientBalanceContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InsufficientBalance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["MockLidoERC20InsufficientBalanceContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InsufficientBalance" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class MockLidoERC20InvalidApproverContractError:
+    """ContractError for ERC20InvalidApprover."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "MockLidoERC20InvalidApproverContractError",
+    ) -> None:
+        self.selector = "0xe602df05"
+        self.signature = "ERC20InvalidApprover(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "MockLidoERC20InvalidApproverContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InvalidApprover" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["MockLidoERC20InvalidApproverContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InvalidApprover" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class MockLidoERC20InvalidReceiverContractError:
+    """ContractError for ERC20InvalidReceiver."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "MockLidoERC20InvalidReceiverContractError",
+    ) -> None:
+        self.selector = "0xec442f05"
+        self.signature = "ERC20InvalidReceiver(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "MockLidoERC20InvalidReceiverContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InvalidReceiver" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["MockLidoERC20InvalidReceiverContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InvalidReceiver" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class MockLidoERC20InvalidSenderContractError:
+    """ContractError for ERC20InvalidSender."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "MockLidoERC20InvalidSenderContractError",
+    ) -> None:
+        self.selector = "0x96c6fd1e"
+        self.signature = "ERC20InvalidSender(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "MockLidoERC20InvalidSenderContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [item for item in mocklido_abi if item.get("name") == "ERC20InvalidSender" and item.get("type") == "error"][
+                0
+            ],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["MockLidoERC20InvalidSenderContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [item for item in mocklido_abi if item.get("name") == "ERC20InvalidSender" and item.get("type") == "error"][
+                0
+            ],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class MockLidoERC20InvalidSpenderContractError:
+    """ContractError for ERC20InvalidSpender."""
+
+    # @combomethod destroys return types, so we are redefining functions as both class and instance
+    # pylint: disable=function-redefined
+
+    # 4 byte error selector
+    selector: str
+    # error signature, i.e. CustomError(uint256,bool)
+    signature: str
+
+    # pylint: disable=useless-parent-delegation
+    def __init__(
+        self: "MockLidoERC20InvalidSpenderContractError",
+    ) -> None:
+        self.selector = "0x94280d62"
+        self.signature = "ERC20InvalidSpender(address)"
+
+    def decode_error_data(  # type: ignore
+        self: "MockLidoERC20InvalidSpenderContractError",
+        data: HexBytes,
+        # TODO: instead of returning a tuple, return a dataclass with the input names and types just like we do for functions
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InvalidSpender" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+    @classmethod
+    def decode_error_data(  # type: ignore
+        cls: Type["MockLidoERC20InvalidSpenderContractError"],
+        data: HexBytes,
+    ) -> tuple[Any, ...]:
+        """Decodes error data returns from a smart contract."""
+        error_abi = cast(
+            ABIFunction,
+            [
+                item
+                for item in mocklido_abi
+                if item.get("name") == "ERC20InvalidSpender" and item.get("type") == "error"
+            ][0],
+        )
+        types = get_abi_input_types(error_abi)
+        abi_codec = ABICodec(default_registry)
+        decoded = abi_codec.decode(types, data)
+        return decoded
+
+
+class MockLidoContractErrors:
+    """ContractErrors for the MockLido contract."""
+
+    ERC20InsufficientAllowance: MockLidoERC20InsufficientAllowanceContractError
+
+    ERC20InsufficientBalance: MockLidoERC20InsufficientBalanceContractError
+
+    ERC20InvalidApprover: MockLidoERC20InvalidApproverContractError
+
+    ERC20InvalidReceiver: MockLidoERC20InvalidReceiverContractError
+
+    ERC20InvalidSender: MockLidoERC20InvalidSenderContractError
+
+    ERC20InvalidSpender: MockLidoERC20InvalidSpenderContractError
+
+    def __init__(
+        self,
+    ) -> None:
+        self.ERC20InsufficientAllowance = MockLidoERC20InsufficientAllowanceContractError()
+        self.ERC20InsufficientBalance = MockLidoERC20InsufficientBalanceContractError()
+        self.ERC20InvalidApprover = MockLidoERC20InvalidApproverContractError()
+        self.ERC20InvalidReceiver = MockLidoERC20InvalidReceiverContractError()
+        self.ERC20InvalidSender = MockLidoERC20InvalidSenderContractError()
+        self.ERC20InvalidSpender = MockLidoERC20InvalidSpenderContractError()
+
+        self._all = [
+            self.ERC20InsufficientAllowance,
+            self.ERC20InsufficientBalance,
+            self.ERC20InvalidApprover,
+            self.ERC20InvalidReceiver,
+            self.ERC20InvalidSender,
+            self.ERC20InvalidSpender,
+        ]
+
+    def decode_custom_error(self, data: str) -> tuple[Any, ...]:
+        """Decodes a custom contract error."""
+        selector = data[:10]
+        for err in self._all:
+            if err.selector == selector:
+                return err.decode_error_data(HexBytes(data[10:]))
+
+        raise ValueError(f"MockLido does not have a selector matching {selector}")
 
 
 mocklido_abi: ABI = cast(
@@ -2469,17 +2823,10 @@ mocklido_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "DOMAIN_SEPARATOR",
-            "inputs": [],
-            "outputs": [{"name": "", "type": "bytes32", "internalType": "bytes32"}],
-            "stateMutability": "view",
-        },
-        {
-            "type": "function",
             "name": "allowance",
             "inputs": [
-                {"name": "", "type": "address", "internalType": "address"},
-                {"name": "", "type": "address", "internalType": "address"},
+                {"name": "owner", "type": "address", "internalType": "address"},
+                {"name": "spender", "type": "address", "internalType": "address"},
             ],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
@@ -2489,7 +2836,7 @@ mocklido_abi: ABI = cast(
             "name": "approve",
             "inputs": [
                 {"name": "spender", "type": "address", "internalType": "address"},
-                {"name": "amount", "type": "uint256", "internalType": "uint256"},
+                {"name": "value", "type": "uint256", "internalType": "uint256"},
             ],
             "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
             "stateMutability": "nonpayable",
@@ -2504,7 +2851,7 @@ mocklido_abi: ABI = cast(
         {
             "type": "function",
             "name": "balanceOf",
-            "inputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "inputs": [{"name": "_owner", "type": "address", "internalType": "address"}],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
         },
@@ -2519,8 +2866,8 @@ mocklido_abi: ABI = cast(
             "type": "function",
             "name": "burn",
             "inputs": [
-                {"name": "destination", "type": "address", "internalType": "address"},
-                {"name": "amount", "type": "uint256", "internalType": "uint256"},
+                {"name": "_target", "type": "address", "internalType": "address"},
+                {"name": "_amount", "type": "uint256", "internalType": "uint256"},
             ],
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -2658,8 +3005,8 @@ mocklido_abi: ABI = cast(
             "type": "function",
             "name": "mint",
             "inputs": [
-                {"name": "destination", "type": "address", "internalType": "address"},
-                {"name": "amount", "type": "uint256", "internalType": "uint256"},
+                {"name": "_recipient", "type": "address", "internalType": "address"},
+                {"name": "_amount", "type": "uint256", "internalType": "uint256"},
             ],
             "outputs": [],
             "stateMutability": "nonpayable",
@@ -2667,7 +3014,7 @@ mocklido_abi: ABI = cast(
         {
             "type": "function",
             "name": "mint",
-            "inputs": [{"name": "amount", "type": "uint256", "internalType": "uint256"}],
+            "inputs": [{"name": "_amount", "type": "uint256", "internalType": "uint256"}],
             "outputs": [],
             "stateMutability": "nonpayable",
         },
@@ -2680,32 +3027,10 @@ mocklido_abi: ABI = cast(
         },
         {
             "type": "function",
-            "name": "nonces",
-            "inputs": [{"name": "", "type": "address", "internalType": "address"}],
-            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
-            "stateMutability": "view",
-        },
-        {
-            "type": "function",
             "name": "owner",
             "inputs": [],
             "outputs": [{"name": "", "type": "address", "internalType": "address"}],
             "stateMutability": "view",
-        },
-        {
-            "type": "function",
-            "name": "permit",
-            "inputs": [
-                {"name": "owner", "type": "address", "internalType": "address"},
-                {"name": "spender", "type": "address", "internalType": "address"},
-                {"name": "value", "type": "uint256", "internalType": "uint256"},
-                {"name": "deadline", "type": "uint256", "internalType": "uint256"},
-                {"name": "v", "type": "uint8", "internalType": "uint8"},
-                {"name": "r", "type": "bytes32", "internalType": "bytes32"},
-                {"name": "s", "type": "bytes32", "internalType": "bytes32"},
-            ],
-            "outputs": [],
-            "stateMutability": "nonpayable",
         },
         {
             "type": "function",
@@ -2783,7 +3108,7 @@ mocklido_abi: ABI = cast(
         {
             "type": "function",
             "name": "sharesOf",
-            "inputs": [{"name": "_account", "type": "address", "internalType": "address"}],
+            "inputs": [{"name": "", "type": "address", "internalType": "address"}],
             "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
             "stateMutability": "view",
         },
@@ -2812,8 +3137,8 @@ mocklido_abi: ABI = cast(
             "type": "function",
             "name": "transfer",
             "inputs": [
-                {"name": "to", "type": "address", "internalType": "address"},
-                {"name": "amount", "type": "uint256", "internalType": "uint256"},
+                {"name": "_recipient", "type": "address", "internalType": "address"},
+                {"name": "_amount", "type": "uint256", "internalType": "uint256"},
             ],
             "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
             "stateMutability": "nonpayable",
@@ -2822,9 +3147,9 @@ mocklido_abi: ABI = cast(
             "type": "function",
             "name": "transferFrom",
             "inputs": [
-                {"name": "from", "type": "address", "internalType": "address"},
-                {"name": "to", "type": "address", "internalType": "address"},
-                {"name": "amount", "type": "uint256", "internalType": "uint256"},
+                {"name": "_sender", "type": "address", "internalType": "address"},
+                {"name": "_recipient", "type": "address", "internalType": "address"},
+                {"name": "_amount", "type": "uint256", "internalType": "uint256"},
             ],
             "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
             "stateMutability": "nonpayable",
@@ -2863,7 +3188,7 @@ mocklido_abi: ABI = cast(
             "inputs": [
                 {"name": "owner", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "spender", "type": "address", "indexed": True, "internalType": "address"},
-                {"name": "amount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "value", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
         },
@@ -2919,7 +3244,17 @@ mocklido_abi: ABI = cast(
             "inputs": [
                 {"name": "from", "type": "address", "indexed": True, "internalType": "address"},
                 {"name": "to", "type": "address", "indexed": True, "internalType": "address"},
-                {"name": "amount", "type": "uint256", "indexed": False, "internalType": "uint256"},
+                {"name": "value", "type": "uint256", "indexed": False, "internalType": "uint256"},
+            ],
+            "anonymous": False,
+        },
+        {
+            "type": "event",
+            "name": "TransferShares",
+            "inputs": [
+                {"name": "from", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "to", "type": "address", "indexed": True, "internalType": "address"},
+                {"name": "sharesValue", "type": "uint256", "indexed": False, "internalType": "uint256"},
             ],
             "anonymous": False,
         },
@@ -2933,11 +3268,49 @@ mocklido_abi: ABI = cast(
             ],
             "anonymous": False,
         },
+        {
+            "type": "error",
+            "name": "ERC20InsufficientAllowance",
+            "inputs": [
+                {"name": "spender", "type": "address", "internalType": "address"},
+                {"name": "allowance", "type": "uint256", "internalType": "uint256"},
+                {"name": "needed", "type": "uint256", "internalType": "uint256"},
+            ],
+        },
+        {
+            "type": "error",
+            "name": "ERC20InsufficientBalance",
+            "inputs": [
+                {"name": "sender", "type": "address", "internalType": "address"},
+                {"name": "balance", "type": "uint256", "internalType": "uint256"},
+                {"name": "needed", "type": "uint256", "internalType": "uint256"},
+            ],
+        },
+        {
+            "type": "error",
+            "name": "ERC20InvalidApprover",
+            "inputs": [{"name": "approver", "type": "address", "internalType": "address"}],
+        },
+        {
+            "type": "error",
+            "name": "ERC20InvalidReceiver",
+            "inputs": [{"name": "receiver", "type": "address", "internalType": "address"}],
+        },
+        {
+            "type": "error",
+            "name": "ERC20InvalidSender",
+            "inputs": [{"name": "sender", "type": "address", "internalType": "address"}],
+        },
+        {
+            "type": "error",
+            "name": "ERC20InvalidSpender",
+            "inputs": [{"name": "spender", "type": "address", "internalType": "address"}],
+        },
     ],
 )
 # pylint: disable=line-too-long
 mocklido_bytecode = HexStr(
-    "0x6101006040523480156200001257600080fd5b506040516200258e3803806200258e833981016040819052620000359162000223565b6040518060400160405280601781526020017f4c6971756964207374616b656420457468657220322e30000000000000000000815250604051806040016040528060058152602001640e6e88aa8960db1b8152506012858585823081818989898260009081620000a6919062000326565b506001620000b5838262000326565b5060ff81166080524660a052620000cb62000187565b60c0525050600680546001600160a01b038086166001600160a01b03199283168117909355600780549186169190921617905560405190915033907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a36040516001600160a01b0382169033907fa3396fd7f6e0a21b50e5089d2da70d5ac0a3bbbd1f617a93f134b7638998019890600090a35050505090151560e052600c55505050600e94909455505042600f5550620004709050565b60007f8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f6000604051620001bb9190620003f2565b6040805191829003822060208301939093528101919091527fc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc660608201524660808201523060a082015260c00160405160208183030381529060405280519060200120905090565b600080600080608085870312156200023a57600080fd5b845160208601519094506001600160a01b03811681146200025a57600080fd5b604086015190935080151581146200027157600080fd5b6060959095015193969295505050565b634e487b7160e01b600052604160045260246000fd5b600181811c90821680620002ac57607f821691505b602082108103620002cd57634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156200032157600081815260208120601f850160051c81016020861015620002fc5750805b601f850160051c820191505b818110156200031d5782815560010162000308565b5050505b505050565b81516001600160401b0381111562000342576200034262000281565b6200035a8162000353845462000297565b84620002d3565b602080601f831160018114620003925760008415620003795750858301515b600019600386901b1c1916600185901b1785556200031d565b600085815260208120601f198616915b82811015620003c357888601518255948401946001909101908401620003a2565b5085821015620003e25787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6000808354620004028162000297565b600182811680156200041d5760018114620004335762000464565b60ff198416875282151583028701945062000464565b8760005260208060002060005b858110156200045b5781548a82015290840190820162000440565b50505082870194505b50929695505050505050565b60805160a05160c05160e0516120b3620004db600039600081816105f50152818161094d01528181610a6701528181610d0901528181610de001528181610e7f01528181611236015261129801526000610da501526000610d700152600061042f01526120b36000f3fe6080604052600436106102885760003560e01c8063728b952b1161015a578063aed30777116100c1578063dd62ed3e1161007a578063dd62ed3e1461081f578063e688747b14610857578063ea7ca2761461089a578063ed0d0efb146108de578063f2fde38b1461090b578063f5eb42dc1461092b57600080fd5b8063aed3077714610744578063b700961314610774578063bf7e214f14610794578063c53a3985146107b4578063d5002f2e146107ea578063d505accf146107ff57600080fd5b80638fcb4e5b116101135780638fcb4e5b1461069c57806395d89b41146106bc5780639dc29fac146106d1578063a0712d68146106f1578063a1903eab14610711578063a9059cbb1461072457600080fd5b8063728b952b146105a35780637a28fb88146105c35780637a8c63b5146105e35780637a9e5e4b146106175780637ecebe00146106375780638da5cb5b1461066457600080fd5b8063313ce567116101fe57806347b714e0116101b757806347b714e0146104ed5780634b5159da14610501578063679aefce1461052157806367aff484146105365780636d7804591461055657806370a082311461057657600080fd5b8063313ce5671461041d57806334fcf437146104635780633644e5151461048357806337cfdaca1461049857806340c10f19146104ad57806342966c68146104cd57600080fd5b80630bade8a4116102505780630bade8a4146103615780630ea9b75b1461039157806318160ddd146103b157806319208451146103c7578063239c70ae146103e757806323b872dd146103fd57600080fd5b806305f05a941461028d57806306a36aee146102af57806306fdde03146102ef578063088a4ed014610311578063095ea7b314610331575b600080fd5b34801561029957600080fd5b506102ad6102a8366004611b19565b61094b565b005b3480156102bb57600080fd5b506102dc6102ca366004611b52565b60096020526000908152604090205481565b6040519081526020015b60405180910390f35b3480156102fb57600080fd5b506103046109d7565b6040516102e69190611b6f565b34801561031d57600080fd5b506102ad61032c366004611bbd565b610a65565b34801561033d57600080fd5b5061035161034c366004611bd6565b610ac2565b60405190151581526020016102e6565b34801561036d57600080fd5b5061035161037c366004611c1f565b600a6020526000908152604090205460ff1681565b34801561039d57600080fd5b506102ad6103ac366004611c4b565b610b2f565b3480156103bd57600080fd5b506102dc60025481565b3480156103d357600080fd5b506102dc6103e2366004611bbd565b610c07565b3480156103f357600080fd5b506102dc600c5481565b34801561040957600080fd5b50610351610418366004611c92565b610c25565b34801561042957600080fd5b506104517f000000000000000000000000000000000000000000000000000000000000000081565b60405160ff90911681526020016102e6565b34801561046f57600080fd5b506102ad61047e366004611bbd565b610d07565b34801561048f57600080fd5b506102dc610d6c565b3480156104a457600080fd5b506102dc610dc7565b3480156104b957600080fd5b506102ad6104c8366004611bd6565b610dde565b3480156104d957600080fd5b506102ad6104e8366004611bbd565b610e7d565b3480156104f957600080fd5b5060006102dc565b34801561050d57600080fd5b506102ad61051c366004611cd3565b610ee2565b34801561052d57600080fd5b50600e546102dc565b34801561054257600080fd5b506102ad610551366004611cef565b610f74565b34801561056257600080fd5b506102dc610571366004611c92565b61103c565b34801561058257600080fd5b506102dc610591366004611b52565b60036020526000908152604090205481565b3480156105af57600080fd5b506102ad6105be366004611d1d565b611074565b3480156105cf57600080fd5b506102dc6105de366004611bbd565b6110fd565b3480156105ef57600080fd5b506103517f000000000000000000000000000000000000000000000000000000000000000081565b34801561062357600080fd5b506102ad610632366004611b52565b611112565b34801561064357600080fd5b506102dc610652366004611b52565b60056020526000908152604090205481565b34801561067057600080fd5b50600654610684906001600160a01b031681565b6040516001600160a01b0390911681526020016102e6565b3480156106a857600080fd5b506102dc6106b7366004611bd6565b6111fc565b3480156106c857600080fd5b50610304611227565b3480156106dd57600080fd5b506102ad6106ec366004611bd6565b611234565b3480156106fd57600080fd5b506102ad61070c366004611bbd565b611296565b6102dc61071f366004611b52565b611331565b34801561073057600080fd5b5061035161073f366004611bd6565b6113bd565b34801561075057600080fd5b5061035161075f366004611b52565b600d6020526000908152604090205460ff1681565b34801561078057600080fd5b5061035161078f366004611d4b565b611423565b3480156107a057600080fd5b50600754610684906001600160a01b031681565b3480156107c057600080fd5b506106846107cf366004611b52565b6008602052600090815260409020546001600160a01b031681565b3480156107f657600080fd5b506011546102dc565b34801561080b57600080fd5b506102ad61081a366004611d92565b611521565b34801561082b57600080fd5b506102dc61083a366004611d1d565b600460209081526000928352604080842090915290825290205481565b34801561086357600080fd5b50610351610872366004611e00565b6001600160e01b0319166000908152600b602052604090205460ff919091161c600116151590565b3480156108a657600080fd5b506103516108b5366004611e33565b6001600160a01b0391909116600090815260096020526040902054600160ff9092161c16151590565b3480156108ea57600080fd5b506102dc6108f9366004611c1f565b600b6020526000908152604090205481565b34801561091757600080fd5b506102ad610926366004611b52565b611765565b34801561093757600080fd5b506102dc610946366004611b52565b6117e3565b7f0000000000000000000000000000000000000000000000000000000000000000156109ac57610987336000356001600160e01b031916611818565b6109ac5760405162461bcd60e51b81526004016109a390611e5f565b60405180910390fd5b6001600160a01b03919091166000908152600d60205260409020805460ff1916911515919091179055565b600080546109e490611e96565b80601f0160208091040260200160405190810160405280929190818152602001828054610a1090611e96565b8015610a5d5780601f10610a3257610100808354040283529160200191610a5d565b820191906000526020600020905b815481529060010190602001808311610a4057829003601f168201915b505050505081565b7f000000000000000000000000000000000000000000000000000000000000000015610abd57610aa1336000356001600160e01b031916611818565b610abd5760405162461bcd60e51b81526004016109a390611e5f565b600c55565b3360008181526004602090815260408083206001600160a01b038716808552925280832085905551919290917f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92590610b1d9086815260200190565b60405180910390a35060015b92915050565b610b45336000356001600160e01b031916611818565b610b615760405162461bcd60e51b81526004016109a390611ed0565b8015610b91576001600160e01b031982166000908152600b602052604090208054600160ff86161b179055610bb8565b6001600160e01b031982166000908152600b602052604090208054600160ff86161b191690555b816001600160e01b0319168360ff167fbfe16b2c35ce23dfd1ab0e7b5d086a10060c9b52d1574e1680c881b3b3a2b15183604051610bfa911515815260200190565b60405180910390a3505050565b6000610b29610c1560115490565b610c1d610dc7565b8491906118c2565b6001600160a01b03831660009081526004602090815260408083203384529091528120546000198114610c8157610c5c8382611f0c565b6001600160a01b03861660009081526004602090815260408083203384529091529020555b6001600160a01b03851660009081526003602052604081208054859290610ca9908490611f0c565b90915550506001600160a01b038085166000818152600360205260409081902080548701905551909187169060008051602061205e83398151915290610cf29087815260200190565b60405180910390a360019150505b9392505050565b7f000000000000000000000000000000000000000000000000000000000000000015610d5f57610d43336000356001600160e01b031916611818565b610d5f5760405162461bcd60e51b81526004016109a390611e5f565b610d676118e0565b600e55565b60007f00000000000000000000000000000000000000000000000000000000000000004614610da257610d9d611911565b905090565b507f000000000000000000000000000000000000000000000000000000000000000090565b6000610dd16119ab565b601054610d9d9190611f1f565b7f000000000000000000000000000000000000000000000000000000000000000015610e3657610e1a336000356001600160e01b031916611818565b610e365760405162461bcd60e51b81526004016109a390611e5f565b336000908152600d602052604090205460ff16610e6f57600c54811115610e6f5760405162461bcd60e51b81526004016109a390611f32565b610e798282611a10565b5050565b7f000000000000000000000000000000000000000000000000000000000000000015610ed557610eb9336000356001600160e01b031916611818565b610ed55760405162461bcd60e51b81526004016109a390611e5f565b610edf3382611a6a565b50565b610ef8336000356001600160e01b031916611818565b610f145760405162461bcd60e51b81526004016109a390611ed0565b6001600160e01b031982166000818152600a6020908152604091829020805460ff191685151590811790915591519182527f36d28126bef21a4f3765d7fcb7c45cead463ae4c41094ef3b771ede598544103910160405180910390a25050565b610f8a336000356001600160e01b031916611818565b610fa65760405162461bcd60e51b81526004016109a390611ed0565b8015610fd5576001600160a01b03831660009081526009602052604090208054600160ff85161b179055610ffb565b6001600160a01b03831660009081526009602052604090208054600160ff85161b191690555b8160ff16836001600160a01b03167f4c9bdd0c8e073eb5eda2250b18d8e5121ff27b62064fbeeeed4869bb99bc5bf283604051610bfa911515815260200190565b60006110466118e0565b600061105e611053610dc7565b6011548591906118c2565b905061106b858583610c25565b50949350505050565b61108a336000356001600160e01b031916611818565b6110a65760405162461bcd60e51b81526004016109a390611ed0565b6001600160a01b0382811660008181526008602052604080822080546001600160a01b0319169486169485179055517fa4908e11a5f895b13d51526c331ac93cdd30e59772361c5d07874eb36bff20659190a35050565b6000610b2961110a610dc7565b601154610c1d565b6006546001600160a01b03163314806111a7575060075460405163b700961360e01b81526001600160a01b039091169063b70096139061116690339030906001600160e01b03196000351690600401611f74565b602060405180830381865afa158015611183573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906111a79190611fa1565b6111b057600080fd5b600780546001600160a01b0319166001600160a01b03831690811790915560405133907fa3396fd7f6e0a21b50e5089d2da70d5ac0a3bbbd1f617a93f134b7638998019890600090a350565b60006112066118e0565b6000611213611053610dc7565b905061121f84826113bd565b509392505050565b600180546109e490611e96565b7f00000000000000000000000000000000000000000000000000000000000000001561128c57611270336000356001600160e01b031916611818565b61128c5760405162461bcd60e51b81526004016109a390611e5f565b610e798282611a6a565b7f0000000000000000000000000000000000000000000000000000000000000000156112ee576112d2336000356001600160e01b031916611818565b6112ee5760405162461bcd60e51b81526004016109a390611e5f565b336000908152600d602052604090205460ff1661132757600c548111156113275760405162461bcd60e51b81526004016109a390611f32565b610edf3382611a10565b600061133b6118e0565b60115460000361136257346011819055601081905561135b903390611a10565b5034919050565b600061138061137060115490565b611378610dc7565b3491906118c2565b905034601060008282546113949190611f1f565b9250508190555080601160008282546113ad9190611f1f565b90915550610b2990503334611a10565b336000908152600360205260408120805483919083906113de908490611f0c565b90915550506001600160a01b0383166000818152600360205260409081902080548501905551339060008051602061205e83398151915290610b1d9086815260200190565b6001600160a01b0380831660009081526008602052604081205490911680156114bf5760405163b700961360e01b81526001600160a01b0382169063b70096139061147690889088908890600401611f74565b602060405180830381865afa158015611493573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906114b79190611fa1565b915050610d00565b6001600160e01b031983166000908152600a602052604090205460ff168061151857506001600160e01b031983166000908152600b60209081526040808320546001600160a01b03891684526009909252909120541615155b95945050505050565b428410156115715760405162461bcd60e51b815260206004820152601760248201527f5045524d49545f444541444c494e455f4558504952454400000000000000000060448201526064016109a3565b6000600161157d610d6c565b6001600160a01b038a811660008181526005602090815260409182902080546001810190915582517f6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c98184015280840194909452938d166060840152608083018c905260a083019390935260c08083018b90528151808403909101815260e08301909152805192019190912061190160f01b6101008301526101028201929092526101228101919091526101420160408051601f198184030181528282528051602091820120600084529083018083525260ff871690820152606081018590526080810184905260a0016020604051602081039080840390855afa158015611689573d6000803e3d6000fd5b5050604051601f1901519150506001600160a01b038116158015906116bf5750876001600160a01b0316816001600160a01b0316145b6116fc5760405162461bcd60e51b815260206004820152600e60248201526d24a72b20a624a22fa9a4a3a722a960911b60448201526064016109a3565b6001600160a01b0390811660009081526004602090815260408083208a8516808552908352928190208990555188815291928a16917f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925910160405180910390a350505050505050565b61177b336000356001600160e01b031916611818565b6117975760405162461bcd60e51b81526004016109a390611ed0565b600680546001600160a01b0319166001600160a01b03831690811790915560405133907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e090600090a350565b6001600160a01b038116600090815260036020526040812054610d0061180860115490565b611810610dc7565b8391906118c2565b6007546000906001600160a01b031680158015906118a2575060405163b700961360e01b81526001600160a01b0382169063b70096139061186190879030908890600401611f74565b602060405180830381865afa15801561187e573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906118a29190611fa1565b806118ba57506006546001600160a01b038581169116145b949350505050565b60008260001904841183021582026118d957600080fd5b5091020490565b60006118ea6119ab565b9050801561190a5780601060008282546119049190611f1f565b90915550505b5042600f55565b60007f8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f60006040516119439190611fbe565b6040805191829003822060208301939093528101919091527fc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc660608201524660808201523060a082015260c00160405160208183030381529060405280519060200120905090565b6000600e546000036119bd5750600090565b600f544210156119cd5750600090565b60006119eb6301e13380600f54426119e59190611f0c565b90611acc565b90506000610d00611a0783600e54611ae190919063ffffffff16565b60105490611ae1565b8060026000828254611a229190611f1f565b90915550506001600160a01b03821660008181526003602090815260408083208054860190555184815260008051602061205e83398151915291015b60405180910390a35050565b6001600160a01b03821660009081526003602052604081208054839290611a92908490611f0c565b90915550506002805482900390556040518181526000906001600160a01b0384169060008051602061205e83398151915290602001611a5e565b6000610d0083670de0b6b3a7640000846118c2565b6000610d008383670de0b6b3a76400006118c2565b6001600160a01b0381168114610edf57600080fd5b8015158114610edf57600080fd5b60008060408385031215611b2c57600080fd5b8235611b3781611af6565b91506020830135611b4781611b0b565b809150509250929050565b600060208284031215611b6457600080fd5b8135610d0081611af6565b600060208083528351808285015260005b81811015611b9c57858101830151858201604001528201611b80565b506000604082860101526040601f19601f8301168501019250505092915050565b600060208284031215611bcf57600080fd5b5035919050565b60008060408385031215611be957600080fd5b8235611bf481611af6565b946020939093013593505050565b80356001600160e01b031981168114611c1a57600080fd5b919050565b600060208284031215611c3157600080fd5b610d0082611c02565b803560ff81168114611c1a57600080fd5b600080600060608486031215611c6057600080fd5b611c6984611c3a565b9250611c7760208501611c02565b91506040840135611c8781611b0b565b809150509250925092565b600080600060608486031215611ca757600080fd5b8335611cb281611af6565b92506020840135611cc281611af6565b929592945050506040919091013590565b60008060408385031215611ce657600080fd5b611b3783611c02565b600080600060608486031215611d0457600080fd5b8335611d0f81611af6565b9250611c7760208501611c3a565b60008060408385031215611d3057600080fd5b8235611d3b81611af6565b91506020830135611b4781611af6565b600080600060608486031215611d6057600080fd5b8335611d6b81611af6565b92506020840135611d7b81611af6565b9150611d8960408501611c02565b90509250925092565b600080600080600080600060e0888a031215611dad57600080fd5b8735611db881611af6565b96506020880135611dc881611af6565b95506040880135945060608801359350611de460808901611c3a565b925060a0880135915060c0880135905092959891949750929550565b60008060408385031215611e1357600080fd5b611e1c83611c3a565b9150611e2a60208401611c02565b90509250929050565b60008060408385031215611e4657600080fd5b8235611e5181611af6565b9150611e2a60208401611c3a565b6020808252601d908201527f45524332304d696e7461626c653a206e6f7420617574686f72697a6564000000604082015260600190565b600181811c90821680611eaa57607f821691505b602082108103611eca57634e487b7160e01b600052602260045260246000fd5b50919050565b6020808252600c908201526b15539055551213d49256915160a21b604082015260600190565b634e487b7160e01b600052601160045260246000fd5b81810381811115610b2957610b29611ef6565b80820180821115610b2957610b29611ef6565b60208082526022908201527f45524332304d696e7461626c653a20496e76616c6964206d696e7420616d6f756040820152611b9d60f21b606082015260800190565b6001600160a01b0393841681529190921660208201526001600160e01b0319909116604082015260600190565b600060208284031215611fb357600080fd5b8151610d0081611b0b565b600080835481600182811c915080831680611fda57607f831692505b60208084108203611ff957634e487b7160e01b86526022600452602486fd5b81801561200d57600181146120225761204f565b60ff198616895284151585028901965061204f565b60008a81526020902060005b868110156120475781548b82015290850190830161202e565b505084890196505b50949897505050505050505056feddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa2646970667358221220fc3c712ddd13fc9c5ff0c6f29f11a6d5d8e16c4d24399d7fb995be24ab2601c264736f6c63430008140033"
+    "0x60a06040523480156200001157600080fd5b50604051620021f9380380620021f983398101604081905262000034916200015c565b604080518082018252601781527f4c6971756964207374616b656420457468657220322e300000000000000000006020808301919091528251808401845260058152640e6e88aa8960db1b91810191909152600080546001600160a01b03199081166001600160a01b038916908117835560018054309316831790559451939492938893919284928492909133917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a36040516001600160a01b0382169033907fa3396fd7f6e0a21b50e5089d2da70d5ac0a3bbbd1f617a93f134b7638998019890600090a35050505081600990816200013191906200025f565b50600a6200014082826200025f565b505050600d9390935542600e55151560805250600b556200032b565b600080600080608085870312156200017357600080fd5b845160208601519094506001600160a01b03811681146200019357600080fd5b60408601519093508015158114620001aa57600080fd5b6060959095015193969295505050565b634e487b7160e01b600052604160045260246000fd5b600181811c90821680620001e557607f821691505b6020821081036200020657634e487b7160e01b600052602260045260246000fd5b50919050565b601f8211156200025a57600081815260208120601f850160051c81016020861015620002355750805b601f850160051c820191505b81811015620002565782815560010162000241565b5050505b505050565b81516001600160401b038111156200027b576200027b620001ba565b62000293816200028c8454620001d0565b846200020c565b602080601f831160018114620002cb5760008415620002b25750858301515b600019600386901b1c1916600185901b17855562000256565b600085815260208120601f198616915b82811015620002fc57888601518255948401946001909101908401620002db565b50858210156200031b5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b608051611e816200037860003960008181610587015281816108ad015281816109cb01528181610bc401528181610c4501528181610cab0152818161114c01526111ae0152611e816000f3fe6080604052600436106102675760003560e01c8063728b952b11610144578063aed30777116100b6578063dd62ed3e1161007a578063dd62ed3e14610764578063e688747b146107aa578063ea7ca276146107ed578063ed0d0efb14610831578063f2fde38b1461085e578063f5eb42dc1461087e57600080fd5b8063aed30777146106a9578063b7009613146106d9578063bf7e214f146106f9578063c53a398514610719578063d5002f2e1461074f57600080fd5b80638fcb4e5b116101085780638fcb4e5b1461060157806395d89b41146106215780639dc29fac14610636578063a0712d6814610656578063a1903eab14610676578063a9059cbb1461068957600080fd5b8063728b952b146105355780637a28fb88146105555780637a8c63b5146105755780637a9e5e4b146105a95780638da5cb5b146105c957600080fd5b8063313ce567116101dd57806347b714e0116101a157806347b714e01461048c5780634b5159da146104a0578063679aefce146104c057806367aff484146104d55780636d780459146104f557806370a082311461051557600080fd5b8063313ce567146103fb57806334fcf4371461041757806337cfdaca1461043757806340c10f191461044c57806342966c681461046c57600080fd5b80630bade8a41161022f5780630bade8a4146103405780630ea9b75b1461037057806318160ddd1461039057806319208451146103a5578063239c70ae146103c557806323b872dd146103db57600080fd5b806305f05a941461026c57806306a36aee1461028e57806306fdde03146102ce578063088a4ed0146102f0578063095ea7b314610310575b600080fd5b34801561027857600080fd5b5061028c610287366004611a16565b6108ab565b005b34801561029a57600080fd5b506102bb6102a9366004611a4f565b60036020526000908152604090205481565b6040519081526020015b60405180910390f35b3480156102da57600080fd5b506102e3610937565b6040516102c59190611a6c565b3480156102fc57600080fd5b5061028c61030b366004611aba565b6109c9565b34801561031c57600080fd5b5061033061032b366004611ad3565b610a26565b60405190151581526020016102c5565b34801561034c57600080fd5b5061033061035b366004611b1c565b60046020526000908152604090205460ff1681565b34801561037c57600080fd5b5061028c61038b366004611b48565b610a40565b34801561039c57600080fd5b506008546102bb565b3480156103b157600080fd5b506102bb6103c0366004611aba565b610b18565b3480156103d157600080fd5b506102bb600b5481565b3480156103e757600080fd5b506103306103f6366004611b8f565b610b36565b34801561040757600080fd5b50604051601281526020016102c5565b34801561042357600080fd5b5061028c610432366004611aba565b610bc2565b34801561044357600080fd5b506102bb610c27565b34801561045857600080fd5b5061028c610467366004611ad3565b610c43565b34801561047857600080fd5b5061028c610487366004611aba565b610ca9565b34801561049857600080fd5b5060006102bb565b3480156104ac57600080fd5b5061028c6104bb366004611bd0565b610d0e565b3480156104cc57600080fd5b50600d546102bb565b3480156104e157600080fd5b5061028c6104f0366004611bec565b610da0565b34801561050157600080fd5b506102bb610510366004611b8f565b610e68565b34801561052157600080fd5b506102bb610530366004611a4f565b610eff565b34801561054157600080fd5b5061028c610550366004611c1a565b610f21565b34801561056157600080fd5b506102bb610570366004611aba565b610faa565b34801561058157600080fd5b506103307f000000000000000000000000000000000000000000000000000000000000000081565b3480156105b557600080fd5b5061028c6105c4366004611a4f565b610fbf565b3480156105d557600080fd5b506000546105e9906001600160a01b031681565b6040516001600160a01b0390911681526020016102c5565b34801561060d57600080fd5b506102bb61061c366004611ad3565b6110a9565b34801561062d57600080fd5b506102e361113b565b34801561064257600080fd5b5061028c610651366004611ad3565b61114a565b34801561066257600080fd5b5061028c610671366004611aba565b6111ac565b6102bb610684366004611a4f565b61120e565b34801561069557600080fd5b506103306106a4366004611ad3565b6112d3565b3480156106b557600080fd5b506103306106c4366004611a4f565b600c6020526000908152604090205460ff1681565b3480156106e557600080fd5b506103306106f4366004611c48565b61135b565b34801561070557600080fd5b506001546105e9906001600160a01b031681565b34801561072557600080fd5b506105e9610734366004611a4f565b6002602052600090815260409020546001600160a01b031681565b34801561075b57600080fd5b506010546102bb565b34801561077057600080fd5b506102bb61077f366004611c1a565b6001600160a01b03918216600090815260076020908152604080832093909416825291909152205490565b3480156107b657600080fd5b506103306107c5366004611c8f565b6001600160e01b03191660009081526005602052604090205460ff919091161c600116151590565b3480156107f957600080fd5b50610330610808366004611cc2565b6001600160a01b0391909116600090815260036020526040902054600160ff9092161c16151590565b34801561083d57600080fd5b506102bb61084c366004611b1c565b60056020526000908152604090205481565b34801561086a57600080fd5b5061028c610879366004611a4f565b611459565b34801561088a57600080fd5b506102bb610899366004611a4f565b60116020526000908152604090205481565b7f00000000000000000000000000000000000000000000000000000000000000001561090c576108e7336000356001600160e01b0319166114d6565b61090c5760405162461bcd60e51b815260040161090390611cee565b60405180910390fd5b6001600160a01b03919091166000908152600c60205260409020805460ff1916911515919091179055565b60606009805461094690611d25565b80601f016020809104026020016040519081016040528092919081815260200182805461097290611d25565b80156109bf5780601f10610994576101008083540402835291602001916109bf565b820191906000526020600020905b8154815290600101906020018083116109a257829003601f168201915b5050505050905090565b7f000000000000000000000000000000000000000000000000000000000000000015610a2157610a05336000356001600160e01b0319166114d6565b610a215760405162461bcd60e51b815260040161090390611cee565b600b55565b600033610a34818585611580565b60019150505b92915050565b610a56336000356001600160e01b0319166114d6565b610a725760405162461bcd60e51b815260040161090390611d5f565b8015610aa2576001600160e01b0319821660009081526005602052604090208054600160ff86161b179055610ac9565b6001600160e01b0319821660009081526005602052604090208054600160ff86161b191690555b816001600160e01b0319168360ff167fbfe16b2c35ce23dfd1ab0e7b5d086a10060c9b52d1574e1680c881b3b3a2b15183604051610b0b911515815260200190565b60405180910390a3505050565b6000610a3a610b2660105490565b610b2e610c27565b849190611592565b6000610b406115b0565b6000610b4b83610b18565b9050610b588585836115e1565b506040518381526001600160a01b038516903390600080516020611e2c8339815191529060200160405180910390a36040518181526001600160a01b038516903390600080516020611e0c8339815191529060200160405180910390a360019150505b9392505050565b7f000000000000000000000000000000000000000000000000000000000000000015610c1a57610bfe336000356001600160e01b0319166114d6565b610c1a5760405162461bcd60e51b815260040161090390611cee565b610c226115b0565b600d55565b6000610c3161165d565b600f54610c3e9190611d9b565b905090565b7f000000000000000000000000000000000000000000000000000000000000000015610c9b57610c7f336000356001600160e01b0319166114d6565b610c9b5760405162461bcd60e51b815260040161090390611cee565b610ca582826116c2565b5050565b7f000000000000000000000000000000000000000000000000000000000000000015610d0157610ce5336000356001600160e01b0319166114d6565b610d015760405162461bcd60e51b815260040161090390611cee565b610d0b33826117b4565b50565b610d24336000356001600160e01b0319166114d6565b610d405760405162461bcd60e51b815260040161090390611d5f565b6001600160e01b03198216600081815260046020908152604091829020805460ff191685151590811790915591519182527f36d28126bef21a4f3765d7fcb7c45cead463ae4c41094ef3b771ede598544103910160405180910390a25050565b610db6336000356001600160e01b0319166114d6565b610dd25760405162461bcd60e51b815260040161090390611d5f565b8015610e01576001600160a01b03831660009081526003602052604090208054600160ff85161b179055610e27565b6001600160a01b03831660009081526003602052604090208054600160ff85161b191690555b8160ff16836001600160a01b03167f4c9bdd0c8e073eb5eda2250b18d8e5121ff27b62064fbeeeed4869bb99bc5bf283604051610b0b911515815260200190565b6000610e726115b0565b6000610e7f8585856115e1565b9050836001600160a01b0316856001600160a01b0316600080516020611e2c83398151915283604051610eb491815260200190565b60405180910390a3836001600160a01b0316856001600160a01b0316600080516020611e0c83398151915285604051610eef91815260200190565b60405180910390a3949350505050565b6001600160a01b038116600090815260116020526040812054610a3a90610faa565b610f37336000356001600160e01b0319166114d6565b610f535760405162461bcd60e51b815260040161090390611d5f565b6001600160a01b0382811660008181526002602052604080822080546001600160a01b0319169486169485179055517fa4908e11a5f895b13d51526c331ac93cdd30e59772361c5d07874eb36bff20659190a35050565b6000610a3a610fb7610c27565b601054610b2e565b6000546001600160a01b0316331480611054575060015460405163b700961360e01b81526001600160a01b039091169063b70096139061101390339030906001600160e01b03196000351690600401611dae565b602060405180830381865afa158015611030573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906110549190611ddb565b61105d57600080fd5b600180546001600160a01b0319166001600160a01b03831690811790915560405133907fa3396fd7f6e0a21b50e5089d2da70d5ac0a3bbbd1f617a93f134b7638998019890600090a350565b60006110b36115b0565b60006110bf848461181e565b9050836001600160a01b0316336001600160a01b0316600080516020611e2c833981519152836040516110f491815260200190565b60405180910390a36040518381526001600160a01b038516903390600080516020611e0c8339815191529060200160405180910390a361113383610faa565b949350505050565b6060600a805461094690611d25565b7f0000000000000000000000000000000000000000000000000000000000000000156111a257611186336000356001600160e01b0319166114d6565b6111a25760405162461bcd60e51b815260040161090390611cee565b610ca582826117b4565b7f000000000000000000000000000000000000000000000000000000000000000015611204576111e8336000356001600160e01b0319166114d6565b6112045760405162461bcd60e51b815260040161090390611cee565b610d0b33826116c2565b60006112186115b0565b60105460000361125857346010819055600f819055336000908152601160205260408120805490919061124c908490611d9b565b90915550349392505050565b600061127661126660105490565b61126e610c27565b349190611592565b905034600f600082825461128a9190611d9b565b9250508190555080601060008282546112a39190611d9b565b909155505033600090815260116020526040812080548392906112c7908490611d9b565b90915550909392505050565b60006112dd6115b0565b60006112e883610b18565b90506112f4848261181e565b506040518381526001600160a01b038516903390600080516020611e2c8339815191529060200160405180910390a36040518181526001600160a01b038516903390600080516020611e0c8339815191529060200160405180910390a35060019392505050565b6001600160a01b0380831660009081526002602052604081205490911680156113f75760405163b700961360e01b81526001600160a01b0382169063b7009613906113ae90889088908890600401611dae565b602060405180830381865afa1580156113cb573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906113ef9190611ddb565b915050610bbb565b6001600160e01b0319831660009081526004602052604090205460ff168061145057506001600160e01b031983166000908152600560209081526040808320546001600160a01b03891684526003909252909120541615155b95945050505050565b61146f336000356001600160e01b0319166114d6565b61148b5760405162461bcd60e51b815260040161090390611d5f565b600080546001600160a01b0319166001600160a01b0383169081178255604051909133917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a350565b6001546000906001600160a01b03168015801590611560575060405163b700961360e01b81526001600160a01b0382169063b70096139061151f90879030908890600401611dae565b602060405180830381865afa15801561153c573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906115609190611ddb565b8061113357506000546001600160a01b0385811691161491505092915050565b61158d838383600161187b565b505050565b60008260001904841183021582026115a957600080fd5b5091020490565b60006115ba61165d565b905080156115da5780600f60008282546115d49190611d9b565b90915550505b5042600e55565b6000806115ed83610faa565b90506115fa853383611951565b6001600160a01b03851660009081526011602052604081208054859290611622908490611df8565b90915550506001600160a01b0384166000908152601160205260408120805485929061164f908490611d9b565b909155509095945050505050565b6000600d5460000361166f5750600090565b600e5442101561167f5750600090565b600061169d6301e13380600e54426116979190611df8565b906119c9565b90506000610bbb6116b983600d546119de90919063ffffffff16565b600f54906119de565b336000908152600c602052604090205460ff1661172b57600b5481111561172b5760405162461bcd60e51b815260206004820152601d60248201527f4d6f636b4c69646f3a20496e76616c6964206d696e7420616d6f756e740000006044820152606401610903565b600061173660105490565b600003611744575080611750565b61174d82610b18565b90505b6001600160a01b03831660009081526011602052604081208054839290611778908490611d9b565b9250508190555081600f60008282546117919190611d9b565b9250508190555080601060008282546117aa9190611d9b565b9091555050505050565b60006117bf82610b18565b6001600160a01b0384166000908152601160205260408120805492935083929091906117ec908490611df8565b9250508190555081600f60008282546118059190611df8565b9250508190555080601060008282546117aa9190611df8565b3360009081526011602052604081208054839190839061183f908490611df8565b90915550506001600160a01b0383166000908152601160205260408120805484929061186c908490611d9b565b90915550610bbb905082610faa565b6001600160a01b0384166118a55760405163e602df0560e01b815260006004820152602401610903565b6001600160a01b0383166118cf57604051634a1406b160e11b815260006004820152602401610903565b6001600160a01b038085166000908152600760209081526040808320938716835292905220829055801561194b57826001600160a01b0316846001600160a01b03167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b9258460405161194291815260200190565b60405180910390a35b50505050565b6001600160a01b03838116600090815260076020908152604080832093861683529290522054600019811461194b57818110156119ba57604051637dc7a0d960e11b81526001600160a01b03841660048201526024810182905260448101839052606401610903565b61194b8484848403600061187b565b6000610bbb83670de0b6b3a764000084611592565b6000610bbb8383670de0b6b3a7640000611592565b6001600160a01b0381168114610d0b57600080fd5b8015158114610d0b57600080fd5b60008060408385031215611a2957600080fd5b8235611a34816119f3565b91506020830135611a4481611a08565b809150509250929050565b600060208284031215611a6157600080fd5b8135610bbb816119f3565b600060208083528351808285015260005b81811015611a9957858101830151858201604001528201611a7d565b506000604082860101526040601f19601f8301168501019250505092915050565b600060208284031215611acc57600080fd5b5035919050565b60008060408385031215611ae657600080fd5b8235611af1816119f3565b946020939093013593505050565b80356001600160e01b031981168114611b1757600080fd5b919050565b600060208284031215611b2e57600080fd5b610bbb82611aff565b803560ff81168114611b1757600080fd5b600080600060608486031215611b5d57600080fd5b611b6684611b37565b9250611b7460208501611aff565b91506040840135611b8481611a08565b809150509250925092565b600080600060608486031215611ba457600080fd5b8335611baf816119f3565b92506020840135611bbf816119f3565b929592945050506040919091013590565b60008060408385031215611be357600080fd5b611a3483611aff565b600080600060608486031215611c0157600080fd5b8335611c0c816119f3565b9250611b7460208501611b37565b60008060408385031215611c2d57600080fd5b8235611c38816119f3565b91506020830135611a44816119f3565b600080600060608486031215611c5d57600080fd5b8335611c68816119f3565b92506020840135611c78816119f3565b9150611c8660408501611aff565b90509250925092565b60008060408385031215611ca257600080fd5b611cab83611b37565b9150611cb960208401611aff565b90509250929050565b60008060408385031215611cd557600080fd5b8235611ce0816119f3565b9150611cb960208401611b37565b60208082526018908201527f4d6f636b4c69646f3a206e6f7420617574686f72697a65640000000000000000604082015260600190565b600181811c90821680611d3957607f821691505b602082108103611d5957634e487b7160e01b600052602260045260246000fd5b50919050565b6020808252600c908201526b15539055551213d49256915160a21b604082015260600190565b634e487b7160e01b600052601160045260246000fd5b80820180821115610a3a57610a3a611d85565b6001600160a01b0393841681529190921660208201526001600160e01b0319909116604082015260600190565b600060208284031215611ded57600080fd5b8151610bbb81611a08565b81810381811115610a3a57610a3a611d8556fe9d9c909296d9c674451c0c24f02cb64981eb3b727f99865939192f880a755dcbddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa2646970667358221220fa2d0a741edf7fd8641101efc4b82f2e57064238f502ec2a513d708cace19cf964736f6c63430008140033"
 )
 
 
@@ -2953,11 +3326,14 @@ class MockLidoContract(Contract):
             super().__init__(address=address)
             self.functions = MockLidoContractFunctions(mocklido_abi, self.w3, address)  # type: ignore
             self.events = MockLidoContractEvents(mocklido_abi, self.w3, address)  # type: ignore
+            self.errors = MockLidoContractErrors()
 
         except FallbackNotFound:
             print("Fallback function not found. Continuing...")
 
     events: MockLidoContractEvents
+
+    errors: MockLidoContractErrors = MockLidoContractErrors()
 
     functions: MockLidoContractFunctions
 
@@ -3058,5 +3434,6 @@ class MockLidoContract(Contract):
         """
         contract = super().factory(w3, class_name, **kwargs)
         contract.functions = MockLidoContractFunctions(mocklido_abi, w3, None)
+        contract.errors = MockLidoContractErrors()
 
         return contract
