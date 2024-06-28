@@ -24,7 +24,7 @@ TOTAL_SHARES_EPSILON = 1e-9
 
 
 def run_invariant_checks(
-    latest_block: BlockData,
+    check_block_data: BlockData,
     interface: HyperdriveReadInterface,
     log_to_rollbar: bool = True,
     pool_name: str | None = None,
@@ -44,7 +44,7 @@ def run_invariant_checks(
 
     Arguments
     ---------
-    latest_block: BlockData
+    check_block_data: BlockData
         The current block to be tested.
     interface: HyperdriveReadInterface
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
@@ -68,7 +68,7 @@ def run_invariant_checks(
     # pylint: disable=too-many-arguments
 
     # Get the variables to check & check each invariant
-    pool_state = interface.get_hyperdrive_state(latest_block)
+    pool_state = interface.get_hyperdrive_state(check_block_data)
 
     results: list[InvariantCheckResults]
     if lp_share_price_test is None:

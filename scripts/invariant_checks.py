@@ -21,7 +21,9 @@ from typing import NamedTuple, Sequence
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
+
+LOOKBACK_BLOCK_LIMIT = 1000
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -67,11 +69,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Get deployed pools on first iteration
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
 
+    start_block_number = chain.block_data().get("number", None)
+    if start_block_number is None:
+        raise AssertionError("Block has no number.")
+
     # Run the loop forever
     while True:
         # Check for new pools
-        latest_block = chain.block_data()
-        latest_block_number = latest_block.get("number", None)
+        latest_block_number = chain.block_number()
         if latest_block_number is None:
             raise AssertionError("Block has no number.")
 
@@ -91,18 +96,30 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Update block number
         last_executed_block_number = latest_block_number
         # Loop through all deployed pools and run invariant checks
-        for hyperdrive_obj in deployed_pools:
-            name = hyperdrive_obj.name
-            logging.info("Running invariance check on %s", name)
-            # This returns the list of all exceptions for failed checks,
-            # we ignore them here since we don't want to stop the script,
-            # we just log them.
-            _ = run_invariant_checks(
-                latest_block=latest_block,
-                interface=hyperdrive_obj.interface,
-                log_to_rollbar=log_to_rollbar,
-                pool_name=name,
-            )
+
+        for check_block in range(start_block_number, latest_block_number + 1):
+            print(check_block)
+            if (latest_block_number - start_block_number) > LOOKBACK_BLOCK_LIMIT:
+                error_message = "Unable to keep up with invariant checks."
+                logging.error(error_message)
+                log_rollbar_message(error_message, logging.ERROR)
+                break
+
+            check_block_data = chain.block_data(block_identifier=check_block)
+            for hyperdrive_obj in deployed_pools:
+                name = hyperdrive_obj.name
+                logging.info("Running invariance check on %s", name)
+                # This returns the list of all exceptions for failed checks,
+                # we ignore them here since we don't want to stop the script,
+                # we just log them.
+                _ = run_invariant_checks(
+                    check_block_data=check_block_data,
+                    interface=hyperdrive_obj.interface,
+                    log_to_rollbar=log_to_rollbar,
+                    pool_name=name,
+                )
+
+        start_block_number = latest_block_number + 1
 
 
 class Args(NamedTuple):

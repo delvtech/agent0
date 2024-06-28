@@ -296,7 +296,7 @@ def run_fuzz_bots(
                     raise AssertionError("Block has no number.")
                 # pylint: disable=protected-access
                 fuzz_exceptions = run_invariant_checks(
-                    latest_block=latest_block,
+                    check_block_data=latest_block,
                     interface=hyperdrive_pool.interface,
                     log_to_rollbar=log_to_rollbar,
                     lp_share_price_test=lp_share_price_test,
