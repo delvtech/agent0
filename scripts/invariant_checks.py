@@ -64,49 +64,40 @@ def main(argv: Sequence[str] | None = None) -> None:
     rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
-    # We calculate how many blocks we should wait before checking for a new pool
-    last_executed_block_number = (
-        -parsed_args.pool_check_sleep_blocks - 1
-    )  # no matter what we will run the check the first time
+    # Keeps track of the last time we checked for a new pool
     last_pool_check_block_number = 0
-    # Get deployed pools on first iteration
-    deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-
-    start_block_number = chain.block_data().get("number", None)
-    if start_block_number is None:
-        raise AssertionError("Block has no number.")
+    # Keeps track of the last time we executed an invariant check
+    # Start from the current block - 1 to ensure we check on the first iteration
+    batch_check_start_block = chain.block_number() - 1
 
     # Run the loop forever
     while True:
         # Check for new pools
         latest_block_number = chain.block_number()
-        if latest_block_number is None:
-            raise AssertionError("Block has no number.")
 
+        # Check if we need to check for new pools
         if latest_block_number > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
             logging.info("Checking for new pools...")
-            # First iteration, get list of deployed pools
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
             last_pool_check_block_number = latest_block_number
 
-        # Ensure we check on every block, and wait for a new mined block
-        # Throw a critical if it gets behind
-        if not latest_block_number > last_executed_block_number:
+        # If a block hasn't ticked, we sleep
+        if batch_check_start_block >= latest_block_number:
             # take a nap
             time.sleep(1)
             continue
 
-        # Update block number
-        last_executed_block_number = latest_block_number
+        # Look at the number of blocks we need to iterate through
+        # If it's past the limit, log an error and catch up by
+        # skipping to the latest block
+        if (latest_block_number - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
+            error_message = "Unable to keep up with invariant checks. Skipping check blocks."
+            logging.error(error_message)
+            log_rollbar_message(error_message, logging.ERROR)
+            batch_check_start_block = latest_block_number
+
         # Loop through all deployed pools and run invariant checks
-
-        for check_block in range(start_block_number, latest_block_number + 1):
-            if (latest_block_number - start_block_number) > LOOKBACK_BLOCK_LIMIT:
-                error_message = "Unable to keep up with invariant checks."
-                logging.error(error_message)
-                log_rollbar_message(error_message, logging.ERROR)
-                break
-
+        for check_block in range(batch_check_start_block, latest_block_number + 1):
             check_block_data = chain.block_data(block_identifier=check_block)
             partials = [
                 partial(
@@ -122,7 +113,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             logging.info("Running invariant checks for block %s on pools %s", check_block, deployed_pools)
             asyncio.run(async_runner(return_exceptions=False, funcs=partials))
 
-        start_block_number = latest_block_number + 1
+        batch_check_start_block = latest_block_number + 1
 
 
 class Args(NamedTuple):
