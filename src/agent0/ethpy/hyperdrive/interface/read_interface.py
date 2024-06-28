@@ -18,7 +18,13 @@ from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
 )
-from agent0.hypertypes import CheckpointFP, ERC20MintableContract, IHyperdriveContract, MockERC4626Contract
+from agent0.hypertypes import (
+    CheckpointFP,
+    ERC20MintableContract,
+    IHyperdriveContract,
+    MockERC4626Contract,
+    MockLidoContract,
+)
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time
 from ._contract_calls import (
@@ -161,9 +167,9 @@ class HyperdriveReadInterface:
         # the pypechain contract factory happily accepts any address and exposes
         # all functions from that contract. The code will only break if we try to
         # call a non-existent function on the underlying contract address.
-        self.vault_shares_token_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=self.web3)(
-            address=web3.to_checksum_address(vault_shares_token_address)
-        )
+        self.vault_shares_token_contract: MockERC4626Contract | MockLidoContract = MockERC4626Contract.factory(
+            w3=self.web3
+        )(address=web3.to_checksum_address(vault_shares_token_address))
 
         # Agent0 doesn't support eth as base, so if it is, we use the yield token as the base, and
         # calls to trades will use "as_base=False"
@@ -182,6 +188,10 @@ class HyperdriveReadInterface:
         # We look for the vault shares token symbol to determine if the yield contract is steth
         if self.vault_shares_token_contract.functions.symbol().call() == "stETH":
             self.vault_is_steth = True
+            # Redefine the vault shares token contract as the mock lido contract
+            self.vault_shares_token_contract = MockLidoContract.factory(w3=self.web3)(
+                address=web3.to_checksum_address(vault_shares_token_address)
+            )
         else:
             self.vault_is_steth = False
 
@@ -397,7 +407,7 @@ class HyperdriveReadInterface:
         """
         if block_number is None:
             block_number = self.get_block_number(self.get_current_block())
-        return _get_vault_shares(self.vault_shares_token_contract, self.hyperdrive_contract, block_number)
+        return _get_vault_shares(self, self.hyperdrive_contract, block_number)
 
     def get_idle_shares(self, pool_state: PoolState | None) -> FixedPoint:
         """Get the balance of idle shares that the Hyperdrive pool has.
