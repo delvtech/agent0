@@ -81,6 +81,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
             last_pool_check_block_number = latest_block_number
 
+        # TODO ensure we check on every block, and wait for a new mined block
+        # Throw a critical if it gets behind
         if not latest_block_number > last_executed_block_number:
             # take a nap
             time.sleep(parsed_args.invariance_check_sleep_time)
@@ -92,10 +94,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         for hyperdrive_obj in deployed_pools:
             name = hyperdrive_obj.name
             logging.info("Running invariance check on %s", name)
-            run_invariant_checks(
+            # This returns the list of all exceptions for failed checks,
+            # we ignore them here since we don't want to stop the script,
+            # we just log them.
+            _ = run_invariant_checks(
                 latest_block=latest_block,
                 interface=hyperdrive_obj.interface,
-                raise_error_on_failure=False,
                 log_to_rollbar=log_to_rollbar,
                 pool_name=name,
             )
