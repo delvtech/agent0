@@ -246,11 +246,12 @@ def run_checkpoint_bot(
                 if fail_count < FAIL_COUNT_THRESHOLD:
                     logging_str = "Checkpoint transaction failed."
                     log_level = logging.WARNING
-                    logging.warning(logging_str + f" {repr(e)}")
+                    term_logging_str = logging_str + f" {repr(e)}"
                 else:
                     logging_str = f"Checkpoint transaction failed over {FAIL_COUNT_THRESHOLD} times."
                     log_level = logging.CRITICAL
-                    logging.critical(logging_str + f" {repr(e)}")
+                    term_logging_str = logging_str + f" {repr(e)}"
+                logging.log(log_level, term_logging_str)
 
                 if log_to_rollbar:
                     log_rollbar_exception(
