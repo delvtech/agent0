@@ -67,7 +67,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Keeps track of the last time we checked for a new pool
     last_pool_check_block_number = 0
     # Keeps track of the last time we executed an invariant check
-    # Start from the current block - 1 to ensure we check on the first iteration
     batch_check_start_block = chain.block_number()
 
     # Run the loop forever
