@@ -1,6 +1,6 @@
 [project]
 name = "agent0"
-version = "0.21.8"
+version = "0.21.9"
 # Authors are the current, primary stewards of the repo
 # contributors can be found on github
 authors = [
@@ -33,7 +33,7 @@ dependencies = [
     "flask",
     "flask-expects-json",
     "hexbytes",
-    "hyperdrivepy==0.16.1",
+    "hyperdrivepy==0.16.2",
     "ipython",
     "matplotlib",
     "mplfinance",
