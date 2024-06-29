@@ -15,6 +15,13 @@ from fixedpointmath import FixedPoint
 class BaseHyperdriveEvent:
     """The base hyperdrive event."""
 
+    # While these values are not part of the events in hyperdrive,
+    # we add them here as they might be useful for tracking down transactions.
+    block_number: int
+    """The block number of the transaction."""
+    transaction_hash: str
+    """The output hash of the transaction."""
+
     # Expose the name of the object
     __name__: str = "BaseHyperdriveEvent"
 

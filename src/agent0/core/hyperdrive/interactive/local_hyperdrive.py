@@ -482,7 +482,7 @@ class LocalHyperdrive(Hyperdrive):
 
         try:
             # Adding in explicit retires here to avoid setting the global retry
-            tx_receipt = self.interface.create_checkpoint(
+            checkpoint_event = self.interface.create_checkpoint(
                 self.chain.get_deployer_account(),
                 checkpoint_time=checkpoint_time,
                 gas_limit=gas_limit,
@@ -494,14 +494,7 @@ class LocalHyperdrive(Hyperdrive):
         # We don't call `_build_event_obj_from_tx_receipt` here because
         # it's based on the enum of `HyperdriveActionType`, which creating
         # a checkpoint isn't a trade result
-        return CreateCheckpoint(
-            checkpoint_time=tx_receipt.checkpoint_time,
-            vault_share_price=tx_receipt.vault_share_price,
-            checkpoint_vault_share_price=tx_receipt.checkpoint_vault_share_price,
-            matured_shorts=tx_receipt.matured_shorts,
-            matured_longs=tx_receipt.matured_longs,
-            lp_share_price=tx_receipt.lp_share_price,
-        )
+        return checkpoint_event
 
     ### Database methods
     # These methods expose the underlying chainsync getter methods with minimal processing

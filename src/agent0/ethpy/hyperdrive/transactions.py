@@ -203,7 +203,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         raise AssertionError("Transaction receipt had no logs", f"{tx_receipt=}")
     if len(hyperdrive_event_logs) > 1:
         raise AssertionError("Too many logs found")
-    log_args = hyperdrive_event_logs[0]["args"]
+    event_logs = hyperdrive_event_logs[0]
+    log_args = event_logs["args"]
 
     # Convert solidity types to python types
     values = ["trader", "destination", "provider", "assetId", "checkpointTime", "asBase", "maturityTime"]
@@ -246,6 +247,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
     # Build event objects based on fn_name
     if fn_name == "createCheckpoint":
         out_event = CreateCheckpoint(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             checkpoint_time=event_args_dict["checkpoint_time"],
             vault_share_price=event_args_dict["vault_share_price"],
             checkpoint_vault_share_price=event_args_dict["checkpoint_vault_share_price"],
@@ -255,6 +258,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "openLong":
         out_event = OpenLong(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             trader=Web3.to_checksum_address(event_args_dict["trader"]),
             asset_id=event_args_dict["asset_id"],
             maturity_time=event_args_dict["maturity_time"],
@@ -265,6 +270,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "closeLong":
         out_event = CloseLong(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             trader=Web3.to_checksum_address(event_args_dict["trader"]),
             destination=Web3.to_checksum_address(event_args_dict["destination"]),
             asset_id=event_args_dict["asset_id"],
@@ -276,6 +283,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "openShort":
         out_event = OpenShort(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             trader=Web3.to_checksum_address(event_args_dict["trader"]),
             asset_id=event_args_dict["asset_id"],
             maturity_time=event_args_dict["maturity_time"],
@@ -287,6 +296,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "closeShort":
         out_event = CloseShort(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             trader=Web3.to_checksum_address(event_args_dict["trader"]),
             destination=Web3.to_checksum_address(event_args_dict["destination"]),
             asset_id=event_args_dict["asset_id"],
@@ -299,6 +310,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "addLiquidity":
         out_event = AddLiquidity(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             provider=Web3.to_checksum_address(event_args_dict["provider"]),
             lp_amount=event_args_dict["lp_amount"],
             amount=event_args_dict["amount"],
@@ -308,6 +321,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "removeLiquidity":
         out_event = RemoveLiquidity(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             provider=Web3.to_checksum_address(event_args_dict["provider"]),
             destination=Web3.to_checksum_address(event_args_dict["destination"]),
             lp_amount=event_args_dict["lp_amount"],
@@ -319,6 +334,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
         )
     elif fn_name == "redeemWithdrawalShares":
         out_event = RedeemWithdrawalShares(
+            block_number=event_logs["blockNumber"],
+            transaction_hash=event_logs["transactionHash"].to_0x_hex(),
             provider=Web3.to_checksum_address(event_args_dict["provider"]),
             destination=Web3.to_checksum_address(event_args_dict["destination"]),
             withdrawal_share_amount=event_args_dict["withdrawal_share_amount"],
