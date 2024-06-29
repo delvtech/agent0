@@ -270,6 +270,12 @@ class Chain:
 
     def cleanup(self):
         """General cleanup of resources of interactive hyperdrive."""
+        # If this function is being called, unregister this function as a cleanup function
+        try:
+            atexit.unregister(self.cleanup)
+        except Exception:  # pylint: disable=broad-except
+            pass
+
         db_engine = None
         if self.db_session is not None:
             db_engine = self.db_session.get_bind()
