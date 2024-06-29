@@ -233,6 +233,8 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
 
     # If hyperdrive is steth, convert the amount from lido shares to steth
     if interface.vault_is_steth:
+        # TODO consider not converting the amount to steth here
+
         # The vault share price should be in every event
         if "vault_share_price" not in event_args_dict:
             raise AssertionError("vault_share_price not found in event.")
