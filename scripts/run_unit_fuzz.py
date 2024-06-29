@@ -253,7 +253,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         help="The port to run anvil on.",
     )
     parser.add_argument(
-        "--pause-on-invariance-fail",
+        "--pause-on-fail",
         default=False,
         action="store_true",
         help="Pause execution on invariance failure.",
