@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import time
 from typing import Any, NamedTuple, Sequence
 
 import numpy as np
@@ -53,7 +54,7 @@ def main(argv: Sequence[str] | None = None):
     fuzz_profit_check(*parsed_args)
 
 
-def fuzz_profit_check(chain_config: LocalChain.Config | None = None, steth: bool = False):
+def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, pause_on_fail: bool = False):
     """Fuzzes invariant checks for profit from long and short positions.
 
     Parameters
@@ -62,6 +63,8 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, steth: bool
         Configuration options for the local chain.
     steth: bool
         Whether to use steth instead of erc4626
+    pause_on_fail: bool
+        If True, pause on test failure.
     """
     # pylint: disable=too-many-statements
 
@@ -215,6 +218,12 @@ def fuzz_profit_check(chain_config: LocalChain.Config | None = None, steth: bool
             log_to_rollbar=True,
             rollbar_data=rollbar_data,
         )
+        if pause_on_fail:
+            logging.error("Pausing pool (port %s) on crash %s", chain_config.chain_port, repr(error))
+            while True:
+                time.sleep(1000000)
+
+
         chain.cleanup()
         raise error
     chain.cleanup()

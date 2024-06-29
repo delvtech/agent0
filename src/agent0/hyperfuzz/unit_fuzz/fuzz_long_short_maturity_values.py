@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import time
 from typing import Any, NamedTuple, Sequence
 
 import numpy as np
@@ -56,8 +57,9 @@ def fuzz_long_short_maturity_values(
     num_trades: int,
     long_maturity_vals_epsilon: float,
     short_maturity_vals_epsilon: float,
-    chain_config: LocalChain.Config | None = None,
+    chain_config: LocalChain.Config,
     steth: bool = False,
+    pause_on_fail: bool = False,
 ):
     """Does fuzzy invariant checks on closing longs and shorts past maturity.
 
@@ -73,7 +75,10 @@ def fuzz_long_short_maturity_values(
         Configuration options for the local chain.
     steth: bool
         Whether to use steth instead of erc4626
+    pause_on_fail: bool
+        If True, pause on test failure.
     """
+    # pylint: disable=too-many-arguments
 
     # Parameters for local chain initialization, defines defaults in constructor
     # set a large block time so i can manually control when it ticks
@@ -176,6 +181,11 @@ def fuzz_long_short_maturity_values(
                 log_to_rollbar=True,
                 rollbar_data=rollbar_data,
             )
+            if pause_on_fail:
+                logging.error("Pausing pool (port %s) on crash %s", chain_config.chain_port, repr(error))
+                while True:
+                    time.sleep(1000000)
+
             chain.cleanup()
             raise error
 

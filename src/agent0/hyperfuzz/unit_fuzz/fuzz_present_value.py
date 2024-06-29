@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import time
 from dataclasses import asdict
 from typing import Any, NamedTuple, Sequence
 
@@ -56,6 +57,7 @@ def fuzz_present_value(
     test_epsilon: float,
     chain_config: LocalChain.Config,
     steth: bool = False,
+    pause_on_fail: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
@@ -67,6 +69,8 @@ def fuzz_present_value(
         Configuration options for the local chain.
     steth: bool
         Whether to use steth instead of erc4626
+    pause_on_fail: bool
+        Whether to pause on failure.
     """
     chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
         chain_config,
@@ -191,6 +195,11 @@ def fuzz_present_value(
                 log_to_rollbar=True,
                 rollbar_data=rollbar_data,
             )
+            if pause_on_fail:
+                logging.error("Pausing pool (port %s) on crash %s", chain_config.chain_port, repr(error))
+                while True:
+                    time.sleep(1000000)
+
             chain.cleanup()
             raise error
     chain.cleanup()

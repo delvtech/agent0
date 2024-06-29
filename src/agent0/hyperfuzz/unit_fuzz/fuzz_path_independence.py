@@ -35,6 +35,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 from math import perm
 from typing import Any, NamedTuple, Sequence
 
@@ -73,6 +74,7 @@ def fuzz_path_independence(
     present_value_epsilon: float,
     chain_config: LocalChain.Config,
     steth: bool = False,
+    pause_on_fail: bool = False,
 ):
     """Does fuzzy invariant checks for opening and closing longs and shorts.
 
@@ -92,9 +94,12 @@ def fuzz_path_independence(
         Configuration options for the local chain.
     steth: bool
         Whether to use steth instead of erc4626
+    pause_on_fail: bool
+        Whether to pause on failure.
     """
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
 
     # Make sure there exists enough permutations of paths to ensure independent operations
     # plus some buffer
@@ -281,6 +286,11 @@ def fuzz_path_independence(
 
     # If any of the path checks broke, we throw an exception at the very end
     if latest_error is not None:
+        if pause_on_fail:
+            logging.error("Pausing pool (port %s) on crash %s", chain_config.chain_port, repr(latest_error))
+            while True:
+                time.sleep(1000000)
+
         chain.cleanup()
         raise latest_error
 

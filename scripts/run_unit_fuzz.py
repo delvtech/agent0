@@ -86,6 +86,7 @@ def main(argv: Sequence[str] | None = None):
                 short_maturity_vals_epsilon,
                 chain_config,
                 parsed_args.steth,
+                pause_on_fail=parsed_args.pause_on_fail,
             )
         except FuzzAssertionException:
             pass
@@ -118,6 +119,7 @@ def main(argv: Sequence[str] | None = None):
                 present_value_epsilon=present_value_epsilon,
                 chain_config=chain_config,
                 steth=parsed_args.steth,
+                pause_on_fail=parsed_args.pause_on_fail,
             )
         except FuzzAssertionException:
             pass
@@ -139,7 +141,7 @@ def main(argv: Sequence[str] | None = None):
                 # Try 5 times when creating checkpoints for advancing time transactions
                 advance_time_create_checkpoint_retry_count=5,
             )
-            fuzz_profit_check(chain_config, parsed_args.steth)
+            fuzz_profit_check(chain_config, parsed_args.steth, pause_on_fail=parsed_args.pause_on_fail)
         except FuzzAssertionException:
             pass
         except Exception as e:  # pylint: disable=broad-except
@@ -161,7 +163,12 @@ def main(argv: Sequence[str] | None = None):
                 advance_time_create_checkpoint_retry_count=5,
             )
             present_value_epsilon = 0.01
-            fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config, steth=parsed_args.steth)
+            fuzz_present_value(
+                test_epsilon=present_value_epsilon,
+                chain_config=chain_config,
+                steth=parsed_args.steth,
+                pause_on_fail=parsed_args.pause_on_fail,
+            )
         except FuzzAssertionException:
             pass
         except Exception as e:  # pylint: disable=broad-except
