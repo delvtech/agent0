@@ -12,7 +12,7 @@ from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 
 
 def setup_fuzz(
-    chain_config: LocalChain.Config | None = None,
+    chain_config: LocalChain.Config,
     log_to_rollbar: bool = True,
     crash_log_level: int | None = None,
     fuzz_test_name: str | None = None,

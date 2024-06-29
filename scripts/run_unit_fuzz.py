@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import time
 from typing import NamedTuple, Sequence
 
 from agent0.core.hyperdrive.interactive import LocalChain
@@ -39,18 +40,34 @@ def main(argv: Sequence[str] | None = None):
     num_trades = 10
     num_paths_checked = 20
 
-    if parsed_args.steth:
-        steth_port_add = 1000
+    # Empty string means default
+    if parsed_args.chain_host == "":
+        chain_host = None
     else:
-        steth_port_add = 0
+        chain_host = parsed_args.chain_host
+
+    # Negative port means default
+    if parsed_args.chain_port < 0:
+        if parsed_args.steth:
+            chain_port = 10001
+        else:
+            chain_port = 11001
+    else:
+        chain_port = parsed_args.chain_port
+
+    if parsed_args.steth:
+        db_port = 5434
+    else:
+        db_port = 6434
 
     num_checks = 0
     while True:
         try:
             print("Running long short maturity test")
             chain_config = LocalChain.Config(
-                db_port=5434 + steth_port_add,
-                chain_port=10001 + steth_port_add,
+                db_port=db_port,
+                chain_host=chain_host,
+                chain_port=chain_port,
                 log_filename=".logging/fuzz_long_short_maturity_values.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
@@ -69,6 +86,7 @@ def main(argv: Sequence[str] | None = None):
                 short_maturity_vals_epsilon,
                 chain_config,
                 parsed_args.steth,
+                pause_on_fail=parsed_args.pause_on_fail,
             )
         except FuzzAssertionException:
             pass
@@ -76,11 +94,14 @@ def main(argv: Sequence[str] | None = None):
             print("Unexpected error:\n", repr(e))
             log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
+        time.sleep(1)
+
         try:
             print("Running path independence test")
             chain_config = LocalChain.Config(
-                db_port=5435 + steth_port_add,
-                chain_port=10002 + steth_port_add,
+                db_port=db_port,
+                chain_host=chain_host,
+                chain_port=chain_port,
                 log_filename=".logging/fuzz_path_independence.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
@@ -98,6 +119,7 @@ def main(argv: Sequence[str] | None = None):
                 present_value_epsilon=present_value_epsilon,
                 chain_config=chain_config,
                 steth=parsed_args.steth,
+                pause_on_fail=parsed_args.pause_on_fail,
             )
         except FuzzAssertionException:
             pass
@@ -105,29 +127,35 @@ def main(argv: Sequence[str] | None = None):
             print("Unexpected error:\n", repr(e))
             log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
+        time.sleep(1)
+
         try:
             print("Running fuzz profit test")
             chain_config = LocalChain.Config(
-                db_port=5436 + steth_port_add,
-                chain_port=10003 + steth_port_add,
+                db_port=db_port,
+                chain_host=chain_host,
+                chain_port=chain_port,
                 log_filename=".logging/fuzz_profit_check.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
                 # Try 5 times when creating checkpoints for advancing time transactions
                 advance_time_create_checkpoint_retry_count=5,
             )
-            fuzz_profit_check(chain_config, parsed_args.steth)
+            fuzz_profit_check(chain_config, parsed_args.steth, pause_on_fail=parsed_args.pause_on_fail)
         except FuzzAssertionException:
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
             log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
 
+        time.sleep(1)
+
         try:
             print("Running fuzz present value test")
             chain_config = LocalChain.Config(
-                db_port=5437 + steth_port_add,
-                chain_port=10004 + steth_port_add,
+                db_port=db_port,
+                chain_host=chain_host,
+                chain_port=chain_port,
                 log_filename=".logging/fuzz_present_value.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
@@ -135,12 +163,19 @@ def main(argv: Sequence[str] | None = None):
                 advance_time_create_checkpoint_retry_count=5,
             )
             present_value_epsilon = 0.01
-            fuzz_present_value(test_epsilon=present_value_epsilon, chain_config=chain_config, steth=parsed_args.steth)
+            fuzz_present_value(
+                test_epsilon=present_value_epsilon,
+                chain_config=chain_config,
+                steth=parsed_args.steth,
+                pause_on_fail=parsed_args.pause_on_fail,
+            )
         except FuzzAssertionException:
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
             log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
+
+        time.sleep(1)
 
         num_checks += 1
         if parsed_args.number_of_runs > 0 and num_checks >= parsed_args.number_of_runs:
@@ -151,6 +186,9 @@ class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
     number_of_runs: int
+    pause_on_fail: bool
+    chain_host: str
+    chain_port: int
     steth: bool
 
 
@@ -169,6 +207,9 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         number_of_runs=namespace.number_of_runs,
+        pause_on_fail=namespace.pause_on_fail,
+        chain_host=namespace.chain_host,
+        chain_port=namespace.chain_port,
         steth=namespace.steth,
     )
 
@@ -198,6 +239,24 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=False,
         action="store_true",
         help="Runs fuzz testing on the steth hyperdrive",
+    )
+    parser.add_argument(
+        "--chain-host",
+        type=str,
+        default="",
+        help="The host to bind for the anvil chain. Defaults to 127.0.0.1.",
+    )
+    parser.add_argument(
+        "--chain-port",
+        type=int,
+        default=-1,
+        help="The port to run anvil on.",
+    )
+    parser.add_argument(
+        "--pause-on-fail",
+        default=False,
+        action="store_true",
+        help="Pause execution on invariance failure.",
     )
     # Use system arguments if none were passed
     if argv is None:
