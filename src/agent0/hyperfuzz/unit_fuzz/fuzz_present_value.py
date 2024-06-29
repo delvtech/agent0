@@ -196,7 +196,8 @@ def fuzz_present_value(
                 rollbar_data=rollbar_data,
             )
             if pause_on_fail:
-                logging.error("Pausing pool (port %s) on crash %s", chain_config.chain_port, repr(error))
+                # We don't log info from logging, so we print to ensure this shows up
+                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(error)}")
                 while True:
                     time.sleep(1000000)
 

@@ -287,7 +287,8 @@ def fuzz_path_independence(
     # If any of the path checks broke, we throw an exception at the very end
     if latest_error is not None:
         if pause_on_fail:
-            logging.error("Pausing pool (port %s) on crash %s", chain_config.chain_port, repr(latest_error))
+            # We don't log info from logging, so we print to ensure this shows up
+            print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(latest_error)}")
             while True:
                 time.sleep(1000000)
 
