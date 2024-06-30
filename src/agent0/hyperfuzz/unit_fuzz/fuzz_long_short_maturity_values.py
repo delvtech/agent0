@@ -318,7 +318,35 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        actual_long_base_amount = close_trade_event.amount
+        if interactive_hyperdrive.interface.vault_is_steth:
+            # If the underlying vault is steth, there's an inaccuracy with computing
+            # the base amount via `lidoShares * vaultSharePrice`.
+            # Instead, we do a contract call for the conversion for a more accurate value.
+
+            # TODO to keep accounting accurate, we should keep all internal unit in lido shares,
+            # and only convert on anything that is user facing. This isn't ideal however,
+            # because while conversion from steth -> shares in inputs to trades (e.g., openLong)
+            # is relatively straightforward, the conversion from shares -> steth in
+            # analysis is not, and is especially complicated when analysis goes back in the past
+            # (e.g., we want to show historical pnl in units of steth, but we need to know
+            # the share price at the time index). This is especially complicated since
+            # the raw number in steth is changing as well. One fix is to just keep all
+            # user facing output units in lido shares, and add comments on any user
+            # facing functions that the units in analysis and events are in lido shares.
+
+            # Undo lido to steth conversion
+            lido_shares = close_trade_event.amount / close_trade_event.vault_share_price
+            # Use lido contract to make the conversion on the event block
+            steth_amount_in_wei = (
+                interactive_hyperdrive.interface.vault_shares_token_contract.functions.getPooledEthByShares(
+                    lido_shares.scaled_value
+                ).call(block_identifier=close_trade_event.block_number)
+            )
+            actual_long_base_amount = FixedPoint(scaled_value=steth_amount_in_wei)
+
+        else:
+            actual_long_base_amount = close_trade_event.amount
+
         expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
 
         # assert with close event bond amount

@@ -24,6 +24,8 @@ def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
 
 
 def _convert_event_lido_shares_to_steth(events: list[dict[str, Any]]) -> None:
+    # TODO consider not making this conversion and keeping things in lido shares
+
     # NOTE this edits the list of events in place.
     for event in events:
         # We expect all of these fields to exist in the event
