@@ -137,6 +137,10 @@ def _ensure_event_matches_wallet_delta(
         short_chain_balance_comparison_epsilon = FixedPoint(0)
     else:
         # There's known conversion errors in the steth market
+        # TODO this conversion error for chain comparisons
+        # is due to the inaccuracy of converting from lido shares to steth
+        # via the vault share price. The more accurate conversion is to do a
+        # contract call for the conversion.
         event_comparison_epsilon = FixedPoint(scaled_value=10)
         chain_balance_comparison_epsilon = FixedPoint(scaled_value=int(3e6))
         short_chain_balance_comparison_epsilon = FixedPoint(scaled_value=50)
