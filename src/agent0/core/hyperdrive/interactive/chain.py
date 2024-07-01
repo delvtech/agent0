@@ -47,8 +47,8 @@ class Chain:
         """Path and name of the log file. Won't log to file if None. Defaults to None."""
         log_max_bytes: int | None = None
         """Maximum size of the log file in bytes. Defaults to hyperlogs.DEFAULT_LOG_MAXBYTES."""
-        print_log_level: int | None = None
-        """Log level to track. Defaults to hyperlogs.DEFAULT_LOG_LEVEL."""
+        log_level_threshold: int | None = None
+        """Threshold for log level in logging. Defaults to hyperlogs.DEFAULT_LOG_LEVEL."""
         delete_previous_logs: bool = False
         """Whether to delete previous log file if it exists. Defaults to False."""
         log_to_stdout: bool = True
@@ -69,12 +69,14 @@ class Chain:
         """Whether to preview the position before executing a trade. Defaults to False."""
 
         # Logging and crash reporting
-        log_to_rollbar: bool = False
-        """Whether to log crash reports to rollbar. Defaults to False."""
-        rollbar_log_prefix: str | None = None
-        """Additional prefix for this hyperdrive to log to rollbar."""
         crash_log_level: int = logging.ERROR
         """The log level to log crashes at. Defaults to error."""
+        log_to_rollbar: bool = False
+        """Whether to log crash reports to rollbar. Defaults to False."""
+        rollbar_log_level_threshold: int = logging.DEBUG
+        """Threshold for log level in rollbar. Defaults to debug (i.e., log all to rollbar)."""
+        rollbar_log_prefix: str | None = None
+        """Additional prefix for this hyperdrive to log to rollbar."""
         crash_report_additional_info: dict[str, Any] | None = None
         """Additional information to include in the crash report."""
         always_execute_policy_post_action: bool = False
@@ -154,7 +156,7 @@ class Chain:
         setup_logging(
             log_filename=config.log_filename,
             max_bytes=config.log_max_bytes,
-            log_level=config.print_log_level,
+            log_level=config.log_level_threshold,
             delete_previous_logs=config.delete_previous_logs,
             log_stdout=config.log_to_stdout,
             log_format_string=config.log_format_string,
