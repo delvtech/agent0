@@ -78,6 +78,15 @@ def async_get_nonce(web3: Web3, account: LocalAccount) -> Nonce:
     return Nonce(out_nonce)
 
 
+def async_reset_nonce() -> None:
+    """Resets the internal nonce counter."""
+    # Reference global variable here for handling nonce
+    global CURRENT_NONCE  # pylint: disable=global-statement
+
+    with NONCE_LOCK:
+        CURRENT_NONCE = 0
+
+
 def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_time: int) -> bool:
     """Checks whether or not a given checkpoint exists.
 
@@ -242,6 +251,8 @@ def run_checkpoint_bot(
                 )
                 # Reset fail count on successful transaction
                 fail_count = 0
+
+            # Catch all errors here and retry next iteration
             except Exception as e:  # pylint: disable=broad-except
                 if fail_count < FAIL_COUNT_THRESHOLD:
                     logging_str = "Checkpoint transaction failed."
@@ -259,8 +270,11 @@ def run_checkpoint_bot(
                         rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}: {logging_str}",
                     )
 
+                # If any transaction or preview failed, we reset our global nonce counter and depend on the chain's
+                # counter on the next iteration.
+                async_reset_nonce()
+
                 fail_count += 1
-                # Catch all errors here and retry next iteration
                 continue
             logging_str = (
                 f"Pool {pool_name} for {checkpoint_time=}: "
