@@ -69,12 +69,12 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     chain_config = Chain.Config(
         use_existing_postgres=use_existing_postgres,
-        log_level=logging.WARNING,
+        print_log_level=logging.WARNING,
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
         rollbar_log_prefix="remotefuzzbots",
         rng=rng,
-        crash_log_level=logging.CRITICAL,
+        crash_log_level=logging.ERROR,
         crash_report_additional_info={"rng_seed": rng_seed},
         gas_limit=int(1e6),  # Plenty of gas limit for transactions
     )
