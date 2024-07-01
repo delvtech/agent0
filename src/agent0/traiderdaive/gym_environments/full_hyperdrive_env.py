@@ -48,7 +48,6 @@ class FullHyperdriveEnv(gym.Env):
         max_positions_per_type: int = 10
         base_reward_scale: float = 0.0
         position_reward_scale: float = 1
-        window_size: int = 10
         episode_length: int = 200
         # The threshold for the probability of opening and closing orders
         open_threshold: float = 0.5
@@ -107,9 +106,16 @@ class FullHyperdriveEnv(gym.Env):
         self.eval_mode = gym_config.eval_mode
         self.sample_actions = gym_config.sample_actions
         if self.eval_mode:
-            local_chain_config = LocalChain.Config(block_timestamp_interval=12, db_port=5434, chain_port=10001)
+            db_port = 5434
+            chain_port = 10001
         else:
-            local_chain_config = LocalChain.Config(block_timestamp_interval=12, db_port=5435, chain_port=10002)
+            db_port = 5435
+            chain_port = 10002
+
+        local_chain_config = LocalChain.Config(
+            block_timestamp_interval=12, db_port=db_port, chain_port=chain_port, calc_pnl=False
+        )
+
         initial_pool_config = LocalHyperdrive.Config()
         self.chain = LocalChain(local_chain_config)
         self.interactive_hyperdrive = LocalHyperdrive(self.chain, initial_pool_config)
@@ -481,7 +487,7 @@ class FullHyperdriveEnv(gym.Env):
         self._step_count += 1
         terminated = False
 
-        if self._step_count > self.gym_config.episode_length:
+        if self._step_count >= self.gym_config.episode_length:
             terminated = True
 
         # TODO when does the episode stop?
@@ -508,7 +514,7 @@ class FullHyperdriveEnv(gym.Env):
         out_obs["lp_orders"] = np.zeros(2)
 
         # Observation data uses floats
-        rl_bot_wallet = self.rl_bot.get_positions(coerce_float=True)
+        rl_bot_wallet = self.rl_bot.get_positions(coerce_float=True, calc_pnl=True)
 
         if not rl_bot_wallet.empty:
             position_duration = self.interactive_hyperdrive.config.position_duration
@@ -544,7 +550,9 @@ class FullHyperdriveEnv(gym.Env):
     def _calculate_reward(self) -> float:
         # The total delta for this episode
 
-        current_wallet = self.interactive_hyperdrive.get_positions(show_closed_positions=True, coerce_float=True)
+        current_wallet = self.interactive_hyperdrive.get_positions(
+            show_closed_positions=True, calc_pnl=True, coerce_float=True
+        )
         # Filter by rl bot
         rl_bot_wallet = current_wallet[current_wallet["wallet_address"] == self.rl_bot.address]
         # The rl_bot_wallet shows the pnl of all positions
