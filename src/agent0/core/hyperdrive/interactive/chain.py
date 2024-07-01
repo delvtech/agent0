@@ -47,7 +47,7 @@ class Chain:
         """Path and name of the log file. Won't log to file if None. Defaults to None."""
         log_max_bytes: int | None = None
         """Maximum size of the log file in bytes. Defaults to hyperlogs.DEFAULT_LOG_MAXBYTES."""
-        log_level: int | None = None
+        print_log_level: int | None = None
         """Log level to track. Defaults to hyperlogs.DEFAULT_LOG_LEVEL."""
         delete_previous_logs: bool = False
         """Whether to delete previous log file if it exists. Defaults to False."""
@@ -154,7 +154,7 @@ class Chain:
         setup_logging(
             log_filename=config.log_filename,
             max_bytes=config.log_max_bytes,
-            log_level=config.log_level,
+            log_level=config.print_log_level,
             delete_previous_logs=config.delete_previous_logs,
             log_stdout=config.log_to_stdout,
             log_format_string=config.log_format_string,
