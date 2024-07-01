@@ -111,6 +111,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     check_block_data=check_block_data,
                     interface=hyperdrive_obj.interface,
                     log_to_rollbar=log_to_rollbar,
+                    rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
                     pool_name=hyperdrive_obj.name,
                 )
                 for hyperdrive_obj in deployed_pools

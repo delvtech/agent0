@@ -151,6 +151,7 @@ class Random(HyperdriveBasePolicy):
             A list with a single Trade element for opening a Hyperdrive short.
         """
         # Calc max short is crashing, we surround in try catch to log
+        # TODO fix all crashes in calc_max_short and calc_max_long and instead return 0 for max short
         try:
             maximum_trade_amount = interface.calc_max_short(wallet.balance.amount, interface.current_pool_state)
         # TODO pyo3 throws a PanicException here, which is derived from BaseException
@@ -174,7 +175,7 @@ class Random(HyperdriveBasePolicy):
                 logging.WARNING,
                 crash_report_to_file=True,
                 crash_report_file_prefix="",
-                log_to_rollbar=True,
+                log_to_rollbar=False,  # Don't log rust errors to rollbar
             )
             # We don't return a trade here if this fails
             return []
@@ -257,6 +258,7 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for opening a Hyperdrive long.
         """
+        # TODO fix all crashes in calc_max_short and calc_max_long and instead return 0 for max short
         try:
             maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, interface.current_pool_state)
         # TODO pyo3 throws a PanicException here, which is derived from BaseException
@@ -280,7 +282,7 @@ class Random(HyperdriveBasePolicy):
                 logging.WARNING,
                 crash_report_to_file=True,
                 crash_report_file_prefix="",
-                log_to_rollbar=True,
+                log_to_rollbar=False,  # Don't log rust errors to rollbar
             )
             # We don't return a trade here if this fails
             return []

@@ -27,6 +27,7 @@ def run_invariant_checks(
     check_block_data: BlockData,
     interface: HyperdriveReadInterface,
     log_to_rollbar: bool = True,
+    rollbar_log_level_threshold: int | None = None,
     pool_name: str | None = None,
     lp_share_price_test: bool | None = None,
     crash_report_additional_info: dict[str, Any] | None = None,
@@ -50,6 +51,8 @@ def run_invariant_checks(
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
     log_to_rollbar: bool
         If True, log to rollbar if any invariant check fails.
+    rollbar_log_level_threshold: int | None, optional
+        Threshold for logging to rollbar.
     pool_name: str | None
         The name of the pool for crash reporting information.
     lp_share_price_test: bool | None, optional
@@ -66,6 +69,9 @@ def run_invariant_checks(
     # TODO cleanup
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
+
+    if rollbar_log_level_threshold is None:
+        rollbar_log_level_threshold = logging.DEBUG
 
     # Get the variables to check & check each invariant
     pool_state = interface.get_hyperdrive_state(check_block_data)
@@ -154,6 +160,7 @@ def run_invariant_checks(
             crash_report_to_file=True,
             crash_report_file_prefix=crash_report_file_prefix,
             log_to_rollbar=log_to_rollbar,
+            rollbar_log_level_threshold=rollbar_log_level_threshold,
             rollbar_data=rollbar_data,
             rollbar_log_prefix=rollbar_log_prefix,
         )

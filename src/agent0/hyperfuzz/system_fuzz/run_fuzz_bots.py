@@ -299,6 +299,7 @@ def run_fuzz_bots(
                     check_block_data=latest_block,
                     interface=hyperdrive_pool.interface,
                     log_to_rollbar=log_to_rollbar,
+                    rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
                     lp_share_price_test=lp_share_price_test,
                     crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
                 )
