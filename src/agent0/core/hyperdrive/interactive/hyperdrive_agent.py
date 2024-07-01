@@ -663,6 +663,7 @@ class HyperdriveAgent:
                 crash_report_to_file=True,
                 crash_report_file_prefix="interactive_hyperdrive",
                 log_to_rollbar=self.chain.config.log_to_rollbar,
+                rollbar_log_level_threshold=self.chain.config.rollbar_log_level_threshold,
                 rollbar_log_prefix=self.chain.config.rollbar_log_prefix,
                 additional_info=pool._crash_report_additional_info,
             )

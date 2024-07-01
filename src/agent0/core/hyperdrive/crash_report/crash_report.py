@@ -210,6 +210,7 @@ def log_hyperdrive_crash_report(
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,
     log_to_rollbar: bool = False,
+    rollbar_log_level_threshold: int | None = None,
     rollbar_log_prefix: str | None = None,
     rollbar_data: dict | None = None,
     additional_info: dict | None = None,
@@ -233,6 +234,8 @@ def log_hyperdrive_crash_report(
     log_to_rollbar: bool, optional
         If enabled, logs errors to the rollbar service.
         Defaults to False.
+    rollbar_log_level_threshold: int | None, optional
+        Threshold for logging to rollbar. Defaults to DEBUG.
     rollbar_log_prefix: str | None, optional
         The prefix to prepend to rollbar exception messages
     rollbar_data: dict | None, optional
@@ -243,6 +246,8 @@ def log_hyperdrive_crash_report(
     """
     if log_level is None:
         log_level = logging.CRITICAL
+    if rollbar_log_level_threshold is None:
+        rollbar_log_level_threshold = logging.DEBUG
 
     # If we're crash reporting, an exception is expected
     assert trade_result.exception is not None
@@ -350,7 +355,7 @@ def log_hyperdrive_crash_report(
         with open(crash_report_file, "w", encoding="utf-8") as file:
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
 
-    if log_to_rollbar:
+    if log_to_rollbar and (log_level >= rollbar_log_level_threshold):
         if rollbar_data is None:
             # Don't log anvil dump state to rollbar
             dump_obj["anvil_dump_state"] = None  # type: ignore

@@ -84,6 +84,7 @@ def setup_fuzz(
     # We explicitly set some config parameters here
     config.preview_before_trade = True
     config.log_to_rollbar = log_to_rollbar
+    config.rollbar_log_level_threshold = logging.ERROR  # Fuzz only logs errors and above to rollbar
     config.rollbar_log_prefix = fuzz_test_name
     config.crash_log_level = crash_log_level
     config.crash_log_ticker = True

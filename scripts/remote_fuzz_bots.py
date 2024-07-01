@@ -69,7 +69,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     chain_config = Chain.Config(
         use_existing_postgres=use_existing_postgres,
-        print_log_level=logging.WARNING,
+        log_level_threshold=logging.WARNING,
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
         rollbar_log_prefix="remotefuzzbots",

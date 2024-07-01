@@ -193,6 +193,7 @@ def fuzz_present_value(
                 crash_report_to_file=True,
                 crash_report_file_prefix="fuzz_present_value",
                 log_to_rollbar=True,
+                rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
                 rollbar_data=rollbar_data,
             )
             if pause_on_fail:
