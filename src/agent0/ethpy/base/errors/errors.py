@@ -47,6 +47,11 @@ class ContractCallException(Exception):
         self.block_number = block_number
         self.raw_txn = raw_txn
 
+    def __repr__(self):
+        # We overwrite repr here to ensure the orig exception gets printed for
+        # repr(ContractCallException)
+        return f"ContractCallException({self.args + (repr(self.orig_exception),)})"
+
 
 def decode_error_selector_for_contract(error_selector: str, contract: Contract) -> str:
     """Decode the error selector for a contract,
