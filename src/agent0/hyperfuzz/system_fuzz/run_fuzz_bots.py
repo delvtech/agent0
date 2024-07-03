@@ -281,6 +281,8 @@ def run_fuzz_bots(
             if raise_error_on_crash:
                 if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
                     raise exc
+            else:
+                logging.error("Logged %s, continuing", repr(exc))
             # Otherwise, we ignore crashes, we want the bot to keep trading
             # These errors will get logged regardless
 

@@ -100,8 +100,10 @@ def build_crash_trade_result(
     # Best effort to get the crash block number
     if isinstance(exception, ContractCallException) and exception.block_identifier is not None:
         crash_block_number = interface.get_block_number(interface.get_block(exception.block_identifier))
+        crash_block_identifier = exception.block_identifier
     else:
         crash_block_number = interface.get_block_number(interface.get_current_block())
+        crash_block_identifier = crash_block_number
     trade_result.block_number = crash_block_number
 
     ## Check if the exception came from a contract call & determine block number
@@ -129,8 +131,15 @@ def build_crash_trade_result(
     # We trust the caller to provide the correct pool state if it's being passed in.
     if pool_state is None:
         # Get the pool state at the desired block number
+        # If the exception's block identifier is "pending", we need to get the state using a mined block
+        # so we grab the latest
+        if crash_block_identifier == "pending":
+            query_block_id = "latest"
+        else:
+            query_block_id = trade_result.block_number
+
         try:
-            pool_state = interface.get_hyperdrive_state(interface.get_block(trade_result.block_number))
+            pool_state = interface.get_hyperdrive_state(interface.get_block(query_block_id))
         except Exception:  # pylint: disable=broad-except
             pass
 
@@ -153,8 +162,8 @@ def build_crash_trade_result(
         trade_result.block_timestamp = pool_state.block.get("timestamp", None)
         if trade_result.raw_pool_info is not None and trade_result.block_timestamp is not None:
             trade_result.pool_info = asdict(pool_state.pool_info)
-            trade_result.pool_info["timestamp"] = datetime.utcfromtimestamp(trade_result.block_timestamp)
-            trade_result.pool_info["block_number"] = trade_result.block_number
+            trade_result.pool_info["timestamp"] = datetime.fromtimestamp(pool_state.block_time, tz=timezone.utc)
+            trade_result.pool_info["block_number"] = pool_state.block_number
             trade_result.pool_info["total_supply_withdrawal_shares"] = pool_state.total_supply_withdrawal_shares
         else:
             trade_result.pool_info = None
