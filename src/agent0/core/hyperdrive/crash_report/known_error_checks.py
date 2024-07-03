@@ -126,22 +126,9 @@ def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveRe
                 )
 
         case HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-            # If we're crash reporting, pool_info should exist
-            assert trade_result.pool_info is not None
-            ready_to_withdraw = trade_result.pool_info["withdrawal_shares_ready_to_withdraw"]
-            if trade_amount > wallet.withdraw_shares:
-                invalid_balance = True
-                add_arg = (
-                    f"Invalid balance: {trade_type.name} for {trade_amount} withdraw shares, "
-                    f"balance of {wallet.withdraw_shares} withdraw shares."
-                )
-            # Also checking that there are enough withdrawal shares ready to withdraw
-            elif trade_amount > ready_to_withdraw:
-                invalid_balance = True
-                add_arg = (
-                    f"Invalid balance: {trade_type.name} for {trade_amount} withdraw shares, "
-                    f"not enough ready to withdraw shares in pool ({ready_to_withdraw})."
-                )
+            # We can't check if the user has enough withdraw shares to redeem
+            # since the contract function clamps to however much is ready to withdraw.
+            pass
 
         case _:
             assert_never(trade_type)
