@@ -673,12 +673,7 @@ async def async_smart_contract_transact(
 
         except Exception as preview_err:  # pylint: disable=broad-except
             if isinstance(preview_err, ContractCallException):
-                # We add a message to the preview error saying what this error is
-                preview_err.args = ("Retry preview result: ",) + (repr(preview_err.orig_exception),)
-            else:
-                preview_err.args = ("Retry preview result: ",) + (repr(preview_err),)
-
-            # We report both the exception from the transaction and the exception from the preview
+                preview_err.args = ("Retry preview result: ",) + preview_err.args
             retry_preview_exception = preview_err
 
         raise ContractCallException(
@@ -900,16 +895,11 @@ def smart_contract_transact(
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here
-            raise AssertionError("Preview was successful.")  # pylint: disable=raise-missing-from
+            raise ValueError("Preview was successful.")  # pylint: disable=raise-missing-from
 
         except Exception as preview_err:  # pylint: disable=broad-except
             if isinstance(preview_err, ContractCallException):
-                # We add a message to the preview error saying what this error is
-                preview_err.args = ("Retry preview result: ",) + (repr(preview_err.orig_exception),)
-            else:
-                preview_err.args = ("Retry preview result: ",) + (repr(preview_err),)
-
-            # We report both the exception from the transaction and the exception from the preview
+                preview_err.args = ("Retry preview result: ",) + preview_err.args
             retry_preview_exception = preview_err
 
         raise ContractCallException(
