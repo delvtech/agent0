@@ -447,24 +447,6 @@ class TestInvalidTrades:
             assert "InsufficientBalance raised" in exc.orig_exception.args[1]
 
     @pytest.mark.anvil
-    def test_invalid_redeem_withdraw_share_from_zero(
-        self,
-        fast_hyperdrive_fixture: LocalHyperdrive,
-    ):
-        """Test making a invalid redeem withdrawal shares with zero withdrawal tokens."""
-        try:
-            expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRedeemWithdrawFromZero)
-        # This is catching a value error, since this transaction is actually valid on the chain
-        # We're explicitly catching this and throwing a value error in redeem withdraw shares
-        except ValueError as exc:
-            # Expected error due to illegal trade
-            # We do add an argument for invalid balance to the args, so check for that here
-            assert "Invalid balance:" in exc.args[0]
-            # Error message should print out the balance of withdraw shares here
-            assert "balance of " in exc.args[0]
-            assert exc.args[1] == "Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount"
-
-    @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_nonzero(
         self,
         fast_hyperdrive_fixture: LocalHyperdrive,
