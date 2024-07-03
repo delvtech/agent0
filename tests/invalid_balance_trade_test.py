@@ -17,7 +17,6 @@ from agent0.core.hyperdrive.agent import (
     close_short_trade,
     open_long_trade,
     open_short_trade,
-    redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
 from agent0.core.hyperdrive.interactive import LocalHyperdrive
@@ -204,34 +203,6 @@ class InvalidCloseShortFromZero(HyperdriveBasePolicy):
         action_list = [
             close_short_trade(FixedPoint(20_000), maturity_time=1699561146, slippage_tolerance=self.slippage_tolerance)
         ]
-        return action_list, True
-
-
-class InvalidRedeemWithdrawFromZero(HyperdriveBasePolicy):
-    """An agent that submits a redeem withdrawal share with a zero wallet."""
-
-    def action(
-        self, interface: HyperdriveReadInterface, wallet: HyperdriveWallet
-    ) -> tuple[list[Trade[HyperdriveMarketAction]], bool]:
-        """Redeem withdraw shares.
-
-        Arguments
-        ---------
-        interface: HyperdriveReadInterface
-            The trading market interface.
-        wallet: HyperdriveWallet
-            The agent's wallet.
-
-        Returns
-        -------
-        tuple[list[HyperdriveMarketAction], bool]
-            A tuple where the first element is a list of actions,
-            and the second element defines if the agent is done trading
-        """
-        # pylint: disable=unused-argument
-        action_list = []
-        # Redeem non-existent withdrawal shares
-        action_list.append(redeem_withdraw_shares_trade(FixedPoint(20_000)))
         return action_list, True
 
 
