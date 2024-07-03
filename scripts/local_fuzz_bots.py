@@ -20,6 +20,7 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
+    # pylint: disable=too-many-return-statements
     # Ignored fuzz exceptions
     if isinstance(exc, FuzzAssertionException):
         # LP rate invariance check
@@ -53,7 +54,23 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
-        # Status == 0, but preview was successful error
+        # DistributeExcessIdle error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "DistributeExcessIdleFailed raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # DecreasedPresentValueWhenAddingLiquidity error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "DecreasedPresentValueWhenAddingLiquidity raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # Status == 0
         if (
             # Lots of conditions to check
             # pylint: disable=too-many-boolean-expressions

@@ -509,22 +509,21 @@ async def _async_send_transaction_and_wait_for_receipt(
         try:
             # Tracing doesn't exist in typing for some reason.
             # Doing this in error checking with try/catch.
-            tx_hash = tx_receipt["transactionHash"]
             trace = web3.tracing.trace_transaction(tx_hash)  # type: ignore
             if len(trace) == 0:
-                error_message = f"Receipt has status of 0. {tx_hash=}"
+                error_message = "Receipt has status of 0."
             else:
                 # Trace gives a list of values, the last one should contain the error
                 error_message = trace[-1].get("error", None)
                 # If no trace, add back in status == 0 error
                 if error_message is None:
-                    error_message = f"Receipt has status of 0. {tx_hash=}"
+                    error_message = "Receipt has status of 0."
         # TODO does this need to be BaseException?
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Don't crash in crash reporting
             logging.warning("Tracing failed for handling failed status: %s", repr(e))
             error_message = f"Receipt has status of 0. Error getting trace: {repr(e)}"
-        raise UnknownBlockError(f"{error_message}", f"{block_number=}", f"{tx_receipt=}")
+        raise UnknownBlockError(f"{error_message}", f"{block_number=}", f"{tx_hash=}")
     return tx_receipt
 
 
@@ -658,7 +657,7 @@ async def async_smart_contract_transact(
         assert "block_number=" in block_number_arg
         block_number = int(block_number_arg.split("block_number=")[1])
 
-        orig_exception: list[Exception] = [err]
+        retry_preview_exception: Exception | None = None
         try:
             smart_contract_preview_transaction(
                 contract,
@@ -670,24 +669,17 @@ async def async_smart_contract_transact(
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here
-            raise AssertionError("Preview was successful.")  # pylint: disable=raise-missing-from
+            raise ValueError("Preview was successful.")  # pylint: disable=raise-missing-from
 
         except Exception as preview_err:  # pylint: disable=broad-except
             if isinstance(preview_err, ContractCallException):
-                # We add a message to the preview error saying what this error is
-                preview_err.args = ("Previewing transaction on transaction failure:",) + (
-                    repr(preview_err.orig_exception),
-                )
-            else:
-                preview_err.args = ("Previewing transaction on transaction failure:",) + (repr(preview_err),)
-
-            # We report both the exception from the transaction and the exception from the preview
-            orig_exception.append(preview_err)
+                preview_err.args = ("Retry preview result: ",) + preview_err.args
+            retry_preview_exception = preview_err
 
         raise ContractCallException(
             "Error in smart_contract_transact: " + err.args[0],
-            "Retry preview result: " + repr(orig_exception[-1]),
-            orig_exception=orig_exception,
+            repr(retry_preview_exception),
+            orig_exception=err,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
@@ -751,22 +743,21 @@ def _send_transaction_and_wait_for_receipt(
         try:
             # Tracing doesn't exist in typing for some reason.
             # Doing this in error checking with try/catch.
-            tx_hash = tx_receipt["transactionHash"]
             trace = web3.tracing.trace_transaction(tx_hash)  # type: ignore
             if len(trace) == 0:
-                error_message = f"Receipt has status of 0. {tx_hash=}"
+                error_message = "Receipt has status of 0."
             else:
                 # Trace gives a list of values, the last one should contain the error
                 error_message = trace[-1].get("error", None)
                 # If no trace, add back in status == 0 error
                 if error_message is None:
-                    error_message = f"Receipt has status of 0. {tx_hash=}"
+                    error_message = "Receipt has status of 0."
         # TODO does this need to be BaseException?
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Don't crash in crash reporting
             logging.warning("Tracing failed for handling failed status: %s", repr(e))
             error_message = f"Receipt has status of 0. Error getting trace: {repr(e)}"
-        raise UnknownBlockError(f"{error_message}", f"{block_number=}", f"{tx_receipt=}")
+        raise UnknownBlockError(f"{error_message}", f"{block_number=}", f"{tx_hash=}")
     return tx_receipt
 
 
@@ -892,7 +883,7 @@ def smart_contract_transact(
         assert "block_number=" in block_number_arg
         block_number = int(block_number_arg.split("block_number=")[1])
 
-        orig_exception: list[Exception] = [err]
+        retry_preview_exception: Exception | None = None
         try:
             smart_contract_preview_transaction(
                 contract,
@@ -904,24 +895,17 @@ def smart_contract_transact(
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here
-            raise AssertionError("Preview was successful.")  # pylint: disable=raise-missing-from
+            raise ValueError("Preview was successful.")  # pylint: disable=raise-missing-from
 
         except Exception as preview_err:  # pylint: disable=broad-except
             if isinstance(preview_err, ContractCallException):
-                # We add a message to the preview error saying what this error is
-                preview_err.args = ("Previewing transaction on transaction failure:",) + (
-                    repr(preview_err.orig_exception),
-                )
-            else:
-                preview_err.args = ("Previewing transaction on transaction failure:",) + (repr(preview_err),)
-
-            # We report both the exception from the transaction and the exception from the preview
-            orig_exception.append(preview_err)
+                preview_err.args = ("Retry preview result: ",) + preview_err.args
+            retry_preview_exception = preview_err
 
         raise ContractCallException(
-            "Error in smart_contract_transact",
-            "Retry preview result: " + repr(orig_exception[-1]),
-            orig_exception=orig_exception,
+            "Error in smart_contract_transact: " + err.args[0],
+            repr(retry_preview_exception),
+            orig_exception=err,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,

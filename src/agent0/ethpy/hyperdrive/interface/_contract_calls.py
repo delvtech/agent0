@@ -214,10 +214,12 @@ async def _async_open_long(
     # Convert the trade amount from steth to lido shares
     # before passing into hyperdrive
     if interface.vault_is_steth:
-        trade_amount = trade_amount / interface.current_pool_state.pool_info.vault_share_price
-        # TODO the more accurate way to do this is to use the underlying `getPooledEthByShares`
-        # call to convert steth to shares, or by using
-        # trade_amount.mul_div_down(getTotalPooledEther(), getTotalShares()).
+        # Convert input steth into lido shares
+        trade_amount = FixedPoint(
+            scaled_value=interface.vault_shares_token_contract.functions.getSharesByPooledEth(
+                trade_amount.scaled_value
+            ).call()
+        )
 
     fn_args = (
         trade_amount.scaled_value,
@@ -571,10 +573,12 @@ async def _async_add_liquidity(
     # Convert the trade amount from steth to lido shares
     # before passing into hyperdrive
     if interface.vault_is_steth:
-        trade_amount = trade_amount / interface.current_pool_state.pool_info.vault_share_price
-        # TODO the more accurate way to do this is to use the underlying `getPooledEthByShares`
-        # call to convert steth to shares, or by using
-        # trade_amount.mul_div_down(getTotalPooledEther(), getTotalShares()).
+        # Convert input steth into lido shares
+        trade_amount = FixedPoint(
+            scaled_value=interface.vault_shares_token_contract.functions.getSharesByPooledEth(
+                trade_amount.scaled_value
+            ).call()
+        )
 
     fn_args = (
         trade_amount.scaled_value,

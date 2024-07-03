@@ -132,25 +132,27 @@ def _ensure_event_matches_wallet_delta(
     # pylint: disable=too-many-statements
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
         # We expect exact matches for erc4626
-        event_comparison_epsilon = FixedPoint(0)
-        chain_balance_comparison_epsilon = FixedPoint(0)
-        short_chain_balance_comparison_epsilon = FixedPoint(0)
+        balance_comparison_epsilon = FixedPoint(0)
+        short_balance_comparison_epsilon = FixedPoint(0)
     else:
-        # There's known conversion errors in the steth market
+        # There's known conversion errors in the steth market.
+        # This comes from us using the more accurate contract call to convert
+        # from user input steth to contract expected lido shares,
+        # but using the less inaccurate conversion in the resulting event.
         # TODO this conversion error for chain comparisons
         # is due to the inaccuracy of converting from lido shares to steth
         # via the vault share price. The more accurate conversion is to do a
         # contract call for the conversion.
-        event_comparison_epsilon = FixedPoint(scaled_value=10)
-        chain_balance_comparison_epsilon = FixedPoint(scaled_value=int(3e6))
-        short_chain_balance_comparison_epsilon = FixedPoint(scaled_value=50)
+        balance_comparison_epsilon = FixedPoint(scaled_value=int(3e6))
+        # TODO shorts comparison epsilon is much smaller, figure out why
+        short_balance_comparison_epsilon = FixedPoint(scaled_value=50)
 
     if isinstance(event, AddLiquidity):
-        assert isclose(trade_input, event.amount, abs_tol=event_comparison_epsilon)
+        assert isclose(trade_input, event.amount, abs_tol=balance_comparison_epsilon)
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             -event.amount,
-            abs_tol=chain_balance_comparison_epsilon,
+            abs_tol=balance_comparison_epsilon,
         )
         assert wallet_after.lp_tokens - wallet_before.lp_tokens == event.lp_amount
     elif isinstance(event, RemoveLiquidity):
@@ -158,7 +160,7 @@ def _ensure_event_matches_wallet_delta(
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             event.amount,
-            abs_tol=chain_balance_comparison_epsilon,
+            abs_tol=balance_comparison_epsilon,
         )
         assert wallet_after.lp_tokens - wallet_before.lp_tokens == -event.lp_amount
         assert wallet_after.withdraw_shares - wallet_before.withdraw_shares == event.withdrawal_share_amount
@@ -167,15 +169,15 @@ def _ensure_event_matches_wallet_delta(
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             event.amount,
-            abs_tol=chain_balance_comparison_epsilon,
+            abs_tol=balance_comparison_epsilon,
         )
         assert wallet_after.withdraw_shares - wallet_before.withdraw_shares == -event.withdrawal_share_amount
     elif isinstance(event, OpenLong):
-        assert isclose(trade_input, event.amount, abs_tol=event_comparison_epsilon)
+        assert isclose(trade_input, event.amount, abs_tol=balance_comparison_epsilon)
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             -event.amount,
-            abs_tol=chain_balance_comparison_epsilon,
+            abs_tol=balance_comparison_epsilon,
         )
         # If this long existed before, check the delta
         if event.maturity_time in wallet_before.longs:
@@ -191,7 +193,7 @@ def _ensure_event_matches_wallet_delta(
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             event.amount,
-            abs_tol=chain_balance_comparison_epsilon,
+            abs_tol=balance_comparison_epsilon,
         )
         if event.maturity_time in wallet_after.longs:
             assert (
@@ -202,13 +204,10 @@ def _ensure_event_matches_wallet_delta(
             assert wallet_before.longs[event.maturity_time].balance == event.bond_amount
     elif isinstance(event, OpenShort):
         assert trade_input == event.bond_amount
-        # Although this one is a chain balance delta, the epsilon here is much smaller,
-        # so we use a tighter bound here
-        # TODO figure out why
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             -event.amount,
-            abs_tol=short_chain_balance_comparison_epsilon,
+            abs_tol=short_balance_comparison_epsilon,
         )
         if event.maturity_time in wallet_before.shorts:
             assert (
@@ -219,13 +218,10 @@ def _ensure_event_matches_wallet_delta(
             assert wallet_after.shorts[event.maturity_time].balance == event.bond_amount
     elif isinstance(event, CloseShort):
         assert trade_input == event.bond_amount
-        # Although this one is a chain balance delta, the epsilon here is much smaller,
-        # so we use a tighter bound here
-        # TODO figure out why
         assert isclose(
             wallet_after.balance.amount - wallet_before.balance.amount,
             event.amount,
-            abs_tol=short_chain_balance_comparison_epsilon,
+            abs_tol=short_balance_comparison_epsilon,
         )
         if event.maturity_time in wallet_after.shorts:
             assert (

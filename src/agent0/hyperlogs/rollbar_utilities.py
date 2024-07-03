@@ -11,8 +11,6 @@ import platform
 import rollbar
 from dotenv import load_dotenv
 
-from agent0.ethpy.base.errors import ContractCallException
-
 load_dotenv(".env")
 ROLLBAR_API_KEY = os.getenv("ROLLBAR_API_KEY")
 
@@ -91,6 +89,4 @@ def log_rollbar_exception(
     else:
         log_message = rollbar_log_prefix + ": "
     log_message += repr(exception)
-    if isinstance(exception, ContractCallException):
-        log_message += ": " + repr(exception.orig_exception)
     rollbar.report_message(log_message, log_level_name, extra_data=extra_data)

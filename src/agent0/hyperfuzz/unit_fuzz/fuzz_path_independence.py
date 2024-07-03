@@ -200,8 +200,12 @@ def fuzz_path_independence(
         if starting_checkpoint_id != ending_checkpoint_id:
             message = "Trades were not closed in the same checkpoint"
             logging.warning(message)
-            rollbar_data = {"fuzz_random_seed": random_seed}
-            rollbar.report_message(message, "warning", extra_data=rollbar_data)
+
+            # TODO abstract out rollbar logging into a single point in interactive hyperdrive
+            if chain.config.rollbar_log_level_threshold <= logging.WARNING:
+                rollbar_data = {"fuzz_random_seed": random_seed}
+                rollbar.report_message(message, "warning", extra_data=rollbar_data)
+
             continue
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
@@ -274,16 +278,18 @@ def fuzz_path_independence(
     if not invariance_checked:
         warning_message = "No invariance checks were performed due to failed paths."
         logging.warning(warning_message)
-        rollbar_data = {
-            "fuzz_random_seed": random_seed,
-            "close_random_paths": [[trade for _, trade in path] for path in trade_paths],
-            "trade_event_paths": trade_event_paths,
-        }
-        rollbar.report_message(
-            warning_message,
-            "warning",
-            extra_data=json.loads(json.dumps(rollbar_data, indent=2, cls=ExtendedJSONEncoder)),
-        )
+        # TODO abstract out rollbar logging into a single point in interactive hyperdrive
+        if chain.config.rollbar_log_level_threshold <= logging.WARNING:
+            rollbar_data = {
+                "fuzz_random_seed": random_seed,
+                "close_random_paths": [[trade for _, trade in path] for path in trade_paths],
+                "trade_event_paths": trade_event_paths,
+            }
+            rollbar.report_message(
+                warning_message,
+                "warning",
+                extra_data=json.loads(json.dumps(rollbar_data, indent=2, cls=ExtendedJSONEncoder)),
+            )
 
     # If any of the path checks broke, we throw an exception at the very end
     if latest_error is not None:

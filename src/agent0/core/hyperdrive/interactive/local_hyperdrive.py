@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -290,30 +290,6 @@ class LocalHyperdrive(Hyperdrive):
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
         self.chain = chain
-
-        # Add additional deployment info to crash report additional info
-        if self._deployed_hyperdrive_factory is not None:
-            self._crash_report_additional_info.update(
-                {
-                    "factory_deployer_account": self._deployed_hyperdrive_factory.deployer_account.address,
-                    "factory_contract": self._deployed_hyperdrive_factory.factory_contract.address,
-                    "deployer_coor_contract": self._deployed_hyperdrive_factory.deployer_coordinator_contract.address,
-                    "registry_contract": self._deployed_hyperdrive_factory.registry_contract.address,
-                    "factory_deploy_config": asdict(self._deployed_hyperdrive_factory.factory_deploy_config),
-                }
-            )
-
-        if self._deployed_hyperdrive_pool is not None:
-            self._crash_report_additional_info.update(
-                {
-                    "pool_deployer_account": self._deployed_hyperdrive_pool.deployer_account.address,
-                    "hyperdrive_contract": self._deployed_hyperdrive_pool.hyperdrive_contract.address,
-                    "base_token_contract": self._deployed_hyperdrive_pool.base_token_contract.address,
-                    "vault_shares_token_contract": self._deployed_hyperdrive_pool.vault_shares_token_contract.address,
-                    "deploy_block_number": self._deploy_block_number,
-                    "pool_deploy_config": asdict(self._deployed_hyperdrive_pool.pool_deploy_config),
-                }
-            )
 
         # Run the data pipeline in background threads if experimental mode
         self.data_pipeline_timeout = self.config.data_pipeline_timeout
