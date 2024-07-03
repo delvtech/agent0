@@ -14,6 +14,7 @@ from hexbytes import HexBytes
 from web3 import Web3
 
 from agent0.chainsync.analysis import fill_pnl_values, snapshot_positions_to_db
+from agent0.chainsync.dashboard import abbreviate_address
 from agent0.chainsync.db.base import add_addr_to_username
 from agent0.chainsync.db.hyperdrive import (
     checkpoint_events_to_db,
@@ -127,9 +128,13 @@ class HyperdriveAgent:
         elif public_address is not None:
             self.address = Web3.to_checksum_address(public_address)
 
+        if name is None:
+            self.name = abbreviate_address(self.address)
+        else:
+            self.name = name
+
         # Register the username if it was provided
-        if name is not None:
-            add_addr_to_username(name, [self.address], self.chain.db_session)
+        add_addr_to_username(self.name, [self.address], self.chain.db_session)
 
     # Expose account and address for type narrowing in local agent
     @property

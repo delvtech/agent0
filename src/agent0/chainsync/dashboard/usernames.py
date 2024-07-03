@@ -101,16 +101,32 @@ def map_addresses(key: pd.Series | list | str, user_map: pd.DataFrame, map_colum
     return out
 
 
-def abbreviate_address(addresses: pd.Series) -> pd.Series:
+# TODO move this function somewhere else, as agent0's agent also uses this function.
+@overload
+def abbreviate_address(address: pd.Series) -> pd.Series: ...
+
+
+@overload
+def abbreviate_address(address: str) -> str: ...
+
+
+def abbreviate_address(address: pd.Series | str) -> pd.Series | str:
     """Given a series of addresses, return the corresponding addresses in a human readable way.
 
     Arguments
     ---------
-    addresses: pd.Series
+    address: pd.Series | str
 
     Returns
     -------
-    pd.Series
-        The corresponding abbreviated addresses in the same order (with the same indices)
+    pd.Series | str
+        The corresponding abbreviated addresses in the same order (with the same indices),
+        or a single abbreviated address string.
     """
-    return addresses.str[:6] + "..." + addresses.str[-4:]
+    if isinstance(address, pd.Series):
+        out = address.str[:6] + "..." + address.str[-4:]
+    elif isinstance(address, str):
+        out = address[:6] + "..." + address[-4:]
+    else:
+        raise TypeError(f"Unexpected type {type(address)}")
+    return out
