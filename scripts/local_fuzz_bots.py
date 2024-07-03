@@ -20,6 +20,7 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
+    # pylint: disable=too-many-return-statements
     # Ignored fuzz exceptions
     if isinstance(exc, FuzzAssertionException):
         # LP rate invariance check
