@@ -50,7 +50,8 @@ class ContractCallException(Exception):
     def __repr__(self):
         # We overwrite repr here to ensure the orig exception gets printed for
         # repr(ContractCallException)
-        return f"ContractCallException({self.args + (repr(self.orig_exception),)})"
+        # Since args is already a tuple, no need for outer parenthesis
+        return f"ContractCallException{self.args + (repr(self.orig_exception),)}"
 
 
 def decode_error_selector_for_contract(error_selector: str, contract: Contract) -> str:

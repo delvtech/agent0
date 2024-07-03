@@ -91,6 +91,4 @@ def log_rollbar_exception(
     else:
         log_message = rollbar_log_prefix + ": "
     log_message += repr(exception)
-    if isinstance(exception, ContractCallException):
-        log_message += ": " + repr(exception.orig_exception)
     rollbar.report_message(log_message, log_level_name, extra_data=extra_data)
