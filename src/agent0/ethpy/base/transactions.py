@@ -7,7 +7,7 @@ import random
 from typing import Any, Sequence
 
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockNumber, ChecksumAddress
+from eth_typing import BlockIdentifier, BlockNumber, ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
@@ -113,7 +113,7 @@ def smart_contract_read(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
 
     # If there is a single value returned, we want to put it in a list of length 1
@@ -149,7 +149,7 @@ def smart_contract_preview_transaction(
     signer_address: ChecksumAddress,
     function_name_or_signature: str,
     *fn_args,
-    block_number: BlockNumber | None = None,
+    block_identifier: BlockIdentifier | None = None,
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
     nonce: int | None = None,
@@ -167,8 +167,8 @@ def smart_contract_preview_transaction(
         The name of the function
     *fn_args: Unknown
         The arguments passed to the contract method.
-    block_number: BlockNumber | None
-        If set, will query the chain on the specified block
+    block_identifier: BlockIdentifier | None, optional
+        If set, will query the chain on the specified block. Defaults to the `pending` block.
     read_retry_count: int | None
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
@@ -191,6 +191,8 @@ def smart_contract_preview_transaction(
     """
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
+    if block_identifier is None:
+        block_identifier = "pending"
 
     # get the callable contract function from function_name & call it
     if "(" in function_name_or_signature:
@@ -226,7 +228,7 @@ def smart_contract_preview_transaction(
             _retry_preview_check,
             function.call,
             transaction_kwargs,
-            block_identifier=block_number,
+            block_identifier=block_identifier,
         )
     # Wraps the exception with a contract call exception, adding additional information
     # If block number is set in the preview call, will add to crash report,
@@ -241,7 +243,7 @@ def smart_contract_preview_transaction(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(raw_txn),
-            block_number=block_number,
+            block_identifier=block_identifier,
         ) from err
     except Exception as err:
         raise ContractCallException(
@@ -252,7 +254,7 @@ def smart_contract_preview_transaction(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(raw_txn),
-            block_number=block_number,
+            block_identifier=block_identifier,
         ) from err
 
     if not isinstance(return_values, Sequence):  # could be list or tuple
@@ -647,7 +649,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
     except UnknownBlockError as err:
         # Unknown block error means the transaction went through, but was rejected
@@ -664,7 +666,7 @@ async def async_smart_contract_transact(
                 signer.address,
                 function_name_or_signature,
                 *fn_args,
-                block_number=BlockNumber(block_number),
+                block_identifier=BlockNumber(block_number),
                 read_retry_count=1,  # No retries for this preview
                 **fn_kwargs,
             )
@@ -685,7 +687,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
     except Exception as err:
         # Race condition here, other transactions may have happened when we get the block number here
@@ -699,7 +701,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
 
 
@@ -890,7 +892,7 @@ def smart_contract_transact(
                 signer.address,
                 function_name_or_signature,
                 *fn_args,
-                block_number=BlockNumber(block_number),
+                block_identifier=BlockNumber(block_number),
                 read_retry_count=1,  # No retries for this preview
                 **fn_kwargs,
             )
@@ -911,7 +913,7 @@ def smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
     except Exception as err:
         raise ContractCallException(

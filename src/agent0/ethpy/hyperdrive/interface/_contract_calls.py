@@ -237,7 +237,6 @@ async def _async_open_long(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     preview_result = {}
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
@@ -245,7 +244,7 @@ async def _async_open_long(
             agent_checksum_address,
             "openLong",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
@@ -262,26 +261,21 @@ async def _async_open_long(
                 interface.txn_signature,  # extraData
             ),
         )
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "openLong",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "openLong")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "openLong",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "openLong")
     return trade_result
 
 
@@ -322,7 +316,6 @@ async def _async_close_long(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     preview_result = {}
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
@@ -330,7 +323,7 @@ async def _async_close_long(
             agent_checksum_address,
             "closeLong",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
@@ -347,26 +340,21 @@ async def _async_close_long(
                 interface.txn_signature,  # extraData
             ),
         )
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "closeLong",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "closeLong")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "closeLong",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "closeLong")
     return trade_result
 
 
@@ -411,7 +399,6 @@ async def _async_open_short(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     preview_result = {}
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
@@ -419,7 +406,7 @@ async def _async_open_short(
             agent_checksum_address,
             "openShort",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
@@ -436,26 +423,21 @@ async def _async_open_short(
                 interface.txn_signature,  # extraData
             ),
         )
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "openShort",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "openShort")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "openShort",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "openShort")
     return trade_result
 
 
@@ -495,7 +477,6 @@ async def _async_close_short(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     preview_result = {}
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = smart_contract_preview_transaction(
@@ -503,7 +484,7 @@ async def _async_close_short(
             agent_checksum_address,
             "closeShort",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
@@ -520,26 +501,21 @@ async def _async_close_short(
                 interface.txn_signature,  # extraData
             ),
         )
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "closeShort",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "closeShort")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "closeShort",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "closeShort")
     return trade_result
 
 
@@ -595,36 +571,30 @@ async def _async_add_liquidity(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     if preview_before_trade:
         _ = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
             "addLiquidity",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "addLiquidity",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "addLiquidity")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "addLiquidity",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "addLiquidity")
     return trade_result
 
 
@@ -660,36 +630,30 @@ async def _async_remove_liquidity(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     if preview_before_trade is True:
         _ = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
             "removeLiquidity",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "removeLiquidity",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "removeLiquidity")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "removeLiquidity",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "removeLiquidity")
     return trade_result
 
 
@@ -726,14 +690,13 @@ async def _async_redeem_withdraw_shares(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    current_block = interface.current_pool_state.block_number
     if preview_before_trade is True:
         preview_result = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
             agent_checksum_address,
             "redeemWithdrawalShares",
             *fn_args,
-            block_number=current_block,
+            block_identifier="pending",
             read_retry_count=interface.read_retry_count,
         )
         # Here, a preview call of redeem withdrawal shares will still be successful without logs if
@@ -742,24 +705,19 @@ async def _async_redeem_withdraw_shares(
         if preview_result["withdrawalSharesRedeemed"] == 0 and trade_amount > 0:
             raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
-    try:
-        tx_receipt = await async_smart_contract_transact(
-            interface.web3,
-            interface.hyperdrive_contract,
-            agent,
-            "redeemWithdrawalShares",
-            *fn_args,
-            nonce=nonce,
-            read_retry_count=interface.read_retry_count,
-            write_retry_count=interface.write_retry_count,
-            txn_options_gas=gas_limit,
-            txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-            txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            timeout=interface.txn_receipt_timeout,
-        )
-        trade_result = parse_logs_to_event(tx_receipt, interface, "redeemWithdrawalShares")
-    except Exception as exc:
-        # We add the preview block as an arg to the exception
-        exc.args += (f"Call previewed in block {current_block}",)
-        raise exc
+    tx_receipt = await async_smart_contract_transact(
+        interface.web3,
+        interface.hyperdrive_contract,
+        agent,
+        "redeemWithdrawalShares",
+        *fn_args,
+        nonce=nonce,
+        read_retry_count=interface.read_retry_count,
+        write_retry_count=interface.write_retry_count,
+        txn_options_gas=gas_limit,
+        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
+        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
+        timeout=interface.txn_receipt_timeout,
+    )
+    trade_result = parse_logs_to_event(tx_receipt, interface, "redeemWithdrawalShares")
     return trade_result

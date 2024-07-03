@@ -5,6 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
+from eth_typing import BlockIdentifier
 from eth_utils.conversions import to_hex
 from eth_utils.crypto import keccak
 from web3.contract.contract import Contract
@@ -36,7 +37,7 @@ class ContractCallException(Exception):
         fn_args: tuple | None = None,
         fn_kwargs: dict[str, Any] | None = None,
         raw_txn: dict[str, Any] | None = None,
-        block_number: int | None = None,
+        block_identifier: BlockIdentifier | None = None,
     ):
         super().__init__(*args)
         self.orig_exception = orig_exception
@@ -44,7 +45,7 @@ class ContractCallException(Exception):
         self.function_name_or_signature = function_name_or_signature
         self.fn_args = fn_args
         self.fn_kwargs = fn_kwargs
-        self.block_number = block_number
+        self.block_identifier: BlockIdentifier | None = block_identifier
         self.raw_txn = raw_txn
 
     def __repr__(self):
