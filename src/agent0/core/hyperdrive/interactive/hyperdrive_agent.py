@@ -131,6 +131,8 @@ class HyperdriveAgent:
         if name is not None:
             add_addr_to_username(name, [self.address], self.chain.db_session)
 
+        self.name = name
+
     # Expose account and address for type narrowing in local agent
     @property
     def account(self) -> LocalAccount:
