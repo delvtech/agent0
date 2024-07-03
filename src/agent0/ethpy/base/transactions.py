@@ -113,7 +113,7 @@ def smart_contract_read(
             function_name_or_signature=function_name_or_signature,
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
 
     # If there is a single value returned, we want to put it in a list of length 1
@@ -243,7 +243,7 @@ def smart_contract_preview_transaction(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(raw_txn),
-            block_number=block_identifier,
+            block_identifier=block_identifier,
         ) from err
     except Exception as err:
         raise ContractCallException(
@@ -254,7 +254,7 @@ def smart_contract_preview_transaction(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(raw_txn),
-            block_number=block_identifier,
+            block_identifier=block_identifier,
         ) from err
 
     if not isinstance(return_values, Sequence):  # could be list or tuple
@@ -649,7 +649,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
     except UnknownBlockError as err:
         # Unknown block error means the transaction went through, but was rejected
@@ -687,7 +687,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
     except Exception as err:
         # Race condition here, other transactions may have happened when we get the block number here
@@ -701,7 +701,7 @@ async def async_smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
 
 
@@ -913,7 +913,7 @@ def smart_contract_transact(
             fn_args=fn_args,
             fn_kwargs=fn_kwargs,
             raw_txn=dict(unsent_txn),
-            block_number=block_number,
+            block_identifier=block_number,
         ) from err
     except Exception as err:
         raise ContractCallException(

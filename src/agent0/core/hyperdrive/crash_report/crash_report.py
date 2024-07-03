@@ -96,7 +96,13 @@ def build_crash_trade_result(
         policy=policy,
         trade_object=trade_object,
     )
-    current_block_number = interface.get_block_number(interface.get_current_block())
+
+    # Best effort to get the crash block number
+    if isinstance(exception, ContractCallException) and exception.block_identifier is not None:
+        crash_block_number = interface.get_block_number(interface.get_block(exception.block_identifier))
+    else:
+        crash_block_number = interface.get_block_number(interface.get_current_block())
+    trade_result.block_number = crash_block_number
 
     ## Check if the exception came from a contract call & determine block number
     # If it did, we fill various trade result data with custom data from
@@ -104,12 +110,6 @@ def build_crash_trade_result(
     trade_result.exception = exception
     if isinstance(exception, ContractCallException):
         trade_result.orig_exception = exception.orig_exception
-        if exception.block_number is not None:
-            trade_result.block_number = exception.block_number
-        else:
-            # Best effort to get the block it crashed on
-            # We assume the exception happened in the previous block
-            trade_result.block_number = current_block_number - 1
         trade_result.contract_call = {
             "contract_call_type": exception.contract_call_type,
             "function_name_or_signature": exception.function_name_or_signature,
@@ -118,9 +118,6 @@ def build_crash_trade_result(
         }
         trade_result.raw_transaction = exception.raw_txn
     else:
-        # Best effort to get the block it crashed on
-        # We assume the exception happened in the previous block
-        trade_result.block_number = current_block_number - 1
         # We still build this structure so the schema stays the same
         trade_result.contract_call = {
             "contract_call_type": None,
