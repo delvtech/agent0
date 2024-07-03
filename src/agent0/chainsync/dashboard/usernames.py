@@ -127,4 +127,6 @@ def abbreviate_address(address: pd.Series | str) -> pd.Series | str:
         out = address.str[:6] + "..." + address.str[-4:]
     elif isinstance(address, str):
         out = address[:6] + "..." + address[-4:]
+    else:
+        raise TypeError(f"Unexpected type {type(address)}")
     return out
