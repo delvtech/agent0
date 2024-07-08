@@ -35,7 +35,10 @@ def initialize_web3_with_http_provider(
         The connected web3 instance
     """
     if request_kwargs is None:
-        request_kwargs = {}
+        # TODO expose this timeout argument in the functions that call this,
+        # e.g., agent0.chain and read_interface.
+        # For now, set the default to be 20 seconds.
+        request_kwargs = {"timeout": 20}
     provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
     web3 = Web3(provider)
     web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
