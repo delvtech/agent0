@@ -8,6 +8,8 @@ import sys
 import time
 from typing import NamedTuple, Sequence
 
+import rollbar
+
 from agent0.core.hyperdrive.interactive import LocalChain
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.unit_fuzz import (
@@ -16,7 +18,7 @@ from agent0.hyperfuzz.unit_fuzz import (
     fuzz_present_value,
     fuzz_profit_check,
 )
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
@@ -88,7 +90,12 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
+            rollbar.report_exc_info(level=logging.CRITICAL)
+            if parsed_args.pause_on_fail:
+                # We don't log info from logging, so we print to ensure this shows up
+                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(e)}")
+                while True:
+                    time.sleep(1000000)
 
         time.sleep(1)
 
@@ -121,7 +128,12 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
+            rollbar.report_exc_info(level=logging.CRITICAL)
+            if parsed_args.pause_on_fail:
+                # We don't log info from logging, so we print to ensure this shows up
+                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(e)}")
+                while True:
+                    time.sleep(1000000)
 
         time.sleep(1)
 
@@ -142,7 +154,12 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
+            rollbar.report_exc_info(level=logging.CRITICAL)
+            if parsed_args.pause_on_fail:
+                # We don't log info from logging, so we print to ensure this shows up
+                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(e)}")
+                while True:
+                    time.sleep(1000000)
 
         time.sleep(1)
 
@@ -169,7 +186,12 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            log_rollbar_exception(e, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in unit fuzz.")
+            rollbar.report_exc_info(level=logging.CRITICAL)
+            if parsed_args.pause_on_fail:
+                # We don't log info from logging, so we print to ensure this shows up
+                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(e)}")
+                while True:
+                    time.sleep(1000000)
 
         time.sleep(1)
 
