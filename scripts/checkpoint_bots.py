@@ -14,6 +14,7 @@ import time
 from functools import partial
 from typing import NamedTuple, Sequence
 
+import rollbar
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -510,5 +511,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        log_rollbar_exception(exc, logging.CRITICAL, rollbar_log_prefix="Uncaught critical error in checkpoint bots.")
+        rollbar.report_exc_info(level=logging.CRITICAL)
         raise exc
