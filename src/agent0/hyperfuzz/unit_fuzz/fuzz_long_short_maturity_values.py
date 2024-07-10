@@ -84,20 +84,20 @@ def fuzz_long_short_maturity_values(
     # set a large block time so i can manually control when it ticks
     # TODO: set block time really high after contracts deployed:
     # chain_config = LocalChain.Config(block_time=1_000_000)
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+    chain, random_seed, rng, hyperdrive_pool = setup_fuzz(
         chain_config, fuzz_test_name="fuzz_long_short_maturity_values", steth=steth
     )
-    signer = chain.init_agent(eth=FixedPoint(100), pool=interactive_hyperdrive)
+    signer = chain.init_agent(eth=FixedPoint(100), pool=hyperdrive_pool)
 
     # Add a small amount to ensure we're not at the edge of a checkpoint
     # This prevents the latter step of `chain.advance_time(position_duration+30)` advancing past a checkpoint
     # Also prevents `open_random_trades` from passing the create checkpoint barrier
     logging.info("Advance time...")
-    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+    advance_time_after_checkpoint(chain, hyperdrive_pool)
 
     # Open some trades
     logging.info("Open random trades...")
-    trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=False)
+    trade_events = execute_random_trades(num_trades, chain, rng, hyperdrive_pool, advance_time=False)
 
     # Ensure all trades open are within the same checkpoint
     trade_maturity_times = []
@@ -106,19 +106,19 @@ def fuzz_long_short_maturity_values(
     assert all(maturity_time == trade_maturity_times[0] for maturity_time in trade_maturity_times)
 
     # Starting checkpoint is automatically created by sending transactions
-    starting_checkpoint = interactive_hyperdrive.interface.current_pool_state.checkpoint
+    starting_checkpoint = hyperdrive_pool.interface.current_pool_state.checkpoint
 
     # Advance the time to a little more than the position duration
     logging.info("Advance time...")
-    position_duration = interactive_hyperdrive.interface.pool_config.position_duration
+    position_duration = hyperdrive_pool.interface.pool_config.position_duration
     chain.advance_time(position_duration + 30, create_checkpoints=False)
 
     # Create a checkpoint
     logging.info("Create a checkpoint...")
     # Get the maturity checkpoint for the previously created checkpoint
-    checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
-    interactive_hyperdrive.interface.create_checkpoint(signer.account, checkpoint_time=checkpoint_id)
-    maturity_checkpoint = interactive_hyperdrive.interface.current_pool_state.checkpoint
+    checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
+    hyperdrive_pool.interface.create_checkpoint(signer.account, checkpoint_time=checkpoint_id)
+    maturity_checkpoint = hyperdrive_pool.interface.current_pool_state.checkpoint
 
     # Ensure this maturity checkpoint is the maturity of all open positions
     for trade_maturity_time in trade_maturity_times:
@@ -151,7 +151,7 @@ def fuzz_long_short_maturity_values(
                 maturity_checkpoint,
                 long_maturity_vals_epsilon,
                 short_maturity_vals_epsilon,
-                interactive_hyperdrive,
+                hyperdrive_pool,
             )
         except FuzzAssertionException as error:
             dump_state_dir = chain.save_state(save_prefix="fuzz_long_short_maturity_values")
@@ -159,7 +159,7 @@ def fuzz_long_short_maturity_values(
             additional_info = {
                 "fuzz_random_seed": random_seed,
                 "dump_state_dir": dump_state_dir,
-                "trade_events": interactive_hyperdrive.get_trade_events(),
+                "trade_events": hyperdrive_pool.get_trade_events(),
             }
             additional_info.update(error.exception_data)
 
@@ -171,7 +171,7 @@ def fuzz_long_short_maturity_values(
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
-                error, interactive_hyperdrive.interface, agent.account, additional_info=additional_info
+                error, hyperdrive_pool.interface, agent.account, additional_info=additional_info
             )
             # Crash reporting already going to file in logging
             log_hyperdrive_crash_report(
@@ -184,7 +184,9 @@ def fuzz_long_short_maturity_values(
             )
             if pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
-                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(error)}")
+                print(
+                    f"Pausing pool (pool {hyperdrive_pool.hyperdrive_address} port {chain_config.chain_port}) crash {repr(error)}"
+                )
                 while True:
                     time.sleep(1000000)
 

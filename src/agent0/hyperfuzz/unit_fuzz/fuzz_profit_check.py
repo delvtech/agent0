@@ -69,7 +69,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     # pylint: disable=too-many-statements
 
     # Setup the environment
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+    chain, random_seed, rng, hyperdrive_pool = setup_fuzz(
         chain_config,
         fuzz_test_name="fuzz_profit_check",
         flat_fee=FixedPoint(0),
@@ -85,9 +85,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
         scaled_value=int(
             np.floor(
                 rng.uniform(
-                    low=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount.scaled_value,
-                    high=interactive_hyperdrive.interface.calc_max_long(
-                        FixedPoint(1e9), interactive_hyperdrive.interface.current_pool_state
+                    low=hyperdrive_pool.interface.pool_config.minimum_transaction_amount.scaled_value,
+                    high=hyperdrive_pool.interface.calc_max_long(
+                        FixedPoint(1e9), hyperdrive_pool.interface.current_pool_state
                     ).scaled_value,
                 )
             )
@@ -95,32 +95,30 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     )
 
     # Generate funded trading agent
-    long_agent = chain.init_agent(
-        base=long_trade_amount, eth=FixedPoint(100), pool=interactive_hyperdrive, name="alice"
-    )
+    long_agent = chain.init_agent(base=long_trade_amount, eth=FixedPoint(100), pool=hyperdrive_pool, name="alice")
     long_agent_initial_balance = long_agent.get_wallet().balance.amount
 
     # Advance time to be right after a checkpoint boundary
     logging.info("Advance time...")
-    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+    advance_time_after_checkpoint(chain, hyperdrive_pool)
 
     # Open a long
     logging.info("Open a long...")
     open_long_event = long_agent.open_long(base=long_trade_amount)
 
-    starting_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+    starting_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
-    advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
+    advance_time_before_checkpoint(chain, rng, hyperdrive_pool)
 
     # Close the long
     logging.info("Close the long...")
     close_long_event = long_agent.close_long(
         maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
     )
-    ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+    ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
     # Ensure open + close are within same checkpoint
     assert starting_checkpoint_id == ending_checkpoint_id
@@ -130,9 +128,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
         scaled_value=int(
             np.floor(
                 rng.uniform(
-                    low=interactive_hyperdrive.interface.pool_config.minimum_transaction_amount.scaled_value,
-                    high=interactive_hyperdrive.interface.calc_max_short(
-                        FixedPoint(1e9), interactive_hyperdrive.interface.current_pool_state
+                    low=hyperdrive_pool.interface.pool_config.minimum_transaction_amount.scaled_value,
+                    high=hyperdrive_pool.interface.calc_max_short(
+                        FixedPoint(1e9), hyperdrive_pool.interface.current_pool_state
                     ).scaled_value,
                 )
             )
@@ -141,31 +139,29 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     # Generate funded trading agent
     # the short trade amount is in bonds, but we know we will need much less base
     # we can play it safe by initializing with that much base
-    short_agent = chain.init_agent(
-        base=short_trade_amount, eth=FixedPoint(100), pool=interactive_hyperdrive, name="bob"
-    )
+    short_agent = chain.init_agent(base=short_trade_amount, eth=FixedPoint(100), pool=hyperdrive_pool, name="bob")
     short_agent_initial_balance = short_agent.get_wallet().balance.amount
 
     # Advance time to be right after a checkpoint boundary
     logging.info("Advance time...")
-    advance_time_after_checkpoint(chain, interactive_hyperdrive)
+    advance_time_after_checkpoint(chain, hyperdrive_pool)
 
     # Set trade amount to the new wallet position (due to losing money from the previous open/close)
     logging.info("Open a short...")
     open_short_event = short_agent.open_short(bonds=short_trade_amount)
-    starting_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+    starting_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
     # Let some time pass, as long as it is less than a checkpoint
     # This means that the open & close will get pro-rated to the same spot
     logging.info("Advance time...")
-    advance_time_before_checkpoint(chain, rng, interactive_hyperdrive)
+    advance_time_before_checkpoint(chain, rng, hyperdrive_pool)
 
     # Close the short
     logging.info("Close the short...")
     close_short_event = short_agent.close_short(
         maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
     )
-    ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+    ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
     # Ensure open + close are within same checkpoint
     assert starting_checkpoint_id == ending_checkpoint_id
@@ -191,7 +187,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
         additional_info = {
             "fuzz_random_seed": random_seed,
             "dump_state_dir": dump_state_dir,
-            "trade_events": interactive_hyperdrive.get_trade_events(),
+            "trade_events": hyperdrive_pool.get_trade_events(),
         }
         additional_info.update(error.exception_data)
 
@@ -207,9 +203,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
             account = long_agent.account
         else:
             account = short_agent.account
-        report = build_crash_trade_result(
-            error, interactive_hyperdrive.interface, account, additional_info=additional_info
-        )
+        report = build_crash_trade_result(error, hyperdrive_pool.interface, account, additional_info=additional_info)
         # Crash reporting already going to file in logging
         log_hyperdrive_crash_report(
             report,
@@ -221,7 +215,9 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
         )
         if pause_on_fail:
             # We don't log info from logging, so we print to ensure this shows up
-            print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(error)}")
+            print(
+                f"Pausing pool (pool {hyperdrive_pool.hyperdrive_address} port {chain_config.chain_port}) crash {repr(error)}"
+            )
             while True:
                 time.sleep(1000000)
 

@@ -93,6 +93,8 @@ def main(argv: Sequence[str] | None = None):
             rollbar.report_exc_info(level=logging.CRITICAL)
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
+                # TODO we don't have access to the hyperdrive pool here, ideally we would
+                # report it here
                 print(f"Pausing pool (port {chain_port}) crash {repr(e)}")
                 while True:
                     time.sleep(1000000)
@@ -131,6 +133,8 @@ def main(argv: Sequence[str] | None = None):
             rollbar.report_exc_info(level=logging.CRITICAL)
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
+                # TODO we don't have access to the hyperdrive pool here, ideally we would
+                # report it here
                 print(f"Pausing pool (port {chain_port}) crash {repr(e)}")
                 while True:
                     time.sleep(1000000)
@@ -157,6 +161,8 @@ def main(argv: Sequence[str] | None = None):
             rollbar.report_exc_info(level=logging.CRITICAL)
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
+                # TODO we don't have access to the hyperdrive pool here, ideally we would
+                # report it here
                 print(f"Pausing pool (port {chain_port}) crash {repr(e)}")
                 while True:
                     time.sleep(1000000)
@@ -189,6 +195,8 @@ def main(argv: Sequence[str] | None = None):
             rollbar.report_exc_info(level=logging.CRITICAL)
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
+                # TODO we don't have access to the hyperdrive pool here, ideally we would
+                # report it here
                 print(f"Pausing pool (port {chain_port}) crash {repr(e)}")
                 while True:
                     time.sleep(1000000)
