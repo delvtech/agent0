@@ -185,7 +185,8 @@ def fuzz_long_short_maturity_values(
             if pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 print(
-                    f"Pausing pool (pool {hyperdrive_pool.hyperdrive_address} port {chain_config.chain_port}) crash {repr(error)}"
+                    f"Pausing pool (pool:{hyperdrive_pool.hyperdrive_address} port:{chain_config.chain_port}) "
+                    f"crash {repr(error)}"
                 )
                 while True:
                     time.sleep(1000000)

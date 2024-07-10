@@ -203,7 +203,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(
-                "Pausing pool (pool %s port %s) on crash %s",
+                "Pausing pool (pool:%s port:%s) on crash %s",
                 hyperdrive_pool.hyperdrive_address,
                 local_chain_config.chain_port,
                 repr(e),
