@@ -72,7 +72,7 @@ def fuzz_present_value(
     pause_on_fail: bool
         Whether to pause on failure.
     """
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+    chain, random_seed, rng, hyperdrive_pool = setup_fuzz(
         chain_config,
         curve_fee=FixedPoint(0),
         flat_fee=FixedPoint(0),
@@ -82,12 +82,12 @@ def fuzz_present_value(
         steth=steth,
     )
 
-    initial_pool_state = interactive_hyperdrive.interface.current_pool_state
+    initial_pool_state = hyperdrive_pool.interface.current_pool_state
     check_data: dict[str, Any] = {
         "initial_lp_share_price": initial_pool_state.pool_info.lp_share_price,
-        "initial_present_value": interactive_hyperdrive.interface.calc_present_value(initial_pool_state),
+        "initial_present_value": hyperdrive_pool.interface.calc_present_value(initial_pool_state),
     }
-    agent = chain.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000), pool=interactive_hyperdrive)
+    agent = chain.init_agent(base=FixedPoint("1e10"), eth=FixedPoint(1_000), pool=hyperdrive_pool)
 
     # Execute the trades and check invariances for each trade
     for trade_type in [
@@ -103,15 +103,15 @@ def fuzz_present_value(
             agent.add_funds(base=FixedPoint("1e10") - agent.get_wallet().balance.amount)
 
         # Set up trade amount bounds
-        min_trade = interactive_hyperdrive.interface.pool_config.minimum_transaction_amount
+        min_trade = hyperdrive_pool.interface.pool_config.minimum_transaction_amount
         max_budget = agent.get_wallet().balance.amount
         trade_amount = None
 
         # Execute the trade
         match trade_type:
             case HyperdriveActionType.OPEN_LONG:
-                max_trade = interactive_hyperdrive.interface.calc_max_long(
-                    max_budget, interactive_hyperdrive.interface.current_pool_state
+                max_trade = hyperdrive_pool.interface.calc_max_long(
+                    max_budget, hyperdrive_pool.interface.current_pool_state
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
@@ -121,8 +121,8 @@ def fuzz_present_value(
                 maturity_time, open_trade = next(iter(agent.get_wallet().longs.items()))
                 trade_event = agent.close_long(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.OPEN_SHORT:
-                max_trade = interactive_hyperdrive.interface.calc_max_short(
-                    max_budget, interactive_hyperdrive.interface.current_pool_state
+                max_trade = hyperdrive_pool.interface.calc_max_short(
+                    max_budget, hyperdrive_pool.interface.current_pool_state
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(np.floor(rng.uniform(low=min_trade.scaled_value, high=max_trade.scaled_value)))
@@ -133,8 +133,8 @@ def fuzz_present_value(
                 trade_event = agent.close_short(maturity_time=maturity_time, bonds=open_trade.balance)
             case HyperdriveActionType.ADD_LIQUIDITY:
                 # recompute initial present value for liquidity actions
-                check_data["initial_present_value"] = interactive_hyperdrive.interface.calc_present_value(
-                    interactive_hyperdrive.interface.current_pool_state
+                check_data["initial_present_value"] = hyperdrive_pool.interface.calc_present_value(
+                    hyperdrive_pool.interface.current_pool_state
                 )
                 trade_amount = FixedPoint(
                     scaled_value=int(
@@ -146,8 +146,8 @@ def fuzz_present_value(
                 trade_event = agent.add_liquidity(trade_amount)
             case HyperdriveActionType.REMOVE_LIQUIDITY:
                 # recompute initial present value for liquidity actions
-                check_data["initial_present_value"] = interactive_hyperdrive.interface.calc_present_value(
-                    interactive_hyperdrive.interface.current_pool_state
+                check_data["initial_present_value"] = hyperdrive_pool.interface.calc_present_value(
+                    hyperdrive_pool.interface.current_pool_state
                 )
                 trade_amount = agent.get_wallet().lp_tokens
                 trade_event = agent.remove_liquidity(agent.get_wallet().lp_tokens)
@@ -157,7 +157,7 @@ def fuzz_present_value(
         # run invariance check
         check_data["trade_type"] = trade_type
         try:
-            invariant_check(check_data, test_epsilon, interactive_hyperdrive)
+            invariant_check(check_data, test_epsilon, hyperdrive_pool)
         except FuzzAssertionException as error:
             dump_state_dir = chain.save_state(save_prefix="fuzz_present_value")
 
@@ -165,7 +165,7 @@ def fuzz_present_value(
             additional_info = {
                 "fuzz_random_seed": random_seed,
                 "dump_state_dir": dump_state_dir,
-                "trade_events": interactive_hyperdrive.get_trade_events(),
+                "trade_events": hyperdrive_pool.get_trade_events(),
             }
             additional_info.update(check_data)  # add check_data fields
             additional_info.update(error.exception_data)
@@ -185,7 +185,7 @@ def fuzz_present_value(
             rollbar_data.update(error.exception_data)
 
             report = build_crash_trade_result(
-                error, interactive_hyperdrive.interface, agent.account, additional_info=additional_info
+                error, hyperdrive_pool.interface, agent.account, additional_info=additional_info
             )
             # Crash reporting already going to file in logging
             log_hyperdrive_crash_report(
@@ -198,7 +198,10 @@ def fuzz_present_value(
             )
             if pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
-                print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(error)}")
+                print(
+                    f"Pausing pool (pool:{hyperdrive_pool.hyperdrive_address} port:{chain_config.chain_port}) "
+                    f"crash {repr(error)}"
+                )
                 while True:
                     time.sleep(1000000)
 

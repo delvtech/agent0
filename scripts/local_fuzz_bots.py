@@ -202,7 +202,12 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error("Pausing pool (port %s) on crash %s", local_chain_config.chain_port, repr(e))
+            logging.error(
+                "Pausing pool (pool:%s port:%s) on crash %s",
+                hyperdrive_pool.hyperdrive_address,
+                local_chain_config.chain_port,
+                repr(e),
+            )
             while True:
                 time.sleep(1000000)
 

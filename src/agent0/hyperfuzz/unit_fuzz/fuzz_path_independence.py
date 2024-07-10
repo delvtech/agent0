@@ -106,7 +106,7 @@ def fuzz_path_independence(
     if perm(num_trades) < 2 * num_paths_checked:
         raise AssertionError("Need more trades to check {num_paths_checked} paths.")
 
-    chain, random_seed, rng, interactive_hyperdrive = setup_fuzz(
+    chain, random_seed, rng, hyperdrive_pool = setup_fuzz(
         chain_config,
         # Trade crashes in this file have expected failures, hence we log interactive
         # hyperdrive crashes as info instead of critical.
@@ -121,12 +121,12 @@ def fuzz_path_independence(
 
     # Open some trades
     logging.info("Open random trades...")
-    trade_events = execute_random_trades(num_trades, chain, rng, interactive_hyperdrive, advance_time=True)
+    trade_events = execute_random_trades(num_trades, chain, rng, hyperdrive_pool, advance_time=True)
     assert len(trade_events) > 0
     agent = trade_events[0][0]
 
     # All positions open, we set variable rate to 0 for closing all positions
-    interactive_hyperdrive.set_variable_rate(FixedPoint(0))
+    hyperdrive_pool.set_variable_rate(FixedPoint(0))
 
     # Snapshot the chain, so we can load the snapshot & close in different orders
     logging.info("Save chain snapshot...")
@@ -185,7 +185,7 @@ def fuzz_path_independence(
         # Randomly grab some trades & close them one at a time
         # guarantee closing trades within the same checkpoint by getting the checkpoint id before
         # and after closing trades, then asserting they're the same
-        starting_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+        starting_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
         try:
             close_trades(random_trade_events)
         except ContractCallException:
@@ -193,10 +193,10 @@ def fuzz_path_independence(
             # These trades get logged as info
             # We track the ticker for each failed path here. This bookkeeping is only
             # used if all paths fail
-            trade_event_paths.append(interactive_hyperdrive.get_trade_events())
+            trade_event_paths.append(hyperdrive_pool.get_trade_events())
             continue
 
-        ending_checkpoint_id = interactive_hyperdrive.interface.calc_checkpoint_id()
+        ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
         if starting_checkpoint_id != ending_checkpoint_id:
             message = "Trades were not closed in the same checkpoint"
             logging.warning(message)
@@ -209,22 +209,20 @@ def fuzz_path_independence(
             continue
 
         # Check the reserve amounts; they should be unchanged now that all of the trades are closed
-        pool_state_df = interactive_hyperdrive.get_pool_info(coerce_float=False)
+        pool_state_df = hyperdrive_pool.get_pool_info(coerce_float=False)
 
         # On first run, save final state
         if check_data is None:
             check_data = {}
-            pool_state = interactive_hyperdrive.interface.get_hyperdrive_state()
-            check_data["present_value"] = interactive_hyperdrive.interface.calc_present_value(pool_state)
-            check_data["effective_share_reserves"] = interactive_hyperdrive.interface.calc_effective_share_reserves(
-                pool_state
-            )
+            pool_state = hyperdrive_pool.interface.get_hyperdrive_state()
+            check_data["present_value"] = hyperdrive_pool.interface.calc_present_value(pool_state)
+            check_data["effective_share_reserves"] = hyperdrive_pool.interface.calc_effective_share_reserves(pool_state)
             check_data["initial_pool_state"] = pool_state_df[check_columns].iloc[-1].copy()
             check_data["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
             check_data["minimum_share_reserves"] = pool_state.pool_config.minimum_share_reserves
             check_data["curr_checkpoint_id"] = ending_checkpoint_id
             first_run_state_dump_dir = str(chain.save_state(save_prefix="fuzz_path_independence"))
-            first_run_ticker = interactive_hyperdrive.get_trade_events()
+            first_run_ticker = hyperdrive_pool.get_trade_events()
 
         # On subsequent run, check against the saved final state
         else:
@@ -238,7 +236,7 @@ def fuzz_path_independence(
             # Raise an error if it failed
             assert first_run_state_dump_dir is not None
             try:
-                invariant_check(check_data, check_columns_epsilon, interactive_hyperdrive)
+                invariant_check(check_data, check_columns_epsilon, hyperdrive_pool)
             except FuzzAssertionException as error:
                 dump_state_dir = chain.save_state(save_prefix="fuzz_path_independence")
 
@@ -248,7 +246,7 @@ def fuzz_path_independence(
                     "first_run_state_dump_dir": first_run_state_dump_dir,
                     "dump_state_dir": dump_state_dir,
                     "first_run_trade_ticker": first_run_ticker,
-                    "trade_events": interactive_hyperdrive.get_trade_events(),
+                    "trade_events": hyperdrive_pool.get_trade_events(),
                 }
                 additional_info.update(error.exception_data)
 
@@ -261,7 +259,7 @@ def fuzz_path_independence(
                 rollbar_data.update(error.exception_data)
 
                 report = build_crash_trade_result(
-                    error, interactive_hyperdrive.interface, agent.account, additional_info=additional_info
+                    error, hyperdrive_pool.interface, agent.account, additional_info=additional_info
                 )
                 # Crash reporting already going to file in logging
                 log_hyperdrive_crash_report(
@@ -295,7 +293,10 @@ def fuzz_path_independence(
     if latest_error is not None:
         if pause_on_fail:
             # We don't log info from logging, so we print to ensure this shows up
-            print(f"Pausing pool (port {chain_config.chain_port}) crash {repr(latest_error)}")
+            print(
+                f"Pausing pool (pool:{hyperdrive_pool.hyperdrive_address} port:{chain_config.chain_port}) "
+                f"crash {repr(latest_error)}"
+            )
             while True:
                 time.sleep(1000000)
 
