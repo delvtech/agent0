@@ -82,17 +82,12 @@ dev = [
     "urllib3",
 ]
 
-ai = [
-    "gymnasium",
-    "scipy",
-]
-
 rollbar = [
     "rollbar",
 ]
 
 all = [
-    "agent0[dev,ai,rollbar]",
+    "agent0[dev,rollbar]",
 ]
 
 [project.urls]
