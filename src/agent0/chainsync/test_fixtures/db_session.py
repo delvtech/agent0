@@ -80,7 +80,8 @@ def psql_docker() -> Iterator[PostgresConfig]:
             "POSTGRES_PASSWORD": postgres_config.POSTGRES_PASSWORD,
         },
         name=TEST_POSTGRES_NAME,
-        ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},
+        # Docker python api has typing issues with the following port mapping
+        ports={"5432/tcp": ("127.0.0.1", postgres_config.POSTGRES_PORT)},  # type: ignore
         detach=True,
         remove=True,
     )
