@@ -128,13 +128,14 @@ class HyperdriveAgent:
         elif public_address is not None:
             self.address = Web3.to_checksum_address(public_address)
 
+        # If we don't set a name, we only set the object name as the abbreviated address.
+        # The pandas side will handle missing name to address mappings
         if name is None:
             self.name = abbreviate_address(self.address)
         else:
             self.name = name
-
-        # Register the username if it was provided
-        add_addr_to_username(self.name, [self.address], self.chain.db_session)
+            # Register the username if it was provided
+            add_addr_to_username(self.name, [self.address], self.chain.db_session)
 
     # Expose account and address for type narrowing in local agent
     @property
