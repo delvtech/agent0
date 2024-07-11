@@ -330,7 +330,6 @@ class HyperdriveReadInterface:
         ---------
         block_identifier: BlockIdentifier, optional
             The block identifier to get hyperdrive state on.
-
         block_data: BlockData, optional
             The block data to use to get hyperdrive state. This parameter is useful for reusing a
             previously retrieved block data. Can't provide both block_identifier and block
