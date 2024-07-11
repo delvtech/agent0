@@ -6,7 +6,6 @@ import logging
 from typing import Any, NamedTuple
 
 from fixedpointmath import FixedPoint
-from web3.exceptions import BlockNotFound
 from web3.types import BlockData, Timestamp
 
 from agent0.core.hyperdrive.crash_report import (
