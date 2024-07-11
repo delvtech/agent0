@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from typing import TYPE_CHECKING, Literal, Type, overload
 
 import pandas as pd
@@ -12,6 +13,7 @@ from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
+from web3.types import Nonce
 
 from agent0.chainsync.analysis import fill_pnl_values, snapshot_positions_to_db
 from agent0.chainsync.dashboard import abbreviate_address
@@ -136,6 +138,27 @@ class HyperdriveAgent:
             self.name = name
             # Register the username if it was provided
             add_addr_to_username(self.name, [self.address], self.chain.db_session)
+
+        # The agent object itself maintains it's own nonce for async transactions
+        self.nonce_lock = threading.Lock()
+        self.current_nonce = 0
+
+    def _get_nonce_safe(self) -> Nonce:
+        with self.nonce_lock:
+            # Since we're handing nonces here, we assume this wallet isn't making other trades
+            # so we always use the latest block
+            chain_nonce = self.chain._web3.eth.get_transaction_count(self.address, "latest")
+            if chain_nonce > self.current_nonce:
+                out_nonce = chain_nonce
+                self.current_nonce = chain_nonce + 1
+            else:
+                out_nonce = self.current_nonce
+                self.current_nonce += 1
+            return Nonce(out_nonce)
+
+    def _reset_nonce(self) -> None:
+        with self.nonce_lock:
+            self.current_nonce = 0
 
     # Expose account and address for type narrowing in local agent
     @property
@@ -302,9 +325,16 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
+
         # Type narrowing
         assert isinstance(hyperdrive_event, OpenLong)
         return hyperdrive_event
@@ -345,9 +375,16 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
+
         # Type narrowing
         assert isinstance(hyperdrive_event, CloseLong)
         return hyperdrive_event
@@ -385,9 +422,15 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
         # Type narrowing
         assert isinstance(hyperdrive_event, OpenShort)
         return hyperdrive_event
@@ -427,9 +470,15 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
         # Type narrowing
         assert isinstance(hyperdrive_event, CloseShort)
         return hyperdrive_event
@@ -467,9 +516,15 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
         # Type narrowing
         assert isinstance(hyperdrive_event, AddLiquidity)
         return hyperdrive_event
@@ -507,9 +562,15 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
         # Type narrowing
         assert isinstance(hyperdrive_event, RemoveLiquidity)
         return hyperdrive_event
@@ -547,9 +608,15 @@ class HyperdriveAgent:
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
                 self._active_policy,
+                nonce=self._get_nonce_safe(),
             )
         )
-        hyperdrive_event = self._handle_trade_result(trade_results, pool, always_throw_exception=True)
+        try:
+            hyperdrive_event = self._handle_trade_result(trade_results, pool, always_throw_exception=True)
+        except Exception as e:
+            # We always reset nonce on failure to avoid skipped nonces
+            self._reset_nonce()
+            raise e
         # Type narrowing
         assert isinstance(hyperdrive_event, RedeemWithdrawalShares)
         return hyperdrive_event
@@ -588,6 +655,7 @@ class HyperdriveAgent:
                 policy=self._active_policy,
                 preview_before_trade=self.chain.config.preview_before_trade,
                 liquidate=False,
+                base_nonce=self._get_nonce_safe(),
             )
         )
         out_events = []
@@ -596,6 +664,9 @@ class HyperdriveAgent:
             hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
             if hyperdrive_event is not None:
                 out_events.append(hyperdrive_event)
+            else:
+                # We always reset nonce on failure to avoid skipped nonces
+                self._reset_nonce()
         return out_events
 
     def liquidate(self, randomize: bool = False, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
@@ -634,6 +705,7 @@ class HyperdriveAgent:
                 preview_before_trade=self.chain.config.preview_before_trade,
                 liquidate=True,
                 randomize_liquidation=randomize,
+                base_nonce=self._get_nonce_safe(),
             )
         )
         out_events = []
@@ -643,6 +715,9 @@ class HyperdriveAgent:
             hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
             if hyperdrive_event is not None:
                 out_events.append(hyperdrive_event)
+            else:
+                # We always reset nonce on failure to avoid skipped nonces
+                self._reset_nonce()
         return out_events
 
     # Helper functions for trades
