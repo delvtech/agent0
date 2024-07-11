@@ -19,7 +19,7 @@ from .read_interface import HyperdriveReadInterface
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber, ChecksumAddress
+    from eth_typing import ChecksumAddress
     from fixedpointmath import FixedPoint
     from web3 import Web3
     from web3.types import Nonce
@@ -103,7 +103,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     def create_checkpoint(
         self,
         sender: LocalAccount,
-        block_number: BlockNumber | None = None,
         checkpoint_time: int | None = None,
         gas_limit: int | None = None,
         write_retry_count: int | None = None,
@@ -114,9 +113,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         ---------
         sender: LocalAccount
             The sender account that is executing and signing the trade transaction.
-        block_number: BlockNumber, optional
-            The number for any minted block.
-            Defaults to the current block number.
         checkpoint_time: int, optional
             The checkpoint time to use. Defaults to the corresponding checkpoint for the provided block_number
         gas_limit: int | None, optional
@@ -132,7 +128,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         return _create_checkpoint(
             interface=self,
             sender=sender,
-            block_number=block_number,
             checkpoint_time=checkpoint_time,
             gas_limit=gas_limit,
             write_retry_count=write_retry_count,

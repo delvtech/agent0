@@ -129,7 +129,6 @@ def _get_gov_fees_accrued(
 def _create_checkpoint(
     interface: HyperdriveReadWriteInterface,
     sender: LocalAccount,
-    block_number: BlockNumber | None = None,
     checkpoint_time: int | None = None,
     gas_limit: int | None = None,
     write_retry_count: int | None = None,
@@ -140,10 +139,7 @@ def _create_checkpoint(
         write_retry_count = interface.write_retry_count
 
     if checkpoint_time is None:
-        if block_number is None:
-            block_timestamp = interface.get_block_timestamp(interface.get_current_block())
-        else:
-            block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
+        block_timestamp = interface.get_block_timestamp(interface.get_current_block())
         checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
 
     # 0 is the max iterations for distribute excess idle, where it will default to
