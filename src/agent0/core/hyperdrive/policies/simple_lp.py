@@ -100,7 +100,7 @@ class SimpleLP(HyperdriveBasePolicy):
         """
         # Get the current state of the pool & the bot's position
         current_block = interface.get_current_block()
-        pool_state = interface.get_hyperdrive_state(current_block)
+        pool_state = interface.get_hyperdrive_state(block_data=current_block)
         lp_base_holding = wallet.lp_tokens * pool_state.pool_info.lp_share_price
 
         # Need to be in the game to play it

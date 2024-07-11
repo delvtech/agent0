@@ -195,7 +195,7 @@ def calc_closeout_value(
 
     # Get the pool state at this position
     block_number = int(current_positions["block_number"].iloc[0])
-    hyperdrive_state = interface.get_hyperdrive_state(interface.get_block(block_number))
+    hyperdrive_state = interface.get_hyperdrive_state(block_number)
 
     # Prepare the checkpoint info dataframe for lookups based on checkpoint time
     checkpoint_share_prices = checkpoint_info.set_index("checkpoint_time")["checkpoint_vault_share_price"]
