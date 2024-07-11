@@ -404,7 +404,7 @@ class HyperdriveReadInterface:
         checkpoint_time: Timestamp
             The block timestamp that indexes the checkpoint to get.
         block_identifier: BlockIdentifier, optional
-            The number for any minted block.
+            The identifier for a block.
             If not given, the latest block is used.
 
         Returns
@@ -422,7 +422,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         block_identifier: BlockIdentifier, optional
-            The number for any minted block.
+            The identifier for a block.
             If not given, the latest block number is used.
 
         Returns
@@ -440,7 +440,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         block_identifier: BlockNumber, optional
-            The number for any minted block.
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -483,7 +483,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         block_identifier : BlockIdentifier, optional
-            The number for any minted block.
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -565,7 +565,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         block_identifier: BlockIdentifier, optional
-            The number for any minted block.
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -581,7 +581,7 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         block_identifier: BlockIdentifier, optional
-            The number for any minted block.
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
