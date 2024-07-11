@@ -21,7 +21,7 @@ from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockER
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
-    from web3.types import Nonce
+    from web3.types import BlockIdentifier, Nonce
 
     from agent0.ethpy.hyperdrive.event_types import (
         AddLiquidity,
@@ -43,37 +43,37 @@ if TYPE_CHECKING:
 
 
 def _get_total_supply_withdrawal_shares(
-    hyperdrive_contract: IHyperdriveContract, block_number: BlockNumber | None = None
+    hyperdrive_contract: IHyperdriveContract, block_identifier: BlockIdentifier | None = None
 ) -> FixedPoint:
     """See API for documentation."""
     asset_id = encode_asset_id(AssetIdPrefix.WITHDRAWAL_SHARE, 0)
     total_supply_withdrawal_shares = hyperdrive_contract.functions.balanceOf(
         asset_id, hyperdrive_contract.address
-    ).call(block_identifier=block_number or "latest")
+    ).call(block_identifier=block_identifier or "latest")
     return FixedPoint(scaled_value=int(total_supply_withdrawal_shares))
 
 
 def _get_variable_rate(
-    yield_contract: MockERC4626Contract | MockLidoContract, block_number: BlockNumber | None = None
+    yield_contract: MockERC4626Contract | MockLidoContract, block_identifier: BlockIdentifier | None = None
 ) -> FixedPoint:
     """See API for documentation."""
-    rate = yield_contract.functions.getRate().call(block_identifier=block_number or "latest")
+    rate = yield_contract.functions.getRate().call(block_identifier=block_identifier or "latest")
     return FixedPoint(scaled_value=rate)
 
 
 def _get_vault_shares(
     interface: HyperdriveReadInterface,
     hyperdrive_contract: IHyperdriveContract,
-    block_number: BlockNumber | None = None,
+    block_identifier: BlockIdentifier | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
     if interface.vault_is_steth:
         vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
-            block_identifier=block_number or "latest"
+            block_identifier=block_identifier or "latest"
         )
     else:
         vault_shares = interface.vault_shares_token_contract.functions.balanceOf(hyperdrive_contract.address).call(
-            block_identifier=block_number or "latest"
+            block_identifier=block_identifier or "latest"
         )
     return FixedPoint(scaled_value=vault_shares)
 
@@ -93,11 +93,11 @@ def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccou
 def _get_hyperdrive_base_balance(
     base_contract: ERC20MintableContract,
     hyperdrive_contract: IHyperdriveContract,
-    block_number: BlockNumber | None,
+    block_identifier: BlockIdentifier | None,
 ) -> FixedPoint:
     """See API for documentation."""
     base_balance = base_contract.functions.balanceOf(hyperdrive_contract.address).call(
-        block_identifier=block_number or "latest"
+        block_identifier=block_identifier or "latest"
     )
     return FixedPoint(scaled_value=base_balance)
 
@@ -115,13 +115,11 @@ def _get_hyperdrive_eth_balance(
 
 def _get_gov_fees_accrued(
     hyperdrive_contract: IHyperdriveContract,
-    block_number: BlockNumber | None,
+    block_identifier: BlockIdentifier | None,
 ) -> FixedPoint:
     """See API for documentation."""
-    if block_number is None:
+    if block_identifier is None:
         block_identifier = "latest"
-    else:
-        block_identifier = block_number
     gov_fees_accrued = hyperdrive_contract.functions.getUncollectedGovernanceFees().call(
         block_identifier=block_identifier
     )
@@ -131,7 +129,6 @@ def _get_gov_fees_accrued(
 def _create_checkpoint(
     interface: HyperdriveReadWriteInterface,
     sender: LocalAccount,
-    block_number: BlockNumber | None = None,
     checkpoint_time: int | None = None,
     gas_limit: int | None = None,
     write_retry_count: int | None = None,
@@ -142,10 +139,7 @@ def _create_checkpoint(
         write_retry_count = interface.write_retry_count
 
     if checkpoint_time is None:
-        if block_number is None:
-            block_timestamp = interface.get_block_timestamp(interface.get_current_block())
-        else:
-            block_timestamp = interface.get_block_timestamp(interface.get_block(block_number))
+        block_timestamp = interface.get_block_timestamp(interface.get_current_block())
         checkpoint_time = interface.calc_checkpoint_id(interface.pool_config.checkpoint_duration, block_timestamp)
 
     # 0 is the max iterations for distribute excess idle, where it will default to

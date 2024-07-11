@@ -256,7 +256,7 @@ class HyperdriveReadInterface:
         current_block = self.get_current_block()
         current_block_number = self.get_block_number(current_block)
         if current_block_number > self.last_state_block_number:
-            self._current_pool_state = self.get_hyperdrive_state(current_block)
+            self._current_pool_state = self.get_hyperdrive_state(block_data=current_block)
             self.last_state_block_number = current_block_number
             return True
         return False
@@ -321,14 +321,19 @@ class HyperdriveReadInterface:
         """
         return _get_block_time(block)
 
-    def get_hyperdrive_state(self, block: BlockData | None = None) -> PoolState:
+    def get_hyperdrive_state(
+        self, block_identifier: BlockIdentifier | None = None, block_data: BlockData | None = None
+    ) -> PoolState:
         """Use RPCs and contract calls to get the Hyperdrive pool and block state, given a block identifier.
 
         Arguments
         ---------
-        block: BlockData, optional
-            A web3py dataclass for storing block information.
-            Defaults to the latest block.
+        block_identifier: BlockIdentifier, optional
+            The block identifier to get hyperdrive state on.
+        block_data: BlockData, optional
+            The block data to use to get hyperdrive state. This parameter is useful for reusing a
+            previously retrieved block data. Can't provide both block_identifier and block_data
+            at the same time.
 
         Returns
         -------
@@ -336,17 +341,26 @@ class HyperdriveReadInterface:
             A dataclass containing PoolInfo, PoolConfig, Checkpoint, and Block
             information that is synced to a given block number.
         """
-        if block is None:
-            block_identifier = cast(BlockIdentifier, "latest")
-            block = self.get_block(block_identifier)
-        block_number = self.get_block_number(block)
-        pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_number)
-        checkpoint_time = self.calc_checkpoint_id(self.pool_config.checkpoint_duration, self.get_block_timestamp(block))
-        checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_number)
-        exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time, block_number)
+
+        if block_identifier is not None and block_data is not None:
+            raise ValueError("Can't provide both block_identifier and block_data.")
+
+        if block_data is None:
+            if block_identifier is None:
+                block_identifier = cast(BlockIdentifier, "latest")
+            block_data = self.get_block(block_identifier)
+        else:
+            block_identifier = self.get_block_number(block_data)
+
+        pool_info = get_hyperdrive_pool_info(self.hyperdrive_contract, block_identifier)
+        checkpoint_time = self.calc_checkpoint_id(
+            self.pool_config.checkpoint_duration, self.get_block_timestamp(block_data)
+        )
+        checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_identifier)
+        exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time, block_identifier)
 
         try:
-            variable_rate = self.get_variable_rate(block_number)
+            variable_rate = self.get_variable_rate(block_identifier)
         except BadFunctionCallOutput:
             logging.warning(
                 "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
@@ -359,13 +373,13 @@ class HyperdriveReadInterface:
             )
             variable_rate = None
 
-        vault_shares = self.get_vault_shares(block_number)
-        total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_number)
-        hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_number)
+        vault_shares = self.get_vault_shares(block_identifier)
+        total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_identifier)
+        hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_identifier)
         hyperdrive_eth_balance = self.get_hyperdrive_eth_balance()
-        gov_fees_accrued = self.get_gov_fees_accrued(block_number)
+        gov_fees_accrued = self.get_gov_fees_accrued(block_identifier)
         return PoolState(
-            block=block,
+            block=block_data,
             pool_config=self.pool_config,
             pool_info=pool_info,
             checkpoint_time=checkpoint_time,
@@ -379,33 +393,35 @@ class HyperdriveReadInterface:
             gov_fees_accrued=gov_fees_accrued,
         )
 
-    def get_checkpoint(self, checkpoint_time: Timestamp, block_number: BlockNumber | None = None) -> CheckpointFP:
+    def get_checkpoint(
+        self, checkpoint_time: Timestamp, block_identifier: BlockIdentifier | None = None
+    ) -> CheckpointFP:
         """Use an RPC to get the checkpoint info for the Hyperdrive contract for a given checkpoint_time index.
 
         Arguments
         ---------
         checkpoint_time: Timestamp
             The block timestamp that indexes the checkpoint to get.
-        block_number: BlockNumber, optional
-            The number for any minted block.
-            If not given, the latest block number is used.
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
+            If not given, the latest block is used.
 
         Returns
         -------
         CheckpointFP
             The dataclass containing the checkpoint info in fixed point
         """
-        if block_number is None:
-            block_number = self.get_block_number(self.get_current_block())
-        return get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_number)
+        if block_identifier is None:
+            block_identifier = "latest"
+        return get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_identifier)
 
-    def get_total_supply_withdrawal_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_total_supply_withdrawal_shares(self, block_identifier: BlockIdentifier | None) -> FixedPoint:
         """Use an RPC to get the total supply of withdrawal shares in the pool at the given block.
 
         Arguments
         ---------
-        block_number: BlockNumber, optional
-            The number for any minted block.
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
             If not given, the latest block number is used.
 
         Returns
@@ -413,17 +429,17 @@ class HyperdriveReadInterface:
         FixedPoint
             The quantity of withdrawal shares available in the Hyperdrive pool.
         """
-        if block_number is None:
-            block_number = self.get_block_number(self.get_current_block())
-        return _get_total_supply_withdrawal_shares(self.hyperdrive_contract, block_number)
+        if block_identifier is None:
+            block_identifier = "latest"
+        return _get_total_supply_withdrawal_shares(self.hyperdrive_contract, block_identifier)
 
-    def get_vault_shares(self, block_number: BlockNumber | None) -> FixedPoint:
+    def get_vault_shares(self, block_identifier: BlockIdentifier | None) -> FixedPoint:
         """Use an RPC to get the balance of shares that the Hyperdrive pool has in the underlying yield source.
 
         Arguments
         ---------
-        block_number: BlockNumber, optional
-            The number for any minted block.
+        block_identifier: BlockNumber, optional
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -431,9 +447,9 @@ class HyperdriveReadInterface:
         FixedPoint
             The quantity of vault shares for the yield source at the provided block.
         """
-        if block_number is None:
-            block_number = self.get_block_number(self.get_current_block())
-        return _get_vault_shares(self, self.hyperdrive_contract, block_number)
+        if block_identifier is None:
+            block_identifier = "latest"
+        return _get_vault_shares(self, self.hyperdrive_contract, block_identifier)
 
     def get_idle_shares(self, pool_state: PoolState | None) -> FixedPoint:
         """Get the balance of idle shares that the Hyperdrive pool has.
@@ -457,7 +473,7 @@ class HyperdriveReadInterface:
         )
         return idle_shares
 
-    def get_variable_rate(self, block_number: BlockNumber | None = None) -> FixedPoint:
+    def get_variable_rate(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
         """Use an RPC to get the yield source variable rate.
 
         .. note:: This function assumes there exists an underlying `getRate` function in the contract.
@@ -465,8 +481,8 @@ class HyperdriveReadInterface:
 
         Arguments
         ---------
-        block_number: BlockNumber, optional
-            The number for any minted block.
+        block_identifier : BlockIdentifier, optional
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -474,9 +490,9 @@ class HyperdriveReadInterface:
         FixedPoint
             The variable rate for the yield source at the provided block.
         """
-        if block_number is None:
-            block_number = self.get_block_number(self.get_current_block())
-        return _get_variable_rate(self.vault_shares_token_contract, block_number)
+        if block_identifier is None:
+            block_identifier = "latest"
+        return _get_variable_rate(self.vault_shares_token_contract, block_identifier)
 
     def get_standardized_variable_rate(self, time_range: int = 604800) -> FixedPoint:
         """Get a standardized variable rate using vault share prices from checkpoints in the last `time_range` seconds.
@@ -542,13 +558,13 @@ class HyperdriveReadInterface:
         """
         return _get_hyperdrive_eth_balance(self, self.web3, self.hyperdrive_contract.address)
 
-    def get_hyperdrive_base_balance(self, block_number: BlockNumber | None = None) -> FixedPoint:
+    def get_hyperdrive_base_balance(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
         """Get the current Hyperdrive balance in the base contract.
 
         Arguments
         ---------
-        block_number: BlockNumber, optional
-            The number for any minted block.
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -556,15 +572,15 @@ class HyperdriveReadInterface:
         FixedPoint
             The result of base_token_contract.balanceOf(hyperdrive_address).
         """
-        return _get_hyperdrive_base_balance(self.base_token_contract, self.hyperdrive_contract, block_number)
+        return _get_hyperdrive_base_balance(self.base_token_contract, self.hyperdrive_contract, block_identifier)
 
-    def get_gov_fees_accrued(self, block_number: BlockNumber | None = None) -> FixedPoint:
+    def get_gov_fees_accrued(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
         """Get the current amount of Uncollected Governance Fees in the Hyperdrive contract.
 
         Arguments
         ---------
-        block_number: BlockNumber, optional
-            The number for any minted block.
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
             Defaults to the current block number.
 
         Returns
@@ -572,7 +588,7 @@ class HyperdriveReadInterface:
         FixedPoint
             The result of hyperdrive_contract.functions.getUncollectedGovernanceFees
         """
-        return _get_gov_fees_accrued(self.hyperdrive_contract, block_number)
+        return _get_gov_fees_accrued(self.hyperdrive_contract, block_identifier)
 
     def get_transfer_single_events(
         self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None

@@ -139,7 +139,7 @@ def build_crash_trade_result(
             query_block_id = trade_result.block_number
 
         try:
-            pool_state = interface.get_hyperdrive_state(interface.get_block(query_block_id))
+            pool_state = interface.get_hyperdrive_state(query_block_id)
         except Exception:  # pylint: disable=broad-except
             pass
 

@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
-from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
 from web3 import Web3
-from web3.types import Timestamp, TxReceipt
+from web3.types import BlockIdentifier, Timestamp, TxReceipt
 
 from agent0.ethpy.base import get_transaction_logs
 from agent0.hypertypes import IHyperdriveContract
@@ -52,27 +51,27 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IHyperdriveContract) -> Pool
     return pool_config_to_fixedpoint(cast(Any, pool_config))
 
 
-def get_hyperdrive_pool_info(hyperdrive_contract: IHyperdriveContract, block_number: BlockNumber) -> PoolInfoFP:
+def get_hyperdrive_pool_info(hyperdrive_contract: IHyperdriveContract, block_identifier: BlockIdentifier) -> PoolInfoFP:
     """Get the block pool info from the Hyperdrive contract.
 
     Arguments
     ---------
     hyperdrive_contract: Contract
         The contract to query the pool info from.
-    block_number: BlockNumber
-        The block number to query from the chain.
+    block_identifier: BlockIdentifier
+        The block identifier to query from the chain.
 
     Returns
     -------
     dict[str, Any]
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
-    pool_info = hyperdrive_contract.functions.getPoolInfo().call(None, block_number)
+    pool_info = hyperdrive_contract.functions.getPoolInfo().call(None, block_identifier)
     return pool_info_to_fixedpoint(pool_info)
 
 
 def get_hyperdrive_checkpoint(
-    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp, block_number: BlockNumber
+    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp, block_identifier: BlockIdentifier
 ) -> CheckpointFP:
     """Get the checkpoint info for the Hyperdrive contract at a given block.
 
@@ -82,7 +81,7 @@ def get_hyperdrive_checkpoint(
         The contract to query the pool info from.
     checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.
-    block_number: BlockNumber
+    block_identifier: BlockIdentifier
         The block number to query from the chain.
 
     Returns
@@ -90,12 +89,12 @@ def get_hyperdrive_checkpoint(
     CheckpointFP
         The dataclass containing the checkpoint info in fixed point
     """
-    checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call(None, block_number)
+    checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call(None, block_identifier)
     return checkpoint_to_fixedpoint(checkpoint)
 
 
 def get_hyperdrive_checkpoint_exposure(
-    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp, block_number: BlockNumber
+    hyperdrive_contract: IHyperdriveContract, checkpoint_time: Timestamp, block_identifier: BlockIdentifier
 ) -> FixedPoint:
     """Get the checkpoint exposure for the Hyperdrive contract at a given block.
 
@@ -106,7 +105,7 @@ def get_hyperdrive_checkpoint_exposure(
     checkpoint_time: Timestamp
         The block timestamp that indexes the checkpoint to get.
         This must be an exact checkpoint time for the deployed pool.
-    block_number: BlockNumber
+    block_identifier: BlockIdentifier
         The block number to query from the chain.
 
     Returns
@@ -114,7 +113,7 @@ def get_hyperdrive_checkpoint_exposure(
     CheckpointFP
         The dataclass containing the checkpoint info in fixed point.
     """
-    exposure = hyperdrive_contract.functions.getCheckpointExposure(checkpoint_time).call(None, block_number)
+    exposure = hyperdrive_contract.functions.getCheckpointExposure(checkpoint_time).call(None, block_identifier)
     return FixedPoint(scaled_value=exposure)
 
 

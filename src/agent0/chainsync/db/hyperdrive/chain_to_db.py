@@ -82,7 +82,7 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
 
     for interface in interfaces:
         hyperdrive_address = interface.hyperdrive_address
-        pool_state = interface.get_hyperdrive_state(block)
+        pool_state = interface.get_hyperdrive_state(block_data=block)
 
         ## Query and add block_pool_info
         # Adding this last as pool info is what we use to determine if this block is in the db for analysis

@@ -74,7 +74,7 @@ def run_invariant_checks(
         rollbar_log_level_threshold = logging.DEBUG
 
     # Get the variables to check & check each invariant
-    pool_state = interface.get_hyperdrive_state(check_block_data)
+    pool_state = interface.get_hyperdrive_state(block_data=check_block_data)
 
     results: list[InvariantCheckResults]
     if lp_share_price_test is None:
@@ -399,7 +399,7 @@ def _check_lp_share_price(
 
     # This is known to fail when checking the first block, as block - 1 doesn't exist.
     try:
-        previous_pool_state = interface.get_hyperdrive_state(interface.get_block(block_number - 1))
+        previous_pool_state = interface.get_hyperdrive_state(block_number - 1)
     except BlockNotFound:
         # Not a failure
         return InvariantCheckResults(
