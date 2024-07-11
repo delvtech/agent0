@@ -481,7 +481,7 @@ def _check_lp_share_price(
 
     if failed:
         exception_data["invariance_check:initial_lp_share_price"] = pending_lp_share_price
-        exception_data["invariance_check:current_lp_share_price"] = mined_lp_share_price
+        exception_data["invariance_check:mined_lp_share_price"] = mined_lp_share_price
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
 
