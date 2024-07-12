@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, NamedTuple
 
 from fixedpointmath import FixedPoint
@@ -379,6 +380,7 @@ def _check_lp_share_price(
 ) -> InvariantCheckResults:
     """Returns True if the test (∆ lp_share_price > test_epsilon) fails."""
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
 
     # LP share price
     # for any trade, LP share price shouldn't change by more than 0.1%
@@ -403,6 +405,16 @@ def _check_lp_share_price(
 
     # This is the block we're checking the lp share price on
     check_block_number = pending_pool_state.block_number
+
+    # There's a chance this check gets called again before the check_block_number has been mined.
+    # Hence, we ensure that the check_block_number has been mined before making the check
+    while True:
+        curr_block = interface.get_block_number(interface.get_current_block())
+        if curr_block < check_block_number:
+            time.sleep(1)
+        else:
+            break
+
     # Get the pool state after it was mined
     mined_pool_state = interface.get_hyperdrive_state(block_data=interface.get_block(check_block_number))
 
