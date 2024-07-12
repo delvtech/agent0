@@ -26,6 +26,7 @@ TOTAL_SHARES_EPSILON = 1e-9
 def run_invariant_checks(
     check_block_data: BlockData,
     interface: HyperdriveReadInterface,
+    simulation_mode: bool,
     log_to_rollbar: bool = True,
     rollbar_log_level_threshold: int | None = None,
     pool_name: str | None = None,
@@ -49,6 +50,9 @@ def run_invariant_checks(
         The current block to be tested.
     interface: HyperdriveReadInterface
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
+    simulation_mode: bool
+        If True, we're running invariance checks in simulation mode, which accounts for
+        non-uniform block times and simulated time advancements.
     log_to_rollbar: bool
         If True, log to rollbar if any invariant check fails.
     rollbar_log_level_threshold: int | None, optional
@@ -87,7 +91,7 @@ def run_invariant_checks(
         results = [
             # Critical if lp share price is down,
             # Warn if lp share price is up
-            _check_lp_share_price(interface),
+            _check_lp_share_price(interface, normalize_by_block_time=simulation_mode),
             # Warning
             _check_eth_balances(pool_state),
             # Info
@@ -109,7 +113,7 @@ def run_invariant_checks(
     else:
         if lp_share_price_test:
             results = [
-                _check_lp_share_price(interface),
+                _check_lp_share_price(interface, normalize_by_block_time=simulation_mode),
             ]
         else:
             results = [
@@ -375,12 +379,11 @@ def _check_present_value_greater_than_idle_shares(
     return InvariantCheckResults(failed, exception_message, exception_data, log_level)
 
 
-def _check_lp_share_price(
-    interface: HyperdriveReadInterface,
-) -> InvariantCheckResults:
+def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block_time: bool) -> InvariantCheckResults:
     """Returns True if the test (∆ lp_share_price > test_epsilon) fails."""
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
 
     # LP share price
     # for any trade, LP share price shouldn't change by more than 0.1%
@@ -418,20 +421,26 @@ def _check_lp_share_price(
     # Get the pool state after it was mined
     mined_pool_state = interface.get_hyperdrive_state(block_data=interface.get_block(check_block_number))
 
-    # We expect the lp share price to be less than the test epsilon between sequential blocks
-    # However, when simulating, we can advance time by any amount of time. Hence, we define
-    # the test epsilon to be relative to 12 seconds (1 block), and normalize by the actual time
-    # between blocks.
-
-    # The pending pool state is always 12 seconds ahead of the previously mined pool state.
-    # When we advance time, the actual mined block of the previously pending block time is
-    # then set to the advanced timestep. To account for this, we add 12 seconds to the block_time_delta
-    block_time_delta = (mined_pool_state.block_time - pending_pool_state.block_time) + 12
-    normalized_time_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
-
     pending_lp_share_price = pending_pool_state.pool_info.lp_share_price
     mined_lp_share_price = mined_pool_state.pool_info.lp_share_price
-    test_tolerance = pending_lp_share_price * FixedPoint(str(normalized_time_epsilon))
+
+    if normalize_by_block_time:
+        # We expect the lp share price to be less than the test epsilon between sequential blocks
+        # However, when simulating, we can advance time by any amount of time. Hence, we define
+        # the test epsilon to be relative to 12 seconds (1 block), and normalize by the actual time
+        # between blocks.
+
+        # Although we're testing the pending pool state, we need to normalize the case where
+        # we advance time when running fuzz testing. Pending timestamp is not reliable, so we
+        # compare the mined pool state versus the previous block's timestamp to see how much
+        # time has elapsed, then normalize by that time difference.
+        block_time_delta = mined_pool_state.block_time - interface.get_block_timestamp(
+            interface.get_block(check_block_number - 1)
+        )
+        normalized_time_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
+        test_tolerance = pending_lp_share_price * FixedPoint(str(normalized_time_epsilon))
+    else:
+        test_tolerance = pending_lp_share_price * FixedPoint(str(LP_SHARE_PRICE_EPSILON))
 
     # Relax check if
     # - a checkpoint was minted on the current block

@@ -300,6 +300,7 @@ def run_fuzz_bots(
                 fuzz_exceptions = run_invariant_checks(
                     check_block_data=latest_block,
                     interface=hyperdrive_pool.interface,
+                    simulation_mode=True,
                     log_to_rollbar=log_to_rollbar,
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
                     lp_share_price_test=lp_share_price_test,
