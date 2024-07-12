@@ -79,6 +79,14 @@ class LocalChain(Chain):
         The number of times to retry creating checkpoints when advancing time.
         Defaults to no retries.
         """
+        manual_database_sync: bool = False
+        """
+        If True, depends on the user to sync the database against the chain by calling
+        `pool.sync_database()`.
+        NOTE if this is `True`, the caller must call `pool.sync_database()` before any references
+        to getting the user's wallet, including any policy actions that require a wallet. Otherwise,
+        the wallet may be out of date. Use this at your own risk.
+        """
 
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
