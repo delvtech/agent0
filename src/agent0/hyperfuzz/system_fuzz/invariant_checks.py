@@ -391,18 +391,18 @@ def _check_lp_share_price(
     # TODO we hack in a stateful variable into the interface here, since we need
     # to check between subsequent calls here.
     # Initial call, we look to see if the attribute exists
-    previous_pool_state: PoolState | None = getattr(interface, "_lp_share_price_check_state", None)
+    pending_pool_state: PoolState | None = getattr(interface, "_lp_share_price_check_state", None)
     # Always set the new pending state here
     setattr(interface, "_lp_share_price_check_state", interface.get_hyperdrive_state("pending"))
 
-    if previous_pool_state is None:
+    if pending_pool_state is None:
         # Skip this check on initial call, not a failure
         return InvariantCheckResults(
             failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
         )
 
     # This is the block we're checking the lp share price on
-    check_block_number = previous_pool_state.block_number
+    check_block_number = pending_pool_state.block_number
     # Get the pool state after it was mined
     mined_pool_state = interface.get_hyperdrive_state(block_data=interface.get_block(check_block_number))
 
@@ -411,13 +411,13 @@ def _check_lp_share_price(
     # the test epsilon to be relative to 12 seconds (1 block), and normalize by the actual time
     # between blocks.
 
-    # The mined pool state is always 12 seconds ahead of the previous pool state.
-    # When we advance time, the mined block time is actually much larger.
-    # Hence, we add 12 seconds to the block_time_delta
-    block_time_delta = (mined_pool_state.block_time - previous_pool_state.block_time) + 12
+    # The pending pool state is always 12 seconds ahead of the previously mined pool state.
+    # When we advance time, the actual mined block of the previously pending block time is
+    # then set to the advanced timestep. To account for this, we add 12 seconds to the block_time_delta
+    block_time_delta = (mined_pool_state.block_time - pending_pool_state.block_time) + 12
     normalized_time_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
 
-    pending_lp_share_price = previous_pool_state.pool_info.lp_share_price
+    pending_lp_share_price = pending_pool_state.pool_info.lp_share_price
     mined_lp_share_price = mined_pool_state.pool_info.lp_share_price
     test_tolerance = pending_lp_share_price * FixedPoint(str(normalized_time_epsilon))
 
@@ -479,7 +479,7 @@ def _check_lp_share_price(
         log_level = logging.CRITICAL
 
     if failed:
-        exception_data["invariance_check:initial_lp_share_price"] = pending_lp_share_price
+        exception_data["invariance_check:pending_lp_share_price"] = pending_lp_share_price
         exception_data["invariance_check:mined_lp_share_price"] = mined_lp_share_price
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
