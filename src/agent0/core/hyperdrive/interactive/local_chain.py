@@ -571,6 +571,8 @@ class LocalChain(Chain):
                     if target_pool is None:
                         raise ValueError("Saved active pool not found in list of deployed pools.")
                     agent._active_pool = target_pool
+            # Reset the agent's nonce handler
+            agent._reset_nonce()
 
             agent._max_approval_pools = {}
 
