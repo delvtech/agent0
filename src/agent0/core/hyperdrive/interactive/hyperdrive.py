@@ -296,7 +296,6 @@ class Hyperdrive:
         return self.interface.hyperdrive_address
 
     def _sync_events(self) -> None:
-        # Remote hyperdrive stack syncs only the agent's wallet
         trade_events_to_db([self.interface], wallet_addr=None, db_session=self.chain.db_session)
         # We sync checkpoint events as well
         checkpoint_events_to_db([self.interface], db_session=self.chain.db_session)

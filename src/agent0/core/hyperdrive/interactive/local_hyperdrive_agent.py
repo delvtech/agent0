@@ -199,6 +199,26 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             pool = self._active_pool
 
         return pool
+    
+    def set_max_approval(self, pool: Hyperdrive | None = None) -> None:
+        """Sets the max approval to the hyperdrive contract.
+
+        .. warning:: This sets the max approval to the underlying hyperdrive contract for
+        this wallet. Do this at your own risk.
+
+        Arguments
+        ---------
+        pool: Hyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+        """
+        pool = self._ensure_pool_type(pool)
+        if pool is None:
+            raise ValueError("Setting approval requires an active pool.")
+        super().set_max_approval(pool)
+        # If we explicitly set approval, we mark it as such.
+        self._max_approval_pools[pool] = True
+        # Setting approval mines a block, so we update the data pipeline
+        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
 
     def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
