@@ -2,13 +2,13 @@
 
 ## 1. Prerequisites
 
-While not strictly required when connecting to a remote chain, we recommend that you install these tools to use the full suite of Agent0 simulation tools.
-
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) for running a local Anvil testnnet node.
 - [Docker](https://docs.docker.com/engine/install/) for hosting the underlying data tools.
-- [Rust](https://www.rust-lang.org/tools/install) for building hyperdrivepy
-  
-❗️ Ensure you are using rustc 1.78.0-nightly or newer
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) for running a local Anvil testnnet node for simulations.
+
+Additionally, `agent0` uses the package [`hyperdrivepy`](https://pypi.org/project/hyperdrivepy/) as a dependency. `hyperdrivepy` contains
+prebuilt binaries for common environments. However, if your environment is not supported, pip will attempt to build from
+the distributed source distribution, which requires [Rust](https://www.rust-lang.org/tools/install) installed in your
+environment to compile. Ensure you are using rustc 1.78.0-nightly or newer when building from source distribution.
 
 ## 2. Clone
 
