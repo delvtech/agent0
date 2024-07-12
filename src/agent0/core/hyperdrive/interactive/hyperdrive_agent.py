@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+from functools import partial
 from typing import TYPE_CHECKING, Literal, Type, overload
 
 import pandas as pd
@@ -25,7 +26,8 @@ from agent0.chainsync.db.hyperdrive import (
     get_trade_events,
     trade_events_to_db,
 )
-from agent0.core.base import Quantity, TokenType
+from agent0.core.base import Quantity, TokenType, Trade
+from agent0.core.hyperdrive import HyperdriveMarketAction
 from agent0.core.hyperdrive.agent import (
     HyperdriveWallet,
     TradeResult,
@@ -52,7 +54,13 @@ from agent0.ethpy.hyperdrive.event_types import (
     RemoveLiquidity,
 )
 
-from .exec import async_execute_agent_trades, async_execute_single_trade, set_max_approval
+from .exec import (
+    async_execute_agent_trades,
+    async_execute_single_trade,
+    get_liquidation_trades,
+    get_trades,
+    set_max_approval,
+)
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -194,14 +202,11 @@ class HyperdriveAgent:
             The amount of base to fund the agent with. Defaults to 0.
         eth: FixedPoint | None, optional
             The amount of ETH to fund the agent with. Defaults to 0.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
         """
-
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
 
         if pool is None and self._active_pool is not None:
             pool = self._active_pool
@@ -243,13 +248,9 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
         """
-        # Establish max approval for the hyperdrive contract
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
-
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -272,7 +273,7 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive
+        pool: Hyperdrive
             The pool to set as the active pool.
         policy: Type[HyperdriveBasePolicy] | None
             The policy to set as the active policy.
@@ -298,7 +299,7 @@ class HyperdriveAgent:
         ---------
         base: FixedPoint
             The amount of longs to open in units of base.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -306,8 +307,6 @@ class HyperdriveAgent:
         OpenLong
             The emitted event of the open long call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -320,7 +319,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -348,7 +347,7 @@ class HyperdriveAgent:
             The maturity time of the bonds to close. This is the identifier of the long tokens.
         bonds: FixedPoint
             The amount of longs to close in units of bonds.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -356,8 +355,6 @@ class HyperdriveAgent:
         CloseLong
             The emitted event of the close long call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -370,7 +367,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -396,7 +393,7 @@ class HyperdriveAgent:
         ---------
         bonds: FixedPoint
             The amount of shorts to open in units of bonds.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -404,8 +401,6 @@ class HyperdriveAgent:
         OpenShort
             The emitted event of the open short call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -417,7 +412,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -444,7 +439,7 @@ class HyperdriveAgent:
             The maturity time of the bonds to close. This is the identifier of the short tokens.
         bonds: FixedPoint
             The amount of shorts to close in units of bonds.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -452,8 +447,6 @@ class HyperdriveAgent:
         CloseShort
             The emitted event of the close short call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -465,7 +458,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -490,7 +483,7 @@ class HyperdriveAgent:
         ---------
         base: FixedPoint
             The amount of liquidity to add in units of base.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -498,8 +491,6 @@ class HyperdriveAgent:
         AddLiquidity
             The emitted event of the add liquidity call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -511,7 +502,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -536,7 +527,7 @@ class HyperdriveAgent:
         ---------
         shares: FixedPoint
             The amount of liquidity to remove in units of shares.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -544,8 +535,6 @@ class HyperdriveAgent:
         RemoveLiquidity
             The emitted event of the remove liquidity call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -557,7 +546,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -582,7 +571,7 @@ class HyperdriveAgent:
         ---------
         shares: FixedPoint
             The amount of withdrawal shares to redeem in units of shares.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -590,8 +579,6 @@ class HyperdriveAgent:
         RedeemWithdrawalShares
             The emitted event of the redeem withdrawal shares call.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         if pool is None:
             pool = self._active_pool
         if pool is None:
@@ -603,7 +590,7 @@ class HyperdriveAgent:
             async_execute_single_trade(
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
@@ -621,24 +608,20 @@ class HyperdriveAgent:
         assert isinstance(hyperdrive_event, RedeemWithdrawalShares)
         return hyperdrive_event
 
-    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
-        """Executes the underlying policy action (if set).
+    def get_policy_action(self, pool: Hyperdrive | None = None) -> list[Trade[HyperdriveMarketAction]]:
+        """Gets the underlying policy actions.
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
-        list[BaseHyperdriveEvent]
-            Events of the executed actions.
+        list[Trade[HyperdriveMarketAction]]
+            The actions of the underlying policy.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
         # Only allow executing agent policies if a policy was passed in the constructor
-        # we check type instead of isinstance to explicitly check for the hyperdrive base class
-        # pylint: disable=unidiomatic-typecheck
         if self._active_policy is None:
             raise ValueError("No active policy set.")
 
@@ -647,14 +630,77 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Executing policy action requires an active pool.")
 
+        return get_trades(
+            interface=pool.interface.get_read_interface(),
+            policy=self._active_policy,
+            wallet=self.get_wallet(pool),
+        )
+
+    def get_liquidate_action(
+        self, pool: Hyperdrive | None = None, randomize: bool = False
+    ) -> list[Trade[HyperdriveMarketAction]]:
+        """Gets the liquidate actions for this agent.
+
+        Arguments
+        ---------
+        pool: Hyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+        randomize: bool, optional
+            Whether to randomize the order of the liquidate actions.
+
+        Returns
+        -------
+        list[Trade[HyperdriveMarketAction]]
+            The liquidate actions of the underlying policy.
+        """
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Executing policy action requires an active pool.")
+
+        # For type narrowing
+        # rng should always be set in post_init
+        assert self.chain.config.rng is not None
+
+        return get_liquidation_trades(
+            interface=pool.interface.get_read_interface(),
+            wallet=self.get_wallet(pool),
+            randomize_trades=randomize,
+            rng=self.chain.config.rng,
+        )
+
+    def execute_action(
+        self, actions: list[Trade[HyperdriveMarketAction]], pool: Hyperdrive | None = None
+    ) -> list[BaseHyperdriveEvent]:
+        """Executes the specified actions.
+
+        Arguments
+        ---------
+        actions: list[Trade[HyperdriveMarketAction]]
+            The actions to execute. This is the return value of `get_policy_action` or `get_liquidate_action`.
+        pool: Hyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[BaseHyperdriveEvent]
+            Events of the executed actions.
+        """
+
+        if pool is None:
+            pool = self._active_pool
+        if pool is None:
+            raise ValueError("Executing actions requires an active pool.")
+
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
+                actions,
                 pool.interface,
                 self.account,
-                self.get_wallet(pool),
+                partial(self.get_wallet, pool),
+                # We pass in policy here for `post_action`. Post action is ignored if policy not set.
                 policy=self._active_policy,
                 preview_before_trade=self.chain.config.preview_before_trade,
-                liquidate=False,
                 base_nonce=self._get_nonce_safe(),
             )
         )
@@ -669,14 +715,34 @@ class HyperdriveAgent:
                 self._reset_nonce()
         return out_events
 
-    def liquidate(self, randomize: bool = False, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
-        """Liquidate all of the agent's positions.
+    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
+        """Gets the underlying policy action and executes them.
+
+        This function simply calls `execute_action` with the result of `get_policy_action`.
+
+        Arguments
+        ---------
+        pool: Hyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+
+        Returns
+        -------
+        list[BaseHyperdriveEvent]
+            Events of the executed actions.
+        """
+        # Only allow executing agent policies if a policy was passed in the constructor
+        return self.execute_action(self.get_policy_action(pool), pool)
+
+    def execute_liquidate(self, pool: Hyperdrive | None = None, randomize: bool = False) -> list[BaseHyperdriveEvent]:
+        """Gets the agent's liquidate actions and executes them.
+
+        This function simply calls `execute_action` with the result of `get_liquidate_action`.
 
         Arguments
         ---------
         randomize: bool, optional
             Whether to randomize liquidation trades. Defaults to False.
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -684,41 +750,7 @@ class HyperdriveAgent:
         list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
             Events of the executed actions.
         """
-        if self.account is None:
-            raise ValueError("Must initialize agent with private key for transactions.")
-        if pool is None:
-            pool = self._active_pool
-        if pool is None:
-            raise ValueError("Liquidate requires an active pool.")
-
-        # For type narrowing
-        # rng should always be set in post_init
-        assert self.chain.config.rng is not None
-
-        trade_results: list[TradeResult] = asyncio.run(
-            async_execute_agent_trades(
-                pool.interface,
-                self.account,
-                self.get_wallet(pool),
-                policy=None,
-                rng=self.chain.config.rng,
-                preview_before_trade=self.chain.config.preview_before_trade,
-                liquidate=True,
-                randomize_liquidation=randomize,
-                base_nonce=self._get_nonce_safe(),
-            )
-        )
-        out_events = []
-
-        # The underlying policy can execute multiple actions in one step
-        for trade_result in trade_results:
-            hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
-            if hyperdrive_event is not None:
-                out_events.append(hyperdrive_event)
-            else:
-                # We always reset nonce on failure to avoid skipped nonces
-                self._reset_nonce()
-        return out_events
+        return self.execute_action(self.get_liquidate_action(pool, randomize), pool)
 
     # Helper functions for trades
 
@@ -783,7 +815,7 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -849,7 +881,7 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -865,7 +897,7 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -881,7 +913,7 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
@@ -897,7 +929,7 @@ class HyperdriveAgent:
 
         Arguments
         ---------
-        pool: LocalHyperdrive | None, optional
+        pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns

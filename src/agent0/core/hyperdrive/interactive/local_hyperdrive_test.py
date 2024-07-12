@@ -1157,7 +1157,7 @@ def test_liquidate(fast_chain_fixture: LocalChain):
     alice.add_liquidity(base=FixedPoint(100))
     current_wallet = alice.get_positions()
     assert current_wallet.shape[0] == 3  # we have 3 open positions
-    alice.liquidate()
+    alice.execute_liquidate()
     current_wallet = alice.get_positions()
     assert current_wallet.shape[0] == 0  # we have 0 open position
 
@@ -1179,11 +1179,11 @@ def test_random_liquidate(fast_chain_fixture: LocalChain):
         alice.add_liquidity(base=FixedPoint(100))
         current_wallet = interactive_hyperdrive.get_positions()
         assert current_wallet.shape[0] == 4  # we have 4 open positions, including base
-        liquidate_events = alice.liquidate(randomize=True)
+        liquidate_events = alice.execute_liquidate(randomize=True)
         # We run liquidate here twice, as there's a chance the trades result in gaining withdrawal shares
         # TODO write loop within liquidate to call this multiple times
         # and also account for when no withdrawal shares are available to withdraw.
-        liquidate_events.extend(alice.liquidate(randomize=True))
+        liquidate_events.extend(alice.execute_liquidate(randomize=True))
         current_wallet = interactive_hyperdrive.get_positions()
         all_liquidate_events.append(liquidate_events)
         assert current_wallet.shape[0] == 1  # we have 1 open position, including base

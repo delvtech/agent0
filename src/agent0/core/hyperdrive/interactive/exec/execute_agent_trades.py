@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from copy import deepcopy
+from typing import Callable
 
 from eth_account.signers.local import LocalAccount
 from numpy.random import Generator
@@ -33,9 +34,27 @@ from agent0.ethpy.hyperdrive.event_types import BaseHyperdriveEvent
 from agent0.utils import retry_call
 
 
-def _get_liquidation_trades(
+def get_liquidation_trades(
     interface: HyperdriveReadInterface, wallet: HyperdriveWallet, randomize_trades: bool, rng: Generator
 ) -> list[Trade[HyperdriveMarketAction]]:
+    """Get liquidation trades.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadInterface
+        The read interface for the market.
+    wallet: HyperdriveWallet
+        The wallet of the account.
+    randomize_trades: bool
+        Whether to randomize trades.
+    rng: Generator
+        The random number generator for randomizing trades.
+
+    Returns
+    -------
+    list[Trade[HyperdriveMarketAction]]
+        The list of liquidation trades.
+    """
     minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
     action_list = []
     for maturity_time, long in wallet.longs.items():
@@ -66,9 +85,25 @@ def _get_liquidation_trades(
     return action_list
 
 
-def _get_trades(
+def get_trades(
     interface: HyperdriveReadInterface, policy: HyperdriveBasePolicy, wallet: HyperdriveWallet
 ) -> list[Trade[HyperdriveMarketAction]]:
+    """Get trades from the policy.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadInterface
+        The read interface for the market.
+    policy: HyperdriveBasePolicy
+        The policy attached to the agent.
+    wallet: HyperdriveWallet
+        The wallet of the account.
+
+    Returns
+    -------
+    list[Trade[HyperdriveMarketAction]]
+        The list of trades from the policy.
+    """
     # TODO this function likely should live in policy
 
     # get the action list from the policy
@@ -88,14 +123,12 @@ def _get_trades(
 
 # pylint: disable=too-many-arguments
 async def async_execute_agent_trades(
+    trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadWriteInterface,
     account: LocalAccount,
-    wallet: HyperdriveWallet,
+    wallet_func: Callable[[], HyperdriveWallet],
     policy: HyperdriveBasePolicy | None,
     preview_before_trade: bool,
-    liquidate: bool,
-    randomize_liquidation: bool = False,
-    rng: Generator | None = None,
     base_nonce: Nonce | None = None,
 ) -> list[TradeResult]:
     """Executes a single agent's trade based on its policy.
@@ -108,24 +141,22 @@ async def async_execute_agent_trades(
 
     Arguments
     ---------
+    trades: list[Trade[HyperdriveMarketAction]]
+        The list of trades to execute.
     interface: HyperdriveReadWriteInterface
         The Hyperdrive API interface object.
     account: LocalAccount
         The account that is conducting the trade.
-    wallet: HyperdriveWallet
-        The agent wallet object tied to a pool.
+    wallet_func: Callable[[], HyperdriveWallet]
+        The function to get the agent's wallet object tied to a pool.
+        We only use this function in crash reporting, so we only call this
+        if a trade fails.
+        NOTE: this function parameter doesn't receive any arguments, so a partial
+        function must be made to pass in arguments, e.g., the pool.
     policy: HyperdriveBasePolicy
         The policy being executed.
     preview_before_trade: bool
         Whether or not to preview the trade before it is executed.
-    liquidate: bool
-        If set, will ignore all policy settings and liquidate all open positions.
-    randomize_liquidation: bool, optional
-        If set, will randomize the order of liquidation trades.
-        Defaults to False.
-    rng: Generator, optional
-        The RNG used to randomize liquidation trades.
-        Defaults to None.
     base_nonce: Nonce, optional
         The base nonce to use for this set of trades.
 
@@ -135,19 +166,6 @@ async def async_execute_agent_trades(
         Returns a list of TradeResult objects, one for each trade made by the agent.
         TradeResult handles any information about the trade, as well as any trade errors.
     """
-
-    if liquidate:
-        if rng is None:
-            raise ValueError("RNG cannot be None when liquidating.")
-        trades: list[Trade[HyperdriveMarketAction]] = _get_liquidation_trades(
-            interface, wallet, randomize_liquidation, rng
-        )
-    else:
-        if policy is None:
-            raise ValueError("Policy cannot be None when executing agent trades.")
-        trades: list[Trade[HyperdriveMarketAction]] = _get_trades(
-            interface=interface.get_read_interface(), policy=policy, wallet=wallet
-        )
 
     # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
     # To do this, we need to manually set the nonce, so we get the base transaction count here
@@ -182,7 +200,7 @@ async def async_execute_agent_trades(
         return_exceptions=True,
     )
 
-    trade_results = _handle_contract_call_to_trade(event_or_exception, trades, interface, account, wallet, policy)
+    trade_results = _handle_contract_call_to_trade(event_or_exception, trades, interface, account, wallet_func, policy)
 
     # TODO to avoid adding a post action in base policy, we only call post action
     # if the policy is a hyperdrive policy. Ideally, we'd allow base classes all the
@@ -203,7 +221,7 @@ async def async_execute_agent_trades(
 async def async_execute_single_trade(
     interface: HyperdriveReadWriteInterface,
     account: LocalAccount,
-    account_wallet: HyperdriveWallet,
+    wallet_func: Callable[[], HyperdriveWallet],
     trade_object: Trade[HyperdriveMarketAction],
     execute_policy_post_action: bool,
     preview_before_trade: bool,
@@ -222,8 +240,12 @@ async def async_execute_single_trade(
         The Hyperdrive API interface object.
     account: LocalAccount
         The LocalAccount that is conducting the trade.
-    account_wallet: HyperdriveWallet
-        The wallet of the account.
+    wallet_func: Callable[[], HyperdriveWallet]
+        The function to get the agent's wallet object tied to a pool.
+        We only use this function in crash reporting, so we only call this
+        if a trade fails.
+        NOTE: this function parameter doesn't receive any arguments, so a partial
+        function must be made to pass in arguments, e.g., the pool.
     trade_object: Trade[HyperdriveMarketAction]
         The trade to execute.
     execute_policy_post_action: bool
@@ -261,7 +283,7 @@ async def async_execute_single_trade(
         receipt_or_exception = e
 
     trade_results = _handle_contract_call_to_trade(
-        [receipt_or_exception], [trade_object], interface, account, account_wallet, policy=None
+        [receipt_or_exception], [trade_object], interface, account, wallet_func, policy=None
     )
 
     assert len(trade_results) == 1
@@ -288,7 +310,7 @@ def _handle_contract_call_to_trade(
     trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadInterface,
     account: LocalAccount,
-    wallet: HyperdriveWallet,
+    wallet_func: Callable[[], HyperdriveWallet],
     policy: HyperdriveBasePolicy | None,
 ) -> list[TradeResult]:
     """Handle the results of executing trades. This function also updates the underlying agent's wallet.
@@ -323,13 +345,10 @@ def _handle_contract_call_to_trade(
         )
 
     trade_results: list[TradeResult] = []
-    # Since the list of wallet deltas or exceptions is guaranteed to be in the order
-    # of execution, we incrementally update the wallet. Updating the wallet
-    # while iterating will ensure the invalid balance check has the most
-    # up to date wallet for checking balances.
     for result, trade_object in zip(event_or_exception, trades):
         if isinstance(result, Exception):
-            trade_result = build_crash_trade_result(result, interface, account, wallet, policy, trade_object)
+            # We get the agent's wallet here by calling the function passed in.
+            trade_result = build_crash_trade_result(result, interface, account, wallet_func(), policy, trade_object)
             # We check for common errors and allow for custom handling of various errors.
             # These functions adjust the trade_result.exception object to add
             # additional arguments describing these detected errors for crash reporting.
