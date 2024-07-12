@@ -131,7 +131,7 @@ class CloseShort(BaseHyperdriveEvent):
     maturity_time: int
     """The maturity time for the closed short."""
     amount: FixedPoint
-    """The amount spent from closing the short, units dependent on `as_base` flag."""
+    """The trader proceeds received from closing the short, units dependent on `as_base` flag."""
     vault_share_price: FixedPoint
     """The share price at the time of this trade."""
     as_base: bool
