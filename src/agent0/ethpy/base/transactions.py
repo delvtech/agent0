@@ -433,21 +433,12 @@ def build_transaction(
     if txn_options_priority_fee_multiple is None:
         txn_options_priority_fee_multiple = DEFAULT_PRIORITY_FEE_MULTIPLE
     signer_checksum_address = Web3.to_checksum_address(signer.address)
-    # TODO figure out which exception here to retry on
-    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
-    if nonce is None:
-        nonce = base_nonce
-    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
-    if base_nonce > nonce:
-        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
-        nonce = base_nonce
 
     # This is the additional transaction argument passed into function.call
-    # that may contain additional call arguments such as max_gas, nonce, etc.
+    # that may contain additional call arguments such as max_gas, etc.
     transaction_kwargs = TxParams(
         {
             "from": signer_checksum_address,
-            "nonce": nonce,
         }
     )
     if txn_options_value is not None:
@@ -468,7 +459,22 @@ def build_transaction(
     if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
 
-    return func_handle.build_transaction(TxParams(transaction_kwargs))
+    raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
+
+    # There's an issue where `build_transaction` fails when we pass in an "invalid" nonce.
+    # In the case where the caller is giving an explicit nonce for multiple transactions,
+    # this fails here unnecessarily when e.g., the transaction with the higher nonce
+    # gets built first. Hence, we solve this by building the transaction without the nonce
+    # first, then attach the nonce to the raw txn when submitting. This ensures that building
+    # transactions isn't subject to the specific nonce order, and instead lets the submission
+    # of the transaction handle invalid nonces.
+
+    # TODO figure out which exception here to retry on
+    if nonce is None:
+        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
+    raw_txn["nonce"] = nonce
+
+    return raw_txn
 
 
 async def _async_send_transaction_and_wait_for_receipt(
