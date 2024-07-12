@@ -411,9 +411,13 @@ def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block
 
     # There's a chance this check gets called again before the check_block_number has been mined.
     # Hence, we ensure that the check_block_number has been mined before making the check
+    loop_counter = 0
     while True:
+        if loop_counter > 24:
+            logging.warning("Check block number has not been mined in a reasonable amount of time")
         curr_block = interface.get_block_number(interface.get_current_block())
         if curr_block < check_block_number:
+            loop_counter += 1
             time.sleep(1)
         else:
             break
