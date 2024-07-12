@@ -8,7 +8,7 @@ While not strictly required when connecting to a remote chain, we recommend that
 - [Docker](https://docs.docker.com/engine/install/) for hosting the underlying data tools.
 - [Rust](https://www.rust-lang.org/tools/install) for building hyperdrivepy
   
-❗️ Ensure you are using rustc 1.81.0-nightly or newer
+❗️ Ensure you are using rustc 1.78.0-nightly or newer
 
 ## 2. Clone
 
