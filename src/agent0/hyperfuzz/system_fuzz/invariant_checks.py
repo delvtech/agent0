@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, NamedTuple
 
 from fixedpointmath import FixedPoint
-from web3.exceptions import BlockNotFound
 from web3.types import BlockData, Timestamp
 
 from agent0.core.hyperdrive.crash_report import (
@@ -26,6 +26,7 @@ TOTAL_SHARES_EPSILON = 1e-9
 def run_invariant_checks(
     check_block_data: BlockData,
     interface: HyperdriveReadInterface,
+    simulation_mode: bool,
     log_to_rollbar: bool = True,
     rollbar_log_level_threshold: int | None = None,
     pool_name: str | None = None,
@@ -49,6 +50,9 @@ def run_invariant_checks(
         The current block to be tested.
     interface: HyperdriveReadInterface
         An instantiated HyperdriveReadInterface object constructed using the script arguments.
+    simulation_mode: bool
+        If True, we're running invariance checks in simulation mode, which accounts for
+        non-uniform block times and simulated time advancements.
     log_to_rollbar: bool
         If True, log to rollbar if any invariant check fails.
     rollbar_log_level_threshold: int | None, optional
@@ -87,7 +91,7 @@ def run_invariant_checks(
         results = [
             # Critical if lp share price is down,
             # Warn if lp share price is up
-            _check_lp_share_price(interface, pool_state),
+            _check_lp_share_price(interface, normalize_by_block_time=simulation_mode),
             # Warning
             _check_eth_balances(pool_state),
             # Info
@@ -109,7 +113,7 @@ def run_invariant_checks(
     else:
         if lp_share_price_test:
             results = [
-                _check_lp_share_price(interface, pool_state),
+                _check_lp_share_price(interface, normalize_by_block_time=simulation_mode),
             ]
         else:
             results = [
@@ -375,12 +379,11 @@ def _check_present_value_greater_than_idle_shares(
     return InvariantCheckResults(failed, exception_message, exception_data, log_level)
 
 
-def _check_lp_share_price(
-    interface: HyperdriveReadInterface,
-    pool_state: PoolState,
-) -> InvariantCheckResults:
+def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block_time: bool) -> InvariantCheckResults:
     """Returns True if the test (∆ lp_share_price > test_epsilon) fails."""
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
+    # pylint: disable=too-many-branches
 
     # LP share price
     # for any trade, LP share price shouldn't change by more than 0.1%
@@ -390,28 +393,58 @@ def _check_lp_share_price(
     exception_data: dict[str, Any] = {}
     log_level = None
 
-    block_number = pool_state.block_number
+    # TODO we hack in a stateful variable into the interface here, since we need
+    # to check between subsequent calls here.
+    # Initial call, we look to see if the attribute exists
+    pending_pool_state: PoolState | None = getattr(interface, "_lp_share_price_check_state", None)
+    # Always set the new pending state here
+    setattr(interface, "_lp_share_price_check_state", interface.get_hyperdrive_state("pending"))
 
-    # We expect the lp share price to be less than the test epsilon between sequential blocks
-    # However, when simulating, we can advance time by any amount of time. Hence, we define
-    # the test epsilon to be relative to 12 seconds (1 block), and normalize by the actual time
-    # between blocks.
-
-    # This is known to fail when checking the first block, as block - 1 doesn't exist.
-    try:
-        previous_pool_state = interface.get_hyperdrive_state(block_number - 1)
-    except BlockNotFound:
-        # Not a failure
+    if pending_pool_state is None:
+        # Skip this check on initial call, not a failure
         return InvariantCheckResults(
             failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
         )
 
-    block_time_delta = pool_state.block_time - previous_pool_state.block_time
-    normalized_test_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
+    # This is the block we're checking the lp share price on
+    check_block_number = pending_pool_state.block_number
 
-    previous_lp_share_price = previous_pool_state.pool_info.lp_share_price
-    current_lp_share_price = pool_state.pool_info.lp_share_price
-    test_tolerance = previous_lp_share_price * FixedPoint(str(normalized_test_epsilon))
+    # There's a chance this check gets called again before the check_block_number has been mined.
+    # Hence, we ensure that the check_block_number has been mined before making the check
+    loop_counter = 0
+    while True:
+        if loop_counter > 24:
+            logging.warning("Check block number has not been mined in a reasonable amount of time")
+        curr_block = interface.get_block_number(interface.get_current_block())
+        if curr_block < check_block_number:
+            loop_counter += 1
+            time.sleep(1)
+        else:
+            break
+
+    # Get the pool state after it was mined
+    mined_pool_state = interface.get_hyperdrive_state(block_data=interface.get_block(check_block_number))
+
+    pending_lp_share_price = pending_pool_state.pool_info.lp_share_price
+    mined_lp_share_price = mined_pool_state.pool_info.lp_share_price
+
+    if normalize_by_block_time:
+        # We expect the lp share price to be less than the test epsilon between sequential blocks
+        # However, when simulating, we can advance time by any amount of time. Hence, we define
+        # the test epsilon to be relative to 12 seconds (1 block), and normalize by the actual time
+        # between blocks.
+
+        # Although we're testing the pending pool state, we need to normalize the case where
+        # we advance time when running fuzz testing. Pending timestamp is not reliable, so we
+        # compare the mined pool state versus the previous block's timestamp to see how much
+        # time has elapsed, then normalize by that time difference.
+        block_time_delta = mined_pool_state.block_time - interface.get_block_timestamp(
+            interface.get_block(check_block_number - 1)
+        )
+        normalized_time_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
+        test_tolerance = pending_lp_share_price * FixedPoint(str(normalized_time_epsilon))
+    else:
+        test_tolerance = pending_lp_share_price * FixedPoint(str(LP_SHARE_PRICE_EPSILON))
 
     # Relax check if
     # - a checkpoint was minted on the current block
@@ -419,17 +452,20 @@ def _check_lp_share_price(
 
     # Determine if a checkpoint was minted on the current block
     # -1 to get events from current block
-    checkpoint_events = interface.get_checkpoint_events(from_block=pool_state.block_number - 1)
+    checkpoint_events = interface.get_checkpoint_events(from_block=check_block_number - 1)
     currently_minting_checkpoint = False
-    if len(list(checkpoint_events)) > 0:
-        currently_minting_checkpoint = True
+    for event in checkpoint_events:
+        assert "blockNumber" in event
+        if event["blockNumber"] == check_block_number:
+            currently_minting_checkpoint = True
+            break
 
     # Determine if matured positions were closed this timestamp
     # We look for close events on this block
     # -1 to get events from current block
     trade_events: list[dict[str, Any]] = []
-    trade_events.extend(interface.get_close_short_events(from_block=pool_state.block_number - 1))
-    trade_events.extend(interface.get_close_long_events(from_block=pool_state.block_number - 1))
+    trade_events.extend(interface.get_close_short_events(from_block=check_block_number - 1))
+    trade_events.extend(interface.get_close_long_events(from_block=check_block_number - 1))
 
     closing_mature_position = False
     for event in trade_events:
@@ -439,37 +475,37 @@ def _check_lp_share_price(
         assert "blockNumber" in event
         # Race condition, filter only on events from the current block
         # Check if any matured positions were closed
-        if (event["blockNumber"] == pool_state.block_number) and (
-            pool_state.block_time >= event["args"]["maturityTime"]
+        if (event["blockNumber"] == check_block_number) and (
+            mined_pool_state.block_time >= event["args"]["maturityTime"]
         ):
             closing_mature_position = True
             break
 
     # We check if lp share price jumps higher than expected
     # if we're doing a full check. In this case, we warn
-    difference_in_wei = abs(previous_lp_share_price.scaled_value - current_lp_share_price.scaled_value)
+    difference_in_wei = abs(pending_lp_share_price.scaled_value - mined_lp_share_price.scaled_value)
     if not currently_minting_checkpoint and not closing_mature_position:
-        if (current_lp_share_price - previous_lp_share_price) >= test_tolerance:
+        if (mined_lp_share_price - pending_lp_share_price) >= test_tolerance:
             failed = True
             exception_message = (
-                "LP share price went up more than expected: "
-                f"{previous_lp_share_price=}, {current_lp_share_price=}, {difference_in_wei=}"
+                f"LP share price went up more than expected on block {check_block_number}: "
+                f"{pending_lp_share_price=}, {mined_lp_share_price=}, {difference_in_wei=}"
             )
             log_level = logging.WARNING
 
     # We always check if lp share price jumps lower than expected.
     # In this case, we throw critical.
-    if (previous_lp_share_price - current_lp_share_price) >= test_tolerance:
+    if (pending_lp_share_price - mined_lp_share_price) >= test_tolerance:
         failed = True
         exception_message = (
-            "LP share price went down more than expected: "
-            f"{previous_lp_share_price=}, {current_lp_share_price=}, {difference_in_wei=}"
+            f"LP share price went down more than expected on block {check_block_number}: "
+            f"{pending_lp_share_price=}, {mined_lp_share_price=}, {difference_in_wei=}"
         )
         log_level = logging.CRITICAL
 
     if failed:
-        exception_data["invariance_check:initial_lp_share_price"] = previous_lp_share_price
-        exception_data["invariance_check:current_lp_share_price"] = current_lp_share_price
+        exception_data["invariance_check:pending_lp_share_price"] = pending_lp_share_price
+        exception_data["invariance_check:mined_lp_share_price"] = mined_lp_share_price
         exception_data["invariance_check:lp_share_price_difference_in_wei"] = difference_in_wei
         failed = True
 
