@@ -693,6 +693,12 @@ class HyperdriveAgent:
         if pool is None:
             raise ValueError("Executing actions requires an active pool.")
 
+        # We don't want to call `_get_nonce_safe()` if we don't do any actions,
+        # as this results in a skipped nonce value. Hence, we explicitly check for
+        # empty actions here and return early.
+        if len(actions) == 0:
+            return []
+
         trade_results: list[TradeResult] = asyncio.run(
             async_execute_agent_trades(
                 actions,
