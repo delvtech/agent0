@@ -314,7 +314,7 @@ class LocalChain(Chain):
         if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
             self._advance_chain_time(time_delta)
             for pool in self._deployed_hyperdrive_pools:
-                pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+                pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         else:
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
@@ -373,7 +373,7 @@ class LocalChain(Chain):
 
             curr_block = self._web3.eth.get_block_number()
             for pool in self._deployed_hyperdrive_pools:
-                pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
+                pool._maybe_run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
 
         return out_dict
 

@@ -296,9 +296,11 @@ class LocalHyperdrive(Hyperdrive):
 
         if backfill_data_start_block is not None:
             logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
+            # If this is set, we ignore manual sync and always sync the database
             self.sync_database(progress_bar=True)
         else:
-            self.sync_database()
+            # Otherwise, we do this lazily if manual sync is on
+            self._maybe_run_blocking_data_pipeline()
 
     def sync_database(self, start_block: int | None = None, progress_bar: bool = False) -> None:
         """Syncs the database with the chain.
@@ -343,7 +345,7 @@ class LocalHyperdrive(Hyperdrive):
             calc_pnl=self.calc_pnl,
         )
 
-    def _run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
+    def _maybe_run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
         # Checks the chain config to see if manual sync is on. Noop if it is.
         if not self.chain.config.manual_database_sync:
             self.sync_database(start_block, progress_bar)
@@ -448,7 +450,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         self.interface.set_variable_rate(self.chain.get_deployer_account(), variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
-        self._run_blocking_data_pipeline()
+        self._maybe_run_blocking_data_pipeline()
 
     def _create_checkpoint(
         self,

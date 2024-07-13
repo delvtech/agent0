@@ -218,7 +218,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         # If we explicitly set approval, we mark it as such.
         self._max_approval_pools[pool.hyperdrive_address] = True
         # Setting approval mines a block, so we update the data pipeline
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
 
     def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
@@ -242,7 +242,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().open_long(base, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
@@ -269,7 +269,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().close_long(maturity_time, bonds, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
@@ -294,7 +294,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().open_short(bonds, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
@@ -321,7 +321,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().close_short(maturity_time, bonds, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
@@ -346,7 +346,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().add_liquidity(base, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
@@ -371,7 +371,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().remove_liquidity(shares, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
@@ -396,7 +396,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         self._ensure_approval_set(pool)
         out = super().redeem_withdrawal_share(shares, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def get_policy_action(self, pool: Hyperdrive | None = None) -> list[Trade[HyperdriveMarketAction]]:
@@ -460,7 +460,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             raise ValueError("Executing action requires an active pool.")
         self._ensure_approval_set(pool)
         out = super().execute_action(actions, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     # Helper functions for trades
