@@ -105,7 +105,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         # We keep track of pools this agent has been approved for
         # and call set max approval for any pools this agent has interacted with
-        self._max_approval_pools: dict[LocalHyperdrive, bool] = {}
+        # This is keyed by the hyperdrive address.
+        self._max_approval_pools: dict[str, bool] = {}
 
     def add_funds(
         self,
@@ -183,9 +184,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     def _ensure_approval_set(self, pool: LocalHyperdrive) -> None:
         # Call set max approval for the pool if it hasn't been called yet.
-        if pool not in self._max_approval_pools:
+        if pool.hyperdrive_address not in self._max_approval_pools:
             self.set_max_approval(pool)
-            self._max_approval_pools[pool] = True
 
     def _ensure_pool_type(self, pool: Hyperdrive | None) -> LocalHyperdrive | None:
         # Explicit type checking
@@ -199,7 +199,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             pool = self._active_pool
 
         return pool
-    
+
     def set_max_approval(self, pool: Hyperdrive | None = None) -> None:
         """Sets the max approval to the hyperdrive contract.
 
@@ -216,7 +216,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             raise ValueError("Setting approval requires an active pool.")
         super().set_max_approval(pool)
         # If we explicitly set approval, we mark it as such.
-        self._max_approval_pools[pool] = True
+        self._max_approval_pools[pool.hyperdrive_address] = True
         # Setting approval mines a block, so we update the data pipeline
         pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
 

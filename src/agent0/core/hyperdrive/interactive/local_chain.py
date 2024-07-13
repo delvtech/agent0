@@ -550,6 +550,9 @@ class LocalChain(Chain):
             if agent._active_pool is not None:
                 with open(active_pool_file, "wb") as file:
                     dill.dump(agent._active_pool.hyperdrive_address, file, protocol=dill.HIGHEST_PROTOCOL)
+            max_approval_file = save_dir / (agent.address + "-max-approval.pkl")
+            with open(max_approval_file, "wb") as file:
+                dill.dump(agent._max_approval_pools, file, protocol=dill.HIGHEST_PROTOCOL)
 
     def _load_agent_bookkeeping(self, load_dir: Path) -> None:
         policy_file = load_dir / "agents.pkl"
@@ -582,7 +585,10 @@ class LocalChain(Chain):
             # Reset the agent's nonce handler
             agent._reset_nonce()
 
-            agent._max_approval_pools = {}
+            # Keep track of which pools we set max approval for already
+            max_approval_file = load_dir / (agent.address + "-max-approval.pkl")
+            with open(max_approval_file, "rb") as file:
+                agent._max_approval_pools = dill.load(file)
 
     def _save_policy_state(self, save_dir: Path) -> None:
         for agent in self._chain_agents:
