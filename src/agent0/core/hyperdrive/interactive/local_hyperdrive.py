@@ -303,7 +303,8 @@ class LocalHyperdrive(Hyperdrive):
             self._maybe_run_blocking_data_pipeline()
 
     def sync_database(self, start_block: int | None = None, progress_bar: bool = False) -> None:
-        """Syncs the database with the chain.
+        """Explicitly syncs the database with the chain.
+        This function doesn't need to be explicitly called if `manual_database_sync = False`.
 
         The database itself will determine how to append new data to ensure non-duplicated data.
         We call this function with a start block if we want to skip intermediate blocks.
