@@ -154,7 +154,7 @@ class HyperdriveAgent:
 
     def _get_nonce_safe(self) -> Nonce:
         with self.nonce_lock:
-            # Since we're handing nonces here, we assume this wallet isn't making other trades
+            # Since we're handling nonces here, we assume this wallet isn't making other trades
             # so we always use the latest block
             chain_nonce = self.chain._web3.eth.get_transaction_count(self.address, "latest")
             if chain_nonce > self.current_nonce:
