@@ -629,7 +629,7 @@ class HyperdriveAgent:
         if pool is None:
             pool = self._active_pool
         if pool is None:
-            raise ValueError("Executing policy action requires an active pool.")
+            raise ValueError("Getting policy action requires an active pool.")
 
         return get_trades(
             interface=pool.interface.get_read_interface(),
@@ -657,7 +657,7 @@ class HyperdriveAgent:
         if pool is None:
             pool = self._active_pool
         if pool is None:
-            raise ValueError("Executing policy action requires an active pool.")
+            raise ValueError("Getting liquidate actions requires an active pool.")
 
         # For type narrowing
         # rng should always be set in post_init
