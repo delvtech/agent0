@@ -76,6 +76,7 @@ class HyperdriveAgent:
     """Interactive Hyperdrive Agent."""
 
     # pylint: disable=too-many-public-methods
+    # pylint: disable=too-many-instance-attributes
 
     ################
     # Initialization
