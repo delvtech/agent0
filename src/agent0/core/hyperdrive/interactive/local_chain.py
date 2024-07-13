@@ -79,6 +79,14 @@ class LocalChain(Chain):
         The number of times to retry creating checkpoints when advancing time.
         Defaults to no retries.
         """
+        manual_database_sync: bool = False
+        """
+        If True, depends on the user to sync the database against the chain by calling
+        `pool.sync_database()`.
+        NOTE if this is `True`, the caller must call `pool.sync_database()` before any references
+        to getting the user's wallet, including any policy actions that require a wallet. Otherwise,
+        the wallet may be out of date. Use this at your own risk.
+        """
 
         crash_log_ticker: bool = False
         """Whether to log the trade ticker in crash reports. Defaults to False."""
@@ -306,7 +314,7 @@ class LocalChain(Chain):
         if (not create_checkpoints) or (len(self._deployed_hyperdrive_pools) == 0):
             self._advance_chain_time(time_delta)
             for pool in self._deployed_hyperdrive_pools:
-                pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+                pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         else:
             # For every pool, check the checkpoint duration and advance the chain for that amount of time,
             # followed by creating a checkpoint for that pool.
@@ -365,7 +373,7 @@ class LocalChain(Chain):
 
             curr_block = self._web3.eth.get_block_number()
             for pool in self._deployed_hyperdrive_pools:
-                pool._run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
+                pool._maybe_run_blocking_data_pipeline(curr_block)  # pylint: disable=protected-access
 
         return out_dict
 
@@ -542,6 +550,9 @@ class LocalChain(Chain):
             if agent._active_pool is not None:
                 with open(active_pool_file, "wb") as file:
                     dill.dump(agent._active_pool.hyperdrive_address, file, protocol=dill.HIGHEST_PROTOCOL)
+            max_approval_file = save_dir / (agent.address + "-max-approval.pkl")
+            with open(max_approval_file, "wb") as file:
+                dill.dump(agent._max_approval_pools, file, protocol=dill.HIGHEST_PROTOCOL)
 
     def _load_agent_bookkeeping(self, load_dir: Path) -> None:
         policy_file = load_dir / "agents.pkl"
@@ -571,8 +582,13 @@ class LocalChain(Chain):
                     if target_pool is None:
                         raise ValueError("Saved active pool not found in list of deployed pools.")
                     agent._active_pool = target_pool
+            # Reset the agent's nonce handler
+            agent._reset_nonce()
 
-            agent._max_approval_pools = {}
+            # Keep track of which pools we set max approval for already
+            max_approval_file = load_dir / (agent.address + "-max-approval.pkl")
+            with open(max_approval_file, "rb") as file:
+                agent._max_approval_pools = dill.load(file)
 
     def _save_policy_state(self, save_dir: Path) -> None:
         for agent in self._chain_agents:

@@ -296,18 +296,32 @@ class LocalHyperdrive(Hyperdrive):
 
         if backfill_data_start_block is not None:
             logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
-            self._run_blocking_data_pipeline(progress_bar=True)
+            # If this is set, we ignore manual sync and always sync the database
+            self.sync_database(progress_bar=True)
         else:
-            self._run_blocking_data_pipeline()
+            # Otherwise, we do this lazily if manual sync is on
+            self._maybe_run_blocking_data_pipeline()
 
-    def _run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
-        # TODO these functions are not thread safe, need to fix if we expose async functions
-        # Runs the data pipeline synchronously
+    def sync_database(self, start_block: int | None = None, progress_bar: bool = False) -> None:
+        """Explicitly syncs the database with the chain.
+        This function doesn't need to be explicitly called if `manual_database_sync = False`.
 
-        # We call this function with a start block if we want to skip intermediate blocks.
-        # Subsequent calls after can again be `self._deploy_block_number` as long as the
-        # call with skipping blocks wrote a row, as the data pipeline checks the latest
-        # block entry and starts from there.
+        The database itself will determine how to append new data to ensure non-duplicated data.
+        We call this function with a start block if we want to skip intermediate blocks.
+        Subsequent calls after can again be `self._deploy_block_number` as long as the
+        call with skipping blocks wrote a row, as the data pipeline checks the latest
+        block entry and starts from there.
+
+        TODO these functions are not thread safe, need to fix if we expose async functions
+
+        Arguments
+        ---------
+        start_block: int | None, optional
+            The block number to start syncing from. Only used if we want to skip blocks in the database.
+            Defaults to ensuring all blocks are synced.
+        progress_bar: bool, optional
+            If True, will show a progress bar.
+        """
         if start_block is None:
             data_start_block = self._data_start_block
             analysis_start_block = self._analysis_start_block
@@ -331,6 +345,11 @@ class LocalHyperdrive(Hyperdrive):
             suppress_logs=True,
             calc_pnl=self.calc_pnl,
         )
+
+    def _maybe_run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
+        # Checks the chain config to see if manual sync is on. Noop if it is.
+        if not self.chain.config.manual_database_sync:
+            self.sync_database(start_block, progress_bar)
 
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
     # This is used to allow chain's `advance_time` function to return this object as a key.
@@ -432,7 +451,7 @@ class LocalHyperdrive(Hyperdrive):
         """
         self.interface.set_variable_rate(self.chain.get_deployer_account(), variable_rate)
         # Setting the variable rate mines a block, so we run data pipeline here
-        self._run_blocking_data_pipeline()
+        self._maybe_run_blocking_data_pipeline()
 
     def _create_checkpoint(
         self,

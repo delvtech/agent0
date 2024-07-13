@@ -8,9 +8,12 @@ import pandas as pd
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
 
+from agent0.core.base import Trade
 from agent0.core.base.make_key import make_private_key
+from agent0.core.hyperdrive import HyperdriveMarketAction
 from agent0.core.hyperdrive.agent import TradeResult
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
+from agent0.core.hyperdrive.interactive.hyperdrive import Hyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
@@ -102,7 +105,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         # We keep track of pools this agent has been approved for
         # and call set max approval for any pools this agent has interacted with
-        self._max_approval_pools: dict[LocalHyperdrive, bool] = {}
+        # This is keyed by the hyperdrive address.
+        self._max_approval_pools: dict[str, bool] = {}
 
     def add_funds(
         self,
@@ -180,9 +184,41 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     def _ensure_approval_set(self, pool: LocalHyperdrive) -> None:
         # Call set max approval for the pool if it hasn't been called yet.
-        if pool not in self._max_approval_pools:
+        if pool.hyperdrive_address not in self._max_approval_pools:
             self.set_max_approval(pool)
-            self._max_approval_pools[pool] = True
+
+    def _ensure_pool_type(self, pool: Hyperdrive | None) -> LocalHyperdrive | None:
+        # Explicit type checking
+        if pool is not None and not isinstance(pool, LocalHyperdrive):
+            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+
+        if pool is None:
+            # Type narrowing
+            if self._active_pool is not None:
+                assert isinstance(self._active_pool, LocalHyperdrive)
+            pool = self._active_pool
+
+        return pool
+
+    def set_max_approval(self, pool: Hyperdrive | None = None) -> None:
+        """Sets the max approval to the hyperdrive contract.
+
+        .. warning:: This sets the max approval to the underlying hyperdrive contract for
+        this wallet. Do this at your own risk.
+
+        Arguments
+        ---------
+        pool: Hyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
+        """
+        pool = self._ensure_pool_type(pool)
+        if pool is None:
+            raise ValueError("Setting approval requires an active pool.")
+        super().set_max_approval(pool)
+        # If we explicitly set approval, we mark it as such.
+        self._max_approval_pools[pool.hyperdrive_address] = True
+        # Setting approval mines a block, so we update the data pipeline
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
 
     def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
         """Opens a long for this agent.
@@ -199,21 +235,14 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         OpenLong
             The emitted event of the open long call.
         """
-        # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+        pool = self._ensure_pool_type(pool)
 
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
         if pool is None:
             raise ValueError("Open long requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().open_long(base, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
@@ -234,20 +263,13 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The emitted event of the close long call.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
+        pool = self._ensure_pool_type(pool)
         if pool is None:
             raise ValueError("Close long requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().close_long(maturity_time, bonds, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
@@ -266,20 +288,13 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The emitted event of the open short call.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
+        pool = self._ensure_pool_type(pool)
         if pool is None:
             raise ValueError("Open short requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().open_short(bonds, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
@@ -300,20 +315,13 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The emitted event of the close short call.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
+        pool = self._ensure_pool_type(pool)
         if pool is None:
             raise ValueError("Close short requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().close_short(maturity_time, bonds, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
@@ -332,20 +340,13 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The emitted event of the add liquidity call.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
+        pool = self._ensure_pool_type(pool)
         if pool is None:
             raise ValueError("Add liquidity requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().add_liquidity(base, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
@@ -364,20 +365,13 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The emitted event of the remove liquidity call.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
+        pool = self._ensure_pool_type(pool)
         if pool is None:
             raise ValueError("Remove liquidity requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().remove_liquidity(shares, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
@@ -396,24 +390,17 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The emitted event of the redeem withdrawal shares call.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
+        pool = self._ensure_pool_type(pool)
         if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
-        if pool is None:
-            raise ValueError("Remove liquidity requires an active pool.")
+            raise ValueError("Remove withdrawal shares requires an active pool.")
 
         self._ensure_approval_set(pool)
         out = super().redeem_withdrawal_share(shares, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
-        """Executes the underlying policy action (if set).
+    def get_policy_action(self, pool: Hyperdrive | None = None) -> list[Trade[HyperdriveMarketAction]]:
+        """Gets the underlying policy actions.
 
         Arguments
         ---------
@@ -422,56 +409,58 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
         Returns
         -------
-        list[OpenLong | OpenShort | CloseLong | CloseShort | AddLiquidity | RemoveLiquidity | RedeemWithdrawalShares]
-            Events of the executed actions.
+        list[Trade[HyperdriveMarketAction]]
+            The actions of the underlying policy.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
+        pool = self._ensure_pool_type(pool)
+        return super().get_policy_action(pool)
 
-        if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
-        if pool is None:
-            raise ValueError("Executing policy action requires an active pool.")
-
-        self._ensure_approval_set(pool)
-        out = super().execute_policy_action(pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
-        return out
-
-    def liquidate(self, randomize: bool = False, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
-        """Liquidate all of the agent's positions.
+    def get_liquidate_action(
+        self, pool: Hyperdrive | None = None, randomize: bool = False
+    ) -> list[Trade[HyperdriveMarketAction]]:
+        """Gets the liquidate actions for this agent.
 
         Arguments
         ---------
+        pool: LocalHyperdrive | None, optional
+            The pool to interact with. Defaults to the active pool.
         randomize: bool, optional
-            Whether to randomize liquidation trades. Defaults to False.
+            Whether to randomize the order of the liquidate actions.
+
+        Returns
+        -------
+        list[Trade[HyperdriveMarketAction]]
+            The liquidate actions of the underlying policy.
+        """
+        # Explicit type checking
+        pool = self._ensure_pool_type(pool)
+        return super().get_liquidate_action(pool, randomize)
+
+    def execute_action(
+        self, actions: list[Trade[HyperdriveMarketAction]], pool: Hyperdrive | None = None
+    ) -> list[BaseHyperdriveEvent]:
+        """Executes the specified actions.
+
+        Arguments
+        ---------
+        actions: list[Trade[HyperdriveMarketAction]]
+            The actions to execute. This is the return value of `get_policy_action` or `get_liquidate_action`.
         pool: LocalHyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
 
         Returns
         -------
-        list[CloseLong | CloseShort | RemoveLiquidity | RedeemWithdrawalShares]
+        list[BaseHyperdriveEvent]
             Events of the executed actions.
         """
         # Explicit type checking
-        if pool is not None and not isinstance(pool, LocalHyperdrive):
-            raise TypeError("Pool must be an instance of LocalHyperdrive for a LocalHyperdriveAgent")
-
+        pool = self._ensure_pool_type(pool)
         if pool is None:
-            # Type narrowing
-            if self._active_pool is not None:
-                assert isinstance(self._active_pool, LocalHyperdrive)
-            pool = self._active_pool
-        if pool is None:
-            raise ValueError("Liquidate requires an active pool.")
-
+            raise ValueError("Executing action requires an active pool.")
         self._ensure_approval_set(pool)
-        out = super().liquidate(randomize, pool)
-        pool._run_blocking_data_pipeline()  # pylint: disable=protected-access
+        out = super().execute_action(actions, pool)
+        pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
     # Helper functions for trades
