@@ -153,9 +153,16 @@ class HyperdriveAgent:
         self.current_nonce = 0
 
     def _get_nonce_safe(self) -> Nonce:
-        # This function handles getting nonces in a thread-safe manner.
-        # We pass in the callable function to underlying ethpy calls so that
-        # we get nonce when we sign the transaction.
+        """Get agent nonces in a thread-safe manner.
+
+        We pass in the callable function to underlying ethpy calls so that
+        we get nonce when we sign the transaction.
+
+        Returns
+        -------
+        int
+            The agent's current nonce value.
+        """
         with self.nonce_lock:
             # Since we're handling nonces here, we assume this wallet isn't making other trades
             # so we always use the latest block
