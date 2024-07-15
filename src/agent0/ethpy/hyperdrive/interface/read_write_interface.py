@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from ._contract_calls import (
     _async_add_liquidity,
@@ -156,7 +156,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> OpenLong:
         """Contract call to open a long position.
@@ -178,8 +178,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce, optional
-            An optional explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -196,7 +198,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )
 
@@ -211,7 +213,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> CloseLong:
         """Contract call to close a long position.
@@ -235,8 +237,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce, optional
-            An optional explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -254,7 +258,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )
 
@@ -266,7 +270,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> OpenShort:
         """Contract call to open a short position.
@@ -288,8 +292,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce, optional
-            An explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -306,7 +312,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )
 
@@ -321,7 +327,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> CloseShort:
         """Contract call to close a short position.
@@ -345,8 +351,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce | None, optional
-            An explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -364,7 +372,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )
 
@@ -380,7 +388,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> AddLiquidity:
         """Contract call to add liquidity to the Hyperdrive pool.
@@ -406,8 +414,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce | None, optional
-            An explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -426,7 +436,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )
 
@@ -437,7 +447,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> RemoveLiquidity:
         """Contract call to remove liquidity from the Hyperdrive pool.
@@ -455,8 +465,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce | None, optional
-            An explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -472,7 +484,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )
 
@@ -483,7 +495,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
         txn_options_priority_fee_multiple: float | None = None,
-        nonce: Nonce | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
     ) -> RedeemWithdrawalShares:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
@@ -509,8 +521,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The multiple applied to the base fee for the transaction. Defaults to 1.
         txn_options_priority_fee_multiple: float | None, optional
             The multiple applied to the priority fee for the transaction. Defaults to 1.
-        nonce: Nonce | None, optional
-            An explicit nonce to set with the transaction.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
+            Defaults to setting it to the result of `get_transaction_count`.
         preview_before_trade: bool, optional
             Whether to preview the trade before executing. Defaults to False.
 
@@ -526,6 +540,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
             txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-            nonce=nonce,
+            nonce_func=nonce_func,
             preview_before_trade=preview_before_trade,
         )

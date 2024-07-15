@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
 import time
 from typing import NamedTuple, Sequence
@@ -90,7 +89,7 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level=logging.CRITICAL)
+            rollbar.report_exc_info(level="critical")
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
@@ -130,7 +129,7 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level=logging.CRITICAL)
+            rollbar.report_exc_info(level="critical")
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
@@ -158,7 +157,7 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level=logging.CRITICAL)
+            rollbar.report_exc_info(level="critical")
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
@@ -192,7 +191,7 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level=logging.CRITICAL)
+            rollbar.report_exc_info(level="critical")
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would

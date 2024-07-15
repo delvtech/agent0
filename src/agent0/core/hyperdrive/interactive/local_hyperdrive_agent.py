@@ -175,7 +175,8 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     def account(self) -> LocalAccount:
         """Returns the `LocalAccount` associated with the agent."""
         # Account should always be set in local agents
-        assert self._account is not None
+        if self._account is None:
+            raise ValueError("Must initialize agent with private key to access agent's LocalAccount.")
         return self._account
 
     ################

@@ -230,8 +230,6 @@ def run_checkpoint_bot(
                 # 0 is the max iterations for distribute excess idle, where it will default to
                 # the default max iterations
                 fn_args = (checkpoint_time, 0)
-                # Call the thread safe get nonce function for this transaction's nonce
-                nonce = async_get_nonce(web3, sender)
 
                 # Try preview call
                 _ = smart_contract_preview_transaction(
@@ -239,7 +237,6 @@ def run_checkpoint_bot(
                     sender.address,
                     "checkpoint",
                     *fn_args,
-                    nonce=nonce,
                 )
 
                 receipt = smart_contract_transact(
@@ -248,7 +245,7 @@ def run_checkpoint_bot(
                     sender,
                     "checkpoint",
                     *fn_args,
-                    nonce=nonce,
+                    nonce_func=partial(async_get_nonce, web3, sender),
                 )
                 # Reset fail count on successful transaction
                 fail_count = 0

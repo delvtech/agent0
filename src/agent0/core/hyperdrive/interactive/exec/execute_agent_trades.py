@@ -28,10 +28,8 @@ from agent0.core.hyperdrive.crash_report import (
 )
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
-from agent0.ethpy.base.transactions import DEFAULT_READ_RETRY_COUNT
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from agent0.ethpy.hyperdrive.event_types import BaseHyperdriveEvent
-from agent0.utils import retry_call
 
 
 def get_liquidation_trades(
@@ -129,7 +127,7 @@ async def async_execute_agent_trades(
     wallet_func: Callable[[], HyperdriveWallet],
     policy: HyperdriveBasePolicy | None,
     preview_before_trade: bool,
-    base_nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
 ) -> list[TradeResult]:
     """Executes a single agent's trade based on its policy.
     This function is async as `_match_contract_call_to_trade` waits for a transaction receipt.
@@ -157,8 +155,10 @@ async def async_execute_agent_trades(
         The policy being executed.
     preview_before_trade: bool
         Whether or not to preview the trade before it is executed.
-    base_nonce: Nonce, optional
-        The base nonce to use for this set of trades.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
 
     Returns
     -------
@@ -166,15 +166,6 @@ async def async_execute_agent_trades(
         Returns a list of TradeResult objects, one for each trade made by the agent.
         TradeResult handles any information about the trade, as well as any trade errors.
     """
-
-    # Make trades async for this agent. This way, an agent can submit multiple trades for a single block
-    # To do this, we need to manually set the nonce, so we get the base transaction count here
-    # and pass in an incrementing nonce per call
-    # TODO figure out which exception here to retry on
-    if base_nonce is None:
-        base_nonce = retry_call(
-            DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, account.address, "pending"
-        )
 
     # Here, gather returns results based on original order of trades due to nonce getting explicitly set based
     # on iterating through the list
@@ -191,8 +182,8 @@ async def async_execute_agent_trades(
                 account,
                 interface,
                 trade_object,
-                nonce=Nonce(base_nonce + i),
                 preview_before_trade=preview_before_trade,
+                nonce_func=nonce_func,
             )
             for i, trade_object in enumerate(trades)
         ],
@@ -225,8 +216,8 @@ async def async_execute_single_trade(
     trade_object: Trade[HyperdriveMarketAction],
     execute_policy_post_action: bool,
     preview_before_trade: bool,
+    nonce_func: Callable[[], Nonce] | None = None,
     policy: HyperdriveBasePolicy | None = None,
-    nonce: Nonce | None = None,
 ) -> TradeResult:
     """Executes a single trade made by the agent.
 
@@ -252,11 +243,13 @@ async def async_execute_single_trade(
         Whether or not to execute the post_action of the policy after the trade.
     preview_before_trade: bool
         Whether or not to preview the trade before it is executed.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     policy: HyperdriveBasePolicy | None, optional
         The policy attached to the agent. This is only used to potentially call `post_action`
         of the policy.
-    nonce: Nonce | None, optional
-        The nonce for the trade.
 
     Returns
     -------
@@ -264,20 +257,13 @@ async def async_execute_single_trade(
         The result of the trade.
     """
 
-    # TODO we likely need to bookkeep nonces here to avoid a race condition when this function
-    # is being called asynchronously. We use a lock for the time being as a stopgap.
-    if nonce is None:
-        nonce = retry_call(
-            DEFAULT_READ_RETRY_COUNT, None, interface.web3.eth.get_transaction_count, account.address, "pending"
-        )
-
     try:
         receipt_or_exception = await _async_match_contract_call_to_trade(
             account,
             interface,
             trade_object,
-            nonce,
             preview_before_trade,
+            nonce_func=nonce_func,
         )
     except Exception as e:  # pylint: disable=broad-except
         receipt_or_exception = e
@@ -372,8 +358,8 @@ async def _async_match_contract_call_to_trade(
     account: LocalAccount,
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
-    nonce: Nonce,
     preview_before_trade: bool,
+    nonce_func: Callable[[], Nonce] | None = None,
 ) -> BaseHyperdriveEvent:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -385,10 +371,12 @@ async def _async_match_contract_call_to_trade(
         The Hyperdrive API interface object.
     trade_envelope: Trade[HyperdriveMarketAction]
         A specific Hyperdrive trade requested by the given agent.
-    nonce: Nonce, optional
-        Override the transaction number assigned to the transaction call from the agent wallet.
     preview_before_trade: bool
         Whether or not to preview the trade before it is executed.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
 
     Returns
     -------
@@ -406,7 +394,7 @@ async def _async_match_contract_call_to_trade(
                 trade.trade_amount,
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 
@@ -419,7 +407,7 @@ async def _async_match_contract_call_to_trade(
                 trade.maturity_time,
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 
@@ -429,7 +417,7 @@ async def _async_match_contract_call_to_trade(
                 trade.trade_amount,
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 
@@ -442,7 +430,7 @@ async def _async_match_contract_call_to_trade(
                 trade.maturity_time,
                 slippage_tolerance=trade.slippage_tolerance,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 
@@ -458,7 +446,7 @@ async def _async_match_contract_call_to_trade(
                 trade.max_apr,
                 slippage_tolerance=None,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 
@@ -467,7 +455,7 @@ async def _async_match_contract_call_to_trade(
                 account,
                 trade.trade_amount,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 
@@ -476,7 +464,7 @@ async def _async_match_contract_call_to_trade(
                 account,
                 trade.trade_amount,
                 gas_limit=trade.gas_limit,
-                nonce=nonce,
+                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
             )
 

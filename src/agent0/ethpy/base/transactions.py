@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockIdentifier, BlockNumber, ChecksumAddress
@@ -174,7 +174,7 @@ def smart_contract_preview_transaction(
     txn_options_value: int | None
         The value field for the transaction.
     nonce: int | None
-        The nonce field for the transaction.
+        The nonce field for the preview. If None, we call preview without a nonce.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -391,8 +391,6 @@ def build_transaction(
     func_handle: ContractFunction,
     signer: LocalAccount,
     web3: Web3,
-    nonce: Nonce | None = None,
-    read_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
@@ -408,10 +406,6 @@ def build_transaction(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     web3: Web3
         web3 container object
-    nonce: Nonce | None
-        The nonce to use for this transaction. Defaults to setting it to the result of `get_transaction_count`.
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
         The value field for the transaction.
     txn_options_gas: int | None = None
@@ -426,8 +420,6 @@ def build_transaction(
     TxParams
         The unsent raw transaction.
     """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
     if txn_options_base_fee_multiple is None:
         txn_options_base_fee_multiple = DEFAULT_BASE_FEE_MULTIPLE
     if txn_options_priority_fee_multiple is None:
@@ -461,24 +453,16 @@ def build_transaction(
 
     raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
 
-    # There's an issue where `build_transaction` fails when we pass in an "invalid" nonce.
-    # In the case where the caller is giving an explicit nonce for multiple transactions,
-    # this fails here unnecessarily when e.g., the transaction with the higher nonce
-    # gets built first. Hence, we solve this by building the transaction without the nonce
-    # first, then attach the nonce to the raw txn when submitting. This ensures that building
-    # transactions isn't subject to the specific nonce order, and instead lets the submission
-    # of the transaction handle invalid nonces.
-
-    # TODO figure out which exception here to retry on
-    if nonce is None:
-        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
-    raw_txn["nonce"] = nonce
-
     return raw_txn
 
 
 async def _async_send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
+    unsent_txn: TxParams,
+    signer: LocalAccount,
+    web3: Web3,
+    read_retry_count: int | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
+    timeout: float | None = None,
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt asynchronously.
 
@@ -488,17 +472,32 @@ async def _async_send_transaction_and_wait_for_receipt(
         The built transaction ready to be sent.
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction.
+    web3: Web3
+        web3 provider object.
+    read_retry_count: int | None
+        The number of times to retry getting the nonce. Defaults to `DEFAULT_READ_RETRY_COUNT`.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `async_wait_for_transaction_receipt`.
-    web3: Web3
-        web3 provider object.
 
     Returns
     -------
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    # We generate a nonce right before we sign the transaction
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
+    if nonce_func is None:
+        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer.address, "pending")
+    else:
+        nonce = nonce_func()
+    unsent_txn["nonce"] = nonce
+
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
@@ -543,7 +542,7 @@ async def async_smart_contract_transact(
     signer: LocalAccount,
     function_name_or_signature: str,
     *fn_args,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
@@ -569,8 +568,10 @@ async def async_smart_contract_transact(
         This function must exist in the compiled contract's ABI
     *fn_args: Unknown
         The positional arguments passed to the contract method.
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
@@ -594,8 +595,6 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
     if write_retry_count is None:
         write_retry_count = DEFAULT_WRITE_RETRY_COUNT
 
@@ -621,15 +620,20 @@ async def async_smart_contract_transact(
                 func_handle,
                 signer,
                 web3,
-                nonce=nonce,
-                read_retry_count=read_retry_count,
                 txn_options_value=txn_options_value,
                 txn_options_gas=txn_options_gas,
                 txn_options_base_fee_multiple=txn_options_base_fee_multiple,
                 txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             )
         )
-        return await _async_send_transaction_and_wait_for_receipt(unsent_txn, signer, web3, timeout=timeout)
+        return await _async_send_transaction_and_wait_for_receipt(
+            unsent_txn,
+            signer,
+            web3,
+            read_retry_count=read_retry_count,
+            nonce_func=nonce_func,
+            timeout=timeout,
+        )
 
     try:
         return await retry_call(
@@ -712,7 +716,12 @@ async def async_smart_contract_transact(
 
 
 def _send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
+    unsent_txn: TxParams,
+    signer: LocalAccount,
+    web3: Web3,
+    read_retry_count: int | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
+    timeout: float | None = None,
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt.
 
@@ -722,17 +731,31 @@ def _send_transaction_and_wait_for_receipt(
         The built transaction ready to be sent.
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction.
+    web3: Web3
+        web3 provider object.
+    read_retry_count: int | None
+        The number of times to retry getting the nonce. Defaults to `DEFAULT_READ_RETRY_COUNT`.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `wait_for_transaction_receipt`.
-    web3: Web3
-        web3 provider object.
 
     Returns
     -------
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    # We generate a nonce right before we sign the transaction
+    if read_retry_count is None:
+        read_retry_count = DEFAULT_READ_RETRY_COUNT
+    if nonce_func is None:
+        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer.address, "pending")
+    else:
+        nonce = nonce_func()
+    unsent_txn["nonce"] = nonce
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
@@ -775,7 +798,7 @@ def smart_contract_transact(
     signer: LocalAccount,
     function_name_or_signature: str,
     *fn_args,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
@@ -799,8 +822,10 @@ def smart_contract_transact(
         This function must exist in the compiled contract's ABI
     *fn_args: Unknown
         The positional arguments passed to the contract method.
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
@@ -824,8 +849,6 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
     if write_retry_count is None:
         write_retry_count = DEFAULT_WRITE_RETRY_COUNT
 
@@ -851,15 +874,20 @@ def smart_contract_transact(
                 func_handle,
                 signer,
                 web3,
-                nonce=nonce,
-                read_retry_count=read_retry_count,
                 txn_options_value=txn_options_value,
                 txn_options_gas=txn_options_gas,
                 txn_options_base_fee_multiple=txn_options_base_fee_multiple,
                 txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             )
         )
-        return _send_transaction_and_wait_for_receipt(unsent_txn, signer, web3, timeout=timeout)
+        return _send_transaction_and_wait_for_receipt(
+            unsent_txn,
+            signer,
+            web3,
+            read_retry_count=read_retry_count,
+            nonce_func=nonce_func,
+            timeout=timeout,
+        )
 
     try:
         return retry_call(
@@ -931,138 +959,6 @@ def smart_contract_transact(
             raw_txn=dict(unsent_txn),
             fn_kwargs=fn_kwargs,
         ) from err
-
-
-# TODO clean up args
-# pylint: disable=too-many-arguments
-async def async_eth_transfer(
-    web3: Web3,
-    signer: LocalAccount,
-    to_address: ChecksumAddress,
-    amount_wei: int,
-    max_priority_fee: int | None = None,
-    nonce: Nonce | None = None,
-    read_retry_count: int | None = None,
-) -> TxReceipt:
-    """Execute a generic Ethereum transaction to move ETH from one account to another.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 container object
-    signer: LocalAccount
-        The LocalAccount that will be used to pay for the gas & sign the transaction
-    to_address: ChecksumAddress
-        Address for where the Ethereum is going to
-    amount_wei: int
-        Amount to transfer, in WEI
-    max_priority_fee: int
-        Amount of tip to provide to the miner when a block is mined
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-
-    Returns
-    -------
-    TxReceipt
-        a TypedDict; success can be checked via tx_receipt["status"]
-    """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
-    signer_checksum_address = Web3.to_checksum_address(signer.address)
-    base_nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
-    if nonce is None:
-        nonce = base_nonce
-    # We explicitly check to ensure explicit nonce is larger than what web3 is reporting
-    if base_nonce > nonce:
-        logging.warning("Specified nonce %s is larger than current trx count %s", nonce, base_nonce)
-        nonce = base_nonce
-
-    unsent_txn: TxParams = {
-        "from": signer_checksum_address,
-        "to": to_address,
-        "value": Wei(amount_wei),
-        "nonce": nonce,
-        "chainId": web3.eth.chain_id,
-    }
-    if max_priority_fee is None:
-        max_priority_fee = web3.eth.max_priority_fee
-    pending_block = web3.eth.get_block("pending")
-    base_fee = pending_block.get("baseFeePerGas", None)
-    if base_fee is None:
-        raise AssertionError("The latest block does not have a baseFeePerGas")
-    max_fee_per_gas = max_priority_fee + base_fee
-    unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
-    unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
-    unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
-    signed_txn = signer.sign_transaction(unsent_txn)
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    return await async_wait_for_transaction_receipt(web3, tx_hash)
-
-
-# TODO clean up args
-# pylint: disable=too-many-arguments
-def eth_transfer(
-    web3: Web3,
-    signer: LocalAccount,
-    to_address: ChecksumAddress,
-    amount_wei: int,
-    max_priority_fee: int | None = None,
-    nonce: Nonce | None = None,
-    read_retry_count: int | None = None,
-) -> TxReceipt:
-    """Execute a generic Ethereum transaction to move ETH from one account to another.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 container object
-    signer: LocalAccount
-        The LocalAccount that will be used to pay for the gas & sign the transaction
-    to_address: ChecksumAddress
-        Address for where the Ethereum is going to
-    amount_wei: int
-        Amount to transfer, in WEI
-    max_priority_fee: int
-        Amount of tip to provide to the miner when a block is mined
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-
-    Returns
-    -------
-    TxReceipt
-        a TypedDict; success can be checked via tx_receipt["status"]
-    """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
-    signer_checksum_address = Web3.to_checksum_address(signer.address)
-    if nonce is None:
-        # TODO figure out which exception here to retry on
-        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
-    unsent_txn: TxParams = {
-        "from": signer_checksum_address,
-        "to": to_address,
-        "value": Wei(amount_wei),
-        "nonce": nonce,
-        "chainId": web3.eth.chain_id,
-    }
-    if max_priority_fee is None:
-        max_priority_fee = web3.eth.max_priority_fee
-    pending_block = web3.eth.get_block("pending")
-    base_fee = pending_block.get("baseFeePerGas", None)
-    if base_fee is None:
-        raise AssertionError("The latest block does not have a baseFeePerGas")
-    max_fee_per_gas = max_priority_fee + base_fee
-    unsent_txn["gas"] = web3.eth.estimate_gas(unsent_txn)
-    unsent_txn["maxFeePerGas"] = Wei(max_fee_per_gas)
-    unsent_txn["maxPriorityFeePerGas"] = Wei(max_priority_fee)
-    signed_txn = signer.sign_transaction(unsent_txn)
-
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    return web3.eth.wait_for_transaction_receipt(tx_hash)
 
 
 def fetch_contract_transactions_for_block(
