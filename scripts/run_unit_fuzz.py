@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
 import time
 from typing import NamedTuple, Sequence
