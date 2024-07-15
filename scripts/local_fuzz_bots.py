@@ -16,7 +16,7 @@ from agent0 import LocalChain, LocalHyperdrive
 from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
@@ -178,7 +178,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         hyperdrive_config = generate_fuzz_hyperdrive_config(
             rng, lp_share_price_test=parsed_args.lp_share_price_test, steth=parsed_args.steth
         )
-        hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
+
+        try:
+            hyperdrive_pool = LocalHyperdrive(chain, hyperdrive_config)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(
+                "Error deploying hyperdrive: %s",
+                repr(e),
+            )
+            log_rollbar_exception(
+                e,
+                log_level=logging.ERROR,
+                rollbar_log_prefix="Error deploying hyperdrive poolError deploying hyperdrive pool",
+            )
+            chain.cleanup()
+            continue
 
         raise_error_on_fail = False
         if parsed_args.pause_on_invariance_fail:
