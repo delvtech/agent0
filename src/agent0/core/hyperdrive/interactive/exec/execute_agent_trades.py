@@ -127,7 +127,7 @@ async def async_execute_agent_trades(
     wallet_func: Callable[[], HyperdriveWallet],
     policy: HyperdriveBasePolicy | None,
     preview_before_trade: bool,
-    nonce_func: Callable[[], Nonce],
+    nonce_func: Callable[[], Nonce] | None = None,
 ) -> list[TradeResult]:
     """Executes a single agent's trade based on its policy.
     This function is async as `_match_contract_call_to_trade` waits for a transaction receipt.
@@ -182,8 +182,8 @@ async def async_execute_agent_trades(
                 account,
                 interface,
                 trade_object,
-                nonce_func=nonce_func,
                 preview_before_trade=preview_before_trade,
+                nonce_func=nonce_func,
             )
             for i, trade_object in enumerate(trades)
         ],
@@ -216,7 +216,7 @@ async def async_execute_single_trade(
     trade_object: Trade[HyperdriveMarketAction],
     execute_policy_post_action: bool,
     preview_before_trade: bool,
-    nonce_func: Callable[[], Nonce],
+    nonce_func: Callable[[], Nonce] | None = None,
     policy: HyperdriveBasePolicy | None = None,
 ) -> TradeResult:
     """Executes a single trade made by the agent.
@@ -243,13 +243,13 @@ async def async_execute_single_trade(
         Whether or not to execute the post_action of the policy after the trade.
     preview_before_trade: bool
         Whether or not to preview the trade before it is executed.
-    policy: HyperdriveBasePolicy | None, optional
-        The policy attached to the agent. This is only used to potentially call `post_action`
-        of the policy.
     nonce_func: Callable[[], Nonce] | None
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
         Defaults to setting it to the result of `get_transaction_count`.
+    policy: HyperdriveBasePolicy | None, optional
+        The policy attached to the agent. This is only used to potentially call `post_action`
+        of the policy.
 
     Returns
     -------
@@ -262,8 +262,8 @@ async def async_execute_single_trade(
             account,
             interface,
             trade_object,
-            nonce_func,
             preview_before_trade,
+            nonce_func=nonce_func,
         )
     except Exception as e:  # pylint: disable=broad-except
         receipt_or_exception = e
@@ -358,8 +358,8 @@ async def _async_match_contract_call_to_trade(
     account: LocalAccount,
     interface: HyperdriveReadWriteInterface,
     trade_envelope: Trade[HyperdriveMarketAction],
-    nonce_func: Callable[[], Nonce],
     preview_before_trade: bool,
+    nonce_func: Callable[[], Nonce] | None = None,
 ) -> BaseHyperdriveEvent:
     """Match statement that executes the smart contract trade based on the provided type.
 
@@ -371,12 +371,12 @@ async def _async_match_contract_call_to_trade(
         The Hyperdrive API interface object.
     trade_envelope: Trade[HyperdriveMarketAction]
         A specific Hyperdrive trade requested by the given agent.
+    preview_before_trade: bool
+        Whether or not to preview the trade before it is executed.
     nonce_func: Callable[[], Nonce] | None
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
         Defaults to setting it to the result of `get_transaction_count`.
-    preview_before_trade: bool
-        Whether or not to preview the trade before it is executed.
 
     Returns
     -------
