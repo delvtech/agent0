@@ -191,6 +191,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 log_level=logging.ERROR,
                 rollbar_log_prefix="Error deploying hyperdrive poolError deploying hyperdrive pool",
             )
+            chain.cleanup()
             continue
 
         raise_error_on_fail = False
