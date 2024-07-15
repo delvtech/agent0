@@ -153,6 +153,9 @@ class HyperdriveAgent:
         self.current_nonce = 0
 
     def _get_nonce_safe(self) -> Nonce:
+        # This function handles getting nonces in a thread-safe manner.
+        # We pass in the callable function to underlying ethpy calls so that
+        # we get nonce when we sign the transaction.
         with self.nonce_lock:
             # Since we're handling nonces here, we assume this wallet isn't making other trades
             # so we always use the latest block
@@ -163,7 +166,8 @@ class HyperdriveAgent:
             else:
                 out_nonce = self.current_nonce
                 self.current_nonce += 1
-            return Nonce(out_nonce)
+
+        return Nonce(out_nonce)
 
     def _reset_nonce(self) -> None:
         with self.nonce_lock:
@@ -324,8 +328,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -372,8 +376,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -417,8 +421,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -463,8 +467,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -507,8 +511,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -551,8 +555,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -595,8 +599,8 @@ class HyperdriveAgent:
                 trade_object,
                 self.chain.config.always_execute_policy_post_action,
                 self.chain.config.preview_before_trade,
-                self._active_policy,
-                nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
+                policy=self._active_policy,
             )
         )
         try:
@@ -708,7 +712,7 @@ class HyperdriveAgent:
                 # We pass in policy here for `post_action`. Post action is ignored if policy not set.
                 policy=self._active_policy,
                 preview_before_trade=self.chain.config.preview_before_trade,
-                base_nonce=self._get_nonce_safe(),
+                nonce_func=self._get_nonce_safe,
             )
         )
         out_events = []
@@ -717,9 +721,6 @@ class HyperdriveAgent:
             hyperdrive_event = self._handle_trade_result(trade_result, pool, always_throw_exception=False)
             if hyperdrive_event is not None:
                 out_events.append(hyperdrive_event)
-            else:
-                # We always reset nonce on failure to avoid skipped nonces
-                self._reset_nonce()
         return out_events
 
     def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:

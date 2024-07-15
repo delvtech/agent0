@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockIdentifier, BlockNumber, ChecksumAddress
@@ -174,7 +174,7 @@ def smart_contract_preview_transaction(
     txn_options_value: int | None
         The value field for the transaction.
     nonce: int | None
-        The nonce field for the transaction.
+        The nonce field for the preview. If None, we call preview without a nonce.
     **fn_kwargs: Unknown
         The keyword arguments passed to the contract method.
 
@@ -391,7 +391,6 @@ def build_transaction(
     func_handle: ContractFunction,
     signer: LocalAccount,
     web3: Web3,
-    nonce: Nonce | None = None,
     read_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
@@ -408,8 +407,6 @@ def build_transaction(
         The LocalAccount that will be used to pay for the gas & sign the transaction
     web3: Web3
         web3 container object
-    nonce: Nonce | None
-        The nonce to use for this transaction. Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
@@ -461,24 +458,15 @@ def build_transaction(
 
     raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
 
-    # There's an issue where `build_transaction` fails when we pass in an "invalid" nonce.
-    # In the case where the caller is giving an explicit nonce for multiple transactions,
-    # this fails here unnecessarily when e.g., the transaction with the higher nonce
-    # gets built first. Hence, we solve this by building the transaction without the nonce
-    # first, then attach the nonce to the raw txn when submitting. This ensures that building
-    # transactions isn't subject to the specific nonce order, and instead lets the submission
-    # of the transaction handle invalid nonces.
-
-    # TODO figure out which exception here to retry on
-    if nonce is None:
-        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer_checksum_address, "pending")
-    raw_txn["nonce"] = nonce
-
     return raw_txn
 
 
 async def _async_send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
+    unsent_txn: TxParams,
+    signer: LocalAccount,
+    web3: Web3,
+    nonce_func: Callable[[], Nonce] | None = None,
+    timeout: float | None = None,
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt asynchronously.
 
@@ -488,17 +476,28 @@ async def _async_send_transaction_and_wait_for_receipt(
         The built transaction ready to be sent.
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction.
+    web3: Web3
+        web3 provider object.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `async_wait_for_transaction_receipt`.
-    web3: Web3
-        web3 provider object.
 
     Returns
     -------
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    # We generate a nonce right before we sign the transaction
+    if nonce_func is None:
+        nonce = web3.eth.get_transaction_count(signer.address, "pending")
+    else:
+        nonce = nonce_func()
+    unsent_txn["nonce"] = nonce
+
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
@@ -543,7 +542,7 @@ async def async_smart_contract_transact(
     signer: LocalAccount,
     function_name_or_signature: str,
     *fn_args,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
@@ -569,8 +568,10 @@ async def async_smart_contract_transact(
         This function must exist in the compiled contract's ABI
     *fn_args: Unknown
         The positional arguments passed to the contract method.
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
@@ -621,7 +622,6 @@ async def async_smart_contract_transact(
                 func_handle,
                 signer,
                 web3,
-                nonce=nonce,
                 read_retry_count=read_retry_count,
                 txn_options_value=txn_options_value,
                 txn_options_gas=txn_options_gas,
@@ -629,7 +629,13 @@ async def async_smart_contract_transact(
                 txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             )
         )
-        return await _async_send_transaction_and_wait_for_receipt(unsent_txn, signer, web3, timeout=timeout)
+        return await _async_send_transaction_and_wait_for_receipt(
+            unsent_txn,
+            signer,
+            web3,
+            nonce_func=nonce_func,
+            timeout=timeout,
+        )
 
     try:
         return await retry_call(
@@ -712,7 +718,11 @@ async def async_smart_contract_transact(
 
 
 def _send_transaction_and_wait_for_receipt(
-    unsent_txn: TxParams, signer: LocalAccount, web3: Web3, timeout: float | None = None
+    unsent_txn: TxParams,
+    signer: LocalAccount,
+    web3: Web3,
+    nonce_func: Callable[[], Nonce] | None = None,
+    timeout: float | None = None,
 ) -> TxReceipt:
     """Send a transaction and waits for the receipt.
 
@@ -722,17 +732,27 @@ def _send_transaction_and_wait_for_receipt(
         The built transaction ready to be sent.
     signer: LocalAccount
         The LocalAccount that will be used to pay for the gas & sign the transaction.
+    web3: Web3
+        web3 provider object.
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     timeout: float | None, optional
         The number of seconds to wait for the transaction to be mined.
         Default is defined in `wait_for_transaction_receipt`.
-    web3: Web3
-        web3 provider object.
 
     Returns
     -------
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
+    # We generate a nonce right before we sign the transaction
+    if nonce_func is None:
+        nonce = web3.eth.get_transaction_count(signer.address, "pending")
+    else:
+        nonce = nonce_func()
+    unsent_txn["nonce"] = nonce
     signed_txn = signer.sign_transaction(unsent_txn)
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
@@ -775,7 +795,7 @@ def smart_contract_transact(
     signer: LocalAccount,
     function_name_or_signature: str,
     *fn_args,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     read_retry_count: int | None = None,
     write_retry_count: int | None = None,
     txn_options_value: int | None = None,
@@ -799,8 +819,10 @@ def smart_contract_transact(
         This function must exist in the compiled contract's ABI
     *fn_args: Unknown
         The positional arguments passed to the contract method.
-    nonce: Nonce | None
-        If set, will explicitly set the nonce to this value, otherwise will use web3 to get transaction count
+    nonce_func: Callable[[], Nonce] | None
+        A callable function to use to get a nonce. This function is useful for e.g.,
+        passing in a safe nonce getter tied to an agent.
+        Defaults to setting it to the result of `get_transaction_count`.
     read_retry_count: BlockNumber | None
         The number of times to retry the read call if it fails. Defaults to 5.
     write_retry_count: BlockNumber | None
@@ -851,7 +873,6 @@ def smart_contract_transact(
                 func_handle,
                 signer,
                 web3,
-                nonce=nonce,
                 read_retry_count=read_retry_count,
                 txn_options_value=txn_options_value,
                 txn_options_gas=txn_options_gas,
@@ -859,7 +880,13 @@ def smart_contract_transact(
                 txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             )
         )
-        return _send_transaction_and_wait_for_receipt(unsent_txn, signer, web3, timeout=timeout)
+        return _send_transaction_and_wait_for_receipt(
+            unsent_txn,
+            signer,
+            web3,
+            nonce_func=nonce_func,
+            timeout=timeout,
+        )
 
     try:
         return retry_call(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
@@ -187,7 +187,7 @@ async def _async_open_long(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> OpenLong:
     """See API for documentation."""
@@ -261,7 +261,7 @@ async def _async_open_long(
         agent,
         "openLong",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
@@ -283,7 +283,7 @@ async def _async_close_long(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> CloseLong:
     """See API for documentation."""
@@ -340,7 +340,7 @@ async def _async_close_long(
         agent,
         "closeLong",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
@@ -361,7 +361,7 @@ async def _async_open_short(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> OpenShort:
     """See API for documentation."""
@@ -423,7 +423,7 @@ async def _async_open_short(
         agent,
         "openShort",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
@@ -444,7 +444,7 @@ async def _async_close_short(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> CloseShort:
     """See API for documentation."""
@@ -501,7 +501,7 @@ async def _async_close_short(
         agent,
         "closeShort",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
@@ -523,7 +523,7 @@ async def _async_add_liquidity(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> AddLiquidity:
     """See API for documentation."""
@@ -580,7 +580,7 @@ async def _async_add_liquidity(
         agent,
         "addLiquidity",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
@@ -599,7 +599,7 @@ async def _async_remove_liquidity(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> RemoveLiquidity:
     """See API for documentation."""
@@ -639,7 +639,7 @@ async def _async_remove_liquidity(
         agent,
         "removeLiquidity",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
@@ -658,7 +658,7 @@ async def _async_redeem_withdraw_shares(
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
     txn_options_priority_fee_multiple: float | None = None,
-    nonce: Nonce | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
 ) -> RedeemWithdrawalShares:
     """See API for documentation."""
@@ -705,7 +705,7 @@ async def _async_redeem_withdraw_shares(
         agent,
         "redeemWithdrawalShares",
         *fn_args,
-        nonce=nonce,
+        nonce_func=nonce_func,
         read_retry_count=interface.read_retry_count,
         write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
