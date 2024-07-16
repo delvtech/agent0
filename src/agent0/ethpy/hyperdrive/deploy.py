@@ -713,7 +713,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         )
 
     # There are 4 contracts to deploy, we call deployTarget on all of them
-    for target_index in range(4):
+    for target_index in range(5):
         deploy_target_function = factory_contract.functions.deployTarget(
             deploymentId=deployment_id,
             deployerCoordinator=deployer_coordinator_address,
