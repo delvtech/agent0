@@ -268,6 +268,8 @@ class LocalHyperdrive(Hyperdrive):
         # for the data pipeline
         deploy_event = self.interface.get_initialize_events(from_block="earliest")
         deploy_event = list(deploy_event)
+
+        # Attempt to get the deploy event
         self._deploy_block_number = None
         if len(deploy_event) == 0:
             logging.warning("Deploy event not found, can't set deploy_block")
@@ -277,6 +279,9 @@ class LocalHyperdrive(Hyperdrive):
             self._deploy_block_number = deploy_event[0]["blockNumber"]
 
         if deploy:
+            # If we're deploying, we expect the deploy block to be set
+            if self._deploy_block_number is None:
+                raise AssertionError("Expected deploy event not found")
             self._data_start_block = self._deploy_block_number
             self._analysis_start_block = self._deploy_block_number
         else:
