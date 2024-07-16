@@ -30,6 +30,7 @@ from agent0.hypertypes import (
     ERC4626Target1DeployerContract,
     ERC4626Target2DeployerContract,
     ERC4626Target3DeployerContract,
+    ERC4626Target4DeployerContract,
     FactoryConfig,
     HyperdriveFactoryContract,
     HyperdriveRegistryContract,
@@ -45,15 +46,18 @@ from agent0.hypertypes import (
     StETHTarget1DeployerContract,
     StETHTarget2DeployerContract,
     StETHTarget3DeployerContract,
+    StETHTarget4DeployerContract,
 )
 from agent0.hypertypes.types.ERC4626Target0DeployerContract import erc4626target0deployer_bytecode
 from agent0.hypertypes.types.ERC4626Target1DeployerContract import erc4626target1deployer_bytecode
 from agent0.hypertypes.types.ERC4626Target2DeployerContract import erc4626target2deployer_bytecode
 from agent0.hypertypes.types.ERC4626Target3DeployerContract import erc4626target3deployer_bytecode
+from agent0.hypertypes.types.ERC4626Target4DeployerContract import erc4626target4deployer_bytecode
 from agent0.hypertypes.types.StETHTarget0DeployerContract import stethtarget0deployer_bytecode
 from agent0.hypertypes.types.StETHTarget1DeployerContract import stethtarget1deployer_bytecode
 from agent0.hypertypes.types.StETHTarget2DeployerContract import stethtarget2deployer_bytecode
 from agent0.hypertypes.types.StETHTarget3DeployerContract import stethtarget3deployer_bytecode
+from agent0.hypertypes.types.StETHTarget4DeployerContract import stethtarget4deployer_bytecode
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -417,12 +421,16 @@ def _deploy_erc4626_deployer(
     ERC4626Target3DeployerContract.bytecode = HexBytes(
         str(erc4626target3deployer_bytecode).replace(linked_str, linked_contract_addr)
     )
+    ERC4626Target4DeployerContract.bytecode = HexBytes(
+        str(erc4626target4deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
 
     core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target0_contract = ERC4626Target0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target1_contract = ERC4626Target1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target2_contract = ERC4626Target2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target3_contract = ERC4626Target3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target4_contract = ERC4626Target4DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     return ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
@@ -434,6 +442,7 @@ def _deploy_erc4626_deployer(
             target1Deployer=target1_contract.address,
             target2Deployer=target2_contract.address,
             target3Deployer=target3_contract.address,
+            target4Deployer=target4_contract.address,
         ),
     )
 
@@ -458,12 +467,16 @@ def _deploy_steth_deployer(
     StETHTarget3DeployerContract.bytecode = HexBytes(
         str(stethtarget3deployer_bytecode).replace(linked_str, linked_contract_addr)
     )
+    StETHTarget4DeployerContract.bytecode = HexBytes(
+        str(stethtarget4deployer_bytecode).replace(linked_str, linked_contract_addr)
+    )
 
     core_deployer_contract = StETHHyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target0_contract = StETHTarget0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target1_contract = StETHTarget1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target2_contract = StETHTarget2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     target3_contract = StETHTarget3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target4_contract = StETHTarget4DeployerContract.deploy(w3=web3, account=deploy_account_addr)
     return StETHHyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
@@ -475,6 +488,7 @@ def _deploy_steth_deployer(
             target1Deployer=target1_contract.address,
             target2Deployer=target2_contract.address,
             target3Deployer=target3_contract.address,
+            target4Deployer=target4_contract.address,
             lido=lido_address,
         ),
     )
