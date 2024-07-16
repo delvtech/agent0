@@ -268,13 +268,13 @@ class LocalHyperdrive(Hyperdrive):
         # for the data pipeline
         deploy_event = self.interface.get_initialize_events(from_block="earliest")
         deploy_event = list(deploy_event)
+        self._deploy_block_number = None
         if len(deploy_event) == 0:
-            # TODO handle this case more gracefully by e.g., finding the earliest event
-            # that exists from this contract.
-            raise ValueError(f"Deploy event not found for pool {self.name} ({hyperdrive_address}).")
-        if len(deploy_event) > 1:
+            logging.warning("Deploy event not found, can't set deploy_block")
+        elif len(deploy_event) > 1:
             raise AssertionError("Multiple deploy events found.")
-        self._deploy_block_number = deploy_event[0]["blockNumber"]
+        else:
+            self._deploy_block_number = deploy_event[0]["blockNumber"]
 
         if deploy:
             self._data_start_block = self._deploy_block_number
@@ -283,7 +283,10 @@ class LocalHyperdrive(Hyperdrive):
             if backfill_data_start_block is None:
                 self._data_start_block = chain.block_number()
             else:
-                self._data_start_block = max(self._deploy_block_number, backfill_data_start_block)
+                if self._deploy_block_number is None:
+                    self._data_start_block = backfill_data_start_block
+                else:
+                    self._data_start_block = max(self._deploy_block_number, backfill_data_start_block)
             # Always start analysis at the current block
             self._analysis_start_block = chain.block_number()
 
