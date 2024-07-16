@@ -312,6 +312,60 @@ class IHyperdriveCollectGovernanceFeeContractFunction(ContractFunction):
         return cast(int, rename_returned_types(structs, return_types, raw_values))
 
 
+class IHyperdriveConvertToBaseContractFunction(ContractFunction):
+    """ContractFunction for the convertToBase method."""
+
+    def __call__(self, shareAmount: int) -> IHyperdriveConvertToBaseContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(shareAmount))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
+class IHyperdriveConvertToSharesContractFunction(ContractFunction):
+    """ContractFunction for the convertToShares method."""
+
+    def __call__(self, baseAmount: int) -> IHyperdriveConvertToSharesContractFunction:  # type: ignore
+        clone = super().__call__(dataclass_to_tuple(baseAmount))
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> int:
+        """returns int."""
+        # Define the expected return types from the smart contract call
+
+        return_types = int
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(int, rename_returned_types(structs, return_types, raw_values))
+
+
 class IHyperdriveDecimalsContractFunction(ContractFunction):
     """ContractFunction for the decimals method."""
 
@@ -1352,6 +1406,33 @@ class IHyperdriveTarget3ContractFunction(ContractFunction):
         return cast(str, rename_returned_types(structs, return_types, raw_values))
 
 
+class IHyperdriveTarget4ContractFunction(ContractFunction):
+    """ContractFunction for the target4 method."""
+
+    def __call__(self) -> IHyperdriveTarget4ContractFunction:  # type: ignore
+        clone = super().__call__()
+        self.kwargs = clone.kwargs
+        self.args = clone.args
+        return self
+
+    def call(
+        self,
+        transaction: TxParams | None = None,
+        block_identifier: BlockIdentifier = "latest",
+        state_override: CallOverride | None = None,
+        ccip_read_enabled: bool | None = None,
+    ) -> str:
+        """returns str."""
+        # Define the expected return types from the smart contract call
+
+        return_types = str
+
+        # Call the function
+
+        raw_values = super().call(transaction, block_identifier, state_override, ccip_read_enabled)
+        return cast(str, rename_returned_types(structs, return_types, raw_values))
+
+
 class IHyperdriveTotalSupplyContractFunction(ContractFunction):
     """ContractFunction for the totalSupply method."""
 
@@ -1506,6 +1587,10 @@ class IHyperdriveContractFunctions(ContractFunctions):
 
     collectGovernanceFee: IHyperdriveCollectGovernanceFeeContractFunction
 
+    convertToBase: IHyperdriveConvertToBaseContractFunction
+
+    convertToShares: IHyperdriveConvertToSharesContractFunction
+
     decimals: IHyperdriveDecimalsContractFunction
 
     domainSeparator: IHyperdriveDomainSeparatorContractFunction
@@ -1579,6 +1664,8 @@ class IHyperdriveContractFunctions(ContractFunctions):
     target2: IHyperdriveTarget2ContractFunction
 
     target3: IHyperdriveTarget3ContractFunction
+
+    target4: IHyperdriveTarget4ContractFunction
 
     totalSupply: IHyperdriveTotalSupplyContractFunction
 
@@ -1669,6 +1756,22 @@ class IHyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="collectGovernanceFee",
+        )
+        self.convertToBase = IHyperdriveConvertToBaseContractFunction.factory(
+            "convertToBase",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="convertToBase",
+        )
+        self.convertToShares = IHyperdriveConvertToSharesContractFunction.factory(
+            "convertToShares",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="convertToShares",
         )
         self.decimals = IHyperdriveDecimalsContractFunction.factory(
             "decimals",
@@ -1965,6 +2068,14 @@ class IHyperdriveContractFunctions(ContractFunctions):
             address=address,
             decode_tuples=decode_tuples,
             function_identifier="target3",
+        )
+        self.target4 = IHyperdriveTarget4ContractFunction.factory(
+            "target4",
+            w3=w3,
+            contract_abi=abi,
+            address=address,
+            decode_tuples=decode_tuples,
+            function_identifier="target4",
         )
         self.totalSupply = IHyperdriveTotalSupplyContractFunction.factory(
             "totalSupply",
@@ -6109,6 +6220,20 @@ ihyperdrive_abi: ABI = cast(
         },
         {
             "type": "function",
+            "name": "convertToBase",
+            "inputs": [{"name": "_shareAmount", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "convertToShares",
+            "inputs": [{"name": "_baseAmount", "type": "uint256", "internalType": "uint256"}],
+            "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
             "name": "decimals",
             "inputs": [],
             "outputs": [{"name": "", "type": "uint8", "internalType": "uint8"}],
@@ -6576,6 +6701,13 @@ ihyperdrive_abi: ABI = cast(
         {
             "type": "function",
             "name": "target3",
+            "inputs": [],
+            "outputs": [{"name": "", "type": "address", "internalType": "address"}],
+            "stateMutability": "view",
+        },
+        {
+            "type": "function",
+            "name": "target4",
             "inputs": [],
             "outputs": [{"name": "", "type": "address", "internalType": "address"}],
             "stateMutability": "view",
