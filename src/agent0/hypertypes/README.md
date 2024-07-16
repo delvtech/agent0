@@ -36,6 +36,7 @@ ERC4626Target0Deployer.sol
 ERC4626Target1deployer.sol
 ERC4626Target2Deployer.sol
 ERC4626Target3Deployer.sol
+ERC4626Target4Deployer.sol
 HyperdriveFactory.sol
 HyperdriveRegistry.sol
 IHyperdrive.sol
@@ -48,6 +49,7 @@ StETHTarget0Deployer.sol
 StETHTarget1deployer.sol
 StETHTarget2Deployer.sol
 StETHTarget3Deployer.sol
+StETHTarget4Deployer.sol
 ```
 
 You then can update the generated `hypertypes` python package by running `pypechain` on this folder:

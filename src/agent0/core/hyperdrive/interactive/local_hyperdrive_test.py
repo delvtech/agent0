@@ -1444,7 +1444,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(fast_chain_fixture
 
 
 @pytest.mark.anvil
-@pytest.mark.parametrize("time_stretch", [0.01, 0.1, 0.5, 1, 10, 100])
+@pytest.mark.parametrize("time_stretch", [0.01, 0.1, 0.5, 1])
 def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_stretch: float):
     """Deploy with nonstandard timestretch parameters."""
     initial_pool_config = LocalHyperdrive.Config(

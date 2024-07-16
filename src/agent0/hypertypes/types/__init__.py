@@ -25,6 +25,7 @@ from .StETHTarget0DeployerContract import *
 from .HyperdriveRegistryContract import *
 from .HyperdriveRegistryTypes import *
 from .IHyperdriveRegistryTypes import *
+from .ERC4626Target4DeployerContract import *
 from .ERC4626Target1DeployerContract import *
 from .StETHTarget2DeployerContract import *
 from .StETHTarget1DeployerContract import *
@@ -32,6 +33,7 @@ from .ERC4626Target2DeployerContract import *
 from .ERC20MintableContract import *
 from .ERC20MintableTypes import *
 from .StETHHyperdriveDeployerCoordinatorContract import *
+from .StETHTarget4DeployerContract import *
 from .MockERC4626Contract import *
 from .MockERC4626Types import *
 from .ERC4626HyperdriveCoreDeployerContract import *
