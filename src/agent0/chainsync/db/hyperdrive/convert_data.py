@@ -16,7 +16,7 @@ from agent0.hypertypes.utilities.conversions import camel_to_snake
 from .schema import PoolConfig, PoolInfo
 
 
-def _scaled_value_to_decimal(int_val: int) -> Decimal:
+def _scaled_value_to_decimal(int_val: Any) -> Decimal:
     # TODO we may want to use Decimal's internal scale via context
     # to do this conversion instead of casting to FixedPoint for performance.
     return Decimal(str(FixedPoint(scaled_value=int(int_val))))
@@ -209,9 +209,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
 
     # Convert fields to db schema
     # All events should have vaultSharePrice. We convert to non-scaled value.
-    events_df["vaultSharePrice"] = (
-        events_df["vaultSharePrice"].astype(int).apply(_scaled_value_to_decimal)  # type: ignore
-    )
+    events_df["vaultSharePrice"] = events_df["vaultSharePrice"].apply(_scaled_value_to_decimal)  # type: ignore
 
     # LP
     events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity", "Initialize"])
