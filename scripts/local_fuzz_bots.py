@@ -19,7 +19,39 @@ from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fu
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
 
 
+def _fuzz_ignore_logging_to_rollbar(exc: Exception) -> bool:
+    """Function defining errors to not log to rollbar during fuzzing.
+
+    These are the two most common errors we see in local fuzz testing. These are
+    known issues due to random bots not accounting for these cases, so we don't log them to
+    rollbar.
+    """
+    if isinstance(exc, ContractCallException):
+        orig_exception = exc.orig_exception
+        if orig_exception is None:
+            return False
+
+        # Insufficient liquidity error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "InsufficientLiquidity raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # Circuit breaker triggered error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "CircuitBreakerTriggered raised" in orig_exception.args[1]
+        ):
+            return True
+
+    return False
+
+
 def _fuzz_ignore_errors(exc: Exception) -> bool:
+    """Function defining errors to ignore for pausing chain during fuzzing."""
     # pylint: disable=too-many-return-statements
     # Ignored fuzz exceptions
     if isinstance(exc, FuzzAssertionException):
@@ -160,6 +192,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
         rollbar_log_prefix="localfuzzbots",
+        rollbar_log_filter_func=_fuzz_ignore_logging_to_rollbar,
         rng=rng,
         crash_log_level=logging.ERROR,
         rollbar_log_level_threshold=logging.ERROR,  # Only log errors and above to rollbar
