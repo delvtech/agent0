@@ -180,6 +180,7 @@ def fuzz_long_short_maturity_values(
                 crash_report_file_prefix="fuzz_long_short_maturity_values",
                 log_to_rollbar=True,
                 rollbar_log_level_threshold=chain_config.rollbar_log_level_threshold,
+                rollbar_log_filter_func=chain_config.rollbar_log_filter_func,
                 rollbar_data=rollbar_data,
             )
             if pause_on_fail:

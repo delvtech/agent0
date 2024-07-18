@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, NamedTuple
+from typing import Any, Callable, NamedTuple
 
 from fixedpointmath import FixedPoint
 from web3.types import BlockData, Timestamp
@@ -29,6 +29,7 @@ def run_invariant_checks(
     simulation_mode: bool,
     log_to_rollbar: bool = True,
     rollbar_log_level_threshold: int | None = None,
+    rollbar_log_filter_func: Callable[[Exception], bool] | None = None,
     pool_name: str | None = None,
     lp_share_price_test: bool | None = None,
     crash_report_additional_info: dict[str, Any] | None = None,
@@ -57,6 +58,10 @@ def run_invariant_checks(
         If True, log to rollbar if any invariant check fails.
     rollbar_log_level_threshold: int | None, optional
         Threshold for logging to rollbar.
+    rollbar_log_filter_func: Callable[[Exception], bool] | None
+        A function that filters exceptions to log to rollbar. The function should return
+        `True` for exceptions that should be filtered from rollbar logging.
+        Defaults to logging all exceptions.
     pool_name: str | None
         The name of the pool for crash reporting information.
     lp_share_price_test: bool | None, optional
@@ -165,8 +170,9 @@ def run_invariant_checks(
             crash_report_file_prefix=crash_report_file_prefix,
             log_to_rollbar=log_to_rollbar,
             rollbar_log_level_threshold=rollbar_log_level_threshold,
-            rollbar_data=rollbar_data,
             rollbar_log_prefix=rollbar_log_prefix,
+            rollbar_data=rollbar_data,
+            rollbar_log_filter_func=rollbar_log_filter_func,
         )
     return out_exceptions
 

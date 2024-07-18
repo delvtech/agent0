@@ -211,6 +211,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
             crash_report_file_prefix="fuzz_profit_check",
             log_to_rollbar=True,
             rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
+            rollbar_log_filter_func=chain_config.rollbar_log_filter_func,
             rollbar_data=rollbar_data,
         )
         if pause_on_fail:

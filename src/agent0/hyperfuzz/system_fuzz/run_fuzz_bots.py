@@ -303,6 +303,7 @@ def run_fuzz_bots(
                     simulation_mode=True,
                     log_to_rollbar=log_to_rollbar,
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
+                    rollbar_log_filter_func=chain.config.rollbar_log_filter_func,
                     lp_share_price_test=lp_share_price_test,
                     crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
                 )
