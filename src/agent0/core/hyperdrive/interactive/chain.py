@@ -7,7 +7,7 @@ import logging
 import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Callable, Type
 
 import docker
 import numpy as np
@@ -77,6 +77,12 @@ class Chain:
         """Threshold for log level in rollbar. Defaults to debug (i.e., log all to rollbar)."""
         rollbar_log_prefix: str | None = None
         """Additional prefix for this hyperdrive to log to rollbar."""
+        rollbar_log_filter_func: Callable[[Exception], bool] | None = None
+        """
+        A function that filters exceptions to log to rollbar. The function should return 
+        `True` for exceptions that should be filtered from rollbar logging.
+        Defaults to logging all exceptions.
+        """
         crash_report_additional_info: dict[str, Any] | None = None
         """Additional information to include in the crash report."""
         always_execute_policy_post_action: bool = False

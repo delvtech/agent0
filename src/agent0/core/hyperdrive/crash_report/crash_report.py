@@ -11,7 +11,7 @@ import subprocess
 from collections import OrderedDict
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
@@ -219,6 +219,7 @@ def log_hyperdrive_crash_report(
     rollbar_log_level_threshold: int | None = None,
     rollbar_log_prefix: str | None = None,
     rollbar_data: dict | None = None,
+    rollbar_log_filter_func: Callable[[Exception], bool] | None = None,
     additional_info: dict | None = None,
 ) -> None:
     # pylint: disable=too-many-arguments
@@ -247,6 +248,10 @@ def log_hyperdrive_crash_report(
     rollbar_data: dict | None, optional
         Optional dictionary of data to use for the the rollbar report.
         If not provided, will default to logging all of the crash report to rollbar.
+    rollbar_log_filter_func: Callable[[Exception], bool] | None, optional
+        A function that filters exceptions to log to rollbar. The function should return
+        `True` for exceptions that should be filtered from rollbar logging.
+        Defaults to logging all exceptions.
     additional_info: dict | None, optional
         Optional dictionary of additional data to include in the crash report.
     """
@@ -361,7 +366,13 @@ def log_hyperdrive_crash_report(
         with open(crash_report_file, "w", encoding="utf-8") as file:
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
 
-    if log_to_rollbar and (log_level >= rollbar_log_level_threshold):
+    if (
+        log_to_rollbar
+        and (log_level >= rollbar_log_level_threshold)
+        # Either rollbar_log_filter is set to default, or the function returns False
+        # (for do not filter)
+        and (rollbar_log_filter_func is None or not rollbar_log_filter_func(trade_result.exception))
+    ):
         if rollbar_data is None:
             # Don't log anvil dump state to rollbar
             dump_obj["anvil_dump_state"] = None  # type: ignore

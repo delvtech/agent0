@@ -268,6 +268,7 @@ def fuzz_path_independence(
                     crash_report_file_prefix="fuzz_path_independence",
                     log_to_rollbar=True,
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
+                    rollbar_log_filter_func=chain_config.rollbar_log_filter_func,
                     rollbar_data=rollbar_data,
                 )
                 latest_error = error
