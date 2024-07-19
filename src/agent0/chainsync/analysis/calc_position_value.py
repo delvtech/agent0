@@ -48,6 +48,32 @@ class _suppress_stdout_stderr:
             os.close(fd)
 
 
+def calc_scaled_normalized_time_remaining(
+    maturity_time: FixedPoint,
+    latest_checkpoint_time: FixedPoint,
+    position_duration: FixedPoint,
+) -> FixedPoint:
+    """Calculate the scaled and normalized time remaining.
+
+    TODO: This exists in hyperdrive-rs; add it to hyperdrivepy.
+
+    Arguments
+    ---------
+    maturity_time: FixedPoint
+        The maturity time of the position.
+    latest_checkpoint_time: FixedPoint
+        The timestamp for the latest checkpoint.
+    position_duration: FixedPoint
+        The pool config setting for position duration.
+
+    Returns
+    -------
+    FixedPoint
+        The scaled and normalized time remaining.
+    """
+    return (maturity_time - latest_checkpoint_time) / position_duration
+
+
 def calc_single_closeout(
     position: pd.Series,
     interface: HyperdriveReadInterface,
@@ -86,6 +112,7 @@ def calc_single_closeout(
     token_type = position["token_type"]
     maturity = 0
     position_duration = hyperdrive_state.pool_config.position_duration
+    checkpoint_time = hyperdrive_state.checkpoint_time
 
     if token_type in ["LONG", "SHORT"]:
         maturity = int(position["maturity_time"])
@@ -98,7 +125,17 @@ def calc_single_closeout(
                 fp_out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
-            logging.info("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
+            logging.info(
+                "Chainsync: Exception caught in calculating close long: %s\nApproximating with spot price.", exception
+            )
+
+            # TODO: We can use the rust `calculate_market_value_*` functions once
+            # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
+            # Long value = users_longs * spot_price * term_remaining
+            normalized_time_remaining = calc_scaled_normalized_time_remaining(
+                maturity, FixedPoint(checkpoint_time), FixedPoint(position_duration)
+            )
+            fp_out_value = amount * interface.calc_spot_price(hyperdrive_state) * normalized_time_remaining
 
     elif token_type == "SHORT":
         # Get the open share price from the checkpoint lookup
@@ -146,6 +183,16 @@ def calc_single_closeout(
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.info("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
+
+            # TODO: We can use the rust `calculate_market_value_*` functions once
+            # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
+            # Short value = users_shorts * ( 1 - spot_price ) * term_remaining
+            normalized_time_remaining = calc_scaled_normalized_time_remaining(
+                maturity, FixedPoint(checkpoint_time), FixedPoint(position_duration)
+            )
+            fp_out_value = (
+                amount * (FixedPoint(1) - interface.calc_spot_price(hyperdrive_state)) * normalized_time_remaining
+            )
 
     # For PNL, we assume all withdrawal shares are redeemable
     # even if there are no withdrawal shares available to withdraw
