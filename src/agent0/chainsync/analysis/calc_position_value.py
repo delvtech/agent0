@@ -182,7 +182,9 @@ def calc_single_closeout(
                 )
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
-            logging.info("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
+            logging.info(
+                "Chainsync: Exception caught in calculating close short: %s\nApproximating with spot price.", exception
+            )
 
             # TODO: We can use the rust `calculate_market_value_*` functions once
             # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
