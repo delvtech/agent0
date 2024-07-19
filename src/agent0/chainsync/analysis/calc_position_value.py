@@ -133,7 +133,7 @@ def calc_single_closeout(
             # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
             # Long value = users_longs * spot_price * term_remaining
             normalized_time_remaining = calc_scaled_normalized_time_remaining(
-                maturity, FixedPoint(checkpoint_time), FixedPoint(position_duration)
+                FixedPoint(maturity), FixedPoint(checkpoint_time), FixedPoint(position_duration)
             )
             fp_out_value = amount * interface.calc_spot_price(hyperdrive_state) * normalized_time_remaining
 
@@ -190,7 +190,7 @@ def calc_single_closeout(
             # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
             # Short value = users_shorts * ( 1 - spot_price ) * term_remaining
             normalized_time_remaining = calc_scaled_normalized_time_remaining(
-                maturity, FixedPoint(checkpoint_time), FixedPoint(position_duration)
+                FixedPoint(maturity), FixedPoint(checkpoint_time), FixedPoint(position_duration)
             )
             fp_out_value = (
                 amount * (FixedPoint(1) - interface.calc_spot_price(hyperdrive_state)) * normalized_time_remaining
