@@ -119,6 +119,10 @@ class Chain:
         Whether to remove the existing container if it exists on container launch. Defaults to True.
         Not used if `use_existing_postgres` is True.
         """
+        backfill_pool_info: bool = True
+        """
+        Determines if we keep the pool info for every block in the database. Defaults to True.
+        """
 
         # RNG config
         rng_seed: int | None = None
