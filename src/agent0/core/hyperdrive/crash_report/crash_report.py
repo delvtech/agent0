@@ -335,6 +335,7 @@ def log_hyperdrive_crash_report(
 
     # We use ordered dict to ensure the outermost order is preserved
     # The above is what we want for the logging str
+    logging_crash_report_str = None
     if not crash_report_stdout_summary:
         logging_crash_report_str = json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder)
 
@@ -378,6 +379,8 @@ def log_hyperdrive_crash_report(
             crash_summary += ": " + os.path.abspath(crash_report_file)
         logging.log(log_level, crash_summary)
     else:
+        # Type narrowing
+        assert logging_crash_report_str is not None
         logging.log(log_level, logging_crash_report_str)
 
     if (
