@@ -375,7 +375,7 @@ def log_hyperdrive_crash_report(
     if crash_report_stdout_summary:
         crash_summary = repr(trade_result.exception)
         if crash_report_file is not None:
-            crash_summary += ": " + crash_report_file
+            crash_summary += ": " + os.path.abspath(crash_report_file)
         logging.log(log_level, crash_summary)
     else:
         logging.log(log_level, logging_crash_report_str)
