@@ -173,6 +173,7 @@ class Random(HyperdriveBasePolicy):
             log_hyperdrive_crash_report(
                 crash_report,
                 logging.WARNING,
+                crash_report_stdout_summary=True,
                 crash_report_to_file=True,
                 crash_report_file_prefix="",
                 log_to_rollbar=False,  # Don't log rust errors to rollbar
@@ -280,6 +281,7 @@ class Random(HyperdriveBasePolicy):
             log_hyperdrive_crash_report(
                 crash_report,
                 logging.WARNING,
+                crash_report_stdout_summary=True,
                 crash_report_to_file=True,
                 crash_report_file_prefix="",
                 log_to_rollbar=False,  # Don't log rust errors to rollbar

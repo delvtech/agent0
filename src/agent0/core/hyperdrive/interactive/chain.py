@@ -71,6 +71,11 @@ class Chain:
         # Logging and crash reporting
         crash_log_level: int = logging.ERROR
         """The log level to log crashes at. Defaults to error."""
+        crash_report_stdout_summary: bool = True
+        """
+        Whether to print a summary of the crash report to stdout (if True), 
+        or print out the full report (if False). Defaults to True.
+        """
         log_to_rollbar: bool = False
         """Whether to log crash reports to rollbar. Defaults to False."""
         rollbar_log_level_threshold: int = logging.DEBUG

@@ -208,6 +208,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
         log_hyperdrive_crash_report(
             report,
             crash_report_to_file=True,
+            crash_report_stdout_summary=False,
             crash_report_file_prefix="fuzz_profit_check",
             log_to_rollbar=True,
             rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,

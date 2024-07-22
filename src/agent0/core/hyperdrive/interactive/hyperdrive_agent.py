@@ -789,6 +789,7 @@ class HyperdriveAgent:
                 trade_result,
                 log_level=self.chain.config.crash_log_level,
                 crash_report_to_file=True,
+                crash_report_stdout_summary=self.chain.config.crash_report_stdout_summary,
                 crash_report_file_prefix="interactive_hyperdrive",
                 log_to_rollbar=self.chain.config.log_to_rollbar,
                 rollbar_log_level_threshold=self.chain.config.rollbar_log_level_threshold,

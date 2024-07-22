@@ -166,6 +166,7 @@ def run_invariant_checks(
         log_hyperdrive_crash_report(
             report,
             log_level=log_level,
+            crash_report_stdout_summary=False,
             crash_report_to_file=True,
             crash_report_file_prefix=crash_report_file_prefix,
             log_to_rollbar=log_to_rollbar,
