@@ -213,6 +213,7 @@ def build_crash_trade_result(
 def log_hyperdrive_crash_report(
     trade_result: TradeResult,
     log_level: int | None = None,
+    crash_report_stdout_summary: bool = True,
     crash_report_to_file: bool = True,
     crash_report_file_prefix: str | None = None,
     log_to_rollbar: bool = False,
@@ -232,6 +233,9 @@ def log_hyperdrive_crash_report(
     log_level: int | None, optional
         The logging level for this crash report.
         Defaults to critical.
+    crash_report_stdout_summary: bool, optional
+        Whether to print a summary of the crash report to stdout (if True),
+        or print out the full report (if False). Defaults to True.
     crash_report_to_file: bool, optional
         Whether or not to save the crash report to a file.
         Defaults to True.
@@ -330,10 +334,11 @@ def log_hyperdrive_crash_report(
     )
 
     # We use ordered dict to ensure the outermost order is preserved
-    logging_crash_report = json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder)
+    # The above is what we want for the logging str
+    if not crash_report_stdout_summary:
+        logging_crash_report_str = json.dumps(dump_obj, indent=2, cls=ExtendedJSONEncoder)
 
-    logging.log(log_level, logging_crash_report)
-
+    # Add additional information for the file
     dump_obj["raw_transaction"] = trade_result.raw_transaction  # type: ignore
     dump_obj["raw_pool_config"] = trade_result.raw_pool_config  # type: ignore
     dump_obj["raw_pool_info"] = trade_result.raw_pool_info  # type: ignore
@@ -365,6 +370,15 @@ def log_hyperdrive_crash_report(
             os.makedirs(crash_report_dir)
         with open(crash_report_file, "w", encoding="utf-8") as file:
             json.dump(dump_obj, file, indent=2, cls=ExtendedJSONEncoder)
+
+    # Log crash report to stdout
+    if crash_report_stdout_summary:
+        crash_summary = repr(trade_result.exception)
+        if crash_report_file is not None:
+            crash_summary += ": " + crash_report_file
+        logging.log(log_level, crash_summary)
+    else:
+        logging.log(log_level, logging_crash_report_str)
 
     if (
         log_to_rollbar

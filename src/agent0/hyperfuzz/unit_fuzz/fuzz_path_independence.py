@@ -265,6 +265,7 @@ def fuzz_path_independence(
                 log_hyperdrive_crash_report(
                     report,
                     crash_report_to_file=True,
+                    crash_report_stdout_summary=False,
                     crash_report_file_prefix="fuzz_path_independence",
                     log_to_rollbar=True,
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
