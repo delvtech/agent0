@@ -48,6 +48,32 @@ class _suppress_stdout_stderr:
             os.close(fd)
 
 
+def _calc_scaled_normalized_time_remaining(
+    maturity_time: FixedPoint,
+    latest_checkpoint_time: FixedPoint,
+    position_duration: FixedPoint,
+) -> FixedPoint:
+    """Calculate the scaled and normalized time remaining.
+
+    TODO: This exists in hyperdrive-rs; add it to hyperdrivepy.
+
+    Arguments
+    ---------
+    maturity_time: FixedPoint
+        The maturity time of the position.
+    latest_checkpoint_time: FixedPoint
+        The timestamp for the latest checkpoint.
+    position_duration: FixedPoint
+        The pool config setting for position duration.
+
+    Returns
+    -------
+    FixedPoint
+        The scaled and normalized time remaining.
+    """
+    return (maturity_time - latest_checkpoint_time) / position_duration
+
+
 def calc_single_closeout(
     position: pd.Series,
     interface: HyperdriveReadInterface,
@@ -83,26 +109,32 @@ def calc_single_closeout(
             return 0.0
         return Decimal(0)
     amount = FixedPoint(f"{position['token_balance']:f}")
-    token_type = position["token_type"]
-    maturity = 0
-    position_duration = hyperdrive_state.pool_config.position_duration
-
-    if token_type in ["LONG", "SHORT"]:
-        maturity = int(position["maturity_time"])
-
-    fp_out_value: FixedPoint = FixedPoint("nan")
-    if token_type == "LONG":
+    maturity = int(position["maturity_time"]) if position["token_type"] in ["LONG", "SHORT"] else 0
+    fp_out_value = FixedPoint("nan")
+    if position["token_type"] == "LONG":
         try:
             # Suppress any errors coming from rust here, we already log it as info
             with _suppress_stdout_stderr():
                 fp_out_value = interface.calc_close_long(amount, maturity, hyperdrive_state)
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
-            logging.info("Chainsync: Exception caught in calculating close long, ignoring: %s", exception)
+            logging.info(
+                "Chainsync: Exception caught in calculating close long: %s\nApproximating with spot price.", exception
+            )
 
-    elif token_type == "SHORT":
+            # TODO: We can use the rust `calculate_market_value_*` functions once
+            # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
+            # Long value = users_longs * spot_price * term_remaining
+            normalized_time_remaining = _calc_scaled_normalized_time_remaining(
+                FixedPoint(maturity),
+                FixedPoint(hyperdrive_state.checkpoint_time),
+                FixedPoint(hyperdrive_state.pool_config.position_duration),
+            )
+            fp_out_value = amount * interface.calc_spot_price(hyperdrive_state) * normalized_time_remaining
+
+    elif position["token_type"] == "SHORT":
         # Get the open share price from the checkpoint lookup
-        open_checkpoint_time = maturity - position_duration
+        open_checkpoint_time = maturity - hyperdrive_state.pool_config.position_duration
 
         # Use checkpoint events to get checkpoint share price.
         # NOTE: anvil doesn't keep events past a certain point
@@ -145,16 +177,30 @@ def calc_single_closeout(
                 )
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
-            logging.info("Chainsync: Exception caught in calculating close short, ignoring: %s", exception)
+            logging.info(
+                "Chainsync: Exception caught in calculating close short: %s\nApproximating with spot price.", exception
+            )
+
+            # TODO: We can use the rust `calculate_market_value_*` functions once
+            # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
+            # Short value = users_shorts * ( 1 - spot_price ) * term_remaining
+            normalized_time_remaining = _calc_scaled_normalized_time_remaining(
+                FixedPoint(maturity),
+                FixedPoint(hyperdrive_state.checkpoint_time),
+                FixedPoint(hyperdrive_state.pool_config.position_duration),
+            )
+            fp_out_value = (
+                amount * (FixedPoint(1) - interface.calc_spot_price(hyperdrive_state)) * normalized_time_remaining
+            )
 
     # For PNL, we assume all withdrawal shares are redeemable
     # even if there are no withdrawal shares available to withdraw
     # Hence, we don't use preview transaction here
-    elif token_type in ["LP", "WITHDRAWAL_SHARE"]:
+    elif position["token_type"] in ["LP", "WITHDRAWAL_SHARE"]:
         fp_out_value = amount * hyperdrive_state.pool_info.lp_share_price
     else:
         # Should never get here
-        raise ValueError(f"Unexpected token type: {token_type}")
+        raise ValueError(f"Unexpected token type: {position['token_type']}")
 
     if coerce_float:
         out_value = float(fp_out_value)
