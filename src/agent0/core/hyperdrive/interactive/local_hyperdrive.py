@@ -305,12 +305,14 @@ class LocalHyperdrive(Hyperdrive):
         if backfill_data_start_block is not None:
             logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
             # If this is set, we ignore manual sync and always sync the database
-            self.sync_database(progress_bar=True)
+            self.sync_database(progress_bar=True, force_backfill=True)
         else:
             # Otherwise, we do this lazily if manual sync is on
             self._maybe_run_blocking_data_pipeline()
 
-    def sync_database(self, start_block: int | None = None, progress_bar: bool = False) -> None:
+    def sync_database(
+        self, start_block: int | None = None, progress_bar: bool = False, force_backfill: bool = False
+    ) -> None:
         """Explicitly syncs the database with the chain.
         This function doesn't need to be explicitly called if `manual_database_sync = False`.
 
@@ -329,6 +331,9 @@ class LocalHyperdrive(Hyperdrive):
             Defaults to ensuring all blocks are synced.
         progress_bar: bool, optional
             If True, will show a progress bar.
+        force_backfill: bool, optional
+            If True, will force backfilling pool info data. Otherwise will look for
+            `chain.config.backfill_pool_info` in the chain config.
         """
         if start_block is None:
             data_start_block = self._data_start_block
@@ -337,6 +342,11 @@ class LocalHyperdrive(Hyperdrive):
             data_start_block = start_block
             analysis_start_block = start_block
 
+        if force_backfill:
+            backfill = True
+        else:
+            backfill = self.chain.config.backfill_pool_info
+
         acquire_data(
             start_block=data_start_block,
             interfaces=[self.interface],
@@ -344,6 +354,7 @@ class LocalHyperdrive(Hyperdrive):
             exit_on_catch_up=True,
             suppress_logs=True,
             progress_bar=progress_bar,
+            backfill=backfill,
         )
         analyze_data(
             start_block=analysis_start_block,

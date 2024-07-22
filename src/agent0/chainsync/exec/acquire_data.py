@@ -39,6 +39,7 @@ def acquire_data(
     exit_callback_fn: Callable[[], bool] | None = None,
     suppress_logs: bool = False,
     progress_bar: bool = False,
+    backfill=True,
 ):
     """Execute the data acquisition pipeline.
 
@@ -75,6 +76,8 @@ def acquire_data(
         If true, will suppress info logging from this function. Defaults to False.
     progress_bar: bool, optional
         If true, will show a progress bar. Defaults to False.
+    backfill: bool, optional
+        If true, will fill in missing pool info data for every block. Defaults to True.
     """
     # TODO implement logger instead of global logging to suppress based on module name.
 
@@ -142,25 +145,29 @@ def acquire_data(
             time.sleep(_SLEEP_AMOUNT)
             continue
         # Backfilling for blocks that need updating
-        for block_int in tqdm(range(curr_write_block, latest_mined_block + 1), disable=not progress_bar):
-            block_number: BlockNumber = BlockNumber(block_int)
-            # Only print every 10 blocks
-            if not suppress_logs and (block_number % 10) == 0:
-                logging.info("Block %s", block_number)
-            # Explicit check against loopback block limit
-            if (latest_mined_block - block_number) > lookback_block_limit:
-                # NOTE when this case happens, wallet information will no longer
-                # be accurate, as we may have missed deltas on wallets
-                # based on the blocks we skipped
-                # TODO should directly query the chain for open positions
-                # in this case
-                logging.warning(
-                    "Querying block_number %s out of %s, unable to keep up with chain block iteration",
-                    block_number,
-                    latest_mined_block,
-                )
-                continue
-            data_chain_to_db(interfaces, block_number, db_session)
+        if backfill:
+            for block_int in tqdm(range(curr_write_block, latest_mined_block + 1), disable=not progress_bar):
+                block_number: BlockNumber = BlockNumber(block_int)
+                # Only print every 10 blocks
+                if not suppress_logs and (block_number % 10) == 0:
+                    logging.info("Block %s", block_number)
+                # Explicit check against loopback block limit
+                if (latest_mined_block - block_number) > lookback_block_limit:
+                    # NOTE when this case happens, wallet information will no longer
+                    # be accurate, as we may have missed deltas on wallets
+                    # based on the blocks we skipped
+                    # TODO should directly query the chain for open positions
+                    # in this case
+                    logging.warning(
+                        "Querying block_number %s out of %s, unable to keep up with chain block iteration",
+                        block_number,
+                        latest_mined_block,
+                    )
+                    continue
+                data_chain_to_db(interfaces, block_number, db_session)
+        else:
+            data_chain_to_db(interfaces, latest_mined_block, db_session)
+
         curr_write_block = latest_mined_block + 1
 
     # Clean up resources on clean exit
