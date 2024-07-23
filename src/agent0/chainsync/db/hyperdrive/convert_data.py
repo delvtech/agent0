@@ -19,7 +19,9 @@ from .schema import PoolConfig, PoolInfo
 def _scaled_value_to_decimal(int_val: Any) -> Decimal:
     # TODO we may want to use Decimal's internal scale via context
     # to do this conversion instead of casting to FixedPoint for performance.
-    return Decimal(str(FixedPoint(scaled_value=int(int_val))))
+    # NOTE int_val is typically a string for keeping precision, so we explicitly cast it
+    # to an int before converting to FixedPoint
+    return FixedPoint(scaled_value=int(int_val)).to_decimal()
 
 
 def convert_checkpoint_events(events: list[dict[str, Any]]) -> pd.DataFrame:
@@ -128,19 +130,23 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     if len(transfer_events_df) > 0:
         # Expand the args dict without losing the args dict field
         # json_normalize works on series, but typing doesn't support it.
+        # NOTE json_normalize can sometimes convert integers to floats, which lose precision.
+        # Hence, event args are strings, which ensures precision is maintained through this function.
         args_columns = pd.json_normalize(transfer_events_df["args"])  # type: ignore
         transfer_events_df = pd.concat([transfer_events_df, args_columns], axis=1)
         # We apply the decode function to each element, then expand the resulting
         # tuple to multiple columns
         if "id" not in transfer_events_df:
-            pass
+            raise AssertionError("Transfer event has no id")
+        # TODO there may be a conversion issue here if `id` is too large of an int
         transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
             *transfer_events_df["id"].astype(int).apply(decode_asset_id)
         )
         # Convert token_type enum to name
         transfer_events_df["token_type"] = transfer_events_df["token_type"].apply(lambda x: AssetIdPrefix(x).name)
         # Convert maturity times of 0 to nan to match other events
-        transfer_events_df.loc[transfer_events_df["maturityTime"] == 0, "maturityTime"] = np.nan
+        # NOTE underlying data is string, so we do string comparison
+        transfer_events_df.loc[transfer_events_df["maturityTime"] == "0", "maturityTime"] = np.nan
         # Set token id, default is to set it to the token type
         transfer_events_df["token_id"] = transfer_events_df["token_type"]
         # Append the maturity time for longs and shorts
@@ -148,7 +154,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         transfer_events_df.loc[long_or_short_idx, "token_id"] = (
             transfer_events_df.loc[long_or_short_idx, "token_type"]
             + "-"
-            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
+            + transfer_events_df.loc[long_or_short_idx, "maturityTime"]
         )
 
         # If the wallet address is set, set the event wrt the trader
@@ -204,6 +210,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
 
     # Expand the args dict without losing the args dict field
     # json_normalize works on series, but typing doesn't support it.
+    # NOTE json_normalize can sometimes convert integers to floats, which lose precision.
+    # Hence, event args are strings, which ensures precision is maintained through this function.
     args_columns = pd.json_normalize(events_df["args"])  # type: ignore
     events_df = pd.concat([events_df, args_columns], axis=1)
 
@@ -253,7 +261,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
             _scaled_value_to_decimal  # type: ignore
         )
         # We need to also add any withdrawal shares as additional rows
-        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] > 0)
+        # NOTE withdrawalShareAmount is a string, so we look for non-zero string values
+        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] != "0")
         if withdrawal_shares_idx.any():
             withdrawal_rows = events_df[withdrawal_shares_idx].copy()
             withdrawal_rows["token_type"] = "WITHDRAWAL_SHARE"
@@ -291,9 +300,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     events_idx = events_df["event"].isin(["OpenLong", "CloseLong"])
     if events_idx.any():
         events_df.loc[events_idx, "token_type"] = "LONG"
-        events_df.loc[events_idx, "token_id"] = "LONG-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
-            str
-        )
+        events_df.loc[events_idx, "token_id"] = "LONG-" + events_df.loc[events_idx, "maturityTime"]
 
     events_idx = events_df["event"] == "OpenLong"
     if events_idx.any():
@@ -329,9 +336,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     events_idx = events_df["event"].isin(["OpenShort", "CloseShort"])
     if events_idx.any():
         events_df.loc[events_idx, "token_type"] = "SHORT"
-        events_df.loc[events_idx, "token_id"] = "SHORT-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
-            str
-        )
+        events_df.loc[events_idx, "token_id"] = "SHORT-" + events_df.loc[events_idx, "maturityTime"]
 
     events_idx = events_df["event"] == "OpenShort"
     if events_idx.any():

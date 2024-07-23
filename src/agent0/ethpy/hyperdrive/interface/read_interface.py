@@ -591,9 +591,14 @@ class HyperdriveReadInterface:
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_identifier)
 
     def get_transfer_single_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted TransferSingle events from the Hyperdrive contract.
+
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -601,16 +606,22 @@ class HyperdriveReadInterface:
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_transfer_single_events(self, from_block, argument_filters)
+        return _get_transfer_single_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_checkpoint_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted CreateCheckpoint events from the Hyperdrive contract.
 
@@ -620,16 +631,22 @@ class HyperdriveReadInterface:
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_checkpoint_events(self, from_block, argument_filters)
+        return _get_checkpoint_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_initialize_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted Initialize events from the Hyperdrive contract.
 
@@ -639,16 +656,22 @@ class HyperdriveReadInterface:
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_initialize_events(self, from_block, argument_filters)
+        return _get_initialize_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_open_long_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenLong events from the Hyperdrive contract.
 
@@ -658,37 +681,53 @@ class HyperdriveReadInterface:
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_open_long_events(self, from_block, argument_filters)
+        return _get_open_long_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_close_long_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted CloseLong events from the Hyperdrive contract.
 
+        NOTE: numeric event argument values are strings to maintain precision.
+
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_close_long_events(self, from_block, argument_filters)
+        return _get_close_long_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_open_short_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
+
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -696,18 +735,26 @@ class HyperdriveReadInterface:
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_open_short_events(self, from_block, argument_filters)
+        return _get_open_short_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_close_short_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
+
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -715,70 +762,97 @@ class HyperdriveReadInterface:
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_close_short_events(self, from_block, argument_filters)
+        return _get_close_short_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_add_liquidity_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted AddLiquidity events from the Hyperdrive contract.
 
+        NOTE: numeric event argument values are strings to maintain precision.
+
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_add_liquidity_events(self, from_block, argument_filters)
+        return _get_add_liquidity_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_remove_liquidity_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted RemoveLiquidity events from the Hyperdrive contract.
 
+        NOTE: numeric event argument values are strings to maintain precision.
+
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_remove_liquidity_events(self, from_block, argument_filters)
+        return _get_remove_liquidity_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def get_redeem_withdrawal_shares_events(
-        self, from_block: BlockIdentifier | None = None, argument_filters: dict[str, Any] | None = None
+        self,
+        from_block: BlockIdentifier | None = None,
+        argument_filters: dict[str, Any] | None = None,
+        numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted RedeemWithdrawalShares events from the Hyperdrive contract.
 
+        NOTE: numeric event argument values are strings to maintain precision.
+
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
             The block to start getting events from.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
+        numeric_args_as_str: bool, optional
+            Whether to convert numeric event arguments to strings for keeping precision.
+            Defaults to False.
 
         Returns
         -------
         list[dict[str, Any]]
             A list of emitted events.
         """
-        return _get_redeem_withdrawal_shares_events(self, from_block, argument_filters)
+        return _get_redeem_withdrawal_shares_events(self, from_block, argument_filters, numeric_args_as_str)
 
     def calc_position_duration_in_years(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Return the pool config position duration as a fraction of a year.

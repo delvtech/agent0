@@ -240,8 +240,7 @@ def _ensure_event_matches_wallet_delta(
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0915 (too many statements)
 @pytest.mark.anvil
-# @pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
-@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.STETH])
+@pytest.mark.parametrize("deploy_type", [LocalHyperdrive.DeployType.ERC4626, LocalHyperdrive.DeployType.STETH])
 def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHyperdrive.DeployType):
     """Deploy 2 pools, 3 agents, and test funding and each trade type."""
     # TODO DRY this up, e.g., doing the same calls while swapping the agent.
@@ -501,6 +500,30 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
+
+
+@pytest.mark.anvil
+def test_no_loss_in_precision():
+    # We need manual db sync since we need to have multiple
+    # trades inserted at the same time.
+    with LocalChain(LocalChain.Config(db_port=6000, chain_port=6001, manual_database_sync=True)) as chain:
+        # Deploy hyperdrive pool
+        hyperdrive = LocalHyperdrive(
+            chain,
+            config=LocalHyperdrive.Config(
+                initial_liquidity=FixedPoint(100_000_000_000_000),
+            ),
+        )
+        # Setup agent
+        agent0 = chain.init_agent(eth=FixedPoint(1_000), name="agent0", pool=hyperdrive)
+        agent0.add_funds(base=FixedPoint(100_000_000_000_000))
+        # Open short
+        small_val = FixedPoint("0.0011")
+        large_val = FixedPoint("1234567890.123456789012345678")
+        _ = agent0.open_long(base=small_val)
+        _ = agent0.open_short(bonds=large_val)
+        hyperdrive.sync_database()
+        _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive, agent0)
 
 
 def _to_unscaled_decimal(fp_val: FixedPoint) -> Decimal:
