@@ -520,8 +520,8 @@ def test_no_loss_in_precision():
         # Open short
         small_val = FixedPoint("0.0011")
         large_val = FixedPoint("1234567890123.123456789012345678")
-        small_open_long_event = agent0.open_long(base=small_val)
-        large_open_short_event = agent0.open_short(bonds=large_val)
+        _ = agent0.open_long(base=small_val)
+        _ = agent0.open_short(bonds=large_val)
         hyperdrive.sync_database()
         _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive, agent0)
 
