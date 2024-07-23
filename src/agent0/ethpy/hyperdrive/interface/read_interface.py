@@ -595,7 +595,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted TransferSingle events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -616,7 +616,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted CreateCheckpoint events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -637,7 +637,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted Initialize events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -658,7 +658,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenLong events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -679,7 +679,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted CloseLong events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -700,7 +700,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -721,7 +721,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -742,7 +742,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted AddLiquidity events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -763,7 +763,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted RemoveLiquidity events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -784,7 +784,7 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted RedeemWithdrawalShares events from the Hyperdrive contract.
 
-        NOTE: all event argument values are strings to maintain precision.
+        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
