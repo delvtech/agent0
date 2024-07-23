@@ -153,7 +153,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         transfer_events_df.loc[long_or_short_idx, "token_id"] = (
             transfer_events_df.loc[long_or_short_idx, "token_type"]
             + "-"
-            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
+            + transfer_events_df.loc[long_or_short_idx, "maturityTime"]
         )
 
         # If the wallet address is set, set the event wrt the trader
@@ -260,7 +260,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
             _scaled_value_to_decimal  # type: ignore
         )
         # We need to also add any withdrawal shares as additional rows
-        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] > 0)
+        # NOTE withdrawalShareAmount is a string, so we look for non-zero string values
+        withdrawal_shares_idx = events_idx & (events_df["withdrawalShareAmount"] != "0")
         if withdrawal_shares_idx.any():
             withdrawal_rows = events_df[withdrawal_shares_idx].copy()
             withdrawal_rows["token_type"] = "WITHDRAWAL_SHARE"
@@ -298,9 +299,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     events_idx = events_df["event"].isin(["OpenLong", "CloseLong"])
     if events_idx.any():
         events_df.loc[events_idx, "token_type"] = "LONG"
-        events_df.loc[events_idx, "token_id"] = "LONG-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
-            str
-        )
+        events_df.loc[events_idx, "token_id"] = "LONG-" + events_df.loc[events_idx, "maturityTime"]
 
     events_idx = events_df["event"] == "OpenLong"
     if events_idx.any():
@@ -336,9 +335,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     events_idx = events_df["event"].isin(["OpenShort", "CloseShort"])
     if events_idx.any():
         events_df.loc[events_idx, "token_type"] = "SHORT"
-        events_df.loc[events_idx, "token_id"] = "SHORT-" + events_df.loc[events_idx, "maturityTime"].astype(int).astype(
-            str
-        )
+        events_df.loc[events_idx, "token_id"] = "SHORT-" + events_df.loc[events_idx, "maturityTime"]
 
     events_idx = events_df["event"] == "OpenShort"
     if events_idx.any():
