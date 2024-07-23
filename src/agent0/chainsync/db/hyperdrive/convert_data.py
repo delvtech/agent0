@@ -19,7 +19,9 @@ from .schema import PoolConfig, PoolInfo
 def _scaled_value_to_decimal(int_val: Any) -> Decimal:
     # TODO we may want to use Decimal's internal scale via context
     # to do this conversion instead of casting to FixedPoint for performance.
-    return Decimal(str(FixedPoint(scaled_value=int(int_val))))
+    # NOTE int_val is typically a string for keeping precision, so we explicitly cast it
+    # to an int before converting to FixedPoint
+    return FixedPoint(scaled_value=int(int_val)).to_decimal()
 
 
 def convert_checkpoint_events(events: list[dict[str, Any]]) -> pd.DataFrame:
@@ -128,7 +130,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     if len(transfer_events_df) > 0:
         # Expand the args dict without losing the args dict field
         # json_normalize works on series, but typing doesn't support it.
-        # FIXME json_normalize can sometimes convert integers to floats, which lose precision
+        # NOTE json_normalize can sometimes convert integers to floats, which lose precision.
+        # Hence, event args are strings, which ensures precision is maintained through this function.
         args_columns = pd.json_normalize(transfer_events_df["args"])  # type: ignore
         transfer_events_df = pd.concat([transfer_events_df, args_columns], axis=1)
         # We apply the decode function to each element, then expand the resulting
@@ -141,7 +144,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         # Convert token_type enum to name
         transfer_events_df["token_type"] = transfer_events_df["token_type"].apply(lambda x: AssetIdPrefix(x).name)
         # Convert maturity times of 0 to nan to match other events
-        transfer_events_df.loc[transfer_events_df["maturityTime"] == 0, "maturityTime"] = np.nan
+        # NOTE underlying data is string, so we do string comparison
+        transfer_events_df.loc[transfer_events_df["maturityTime"] == "0", "maturityTime"] = np.nan
         # Set token id, default is to set it to the token type
         transfer_events_df["token_id"] = transfer_events_df["token_type"]
         # Append the maturity time for longs and shorts
@@ -205,7 +209,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
 
     # Expand the args dict without losing the args dict field
     # json_normalize works on series, but typing doesn't support it.
-    # FIXME json_normalize can sometimes convert integers to floats, which lose precision
+    # NOTE json_normalize can sometimes convert integers to floats, which lose precision.
+    # Hence, event args are strings, which ensures precision is maintained through this function.
     args_columns = pd.json_normalize(events_df["args"])  # type: ignore
     events_df = pd.concat([events_df, args_columns], axis=1)
 
