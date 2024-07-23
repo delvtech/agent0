@@ -508,5 +508,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        rollbar.report_exc_info(level=logging.CRITICAL)
+        rollbar.report_exc_info(level="critical")
         raise exc
