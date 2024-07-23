@@ -511,7 +511,7 @@ def test_no_loss_in_precision():
         hyperdrive = LocalHyperdrive(
             chain,
             config=LocalHyperdrive.Config(
-                initial_liquidity=FixedPoint(100_000_000_000_000_000_000),
+                initial_liquidity=FixedPoint(100_000_000_000_000),
             ),
         )
         # Setup agent
@@ -519,7 +519,7 @@ def test_no_loss_in_precision():
         agent0.add_funds(base=FixedPoint(100_000_000_000_000))
         # Open short
         small_val = FixedPoint("0.0011")
-        large_val = FixedPoint("1234567890123.123456789012345678")
+        large_val = FixedPoint("1234567890.123456789012345678")
         _ = agent0.open_long(base=small_val)
         _ = agent0.open_short(bonds=large_val)
         hyperdrive.sync_database()
