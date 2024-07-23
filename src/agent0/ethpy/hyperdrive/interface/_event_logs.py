@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
     out = dict(in_val)
     # The args field is also an attribute dict, change to dict
-    out["args"] = dict(in_val["args"])
+    # We cast all values to strings to keep precision
+    out["args"] = {k: str(v) for k, v in in_val["args"].items()}
 
     # Convert transaction hash to string
     out["transactionHash"] = in_val["transactionHash"].hex()
@@ -27,6 +28,7 @@ def _convert_event_lido_shares_to_steth(events: list[dict[str, Any]]) -> None:
     # TODO consider not making this conversion and keeping things in lido shares
 
     # NOTE this edits the list of events in place.
+    # Since event arguments are strings, we cast them back to int to do math, then convert it back to string
     for event in events:
         # We expect all of these fields to exist in the event
         assert "args" in event
@@ -35,21 +37,27 @@ def _convert_event_lido_shares_to_steth(events: list[dict[str, Any]]) -> None:
         assert "vaultSharePrice" in event["args"]
         # If the transaction was made with the vault token, we need to convert
         if not event["args"]["asBase"]:
-            event["args"]["amount"] = (
-                FixedPoint(scaled_value=event["args"]["amount"])
-                * FixedPoint(scaled_value=event["args"]["vaultSharePrice"])
-            ).scaled_value
+            event["args"]["amount"] = str(
+                (
+                    FixedPoint(scaled_value=int(event["args"]["amount"]))
+                    * FixedPoint(scaled_value=int(event["args"]["vaultSharePrice"]))
+                ).scaled_value
+            )
             # Shorts also have base_proceeds and base_payment that we need to convert
             if "base_proceeds" in event["args"]:
-                event["args"]["base_proceeds"] = (
-                    FixedPoint(scaled_value=event["args"]["base_proceeds"])
-                    * FixedPoint(scaled_value=event["args"]["vaultSharePrice"])
-                ).scaled_value
+                event["args"]["base_proceeds"] = str(
+                    (
+                        FixedPoint(scaled_value=int(event["args"]["base_proceeds"]))
+                        * FixedPoint(scaled_value=int(event["args"]["vaultSharePrice"]))
+                    ).scaled_value
+                )
             if "base_payment" in event["args"]:
-                event["args"]["base_payment"] = (
-                    FixedPoint(scaled_value=event["args"]["base_payment"])
-                    * FixedPoint(scaled_value=event["args"]["vaultSharePrice"])
-                ).scaled_value
+                event["args"]["base_payment"] = str(
+                    (
+                        FixedPoint(scaled_value=int(event["args"]["base_payment"]))
+                        * FixedPoint(scaled_value=int(event["args"]["vaultSharePrice"]))
+                    ).scaled_value
+                )
 
 
 # TODO it may be useful to return a list of our defined event types.
