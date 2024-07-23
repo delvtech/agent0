@@ -14,8 +14,10 @@ if TYPE_CHECKING:
 def _event_data_to_dict(in_val: EventData) -> dict[str, Any]:
     out = dict(in_val)
     # The args field is also an attribute dict, change to dict
-    # We cast all values to strings to keep precision
-    out["args"] = {k: str(v) for k, v in in_val["args"].items()}
+    # We cast all integer values to strings to keep precision
+    # We use `type(v)` instead of `isinstance` to avoid converting booleans to strings
+    # pylint: disable=unidiomatic-typecheck
+    out["args"] = {k: (str(v) if type(v) is int else v) for k, v in in_val["args"].items()}
 
     # Convert transaction hash to string
     out["transactionHash"] = in_val["transactionHash"].hex()
