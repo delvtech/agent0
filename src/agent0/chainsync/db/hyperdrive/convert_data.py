@@ -137,7 +137,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         # We apply the decode function to each element, then expand the resulting
         # tuple to multiple columns
         if "id" not in transfer_events_df:
-            pass
+            raise AssertionError("Transfer event has no id")
+        # TODO there may be a conversion issue here if `id` is too large of an int
         transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
             *transfer_events_df["id"].astype(int).apply(decode_asset_id)
         )
