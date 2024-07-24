@@ -343,6 +343,8 @@ def invariant_check(
             # Undo lido to steth conversion
             lido_shares = close_trade_event.amount / close_trade_event.vault_share_price
             # Use lido contract to make the conversion on the event block
+            # Type narrowing
+            assert interactive_hyperdrive.interface.vault_shares_token_contract is not None
             steth_amount_in_wei = (
                 interactive_hyperdrive.interface.vault_shares_token_contract.functions.getPooledEthByShares(
                     lido_shares.scaled_value

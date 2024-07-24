@@ -210,10 +210,13 @@ class HyperdriveReadInterface:
             self.vault_shares_token_contract = None
             # We access the vault shares token via the specific instance, so we reinitialize
             # the hyperdrive contract to the MorphoBlueHyperdrive contract
-            self.hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
-                web3.to_checksum_address(self.hyperdrive_address)
-            )
-            pass
+            # TODO cast this as a MorphoBlueHyperdriveContract to call other functions.
+            # We may want to do this where we need the call as opposed to setting this
+            # globally, since python types doesn't know `IMorphoBlueHyperdriveContract` is
+            # a subclass of `IHyperdrive`.
+            # self.hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
+            #     web3.to_checksum_address(self.hyperdrive_address)
+            # )
         else:
             raise ValueError(f"Unknown hyperdrive kind: {hyperdrive_kind}")
 
@@ -383,7 +386,7 @@ class HyperdriveReadInterface:
 
         try:
             variable_rate = self.get_variable_rate(block_identifier)
-        except BadFunctionCallOutput:
+        except (BadFunctionCallOutput, ValueError):
             logging.warning(
                 "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
             )
@@ -514,6 +517,8 @@ class HyperdriveReadInterface:
         """
         if block_identifier is None:
             block_identifier = "latest"
+        if self.vault_shares_token_contract is None:
+            raise ValueError("Vault shares token contract is not set")
         return _get_variable_rate(self.vault_shares_token_contract, block_identifier)
 
     def get_standardized_variable_rate(self, time_range: int = 604800) -> FixedPoint:

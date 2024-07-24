@@ -599,6 +599,8 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
     deployer_address = fast_hyperdrive_fixture.chain.get_deployer_address()
     # pylint: disable=protected-access
     base_token_addr = fast_hyperdrive_fixture.interface.base_token_contract.address
+    # Type narrowing
+    assert fast_hyperdrive_fixture.interface.vault_shares_token_contract is not None
     vault_shares_token_addr = fast_hyperdrive_fixture.interface.vault_shares_token_contract.address
     expected_pool_config = {
         "hyperdrive_address": fast_hyperdrive_fixture.hyperdrive_address,

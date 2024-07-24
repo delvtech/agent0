@@ -181,6 +181,8 @@ def _set_variable_rate(
     new_rate: FixedPoint,
 ) -> None:
     """See API for documentation."""
+    # Type narrowing
+    assert interface.vault_shares_token_contract is not None
     _ = smart_contract_transact(
         interface.web3,
         interface.vault_shares_token_contract,
@@ -222,7 +224,9 @@ async def _async_open_long(
 
     # Convert the trade amount from steth to lido shares
     # before passing into hyperdrive
-    if interface.hyperdrive_kind:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        # Type narrowing
+        assert interface.vault_shares_token_contract is not None
         # Convert input steth into lido shares
         trade_amount = FixedPoint(
             scaled_value=interface.vault_shares_token_contract.functions.getSharesByPooledEth(
@@ -557,7 +561,9 @@ async def _async_add_liquidity(
 
     # Convert the trade amount from steth to lido shares
     # before passing into hyperdrive
-    if interface.hyperdrive_kind:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        # type narrowing
+        assert interface.vault_shares_token_contract is not None
         # Convert input steth into lido shares
         trade_amount = FixedPoint(
             scaled_value=interface.vault_shares_token_contract.functions.getSharesByPooledEth(
