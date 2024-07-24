@@ -498,7 +498,7 @@ async def _async_send_transaction_and_wait_for_receipt(
         nonce = nonce_func()
     unsent_txn["nonce"] = nonce
 
-    signed_txn = signer.sign_transaction(unsent_txn)
+    signed_txn = signer.sign_transaction(unsent_txn)  # type: ignore
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
@@ -756,7 +756,7 @@ def _send_transaction_and_wait_for_receipt(
     else:
         nonce = nonce_func()
     unsent_txn["nonce"] = nonce
-    signed_txn = signer.sign_transaction(unsent_txn)
+    signed_txn = signer.sign_transaction(unsent_txn)  # type: ignore
     tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
