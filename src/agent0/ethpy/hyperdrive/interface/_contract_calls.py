@@ -79,7 +79,7 @@ def _get_vault_shares(
         vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
             block_identifier=block_identifier or "latest"
         )
-    elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHOBLUE:
+    elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHO:
         # Type narrowing
         assert interface.morpho_hyperdrive_contract is not None
         assert interface.morpho_contract is not None

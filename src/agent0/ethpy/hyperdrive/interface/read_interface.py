@@ -125,7 +125,7 @@ class HyperdriveReadInterface:
 
         ERC4626 = "ERC4626"
         STETH = "STETH"
-        MORPHOBLUE = "MORPHOBLUE"
+        MORPHO = "MORPHO"
 
     def __init__(
         self,
@@ -226,7 +226,7 @@ class HyperdriveReadInterface:
                 address=web3.to_checksum_address(vault_shares_token_address)
             )
         elif hyperdrive_kind == "MorphoBlueHyperdrive":
-            self.hyperdrive_kind = self.HyperdriveKind.MORPHOBLUE
+            self.hyperdrive_kind = self.HyperdriveKind.MORPHO
             # MorphoBlue doesn't have a vault shares token
             self.vault_shares_token_contract = None
             # We access the vault shares token via the specific instance, so we reinitialize
