@@ -40,6 +40,7 @@ ERC4626Target4Deployer.sol
 HyperdriveFactory.sol
 HyperdriveRegistry.sol
 IHyperdrive.sol
+IMorphoBlueHyperdrive.sol
 LPMath.sol
 MockERC4626.sol
 MockLido.sol
