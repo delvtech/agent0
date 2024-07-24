@@ -20,8 +20,6 @@ import time
 from functools import partial
 from typing import NamedTuple, Sequence
 
-import rollbar
-
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
