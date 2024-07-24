@@ -12,7 +12,7 @@ from web3 import Web3
 
 from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract, MockERC4626Contract
 
-from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
+from .get_expected_hyperdrive_version import check_hyperdrive_version, get_minimum_hyperdrive_version
 from .transactions import get_hyperdrive_pool_config
 
 
@@ -100,12 +100,11 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     for address, info in zip(hyperdrive_addresses, hyperdrive_infos):
         # Check versions
         hyperdrive_version = info.version
-        expected_version = get_expected_hyperdrive_version()
-        if hyperdrive_version not in expected_version:
+        if not check_hyperdrive_version(hyperdrive_version):
             logging.error(
-                "Hyperdrive pool at address %s version does not match (expected %s, actual %s}).",
+                "Hyperdrive pool at address %s version not supported (minimum %s, actual %s}).",
                 address,
-                expected_version,
+                get_minimum_hyperdrive_version(),
                 hyperdrive_version,
             )
 
