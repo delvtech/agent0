@@ -14,7 +14,7 @@ from .deploy import (
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
-from .get_expected_hyperdrive_version import get_expected_hyperdrive_version
+from .get_expected_hyperdrive_version import check_hyperdrive_version, get_minimum_hyperdrive_version
 from .interface import HyperdriveReadInterface, HyperdriveReadWriteInterface
 from .transactions import (
     get_hyperdrive_checkpoint,
