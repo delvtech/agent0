@@ -67,11 +67,24 @@ def _get_vault_shares(
     block_identifier: BlockIdentifier | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    if interface.vault_is_steth:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        # Type narrowing
+        assert interface.vault_shares_token_contract is not None
         vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
             block_identifier=block_identifier or "latest"
         )
+    elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHO:
+        # Type narrowing
+        assert interface.morpho_contract is not None
+        assert interface.morpho_market_id is not None
+        # Get token balances
+        # We want supply shares, which is the first element in the tuple
+        vault_shares = interface.morpho_contract.functions.position(
+            interface.morpho_market_id, hyperdrive_contract.address
+        ).call(block_identifier=block_identifier or "latest")[0]
     else:
+        # Type narrowing
+        assert interface.vault_shares_token_contract is not None
         vault_shares = interface.vault_shares_token_contract.functions.balanceOf(hyperdrive_contract.address).call(
             block_identifier=block_identifier or "latest"
         )
@@ -166,6 +179,8 @@ def _set_variable_rate(
     new_rate: FixedPoint,
 ) -> None:
     """See API for documentation."""
+    # Type narrowing
+    assert interface.vault_shares_token_contract is not None
     _ = smart_contract_transact(
         interface.web3,
         interface.vault_shares_token_contract,
@@ -207,7 +222,9 @@ async def _async_open_long(
 
     # Convert the trade amount from steth to lido shares
     # before passing into hyperdrive
-    if interface.vault_is_steth:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        # Type narrowing
+        assert interface.vault_shares_token_contract is not None
         # Convert input steth into lido shares
         trade_amount = FixedPoint(
             scaled_value=interface.vault_shares_token_contract.functions.getSharesByPooledEth(
@@ -542,7 +559,9 @@ async def _async_add_liquidity(
 
     # Convert the trade amount from steth to lido shares
     # before passing into hyperdrive
-    if interface.vault_is_steth:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        # type narrowing
+        assert interface.vault_shares_token_contract is not None
         # Convert input steth into lido shares
         trade_amount = FixedPoint(
             scaled_value=interface.vault_shares_token_contract.functions.getSharesByPooledEth(

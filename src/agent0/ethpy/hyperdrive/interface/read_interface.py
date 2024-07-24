@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import pathlib
+from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
 from fixedpointmath import FixedPoint
+from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
@@ -25,6 +29,7 @@ from agent0.hypertypes import (
     CheckpointFP,
     ERC20MintableContract,
     IHyperdriveContract,
+    IMorphoBlueHyperdriveContract,
     MockERC4626Contract,
     MockLidoContract,
 )
@@ -82,18 +87,32 @@ from ._mock_contract import (
     _calc_time_stretch,
 )
 
-AGENT0_SIGNATURE = bytes.fromhex("a0")
-
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber, ChecksumAddress
-    from web3 import Web3
+
+AGENT0_SIGNATURE = bytes.fromhex("a0")
+# TODO this path won't exist when not building from source, fix
+MORPHO_ABI_PATH = (
+    pathlib.Path(__file__).parent.parent.parent.parent.parent.parent
+    / "packages"
+    / "external"
+    / "IMorpho.sol"
+    / "IMorpho.json"
+).resolve()
+
+# TODO morpho hyperdrive doesn't expose this
+# MORPHO_LOAN_TOKEN_ADDR = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+# TODO generate this id from the variables exposed by morpho hyperdrive contract
+MORPHO_MARKET_PARAMS_ID = "0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48"
+
 
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 # ruff: noqa: PLR0913
 # We only worry about protected access for anyone outside of this folder.
 # pylint: disable=protected-access
@@ -101,6 +120,13 @@ if TYPE_CHECKING:
 
 class HyperdriveReadInterface:
     """Read-only end-point API for interfacing with a deployed Hyperdrive pool."""
+
+    class HyperdriveKind(Enum):
+        """Hyperdrive contract kind."""
+
+        ERC4626 = "ERC4626"
+        STETH = "STETH"
+        MORPHO = "MORPHO"
 
     def __init__(
         self,
@@ -148,7 +174,7 @@ class HyperdriveReadInterface:
         self.web3 = web3
 
         # Setup Hyperdrive contract
-        self.hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=self.web3)(
+        self.hyperdrive_contract = IHyperdriveContract.factory(w3=self.web3)(
             web3.to_checksum_address(self.hyperdrive_address)
         )
 
@@ -165,14 +191,6 @@ class HyperdriveReadInterface:
         base_token_contract_address = self.pool_config.base_token
         vault_shares_token_address = self.pool_config.vault_shares_token
 
-        # TODO Although the underlying function might not be a MockERC4626Contract,
-        # the pypechain contract factory happily accepts any address and exposes
-        # all functions from that contract. The code will only break if we try to
-        # call a non-existent function on the underlying contract address.
-        self.vault_shares_token_contract: MockERC4626Contract | MockLidoContract = MockERC4626Contract.factory(
-            w3=self.web3
-        )(address=web3.to_checksum_address(vault_shares_token_address))
-
         # Agent0 doesn't support eth as base, so if it is, we use the yield token as the base, and
         # calls to trades will use "as_base=False"
         if base_token_contract_address == ETH_CONTRACT_ADDRESS:
@@ -187,15 +205,62 @@ class HyperdriveReadInterface:
         else:
             self.base_is_eth = False
 
-        # We look for the vault shares token symbol to determine if the yield contract is steth
-        if self.vault_shares_token_contract.functions.symbol().call() == "stETH":
-            self.vault_is_steth = True
+        # Define morpho specific variables
+        self.morpho_contract = None
+        self.morpho_market_id = None
+
+        hyperdrive_kind = self.hyperdrive_contract.functions.kind().call()
+        if hyperdrive_kind == "ERC4626Hyperdrive":
+            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
+            # TODO Although the underlying function might not be a MockERC4626Contract,
+            # the pypechain contract factory happily accepts any address and exposes
+            # all functions from that contract. The code will only break if we try to
+            # call a non-existent function on the underlying contract address.
+            self.vault_shares_token_contract = MockERC4626Contract.factory(w3=self.web3)(
+                address=web3.to_checksum_address(vault_shares_token_address)
+            )
+        elif hyperdrive_kind == "StETHHyperdrive":
+            self.hyperdrive_kind = self.HyperdriveKind.STETH
             # Redefine the vault shares token contract as the mock lido contract
             self.vault_shares_token_contract = MockLidoContract.factory(w3=self.web3)(
                 address=web3.to_checksum_address(vault_shares_token_address)
             )
+        elif hyperdrive_kind == "MorphoBlueHyperdrive":
+            self.hyperdrive_kind = self.HyperdriveKind.MORPHO
+            # MorphoBlue doesn't have a vault shares token
+            self.vault_shares_token_contract = None
+            # We access the vault shares token via the specific instance, so we reinitialize
+            # the hyperdrive contract to the MorphoBlueHyperdrive contract
+            # TODO we initialize another variable for the morpho hyperdrive contract.
+            # This is due to `hyperdrive_contract` type not knowing it's a base class of
+            # morpho, hence we keep it as a separate variable. Ideally we would subclass
+            # from interface for the specific instance.
+            morpho_hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
+                web3.to_checksum_address(self.hyperdrive_address)
+            )
+            with open(MORPHO_ABI_PATH, "rb") as f:
+                morpho_blue_abi = json.load(f)
+
+            morpho_contract_addr = morpho_hyperdrive_contract.functions.vault().call()
+            self.morpho_contract = web3.eth.contract(
+                address=web3.to_checksum_address(morpho_contract_addr), abi=morpho_blue_abi["abi"]
+            )
+            # TODO ideally we would build the id, but something below is incorrect.
+            # We hard code for now.
+            # self.morpho_market_id = web3.solidity_keccak(
+            #    abi_types=["address", "address", "address", "address", "uint256"],
+            #    values=[
+            #        MORPHO_LOAN_TOKEN_ADDR,
+            #        morpho_hyperdrive_contract.functions.collateralToken().call(),
+            #        morpho_hyperdrive_contract.functions.oracle().call(),
+            #        morpho_hyperdrive_contract.functions.irm().call(),
+            #        morpho_hyperdrive_contract.functions.lltv().call(),
+            #    ],
+            # )
+            self.morpho_market_id = MORPHO_MARKET_PARAMS_ID
+
         else:
-            self.vault_is_steth = False
+            raise ValueError(f"Unknown hyperdrive kind: {hyperdrive_kind}")
 
         self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
             web3.to_checksum_address(base_token_contract_address)
@@ -363,7 +428,7 @@ class HyperdriveReadInterface:
 
         try:
             variable_rate = self.get_variable_rate(block_identifier)
-        except BadFunctionCallOutput:
+        except (BadFunctionCallOutput, ValueError):
             logging.warning(
                 "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
             )
@@ -494,6 +559,8 @@ class HyperdriveReadInterface:
         """
         if block_identifier is None:
             block_identifier = "latest"
+        if self.vault_shares_token_contract is None:
+            raise ValueError("Vault shares token contract is not set")
         return _get_variable_rate(self.vault_shares_token_contract, block_identifier)
 
     def get_standardized_variable_rate(self, time_range: int = 604800) -> FixedPoint:

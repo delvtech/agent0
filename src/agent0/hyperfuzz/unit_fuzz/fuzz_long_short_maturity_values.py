@@ -324,7 +324,7 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        if interactive_hyperdrive.interface.vault_is_steth:
+        if interactive_hyperdrive.interface.hyperdrive_kind == interactive_hyperdrive.interface.HyperdriveKind.STETH:
             # If the underlying vault is steth, there's an inaccuracy with computing
             # the base amount via `lidoShares * vaultSharePrice`.
             # Instead, we do a contract call for the conversion for a more accurate value.
@@ -343,6 +343,8 @@ def invariant_check(
             # Undo lido to steth conversion
             lido_shares = close_trade_event.amount / close_trade_event.vault_share_price
             # Use lido contract to make the conversion on the event block
+            # Type narrowing
+            assert interactive_hyperdrive.interface.vault_shares_token_contract is not None
             steth_amount_in_wei = (
                 interactive_hyperdrive.interface.vault_shares_token_contract.functions.getPooledEthByShares(
                     lido_shares.scaled_value

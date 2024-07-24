@@ -217,6 +217,8 @@ class TestHyperdriveReadInterface:
             "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
         )
         base_token_address = hyperdrive_read_interface_fixture.base_token_contract.address
+        # Type narrowing
+        assert hyperdrive_read_interface_fixture.vault_shares_token_contract is not None
         vault_shares_token_address = hyperdrive_read_interface_fixture.vault_shares_token_contract.address
         expected_pool_config = {
             "base_token": base_token_address,

@@ -18,6 +18,8 @@ from .ERC4626HyperdriveDeployerCoordinatorContract import *
 from .HyperdriveDeployerCoordinatorTypes import *
 from .HyperdriveFactoryContract import *
 from .HyperdriveFactoryTypes import *
+from .IMorphoBlueHyperdriveContract import *
+from .IMorphoBlueHyperdriveTypes import *
 from .LPMathContract import *
 from .LPMathTypes import *
 from .ERC4626Target3DeployerContract import *
