@@ -112,6 +112,7 @@ MORPHO_MARKET_PARAMS_ID = "0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 # ruff: noqa: PLR0913
 # We only worry about protected access for anyone outside of this folder.
 # pylint: disable=protected-access
