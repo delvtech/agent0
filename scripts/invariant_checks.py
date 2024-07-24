@@ -20,12 +20,10 @@ import time
 from functools import partial
 from typing import NamedTuple, Sequence
 
-import rollbar
-
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_message
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.utils import async_runner
 
 LOOKBACK_BLOCK_LIMIT = 1000
@@ -213,5 +211,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:  # pylint: disable=broad-except
-        rollbar.report_exc_info(level="critical")
+        log_rollbar_exception(
+            exception=e, log_level=logging.CRITICAL, rollbar_log_prefix="Uncaught Critical Error in Invariant Checks:"
+        )
         raise e
