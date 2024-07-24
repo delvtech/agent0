@@ -81,6 +81,7 @@ from ._mock_contract import (
     _calc_targeted_long,
     _calc_time_stretch,
 )
+from .hyperdrive_kind import HyperdriveKind
 
 AGENT0_SIGNATURE = bytes.fromhex("a0")
 
@@ -165,14 +166,6 @@ class HyperdriveReadInterface:
         base_token_contract_address = self.pool_config.base_token
         vault_shares_token_address = self.pool_config.vault_shares_token
 
-        # TODO Although the underlying function might not be a MockERC4626Contract,
-        # the pypechain contract factory happily accepts any address and exposes
-        # all functions from that contract. The code will only break if we try to
-        # call a non-existent function on the underlying contract address.
-        self.vault_shares_token_contract: MockERC4626Contract | MockLidoContract = MockERC4626Contract.factory(
-            w3=self.web3
-        )(address=web3.to_checksum_address(vault_shares_token_address))
-
         # Agent0 doesn't support eth as base, so if it is, we use the yield token as the base, and
         # calls to trades will use "as_base=False"
         if base_token_contract_address == ETH_CONTRACT_ADDRESS:
@@ -187,15 +180,32 @@ class HyperdriveReadInterface:
         else:
             self.base_is_eth = False
 
-        # We look for the vault shares token symbol to determine if the yield contract is steth
-        if self.vault_shares_token_contract.functions.symbol().call() == "stETH":
-            self.vault_is_steth = True
+        hyperdrive_kind = self.hyperdrive_contract.functions.kind().call()
+        if hyperdrive_kind == "ERC4626Hyperdrive":
+            self.hyperdrive_kind = HyperdriveKind.ERC4626
+            # TODO Although the underlying function might not be a MockERC4626Contract,
+            # the pypechain contract factory happily accepts any address and exposes
+            # all functions from that contract. The code will only break if we try to
+            # call a non-existent function on the underlying contract address.
+            self.vault_shares_token_contract = MockERC4626Contract.factory(w3=self.web3)(
+                address=web3.to_checksum_address(vault_shares_token_address)
+            )
+        elif hyperdrive_kind == "StETHHyperdrive":
+            self.hyperdrive_kind = HyperdriveKind.STETH
             # Redefine the vault shares token contract as the mock lido contract
             self.vault_shares_token_contract = MockLidoContract.factory(w3=self.web3)(
                 address=web3.to_checksum_address(vault_shares_token_address)
             )
+        elif hyperdrive_kind == "MorphoBlueHyperdrive":
+            self.hyperdrive_kind = HyperdriveKind.MORPHOBLUE
+            # MorphoBlue doesn't have a vault shares token
+            self.vault_shares_token_contract = None
+            # We access the vault shares token via the specific instance, so we reinitialize
+            # the hyperdrive contract to the MorphoBlueHyperdrive contract
+            # FIXME
+            pass
         else:
-            self.vault_is_steth = False
+            raise ValueError(f"Unknown hyperdrive kind: {hyperdrive_kind}")
 
         self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
             web3.to_checksum_address(base_token_contract_address)

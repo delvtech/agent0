@@ -31,6 +31,7 @@ from fixedpointmath import FixedPoint, isclose
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.ethpy.hyperdrive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
+from agent0.ethpy.hyperdrive.interface.hyperdrive_kind import HyperdriveKind
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hypertypes.fixedpoint_types import CheckpointFP
 
@@ -324,7 +325,7 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # base out should be equal to bonds in minus the flat fee.
-        if interactive_hyperdrive.interface.vault_is_steth:
+        if interactive_hyperdrive.interface.hyperdrive_kind == HyperdriveKind.STETH:
             # If the underlying vault is steth, there's an inaccuracy with computing
             # the base amount via `lidoShares * vaultSharePrice`.
             # Instead, we do a contract call for the conversion for a more accurate value.
