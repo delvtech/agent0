@@ -206,7 +206,6 @@ class HyperdriveReadInterface:
             self.base_is_eth = False
 
         # Define morpho specific variables
-        self.morpho_hyperdrive_contract = None
         self.morpho_contract = None
         self.morpho_market_id = None
 
@@ -236,13 +235,13 @@ class HyperdriveReadInterface:
             # This is due to `hyperdrive_contract` type not knowing it's a base class of
             # morpho, hence we keep it as a separate variable. Ideally we would subclass
             # from interface for the specific instance.
-            self.morpho_hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
+            morpho_hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
                 web3.to_checksum_address(self.hyperdrive_address)
             )
             with open(MORPHO_ABI_PATH, "rb") as f:
                 morpho_blue_abi = json.load(f)
 
-            morpho_contract_addr = self.morpho_hyperdrive_contract.functions.vault().call()
+            morpho_contract_addr = morpho_hyperdrive_contract.functions.vault().call()
             self.morpho_contract = web3.eth.contract(
                 address=web3.to_checksum_address(morpho_contract_addr), abi=morpho_blue_abi["abi"]
             )
@@ -252,10 +251,10 @@ class HyperdriveReadInterface:
             #    abi_types=["address", "address", "address", "address", "uint256"],
             #    values=[
             #        MORPHO_LOAN_TOKEN_ADDR,
-            #        self.morpho_hyperdrive_contract.functions.collateralToken().call(),
-            #        self.morpho_hyperdrive_contract.functions.oracle().call(),
-            #        self.morpho_hyperdrive_contract.functions.irm().call(),
-            #        self.morpho_hyperdrive_contract.functions.lltv().call(),
+            #        morpho_hyperdrive_contract.functions.collateralToken().call(),
+            #        morpho_hyperdrive_contract.functions.oracle().call(),
+            #        morpho_hyperdrive_contract.functions.irm().call(),
+            #        morpho_hyperdrive_contract.functions.lltv().call(),
             #    ],
             # )
             self.morpho_market_id = MORPHO_MARKET_PARAMS_ID

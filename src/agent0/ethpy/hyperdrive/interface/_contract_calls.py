@@ -75,7 +75,6 @@ def _get_vault_shares(
         )
     elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHO:
         # Type narrowing
-        assert interface.morpho_hyperdrive_contract is not None
         assert interface.morpho_contract is not None
         assert interface.morpho_market_id is not None
         # Get token balances
