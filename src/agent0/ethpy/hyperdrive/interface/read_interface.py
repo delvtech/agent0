@@ -73,7 +73,7 @@ from ._mock_contract import (
     _calc_open_long,
     _calc_open_short,
     _calc_pool_deltas_after_open_long,
-    _calc_pool_deltas_after_open_short,
+    _calc_pool_share_delta_after_open_short,
     _calc_position_duration_in_years,
     _calc_present_value,
     _calc_shares_in_given_bonds_out_down,
@@ -1159,7 +1159,7 @@ class HyperdriveReadInterface:
 
     def calc_pool_deltas_after_open_long(
         self, base_amount: FixedPoint, pool_state: PoolState | None = None
-    ) -> FixedPoint:
+    ) -> tuple[FixedPoint]:
         """Calculate the bond deltas to be applied to the pool after opening a long.
 
         Arguments
@@ -1172,8 +1172,8 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        FixedPoint
-            The amount of bonds to remove from the pool reserves.
+        (FixedPoint, FixedPoint)
+            The amount of (shares, bonds) to remove from the pool reserves.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
@@ -1364,7 +1364,7 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_open_short(pool_state, bond_amount, pool_state.pool_info.vault_share_price)
 
-    def calc_pool_deltas_after_open_short(
+    def calc_pool_share_delta_after_open_short(
         self, bond_amount: FixedPoint, pool_state: PoolState | None = None
     ) -> FixedPoint:
         """Calculate the amount of shares the pool will add after opening a short.
@@ -1380,11 +1380,11 @@ class HyperdriveReadInterface:
         Returns
         -------
         FixedPoint
-            The amount of base to add to the pool share reserves.
+            The amount of shares to add to the pool reserves.
         """
         if pool_state is None:
             pool_state = self.current_pool_state
-        return _calc_pool_deltas_after_open_short(pool_state, bond_amount)
+        return _calc_pool_share_delta_after_open_short(pool_state, bond_amount)
 
     def calc_spot_price_after_short(
         self, bond_amount: FixedPoint, base_amount: FixedPoint | None = None, pool_state: PoolState | None = None
