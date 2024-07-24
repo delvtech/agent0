@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Any
 from fixedpointmath import FixedPoint
 from web3.types import BlockIdentifier, EventData
 
-from .hyperdrive_kind import HyperdriveKind
-
 if TYPE_CHECKING:
     from .read_interface import HyperdriveReadInterface
 
@@ -116,7 +114,7 @@ def _get_initialize_events(
         )
     ]
     # Convert output event data from lido shares to steth
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events
 
@@ -135,7 +133,7 @@ def _get_open_long_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
 
     return out_events
@@ -154,7 +152,7 @@ def _get_close_long_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events
 
@@ -172,7 +170,7 @@ def _get_open_short_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events
 
@@ -190,7 +188,7 @@ def _get_close_short_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events
 
@@ -208,7 +206,7 @@ def _get_add_liquidity_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events
 
@@ -226,7 +224,7 @@ def _get_remove_liquidity_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events
 
@@ -244,6 +242,6 @@ def _get_redeem_withdrawal_shares_events(
             fromBlock=from_block, argument_filters=argument_filters
         )
     ]
-    if hyperdrive_interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
     return out_events

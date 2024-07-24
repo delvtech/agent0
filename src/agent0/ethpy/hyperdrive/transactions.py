@@ -29,7 +29,6 @@ from .event_types import (
     RedeemWithdrawalShares,
     RemoveLiquidity,
 )
-from .interface.hyperdrive_kind import HyperdriveKind
 
 if TYPE_CHECKING:
     from .interface import HyperdriveReadInterface
@@ -232,7 +231,7 @@ def parse_logs_to_event(tx_receipt: TxReceipt, interface: HyperdriveReadInterfac
             event_args_dict[camel_to_snake(value)] = FixedPoint(scaled_value=log_args[value])
 
     # If hyperdrive is steth, convert the amount from lido shares to steth
-    if interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
         # TODO consider not converting the amount to steth here
 
         # The vault share price should be in every event

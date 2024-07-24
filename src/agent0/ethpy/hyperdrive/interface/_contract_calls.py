@@ -16,9 +16,13 @@ from agent0.ethpy.base import (
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
-from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
-
-from .hyperdrive_kind import HyperdriveKind
+from agent0.hypertypes import (
+    ERC20MintableContract,
+    IHyperdriveContract,
+    IMorphoBlueHyperdriveContract,
+    MockERC4626Contract,
+    MockLidoContract,
+)
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
@@ -69,14 +73,16 @@ def _get_vault_shares(
     block_identifier: BlockIdentifier | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
-    if interface.hyperdrive_kind == HyperdriveKind.STETH:
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
         # Type narrowing
         assert interface.vault_shares_token_contract is not None
         vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
             block_identifier=block_identifier or "latest"
         )
-    elif interface.hyperdrive_kind == HyperdriveKind.MORPHOBLUE:
-        # FIXME
+    elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHOBLUE:
+        # Type narrowing
+        assert isinstance(interface.hyperdrive_contract, IMorphoBlueHyperdriveContract)
+        vault_shares = interface.hyperdrive_contract.functions.getTokenBalances().call()
         pass
     else:
         # Type narrowing
