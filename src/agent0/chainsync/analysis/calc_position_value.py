@@ -119,18 +119,9 @@ def calc_single_closeout(
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.info(
-                "Chainsync: Exception caught in calculating close long: %s\nApproximating with spot price.", exception
+                "Chainsync: Exception caught in calculating close long: %s\nUsing an approximation.", exception
             )
-
-            # TODO: We can use the rust `calculate_market_value_*` functions once
-            # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
-            # Long value = users_longs * spot_price * term_remaining
-            normalized_time_remaining = _calc_scaled_normalized_time_remaining(
-                FixedPoint(maturity),
-                FixedPoint(hyperdrive_state.checkpoint_time),
-                FixedPoint(hyperdrive_state.pool_config.position_duration),
-            )
-            fp_out_value = amount * interface.calc_spot_price(hyperdrive_state) * normalized_time_remaining
+            fp_out_value = interface.calc_market_value_long(amount, maturity, hyperdrive_state)
 
     elif position["token_type"] == "SHORT":
         # Get the open share price from the checkpoint lookup
@@ -178,19 +169,14 @@ def calc_single_closeout(
         # Rust Panic Exceptions are base exceptions, not Exceptions
         except BaseException as exception:  # pylint: disable=broad-except
             logging.info(
-                "Chainsync: Exception caught in calculating close short: %s\nApproximating with spot price.", exception
+                "Chainsync: Exception caught in calculating close short: %s\nUsing an approximation.", exception
             )
-
-            # TODO: We can use the rust `calculate_market_value_*` functions once
-            # https://github.com/delvtech/hyperdrive-rs/pull/153 is merged.
-            # Short value = users_shorts * ( 1 - spot_price ) * term_remaining
-            normalized_time_remaining = _calc_scaled_normalized_time_remaining(
-                FixedPoint(maturity),
-                FixedPoint(hyperdrive_state.checkpoint_time),
-                FixedPoint(hyperdrive_state.pool_config.position_duration),
-            )
-            fp_out_value = (
-                amount * (FixedPoint(1) - interface.calc_spot_price(hyperdrive_state)) * normalized_time_remaining
+            fp_out_value = interface.calc_market_value_short(
+                amount,
+                open_share_price,
+                close_share_price,
+                maturity,
+                hyperdrive_state,
             )
 
     # For PNL, we assume all withdrawal shares are redeemable

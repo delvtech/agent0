@@ -65,6 +65,8 @@ from ._mock_contract import (
     _calc_close_short,
     _calc_effective_share_reserves,
     _calc_idle_share_reserves_in_base,
+    _calc_market_value_long,
+    _calc_market_value_short,
     _calc_max_long,
     _calc_max_short,
     _calc_max_spot_price,
@@ -1280,6 +1282,30 @@ class HyperdriveReadInterface:
             pool_state = self.current_pool_state
         return _calc_close_long(pool_state, bond_amount, maturity_time, int(pool_state.block_time))
 
+    def calc_market_value_long(
+        self, bond_amount: FixedPoint, maturity_time: int, pool_state: PoolState | None = None
+    ) -> FixedPoint:
+        """Calculate the amount of shares that will be returned after fees for closing a long.
+
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount of bonds to sell.
+        maturity_time: int
+            The maturity time of the bond.
+        pool_state: PoolState | None, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            An estimate of the amount of shares returned upon closing the long.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_market_value_long(pool_state, bond_amount, maturity_time, int(pool_state.block_time))
+
     def calc_targeted_long(
         self,
         budget: FixedPoint,
@@ -1445,6 +1471,43 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_close_short(
+            pool_state, bond_amount, open_vault_share_price, close_vault_share_price, maturity_time
+        )
+
+    def calc_market_value_short(
+        self,
+        bond_amount: FixedPoint,
+        open_vault_share_price: FixedPoint,
+        close_vault_share_price: FixedPoint,
+        maturity_time: int,
+        pool_state: PoolState | None = None,
+    ) -> FixedPoint:
+        """Estimates the current market value of an open short position.
+
+        Arguments
+        ---------
+        bond_amount: FixedPoint
+            The amount to of bonds provided.
+        open_vault_share_price: FixedPoint
+            The checkpoint share price when the short was opened.
+        close_vault_share_price: FixedPoint
+            The share price when the short was closed.
+            If the short isn't mature, this is the current share price.
+            If the short is mature, this is the share price of the maturity checkpoint.
+        maturity_time: int
+            The maturity time of the short.
+        pool_state: PoolState | None, optional
+            The state of the pool, which includes block details, pool config, and pool info.
+            If not given, use the current pool state.
+
+        Returns
+        -------
+        FixedPoint
+            An estimate of the amount of shares returned upon closing the short.
+        """
+        if pool_state is None:
+            pool_state = self.current_pool_state
+        return _calc_market_value_short(
             pool_state, bond_amount, open_vault_share_price, close_vault_share_price, maturity_time
         )
 

@@ -226,6 +226,20 @@ def _calc_close_long(
     return FixedPoint(scaled_value=int(long_returns))
 
 
+def _calc_market_value_long(
+    pool_state: PoolState, bond_amount: FixedPoint, maturity_time: int, current_time: int
+) -> FixedPoint:
+    """See API for documentation."""
+    long_returns = hyperdrivepy.calculate_market_value_long(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(maturity_time),
+        str(current_time),
+    )
+    return FixedPoint(scaled_value=int(long_returns))
+
+
 def _calc_open_short(
     pool_state: PoolState,
     bond_amount: FixedPoint,
@@ -316,6 +330,27 @@ def _calc_close_short(
     """See API for documentation."""
     current_block_time = pool_state.block_time
     short_returns = hyperdrivepy.calculate_close_short(
+        fixedpoint_to_pool_config(pool_state.pool_config),
+        fixedpoint_to_pool_info(pool_state.pool_info),
+        str(bond_amount.scaled_value),
+        str(open_vault_share_price.scaled_value),
+        str(close_vault_share_price.scaled_value),
+        str(maturity_time),
+        str(current_block_time),
+    )
+    return FixedPoint(scaled_value=int(short_returns))
+
+
+def _calc_market_value_short(
+    pool_state: PoolState,
+    bond_amount: FixedPoint,
+    open_vault_share_price: FixedPoint,
+    close_vault_share_price: FixedPoint,
+    maturity_time: int,
+) -> FixedPoint:
+    """See API for documentation."""
+    current_block_time = pool_state.block_time
+    short_returns = hyperdrivepy.calculate_market_value_short(
         fixedpoint_to_pool_config(pool_state.pool_config),
         fixedpoint_to_pool_info(pool_state.pool_info),
         str(bond_amount.scaled_value),
