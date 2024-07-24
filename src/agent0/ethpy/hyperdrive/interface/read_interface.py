@@ -92,13 +92,8 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber, ChecksumAddress
 
 AGENT0_SIGNATURE = bytes.fromhex("a0")
-# TODO this path won't exist when not building from source, fix
 MORPHO_ABI_PATH = (
-    pathlib.Path(__file__).parent.parent.parent.parent.parent.parent
-    / "packages"
-    / "external"
-    / "IMorpho.sol"
-    / "IMorpho.json"
+    pathlib.Path(__file__).parent.parent.parent.parent / "packages" / "external" / "IMorpho.sol" / "IMorpho.json"
 ).resolve()
 
 # TODO morpho hyperdrive doesn't expose this
