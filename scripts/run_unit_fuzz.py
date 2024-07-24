@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 import time
 from typing import NamedTuple, Sequence
-
-import rollbar
 
 from agent0.core.hyperdrive.interactive import LocalChain
 from agent0.hyperfuzz import FuzzAssertionException
@@ -17,7 +16,7 @@ from agent0.hyperfuzz.unit_fuzz import (
     fuzz_present_value,
     fuzz_profit_check,
 )
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
 
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
@@ -89,7 +88,11 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level="critical")
+            log_rollbar_exception(
+                exception=e,
+                log_level=logging.CRITICAL,
+                rollbar_log_prefix="Uncaught Critical Error in Unit Fuzz:",
+            )
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
@@ -129,7 +132,11 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level="critical")
+            log_rollbar_exception(
+                exception=e,
+                log_level=logging.CRITICAL,
+                rollbar_log_prefix="Uncaught Critical Error in Unit Fuzz:",
+            )
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
@@ -157,7 +164,11 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level="critical")
+            log_rollbar_exception(
+                exception=e,
+                log_level=logging.CRITICAL,
+                rollbar_log_prefix="Uncaught Critical Error in Unit Fuzz:",
+            )
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
@@ -191,7 +202,11 @@ def main(argv: Sequence[str] | None = None):
             pass
         except Exception as e:  # pylint: disable=broad-except
             print("Unexpected error:\n", repr(e))
-            rollbar.report_exc_info(level="critical")
+            log_rollbar_exception(
+                exception=e,
+                log_level=logging.CRITICAL,
+                rollbar_log_prefix="Uncaught Critical Error in Unit Fuzz:",
+            )
             if parsed_args.pause_on_fail:
                 # We don't log info from logging, so we print to ensure this shows up
                 # TODO we don't have access to the hyperdrive pool here, ideally we would
