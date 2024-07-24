@@ -81,9 +81,14 @@ def _get_vault_shares(
         )
     elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHOBLUE:
         # Type narrowing
-        assert isinstance(interface.hyperdrive_contract, IMorphoBlueHyperdriveContract)
-        vault_shares = interface.hyperdrive_contract.functions.getTokenBalances().call()
-        pass
+        assert interface.morpho_hyperdrive_contract is not None
+        assert interface.morpho_contract is not None
+        assert interface.morpho_market_id is not None
+        # Get token balances
+        # We want supply shares, which is the first element in the tuple
+        vault_shares = interface.morpho_contract.functions.position(
+            interface.morpho_market_id, hyperdrive_contract.address
+        ).call(block_identifier=block_identifier or "latest")[0]
     else:
         # Type narrowing
         assert interface.vault_shares_token_contract is not None

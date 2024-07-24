@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import pathlib
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
 from fixedpointmath import FixedPoint
+from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
@@ -84,12 +87,25 @@ from ._mock_contract import (
     _calc_time_stretch,
 )
 
-AGENT0_SIGNATURE = bytes.fromhex("a0")
-
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber, ChecksumAddress
-    from web3 import Web3
+
+AGENT0_SIGNATURE = bytes.fromhex("a0")
+# TODO this path won't exist when not building from source, fix
+MORPHO_ABI_PATH = (
+    pathlib.Path(__file__).parent.parent.parent.parent.parent.parent
+    / "packages"
+    / "external"
+    / "IMorpho.sol"
+    / "IMorpho.json"
+).resolve()
+
+# TODO morpho hyperdrive doesn't expose this
+# MORPHO_LOAN_TOKEN_ADDR = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+# TODO generate this id from the variables exposed by morpho hyperdrive contract
+MORPHO_MARKET_PARAMS_ID = "0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48"
+
 
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-lines
@@ -188,6 +204,11 @@ class HyperdriveReadInterface:
         else:
             self.base_is_eth = False
 
+        # Define morpho specific variables
+        self.morpho_hyperdrive_contract = None
+        self.morpho_contract = None
+        self.morpho_market_id = None
+
         hyperdrive_kind = self.hyperdrive_contract.functions.kind().call()
         if hyperdrive_kind == "ERC4626Hyperdrive":
             self.hyperdrive_kind = self.HyperdriveKind.ERC4626
@@ -210,13 +231,34 @@ class HyperdriveReadInterface:
             self.vault_shares_token_contract = None
             # We access the vault shares token via the specific instance, so we reinitialize
             # the hyperdrive contract to the MorphoBlueHyperdrive contract
-            # TODO cast this as a MorphoBlueHyperdriveContract to call other functions.
-            # We may want to do this where we need the call as opposed to setting this
-            # globally, since python types doesn't know `IMorphoBlueHyperdriveContract` is
-            # a subclass of `IHyperdrive`.
-            # self.hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
-            #     web3.to_checksum_address(self.hyperdrive_address)
+            # TODO we initialize another variable for the morpho hyperdrive contract.
+            # This is due to `hyperdrive_contract` type not knowing it's a base class of
+            # morpho, hence we keep it as a separate variable. Ideally we would subclass
+            # from interface for the specific instance.
+            self.morpho_hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
+                web3.to_checksum_address(self.hyperdrive_address)
+            )
+            with open(MORPHO_ABI_PATH, "rb") as f:
+                morpho_blue_abi = json.load(f)
+
+            morpho_contract_addr = self.morpho_hyperdrive_contract.functions.vault().call()
+            self.morpho_contract = web3.eth.contract(
+                address=web3.to_checksum_address(morpho_contract_addr), abi=morpho_blue_abi["abi"]
+            )
+            # TODO ideally we would build the id, but something below is incorrect.
+            # We hard code for now.
+            # self.morpho_market_id = web3.solidity_keccak(
+            #    abi_types=["address", "address", "address", "address", "uint256"],
+            #    values=[
+            #        MORPHO_LOAN_TOKEN_ADDR,
+            #        self.morpho_hyperdrive_contract.functions.collateralToken().call(),
+            #        self.morpho_hyperdrive_contract.functions.oracle().call(),
+            #        self.morpho_hyperdrive_contract.functions.irm().call(),
+            #        self.morpho_hyperdrive_contract.functions.lltv().call(),
+            #    ],
             # )
+            self.morpho_market_id = MORPHO_MARKET_PARAMS_ID
+
         else:
             raise ValueError(f"Unknown hyperdrive kind: {hyperdrive_kind}")
 
