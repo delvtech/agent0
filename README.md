@@ -36,7 +36,7 @@ Agent0 is DELV's Python-based library for testing, analyzing, and interacting wi
 
 When running Hyperdrive on a local blockchain, agent0 also provides a managed database delivered to you as Pandas dataframes via an API as well as a visualization dashboard to enable analysis and understanding.
 
-Read more here: https://docs.hyperdrive.box/hyperdrive-trading-bots/how-agent0-works
+Read more about [how agent0 works](https://docs.hyperdrive.box/hyperdrive-trading-bots/how-agent0-works) in our [docs](https://docs.hyperdrive.box/).
 
 ## Quickstart | Agent0 Repo
 
