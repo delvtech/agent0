@@ -4,10 +4,11 @@
 [![license: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-lightgrey)](http://www.apache.org/licenses/LICENSE-2.0)
 [![DELV - Terms of Service](https://img.shields.io/badge/DELV-Terms_of_Service-orange)](https://delv-public.s3.us-east-2.amazonaws.com/delv-terms-of-service.pdf)
 
-<img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
-
 [![testing: coverage](https://codecov.io/gh/delvtech/agent0/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://app.codecov.io/gh/delvtech/agent0?displayType=list)
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
+
+<img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
+
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
 # [DELV](https://delv.tech) repo for market simulation and analysis
