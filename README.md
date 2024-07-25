@@ -8,7 +8,7 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 
 <img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
-# Agent0 - A Development Framework for Hyperdrive Trading Strategies
+# Agent0 - A Framework for Hyperdrive Trading Strategies
 
 * Create by [DELV](https://delv.tech)
 * Repo contains tools for automated trading agents, market simulations, and analysis 
