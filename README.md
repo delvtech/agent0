@@ -1,3 +1,4 @@
+<img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![testing: pytest](https://img.shields.io/badge/testing-pytest-blue.svg)](https://docs.pytest.org/en/latest/contents.html)
@@ -7,8 +8,6 @@
 [![testing: coverage](https://codecov.io/gh/delvtech/agent0/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://app.codecov.io/gh/delvtech/agent0?displayType=list)
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
-
-<img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
 
 # [DELV](https://delv.tech) repo for market simulation and analysis
 
