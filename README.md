@@ -8,9 +8,10 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 
 <img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
-# Agent0 - A development framework for Hyperdrive trading strategies
+# Agent0 - A Development Framework for Hyperdrive Trading Strategies
 
 * Create by [DELV](https://delv.tech)
+* Repo contains tools for automated trading agents, market simulations, and analysis 
 * Jump to [Quickstart](https://agent0.readthedocs.io/en/latest/#quickstart)
 * Visualed usage: <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
 
