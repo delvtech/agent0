@@ -8,10 +8,10 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 
 <img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
-### Agent0 | A development framework for Hyperdrive trading strategies
+# Agent0 | A development framework for Hyperdrive trading strategies
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
 
-# Hyperdrive Background
+## Hyperdrive Background
 
 Hyperdrive is an automated market maker (AMM) protocol that enables fixed-rate markets to be built on top of arbitrary yield sources. It deploys assets into those yield sources and wraps them as Hyperdrive positions represented as hy[Tokens] that trade at a discount (%) and can be redeemed for their full face value at maturity. Since the hy[Token]’s initial cost and value at maturity are known upfront, this discounted purchase represents a fixed rate of return.
 
