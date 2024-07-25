@@ -397,16 +397,17 @@ def main(argv: Sequence[str] | None = None) -> None:
         logging.info(log_message)
         log_rollbar_message(message=log_message, log_level=logging.INFO)
 
-        # TODO because _async_runner only takes one set of arguments for all calls,
-        # we make partial calls for each call. The proper fix here is to generalize
-        # _async_runner to take separate arguments for each call.
+        # We set params via partials for _async_runner
         partials = [
             partial(
                 run_checkpoint_bot,
+                chain=chain,
                 pool_address=pool_addr,
+                sender=sender,
                 pool_name=pool_name,
                 block_time=block_time,
                 block_timestamp_interval=block_timestamp_interval,
+                block_to_exit=chain.block_number() + parsed_args.pool_check_sleep_blocks,
                 log_to_rollbar=log_to_rollbar,
             )
             for pool_name, pool_addr in deployed_pools.items()
@@ -414,15 +415,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         # Run checkpoint bots
         # We set return_exceptions to False to crash immediately if a thread fails
-        asyncio.run(
-            async_runner(
-                return_exceptions=True,
-                funcs=partials,
-                chain=chain,
-                sender=sender,
-                block_to_exit=chain.block_number() + parsed_args.pool_check_sleep_blocks,
-            )
-        )
+        asyncio.run(async_runner(partials))
 
 
 class Args(NamedTuple):

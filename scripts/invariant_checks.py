@@ -121,7 +121,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             logging.info(
                 "Running invariant checks for block %s on pools %s", check_block, [pool.name for pool in deployed_pools]
             )
-            asyncio.run(async_runner(return_exceptions=False, funcs=partials))
+            asyncio.run(async_runner(partials))
 
         batch_check_start_block = batch_check_end_block + 1
 
