@@ -31,6 +31,14 @@ Read more here: [https://docs.hyperdrive.box/](https://docs.hyperdrive.box/)
 
 This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https://agent0.readthedocs.io/en/latest/).
 
+## What is Agent0?
+
+Agent0 is DELV's Python-based library for testing, analyzing, and interacting with Hyperdrive's smart contracts. It provides ready-for-use trading policies as well as a framework for building smart agents that act according to policies that can be strictly user-designed, AI-powered, or a combination. These agents are deployable to execute trades on-chain or can be coupled with a simulated environment to test trading strategies, understand Hyperdrive, and explore integrations or deployment configurations. 
+
+When running Hyperdrive on a local blockchain, agent0 also provides a managed database delivered to you as Pandas dataframes via an API as well as a visualization dashboard to enable analysis and understanding.
+
+Read more here: https://docs.hyperdrive.box/hyperdrive-trading-bots/how-agent0-works
+
 ## Quickstart | Agent0 Repo
 
 This repo contains general purpose code for interacting with Ethereum smart contracts.
