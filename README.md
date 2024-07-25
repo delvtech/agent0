@@ -8,8 +8,10 @@
 [![docs: build](https://readthedocs.org/projects/agent0/badge/?version=latest)](https://agent0.readthedocs.io/en/latest/?badge=latest)
 
 <img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
-# Agent0 | A development framework for Hyperdrive trading strategies
+# Agent0 | A development framework for Hyperdrive trading strategies created by [DELV](https://delv.tech)
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="50px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a>
+
+Jump to [Quickstart](https://agent0.readthedocs.io/en/latest/#quickstart)
 
 ## Hyperdrive Background
 
@@ -26,11 +28,9 @@ To ensure that a balanced market exists where the market price can be increased 
 
 Read more here: [https://docs.hyperdrive.box/](https://docs.hyperdrive.box/)
 
-# [DELV](https://delv.tech) repo for market simulation and analysis
-
 This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https://agent0.readthedocs.io/en/latest/).
 
-## Quickstart
+## Quickstart | Agent0 Repo
 
 This repo contains general purpose code for interacting with Ethereum smart contracts.
 However, it was built for the primary use case of trading on [Hyperdrive](https://hyperdrive.delv.tech) markets.
