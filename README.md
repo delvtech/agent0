@@ -10,7 +10,7 @@
 <img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
 # Agent0 - A Framework for Hyperdrive Trading Strategies
 
-This repo by [DELV](https://delv.tech) contain tools for you to deploy automated trading agents, perform market simulations, and conduct research. Read on for more info or jump [here](https://agent0.readthedocs.io/en/latest/#quickstart) to start.
+This repo by [DELV](https://delv.tech) contain tools for you to deploy automated trading agents, perform market simulations, and conduct trading research. Read on for more info or jump [here](https://agent0.readthedocs.io/en/latest/#quickstart) to start.
 
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
 
