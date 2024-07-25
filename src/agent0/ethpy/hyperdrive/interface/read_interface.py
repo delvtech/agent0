@@ -205,16 +205,7 @@ class HyperdriveReadInterface:
         self.morpho_market_id = None
 
         hyperdrive_kind = self.hyperdrive_contract.functions.kind().call()
-        if hyperdrive_kind == "ERC4626Hyperdrive":
-            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
-            # TODO Although the underlying function might not be a MockERC4626Contract,
-            # the pypechain contract factory happily accepts any address and exposes
-            # all functions from that contract. The code will only break if we try to
-            # call a non-existent function on the underlying contract address.
-            self.vault_shares_token_contract = MockERC4626Contract.factory(w3=self.web3)(
-                address=web3.to_checksum_address(vault_shares_token_address)
-            )
-        elif hyperdrive_kind == "StETHHyperdrive":
+        if hyperdrive_kind == "StETHHyperdrive":
             self.hyperdrive_kind = self.HyperdriveKind.STETH
             # Redefine the vault shares token contract as the mock lido contract
             self.vault_shares_token_contract = MockLidoContract.factory(w3=self.web3)(
@@ -255,7 +246,18 @@ class HyperdriveReadInterface:
             self.morpho_market_id = MORPHO_MARKET_PARAMS_ID
 
         else:
-            raise ValueError(f"Unknown hyperdrive kind: {hyperdrive_kind}")
+            # We default to erc4626, but print a warning if we don't recognize the kind
+            if hyperdrive_kind != "ERC4626Hyperdrive":
+                logging.warning("Unknown hyperdrive kind %s, defaulting to `ERC4626`", hyperdrive_kind)
+
+            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
+            # TODO Although the underlying function might not be a MockERC4626Contract,
+            # the pypechain contract factory happily accepts any address and exposes
+            # all functions from that contract. The code will only break if we try to
+            # call a non-existent function on the underlying contract address.
+            self.vault_shares_token_contract = MockERC4626Contract.factory(w3=self.web3)(
+                address=web3.to_checksum_address(vault_shares_token_address)
+            )
 
         self.base_token_contract: ERC20MintableContract = ERC20MintableContract.factory(w3=self.web3)(
             web3.to_checksum_address(base_token_contract_address)
