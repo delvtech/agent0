@@ -10,9 +10,9 @@
 <img src="https://raw.githubusercontent.com/delvtech/agent0/main/icons/agent0-dark.svg" width="800" alt="agent0"><br>
 # Agent0 | A development framework for Hyperdrive trading strategies created by [DELV](https://delv.tech)
 
-Visualized repo usage here: <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
-
 Jump to [Quickstart](https://agent0.readthedocs.io/en/latest/#quickstart)
+
+Visualized repo usage here: <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
 
 ## Hyperdrive Background
 
