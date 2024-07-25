@@ -147,6 +147,7 @@ class HyperdriveReadInterface:
         txn_signature: bytes | None, optional
             The signature for transactions. Defaults to `0xa0`.
         """
+        # pylint: disable=too-many-locals
         if txn_signature is None:
             self.txn_signature = AGENT0_SIGNATURE
         else:
