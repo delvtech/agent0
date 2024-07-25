@@ -79,6 +79,8 @@ def run_invariant_checks(
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
 
+    logging.info("Running invariant checks on pool %s", pool_name)
+
     if rollbar_log_level_threshold is None:
         rollbar_log_level_threshold = logging.DEBUG
 
@@ -146,6 +148,7 @@ def run_invariant_checks(
         exception_data = exception_data_template.copy()
         exception_data.update(data)
         exception_data["block_number"] = pool_state.block_number
+        exception_data["pool_name"] = pool_name
 
         # Log exception to rollbar
         assert log_level is not None
