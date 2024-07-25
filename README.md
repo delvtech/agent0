@@ -12,8 +12,8 @@
 
 Contains tools to deploy automated trading agents, market simulations, and research analyses. Read on for more info or jump [here](https://agent0.readthedocs.io/en/latest/#quickstart) to start.
 
-* Create by [DELV](https://delv.tech)
-* Visualed usage: <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
+By [DELV](https://delv.tech)
+Visualed usage: <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
 
 ## Hyperdrive Background
 
