@@ -67,7 +67,7 @@ def async_get_nonce(web3: Web3, account: LocalAccount) -> Nonce:
     global CURRENT_NONCE  # pylint: disable=global-statement
 
     with NONCE_LOCK:
-        base_nonce = web3.eth.get_transaction_count(account.address, "pending")
+        base_nonce = web3.eth.get_transaction_count(account.address, "latest")
         if base_nonce > CURRENT_NONCE:
             out_nonce = base_nonce
             CURRENT_NONCE = base_nonce + 1
@@ -393,7 +393,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         # Reset hyperdrive objs
         deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
 
-        logging.info("Running for all pools...")
+        log_message = f"Running checkpoint bots for pools {list(deployed_pools.keys())}..."
+        logging.info(log_message)
+        log_rollbar_message(message=log_message, log_level=logging.INFO)
 
         # TODO because _async_runner only takes one set of arguments for all calls,
         # we make partial calls for each call. The proper fix here is to generalize
@@ -414,7 +416,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         # We set return_exceptions to False to crash immediately if a thread fails
         asyncio.run(
             async_runner(
-                return_exceptions=False,
+                return_exceptions=True,
                 funcs=partials,
                 chain=chain,
                 sender=sender,
