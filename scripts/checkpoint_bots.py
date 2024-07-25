@@ -67,7 +67,7 @@ def async_get_nonce(web3: Web3, account: LocalAccount) -> Nonce:
     global CURRENT_NONCE  # pylint: disable=global-statement
 
     with NONCE_LOCK:
-        base_nonce = web3.eth.get_transaction_count(account.address, "pending")
+        base_nonce = web3.eth.get_transaction_count(account.address, "latest")
         if base_nonce > CURRENT_NONCE:
             out_nonce = base_nonce
             CURRENT_NONCE = base_nonce + 1
