@@ -38,6 +38,9 @@ async def async_runner(
     # This allows the underlying functions to use non-async waits.
     loop = asyncio.get_running_loop()
 
+    # NOTE if the underlying funcs is doing a long non-async wait,
+    # the number of executions can be limited based on the number of available
+    # threads on the machine.
     with ThreadPoolExecutor() as pool:
         # Runs all functions passed in and gathers results
         gather_result: list[R | BaseException] = await asyncio.gather(
