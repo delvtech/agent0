@@ -13,7 +13,7 @@
 
 # Hyperdrive Background
 
-Hyperdrive is an automated market maker (AMM) protocol that enables fixed-rate markets to be built on top of arbitrary yield sources. It deploys assets into those yield sources and wraps them as Hyperdrive positions represented as "hy[Tokens]" that trade at a discount (%) and can be redeemed for their full face value at maturity. Since the "hy[Token]’s" initial cost and value at maturity are known upfront, this discounted purchase represents a fixed rate of return.
+Hyperdrive is an automated market maker (AMM) protocol that enables fixed-rate markets to be built on top of arbitrary yield sources. It deploys assets into those yield sources and wraps them as Hyperdrive positions represented as hy[Tokens] that trade at a discount (%) and can be redeemed for their full face value at maturity. Since the "hy[Token]’s" initial cost and value at maturity are known upfront, this discounted purchase represents a fixed rate of return.
 Abstracting interest rate dynamics into a single price opens up interesting Market Dynamics while giving users the freedom to employ a number of Trading Strategies.
 To ensure that a balanced market exists where the market price can be increased and decreased by supply and demand, the AMM supports three basic operations:
 •	Opening Longs, which provides exposure to the fixed rate by purchasing "hy[Tokens]" at a discount to their face value for the price of forgoing the variable rate. Longs pay trading fees to the pool.
