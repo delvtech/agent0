@@ -10,7 +10,6 @@ import os
 import random
 import sys
 import threading
-import time
 from functools import partial
 from typing import NamedTuple, Sequence
 
@@ -27,7 +26,6 @@ from agent0.ethpy.base import get_account_balance, smart_contract_preview_transa
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.hypertypes import IHyperdriveContract
-from agent0.utils import async_runner
 
 # Checkpoint bot has a lot going on
 # pylint: disable=too-many-locals
@@ -103,11 +101,10 @@ def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_t
         Whether or not the checkpoint exists.
     """
     checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call()
-    logging.info("%s", checkpoint)
     return checkpoint.vaultSharePrice > 0
 
 
-def run_checkpoint_bot(
+async def run_checkpoint_bot(
     chain: Chain,
     pool_address: ChecksumAddress,
     sender: LocalAccount,
@@ -143,6 +140,8 @@ def run_checkpoint_bot(
     """
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-branches
+
+    logging.info("Launch checkpoint bot for %s", pool_name)
 
     # TODO pull this function out and put into agent0
     web3 = chain._web3  # pylint: disable=protected-access
@@ -219,7 +218,7 @@ def run_checkpoint_bot(
             # To prevent race conditions with the checkpoint bot submitting transactions
             # for multiple pools simultaneously, we wait a random amount of time before
             # actually submitting a checkpoint
-            time.sleep(random.uniform(0, 5))
+            await asyncio.sleep(random.uniform(0, 5))
 
             # TODO: We will run into issues with the gas price being too low
             # with testnets and mainnet. When we get closer to production, we
@@ -315,10 +314,10 @@ def run_checkpoint_bot(
         logging.info(logging_str)
         # No need to log sleeping info to rollbar here
 
-        time.sleep(adjusted_sleep_duration)
+        await asyncio.sleep(adjusted_sleep_duration)
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+async def main(argv: Sequence[str] | None = None) -> None:
     """Runs the checkpoint bot.
 
     Arguments
@@ -397,31 +396,24 @@ def main(argv: Sequence[str] | None = None) -> None:
         logging.info(log_message)
         log_rollbar_message(message=log_message, log_level=logging.INFO)
 
-        # TODO because _async_runner only takes one set of arguments for all calls,
-        # we make partial calls for each call. The proper fix here is to generalize
-        # _async_runner to take separate arguments for each call.
-        partials = [
-            partial(
-                run_checkpoint_bot,
-                pool_address=pool_addr,
-                pool_name=pool_name,
-                block_time=block_time,
-                block_timestamp_interval=block_timestamp_interval,
-                log_to_rollbar=log_to_rollbar,
-            )
-            for pool_name, pool_addr in deployed_pools.items()
-        ]
-
         # Run checkpoint bots
         # We set return_exceptions to False to crash immediately if a thread fails
-        asyncio.run(
-            async_runner(
-                return_exceptions=True,
-                funcs=partials,
-                chain=chain,
-                sender=sender,
-                block_to_exit=chain.block_number() + parsed_args.pool_check_sleep_blocks,
-            )
+        _ = await asyncio.gather(
+            *[
+                run_checkpoint_bot(
+                    chain=chain,
+                    pool_address=pool_addr,
+                    sender=sender,
+                    pool_name=pool_name,
+                    block_time=block_time,
+                    block_timestamp_interval=block_timestamp_interval,
+                    check_checkpoint=False,
+                    block_to_exit=chain.block_number() + parsed_args.pool_check_sleep_blocks,
+                    log_to_rollbar=log_to_rollbar,
+                )
+                for pool_name, pool_addr in deployed_pools.items()
+            ],
+            return_exceptions=False,
         )
 
 
@@ -507,7 +499,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 if __name__ == "__main__":
     # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
     try:
-        main()
+        asyncio.run(main())
     except Exception as exc:
         log_rollbar_exception(
             exception=exc, log_level=logging.CRITICAL, rollbar_log_prefix="Uncaught Critical Error in Checkpoint Bot:"
