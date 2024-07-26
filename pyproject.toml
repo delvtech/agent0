@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "dill",
     "docker",
+    "eth-abi",
     "eth-typing",
     "eth-account",
     "fixedpointmath",

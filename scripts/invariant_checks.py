@@ -22,11 +22,28 @@ from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
+from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 from agent0.utils import async_runner
 
 LOOKBACK_BLOCK_LIMIT = 1000
+
+
+def _sepolia_ignore_errors(exc: Exception) -> bool:
+    # Ignored fuzz exceptions
+    if isinstance(exc, FuzzAssertionException):
+        # LP rate invariance check
+        if (
+            # Only ignore steth pools
+            "STETH" in exc.exception_data["pool_name"]
+            and len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "actual_vault_shares=" in exc.args[1]
+            and "is expected to be greater than expected_vault_shares=" in exc.args[1]
+        ):
+            return True
+    return False
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -40,6 +57,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     # pylint: disable=too-many-locals
 
     parsed_args = parse_arguments(argv)
+
+    if parsed_args.sepolia:
+        invariance_ignore_func = _sepolia_ignore_errors
+    else:
+        invariance_ignore_func = None
 
     if parsed_args.infra:
         # TODO Abstract this method out for infra scripts
@@ -113,6 +135,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     simulation_mode=False,
                     log_to_rollbar=log_to_rollbar,
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
+                    rollbar_log_filter_func=invariance_ignore_func,
                     pool_name=hyperdrive_obj.name,
                 )
                 for hyperdrive_obj in deployed_pools
@@ -133,6 +156,7 @@ class Args(NamedTuple):
     infra: bool
     registry_addr: str
     rpc_uri: str
+    sepolia: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -153,6 +177,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
+        sepolia=namespace.sepolia,
     )
 
 
@@ -197,6 +222,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=str,
         default="",
         help="The RPC URI of the chain.",
+    )
+
+    parser.add_argument(
+        "--sepolia",
+        default=False,
+        action="store_true",
+        help="Running on Sepolia Testnet. If True, will ignore some known errors.",
     )
 
     # Use system arguments if none were passed

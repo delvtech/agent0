@@ -8,6 +8,7 @@ import pathlib
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
+import eth_abi
 from fixedpointmath import FixedPoint
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
@@ -96,12 +97,6 @@ MORPHO_ABI_PATH = (
     pathlib.Path(__file__).parent.parent.parent.parent / "packages" / "external" / "IMorpho.sol" / "IMorpho.json"
 ).resolve()
 
-# TODO morpho hyperdrive doesn't expose this
-# MORPHO_LOAN_TOKEN_ADDR = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-# TODO generate this id from the variables exposed by morpho hyperdrive contract
-MORPHO_MARKET_PARAMS_ID = "0x39d11026eae1c6ec02aa4c0910778664089cdd97c3fd23f68f7cd05e2e95af48"
-
-
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-instance-attributes
@@ -152,6 +147,7 @@ class HyperdriveReadInterface:
         txn_signature: bytes | None, optional
             The signature for transactions. Defaults to `0xa0`.
         """
+        # pylint: disable=too-many-locals
         if txn_signature is None:
             self.txn_signature = AGENT0_SIGNATURE
         else:
@@ -231,19 +227,22 @@ class HyperdriveReadInterface:
             self.morpho_contract = web3.eth.contract(
                 address=web3.to_checksum_address(morpho_contract_addr), abi=morpho_blue_abi["abi"]
             )
-            # TODO ideally we would build the id, but something below is incorrect.
-            # We hard code for now.
-            # self.morpho_market_id = web3.solidity_keccak(
-            #    abi_types=["address", "address", "address", "address", "uint256"],
-            #    values=[
-            #        MORPHO_LOAN_TOKEN_ADDR,
-            #        morpho_hyperdrive_contract.functions.collateralToken().call(),
-            #        morpho_hyperdrive_contract.functions.oracle().call(),
-            #        morpho_hyperdrive_contract.functions.irm().call(),
-            #        morpho_hyperdrive_contract.functions.lltv().call(),
-            #    ],
-            # )
-            self.morpho_market_id = MORPHO_MARKET_PARAMS_ID
+
+            values = (
+                base_token_contract_address,
+                morpho_hyperdrive_contract.functions.collateralToken().call(),
+                morpho_hyperdrive_contract.functions.oracle().call(),
+                morpho_hyperdrive_contract.functions.irm().call(),
+                morpho_hyperdrive_contract.functions.lltv().call(),
+            )
+
+            # Typing is reporting `encode` is not exposed in `eth_abi`
+            encoded_market_id = eth_abi.encode(  # type: ignore
+                ("address", "address", "address", "address", "uint256"),
+                values,
+            )
+
+            self.morpho_market_id = web3.keccak(encoded_market_id)
 
         else:
             # We default to erc4626, but print a warning if we don't recognize the kind
