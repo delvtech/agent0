@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, ParamSpec, TypeVar
+from typing import Callable, TypeVar
 
 # Async runner helper
-P = ParamSpec("P")
 R = TypeVar("R")
 
 
 async def async_runner(
-    funcs: list[Callable[P, R]],
+    funcs: list[Callable[[], R]],
     return_exceptions: bool = False,
 ) -> list[R]:
     """Helper function that runs a list of passed in functions asynchronously.
