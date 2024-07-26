@@ -22,7 +22,7 @@ async def async_runner(
 
     Arguments
     ---------
-    funcs: list[Callable[P, R]]
+    funcs: list[Callable[[], R]]
         List of functions to run asynchronously.
     return_exceptions: bool
         If True, return exceptions from the functions. Otherwise, will throw exception if
