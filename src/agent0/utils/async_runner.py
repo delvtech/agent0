@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, TypeVar
+from typing import Callable, Sequence, TypeVar
 
 # Async runner helper
 R = TypeVar("R")
 
 
 async def async_runner(
-    funcs: list[Callable[[], R]],
+    funcs: Sequence[Callable[[], R]],
     return_exceptions: bool = False,
 ) -> list[R]:
     """Helper function that runs a list of passed in functions asynchronously.
