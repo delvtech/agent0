@@ -3,36 +3,30 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Callable, ParamSpec, TypeVar
+from concurrent.futures import ThreadPoolExecutor
+from typing import Callable, Sequence, TypeVar
 
 # Async runner helper
-P = ParamSpec("P")
 R = TypeVar("R")
 
 
 async def async_runner(
-    return_exceptions: bool,
-    funcs: list[Callable[P, R]],
-    *args: P.args,
-    **kwargs: P.kwargs,
+    funcs: Sequence[Callable[[], R]],
+    return_exceptions: bool = False,
 ) -> list[R]:
     """Helper function that runs a list of passed in functions asynchronously.
 
-    WARNING: this assumes all functions passed in are thread safe, use at your own risk.
+    NOTE: use `functools.partial()` to pass in arguments to the functions.
 
-    TODO: args and kwargs likely should also be a list for passing in separate arguments.
+    WARNING: this assumes all functions passed in are thread safe, use at your own risk.
 
     Arguments
     ---------
+    funcs: list[Callable[[], R]]
+        List of functions to run asynchronously.
     return_exceptions: bool
         If True, return exceptions from the functions. Otherwise, will throw exception if
         a thread fails.
-    funcs: list[Callable[P, R]]
-        List of functions to run asynchronously.
-    *args: P.args
-        Positional arguments for the functions.
-    **kwargs: P.kwargs
-        Keyword arguments for the functions.
 
     Returns
     -------
@@ -41,11 +35,16 @@ async def async_runner(
     """
     # We launch all functions in threads using the `to_thread` function.
     # This allows the underlying functions to use non-async waits.
+    loop = asyncio.get_running_loop()
 
-    # Runs all functions passed in and gathers results
-    gather_result: list[R | BaseException] = await asyncio.gather(
-        *[asyncio.to_thread(func, *args, **kwargs) for func in funcs], return_exceptions=return_exceptions
-    )
+    # NOTE if the underlying funcs is doing a long non-async wait,
+    # the number of executions can be limited based on the number of available
+    # threads on the machine.
+    with ThreadPoolExecutor() as pool:
+        # Runs all functions passed in and gathers results
+        gather_result: list[R | BaseException] = await asyncio.gather(
+            *[loop.run_in_executor(pool, func) for func in funcs], return_exceptions=return_exceptions
+        )
 
     # Error checking
     # TODO we can add retries here
