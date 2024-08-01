@@ -166,9 +166,9 @@ def test_predict_open_long_bonds(fast_chain_fixture: LocalChain):
     shares_needed = hyperdrive_interface.calc_shares_in_given_bonds_out_up(bonds_needed)
     shares_needed /= FixedPoint(1) - price_discount * curve_fee
     share_price = hyperdrive_interface.current_pool_state.pool_info.vault_share_price
-    share_price_on_next_block = share_price * (
-        FixedPoint(1) + hyperdrive_interface.get_variable_rate(pool_state.block_number) / FixedPoint(YEAR_IN_BLOCKS)
-    )
+    variable_rate = hyperdrive_interface.get_variable_rate(pool_state.block_number)
+    assert variable_rate is not None
+    share_price_on_next_block = share_price * (FixedPoint(1) + variable_rate / FixedPoint(YEAR_IN_BLOCKS))
     base_needed = shares_needed * share_price_on_next_block
     # use rust to predict trade outcome
     delta = predict_long(hyperdrive_interface=hyperdrive_interface, bonds=bonds_needed)

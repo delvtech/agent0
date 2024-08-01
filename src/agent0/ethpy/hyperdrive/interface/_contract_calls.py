@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Callable
 
 from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
 from web3 import Web3
+from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 
 from agent0.ethpy.base import (
     async_smart_contract_transact,
@@ -55,10 +57,21 @@ def _get_total_supply_withdrawal_shares(
 
 def _get_variable_rate(
     yield_contract: MockERC4626Contract | MockLidoContract, block_identifier: BlockIdentifier | None = None
-) -> FixedPoint:
+) -> FixedPoint | None:
     """See API for documentation."""
-    rate = yield_contract.functions.getRate().call(block_identifier=block_identifier or "latest")
-    return FixedPoint(scaled_value=rate)
+    # Best attempt at calling `getRate` from the yield contract
+    try:
+        rate = yield_contract.functions.getRate().call(block_identifier=block_identifier or "latest")
+        return FixedPoint(scaled_value=rate)
+    except (BadFunctionCallOutput, ValueError):
+        logging.warning("Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`.")
+        return None
+    # Some contracts throw a logic error
+    except ContractLogicError:
+        logging.warning(
+            "Underlying yield contract reverted `getRate` function, setting `state.variable_rate` as `None`."
+        )
+        return None
 
 
 def _get_vault_shares(

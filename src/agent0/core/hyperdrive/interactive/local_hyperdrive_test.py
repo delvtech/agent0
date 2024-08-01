@@ -672,11 +672,11 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
         "gov_fees_accrued": pool_state.gov_fees_accrued,
         "hyperdrive_base_balance": pool_state.hyperdrive_base_balance,
         "hyperdrive_eth_balance": pool_state.hyperdrive_eth_balance,
-        "variable_rate": pool_state.variable_rate,
         "vault_shares": pool_state.vault_shares,
         # Pool analysis keys
         "spot_price": fast_hyperdrive_fixture.interface.calc_spot_price(pool_state),
         "fixed_rate": fast_hyperdrive_fixture.interface.calc_spot_rate(pool_state),
+        "variable_rate": fast_hyperdrive_fixture.interface.get_variable_rate(),
     }
     # Ensure keys match
     # Converting to sets and compare
@@ -1245,7 +1245,7 @@ def test_share_price_compounding_quincunx(fast_chain_fixture: LocalChain):
     )
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
-    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Variable rate: {hyperdrive_interface.get_variable_rate()}")
     logging.info(f"Starting share price: {hyperdrive_interface.current_pool_state.pool_info.lp_share_price}")
     number_of_compounding_periods = 5
     for _ in range(number_of_compounding_periods):
@@ -1276,7 +1276,7 @@ def test_share_price_compounding_annus(fast_chain_fixture: LocalChain):
     interactive_hyperdrive = LocalHyperdrive(fast_chain_fixture, interactive_config)
     hyperdrive_interface = interactive_hyperdrive.interface
     beginning_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
-    logging.info(f"Variable rate: {hyperdrive_interface.current_pool_state.variable_rate}")
+    logging.info(f"Variable rate: {hyperdrive_interface.get_variable_rate()}")
     logging.info(f"Starting share price: {beginning_share_price}")
     fast_chain_fixture.advance_time(YEAR_IN_SECONDS, create_checkpoints=False)
     ending_share_price = hyperdrive_interface.current_pool_state.pool_info.lp_share_price
@@ -1455,6 +1455,7 @@ def test_hyperdrive_read_interface_standardized_variable_rate(fast_chain_fixture
     hyperdrive_interface = interactive_hyperdrive.interface
 
     mock_variable_rate = hyperdrive_interface.get_variable_rate()
+    assert mock_variable_rate is not None
 
     # This should fail since pool was just deloyed
     with pytest.raises(ValueError):

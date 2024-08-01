@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, cast
 import eth_abi
 from fixedpointmath import FixedPoint
 from web3 import Web3
-from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
@@ -422,20 +421,6 @@ class HyperdriveReadInterface:
         checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_identifier)
         exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time, block_identifier)
 
-        try:
-            variable_rate = self.get_variable_rate(block_identifier)
-        except (BadFunctionCallOutput, ValueError):
-            logging.warning(
-                "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
-            )
-            variable_rate = None
-        # Some contracts throw a logic error
-        except ContractLogicError:
-            logging.warning(
-                "Underlying yield contract reverted `getRate` function, setting `state.variable_rate` as `None`."
-            )
-            variable_rate = None
-
         vault_shares = self.get_vault_shares(block_identifier)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_identifier)
         hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_identifier)
@@ -448,7 +433,6 @@ class HyperdriveReadInterface:
             checkpoint_time=checkpoint_time,
             checkpoint=checkpoint,
             exposure=exposure,
-            variable_rate=variable_rate,
             vault_shares=vault_shares,
             total_supply_withdrawal_shares=total_supply_withdrawal_shares,
             hyperdrive_base_balance=hyperdrive_base_balance,
@@ -536,11 +520,12 @@ class HyperdriveReadInterface:
         )
         return idle_shares
 
-    def get_variable_rate(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
+    def get_variable_rate(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint | None:
         """Use an RPC to get the yield source variable rate.
 
         .. note:: This function assumes there exists an underlying `getRate` function in the contract.
-        This call will fail if the deployed yield contract doesn't have a `getRate` function.
+        This call will return None if the deployed yield contract doesn't have a `getRate` function.
+        In this case, use `get_standardized_variable_rate` instead.
 
         Arguments
         ---------
@@ -550,8 +535,9 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        FixedPoint
-            The variable rate for the yield source at the provided block.
+        FixedPoint | None
+            The variable rate for the yield source at the provided block, or None if the yield source doesn't
+            have a `getRate` function.
         """
         if block_identifier is None:
             block_identifier = "latest"

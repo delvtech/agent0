@@ -151,12 +151,13 @@ class TestHyperdriveReadInterface:
         """
         # State
         _ = hyperdrive_read_interface_fixture.current_pool_state
-        _ = hyperdrive_read_interface_fixture.current_pool_state.variable_rate
         _ = hyperdrive_read_interface_fixture.current_pool_state.vault_shares
         _ = hyperdrive_read_interface_fixture.calc_bonds_given_shares_and_rate(FixedPoint(0.05))
         _ = hyperdrive_read_interface_fixture.calc_checkpoint_timestamp(int(datetime.now().timestamp()))
         _ = hyperdrive_read_interface_fixture.calc_idle_share_reserves_in_base()
         _ = hyperdrive_read_interface_fixture.calc_solvency()
+
+        _ = hyperdrive_read_interface_fixture.get_variable_rate()
 
         spot_price = hyperdrive_read_interface_fixture.calc_spot_price()
         max_spot_price = hyperdrive_read_interface_fixture.calc_max_spot_price()
