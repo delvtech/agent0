@@ -422,20 +422,6 @@ class HyperdriveReadInterface:
         checkpoint = get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_identifier)
         exposure = get_hyperdrive_checkpoint_exposure(self.hyperdrive_contract, checkpoint_time, block_identifier)
 
-        try:
-            variable_rate = self.get_variable_rate(block_identifier)
-        except (BadFunctionCallOutput, ValueError):
-            logging.warning(
-                "Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`."
-            )
-            variable_rate = None
-        # Some contracts throw a logic error
-        except ContractLogicError:
-            logging.warning(
-                "Underlying yield contract reverted `getRate` function, setting `state.variable_rate` as `None`."
-            )
-            variable_rate = None
-
         vault_shares = self.get_vault_shares(block_identifier)
         total_supply_withdrawal_shares = self.get_total_supply_withdrawal_shares(block_identifier)
         hyperdrive_base_balance = self.get_hyperdrive_base_balance(block_identifier)
@@ -448,7 +434,6 @@ class HyperdriveReadInterface:
             checkpoint_time=checkpoint_time,
             checkpoint=checkpoint,
             exposure=exposure,
-            variable_rate=variable_rate,
             vault_shares=vault_shares,
             total_supply_withdrawal_shares=total_supply_withdrawal_shares,
             hyperdrive_base_balance=hyperdrive_base_balance,
