@@ -33,6 +33,7 @@ def run_invariant_checks(
     pool_name: str | None = None,
     lp_share_price_test: bool | None = None,
     crash_report_additional_info: dict[str, Any] | None = None,
+    log_anvil_state_dump: bool = False,
 ) -> list[FuzzAssertionException]:
     """Run the invariant checks.
 
@@ -69,6 +70,8 @@ def run_invariant_checks(
         If None (default), runs all tests.
     crash_report_additional_info: dict[str, Any] | None
         Additional information to include in the crash report.
+    log_anvil_state_dump: bool
+        If True, log anvil state dump on crash.
 
     Returns
     -------
@@ -156,7 +159,8 @@ def run_invariant_checks(
         error = FuzzAssertionException(*exception_message, exception_data=exception_data)
         out_exceptions.append(error)
         report = build_crash_trade_result(error, interface, additional_info=error.exception_data, pool_state=pool_state)
-        report.anvil_state = get_anvil_state_dump(interface.web3)
+        if log_anvil_state_dump:
+            report.anvil_state = get_anvil_state_dump(interface.web3)
         rollbar_data = error.exception_data
 
         if pool_name is not None:

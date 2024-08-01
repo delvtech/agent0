@@ -137,6 +137,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
                     rollbar_log_filter_func=invariance_ignore_func,
                     pool_name=hyperdrive_obj.name,
+                    log_anvil_state_dump=chain.config.log_anvil_state_dump,
                 )
                 for hyperdrive_obj in deployed_pools
             ]

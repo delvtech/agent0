@@ -306,6 +306,7 @@ def run_fuzz_bots(
                     rollbar_log_filter_func=chain.config.rollbar_log_filter_func,
                     lp_share_price_test=lp_share_price_test,
                     crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
+                    log_anvil_state_dump=chain.config.log_anvil_state_dump,
                 )
                 if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
                     # If we have an ignore function, we filter exceptions

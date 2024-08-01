@@ -97,6 +97,8 @@ class Chain:
         If False, the policy `post_action` function will only be called after `execute_policy_action`.
         Defaults to False.
         """
+        log_anvil_state_dump: bool = False
+        """Whether to log the anvil state dump in crash reports. Defaults to False."""
 
         # Data pipeline parameters
         calc_pnl: bool = True
