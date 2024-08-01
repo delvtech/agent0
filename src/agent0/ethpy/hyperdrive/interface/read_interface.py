@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, cast
 import eth_abi
 from fixedpointmath import FixedPoint
 from web3 import Web3
-from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
@@ -521,11 +520,12 @@ class HyperdriveReadInterface:
         )
         return idle_shares
 
-    def get_variable_rate(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
+    def get_variable_rate(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint | None:
         """Use an RPC to get the yield source variable rate.
 
         .. note:: This function assumes there exists an underlying `getRate` function in the contract.
-        This call will fail if the deployed yield contract doesn't have a `getRate` function.
+        This call will return None if the deployed yield contract doesn't have a `getRate` function.
+        In this case, use `get_standardized_variable_rate` instead.
 
         Arguments
         ---------
@@ -535,8 +535,9 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        FixedPoint
-            The variable rate for the yield source at the provided block.
+        FixedPoint | None
+            The variable rate for the yield source at the provided block, or None if the yield source doesn't
+            have a `getRate` function.
         """
         if block_identifier is None:
             block_identifier = "latest"
