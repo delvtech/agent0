@@ -131,7 +131,7 @@ def test_open_long(
 
     # report results
     fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
-    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
+    variable_rate = interactive_hyperdrive.interface.get_variable_rate()
     assert variable_rate is not None
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
@@ -160,7 +160,7 @@ def test_open_short(
 
     # report results
     fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
-    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
+    variable_rate = interactive_hyperdrive.interface.get_variable_rate()
     assert variable_rate is not None
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
@@ -263,7 +263,7 @@ def test_close_long(
 
     # report results
     fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
-    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
+    variable_rate = interactive_hyperdrive.interface.get_variable_rate()
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     assert variable_rate is not None
@@ -283,7 +283,7 @@ def test_already_at_target(interactive_hyperdrive: LocalHyperdrive, arbitrage_an
 
     # report results
     fixed_rate = interactive_hyperdrive.interface.calc_spot_rate()
-    variable_rate = interactive_hyperdrive.interface.current_pool_state.variable_rate
+    variable_rate = interactive_hyperdrive.interface.get_variable_rate()
     logging.info("ending fixed rate is %s", fixed_rate)
     logging.info("variable rate is %s", variable_rate)
     assert variable_rate is not None

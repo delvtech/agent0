@@ -116,9 +116,11 @@ def predict_long(
             shares_needed /= FixedPoint(1) - price_discount * curve_fee
         else:
             shares_needed /= FixedPoint(1) - price_discount * curve_fee * governance_fee
-        share_price_on_next_block = share_price * (
-            FixedPoint(1) + hyperdrive_interface.get_variable_rate(pool_state.block_number) / FixedPoint(YEAR_IN_BLOCKS)
-        )
+        variable_rate = hyperdrive_interface.get_variable_rate(pool_state.block_number)
+        # Variable rate can be None if underlying yield doesn't have a `getRate` function
+        if variable_rate is None:
+            variable_rate = hyperdrive_interface.get_standardized_variable_rate()
+        share_price_on_next_block = share_price * (FixedPoint(1) + variable_rate / FixedPoint(YEAR_IN_BLOCKS))
         base_needed = shares_needed * share_price_on_next_block
     else:
         raise ValueError("Need to specify either bonds or base, but not both.")

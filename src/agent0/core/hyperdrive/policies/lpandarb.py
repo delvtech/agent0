@@ -76,7 +76,7 @@ def arb_fixed_rate_down(
     """
     action_list = []
 
-    variable_rate = pool_state.variable_rate
+    variable_rate = interface.get_variable_rate()
     # Variable rate can be None if underlying yield doesn't have a `getRate` function
     if variable_rate is None:
         variable_rate = interface.get_standardized_variable_rate()
@@ -161,7 +161,7 @@ def arb_fixed_rate_up(
     """
     action_list = []
 
-    variable_rate = pool_state.variable_rate
+    variable_rate = interface.get_variable_rate()
     # Variable rate can be None if underlying yield doesn't have a `getRate` function
     if variable_rate is None:
         variable_rate = interface.get_standardized_variable_rate()
@@ -535,7 +535,7 @@ class LPandArb(HyperdriveBasePolicy):
             )
             max_trade_amount_base -= lp_amount
 
-        variable_rate = current_pool_state.variable_rate
+        variable_rate = interface.get_variable_rate()
         # Variable rate can be None if underlying yield doesn't have a `getRate` function
         if variable_rate is None:
             variable_rate = interface.get_standardized_variable_rate()

@@ -190,7 +190,7 @@ def build_crash_trade_result(
         trade_result.additional_info = {
             "spot_price": interface.calc_spot_price(pool_state),
             "fixed_rate": interface.calc_spot_rate(pool_state),
-            "variable_rate": pool_state.variable_rate,
+            "variable_rate": interface.get_variable_rate(),
             "vault_shares": pool_state.vault_shares,
         }
 

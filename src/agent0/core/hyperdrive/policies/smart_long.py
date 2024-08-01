@@ -103,7 +103,7 @@ class SmartLong(HyperdriveBasePolicy):
         long_balances = [long.balance for long in wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
 
-        variable_rate = pool_state.variable_rate
+        variable_rate = interface.get_variable_rate()
         # Variable rate can be None if underlying yield doesn't have a `getRate` function
         if variable_rate is None:
             variable_rate = interface.get_standardized_variable_rate()

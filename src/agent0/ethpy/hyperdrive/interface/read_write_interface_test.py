@@ -27,6 +27,7 @@ class TestHyperdriveReadWriteInterface:
 
     def test_set_variable_rate(self, hyperdrive_read_write_interface_fixture: HyperdriveReadWriteInterface):
         variable_rate = hyperdrive_read_write_interface_fixture.get_variable_rate()
+        assert variable_rate is not None
         new_rate = variable_rate * FixedPoint("0.1")
         # TODO: Setup a fixture to create a funded local account
         extra_key_bytes = text_if_str(to_bytes, "extra_entropy")
