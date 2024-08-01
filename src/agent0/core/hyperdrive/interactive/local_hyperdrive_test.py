@@ -676,6 +676,7 @@ def test_bot_to_db(fast_hyperdrive_fixture: LocalHyperdrive, cycle_trade_policy:
         # Pool analysis keys
         "spot_price": fast_hyperdrive_fixture.interface.calc_spot_price(pool_state),
         "fixed_rate": fast_hyperdrive_fixture.interface.calc_spot_rate(pool_state),
+        "variable_rate": fast_hyperdrive_fixture.interface.get_variable_rate(),
     }
     # Ensure keys match
     # Converting to sets and compare
