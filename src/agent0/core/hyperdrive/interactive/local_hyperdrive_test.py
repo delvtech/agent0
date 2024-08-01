@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import timedelta
 from decimal import Decimal
@@ -20,6 +21,7 @@ from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
 from agent0.core.test_utils import CycleTradesPolicy
+from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 from agent0.ethpy.hyperdrive.event_types import (
     AddLiquidity,
@@ -1659,3 +1661,42 @@ def test_fork_backfill():
 
     chain.cleanup()
     fork_chain.cleanup()
+
+
+def test_anvil_dump_state(capsys):
+    """Tests dumping anvil state.
+
+    `capsys` is a pytest fixture that captures output, which we need
+    to get the crash report file.
+    """
+    # Set up chain with log anvil state dump enabled
+    with LocalChain(
+        config=LocalChain.Config(
+            chain_port=6000,
+            db_port=6001,
+            log_anvil_state_dump=True,
+        )
+    ) as chain:
+        pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
+        agent = chain.init_agent(
+            base=FixedPoint(1_000),
+            eth=FixedPoint(10),
+            pool=pool,
+        )
+        # Make known bad trade
+        with pytest.raises(ContractCallException):
+            _ = agent.add_liquidity(FixedPoint(10_000))
+
+        # Look for the last line in captured output
+        captured: str = capsys.readouterr().out
+        # Split the string looking for the last line
+        # -2 because the last line is an empty string
+        error_message = captured.split("\n")[-2]
+        # Get the crash report file location
+        crash_report_file = error_message.split(":")[-1].strip(" ")
+        # Read the json file
+        with open(crash_report_file, "r", encoding="utf-8") as f:
+            crash_report_dict = json.load(f)
+        assert "anvil_dump_state" in crash_report_dict
+        assert crash_report_dict["anvil_dump_state"] is not None
+        assert len(crash_report_dict["anvil_dump_state"]) > 0
