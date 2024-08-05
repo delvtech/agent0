@@ -9,10 +9,23 @@ import sys
 from typing import NamedTuple, Sequence
 
 import numpy as np
+from fixedpointmath import FixedPoint
 
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+
+# We define a dict of whales, keyed by the token contract addr,
+# with the value as the whale address.
+# Note that if a pool is missing in this mapping, we will try to
+# call `mint` on the trading token to fund.
+SEPOLIA_WHALE_ADDRESSES = {
+    # We ignore DAI since the underlying base token is mintable
+    # EZETH
+    "0xDD0D63E304F3D9d9E54d8945bE95011867c80E4f": "0x54A93937EE00838d659795b9bbbe904a00DdF278"
+}
+# The static block we fork at
+# TODO
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -83,6 +96,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             random_advance_time=False,
             random_variable_rate=False,
             lp_share_price_test=False,
+            base_budget_per_bot=FixedPoint(1000),
         )
 
         chain.cleanup()

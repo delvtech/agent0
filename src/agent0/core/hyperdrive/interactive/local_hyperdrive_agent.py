@@ -114,10 +114,12 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         eth: FixedPoint | None = None,
         pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
+        whale_accounts: dict[str, str] | None = None,
     ) -> None:
         """Adds additional funds to the agent.
 
-        .. note:: This method calls `set_anvil_account_balance` and `mint` under the hood.
+        .. note:: This method calls `set_anvil_account_balance` for eth and
+        `mint` or account impersonation + transfers from whale accounts under the hood.
         These functions are likely to fail on any non-test network, but we add them to the
         interactive agent for convenience.
 
@@ -131,7 +133,12 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The pool to mint base for.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
+        whale_accounts: dict[str, str] | None, optional
+            A mapping between token -> whale addresses to use to fund the fuzz agent.
+            If the token is not in the mapping, will attempt to call `mint` on
+            the token contract. Defaults to an empty mapping.
         """
+        # pylint: disable=too-many-arguments
 
         # Explicit type checking
         if pool is not None and not isinstance(pool, LocalHyperdrive):
@@ -141,7 +148,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         if signer_account is None:
             signer_account = self.chain.get_deployer_account()
 
-        super().add_funds(base, eth, pool, signer_account=signer_account)
+        super().add_funds(base, eth, pool, signer_account=signer_account, whale_accounts=whale_accounts)
 
     # We subclass from this function for typing
     def set_active(
