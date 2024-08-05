@@ -17,12 +17,16 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
 # We define a dict of whales, keyed by the token contract addr,
 # with the value as the whale address.
-# Note that if a pool is missing in this mapping, we will try to
+# Note that if a token is missing in this mapping, we will try to
 # call `mint` on the trading token to fund.
 SEPOLIA_WHALE_ADDRESSES = {
     # We ignore DAI since the underlying base token is mintable
     # EZETH
-    "0xDD0D63E304F3D9d9E54d8945bE95011867c80E4f": "0x54A93937EE00838d659795b9bbbe904a00DdF278"
+    "0xDD0D63E304F3D9d9E54d8945bE95011867c80E4f": "0x54A93937EE00838d659795b9bbbe904a00DdF278",
+    # RETH
+    "0x4713c86d0e467064A4CD2a974b7fDA79F7efc338": "0x8DFc7c74331162FE2FCc2Ee83173d806E4Ca2CE8",
+    # STETH
+    "0x7c485f458aD1F32FF66BC45306fd32974C963c32": "0xb59b98209e82Fc0549Bb2572809B7CD10289Bb91",
 }
 # The static block we fork at
 # TODO
