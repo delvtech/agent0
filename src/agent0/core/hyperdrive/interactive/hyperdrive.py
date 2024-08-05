@@ -89,7 +89,7 @@ class Hyperdrive:
         # Explicit type check to ensure chain is not LocalChain
         if chain.is_local_chain:
             raise TypeError(
-                "Cannot use `Hyperdrive` object function on `LocalChain`. "
+                "Cannot use `Hyperdrive` function on `LocalChain` object. "
                 "Use `LocalHyperdrive.get_hyperdrive_pools_from_registry` instead."
             )
 

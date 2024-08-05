@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import pandas as pd
 from eth_typing import BlockNumber, ChecksumAddress
@@ -35,6 +35,7 @@ from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 from .hyperdrive import Hyperdrive
 
 if TYPE_CHECKING:
+    from .chain import Chain
     from .local_chain import LocalChain
 
 # Is very thorough module.
@@ -200,14 +201,14 @@ class LocalHyperdrive(Hyperdrive):
     @classmethod
     def get_hyperdrive_pools_from_registry(
         cls,
-        chain: LocalChain,
+        chain: Chain,
         registry_address: str,
-    ) -> list[LocalHyperdrive]:
+    ) -> Sequence[LocalHyperdrive]:
         """Gather deployed Hyperdrive pool addresses.
 
         Arguments
         ---------
-        chain: LocalChain
+        chain: Chain
             The Chain object connected to a chain.
         registry_address: str
             The address of the Hyperdrive registry contract.
@@ -218,6 +219,13 @@ class LocalHyperdrive(Hyperdrive):
             The hyperdrive objects for all registered pools
         """
 
+        # Explicit type check to ensure chain is not LocalChain
+        if not chain.is_local_chain:
+            raise TypeError(
+                "Cannot use `LocalHyperdrive` function on `Chain` object. "
+                "Use `Hyperdrive.get_hyperdrive_pools_from_registry` instead."
+            )
+
         hyperdrive_addresses = cls.get_hyperdrive_addresses_from_registry(chain, registry_address)
         if len(hyperdrive_addresses) == 0:
             raise ValueError("Registry does not have any hyperdrive pools registered.")
@@ -226,7 +234,10 @@ class LocalHyperdrive(Hyperdrive):
         for hyperdrive_name, hyperdrive_address in hyperdrive_addresses.items():
             registered_pools.append(
                 LocalHyperdrive(
-                    chain,
+                    # Chain is guaranteed to be LocalChain here,
+                    # (from the `chain.is_local_chain` check above)
+                    # but we want to avoid importing it.
+                    chain,  # type: ignore
                     # We don't deploy since we're expecting to get existing pools from the registry
                     deploy=False,
                     hyperdrive_address=hyperdrive_address,
