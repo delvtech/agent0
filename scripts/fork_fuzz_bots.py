@@ -97,6 +97,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             random_variable_rate=False,
             lp_share_price_test=False,
             base_budget_per_bot=FixedPoint(1000),
+            whale_accounts=SEPOLIA_WHALE_ADDRESSES,
         )
 
         chain.cleanup()
