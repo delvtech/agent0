@@ -6,12 +6,16 @@ import argparse
 import logging
 import random
 import sys
+import time
 from typing import NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
+from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
+from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
+from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
 
@@ -28,8 +32,74 @@ SEPOLIA_WHALE_ADDRESSES = {
     # STETH
     "0x7c485f458aD1F32FF66BC45306fd32974C963c32": "0xb59b98209e82Fc0549Bb2572809B7CD10289Bb91",
 }
-# The static block we fork at
-# TODO
+# TODO set the static block we fork at, in case whales change
+
+
+def _fuzz_ignore_errors(exc: Exception) -> bool:
+    """Function defining errors to ignore for pausing chain during fuzzing."""
+    # pylint: disable=too-many-return-statements
+    # Ignored fuzz exceptions
+    if isinstance(exc, FuzzAssertionException):
+        # LP rate invariance check
+        if (
+            len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "lp_rate=" in exc.args[1]
+            and "is expected to be >= vault_rate=" in exc.args[1]
+        ):
+            return True
+
+    # Contract call exceptions
+    elif isinstance(exc, ContractCallException):
+        orig_exception = exc.orig_exception
+        if orig_exception is None:
+            return False
+
+        # Insufficient liquidity error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "InsufficientLiquidity raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # Circuit breaker triggered error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "CircuitBreakerTriggered raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # DistributeExcessIdle error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "DistributeExcessIdleFailed raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # DecreasedPresentValueWhenAddingLiquidity error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "DecreasedPresentValueWhenAddingLiquidity raised" in orig_exception.args[1]
+        ):
+            return True
+
+        # Status == 0
+        if (
+            # Lots of conditions to check
+            # pylint: disable=too-many-boolean-expressions
+            isinstance(orig_exception, list)
+            and len(orig_exception) > 1
+            and isinstance(orig_exception[0], UnknownBlockError)
+            and len(orig_exception[0].args) > 0
+            and "Receipt has status of 0" in orig_exception[0].args[0]
+        ):
+            return True
+
+    return False
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -50,6 +120,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     registry_address = parsed_args.registry_addr
 
     log_to_rollbar = initialize_rollbar("forkfuzzbots")
+
+    raise_error_on_fail = False
+    if parsed_args.pause_on_invariance_fail:
+        raise_error_on_fail = True
 
     # Negative rng_seed means default
     if parsed_args.rng_seed < 0:
@@ -84,25 +158,31 @@ def main(argv: Sequence[str] | None = None) -> None:
         # TODO we may want to refork every once in awhile in case new pools are deployed.
         # For now, we assume this script gets restarted.
 
-        # FIXME the function below funds agents via `mint` function,
-        # this doesn't work on a fork. Find whales for these tokens and
-        # fund this way.
-
-        run_fuzz_bots(
-            chain,
-            hyperdrive_pools=deployed_pools,
-            check_invariance=False,  # We don't check invariance here
-            raise_error_on_failed_invariance_checks=False,
-            raise_error_on_crash=False,
-            log_to_rollbar=log_to_rollbar,
-            ignore_raise_error_func=None,
-            run_async=False,
-            random_advance_time=False,
-            random_variable_rate=False,
-            lp_share_price_test=False,
-            base_budget_per_bot=FixedPoint(1000),
-            whale_accounts=SEPOLIA_WHALE_ADDRESSES,
-        )
+        try:
+            run_fuzz_bots(
+                chain,
+                hyperdrive_pools=deployed_pools,
+                check_invariance=True,
+                raise_error_on_failed_invariance_checks=raise_error_on_fail,
+                raise_error_on_crash=raise_error_on_fail,
+                log_to_rollbar=log_to_rollbar,
+                ignore_raise_error_func=_fuzz_ignore_errors,
+                run_async=False,
+                # TODO advance time and randomize variable rates
+                random_advance_time=False,
+                random_variable_rate=False,
+                lp_share_price_test=False,
+                base_budget_per_bot=FixedPoint(1000),
+                whale_accounts=SEPOLIA_WHALE_ADDRESSES,
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(
+                "Pausing port:%s on crash %s",
+                chain.config.chain_port,
+                repr(e),
+            )
+            while True:
+                time.sleep(1000000)
 
         chain.cleanup()
 
@@ -110,6 +190,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
+    pause_on_invariance_fail: bool
     registry_addr: str
     rpc_uri: str
     rng_seed: int
@@ -130,6 +211,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     """
     return Args(
         registry_addr=namespace.registry_addr,
+        pause_on_invariance_fail=namespace.pause_on_invariance_fail,
         rpc_uri=namespace.rpc_uri,
         rng_seed=namespace.rng_seed,
     )
@@ -155,6 +237,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=str,
         default="",
         help="The address of the registry.",
+    )
+
+    parser.add_argument(
+        "--pause-on-invariance-fail",
+        default=False,
+        action="store_true",
+        help="Pause execution on invariance failure.",
     )
 
     parser.add_argument(
