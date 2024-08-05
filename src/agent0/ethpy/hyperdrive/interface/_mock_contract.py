@@ -118,7 +118,7 @@ def _calc_open_long(pool_state: PoolState, base_amount: FixedPoint) -> FixedPoin
     return FixedPoint(scaled_value=int(long_amount))
 
 
-def _calc_pool_deltas_after_open_long(pool_state: PoolState, base_amount: FixedPoint) -> tuple[FixedPoint]:
+def _calc_pool_deltas_after_open_long(pool_state: PoolState, base_amount: FixedPoint) -> tuple[FixedPoint, FixedPoint]:
     """See API for documentation."""
     deltas = hyperdrivepy.calculate_pool_deltas_after_open_long(
         fixedpoint_to_pool_config(pool_state.pool_config),

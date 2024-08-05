@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from fixedpointmath import FixedPoint
-from utils import run_with_funded_bot
+from utils import run_with_funded_bot  # type: ignore
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet

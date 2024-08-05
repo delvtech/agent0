@@ -1159,7 +1159,7 @@ class HyperdriveReadInterface:
 
     def calc_pool_deltas_after_open_long(
         self, base_amount: FixedPoint, pool_state: PoolState | None = None
-    ) -> tuple[FixedPoint]:
+    ) -> tuple[FixedPoint, FixedPoint]:
         """Calculate the bond deltas to be applied to the pool after opening a long.
 
         Arguments
@@ -1172,7 +1172,7 @@ class HyperdriveReadInterface:
 
         Returns
         -------
-        (FixedPoint, FixedPoint)
+        tuple[FixedPoint, FixedPoint]
             The amount of (shares, bonds) to remove from the pool reserves.
         """
         if pool_state is None:

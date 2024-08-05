@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fixedpointmath import FixedPoint
-from utils import expect_failure_with_funded_bot, run_with_funded_bot
+from utils import expect_failure_with_funded_bot, run_with_funded_bot  # type: ignore
 
 from agent0.core.hyperdrive.agent import (
     add_liquidity_trade,
