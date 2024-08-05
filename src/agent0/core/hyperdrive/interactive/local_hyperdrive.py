@@ -197,6 +197,45 @@ class LocalHyperdrive(Hyperdrive):
     def __str__(self) -> str:
         return f"Local Hyperdrive Pool {self.name} at chain address {self.hyperdrive_address}"
 
+    @classmethod
+    def get_hyperdrive_pools_from_registry(
+        cls,
+        chain: LocalChain,
+        registry_address: str,
+    ) -> list[LocalHyperdrive]:
+        """Gather deployed Hyperdrive pool addresses.
+
+        Arguments
+        ---------
+        chain: LocalChain
+            The Chain object connected to a chain.
+        registry_address: str
+            The address of the Hyperdrive registry contract.
+
+        Returns
+        -------
+        list[LocalHyperdrive]
+            The hyperdrive objects for all registered pools
+        """
+
+        hyperdrive_addresses = cls.get_hyperdrive_addresses_from_registry(chain, registry_address)
+        if len(hyperdrive_addresses) == 0:
+            raise ValueError("Registry does not have any hyperdrive pools registered.")
+        # Generate hyperdrive pool objects here
+        registered_pools = []
+        for hyperdrive_name, hyperdrive_address in hyperdrive_addresses.items():
+            registered_pools.append(
+                LocalHyperdrive(
+                    chain,
+                    # We don't deploy since we're expecting to get existing pools from the registry
+                    deploy=False,
+                    hyperdrive_address=hyperdrive_address,
+                    name=hyperdrive_name,
+                )
+            )
+
+        return registered_pools
+
     # pylint: disable=too-many-arguments
     def __init__(
         self,
