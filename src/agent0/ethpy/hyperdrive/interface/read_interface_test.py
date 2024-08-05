@@ -127,7 +127,7 @@ class TestHyperdriveReadInterface:
         bond_amount = FixedPoint(100)
         price_with_default = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount)
         base_amount = (
-            hyperdrive_read_interface_fixture.calc_pool_deltas_after_open_short(bond_amount)
+            hyperdrive_read_interface_fixture.calc_pool_share_delta_after_open_short(bond_amount)
             * hyperdrive_read_interface_fixture.current_pool_state.pool_info.vault_share_price
         )
         price_with_base_amount = hyperdrive_read_interface_fixture.calc_spot_price_after_short(bond_amount, base_amount)
@@ -140,7 +140,7 @@ class TestHyperdriveReadInterface:
             close_vault_share_price=hyperdrive_read_interface_fixture.current_pool_state.pool_info.vault_share_price,
             maturity_time=current_time + 100,
         )
-        _ = hyperdrive_read_interface_fixture.calc_pool_deltas_after_open_short(bond_amount)
+        _ = hyperdrive_read_interface_fixture.calc_pool_share_delta_after_open_short(bond_amount)
 
     def test_misc(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Miscellaneous tests only verify that the attributes exist and functions can be called.
