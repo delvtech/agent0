@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
+from typing import Callable, Sequence
 
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
@@ -136,7 +136,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool, s
 
 def run_fuzz_bots(
     chain: Chain,
-    hyperdrive_pools: Hyperdrive | list[Hyperdrive],
+    hyperdrive_pools: Hyperdrive | Sequence[Hyperdrive],
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -224,7 +224,7 @@ def run_fuzz_bots(
     if minimum_avg_agent_eth is None:
         minimum_avg_agent_eth = eth_budget_per_bot / FixedPoint(10)
 
-    if not isinstance(hyperdrive_pools, list):
+    if not isinstance(hyperdrive_pools, Sequence):
         hyperdrive_pools = [hyperdrive_pools]
 
     # Initialize agents
