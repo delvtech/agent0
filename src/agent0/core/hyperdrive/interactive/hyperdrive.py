@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import nest_asyncio
 import pandas as pd
@@ -70,7 +70,7 @@ class Hyperdrive:
         cls,
         chain: Chain,
         registry_address: str,
-    ) -> list[Hyperdrive]:
+    ) -> Sequence[Hyperdrive]:
         """Gather deployed Hyperdrive pool addresses.
 
         Arguments
@@ -82,7 +82,7 @@ class Hyperdrive:
 
         Returns
         -------
-        list[Hyperdrive]
+        Sequence[Hyperdrive]
             The hyperdrive objects for all registered pools
         """
 

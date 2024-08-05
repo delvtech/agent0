@@ -162,7 +162,7 @@ def run_fuzz_bots(
     ---------
     chain: Chain
         The chain to run the bots on.
-    hyperdrive_pools: Hyperdrive | list[Hyperdrive]
+    hyperdrive_pools: Hyperdrive | Sequence[Hyperdrive]
         The hyperdrive pool(s) to run the bots on.
     check_invariance: bool
         If True, will run invariance checks after each set of trades.

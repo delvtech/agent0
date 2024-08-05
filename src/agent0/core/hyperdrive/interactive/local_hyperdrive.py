@@ -215,7 +215,7 @@ class LocalHyperdrive(Hyperdrive):
 
         Returns
         -------
-        list[LocalHyperdrive]
+        Sequence[LocalHyperdrive]
             The hyperdrive objects for all registered pools
         """
 
