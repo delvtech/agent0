@@ -247,8 +247,6 @@ def run_fuzz_bots(
         )
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
-            # FIXME remove print
-            print(f"Adding funds for pool {pool.name}")
             agent.add_funds(
                 base=base_budget_per_bot,
                 eth=eth_budget_per_bot,
@@ -271,8 +269,6 @@ def run_fuzz_bots(
         )
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
-            # FIXME remove print
-            print(f"Adding funds for pool {pool.name}")
             agent.add_funds(
                 base=base_budget_per_bot,
                 eth=eth_budget_per_bot,
