@@ -97,7 +97,12 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
         pool_info_dict["gov_fees_accrued"] = pool_state.gov_fees_accrued
         pool_info_dict["hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         pool_info_dict["hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
-        pool_info_dict["variable_rate"] = interface.get_variable_rate()
+        # Some pools may not have an underlying vault shares contract.
+        # We ignore this field in the db in this case.
+        try:
+            pool_info_dict["variable_rate"] = interface.get_variable_rate()
+        except ValueError:
+            pool_info_dict["variable_rate"] = None
         pool_info_dict["vault_shares"] = pool_state.vault_shares
         pool_info_dict["spot_price"] = interface.calc_spot_price(pool_state)
         pool_info_dict["fixed_rate"] = interface.calc_spot_rate(pool_state)
