@@ -132,7 +132,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         rng_seed = parsed_args.rng_seed
     rng = np.random.default_rng(rng_seed)
 
+    # Empty string means default
+    if parsed_args.chain_host == "":
+        chain_host = None
+    else:
+        chain_host = parsed_args.chain_host
+
+    # Negative chain port means default
+    if parsed_args.chain_port < 0:
+        chain_port = 1111
+    else:
+        chain_port = parsed_args.chain_port
+
     chain_config = LocalChain.Config(
+        chain_host=chain_host,
+        chain_port=chain_port,
         log_level_threshold=logging.WARNING,
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
@@ -195,6 +209,8 @@ class Args(NamedTuple):
 
     pause_on_invariance_fail: bool
     registry_addr: str
+    chain_host: str
+    chain_port: int
     rpc_uri: str
     rng_seed: int
 
@@ -215,6 +231,8 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
     return Args(
         registry_addr=namespace.registry_addr,
         pause_on_invariance_fail=namespace.pause_on_invariance_fail,
+        chain_host=namespace.chain_host,
+        chain_port=namespace.chain_port,
         rpc_uri=namespace.rpc_uri,
         rng_seed=namespace.rng_seed,
     )
@@ -247,6 +265,19 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=False,
         action="store_true",
         help="Pause execution on invariance failure.",
+    )
+
+    parser.add_argument(
+        "--chain-host",
+        type=str,
+        default="",
+        help="The host to bind for the anvil chain. Defaults to 127.0.0.1.",
+    )
+    parser.add_argument(
+        "--chain-port",
+        type=int,
+        default=-1,
+        help="The port to run anvil on.",
     )
 
     parser.add_argument(
