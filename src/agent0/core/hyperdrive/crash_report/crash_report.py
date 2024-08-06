@@ -203,6 +203,8 @@ def build_crash_trade_result(
     ## Add extra info
     trade_result.contract_addresses = {
         "hyperdrive_address": interface.hyperdrive_contract.address,
+        "hyperdrive_name": interface.hyperdrive_contract.functions.name().call(),
+        "hyperdrive_kind": interface.hyperdrive_contract.functions.kind().call(),
         "base_token_address": interface.base_token_contract.address,
     }
 
