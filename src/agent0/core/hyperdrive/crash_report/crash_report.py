@@ -187,10 +187,16 @@ def build_crash_trade_result(
             trade_result.checkpoint_info = None
 
         # add additional information to the exception
+        # Variable rate contract might not exist in e.g., morpho pool
+        try:
+            variable_rate = interface.get_variable_rate()
+        except ValueError:
+            variable_rate = None
+
         trade_result.additional_info = {
             "spot_price": interface.calc_spot_price(pool_state),
             "fixed_rate": interface.calc_spot_rate(pool_state),
-            "variable_rate": interface.get_variable_rate(),
+            "variable_rate": variable_rate,
             "vault_shares": pool_state.vault_shares,
         }
 
