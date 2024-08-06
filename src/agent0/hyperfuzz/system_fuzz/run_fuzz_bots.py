@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable
+from typing import Callable, Sequence
 
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
@@ -136,7 +136,7 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool, s
 
 def run_fuzz_bots(
     chain: Chain,
-    hyperdrive_pools: Hyperdrive | list[Hyperdrive],
+    hyperdrive_pools: Hyperdrive | Sequence[Hyperdrive],
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
@@ -154,6 +154,7 @@ def run_fuzz_bots(
     random_variable_rate: bool = False,
     num_iterations: int | None = None,
     lp_share_price_test: bool = False,
+    whale_accounts: dict[str, str] | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -161,7 +162,7 @@ def run_fuzz_bots(
     ---------
     chain: Chain
         The chain to run the bots on.
-    hyperdrive_pools: Hyperdrive | list[Hyperdrive]
+    hyperdrive_pools: Hyperdrive | Sequence[Hyperdrive]
         The hyperdrive pool(s) to run the bots on.
     check_invariance: bool
         If True, will run invariance checks after each set of trades.
@@ -201,6 +202,10 @@ def run_fuzz_bots(
         The number of iterations to run. Defaults to None (infinite)
     lp_share_price_test: bool, optional
         If True, will test the LP share price. Defaults to False.
+    whale_accounts: dict[str, str] | None, optional
+        A mapping between token -> whale addresses to use to fund the fuzz agent.
+        If the token is not in the mapping, fuzzing will attempt to call `mint` on
+        the token contract. Defaults to an empty mapping.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -224,7 +229,7 @@ def run_fuzz_bots(
     if minimum_avg_agent_eth is None:
         minimum_avg_agent_eth = eth_budget_per_bot / FixedPoint(10)
 
-    if not isinstance(hyperdrive_pools, list):
+    if not isinstance(hyperdrive_pools, Sequence):
         hyperdrive_pools = [hyperdrive_pools]
 
     # Initialize agents
@@ -242,7 +247,12 @@ def run_fuzz_bots(
         )
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
-            agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=pool)
+            agent.add_funds(
+                base=base_budget_per_bot,
+                eth=eth_budget_per_bot,
+                pool=pool,
+                whale_accounts=whale_accounts,
+            )
             agent.set_max_approval(pool=pool)
         agents.append(agent)
 
@@ -259,7 +269,12 @@ def run_fuzz_bots(
         )
         # We're assuming we can fund the agent here
         for pool in hyperdrive_pools:
-            agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=pool)
+            agent.add_funds(
+                base=base_budget_per_bot,
+                eth=eth_budget_per_bot,
+                pool=pool,
+                whale_accounts=whale_accounts,
+            )
             agent.set_max_approval(pool=pool)
         agents.append(agent)
 

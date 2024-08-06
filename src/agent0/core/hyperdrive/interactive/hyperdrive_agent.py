@@ -14,7 +14,7 @@ from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.types import Nonce
+from web3.types import Nonce, RPCEndpoint
 
 from agent0.chainsync.analysis import fill_pnl_values, snapshot_positions_to_db
 from agent0.chainsync.dashboard import abbreviate_address
@@ -201,10 +201,12 @@ class HyperdriveAgent:
         eth: FixedPoint | None = None,
         pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
+        whale_accounts: dict[str, str] | None = None,
     ) -> None:
         """Adds additional funds to the agent.
 
-        .. note:: This method calls `set_anvil_account_balance` and `mint` under the hood.
+        .. note:: This method calls `set_anvil_account_balance` for eth and
+        `mint` or account impersonation + transfers from whale accounts under the hood.
         These functions are likely to fail on any non-test network, but we add them to the
         interactive agent for convenience.
 
@@ -218,7 +220,15 @@ class HyperdriveAgent:
             The pool to interact with. Defaults to the active pool.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
+        whale_accounts: dict[str, str] | None, optional
+            A mapping between token -> whale addresses to use to fund the fuzz agent.
+            If the token is not in the mapping, will attempt to call `mint` on
+            the token contract. Defaults to an empty mapping.
         """
+        # pylint: disable=too-many-arguments
+
+        if whale_accounts is None:
+            whale_accounts = {}
 
         if pool is None and self._active_pool is not None:
             pool = self._active_pool
@@ -238,19 +248,47 @@ class HyperdriveAgent:
             new_eth_balance = eth_balance + eth
             _ = set_anvil_account_balance(self.chain._web3, self.account.address, new_eth_balance.scaled_value)
 
-        # TODO minting base requires a pool to be attached
         if base > FixedPoint(0):
             if pool is None:
                 raise ValueError("Minting base requires an active pool.")
-            # We mint base
-            _ = smart_contract_transact(
-                self.chain._web3,
-                pool.interface.base_token_contract,
-                signer_account,
-                "mint(address,uint256)",
-                self.account.address,
-                base.scaled_value,
-            )
+            base_token_contract = pool.interface.base_token_contract
+            if base_token_contract.address in whale_accounts:
+                # Impersonate + transfer to agent here
+                whale_account_addr = whale_accounts[base_token_contract.address]
+
+                # Ensure whale has enough base to transfer
+                whale_balance = base_token_contract.functions.balanceOf(whale_account_addr).call()
+                if whale_balance < base.scaled_value:
+                    raise ValueError(
+                        f"Whale does not have enough base to transfer. {whale_balance=}, {base.scaled_value=}."
+                    )
+
+                # RPC anvil call to impersonate account
+                response = self.chain._web3.provider.make_request(
+                    method=RPCEndpoint("anvil_impersonateAccount"), params=[whale_account_addr]
+                )
+                # ensure response is valid
+                if "result" not in response:
+                    raise KeyError("Response did not have a result.")
+
+                # Give eth to the whale account for gas
+                _ = set_anvil_account_balance(self.chain._web3, whale_account_addr, FixedPoint(10).scaled_value)
+
+                # Transfer base from whale to account
+                base_token_contract.functions.transfer(self.account.address, base.scaled_value).transact(
+                    {"from": whale_account_addr}
+                )
+
+            else:
+                # We mint base
+                _ = smart_contract_transact(
+                    self.chain._web3,
+                    base_token_contract,
+                    signer_account,
+                    "mint(address,uint256)",
+                    self.account.address,
+                    base.scaled_value,
+                )
 
     def set_max_approval(self, pool: Hyperdrive | None = None) -> None:
         """Sets the max approval to the hyperdrive contract.
