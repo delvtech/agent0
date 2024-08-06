@@ -17,7 +17,7 @@ from agent0 import LocalChain, LocalHyperdrive
 from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_message
 
 # We define a dict of whales, keyed by the token contract addr,
 # with the value as the whale address.
@@ -147,6 +147,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Get list of deployed pools on initial iteration
     deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
+    log_message = f"Running fuzzing on pools {[p.name for p in deployed_pools]}..."
+    logging.info(log_message)
+    log_rollbar_message(message=log_message, log_level=logging.INFO)
 
     while True:
         # Check for new pools
