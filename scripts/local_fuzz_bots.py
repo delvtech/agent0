@@ -94,6 +94,14 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
+        # MinimumTransactionAmount error
+        if (
+            isinstance(orig_exception, ContractCustomError)
+            and len(orig_exception.args) > 1
+            and "MinimumTransactionAmount raised" in orig_exception.args[1]
+        ):
+            return True
+
         # DecreasedPresentValueWhenAddingLiquidity error
         if (
             isinstance(orig_exception, ContractCustomError)
