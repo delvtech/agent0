@@ -18,8 +18,8 @@ from agent0.chainsync.db.hyperdrive import (
 )
 from agent0.ethpy.hyperdrive import (
     HyperdriveReadWriteInterface,
-    generate_name_for_hyperdrive,
     get_hyperdrive_addresses_from_registry,
+    get_hyperdrive_name,
 )
 
 if TYPE_CHECKING:
@@ -124,7 +124,7 @@ class Hyperdrive:
         # Register the username if it was provided
         if name is None:
             # Build the name in this case
-            name = generate_name_for_hyperdrive(
+            name = get_hyperdrive_name(
                 self.hyperdrive_address,
                 self.chain._web3,  # pylint: disable=protected-access
             )
