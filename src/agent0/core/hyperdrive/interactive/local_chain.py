@@ -47,6 +47,8 @@ class LocalChain(Chain):
     class Config(Chain.Config):
         """The configuration for the local chain object."""
 
+        anvil_verbose: bool = False
+        """If True, will print underlying anvil output to stdout. Defaults to suppressing output."""
         dashboard_port: int = 7777
         """The URL port for the deployed dashboard."""
         block_time: int | None = None
@@ -141,13 +143,20 @@ class LocalChain(Chain):
                 anvil_launch_args.extend(["--fork-block-number", str(fork_block_number)])
 
         # This process never stops, so we run this in the background and explicitly clean up later
-        self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
-            # Suppressing output of anvil
-            anvil_launch_args,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-            close_fds=True,
-        )
+        if self.config.anvil_verbose:
+            self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
+                # Suppressing output of anvil
+                anvil_launch_args,
+                close_fds=True,
+            )
+        else:
+            self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
+                # Suppressing output of anvil
+                anvil_launch_args,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+            )
 
         # TODO HACK wait for anvil to start, ideally we would be looking for the output to stdout
         # Forking takes a bit longer to spin up, so we only sleep when forking
