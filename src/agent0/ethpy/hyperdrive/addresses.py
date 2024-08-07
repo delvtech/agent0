@@ -10,10 +10,9 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 
-from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract, MockERC4626Contract
+from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract
 
 from .get_expected_hyperdrive_version import check_hyperdrive_version, get_minimum_hyperdrive_version
-from .transactions import get_hyperdrive_pool_config
 
 
 def get_hyperdrive_registry_from_artifacts(artifacts_uri: str) -> str:

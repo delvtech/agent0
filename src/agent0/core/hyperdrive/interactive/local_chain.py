@@ -113,6 +113,7 @@ class LocalChain(Chain):
         fork_block_number: int | None, optional
             The block number to fork at if fork_uri is set. Defaults to latest.
         """
+        # pylint: disable=too-many-branches
         if config is None:
             config = self.Config()
 
