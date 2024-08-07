@@ -18,7 +18,6 @@ plt.close("all")
 gc.collect()
 
 st.set_page_config(page_title="Trading Competition Dashboard", layout="wide")
-st.set_option("deprecation.showPyplotGlobalUse", False)
 
 # Load and connect to postgres
 session = initialize_session()
