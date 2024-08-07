@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Type
 
 import dill
+import requests
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
@@ -158,12 +159,21 @@ class LocalChain(Chain):
                 close_fds=True,
             )
 
-        # TODO HACK wait for anvil to start, ideally we would be looking for the output to stdout
-        # Forking takes a bit longer to spin up, so we only sleep when forking
-        if fork_uri is not None:
-            time.sleep(2)
-
+        # Since the superclass doesn't actually make any requests,
+        # we can initialize the super class before attempting to connect to anvil
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
+
+        # Wait for anvil to spin up
+        num_conn_retries = 5
+        for i in range(num_conn_retries):
+            try:
+                self.block_number()
+                break
+            except requests.exceptions.ConnectionError as e:
+                logging.warning("No anvil connection, retrying")
+                if i == num_conn_retries - 1:
+                    raise e
+                time.sleep(1)
 
         # Snapshot bookkeeping
         # Put chain_id as a separate directory to avoid conflicts
