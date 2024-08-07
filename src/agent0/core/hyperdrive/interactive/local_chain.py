@@ -143,7 +143,7 @@ class LocalChain(Chain):
                 anvil_launch_args.extend(["--fork-block-number", str(fork_block_number)])
 
         # This process never stops, so we run this in the background and explicitly clean up later
-        if self.config.anvil_verbose:
+        if config.anvil_verbose:
             self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
                 # Suppressing output of anvil
                 anvil_launch_args,
