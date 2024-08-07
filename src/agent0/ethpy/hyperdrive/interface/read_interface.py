@@ -93,7 +93,10 @@ if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber, ChecksumAddress
 
-AGENT0_SIGNATURE = bytes.fromhex("a0")
+# TODO add this back in when a fix is found for extra data for morpho
+# AGENT0_SIGNATURE = bytes.fromhex("a0")
+AGENT0_SIGNATURE = bytes(0)
+
 MORPHO_ABI_PATH = (
     pathlib.Path(__file__).parent.parent.parent.parent / "packages" / "external" / "IMorpho.sol" / "IMorpho.json"
 ).resolve()
