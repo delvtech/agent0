@@ -202,7 +202,7 @@ def _check_eth_balances(pool_state: PoolState) -> InvariantCheckResults:
     log_level = None
 
     if pool_state.hyperdrive_eth_balance != FixedPoint(0):
-        exception_message = f"{pool_state.hyperdrive_eth_balance} != 0."
+        exception_message = f"Pool eth balance {pool_state.hyperdrive_eth_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_eth_balance"] = pool_state.hyperdrive_eth_balance
         failed = True
         log_level = logging.WARNING
@@ -219,7 +219,7 @@ def _check_base_balances(pool_state: PoolState, is_steth: bool) -> InvariantChec
 
     # We ignore this test for steth, as the base token here is actually the yield token
     if pool_state.hyperdrive_base_balance != FixedPoint(0) and not is_steth:
-        exception_message = f"{pool_state.hyperdrive_base_balance} != 0."
+        exception_message = f"Pool base balance {pool_state.hyperdrive_base_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         failed = True
         log_level = logging.INFO
