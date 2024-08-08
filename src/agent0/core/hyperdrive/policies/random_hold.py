@@ -119,6 +119,7 @@ class RandomHold(Random):
         list[HyperdriveActionType]
             A list containing all of the available actions.
         """
+        # pylint: disable=too-many-branches
         pool_state = interface.current_pool_state
 
         # Initialize list of open positions
