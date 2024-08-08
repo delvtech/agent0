@@ -84,6 +84,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             txn_signature=txn_signature,
         )
         self.write_retry_count = write_retry_count
+        self._read_interface: HyperdriveReadInterface | None = None
 
     def get_read_interface(self) -> HyperdriveReadInterface:
         """Return the current instance as an instance of the parent (HyperdriveReadInterface) class.
@@ -93,12 +94,17 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         HyperdriveReadInterface
             This instantiated object, but as a ReadInterface.
         """
-        return HyperdriveReadInterface(
-            hyperdrive_address=self.hyperdrive_address,
-            web3=self.web3,
-            read_retry_count=self.read_retry_count,
-            txn_receipt_timeout=self.txn_receipt_timeout,
-        )
+
+        # We cache the read interface output when this function gets called multiple times
+        if self._read_interface is None:
+            self._read_interface = HyperdriveReadInterface(
+                hyperdrive_address=self.hyperdrive_address,
+                web3=self.web3,
+                read_retry_count=self.read_retry_count,
+                txn_receipt_timeout=self.txn_receipt_timeout,
+            )
+
+        return self._read_interface
 
     def create_checkpoint(
         self,
