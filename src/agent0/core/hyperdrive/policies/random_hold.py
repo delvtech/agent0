@@ -75,7 +75,7 @@ class RandomHold(Random):
         # TODO using a dict of lists for now, but likely should use a different data structure
         # to allow for fast "close all positions with a close time <= current time"
         self.open_positions: dict[str, list[RandomHold._Position]] = {}
-        self.max_open_positions = policy_config.max_open_positions_per_pool
+        self.max_open_positions_per_pool = policy_config.max_open_positions_per_pool
         self.min_hold_time = policy_config.min_hold_time
         self.max_hold_time = policy_config.max_hold_time
 
@@ -149,7 +149,7 @@ class RandomHold(Random):
                 HyperdriveActionType.ADD_LIQUIDITY,
             ]
             # We hard cap the number of open positions to keep track of
-            if len(pool_open_positions) < self.max_open_positions:
+            if len(pool_open_positions) < self.max_open_positions_per_pool:
                 all_available_actions.extend(
                     [
                         HyperdriveActionType.OPEN_LONG,
