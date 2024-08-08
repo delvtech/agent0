@@ -147,14 +147,13 @@ class LocalChain(Chain):
         # This process never stops, so we run this in the background and explicitly clean up later
         if config.anvil_verbose:
             self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
-                # Suppressing output of anvil
                 anvil_launch_args,
                 close_fds=True,
             )
         else:
             self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
-                # Suppressing output of anvil
                 anvil_launch_args,
+                # Suppressing output of anvil
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT,
                 close_fds=True,
