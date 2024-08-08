@@ -111,8 +111,8 @@ class RandomHold(Random):
         ---------
         wallet: HyperdriveWallet
             The agent's wallet.
-        pool_state: PoolState
-            The current state of the pool, which includes block details, pool config, and pool info.
+        interface: HyperdriveReadInterface
+            The interface to the Hyperdrive contract.
 
         Returns
         -------
