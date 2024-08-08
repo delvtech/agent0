@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber, ChecksumAddress
 
 AGENT0_SIGNATURE = bytes.fromhex("a0")
+
 MORPHO_ABI_PATH = (
     pathlib.Path(__file__).parent.parent.parent.parent / "packages" / "external" / "IMorpho.sol" / "IMorpho.json"
 ).resolve()
@@ -244,6 +245,11 @@ class HyperdriveReadInterface:
             )
 
             self.morpho_market_id = web3.keccak(encoded_market_id)
+
+            # TODO There's a known issue fixed in Hyperdrive v1.0.17 that causes issues with
+            # extra data passed to morpho. Remove this when minimum hyperdrive version supported
+            # >= 1.0.17
+            self.txn_signature = bytes(0)
 
         else:
             # We default to erc4626, but print a warning if we don't recognize the kind

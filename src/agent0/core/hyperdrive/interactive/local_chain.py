@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Type
 
 import dill
+import requests
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
@@ -47,6 +48,8 @@ class LocalChain(Chain):
     class Config(Chain.Config):
         """The configuration for the local chain object."""
 
+        anvil_verbose: bool = False
+        """If True, will print underlying anvil output to stdout. Defaults to suppressing output."""
         dashboard_port: int = 7777
         """The URL port for the deployed dashboard."""
         block_time: int | None = None
@@ -110,6 +113,7 @@ class LocalChain(Chain):
         fork_block_number: int | None, optional
             The block number to fork at if fork_uri is set. Defaults to latest.
         """
+        # pylint: disable=too-many-branches
         if config is None:
             config = self.Config()
 
@@ -141,20 +145,35 @@ class LocalChain(Chain):
                 anvil_launch_args.extend(["--fork-block-number", str(fork_block_number)])
 
         # This process never stops, so we run this in the background and explicitly clean up later
-        self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
-            # Suppressing output of anvil
-            anvil_launch_args,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-            close_fds=True,
-        )
+        if config.anvil_verbose:
+            self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
+                anvil_launch_args,
+                close_fds=True,
+            )
+        else:
+            self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
+                anvil_launch_args,
+                # Suppressing output of anvil
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+                close_fds=True,
+            )
 
-        # TODO HACK wait for anvil to start, ideally we would be looking for the output to stdout
-        # Forking takes a bit longer to spin up, so we only sleep when forking
-        if fork_uri is not None:
-            time.sleep(2)
-
+        # Since the superclass doesn't actually make any requests,
+        # we can initialize the super class before attempting to connect to anvil
         super().__init__(f"http://127.0.0.1:{str(config.chain_port)}", config)
+
+        # Wait for anvil to spin up
+        num_conn_retries = 5
+        for i in range(num_conn_retries):
+            try:
+                self.block_number()
+                break
+            except requests.exceptions.ConnectionError as e:
+                logging.warning("No anvil connection, retrying")
+                if i == num_conn_retries - 1:
+                    raise e
+                time.sleep(1)
 
         # Snapshot bookkeeping
         # Put chain_id as a separate directory to avoid conflicts

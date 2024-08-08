@@ -10,10 +10,9 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 
-from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract, MockERC4626Contract
+from agent0.hypertypes import HyperdriveRegistryContract, IHyperdriveContract
 
 from .get_expected_hyperdrive_version import check_hyperdrive_version, get_minimum_hyperdrive_version
-from .transactions import get_hyperdrive_pool_config
 
 
 def get_hyperdrive_registry_from_artifacts(artifacts_uri: str) -> str:
@@ -118,7 +117,7 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     return out_addresses
 
 
-def generate_name_for_hyperdrive(hyperdrive_address: ChecksumAddress, web3: Web3) -> str:
+def get_hyperdrive_name(hyperdrive_address: ChecksumAddress, web3: Web3) -> str:
     """Generates a name for a given hyperdrive address. The address generated is of the form
     <vault_shares_token_symbol>_<position_duration>_day.
 
@@ -140,15 +139,6 @@ def generate_name_for_hyperdrive(hyperdrive_address: ChecksumAddress, web3: Web3
     hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(
         web3.to_checksum_address(hyperdrive_address)
     )
-    pool_config = get_hyperdrive_pool_config(hyperdrive_contract)
 
-    # Although the contract here might not be MockERC4626, we only use the symbol function
-    vault_shares_token_contract: MockERC4626Contract = MockERC4626Contract.factory(w3=web3)(
-        address=web3.to_checksum_address(pool_config.vault_shares_token)
-    )
-    vault_shares_token_symbol = vault_shares_token_contract.functions.symbol().call()
-
-    # Convert seconds to days
-    position_duration = str(pool_config.position_duration // (60 * 60 * 24))
-
-    return vault_shares_token_symbol.lower() + "_" + position_duration + "_day"
+    # TODO double check hyperdrive version the name was exposed
+    return hyperdrive_contract.functions.name().call()
