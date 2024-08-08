@@ -40,8 +40,8 @@ class RandomHold(Random):
     class Config(Random.Config):
         """Custom config arguments for this policy."""
 
-        max_open_positions: int = 100
-        """The maximum number of open positions."""
+        max_open_positions_per_pool: int = 100
+        """The maximum number of open positions per pool."""
         min_hold_time: int = 0
         """The minimum hold time in seconds. Defaults to 0."""
         # Can't default here, as we don't know the position duration at the time of constructing the config
@@ -71,10 +71,11 @@ class RandomHold(Random):
             The custom arguments for this policy
         """
         # Bookkeeping data structure for keeping track of open positions
-        # TODO using a list for now, but likely should use a different data structure
+        # Dictionary keyed by pool address, valued by list of positions
+        # TODO using a dict of lists for now, but likely should use a different data structure
         # to allow for fast "close all positions with a close time <= current time"
-        self.open_positions: list[RandomHold._Position] = []
-        self.max_open_positions = policy_config.max_open_positions
+        self.open_positions: dict[str, list[RandomHold._Position]] = {}
+        self.max_open_positions = policy_config.max_open_positions_per_pool
         self.min_hold_time = policy_config.min_hold_time
         self.max_hold_time = policy_config.max_hold_time
 
@@ -102,7 +103,7 @@ class RandomHold(Random):
     def get_available_actions(
         self,
         wallet: HyperdriveWallet,
-        pool_state: PoolState,
+        interface: HyperdriveReadInterface,
     ) -> list[HyperdriveActionType]:
         """Get all available actions.
 
@@ -118,11 +119,19 @@ class RandomHold(Random):
         list[HyperdriveActionType]
             A list containing all of the available actions.
         """
+        pool_state = interface.current_pool_state
+
+        # Initialize list of open positions
+        if interface.hyperdrive_address not in self.open_positions:
+            self.open_positions[interface.hyperdrive_address] = []
+
+        pool_open_positions = self.open_positions[interface.hyperdrive_address]
+
         long_ready_to_close = False
         short_ready_to_close = False
         # Scan for positions ready to close
         current_block_time = int(pool_state.block_time)
-        for position in self.open_positions:
+        for position in pool_open_positions:
             if position.min_close_time <= current_block_time:
                 position.ready_to_close = True
                 if position.action_type == HyperdriveActionType.OPEN_LONG:
@@ -140,7 +149,7 @@ class RandomHold(Random):
                 HyperdriveActionType.ADD_LIQUIDITY,
             ]
             # We hard cap the number of open positions to keep track of
-            if len(self.open_positions) < self.max_open_positions:
+            if len(pool_open_positions) < self.max_open_positions:
                 all_available_actions.extend(
                     [
                         HyperdriveActionType.OPEN_LONG,
@@ -175,10 +184,11 @@ class RandomHold(Random):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for closing a Hyperdrive short.
         """
+        pool_open_positions = self.open_positions[interface.hyperdrive_address]
         # We scan open positions and select a long that's ready to be closed
         longs_ready_to_close: list[RandomHold._Position] = [
             position
-            for position in self.open_positions
+            for position in pool_open_positions
             if position.ready_to_close and position.action_type == HyperdriveActionType.OPEN_LONG
         ]
         # Sanity check, we should have at least one, otherwise close long wouldn't be an available action
@@ -213,10 +223,11 @@ class RandomHold(Random):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for closing a Hyperdrive short.
         """
+        pool_open_positions = self.open_positions[interface.hyperdrive_address]
         # We scan open positions and select a short that's ready to be closed
         shorts_ready_to_close: list[RandomHold._Position] = [
             position
-            for position in self.open_positions
+            for position in pool_open_positions
             if position.ready_to_close and position.action_type == HyperdriveActionType.OPEN_SHORT
         ]
         # Sanity check, we should have at least one, otherwise close short wouldn't be an available action
@@ -278,7 +289,7 @@ class RandomHold(Random):
             bond_amount = hyperdrive_event.bond_amount
             assert bond_amount > 0
 
-            self.open_positions.append(
+            self.open_positions[interface.hyperdrive_address].append(
                 RandomHold._Position(
                     min_close_time=close_time,
                     action_type=result_action_type,
@@ -291,7 +302,9 @@ class RandomHold(Random):
             HyperdriveActionType.CLOSE_LONG,
             HyperdriveActionType.CLOSE_SHORT,
         ):
-            position_submitted = [position for position in self.open_positions if position.txn_sent]
+            position_submitted = [
+                position for position in self.open_positions[interface.hyperdrive_address] if position.txn_sent
+            ]
             # If a close action is submitted, sanity check that we book kept the close position
             assert len(position_submitted) == 1
             # Reset txn flag, and retry at a later time
@@ -303,4 +316,6 @@ class RandomHold(Random):
         # All other trades don't need to add to bookkeeping
 
         # We now remove any bookkept positions where a transaction was sent.
-        self.open_positions = [position for position in self.open_positions if not position.txn_sent]
+        self.open_positions[interface.hyperdrive_address] = [
+            position for position in self.open_positions[interface.hyperdrive_address] if not position.txn_sent
+        ]

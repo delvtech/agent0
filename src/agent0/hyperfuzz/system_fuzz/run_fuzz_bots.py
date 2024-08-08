@@ -264,7 +264,7 @@ def run_fuzz_bots(
                 slippage_tolerance=slippage_tolerance,
                 trade_chance=FixedPoint("0.8"),
                 randomly_ignore_slippage_tolerance=True,
-                max_open_positions=2_000,
+                max_open_positions_per_pool=1_000,
             ),
         )
         # We're assuming we can fund the agent here
