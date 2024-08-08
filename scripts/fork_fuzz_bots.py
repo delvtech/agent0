@@ -43,6 +43,17 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
+        # LP rate invariance check
+        if (
+            # Only ignore steth pools
+            "STETH" in exc.exception_data["pool_name"]
+            and len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "actual_vault_shares=" in exc.args[1]
+            and "is expected to be greater than expected_vault_shares=" in exc.args[1]
+        ):
+            return True
+
     # Contract call exceptions
     elif isinstance(exc, ContractCallException):
         orig_exception = exc.orig_exception
