@@ -96,7 +96,7 @@ class Random(HyperdriveBasePolicy):
     def get_available_actions(
         self,
         wallet: HyperdriveWallet,
-        pool_state: PoolState,
+        interface: HyperdriveReadInterface,
     ) -> list[HyperdriveActionType]:
         """Get all available actions.
 
@@ -104,14 +104,15 @@ class Random(HyperdriveBasePolicy):
         ---------
         wallet: HyperdriveWallet
             The agent's wallet.
-        pool_state: PoolState
-            The current state of the pool, which includes block details, pool config, and pool info.
+        interface: HyperdriveReadInterface
+            The interface to the Hyperdrive contract.
 
         Returns
         -------
         list[HyperdriveActionType]
             A list containing all of the available actions.
         """
+        pool_state = interface.current_pool_state
         # prevent accidental override
         # compile a list of all actions
         if wallet.balance.amount <= pool_state.pool_config.minimum_transaction_amount:
@@ -489,7 +490,7 @@ class Random(HyperdriveBasePolicy):
             return [], False
 
         # user can always open a trade, and can close a trade if one is open
-        available_actions = self.get_available_actions(wallet, interface.current_pool_state)
+        available_actions = self.get_available_actions(wallet, interface)
         if not available_actions:  # it's possible that no actions are available at this time
             return [], False
 
