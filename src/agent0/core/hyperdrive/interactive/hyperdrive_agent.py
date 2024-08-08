@@ -226,6 +226,7 @@ class HyperdriveAgent:
             the token contract. Defaults to an empty mapping.
         """
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-branches
 
         if whale_accounts is None:
             whale_accounts = {}
