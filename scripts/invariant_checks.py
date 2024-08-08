@@ -55,6 +55,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         A sequence containing the uri to the database server.
     """
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
 
     parsed_args = parse_arguments(argv)
 
