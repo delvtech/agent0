@@ -55,6 +55,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         A sequence containing the uri to the database server.
     """
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
 
     parsed_args = parse_arguments(argv)
 
@@ -82,6 +83,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         chain = Chain(parsed_args.rpc_uri)
         registry_address = parsed_args.registry_addr
+
+    if parsed_args.prev_checkpoint_ignore_pools != "":
+        # Split on comma
+        prev_checkpoint_ignore_pools = parsed_args.prev_checkpoint_ignore_pools.split(",")
+    else:
+        prev_checkpoint_ignore_pools = None
 
     rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
@@ -138,6 +145,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     rollbar_log_filter_func=invariance_ignore_func,
                     pool_name=hyperdrive_obj.name,
                     log_anvil_state_dump=chain.config.log_anvil_state_dump,
+                    prev_checkpoint_ignore_pools=prev_checkpoint_ignore_pools,
                 )
                 for hyperdrive_obj in deployed_pools
             ]
@@ -158,6 +166,7 @@ class Args(NamedTuple):
     registry_addr: str
     rpc_uri: str
     sepolia: bool
+    prev_checkpoint_ignore_pools: str
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -179,6 +188,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
         sepolia=namespace.sepolia,
+        prev_checkpoint_ignore_pools=namespace.prev_checkpoint_ignore_pools,
     )
 
 
@@ -230,6 +240,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=False,
         action="store_true",
         help="Running on Sepolia Testnet. If True, will ignore some known errors.",
+    )
+
+    parser.add_argument(
+        "--prev-checkpoint-ignore-pools",
+        type=str,
+        default="",
+        help="Comma separated list of pools to ignore for previous checkpoint exists check.",
     )
 
     # Use system arguments if none were passed
