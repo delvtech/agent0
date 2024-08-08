@@ -226,6 +226,7 @@ class HyperdriveAgent:
             the token contract. Defaults to an empty mapping.
         """
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-branches
 
         if whale_accounts is None:
             whale_accounts = {}
@@ -255,6 +256,10 @@ class HyperdriveAgent:
             if base_token_contract.address in whale_accounts:
                 # Impersonate + transfer to agent here
                 whale_account_addr = whale_accounts[base_token_contract.address]
+
+                # Ensure the whale account used here isn't the hyperdrive pool itself
+                if whale_account_addr == pool.interface.hyperdrive_address:
+                    raise ValueError(f"Cannot use the hyperdrive pool itself as the whale for {pool.name}.")
 
                 # Ensure whale has enough base to transfer
                 whale_balance = base_token_contract.functions.balanceOf(whale_account_addr).call()

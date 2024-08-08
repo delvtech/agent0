@@ -24,13 +24,7 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_m
 # Note that if a token is missing in this mapping, we will try to
 # call `mint` on the trading token to fund.
 SEPOLIA_WHALE_ADDRESSES = {
-    # We ignore DAI since the underlying base token is mintable
-    # EZETH
-    "0xDD0D63E304F3D9d9E54d8945bE95011867c80E4f": "0x54A93937EE00838d659795b9bbbe904a00DdF278",
-    # RETH
-    "0x4713c86d0e467064A4CD2a974b7fDA79F7efc338": "0x8DFc7c74331162FE2FCc2Ee83173d806E4Ca2CE8",
-    # STETH
-    "0x7c485f458aD1F32FF66BC45306fd32974C963c32": "0xb59b98209e82Fc0549Bb2572809B7CD10289Bb91",
+    # Note all base tokens are mintable up to 500, so we don't need whales here
 }
 # TODO set the static block we fork at, in case whales change
 
@@ -46,6 +40,19 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
             and "lp_rate=" in exc.args[1]
             and "is expected to be >= vault_rate=" in exc.args[1]
+        ):
+            return True
+
+        # There's a known issue with the underlying steth pool on sepolia,
+        # due to the deployed mock steth. Hence, we ignore the LP rate invariance check
+        # for sepolia when fuzzing.
+        if (
+            # Only ignore steth pools
+            "STETH" in exc.exception_data["pool_name"]
+            and len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "actual_vault_shares=" in exc.args[1]
+            and "is expected to be greater than expected_vault_shares=" in exc.args[1]
         ):
             return True
 
@@ -189,7 +196,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                 random_advance_time=False,
                 random_variable_rate=False,
                 lp_share_price_test=False,
-                base_budget_per_bot=FixedPoint(1000),
+                # TODO all base tokens are mintable up to 500 base
+                # If we want more, we need to put minting in a loop.
+                base_budget_per_bot=FixedPoint(500),
                 whale_accounts=SEPOLIA_WHALE_ADDRESSES,
             )
         except Exception as e:  # pylint: disable=broad-except
