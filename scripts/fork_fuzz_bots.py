@@ -43,7 +43,9 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
-        # LP rate invariance check
+        # There's a known issue with the underlying steth pool on sepolia,
+        # due to the deployed mock steth. Hence, we ignore the LP rate invariance check
+        # for sepolia when fuzzing.
         if (
             # Only ignore steth pools
             "STETH" in exc.exception_data["pool_name"]
