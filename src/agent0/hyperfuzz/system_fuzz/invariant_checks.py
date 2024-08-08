@@ -84,6 +84,7 @@ def run_invariant_checks(
     # TODO cleanup
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-branches
 
     logging.info("Running invariant checks on pool %s", pool_name)
 
