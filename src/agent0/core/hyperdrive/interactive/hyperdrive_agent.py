@@ -256,6 +256,10 @@ class HyperdriveAgent:
                 # Impersonate + transfer to agent here
                 whale_account_addr = whale_accounts[base_token_contract.address]
 
+                # Ensure the whale account used here isn't the hyperdrive pool itself
+                if whale_account_addr == pool.interface.hyperdrive_address:
+                    raise ValueError(f"Cannot use the hyperdrive pool itself as the whale for {pool.name}.")
+
                 # Ensure whale has enough base to transfer
                 whale_balance = base_token_contract.functions.balanceOf(whale_account_addr).call()
                 if whale_balance < base.scaled_value:
