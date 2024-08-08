@@ -113,7 +113,7 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
     assert CloseLong not in trade_types
     assert CloseShort not in trade_types
 
-    # Advance time to be before min_hold_time
+    # Advance time to ensure a new checkpoint has been made
     fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=True)
 
     # Open 10 more trades on the other pool
@@ -126,12 +126,12 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
     assert CloseLong not in trade_types
     assert CloseShort not in trade_types
 
-    # Advance time to be after min_hold_time
-    fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=True)
+    # Advance time to be after min_hold_time on both pools
+    fast_chain_fixture.advance_time(60 * 60 * 24 * 7 * 2, create_checkpoints=False)
 
     # Execute random trades on one pool, ensuring at least 1 close trade goes through
     trade_events = []
-    for _ in range(10):
+    for _ in range(20):
         trade_events.extend(random_hold_agent.execute_policy_action(pool1))
     # We ensure close trades went through
     # TODO there's a chance the bot will randomly not return a close trade
@@ -142,7 +142,7 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
 
     # Execute random trades on the other pool, ensuring at least 1 close trade goes through
     trade_events = []
-    for _ in range(10):
+    for _ in range(20):
         trade_events.extend(random_hold_agent.execute_policy_action(pool2))
     # We ensure close trades went through
     # TODO there's a chance the bot will randomly not return a close trade
