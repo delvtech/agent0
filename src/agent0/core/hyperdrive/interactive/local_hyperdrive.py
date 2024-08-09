@@ -756,6 +756,8 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Set internal state block number to 0 to enusre it updates
         self.interface.last_state_block_number = BlockNumber(0)
+        # Clear the read interface cache
+        self.interface._read_interface = None
 
     def _sync_events(self) -> None:
         # Making sure this function isn't called in local_hyperdrive

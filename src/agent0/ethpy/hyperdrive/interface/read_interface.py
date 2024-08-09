@@ -114,11 +114,17 @@ class HyperdriveReadInterface:
     """Read-only end-point API for interfacing with a deployed Hyperdrive pool."""
 
     class HyperdriveKind(Enum):
-        """Hyperdrive contract kind."""
+        """Hyperdrive contract kind.
 
-        ERC4626 = "ERC4626"
-        STETH = "STETH"
-        MORPHO = "MORPHO"
+        NOTE the values of these enums match the output of the
+        `kind()` function from the hyperdrive contract.
+        """
+
+        ERC4626 = "ERC4626Hyperdrive"
+        STETH = "StETHHyperdrive"
+        MORPHO = "MorphoBlueHyperdrive"
+        EZETH = "EzETHHyperdrive"
+        RETH = "RETHHyperdrive"
 
     def __init__(
         self,
@@ -202,15 +208,20 @@ class HyperdriveReadInterface:
         self.morpho_contract = None
         self.morpho_market_id = None
 
-        hyperdrive_kind = self.hyperdrive_contract.functions.kind().call()
-        if hyperdrive_kind == "StETHHyperdrive":
-            self.hyperdrive_kind = self.HyperdriveKind.STETH
+        # Set hyperdrive kind variable
+        hyperdrive_kind_str = self.hyperdrive_contract.functions.kind().call()
+        try:
+            self.hyperdrive_kind = self.HyperdriveKind(hyperdrive_kind_str)
+        except ValueError:
+            logging.warning("Unknown hyperdrive kind %s, defaulting to `ERC4626`", hyperdrive_kind_str)
+            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
+
+        if self.hyperdrive_kind == self.HyperdriveKind.STETH:
             # Redefine the vault shares token contract as the mock lido contract
             self.vault_shares_token_contract = MockLidoContract.factory(w3=self.web3)(
                 address=web3.to_checksum_address(vault_shares_token_address)
             )
-        elif hyperdrive_kind == "MorphoBlueHyperdrive":
-            self.hyperdrive_kind = self.HyperdriveKind.MORPHO
+        elif self.hyperdrive_kind == self.HyperdriveKind.MORPHO:
             # MorphoBlue doesn't have a vault shares token
             self.vault_shares_token_contract = None
             # We access the vault shares token via the specific instance, so we reinitialize
@@ -252,11 +263,6 @@ class HyperdriveReadInterface:
             self.txn_signature = bytes(0)
 
         else:
-            # We default to erc4626, but print a warning if we don't recognize the kind
-            if hyperdrive_kind != "ERC4626Hyperdrive":
-                logging.warning("Unknown hyperdrive kind %s, defaulting to `ERC4626`", hyperdrive_kind)
-
-            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
             # TODO Although the underlying function might not be a MockERC4626Contract,
             # the pypechain contract factory happily accepts any address and exposes
             # all functions from that contract. The code will only break if we try to
