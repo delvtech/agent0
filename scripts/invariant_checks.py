@@ -121,6 +121,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             time.sleep(3)
             continue
 
+        # We have an option to run in 2 modes:
+        # 1. When `check_time` <= 0, we check every block, including any blocks we may have missed.
+        # 2. When `check_time` > 0, we don't check every block, but instead check every `check_time` seconds.
+        if parsed_args.check_time > 0:
+            # We don't iterate through all skipped blocks, but instead only check a single block
+            batch_check_start_block = batch_check_end_block
+
         # Look at the number of blocks we need to iterate through
         # If it's past the limit, log an error and catch up by
         # skipping to the latest block
@@ -157,6 +164,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         batch_check_start_block = batch_check_end_block + 1
 
+        if parsed_args.check_time > 0:
+            # If set, we sleep for check_time amount.
+            time.sleep(parsed_args.check_time)
+
 
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
@@ -167,6 +178,7 @@ class Args(NamedTuple):
     rpc_uri: str
     sepolia: bool
     prev_checkpoint_ignore_pools: str
+    check_time: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -189,6 +201,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         rpc_uri=namespace.rpc_uri,
         sepolia=namespace.sepolia,
         prev_checkpoint_ignore_pools=namespace.prev_checkpoint_ignore_pools,
+        check_time=namespace.check_time,
     )
 
 
@@ -247,6 +260,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=str,
         default="",
         help="Comma separated list of pools to ignore for previous checkpoint exists check.",
+    )
+
+    parser.add_argument(
+        "--check-time",
+        type=int,
+        default=-1,
+        help="Time in seconds to wait between invariance checks. Defaults to -1, which is to check every block.",
     )
 
     # Use system arguments if none were passed
