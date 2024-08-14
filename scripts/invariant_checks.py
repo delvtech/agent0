@@ -56,6 +56,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     """
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
 
     parsed_args = parse_arguments(argv)
 
