@@ -28,7 +28,7 @@ dependencies = [
     "dill",
     "docker",
     "eth-abi",
-    "eth-typing",
+    "eth-typing==4.4.0",
     "eth-account",
     "fixedpointmath",
     "flask",
