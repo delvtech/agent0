@@ -28,7 +28,7 @@ dependencies = [
     "dill",
     "docker",
     "eth-abi",
-    "eth-typing==4.4.0",
+    "eth-typing",
     "eth-account",
     "fixedpointmath",
     "flask",
@@ -45,17 +45,14 @@ dependencies = [
     "psycopg[binary]",
     "pytest",
     "python-dotenv",
-    # "requests",
-    # Docker-py breaks with latest requests:
-    # https://github.com/docker/docker-py/issues/3256
-    "requests==2.31.0",
+    "requests",
     "rollbar",
     "setuptools",
     "sqlalchemy",
     "sqlalchemy-utils",
     "streamlit",
     "tqdm",
-    "web3",
+    "web3>=6.20.2",
 ]
 
 
