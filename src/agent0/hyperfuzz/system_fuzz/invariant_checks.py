@@ -34,7 +34,6 @@ def run_invariant_checks(
     lp_share_price_test: bool | None = None,
     crash_report_additional_info: dict[str, Any] | None = None,
     log_anvil_state_dump: bool = False,
-    prev_checkpoint_ignore_pools: list[str] | None = None,
 ) -> list[FuzzAssertionException]:
     """Run the invariant checks.
 
@@ -73,8 +72,6 @@ def run_invariant_checks(
         Additional information to include in the crash report.
     log_anvil_state_dump: bool
         If True, log anvil state dump on crash.
-    prev_checkpoint_ignore_pools: list[str] | None
-        A list of pool names to ignore for prev checkpoint exists check.
 
     Returns
     -------
@@ -118,15 +115,12 @@ def run_invariant_checks(
             _check_solvency(pool_state),
             # Critical
             _check_present_value_greater_than_idle_shares(interface, pool_state),
+            # Critical
+            _check_previous_checkpoint_exists(interface, pool_state),
             # TODO
             # If at any point, we can open a long to make share price to 1
             # Get spot price after long
         ]
-
-        # Allow for ignoring pools via cli argument
-        if prev_checkpoint_ignore_pools is None or pool_name not in prev_checkpoint_ignore_pools:
-            # Critical
-            results.append(_check_previous_checkpoint_exists(interface, pool_state))
 
     else:
         if lp_share_price_test:
@@ -141,11 +135,8 @@ def run_invariant_checks(
                 _check_minimum_share_reserves(pool_state),
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
+                _check_previous_checkpoint_exists(interface, pool_state),
             ]
-            # Allow for ignoring pools via cli argument
-            if prev_checkpoint_ignore_pools is None or pool_name not in prev_checkpoint_ignore_pools:
-                # Critical
-                results.append(_check_previous_checkpoint_exists(interface, pool_state))
 
     exception_message_base = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data_template: dict[str, Any] = {}
