@@ -111,6 +111,7 @@ def calc_single_closeout(
     amount = FixedPoint(f"{position['token_balance']:f}")
     maturity = int(position["maturity_time"]) if position["token_type"] in ["LONG", "SHORT"] else 0
     fp_out_value = FixedPoint("nan")
+    vault_share_price = hyperdrive_state.pool_info.vault_share_price
     if position["token_type"] == "LONG":
         try:
             # Suppress any errors coming from rust here, we already log it as info
@@ -122,6 +123,13 @@ def calc_single_closeout(
                 "Chainsync: Exception caught in calculating close long: %s\nUsing an approximation.", exception
             )
             fp_out_value = interface.calc_market_value_long(amount, maturity, hyperdrive_state)
+
+        # fp_out_value is in units of shares, convert to base (or keep as shares depending
+        # on which pool we're interacting with.)
+        # When base is eth, we are using the shares as the "base" token
+        # Otherwise, we need to convert to base
+        if not interface.base_is_eth:
+            fp_out_value *= vault_share_price
 
     elif position["token_type"] == "SHORT":
         # Get the open share price from the checkpoint lookup
@@ -178,6 +186,13 @@ def calc_single_closeout(
                 maturity,
                 hyperdrive_state,
             )
+
+        # fp_out_value is in units of shares, convert to base (or keep as shares depending
+        # on which pool we're interacting with.)
+        # When base is eth, we are using the shares as the "base" token
+        # Otherwise, we need to convert to base
+        if not interface.base_is_eth:
+            fp_out_value *= vault_share_price
 
     # For PNL, we assume all withdrawal shares are redeemable
     # even if there are no withdrawal shares available to withdraw
