@@ -124,7 +124,7 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     # Connect to the local chain using the remote hyperdrive interface
     # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
     # we use a separate chain port here
-    remote_chain = Chain(fast_chain_fixture.rpc_uri, Chain.Config(db_port=40000))
+    remote_chain = Chain(fast_chain_fixture.rpc_uri, Chain.Config(db_port=40000), gas_limit=int(1e6))
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_address)
 
     # Generate trading agents from the interactive object
@@ -259,7 +259,7 @@ def test_no_policy_call(fast_chain_fixture: LocalChain):
     # Connect to the local chain using the remote hyperdrive interface
     # To avoid a port conflict with the existing db container in `fast_chain_fixture`,
     # we use a separate chain port here
-    remote_chain = Chain(fast_chain_fixture.rpc_uri, Chain.Config(db_port=40000))
+    remote_chain = Chain(fast_chain_fixture.rpc_uri, Chain.Config(db_port=40000, gas_limit=int(1e6)))
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
 
     # Create agent without policy passed in
@@ -291,6 +291,7 @@ def test_no_approval(fast_chain_fixture: LocalChain):
         fast_chain_fixture.rpc_uri,
         Chain.Config(
             db_port=40000,
+            gas_limit=int(1e6),
         ),
     )
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)
@@ -336,7 +337,7 @@ def test_out_of_gas(fast_chain_fixture: LocalChain):
         fast_chain_fixture.rpc_uri,
         Chain.Config(
             db_port=40000,
-            gas_limit=100000,
+            gas_limit=100_000,
         ),
     )
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)

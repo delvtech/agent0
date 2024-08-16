@@ -57,6 +57,7 @@ def launch_chain(port_base) -> LocalChain:
         db_port=port_base + 1,
         # Always preview before trade in tests
         preview_before_trade=True,
+        gas_limit=int(1e6),
     )
     return LocalChain(local_chain_config)
 
