@@ -366,13 +366,27 @@ def check_for_long_proceeds_less_than_fees(
 
     assert trade_result.trade_object is not None
     trade_type = trade_result.trade_object.market_action.action_type
+    trade_amount = trade_result.trade_object.market_action.trade_amount
+    maturity_time = trade_result.trade_object.market_action.maturity_time
 
     is_long_proceeds_less_than_fees = False
     add_arg = None
 
     if trade_type == HyperdriveActionType.CLOSE_LONG:
-        # TODO
-        pass
+        # Type narrowing, we expect maturity time to be set on close longs.
+        assert maturity_time is not None
+        # Try calling the function in rust for this error
+        try:
+            _ = interface.calc_close_long(bond_amount=trade_amount, maturity_time=maturity_time)
+        except ValueError as e:
+            # Look for specific error
+            if len(e.args) == 1 and "Closing the long results in fees exceeding the long proceeds." in e.args[0]:
+                is_long_proceeds_less_than_fees = True
+                add_arg = e.args[0]
+            # Otherwise, we ignore and move on
+        except Exception:  # pylint: disable=broad-except
+            # Never crash in crash reporting
+            pass
 
     # Prepend balance error argument to exception args
     if is_long_proceeds_less_than_fees:
