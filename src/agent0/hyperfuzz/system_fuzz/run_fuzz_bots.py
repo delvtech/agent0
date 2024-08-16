@@ -287,54 +287,56 @@ def run_fuzz_bots(
         iteration += 1
         # Execute the agent policies
         trades = []
-        try:
-            if run_async:
-                # There are race conditions throughout that need to be fixed here
-                raise NotImplementedError("Running async not implemented")
-            trades = [agent.execute_policy_action(pool=pool) for agent in agents for pool in hyperdrive_pools]
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            if raise_error_on_crash:
-                if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
-                    raise exc
-            else:
-                logging.error("Logged %s, continuing", repr(exc))
-            # Otherwise, we ignore crashes, we want the bot to keep trading
-            # These errors will get logged regardless
+        if run_async:
+            # There are race conditions throughout that need to be fixed here
+            raise NotImplementedError("Running async not implemented")
+        for pool in hyperdrive_pools:
+            for agent in agents:
+                # Execute trades
+                try:
+                    trades.append(agent.execute_policy_action(pool=pool))
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    if raise_error_on_crash:
+                        if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                            raise exc
+                    else:
+                        logging.error("Logged %s, continuing", repr(exc))
+                    # Otherwise, we ignore crashes, we want the bot to keep trading
+                    # These errors will get logged regardless
+
+                # Check invariance after every trade
+                if check_invariance:
+                    latest_block = pool.interface.get_block("latest")
+                    latest_block_number = latest_block.get("number", None)
+                    if latest_block_number is None:
+                        raise AssertionError("Block has no number.")
+                    # pylint: disable=protected-access
+                    fuzz_exceptions = run_invariant_checks(
+                        check_block_data=latest_block,
+                        interface=pool.interface,
+                        simulation_mode=True,
+                        log_to_rollbar=log_to_rollbar,
+                        rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
+                        rollbar_log_filter_func=chain.config.rollbar_log_filter_func,
+                        lp_share_price_test=lp_share_price_test,
+                        crash_report_additional_info=pool._crash_report_additional_info,
+                        log_anvil_state_dump=chain.config.log_anvil_state_dump,
+                        pool_name=pool.name,
+                    )
+                    if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
+                        # If we have an ignore function, we filter exceptions
+                        if ignore_raise_error_func is not None:
+                            fuzz_exceptions = [e for e in fuzz_exceptions if not ignore_raise_error_func(e)]
+                        # Do nothing if no exceptions
+                        # If single failure, we raise it by itself
+                        if len(fuzz_exceptions) == 1:
+                            raise fuzz_exceptions[0]
+                        if len(fuzz_exceptions) > 1:
+                            # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
+                            raise FuzzAssertionException(*fuzz_exceptions)
 
         # Logs trades
         logging.debug([[trade.__name__ for trade in agent_trade] for agent_trade in trades])
-
-        # Run invariance checks if flag is set
-        if check_invariance:
-            for hyperdrive_pool in hyperdrive_pools:
-                latest_block = hyperdrive_pool.interface.get_block("latest")
-                latest_block_number = latest_block.get("number", None)
-                if latest_block_number is None:
-                    raise AssertionError("Block has no number.")
-                # pylint: disable=protected-access
-                fuzz_exceptions = run_invariant_checks(
-                    check_block_data=latest_block,
-                    interface=hyperdrive_pool.interface,
-                    simulation_mode=True,
-                    log_to_rollbar=log_to_rollbar,
-                    rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
-                    rollbar_log_filter_func=chain.config.rollbar_log_filter_func,
-                    lp_share_price_test=lp_share_price_test,
-                    crash_report_additional_info=hyperdrive_pool._crash_report_additional_info,
-                    log_anvil_state_dump=chain.config.log_anvil_state_dump,
-                    pool_name=hyperdrive_pool.name,
-                )
-                if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
-                    # If we have an ignore function, we filter exceptions
-                    if ignore_raise_error_func is not None:
-                        fuzz_exceptions = [e for e in fuzz_exceptions if not ignore_raise_error_func(e)]
-                    # Do nothing if no exceptions
-                    # If single failure, we raise it by itself
-                    if len(fuzz_exceptions) == 1:
-                        raise fuzz_exceptions[0]
-                    if len(fuzz_exceptions) > 1:
-                        # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
-                        raise FuzzAssertionException(*fuzz_exceptions)
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
