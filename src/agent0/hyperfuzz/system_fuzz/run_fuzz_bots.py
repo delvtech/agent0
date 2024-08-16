@@ -299,6 +299,7 @@ def run_fuzz_bots(
                     pending_pool_state = pool.interface.get_hyperdrive_state("pending")
 
                 # Execute trades
+                agent_trade = []
                 try:
                     agent_trade = agent.execute_policy_action(pool=pool)
                 except Exception as exc:  # pylint: disable=broad-exception-caught
