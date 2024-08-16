@@ -48,6 +48,8 @@ class TradeResult:
     """If the trade failed due to insufficient approval."""
     is_min_txn_amount: bool = False
     """If the trade failed due to minimum transaction amount."""
+    is_long_proceeds_less_than_fees: bool = False
+    """If the trade failed due long proceeds less than fees."""
 
     # Optional fields for crash reporting
     # These fields are typically set as human readable versions

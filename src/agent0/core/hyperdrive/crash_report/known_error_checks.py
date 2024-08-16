@@ -17,6 +17,29 @@ if TYPE_CHECKING:
     from agent0.core.hyperdrive import TradeResult
 
 
+def check_for_known_errors(trade_result: TradeResult, interface: HyperdriveReadInterface) -> TradeResult:
+    """Runs known error checks and adds information to trade result.
+
+    Arguments
+    ---------
+    trade_result: TradeResult
+        The trade result object from trading.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface to compute expected balances for trades.
+
+    Returns
+    -------
+    TradeResult
+        A modified trade_result that has a custom exception argument message prepended
+    """
+    trade_result = check_for_invalid_balance(trade_result, interface)
+    trade_result = check_for_insufficient_allowance(trade_result, interface)
+    trade_result = check_for_slippage(trade_result)
+    trade_result = check_for_min_txn_amount(trade_result)
+    trade_result = check_for_long_proceeds_less_than_fees(trade_result, interface)
+    return trade_result
+
+
 # pylint: disable=too-many-statements
 def check_for_invalid_balance(trade_result: TradeResult, interface: HyperdriveReadInterface) -> TradeResult:
     """Detects invalid balance errors in trade_result and adds additional information to the
@@ -319,5 +342,43 @@ def check_for_min_txn_amount(trade_result: TradeResult) -> TradeResult:
         assert trade_result.exception is not None
         trade_result.exception.args = (add_arg,) + trade_result.exception.args
         trade_result.is_min_txn_amount = True
+
+    return trade_result
+
+
+def check_for_long_proceeds_less_than_fees(
+    trade_result: TradeResult, interface: HyperdriveReadInterface
+) -> TradeResult:
+    """Detects long proceeds less than fees errors when closing a long.
+
+    Arguments
+    ---------
+    trade_result: TradeResult
+        The trade result object from trading.
+    interface: HyperdriveReadInterface
+        The hyperdrive read interface to compute expected balances for trades.
+
+    Returns
+    -------
+    TradeResult
+        A modified trade_result that has a custom exception argument message prepended
+    """
+
+    assert trade_result.trade_object is not None
+    trade_type = trade_result.trade_object.market_action.action_type
+
+    is_long_proceeds_less_than_fees = False
+    add_arg = None
+
+    if trade_type == HyperdriveActionType.CLOSE_LONG:
+        # TODO
+        pass
+
+    # Prepend balance error argument to exception args
+    if is_long_proceeds_less_than_fees:
+        assert trade_result.exception is not None
+        assert add_arg is not None
+        trade_result.exception.args = (add_arg,) + trade_result.exception.args
+        trade_result.is_long_proceeds_less_than_fees = True
 
     return trade_result

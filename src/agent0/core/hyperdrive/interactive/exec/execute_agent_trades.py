@@ -19,13 +19,7 @@ from agent0.core.hyperdrive.agent import (
     redeem_withdraw_shares_trade,
     remove_liquidity_trade,
 )
-from agent0.core.hyperdrive.crash_report import (
-    build_crash_trade_result,
-    check_for_insufficient_allowance,
-    check_for_invalid_balance,
-    check_for_min_txn_amount,
-    check_for_slippage,
-)
+from agent0.core.hyperdrive.crash_report import build_crash_trade_result, check_for_known_errors
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
@@ -338,10 +332,7 @@ def _handle_contract_call_to_trade(
             # We check for common errors and allow for custom handling of various errors.
             # These functions adjust the trade_result.exception object to add
             # additional arguments describing these detected errors for crash reporting.
-            trade_result = check_for_invalid_balance(trade_result, interface)
-            trade_result = check_for_insufficient_allowance(trade_result, interface)
-            trade_result = check_for_slippage(trade_result)
-            trade_result = check_for_min_txn_amount(trade_result)
+            trade_result = check_for_known_errors(trade_result, interface)
         else:
             if not isinstance(result, BaseHyperdriveEvent):
                 raise TypeError("The trade result is not the correct type.")
