@@ -1700,3 +1700,39 @@ def test_anvil_dump_state(capsys):
         assert "anvil_dump_state" in crash_report_dict
         assert crash_report_dict["anvil_dump_state"] is not None
         assert len(crash_report_dict["anvil_dump_state"]) > 0
+
+
+@pytest.mark.anvil
+def test_close_long_too_much_fees(fast_chain_fixture: LocalChain):
+    """Test to catch custom error when fees > close long proceeds."""
+    pool = LocalHyperdrive(
+        fast_chain_fixture,
+        LocalHyperdrive.Config(
+            # Large curve fee
+            curve_fee=FixedPoint("0.30"),
+            initial_fixed_apr=FixedPoint("0.50"),
+            initial_time_stretch_apr=FixedPoint("0.50"),
+            position_duration=60177600,
+        ),
+    )
+    agent = fast_chain_fixture.init_agent(
+        base=FixedPoint(100_000_000_000_000),
+        eth=FixedPoint(10),
+        pool=pool,
+    )
+
+    # Open a long
+    open_long_event = agent.open_long(FixedPoint(3_000))
+
+    # Open a max short
+    _ = agent.open_short(pool.interface.calc_max_short(FixedPoint(100_000_000_000)))
+
+    # Attempt to close the long
+    # We look for the custom rust error
+    try:
+        agent.close_long(maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount)
+        # We expect this to fail
+        assert False, "Expected exception"
+    except ContractCallException as e:
+        assert len(e.args) > 1
+        assert "Closing the long results in fees exceeding the long proceeds." in e.args[0]
