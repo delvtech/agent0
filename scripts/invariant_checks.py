@@ -141,7 +141,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                     run_invariant_checks,
                     check_block_data=check_block_data,
                     interface=hyperdrive_obj.interface,
-                    simulation_mode=False,
                     log_to_rollbar=log_to_rollbar,
                     rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
                     rollbar_log_filter_func=invariance_ignore_func,
