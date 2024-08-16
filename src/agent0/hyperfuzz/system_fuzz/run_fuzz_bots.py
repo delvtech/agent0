@@ -292,9 +292,15 @@ def run_fuzz_bots(
             raise NotImplementedError("Running async not implemented")
         for pool in hyperdrive_pools:
             for agent in agents:
+                # If we're checking invariance, and we're doing the lp share test,
+                # we need to get the pending pool state here before the trades.
+                pending_pool_state = None
+                if check_invariance and lp_share_price_test:
+                    pending_pool_state = pool.interface.get_hyperdrive_state("pending")
+
                 # Execute trades
                 try:
-                    trades.append(agent.execute_policy_action(pool=pool))
+                    agent_trade = agent.execute_policy_action(pool=pool)
                 except Exception as exc:  # pylint: disable=broad-exception-caught
                     if raise_error_on_crash:
                         if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
@@ -304,8 +310,10 @@ def run_fuzz_bots(
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
 
-                # Check invariance after every trade
-                if check_invariance:
+                trades.append(agent_trade)
+
+                # Check invariance after every trade, only if a trade has been made
+                if check_invariance and len(agent_trade) > 0:
                     latest_block = pool.interface.get_block("latest")
                     latest_block_number = latest_block.get("number", None)
                     if latest_block_number is None:
@@ -322,6 +330,7 @@ def run_fuzz_bots(
                         crash_report_additional_info=pool._crash_report_additional_info,
                         log_anvil_state_dump=chain.config.log_anvil_state_dump,
                         pool_name=pool.name,
+                        pending_pool_state=pending_pool_state,
                     )
                     if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
                         # If we have an ignore function, we filter exceptions

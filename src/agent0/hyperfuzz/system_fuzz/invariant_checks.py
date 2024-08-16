@@ -34,6 +34,7 @@ def run_invariant_checks(
     lp_share_price_test: bool | None = None,
     crash_report_additional_info: dict[str, Any] | None = None,
     log_anvil_state_dump: bool = False,
+    pending_pool_state: PoolState | None = None,
 ) -> list[FuzzAssertionException]:
     """Run the invariant checks.
 
@@ -72,6 +73,9 @@ def run_invariant_checks(
         Additional information to include in the crash report.
     log_anvil_state_dump: bool
         If True, log anvil state dump on crash.
+    pending_pool_state: BlockData | None, optional
+        The pool state for the pending block. If None, assumes the block is ticking in the
+        background and will maintain the pending block itself.
 
     Returns
     -------
@@ -102,7 +106,11 @@ def run_invariant_checks(
         results = [
             # Critical if lp share price is down,
             # Warn if lp share price is up
-            _check_lp_share_price(interface, normalize_by_block_time=simulation_mode),
+            _check_lp_share_price(
+                interface,
+                normalize_by_block_time=simulation_mode,
+                pending_pool_state=pending_pool_state,
+            ),
             # Warning
             _check_eth_balances(pool_state),
             # Info
@@ -125,7 +133,11 @@ def run_invariant_checks(
     else:
         if lp_share_price_test:
             results = [
-                _check_lp_share_price(interface, normalize_by_block_time=simulation_mode),
+                _check_lp_share_price(
+                    interface,
+                    normalize_by_block_time=simulation_mode,
+                    pending_pool_state=pending_pool_state,
+                ),
             ]
         else:
             results = [
@@ -402,7 +414,9 @@ def _check_present_value_greater_than_idle_shares(
     return InvariantCheckResults(failed, exception_message, exception_data, log_level)
 
 
-def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block_time: bool) -> InvariantCheckResults:
+def _check_lp_share_price(
+    interface: HyperdriveReadInterface, normalize_by_block_time: bool, pending_pool_state: PoolState | None
+) -> InvariantCheckResults:
     """Returns True if the test (∆ lp_share_price > test_epsilon) fails."""
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
@@ -416,21 +430,26 @@ def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block
     exception_data: dict[str, Any] = {}
     log_level = None
 
-    # TODO we hack in a stateful variable into the interface here, since we need
-    # to check between subsequent calls here.
-    # Initial call, we look to see if the attribute exists
-    pending_pool_state: PoolState | None = getattr(interface, "_lp_share_price_check_state", None)
-    # Always set the new pending state here
-    setattr(interface, "_lp_share_price_check_state", interface.get_hyperdrive_state("pending"))
-
+    # If a pending pool state isn't passed in, we maintain it ourself
     if pending_pool_state is None:
-        # Skip this check on initial call, not a failure
-        return InvariantCheckResults(
-            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
-        )
+        # TODO we hack in a stateful variable into the interface here, since we need
+        # to check between subsequent calls here.
+        # Initial call, we look to see if the attribute exists
+        _pending_pool_state: PoolState | None = getattr(interface, "_lp_share_price_check_state", None)
+        # Always set the new pending state here
+        setattr(interface, "_lp_share_price_check_state", interface.get_hyperdrive_state("pending"))
+
+        if _pending_pool_state is None:
+            # Skip this check on initial call, not a failure
+            return InvariantCheckResults(
+                failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+            )
+    # Otherwise, we use the one passed in.
+    else:
+        _pending_pool_state = pending_pool_state
 
     # This is the block we're checking the lp share price on
-    check_block_number = pending_pool_state.block_number
+    check_block_number = _pending_pool_state.block_number
 
     # There's a chance this check gets called again before the check_block_number has been mined.
     # Hence, we ensure that the check_block_number has been mined before making the check
@@ -448,7 +467,7 @@ def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block
     # Get the pool state after it was mined
     mined_pool_state = interface.get_hyperdrive_state(block_data=interface.get_block(check_block_number))
 
-    pending_lp_share_price = pending_pool_state.pool_info.lp_share_price
+    pending_lp_share_price = _pending_pool_state.pool_info.lp_share_price
     mined_lp_share_price = mined_pool_state.pool_info.lp_share_price
 
     if normalize_by_block_time:
@@ -464,6 +483,8 @@ def _check_lp_share_price(interface: HyperdriveReadInterface, normalize_by_block
         block_time_delta = mined_pool_state.block_time - interface.get_block_timestamp(
             interface.get_block(check_block_number - 1)
         )
+        print(f"{block_time_delta=}")
+
         normalized_time_epsilon = LP_SHARE_PRICE_EPSILON * (block_time_delta / 12)
         test_tolerance = pending_lp_share_price * FixedPoint(str(normalized_time_epsilon))
     else:
