@@ -1728,7 +1728,11 @@ def test_close_long_too_much_fees(fast_chain_fixture: LocalChain):
     _ = agent.open_short(pool.interface.calc_max_short(FixedPoint(100_000_000_000)))
 
     # Attempt to close the long
-    # TODO wrap this in expected error, where we look for the custom rust error.
-    agent.close_long(maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount)
-
-    pass
+    # We look for the custom rust error
+    try:
+        agent.close_long(maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount)
+        # We expect this to fail
+        assert False, "Expected exception"
+    except ContractCallException as e:
+        assert len(e.args) > 1
+        assert "Closing the long results in fees exceeding the long proceeds." in e.args[0]
