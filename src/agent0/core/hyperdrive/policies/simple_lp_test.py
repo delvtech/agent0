@@ -22,6 +22,7 @@ def test_simple_lp_policy():
             db_port=6001,
             # This test requires the non-policy actions to be passed into the policy's post trade stage.
             always_execute_policy_post_action=True,
+            gas_limit=int(1e6),
         )
     )
     # Parameters for pool initialization. If empty, defaults to default values, allows for custom values if needed

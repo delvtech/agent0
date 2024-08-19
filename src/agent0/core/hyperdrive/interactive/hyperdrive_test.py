@@ -337,7 +337,7 @@ def test_out_of_gas(fast_chain_fixture: LocalChain):
         fast_chain_fixture.rpc_uri,
         Chain.Config(
             db_port=40000,
-            gas_limit=100_000,
+            gas_limit=int(1e6),
         ),
     )
     interactive_remote_hyperdrive = Hyperdrive(remote_chain, hyperdrive_addresses)

@@ -237,6 +237,7 @@ class TestSlippageWarning:
                 chain_port=6000,
                 db_port=6001,
                 exception_on_policy_slippage=False,
+                gas_limit=int(1e6),
             )
         )
 
@@ -262,6 +263,7 @@ class TestSlippageWarning:
                 chain_port=6000,
                 db_port=6001,
                 exception_on_policy_slippage=True,
+                gas_limit=int(1e6),
             )
         )
         config = LocalHyperdrive.Config(
@@ -285,6 +287,7 @@ class TestSlippageWarning:
                 chain_port=6000,
                 db_port=6001,
                 exception_on_policy_slippage=True,
+                gas_limit=int(1e6),
             )
         )
         config = LocalHyperdrive.Config(
@@ -311,6 +314,7 @@ class TestSlippageWarning:
                 chain_port=6000,
                 db_port=6001,
                 exception_on_policy_slippage=True,
+                gas_limit=int(1e6),
             )
         )
         config = LocalHyperdrive.Config(
@@ -334,6 +338,7 @@ class TestSlippageWarning:
                 chain_port=6000,
                 db_port=6001,
                 exception_on_policy_slippage=True,
+                gas_limit=int(1e6),
             )
         )
         config = LocalHyperdrive.Config(

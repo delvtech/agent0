@@ -508,7 +508,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
 def test_no_loss_in_precision():
     # We need manual db sync since we need to have multiple
     # trades inserted at the same time.
-    with LocalChain(LocalChain.Config(db_port=6000, chain_port=6001, manual_database_sync=True)) as chain:
+    with LocalChain(
+        LocalChain.Config(db_port=6000, chain_port=6001, manual_database_sync=True, gas_limit=int(1e6))
+    ) as chain:
         # Deploy hyperdrive pool
         hyperdrive = LocalHyperdrive(
             chain,
@@ -1403,8 +1405,12 @@ def test_snapshot_policy_state(chain_fixture: LocalChain):
 @pytest.mark.anvil
 def test_load_rng_on_snapshot():
     """The policy config has rng set to None."""
-    load_rng_chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, load_rng_on_snapshot=True))
-    non_load_rng_chain = LocalChain(config=LocalChain.Config(chain_port=6002, db_port=6003, load_rng_on_snapshot=False))
+    load_rng_chain = LocalChain(
+        config=LocalChain.Config(chain_port=6000, db_port=6001, load_rng_on_snapshot=True, gas_limit=int(1e6))
+    )
+    non_load_rng_chain = LocalChain(
+        config=LocalChain.Config(chain_port=6002, db_port=6003, load_rng_on_snapshot=False, gas_limit=int(1e6))
+    )
 
     agent_policy = PolicyZoo.random.Config()
     agent_policy.rng = None
@@ -1493,8 +1499,12 @@ def test_deploy_nonstandard_timestretch(fast_chain_fixture: LocalChain, time_str
 def test_lazy_calc_pnl():
     """Tests lazy calc pnl values."""
     # Spin up 2 identical chains, pools, and agents, with trades.
-    calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True))
-    lazy_calc_pnl_chain = LocalChain(config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False))
+    calc_pnl_chain = LocalChain(
+        config=LocalChain.Config(chain_port=6000, db_port=6001, calc_pnl=True, gas_limit=int(1e6))
+    )
+    lazy_calc_pnl_chain = LocalChain(
+        config=LocalChain.Config(chain_port=6002, db_port=6003, calc_pnl=False, gas_limit=int(1e6))
+    )
 
     # Since we added support for querying from multiple pools, we need to create multiple pools here
     calc_pnl_pool_1 = LocalHyperdrive(calc_pnl_chain, LocalHyperdrive.Config())
@@ -1599,7 +1609,7 @@ def test_fork():
     """Tests forking a chain."""
 
     # Set up orig chain
-    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, gas_limit=int(1e6)))
     pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
     agent = chain.init_agent(
         base=FixedPoint(10_000),
@@ -1610,7 +1620,7 @@ def test_fork():
 
     fork_chain = LocalChain(
         fork_uri=chain.rpc_uri,
-        config=LocalChain.Config(chain_port=6002, db_port=6003),
+        config=LocalChain.Config(chain_port=6002, db_port=6003, gas_limit=int(1e6)),
     )
     # Set deploy = False since we're attaching to an existing chain
     fork_pool = LocalHyperdrive(
@@ -1634,7 +1644,7 @@ def test_fork_backfill():
     """Tests backfilling data from a forked chain."""
 
     # Set up orig chain
-    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001, gas_limit=int(1e6)))
     pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
     agent = chain.init_agent(
         base=FixedPoint(10_000),
@@ -1647,7 +1657,7 @@ def test_fork_backfill():
 
     fork_chain = LocalChain(
         fork_uri=chain.rpc_uri,
-        config=LocalChain.Config(chain_port=6002, db_port=6003),
+        config=LocalChain.Config(chain_port=6002, db_port=6003, gas_limit=int(1e6)),
     )
     # Set deploy = False since we're attaching to an existing chain
     # We set backfill data start block to backfill all data
@@ -1675,6 +1685,7 @@ def test_anvil_dump_state(capsys):
             chain_port=6000,
             db_port=6001,
             log_anvil_state_dump=True,
+            gas_limit=int(1e6),
         )
     ) as chain:
         pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
