@@ -734,24 +734,44 @@ class LocalChain(Chain):
         IFrame
             A dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
         """
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.headless",
-                "true",
+        streamlit_cli_flags = [
+            "--server.headless",
+            "true",
+            "--server.address",
+            "localhost",
+        ]
+
+        # TODO get the port from streamlit stdout
+        # For now, we explicitly set a default port, which may collide if the port is already used.
+        if self.config.dashboard_port is None:
+            dashboard_port = 7777
+        else:
+            dashboard_port = self.config.dashboard_port
+
+        streamlit_cli_flags.extend(
+            [
                 "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
+                str(dashboard_port),
             ]
         )
+
+        dashboard_run_command = self._get_dashboard_run_command(flags=streamlit_cli_flags)
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            # stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        network_url = f"http://localhost:{self.config.dashboard_port}"
+
+        if self.config.verbose:
+            self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+                dashboard_run_command,
+                env=env,
+            )
+        else:
+            self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+                dashboard_run_command,
+                env=env,
+                # stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+            )
+
+        network_url = f"http://localhost:{dashboard_port}"
 
         dashboard_iframe = IFrame(src=network_url, width=width, height=height)
         time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
