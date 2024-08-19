@@ -273,6 +273,6 @@ if __name__ == "__main__":
         main()
     except Exception as e:  # pylint: disable=broad-except
         log_rollbar_exception(
-            exception=e, log_level=logging.CRITICAL, rollbar_log_prefix="Uncaught Critical Error in Invariant Checks:"
+            exception=e, log_level=logging.ERROR, rollbar_log_prefix="Uncaught Critical Error in Invariant Checks:"
         )
         raise e
