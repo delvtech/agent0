@@ -48,7 +48,7 @@ def build_ticker_for_pool_page(
 
     # Shorten wallet address string
     trade_events["Wallet"] = mapped_addrs["abbr_address"]
-    return trade_events
+    return trade_events.astype(str)
 
 
 def build_ticker_for_wallet_page(
@@ -112,4 +112,4 @@ def build_ticker_for_wallet_page(
     trade_events["Hyperdrive Address"] = abbreviate_address(trade_events["Hyperdrive Address"])
 
     # Sort latest first
-    return trade_events
+    return trade_events.astype(str)
