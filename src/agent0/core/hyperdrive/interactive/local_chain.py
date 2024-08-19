@@ -48,10 +48,10 @@ class LocalChain(Chain):
     class Config(Chain.Config):
         """The configuration for the local chain object."""
 
-        anvil_verbose: bool = False
-        """If True, will print underlying anvil output to stdout. Defaults to suppressing output."""
-        dashboard_port: int = 7777
-        """The URL port for the deployed dashboard."""
+        verbose: bool = False
+        """If True, will print underlying subprocess output to stdout. Defaults to suppressing output."""
+        dashboard_port: int | None = None
+        """The URL port for the deployed dashboard. Defaults to finding an open port."""
         block_time: int | None = None
         """If None, mines per transaction. Otherwise mines every `block_time` seconds."""
         block_timestamp_interval: int | None = 12
@@ -145,7 +145,7 @@ class LocalChain(Chain):
                 anvil_launch_args.extend(["--fork-block-number", str(fork_block_number)])
 
         # This process never stops, so we run this in the background and explicitly clean up later
-        if config.anvil_verbose:
+        if config.verbose:
             self.anvil_process = subprocess.Popen(  # pylint: disable=consider-using-with
                 anvil_launch_args,
                 close_fds=True,
@@ -734,24 +734,44 @@ class LocalChain(Chain):
         IFrame
             A dashboard IFrame that can be shown in a Jupyter notebook with the `display` command.
         """
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.headless",
-                "true",
+        streamlit_cli_flags = [
+            "--server.headless",
+            "true",
+            "--server.address",
+            "localhost",
+        ]
+
+        # TODO get the port from streamlit stdout
+        # For now, we explicitly set a default port, which may collide if the port is already used.
+        if self.config.dashboard_port is None:
+            dashboard_port = 7777
+        else:
+            dashboard_port = self.config.dashboard_port
+
+        streamlit_cli_flags.extend(
+            [
                 "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
+                str(dashboard_port),
             ]
         )
+
+        dashboard_run_command = self._get_dashboard_run_command(flags=streamlit_cli_flags)
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            # stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        network_url = f"http://localhost:{self.config.dashboard_port}"
+
+        if self.config.verbose:
+            self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+                dashboard_run_command,
+                env=env,
+            )
+        else:
+            self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+                dashboard_run_command,
+                env=env,
+                # stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+            )
+
+        network_url = f"http://localhost:{dashboard_port}"
 
         dashboard_iframe = IFrame(src=network_url, width=width, height=height)
         time.sleep(2)  # TODO: This is a hack, need to sleep to let the page load
@@ -806,24 +826,36 @@ class LocalChain(Chain):
             If False, will clean up subprocess in cleanup.
         """
 
-        dashboard_run_command = self._get_dashboard_run_command(
-            flags=[
-                "--server.port",
-                str(self.config.dashboard_port),
-                "--server.address",
-                "localhost",
-            ]
-        )
+        streamlit_cli_flags = [
+            "--server.address",
+            "localhost",
+        ]
+        if self.config.dashboard_port is not None:
+            streamlit_cli_flags.extend(
+                [
+                    "--server.port",
+                    str(self.config.dashboard_port),
+                ]
+            )
+
+        dashboard_run_command = self._get_dashboard_run_command(flags=streamlit_cli_flags)
         env = {key: str(val) for key, val in asdict(self.postgres_config).items()}
 
         assert self.dashboard_subprocess is None
         # Since dashboard is a non-terminating process, we need to manually control its lifecycle
-        self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
-            dashboard_run_command,
-            env=env,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
-        )
+
+        if self.config.verbose:
+            self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+                dashboard_run_command,
+                env=env,
+            )
+        else:
+            self.dashboard_subprocess = subprocess.Popen(  # pylint: disable=consider-using-with
+                dashboard_run_command,
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+            )
         if blocking:
             input("Press any key to kill dashboard server.")
             self.dashboard_subprocess.kill()
