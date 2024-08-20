@@ -245,9 +245,11 @@ def smart_contract_preview_transaction(
     # If block number is set in the preview call, will add to crash report,
     # otherwise will do best attempt at getting the block it crashed at.
     except ContractCustomError as err:
-        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # We decode the error and attach it as an argument to the `ContractCallException`.
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}'"
         raise ContractCallException(
             "Error in preview transaction",
+            decoded_error,
             orig_exception=err,
             contract_call_type=ContractCallType.PREVIEW,
             function_name_or_signature=function_name_or_signature,
@@ -686,12 +688,14 @@ async def async_smart_contract_transact(
     # the rest will default to setting the block number to None, which then crash reporting
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
-        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # We decode the error and attach it as an argument to the `ContractCallException`.
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}'"
         # Race condition here, other transactions may have happened when we get the block number here
         # Hence, this is a best effort guess as to which block the chain was on when this exception was thrown.
         block_number = int(web3.eth.block_number)
         raise ContractCallException(
             "Error in smart_contract_transact",
+            decoded_error,
             orig_exception=err,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
@@ -940,9 +944,11 @@ def smart_contract_transact(
     # the rest will default to setting the block number to None, which then crash reporting
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
-        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # We decode the error and attach it as an argument to the `ContractCallException`.
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}'"
         raise ContractCallException(
             "Error in smart_contract_transact",
+            decoded_error,
             orig_exception=err,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
