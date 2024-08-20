@@ -13,7 +13,18 @@ from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
-from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
+from web3.types import (
+    ABI,
+    ABIFunctionComponents,
+    ABIFunctionParams,
+    BlockData,
+    Nonce,
+    RPCEndpoint,
+    TxData,
+    TxParams,
+    TxReceipt,
+    Wei,
+)
 
 from agent0.utils import retry_call
 
@@ -453,6 +464,33 @@ def build_transaction(
 
     raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
 
+    if txn_options_gas is None:
+        # Type narrowing, we expect all of these fields to exist after building transaction
+        assert "from" in raw_txn
+        assert "to" in raw_txn
+        assert "value" in raw_txn
+        assert "data" in raw_txn
+        # TODO new web3 version gas estimation seems to underestimate gas.
+        # We explicitly do an rpc call to estimate gas here to get an accurate gas estimate.
+        # RPC call to estimate gas
+        result = web3.provider.make_request(
+            method=RPCEndpoint("eth_estimateGas"),
+            params=[
+                {
+                    "from": str(raw_txn["from"]),
+                    "to": str(raw_txn["to"]),
+                    # Convert integer to hex string
+                    "value": HexBytes(raw_txn["value"]).hex(),
+                    "data": str(raw_txn["data"]),
+                }
+            ],
+        )
+        if "result" not in result:
+            raise ValueError(f"Failed to estimate gas via RPC call: {result}")
+        # Hex to int
+        gas = int(result["result"], 0)
+        raw_txn["gas"] = gas
+
     return raw_txn
 
 
@@ -626,6 +664,7 @@ async def async_smart_contract_transact(
                 txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             )
         )
+
         return await _async_send_transaction_and_wait_for_receipt(
             unsent_txn,
             signer,
