@@ -111,7 +111,7 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             return True
 
         # Closing long results in fees exceeding long proceeds
-        if len(exc.args) > 1 and "Closing long results in fees exceeding long proceeds" in exc.args[0]:
+        if len(exc.args) > 1 and "Closing the long results in fees exceeding long proceeds" in exc.args[0]:
             return True
 
         # Status == 0
