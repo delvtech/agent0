@@ -203,12 +203,8 @@ def build_wallet_dashboard(
     )
 
     # Split up into open and closed positions
-    out_dfs["open_positions"] = (
-        current_positions[current_positions["Token Balance"] != 0].reset_index(drop=True).astype(str)
-    ).astype(str)
-    out_dfs["closed_positions"] = (
-        current_positions[current_positions["Token Balance"] == 0].reset_index(drop=True).astype(str)
-    ).astype(str)
+    out_dfs["open_positions"] = current_positions[current_positions["Token Balance"] != 0].reset_index(drop=True)
+    out_dfs["closed_positions"] = current_positions[current_positions["Token Balance"] == 0].reset_index(drop=True)
 
     pnl_over_time = get_total_pnl_over_time(
         session, wallet_address=wallet_addresses, start_block=-max_plot_blocks, coerce_float=True
