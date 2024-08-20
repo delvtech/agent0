@@ -49,19 +49,23 @@ if len(selected) > 0:
 
     # Show all dataframes
     st.write("Total PnL")
-    st.dataframe(data_dfs["total_pnl"], use_container_width=True)
+    st.dataframe(data_dfs["total_pnl"].style.format(precision=18), use_container_width=True)
 
     st.write("Per Pool PnL")
-    st.dataframe(data_dfs["pool_pnl"], use_container_width=True)
+    st.dataframe(data_dfs["pool_pnl"].style.format(precision=18), use_container_width=True)
 
     st.write("Open Positions")
-    st.dataframe(data_dfs["open_positions"], height=300, use_container_width=True, hide_index=True)
+    st.dataframe(
+        data_dfs["open_positions"].style.format(precision=18), height=300, use_container_width=True, hide_index=True
+    )
 
     st.write("Closed Positions")
-    st.dataframe(data_dfs["closed_positions"], height=300, use_container_width=True, hide_index=True)
+    st.dataframe(
+        data_dfs["closed_positions"].style.format(precision=18), height=300, use_container_width=True, hide_index=True
+    )
 
     st.write("Transactions")
-    st.dataframe(data_dfs["display_ticker"], height=500, use_container_width=True)
+    st.dataframe(data_dfs["display_ticker"].style.format(precision=18), height=500, use_container_width=True)
 
     # Plot pnl over time
     main_fig = mpf.figure(style="mike", figsize=(10, 10))

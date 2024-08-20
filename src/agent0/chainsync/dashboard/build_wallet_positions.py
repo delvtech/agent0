@@ -37,6 +37,20 @@ def build_wallet_positions(
     )["name"]
     positions_snapshot["hyperdrive_name"] = hyperdrive_name
 
+    # Mapping for any type conversions.
+    # Omissions mean leave as is
+    type_dict = {
+        "username": "str",
+        "wallet_address": "str",
+        "hyperdrive_name": "str",
+        "hyperdrive_address": "str",
+        "token_id": "str",
+        "token_balance": "float64",
+        "unrealized_value": "float64",
+        "realized_value": "float64",
+        "pnl": "float64",
+    }
+
     rename_dict = {
         "username": "Username",
         "wallet_address": "Wallet Address",
@@ -48,7 +62,7 @@ def build_wallet_positions(
         "realized_value": "Realized Value",
         "pnl": "PnL",
     }
-    positions_snapshot = positions_snapshot[list(rename_dict.keys())].rename(columns=rename_dict)
+    positions_snapshot = positions_snapshot[list(rename_dict.keys())].astype(type_dict).rename(columns=rename_dict)
 
     # Shorten wallet address string
     positions_snapshot["Wallet"] = mapped_addrs["abbr_address"]

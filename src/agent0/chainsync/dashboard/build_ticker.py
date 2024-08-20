@@ -33,6 +33,19 @@ def build_ticker_for_pool_page(
     # Look up block to timestamp
     trade_events = trade_events.merge(block_to_timestamp, how="left", on="block_number")
 
+    # Mapping for any type conversions.
+    # Omissions mean leave as is
+    type_dict = {
+        "block_number": "int",
+        "username": "str",
+        "wallet_address": "str",
+        "event_type": "str",
+        "token_id": "str",
+        "token_delta": "float64",
+        "base_delta": "float64",
+        "vault_share_delta": "float64",
+    }
+
     rename_dict = {
         "timestamp": "Timestamp",
         "block_number": "Block Number",
@@ -44,11 +57,12 @@ def build_ticker_for_pool_page(
         "base_delta": "Base Change",
         "vault_share_delta": "Vault Share Change",
     }
-    trade_events = trade_events[list(rename_dict.keys())].rename(columns=rename_dict)
+
+    trade_events = trade_events[list(rename_dict.keys())].astype(type_dict).rename(columns=rename_dict)
 
     # Shorten wallet address string
     trade_events["Wallet"] = mapped_addrs["abbr_address"]
-    return trade_events.astype(str)
+    return trade_events
 
 
 def build_ticker_for_wallet_page(
@@ -92,6 +106,21 @@ def build_ticker_for_wallet_page(
     # Look up block to timestamp
     trade_events = trade_events.merge(block_to_timestamp, how="left", on="block_number")
 
+    # Mapping for any type conversions.
+    # Omissions mean leave as is
+    type_dict = {
+        "block_number": "int",
+        "hyperdrive_name": "str",
+        "hyperdrive_address": "str",
+        "username": "str",
+        "wallet_address": "str",
+        "event_type": "str",
+        "token_id": "str",
+        "token_delta": "float64",
+        "base_delta": "float64",
+        "vault_share_delta": "float64",
+    }
+
     rename_dict = {
         "timestamp": "Timestamp",
         "block_number": "Block Number",
@@ -105,11 +134,11 @@ def build_ticker_for_wallet_page(
         "base_delta": "Base Change",
         "vault_share_delta": "Vault Share Change",
     }
-    trade_events = trade_events[list(rename_dict.keys())].rename(columns=rename_dict)
+    trade_events = trade_events[list(rename_dict.keys())].astype(type_dict).rename(columns=rename_dict)
 
     # Shorten wallet address string
     trade_events["Wallet"] = mapped_addrs["abbr_address"]
     trade_events["Hyperdrive Address"] = abbreviate_address(trade_events["Hyperdrive Address"])
 
     # Sort latest first
-    return trade_events.astype(str)
+    return trade_events

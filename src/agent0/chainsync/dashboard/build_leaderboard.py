@@ -34,10 +34,23 @@ def build_total_leaderboard(position_snapshot: pd.DataFrame, user_map: pd.DataFr
         .reset_index(drop=True)
     )
 
+    # Mapping for any type conversions.
+    # Omissions mean leave as is
+    type_dict = {
+        "username": "str",
+        "wallet_address": "str",
+        "pnl": "float64",
+    }
+
+    rename_dict = {
+        "username": "Username",
+        "wallet_address": "Wallet Address",
+        "pnl": "PnL",
+    }
+
     leaderboard.index.name = "rank"
 
-    # Convert these leaderboards to strings, as streamlit doesn't like decimals
-    return leaderboard.astype(str)
+    return leaderboard.astype(type_dict).rename(columns=rename_dict)
 
 
 def build_per_pool_leaderboard(
@@ -79,7 +92,25 @@ def build_per_pool_leaderboard(
         .reset_index(drop=True)
     )
 
+    # Mapping for any type conversions.
+    # Omissions mean leave as is
+    type_dict = {
+        "username": "str",
+        "wallet_address": "str",
+        "hyperdrive_name": "str",
+        "hyperdrive_address": "str",
+        "pnl": "float64",
+    }
+
+    rename_dict = {
+        "username": "Username",
+        "wallet_address": "Wallet Address",
+        "hyperdrive_name": "Hyperdrive Name",
+        "hyperdrive_address": "Hyperdrive Address",
+        "pnl": "PnL",
+    }
+
     leaderboard.index.name = "rank"
 
     # Convert these leaderboards to strings, as streamlit doesn't like decimals
-    return leaderboard.astype(str)
+    return leaderboard.astype(type_dict).rename(columns=rename_dict)

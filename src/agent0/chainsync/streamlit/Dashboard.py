@@ -65,11 +65,11 @@ while True:
 
         with ticker_placeholder.container():
             st.header("Ticker")
-            st.dataframe(data_dfs["display_ticker"], height=200, use_container_width=True)
+            st.dataframe(data_dfs["display_ticker"].style.format(precision=18), height=200, use_container_width=True)
 
         with leaderboard_placeholder.container():
             st.header("Wallet Leaderboard")
-            st.dataframe(data_dfs["leaderboard"], height=500, use_container_width=True)
+            st.dataframe(data_dfs["leaderboard"].style.format(precision=18), height=500, use_container_width=True)
 
         with main_placeholder.container():
             # Clears all axes
