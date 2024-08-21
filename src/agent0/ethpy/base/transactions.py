@@ -463,6 +463,13 @@ def build_transaction(
     transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
+    else:
+        # TODO web3 estimate gas getting called is throwing weird errors,
+        # so we explicitly set gas to a large number to avoid estimating gas
+        # within web3, and set it ourselves after building transaction.
+        # A better solution here is to avoid `build_transaction` altogether
+        # and instead encode the `data` field via `contract_instance.encodeABI(...)`.
+        transaction_kwargs["gas"] = int(1e9)
 
     raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
 
