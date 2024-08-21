@@ -25,37 +25,36 @@ classifiers = [
 ]
 
 dependencies = [
-    "dill",
-    "docker",
-    "eth-abi",
-    "eth-typing==4.4.0",
-    "eth-account",
-    "fixedpointmath",
-    "flask",
-    "flask-expects-json",
-    "hexbytes",
+    "dill>=0.3.8",
+    "docker>=7.1.0",
+    "eth-abi>=5.1.0",
+    # web3py requires eth-typing < 5.0.0
+    "eth-typing>=4.4.0",
+    # web3py requires eth-account < 0.13.0
+    # eth-account 0.12.3 requires hexbytes >= 1.2.0, which conflicts with web3py
+    "eth-account>=0.11.2",
+    "fixedpointmath>=0.2.1",
+    # web3py requires < 0.4.0
+    "hexbytes>=0.3.1",
     "hyperdrivepy==0.17.1",
-    "ipython",
-    "matplotlib",
-    "mplfinance",
-    "nest_asyncio",
-    "numpy",
-    "pandas",
-    "pandas-stubs",
-    "psycopg[binary]",
-    "pytest",
-    "python-dotenv",
-    # "requests",
-    # Docker-py breaks with latest requests:
-    # https://github.com/docker/docker-py/issues/3256
-    "requests==2.31.0",
-    "rollbar",
-    "setuptools",
-    "sqlalchemy",
-    "sqlalchemy-utils",
-    "streamlit",
-    "tqdm",
-    "web3",
+    "ipython>=8.26.0",
+    "matplotlib>=3.9.2",
+    "mplfinance>=0.12.10b0",
+    "nest_asyncio>=1.6.0",
+    "numpy>=2.1.0",
+    "pandas>=2.2.2",
+    "pandas-stubs>=2.2.2",
+    "psycopg[binary]>=3.2.1",
+    "pytest>=8.3.2",
+    "python-dotenv>=1.0.1",
+    "requests>=2.32.3",
+    "rollbar>=1.0.0",
+    "setuptools>=73.0.1",
+    "sqlalchemy>=2.0.32",
+    "sqlalchemy-utils>=0.41.2",
+    "streamlit>=1.37.1",
+    "tqdm>=4.66.5",
+    "web3>=6.20.2",
 ]
 
 

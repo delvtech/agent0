@@ -13,7 +13,18 @@ from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
-from web3.types import ABI, ABIFunctionComponents, ABIFunctionParams, BlockData, Nonce, TxData, TxParams, TxReceipt, Wei
+from web3.types import (
+    ABI,
+    ABIFunctionComponents,
+    ABIFunctionParams,
+    BlockData,
+    Nonce,
+    RPCEndpoint,
+    TxData,
+    TxParams,
+    TxReceipt,
+    Wei,
+)
 
 from agent0.utils import retry_call
 
@@ -234,9 +245,11 @@ def smart_contract_preview_transaction(
     # If block number is set in the preview call, will add to crash report,
     # otherwise will do best attempt at getting the block it crashed at.
     except ContractCustomError as err:
-        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # We decode the error and attach it as an argument to the `ContractCallException`.
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}')"
         raise ContractCallException(
             "Error in preview transaction",
+            decoded_error,
             orig_exception=err,
             contract_call_type=ContractCallType.PREVIEW,
             function_name_or_signature=function_name_or_signature,
@@ -450,8 +463,49 @@ def build_transaction(
     transaction_kwargs["maxPriorityFeePerGas"] = Wei(max_priority_fee)
     if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
+    else:
+        # TODO web3 estimate gas getting called is throwing weird errors,
+        # so we explicitly set gas to a large number to avoid estimating gas
+        # within web3, and set it ourselves after building transaction.
+        # A better solution here is to avoid `build_transaction` altogether
+        # and instead encode the `data` field via `contract_instance.encodeABI(...)`.
+        transaction_kwargs["gas"] = int(1e9)
 
     raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
+
+    if txn_options_gas is None:
+        # Type narrowing, we expect all of these fields to exist after building transaction
+        assert "from" in raw_txn
+        assert "to" in raw_txn
+        assert "value" in raw_txn
+        assert "data" in raw_txn
+        # TODO new web3 version gas estimation seems to underestimate gas.
+        # We explicitly do an rpc call to estimate gas here to get an accurate gas estimate.
+        # RPC call to estimate gas
+        result = web3.provider.make_request(
+            method=RPCEndpoint("eth_estimateGas"),
+            params=[
+                {
+                    "from": str(raw_txn["from"]),
+                    "to": str(raw_txn["to"]),
+                    # Convert integer to hex string
+                    "value": HexBytes(raw_txn["value"]).hex(),
+                    "data": str(raw_txn["data"]),
+                }
+            ],
+        )
+        if "result" not in result:
+            # We do error handling here in case the underlying rpc call fails
+            # due to a custom error getting thrown
+            if "error" in result and "data" in result["error"]:
+                data = result["error"]["data"]  # type: ignore
+                # We emulate web3py by throwing a contract custom error here.
+                raise ContractCustomError(data, data=data)
+            # Otherwise, we raise value error with the result.
+            raise ValueError(f"Failed to estimate gas via RPC call: {result}")
+        # Hex to int
+        gas = int(result["result"], 0)
+        raw_txn["gas"] = gas
 
     return raw_txn
 
@@ -499,7 +553,7 @@ async def _async_send_transaction_and_wait_for_receipt(
     unsent_txn["nonce"] = nonce
 
     signed_txn = signer.sign_transaction(unsent_txn)  # type: ignore
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
@@ -626,6 +680,7 @@ async def async_smart_contract_transact(
                 txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
             )
         )
+
         return await _async_send_transaction_and_wait_for_receipt(
             unsent_txn,
             signer,
@@ -647,12 +702,14 @@ async def async_smart_contract_transact(
     # the rest will default to setting the block number to None, which then crash reporting
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
-        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # We decode the error and attach it as an argument to the `ContractCallException`.
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}')"
         # Race condition here, other transactions may have happened when we get the block number here
         # Hence, this is a best effort guess as to which block the chain was on when this exception was thrown.
         block_number = int(web3.eth.block_number)
         raise ContractCallException(
             "Error in smart_contract_transact",
+            decoded_error,
             orig_exception=err,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
@@ -757,7 +814,7 @@ def _send_transaction_and_wait_for_receipt(
         nonce = nonce_func()
     unsent_txn["nonce"] = nonce
     signed_txn = signer.sign_transaction(unsent_txn)  # type: ignore
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
@@ -901,9 +958,11 @@ def smart_contract_transact(
     # the rest will default to setting the block number to None, which then crash reporting
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
-        err.args += (f"ContractCustomError {decode_error_selector_for_contract(err.args[0], contract)} raised.",)
+        # We decode the error and attach it as an argument to the `ContractCallException`.
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}')"
         raise ContractCallException(
             "Error in smart_contract_transact",
+            decoded_error,
             orig_exception=err,
             contract_call_type=ContractCallType.TRANSACTION,
             function_name_or_signature=function_name_or_signature,
