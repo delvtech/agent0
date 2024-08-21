@@ -33,7 +33,6 @@ def df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
         table_name,
         con=session.connection(),
         if_exists="append",
-        method="multi",
         index=False,
         dtype=dtype,  # type: ignore
         chunksize=MAX_BATCH_SIZE,
