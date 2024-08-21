@@ -133,6 +133,7 @@ async def run_event_handler(
     subscription_id_to_pool_lookup: dict[str, Hyperdrive],
     log_to_rollbar: bool,
     invariance_ignore_func: Callable[[Exception], bool] | None,
+    rollbar_verbose: bool,
 ):
     """Runs the event handler on the registry pools.
 
@@ -146,6 +147,8 @@ async def run_event_handler(
         Whether or not to log to rollbar.
     invariance_ignore_func: Callable[[Exception], bool] | None
         A function defining what invariance errors to ignore.
+    rollbar_verbose: bool
+        Whether or not to log debugging statements to rollbar.
     """
     # Wait for response
     async for response in ws_web3.ws.process_subscriptions():
@@ -163,7 +166,10 @@ async def run_event_handler(
         # Look up the pool based on the subscription id
         pool = subscription_id_to_pool_lookup[subscription_id]
 
-        logging.info("Event %s found for pool %s. Running invariant checks.", event_str, pool.name)
+        log_str = f"Event {event_str} found for pool {pool.name}. Running invariant checks."
+        logging.info(log_str)
+        if rollbar_verbose:
+            log_rollbar_message(log_str, log_level=logging.INFO)
 
         # Run invariant checks on the pool.
         check_block_data = pool.chain.block_data(block_identifier=check_block)
@@ -181,7 +187,7 @@ async def run_event_handler(
         )
 
 
-def look_for_exception_in_handler(handler: asyncio.Task):
+def _look_for_exception_in_handler(handler: asyncio.Task):
     # Query the event handler to catch any exceptions that may have been made.
     # This is necessary, as without it, the main thread
     # will happily keep going even if the handler errors out,
@@ -192,7 +198,7 @@ def look_for_exception_in_handler(handler: asyncio.Task):
         if exception is not None:
             raise exception
     # handler.exception() throws CanceledError if the task was canceled.
-    # We propogate it if it was canceled.
+    # We propagate it if it was canceled.
     # handler.exception() throws InvalidStateError if the handler is still running.
     # We ignore if this is the case
     except asyncio.InvalidStateError:
@@ -226,7 +232,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
             raise ValueError("RPC_URI is not set")
 
         ws_rpc_uri = os.getenv("WS_RPC_URI", None)
-        if rpc_uri is None:
+        if ws_rpc_uri is None:
             raise ValueError("WS_RPC_URI is not set")
 
         chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
@@ -264,7 +270,13 @@ async def main(argv: Sequence[str] | None = None) -> None:
 
         # Run event handler in background
         event_handler = asyncio.create_task(
-            run_event_handler(ws_web3, subscription_id_to_pool_lookup, log_to_rollbar, invariance_ignore_func)
+            run_event_handler(
+                ws_web3,
+                subscription_id_to_pool_lookup,
+                log_to_rollbar,
+                invariance_ignore_func,
+                parsed_args.rollbar_verbose,
+            )
         )
 
         # Run periodic invariant checks
@@ -297,7 +309,8 @@ async def main(argv: Sequence[str] | None = None) -> None:
 
             # Loop through all deployed pools and run invariant checks
             print(
-                f"Running periodic invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)"
+                f"Running periodic invariant checks from block {batch_check_start_block} "
+                f"to {batch_check_end_block} (inclusive)"
             )
             for check_block in range(batch_check_start_block, batch_check_end_block + 1):
                 check_block_data = chain.block_data(block_identifier=check_block)
@@ -315,11 +328,14 @@ async def main(argv: Sequence[str] | None = None) -> None:
                     for hyperdrive_obj in deployed_pools
                 ]
 
-                logging.info(
-                    "Running invariant checks for block %s on pools %s",
-                    check_block,
-                    [pool.name for pool in deployed_pools],
+                log_str = (
+                    f"Running periodic invariant checks for block {check_block} "
+                    f"on pools {[pool.name for pool in deployed_pools]}"
                 )
+
+                logging.info(log_str)
+                if parsed_args.rollbar_verbose:
+                    log_rollbar_message(log_str, logging.INFO)
 
                 await async_runner(partials)
 
@@ -330,15 +346,16 @@ async def main(argv: Sequence[str] | None = None) -> None:
                 # While we're waiting, we want to keep looking for exceptions in the event handler
                 num_iterations = parsed_args.check_time // HANDLER_EXCEPTION_CHECK_TIME
                 for _ in range(num_iterations):
-                    look_for_exception_in_handler(event_handler)
+                    _look_for_exception_in_handler(event_handler)
                     await asyncio.sleep(HANDLER_EXCEPTION_CHECK_TIME)
             else:
-                look_for_exception_in_handler(event_handler)
+                _look_for_exception_in_handler(event_handler)
 
 
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
+    rollbar_verbose: bool
     infra: bool
     registry_addr: str
     rpc_uri: str
@@ -361,6 +378,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
+        rollbar_verbose=namespace.rollbar_verbose,
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
@@ -384,6 +402,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
+
+    parser.add_argument(
+        "--rollbar-verbose",
+        default=False,
+        action="store_true",
+        help="If true, will log info to rollbar for debugging",
+    )
 
     parser.add_argument(
         "--infra",
