@@ -34,6 +34,7 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_e
 from agent0.utils import async_runner
 
 LOOKBACK_BLOCK_LIMIT = 1000
+HANDLER_EXCEPTION_CHECK_TIME = 10
 
 # Encoded event hashes
 # TODO is there a way to generate these from events?
@@ -82,8 +83,21 @@ def _sepolia_ignore_errors(exc: Exception) -> bool:
     return False
 
 
-async def init_event_handler(ws_web3: AsyncWeb3, registery_pools: Sequence[Hyperdrive]) -> dict[str, Hyperdrive]:
+async def init_event_handler(ws_web3: AsyncWeb3, registry_pools: Sequence[Hyperdrive]) -> dict[str, Hyperdrive]:
+    """Initializes the event handler on the registery pools.
 
+    Arguments
+    ---------
+    ws_web3: AsyncWeb3
+        The web3 connection to the websocket provider.
+    registry_pools: Sequence[Hyperdrive]
+        A list of Hyperdrive pools.
+
+    Returns
+    -------
+    dict[str, Hyperdrive]
+        A dictionary mapping subscription ids to the pools.
+    """
     # Define list of events we want to listen to
     filter_events = [
         "AddLiquidity",
@@ -96,9 +110,8 @@ async def init_event_handler(ws_web3: AsyncWeb3, registery_pools: Sequence[Hyper
     ]
 
     subscription_id_to_pool_lookup = {}
-
     # Loop through new registery pools
-    for pool in registery_pools:
+    for pool in registry_pools:
         # Subscribe to hyperdrive events on the new pool
         subscription_id = await ws_web3.eth.subscribe(
             "logs",
@@ -121,6 +134,19 @@ async def run_event_handler(
     log_to_rollbar: bool,
     invariance_ignore_func: Callable[[Exception], bool] | None,
 ):
+    """Runs the event handler on the registry pools.
+
+    Arguments
+    ---------
+    ws_web3: _PersistentConnectionWeb3
+        The web3 connection to the websocket provider.
+    subscription_id_to_pool_lookup: dict[str, Hyperdrive]
+        A dictionary mapping subscription ids to the pools.
+    log_to_rollbar: bool
+        Whether or not to log to rollbar.
+    invariance_ignore_func: Callable[[Exception], bool] | None
+        A function defining what invariance errors to ignore.
+    """
     # Wait for response
     async for response in ws_web3.ws.process_subscriptions():
         # Result here is encoded, need to decode if we want to use anything from it.
@@ -241,7 +267,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
             run_event_handler(ws_web3, subscription_id_to_pool_lookup, log_to_rollbar, invariance_ignore_func)
         )
 
-        # Run the loop forever
+        # Run periodic invariant checks
         while True:
             # The batch_check_end_block is inclusive
             # (i.e., we do batch_check_end_block + 1 in the loop range)
@@ -302,9 +328,10 @@ async def main(argv: Sequence[str] | None = None) -> None:
             # If set, we sleep for check_time amount.
             if parsed_args.check_time > 0:
                 # While we're waiting, we want to keep looking for exceptions in the event handler
-                for _ in range(parsed_args.check_time):
+                num_iterations = parsed_args.check_time // HANDLER_EXCEPTION_CHECK_TIME
+                for _ in range(num_iterations):
                     look_for_exception_in_handler(event_handler)
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(HANDLER_EXCEPTION_CHECK_TIME)
             else:
                 look_for_exception_in_handler(event_handler)
 
