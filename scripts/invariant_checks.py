@@ -16,9 +16,14 @@ import asyncio
 import logging
 import os
 import sys
-import time
 from functools import partial
 from typing import NamedTuple, Sequence
+
+from eth_typing import HexStr
+from fixedpointmath import FixedPoint
+from web3 import AsyncWeb3
+from web3.main import _PersistentConnectionWeb3
+from web3.providers import WebsocketProviderV2
 
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
@@ -28,6 +33,36 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_e
 from agent0.utils import async_runner
 
 LOOKBACK_BLOCK_LIMIT = 1000
+
+# Encoded event hashes
+# TODO is there a way to generate these from events?
+ENCODED_EVENTS = {
+    "AddLiquidity": "0xDCC4A01CEA4510BD52201CEBC8CD2D47D60429B35D68329ABC591A70AA2EFABF",
+    "Approval": "0x8C5BE1E5EBEC7D5BD14F71427D1E84F3DD0314C0F7B2291E5B200AC8C7C3B925",
+    "ApprovalForAll": "0x17307EAB39AB6107E8899845AD3D59BD9653F200F220920489CA2B5937696C31",
+    "CheckpointRewarderUpdated": "0xAE062FB82C932C653CD44617343ECDA1D13E375E0D6F20D969C944FBDA1963D3",
+    "CloseLong": "0x3B2C44173852B22D1ECF7784963C2BAB6D4DD07E64ED560F818F144D72EE5267",
+    "CloseShort": "0xF87A3DE08B9FE89D655D6731088496CF5F5DA0ABD455E9F7CDC5F0C717F209E5",
+    "CollectGovernanceFee": "0x3E5EB8642141E29A1B4E5C28B467396F814C1698E1ADFC3FF327DDB9A6038361",
+    "CreateCheckpoint": "0xFF888CF98D2696E95C8C39AA98C9AD55A5378008F7A56614C9353B7137A57AB7",
+    "FeeCollectorUpdated": "0xE5693914D19C789BDEE50A362998C0BC8D035A835F9871DA5D51152F0582C34F",
+    "GovernanceUpdated": "0x9D3E522E1E47A2F6009739342B9CC7B252A1888154E843AB55EE1C81745795AB",
+    "Initialize": "0x4931B9953A65531203C17D9ABE77870A3E49D8B13AF522EC3321C18B5ABB8AF3",
+    "OpenLong": "0x7FC9757758F4C7F2EB9F011C4500BEB349847D2F2ACBDD5FFCE3E2F01E79903A",
+    "OpenShort": "0xFA6DD2E3E152DBC3FE91196C0B8AA871C26FD7A1D07DE126EC3159FD4EDE2C75",
+    "PauseStatusUpdated": "0x7C4D1FE30FDBFDA9E9C4C43E759EF32E4DB5128D4CB58FF3AE9583B89B6242A5",
+    "PauserUpdated": "0x902923DCD4814F6CEF7005A70E01D5CF2035AB02D4523EF3B865F1D7BAB885AF",
+    "RedeemWithdrawalShares": "0x07210CF9A89FAE8012341FDC131255728787856379269F07C2E41C23B3C09B58",
+    "RemoveLiquidity": "0x1C7999DEB68182DE77CE89D32F82D0E13EB042921B2BFA9F35AA1C43F62F261E",
+    "Sweep": "0x951F51EE88C8E42633698BBA90D1E53C0954470938036879E691C0232B47E096",
+    "SweepCollectorUpdated": "0xC049058B1DF2DD8902739CEB78992DF12FA8369C06C450B3C6787137B452FDD2",
+    "TransferSingle": "0xC3D58168C5AE7397731D063D5BBF3D657854427343F4C083240F7AACAA2D0F62",
+}
+
+# All hex strings are lowercase in web3
+ENCODED_EVENTS = {k: v.lower() for k, v in ENCODED_EVENTS.items()}
+
+REVERSE_ENCODED_EVENTS = {v: k for k, v in ENCODED_EVENTS.items()}
 
 
 def _sepolia_ignore_errors(exc: Exception) -> bool:
@@ -46,7 +81,43 @@ def _sepolia_ignore_errors(exc: Exception) -> bool:
     return False
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+async def event_handler_init(ws_rpc_uri: str, pools: Sequence[Hyperdrive]) -> tuple[AsyncWeb3, dict[str, Hyperdrive]]:
+
+    # Initialize web3 web socket
+    web3 = await AsyncWeb3.persistent_websocket(WebsocketProviderV2(ws_rpc_uri))
+
+    # Define list of events we want to listen to
+    filter_events = [
+        "AddLiquidity",
+        "RemoveLiquidity",
+        "OpenLong",
+        "CloseLong",
+        "OpenShort",
+        "CloseShort",
+        "RedeemWithdrawalShares",
+    ]
+
+    # Define lookup for subscription id to pool object
+    subscription_id_to_pool_lookup = {}
+
+    for pool in pools:
+        # Subscribe to hyperdrive events
+        subscription_id = await web3.eth.subscribe(
+            "logs",
+            {
+                "address": pool.hyperdrive_address,
+                # This topics specifies any of the listed events in the first position, and anything after.
+                # More information on subscribe topics here:
+                # https://docs.alchemy.com/reference/logs
+                "topics": [[HexStr(ENCODED_EVENTS[filter_event]) for filter_event in filter_events]],
+            },
+        )
+        subscription_id_to_pool_lookup[subscription_id] = pool
+
+    return web3, subscription_id_to_pool_lookup
+
+
+async def main(argv: Sequence[str] | None = None) -> None:
     """Check Hyperdrive invariants each block.
 
     Arguments
@@ -99,7 +170,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Check pools on first iteration
     logging.info("Checking for new pools...")
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-
     # Keeps track of the last time we checked for a new pool
     last_pool_check_block_number = batch_check_start_block
 
@@ -118,7 +188,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         # If a block hasn't ticked, we sleep
         if batch_check_start_block > batch_check_end_block:
             # take a nap
-            time.sleep(3)
+            await asyncio.sleep(3)
             continue
 
         # We have an option to run in 2 modes:
@@ -158,13 +228,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             logging.info(
                 "Running invariant checks for block %s on pools %s", check_block, [pool.name for pool in deployed_pools]
             )
-            asyncio.run(async_runner(partials))
+
+            await async_runner(partials)
 
         batch_check_start_block = batch_check_end_block + 1
 
         if parsed_args.check_time > 0:
             # If set, we sleep for check_time amount.
-            time.sleep(parsed_args.check_time)
+            await asyncio.sleep(parsed_args.check_time)
 
 
 class Args(NamedTuple):
@@ -263,7 +334,8 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     parser.add_argument(
         "--check-time",
         type=int,
-        default=3600,
+        # default=3600,
+        default=-1,
         help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
     )
 
@@ -277,7 +349,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 if __name__ == "__main__":
     # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
     try:
-        main()
+        asyncio.run(main())
     except Exception as e:  # pylint: disable=broad-except
         log_rollbar_exception(
             exception=e, log_level=logging.ERROR, rollbar_log_prefix="Uncaught Critical Error in Invariant Checks:"
