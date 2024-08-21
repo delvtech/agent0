@@ -22,7 +22,6 @@ from typing import NamedTuple, Sequence
 from eth_typing import HexStr
 from fixedpointmath import FixedPoint
 from web3 import AsyncWeb3
-from web3.main import _PersistentConnectionWeb3
 from web3.providers import WebsocketProviderV2
 
 from agent0 import Chain, Hyperdrive
@@ -81,10 +80,12 @@ def _sepolia_ignore_errors(exc: Exception) -> bool:
     return False
 
 
-async def event_handler_init(ws_rpc_uri: str, pools: Sequence[Hyperdrive]) -> tuple[AsyncWeb3, dict[str, Hyperdrive]]:
+async def init_event_handler(
+    ws_rpc_uri: str, registery_pools: Sequence[Hyperdrive]
+) -> tuple[AsyncWeb3, dict[str, Hyperdrive]]:
 
     # Initialize web3 web socket
-    web3 = await AsyncWeb3.persistent_websocket(WebsocketProviderV2(ws_rpc_uri))
+    ws_web3 = await AsyncWeb3.persistent_websocket(WebsocketProviderV2(ws_rpc_uri))
 
     # Define list of events we want to listen to
     filter_events = [
@@ -97,12 +98,12 @@ async def event_handler_init(ws_rpc_uri: str, pools: Sequence[Hyperdrive]) -> tu
         "RedeemWithdrawalShares",
     ]
 
-    # Define lookup for subscription id to pool object
     subscription_id_to_pool_lookup = {}
 
-    for pool in pools:
-        # Subscribe to hyperdrive events
-        subscription_id = await web3.eth.subscribe(
+    # Loop through new registery pools
+    for pool in registery_pools:
+        # Subscribe to hyperdrive events on the new pool
+        subscription_id = await ws_web3.eth.subscribe(
             "logs",
             {
                 "address": pool.hyperdrive_address,
@@ -114,7 +115,14 @@ async def event_handler_init(ws_rpc_uri: str, pools: Sequence[Hyperdrive]) -> tu
         )
         subscription_id_to_pool_lookup[subscription_id] = pool
 
-    return web3, subscription_id_to_pool_lookup
+    return ws_web3, subscription_id_to_pool_lookup
+
+
+async def run_event_handler(
+    ws_web3: AsyncWeb3,
+    subscription_id_to_pool_lookup: dict[str, Hyperdrive],
+):
+    pass
 
 
 async def main(argv: Sequence[str] | None = None) -> None:
@@ -143,7 +151,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
 
-        ws_rpc_uri = os.getenv("RPC_URI", None)
+        ws_rpc_uri = os.getenv("WS_RPC_URI", None)
         if rpc_uri is None:
             raise ValueError("WS_RPC_URI is not set")
 
@@ -161,6 +169,9 @@ async def main(argv: Sequence[str] | None = None) -> None:
         registry_address = parsed_args.registry_addr
         ws_rpc_uri = parsed_args.ws_rpc_uri
 
+    if ws_rpc_uri is None:
+        raise ValueError("ws_rpc_uri must be set.")
+
     rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
@@ -172,6 +183,14 @@ async def main(argv: Sequence[str] | None = None) -> None:
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
     # Keeps track of the last time we checked for a new pool
     last_pool_check_block_number = batch_check_start_block
+
+    # Initialize event handler
+    ws_web3, subscription_id_to_pool_lookup = await init_event_handler(ws_rpc_uri, deployed_pools)
+
+    # Run event handler in background
+    # TODO since this script runs forever, we don't need event_handler, but we keep this around
+    # just in case we need to disconnect.
+    event_handler = asyncio.create_task(run_event_handler(ws_web3, subscription_id_to_pool_lookup))
 
     # Run the loop forever
     while True:
