@@ -495,6 +495,13 @@ def build_transaction(
             ],
         )
         if "result" not in result:
+            # We do error handling here in case the underlying rpc call fails
+            # due to a custom error getting thrown
+            if "error" in result and "data" in result["error"]:
+                data = result["error"]["data"]  # type: ignore
+                # We emulate web3py by throwing a contract custom error here.
+                raise ContractCustomError(data, data=data)
+            # Otherwise, we raise value error with the result.
             raise ValueError(f"Failed to estimate gas via RPC call: {result}")
         # Hex to int
         gas = int(result["result"], 0)
