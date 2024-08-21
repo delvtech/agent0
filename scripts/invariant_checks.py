@@ -155,6 +155,24 @@ async def run_event_handler(
         )
 
 
+def look_for_exception_in_handler(handler: asyncio.Task):
+    # Query the event handler to catch any exceptions that may have been made.
+    # This is necessary, as without it, the main thread
+    # will happily keep going even if the handler errors out,
+    # and won't throw the exception until we await the handler.
+    try:
+        exception = handler.exception()
+        # exception is None if it returned normally
+        if exception is not None:
+            raise exception
+    # handler.exception() throws CanceledError if the task was canceled.
+    # We propogate it if it was canceled.
+    # handler.exception() throws InvalidStateError if the handler is still running.
+    # We ignore if this is the case
+    except asyncio.InvalidStateError:
+        pass
+
+
 async def main(argv: Sequence[str] | None = None) -> None:
     """Check Hyperdrive invariants each block.
 
@@ -253,7 +271,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
 
             # Loop through all deployed pools and run invariant checks
             print(
-                f"Running invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)"
+                f"Running periodic invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)"
             )
             for check_block in range(batch_check_start_block, batch_check_end_block + 1):
                 check_block_data = chain.block_data(block_identifier=check_block)
@@ -281,25 +299,14 @@ async def main(argv: Sequence[str] | None = None) -> None:
 
             batch_check_start_block = batch_check_end_block + 1
 
-            # Query the event handler to catch any exceptions that may have been made.
-            # This is necessary, as without it, the main thread
-            # will happily keep going even if the handler errors out,
-            # and won't throw the exception until we await the handler.
-            try:
-                exception = event_handler.exception()
-                # exception is None if it returned normally
-                if exception is not None:
-                    raise exception
-            # handler.exception() throws CanceledError if the task was canceled.
-            # We propogate it if it was canceled.
-            # handler.exception() throws InvalidStateError if the handler is still running.
-            # We ignore if this is the case
-            except asyncio.InvalidStateError:
-                pass
-
             # If set, we sleep for check_time amount.
             if parsed_args.check_time > 0:
-                await asyncio.sleep(parsed_args.check_time)
+                # While we're waiting, we want to keep looking for exceptions in the event handler
+                for _ in range(parsed_args.check_time):
+                    look_for_exception_in_handler(event_handler)
+                    await asyncio.sleep(1)
+            else:
+                look_for_exception_in_handler(event_handler)
 
 
 class Args(NamedTuple):
@@ -391,7 +398,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         # FIXME
         # default=3600,
-        default=60,
+        default=3600,
         help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
     )
 
