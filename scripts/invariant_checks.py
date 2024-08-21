@@ -189,9 +189,6 @@ async def run_event_handler(
 
 def _look_for_exception_in_handler(handler: asyncio.Task):
     # Query the event handler to catch any exceptions that may have been made.
-    # This is necessary, as without it, the main thread
-    # will happily keep going even if the handler errors out,
-    # and won't throw the exception until we await the handler.
     try:
         exception = handler.exception()
         # exception is None if it returned normally
@@ -340,6 +337,11 @@ async def main(argv: Sequence[str] | None = None) -> None:
                 await async_runner(partials)
 
             batch_check_start_block = batch_check_end_block + 1
+
+            # We check for exceptions in the event handler.
+            # This is necessary, as without it, the main thread
+            # will happily keep going even if the handler errors out,
+            # and won't throw the exception until we await the handler.
 
             # If set, we sleep for check_time amount.
             if parsed_args.check_time > 0:
