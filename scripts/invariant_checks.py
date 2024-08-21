@@ -448,8 +448,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     parser.add_argument(
         "--check-time",
         type=int,
-        # FIXME
-        # default=3600,
         default=3600,
         help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
     )
