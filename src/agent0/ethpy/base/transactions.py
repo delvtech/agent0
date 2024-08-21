@@ -246,7 +246,7 @@ def smart_contract_preview_transaction(
     # otherwise will do best attempt at getting the block it crashed at.
     except ContractCustomError as err:
         # We decode the error and attach it as an argument to the `ContractCallException`.
-        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}'"
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}')"
         raise ContractCallException(
             "Error in preview transaction",
             decoded_error,
@@ -689,7 +689,7 @@ async def async_smart_contract_transact(
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
         # We decode the error and attach it as an argument to the `ContractCallException`.
-        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}'"
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}')"
         # Race condition here, other transactions may have happened when we get the block number here
         # Hence, this is a best effort guess as to which block the chain was on when this exception was thrown.
         block_number = int(web3.eth.block_number)
@@ -945,7 +945,7 @@ def smart_contract_transact(
     # will attempt a best effort guess as to the block the chain was on before it crashed.
     except ContractCustomError as err:
         # We decode the error and attach it as an argument to the `ContractCallException`.
-        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}'"
+        decoded_error = f"ContractCustomError('{decode_error_selector_for_contract(err.args[0], contract)}')"
         raise ContractCallException(
             "Error in smart_contract_transact",
             decoded_error,
