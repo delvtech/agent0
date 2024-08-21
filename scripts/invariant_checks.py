@@ -72,6 +72,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
 
+        ws_rpc_uri = os.getenv("RPC_URI", None)
+        if rpc_uri is None:
+            raise ValueError("WS_RPC_URI is not set")
+
         chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
 
         # Get the registry address from artifacts
@@ -84,6 +88,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         chain = Chain(parsed_args.rpc_uri)
         registry_address = parsed_args.registry_addr
+        ws_rpc_uri = parsed_args.ws_rpc_uri
 
     rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
@@ -169,6 +174,7 @@ class Args(NamedTuple):
     infra: bool
     registry_addr: str
     rpc_uri: str
+    ws_rpc_uri: str
     sepolia: bool
     check_time: int
 
@@ -191,6 +197,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
+        ws_rpc_uri=namespace.ws_rpc_uri,
         sepolia=namespace.sepolia,
         check_time=namespace.check_time,
     )
@@ -240,6 +247,13 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     )
 
     parser.add_argument(
+        "--ws-rpc-uri",
+        type=str,
+        default="",
+        help="The websocket RPC URI of the chain.",
+    )
+
+    parser.add_argument(
         "--sepolia",
         default=False,
         action="store_true",
@@ -247,17 +261,10 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     )
 
     parser.add_argument(
-        "--prev-checkpoint-ignore-pools",
-        type=str,
-        default="",
-        help="Comma separated list of pools to ignore for previous checkpoint exists check.",
-    )
-
-    parser.add_argument(
         "--check-time",
         type=int,
-        default=-1,
-        help="Time in seconds to wait between invariance checks. Defaults to -1, which is to check every block.",
+        default=3600,
+        help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
     )
 
     # Use system arguments if none were passed
