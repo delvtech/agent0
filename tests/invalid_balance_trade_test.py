@@ -406,7 +406,7 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "removeLiquidity"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
+            assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_long_from_zero(
@@ -425,7 +425,7 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeLong"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
+            assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_short_from_zero(
@@ -444,7 +444,7 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeShort"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
+            assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_from_nonzero(
@@ -462,7 +462,7 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "removeLiquidity"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
+            assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_long_from_nonzero(
@@ -480,7 +480,7 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeLong"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
+            assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_short_from_nonzero(
@@ -498,4 +498,4 @@ class TestInvalidTrades:
             assert exc.function_name_or_signature == "closeShort"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "InsufficientBalance raised" in exc.orig_exception.args[1]
+            assert "ContractCustomError('InsufficientBalance')" in exc.args
