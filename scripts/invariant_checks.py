@@ -7,6 +7,8 @@ and checking Hyperdrive invariants.
 - the pool has more than the minimum share reserves
 - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
 - if a hyperdrive trade happened then a checkpoint was created at the appropriate time
+
+NOTE: this script doesn't check for new registered pools. Rerun the script to run on updated registry.
 """
 
 from __future__ import annotations
@@ -17,11 +19,11 @@ import logging
 import os
 import sys
 from functools import partial
-from typing import NamedTuple, Sequence
+from typing import Callable, NamedTuple, Sequence
 
 from eth_typing import HexStr
-from fixedpointmath import FixedPoint
 from web3 import AsyncWeb3
+from web3.main import _PersistentConnectionWeb3
 from web3.providers import WebsocketProviderV2
 
 from agent0 import Chain, Hyperdrive
@@ -80,12 +82,7 @@ def _sepolia_ignore_errors(exc: Exception) -> bool:
     return False
 
 
-async def init_event_handler(
-    ws_rpc_uri: str, registery_pools: Sequence[Hyperdrive]
-) -> tuple[AsyncWeb3, dict[str, Hyperdrive]]:
-
-    # Initialize web3 web socket
-    ws_web3 = await AsyncWeb3.persistent_websocket(WebsocketProviderV2(ws_rpc_uri))
+async def init_event_handler(ws_web3: AsyncWeb3, registery_pools: Sequence[Hyperdrive]) -> dict[str, Hyperdrive]:
 
     # Define list of events we want to listen to
     filter_events = [
@@ -115,14 +112,47 @@ async def init_event_handler(
         )
         subscription_id_to_pool_lookup[subscription_id] = pool
 
-    return ws_web3, subscription_id_to_pool_lookup
+    return subscription_id_to_pool_lookup
 
 
 async def run_event_handler(
-    ws_web3: AsyncWeb3,
+    ws_web3: _PersistentConnectionWeb3,
     subscription_id_to_pool_lookup: dict[str, Hyperdrive],
+    log_to_rollbar: bool,
+    invariance_ignore_func: Callable[[Exception], bool] | None,
 ):
-    pass
+    # Wait for response
+    async for response in ws_web3.ws.process_subscriptions():
+        # Result here is encoded, need to decode if we want to use anything from it.
+        # We get the first topic element, which defines the type of event.
+        assert "result" in response
+        assert "subscription" in response
+
+        subscription_id = response["subscription"]
+
+        encoded_event = response["result"]["topics"][0].hex()
+        event_str = REVERSE_ENCODED_EVENTS[encoded_event]
+        check_block = response["result"]["blockNumber"]
+
+        # Look up the pool based on the subscription id
+        pool = subscription_id_to_pool_lookup[subscription_id]
+
+        logging.info("Event %s found for pool %s. Running invariant checks.", event_str, pool.name)
+
+        # Run invariant checks on the pool.
+        check_block_data = pool.chain.block_data(block_identifier=check_block)
+
+        run_invariant_checks(
+            check_block_data=check_block_data,
+            interface=pool.interface,
+            log_to_rollbar=log_to_rollbar,
+            rollbar_log_level_threshold=pool.chain.config.rollbar_log_level_threshold,
+            rollbar_log_filter_func=invariance_ignore_func,
+            pool_name=pool.name,
+            log_anvil_state_dump=pool.chain.config.log_anvil_state_dump,
+            # We can't test lp share price here since we don't have access to the pending block.
+            lp_share_price_test=False,
+        )
 
 
 async def main(argv: Sequence[str] | None = None) -> None:
@@ -181,86 +211,100 @@ async def main(argv: Sequence[str] | None = None) -> None:
     # Check pools on first iteration
     logging.info("Checking for new pools...")
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-    # Keeps track of the last time we checked for a new pool
-    last_pool_check_block_number = batch_check_start_block
 
-    # Initialize event handler
-    ws_web3, subscription_id_to_pool_lookup = await init_event_handler(ws_rpc_uri, deployed_pools)
+    # Initialize web socket
+    async with await AsyncWeb3.persistent_websocket(WebsocketProviderV2(ws_rpc_uri)) as ws_web3:
 
-    # Run event handler in background
-    # TODO since this script runs forever, we don't need event_handler, but we keep this around
-    # just in case we need to disconnect.
-    event_handler = asyncio.create_task(run_event_handler(ws_web3, subscription_id_to_pool_lookup))
+        # Initialize event handler
+        subscription_id_to_pool_lookup = await init_event_handler(ws_web3, deployed_pools)
 
-    # Run the loop forever
-    while True:
-        # The batch_check_end_block is inclusive
-        # (i.e., we do batch_check_end_block + 1 in the loop range)
-        batch_check_end_block = chain.block_number()
+        # Run event handler in background
+        event_handler = asyncio.create_task(
+            run_event_handler(ws_web3, subscription_id_to_pool_lookup, log_to_rollbar, invariance_ignore_func)
+        )
 
-        # Check if we need to check for new pools
-        if batch_check_end_block > last_pool_check_block_number + parsed_args.pool_check_sleep_blocks:
-            logging.info("Checking for new pools...")
-            deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-            last_pool_check_block_number = batch_check_end_block
+        # Run the loop forever
+        while True:
+            # The batch_check_end_block is inclusive
+            # (i.e., we do batch_check_end_block + 1 in the loop range)
+            batch_check_end_block = chain.block_number()
 
-        # If a block hasn't ticked, we sleep
-        if batch_check_start_block > batch_check_end_block:
-            # take a nap
-            await asyncio.sleep(3)
-            continue
+            # If a block hasn't ticked, we sleep
+            if batch_check_start_block > batch_check_end_block:
+                # take a nap
+                await asyncio.sleep(3)
+                continue
 
-        # We have an option to run in 2 modes:
-        # 1. When `check_time` <= 0, we check every block, including any blocks we may have missed.
-        # 2. When `check_time` > 0, we don't check every block, but instead check every `check_time` seconds.
-        if parsed_args.check_time > 0:
-            # We don't iterate through all skipped blocks, but instead only check a single block
-            batch_check_start_block = batch_check_end_block
+            # We have an option to run in 2 modes:
+            # 1. When `check_time` <= 0, we check every block, including any blocks we may have missed.
+            # 2. When `check_time` > 0, we don't check every block, but instead check every `check_time` seconds.
+            if parsed_args.check_time > 0:
+                # We don't iterate through all skipped blocks, but instead only check a single block
+                batch_check_start_block = batch_check_end_block
 
-        # Look at the number of blocks we need to iterate through
-        # If it's past the limit, log an error and catch up by
-        # skipping to the latest block
-        if (batch_check_end_block - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
-            error_message = "Unable to keep up with invariant checks. Skipping check blocks."
-            logging.error(error_message)
-            log_rollbar_message(error_message, logging.ERROR)
-            batch_check_start_block = batch_check_end_block
+            # Look at the number of blocks we need to iterate through
+            # If it's past the limit, log an error and catch up by
+            # skipping to the latest block
+            if (batch_check_end_block - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
+                error_message = "Unable to keep up with invariant checks. Skipping check blocks."
+                logging.error(error_message)
+                log_rollbar_message(error_message, logging.ERROR)
+                batch_check_start_block = batch_check_end_block
 
-        # Loop through all deployed pools and run invariant checks
-        print(f"Running invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)")
-        for check_block in range(batch_check_start_block, batch_check_end_block + 1):
-            check_block_data = chain.block_data(block_identifier=check_block)
-            partials = [
-                partial(
-                    run_invariant_checks,
-                    check_block_data=check_block_data,
-                    interface=hyperdrive_obj.interface,
-                    log_to_rollbar=log_to_rollbar,
-                    rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
-                    rollbar_log_filter_func=invariance_ignore_func,
-                    pool_name=hyperdrive_obj.name,
-                    log_anvil_state_dump=chain.config.log_anvil_state_dump,
-                )
-                for hyperdrive_obj in deployed_pools
-            ]
-
-            logging.info(
-                "Running invariant checks for block %s on pools %s", check_block, [pool.name for pool in deployed_pools]
+            # Loop through all deployed pools and run invariant checks
+            print(
+                f"Running invariant checks from block {batch_check_start_block} to {batch_check_end_block} (inclusive)"
             )
+            for check_block in range(batch_check_start_block, batch_check_end_block + 1):
+                check_block_data = chain.block_data(block_identifier=check_block)
+                partials = [
+                    partial(
+                        run_invariant_checks,
+                        check_block_data=check_block_data,
+                        interface=hyperdrive_obj.interface,
+                        log_to_rollbar=log_to_rollbar,
+                        rollbar_log_level_threshold=chain.config.rollbar_log_level_threshold,
+                        rollbar_log_filter_func=invariance_ignore_func,
+                        pool_name=hyperdrive_obj.name,
+                        log_anvil_state_dump=chain.config.log_anvil_state_dump,
+                    )
+                    for hyperdrive_obj in deployed_pools
+                ]
 
-            await async_runner(partials)
+                logging.info(
+                    "Running invariant checks for block %s on pools %s",
+                    check_block,
+                    [pool.name for pool in deployed_pools],
+                )
 
-        batch_check_start_block = batch_check_end_block + 1
+                await async_runner(partials)
 
-        if parsed_args.check_time > 0:
+            batch_check_start_block = batch_check_end_block + 1
+
+            # Query the event handler to catch any exceptions that may have been made.
+            # This is necessary, as without it, the main thread
+            # will happily keep going even if the handler errors out,
+            # and won't throw the exception until we await the handler.
+            try:
+                exception = event_handler.exception()
+                # exception is None if it returned normally
+                if exception is not None:
+                    raise exception
+            # handler.exception() throws CanceledError if the task was canceled.
+            # We propogate it if it was canceled.
+            # handler.exception() throws InvalidStateError if the handler is still running.
+            # We ignore if this is the case
+            except asyncio.InvalidStateError:
+                pass
+
             # If set, we sleep for check_time amount.
-            await asyncio.sleep(parsed_args.check_time)
+            if parsed_args.check_time > 0:
+                await asyncio.sleep(parsed_args.check_time)
 
 
 class Args(NamedTuple):
     """Command line arguments for the invariant checker."""
 
-    pool_check_sleep_blocks: int
     infra: bool
     registry_addr: str
     rpc_uri: str
@@ -283,7 +327,6 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         Formatted arguments
     """
     return Args(
-        pool_check_sleep_blocks=namespace.pool_check_sleep_blocks,
         infra=namespace.infra,
         registry_addr=namespace.registry_addr,
         rpc_uri=namespace.rpc_uri,
@@ -307,13 +350,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         Formatted arguments
     """
     parser = argparse.ArgumentParser(description="Runs a loop to check Hyperdrive invariants at each block.")
-
-    parser.add_argument(
-        "--pool-check-sleep-blocks",
-        type=int,
-        default=300,  # 1 hour for 12 second block time
-        help="Number of blocks in between checking for new pools.",
-    )
 
     parser.add_argument(
         "--infra",
@@ -353,8 +389,9 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     parser.add_argument(
         "--check-time",
         type=int,
+        # FIXME
         # default=3600,
-        default=-1,
+        default=60,
         help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
     )
 
