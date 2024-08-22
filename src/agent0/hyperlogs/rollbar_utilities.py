@@ -7,7 +7,7 @@ import getpass
 import logging
 import os
 import platform
-from traceback import format_tb
+from traceback import format_exception
 
 import rollbar
 from dotenv import load_dotenv
@@ -94,8 +94,8 @@ def log_rollbar_exception(
     if extra_data is None:
         extra_data = {}
 
-    # We add a traceback to extra data if it doesn't exist
-    if "traceback" not in extra_data:
-        extra_data["traceback"] = format_tb(exception.__traceback__)
+    # We add full exception printing
+    if "full_exception" not in extra_data:
+        extra_data["full_exception"] = format_exception(exception)
 
     rollbar.report_message(log_message, log_level_name, extra_data=extra_data)
