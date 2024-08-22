@@ -7,7 +7,7 @@ import getpass
 import logging
 import os
 import platform
-from traceback import format_exception, format_tb
+from traceback import format_exception
 
 import rollbar
 from dotenv import load_dotenv
