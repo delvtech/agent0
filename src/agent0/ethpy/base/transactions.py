@@ -482,6 +482,7 @@ def build_transaction(
         # TODO new web3 version gas estimation seems to underestimate gas.
         # We explicitly do an rpc call to estimate gas here to get an accurate gas estimate.
         # RPC call to estimate gas
+
         result = web3.provider.make_request(
             method=RPCEndpoint("eth_estimateGas"),
             params=[
@@ -489,7 +490,7 @@ def build_transaction(
                     "from": str(raw_txn["from"]),
                     "to": str(raw_txn["to"]),
                     # Convert integer to hex string
-                    "value": HexBytes(raw_txn["value"]).hex(),
+                    "value": hex(raw_txn["value"]),
                     "data": str(raw_txn["data"]),
                 }
             ],
