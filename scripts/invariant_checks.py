@@ -330,10 +330,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
                 f"Running periodic invariant checks for block {check_block} "
                 f"on pools {[pool.name for pool in deployed_pools]}"
             )
-
             logging.info(log_str)
-            if parsed_args.rollbar_verbose:
-                log_rollbar_message(log_str, logging.INFO)
 
             await async_runner(partials)
 
