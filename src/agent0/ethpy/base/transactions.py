@@ -483,12 +483,6 @@ def build_transaction(
         # We explicitly do an rpc call to estimate gas here to get an accurate gas estimate.
         # RPC call to estimate gas
 
-        value = raw_txn["value"]
-        if value == 0:
-            # HexBytes converts 0 to "0x00", which breaks the rpc call
-            value_hex = "0x0"
-        else:
-            value_hex = HexBytes(raw_txn["value"]).hex()
         result = web3.provider.make_request(
             method=RPCEndpoint("eth_estimateGas"),
             params=[
@@ -496,7 +490,7 @@ def build_transaction(
                     "from": str(raw_txn["from"]),
                     "to": str(raw_txn["to"]),
                     # Convert integer to hex string
-                    "value": value_hex,
+                    "value": hex(raw_txn["value"]),
                     "data": str(raw_txn["data"]),
                 }
             ],
