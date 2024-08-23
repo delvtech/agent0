@@ -37,7 +37,7 @@ dependencies = [
     # web3py requires < 0.4.0
     "hexbytes>=0.3.1",
     "hyperdrivepy==0.17.1",
-    "hyperdrivetypes",
+    "hyperdrivetypes==1.0.17",
     "ipython>=8.26.0",
     "matplotlib>=3.9.2",
     "mplfinance>=0.12.10b0",
@@ -117,7 +117,7 @@ line-length = 120
 extend-exclude = "\\.ipynb"
 
 [tool.pylint]
-exclude = [".venv", ".vscode", "docs", "src/agent0/hypertypes/types/"]
+exclude = [".venv", ".vscode", "docs"]
 
 [tool.pylance]
 exclude = [".venv", ".vscode", "docs"]

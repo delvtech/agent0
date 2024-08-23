@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable
 
 from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 
@@ -18,7 +19,6 @@ from agent0.ethpy.base import (
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
-from agent0.hypertypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount

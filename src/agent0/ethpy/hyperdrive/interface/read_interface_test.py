@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, cast
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import PoolConfig
+from hyperdrivetypes.fixedpoint_types import FeesFP
 from web3.constants import ADDRESS_ZERO
 
-from agent0.hypertypes import PoolConfig
-from agent0.hypertypes.fixedpoint_types import FeesFP
 from agent0.utils.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
 
 if TYPE_CHECKING:

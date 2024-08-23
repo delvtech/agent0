@@ -14,7 +14,6 @@ Welcome to the documentation for agent0!
    /autoapi/agent0/chainsync/index
    /autoapi/agent0/ethpy/index
    /autoapi/agent0/hyperlogs/index
-   /autoapi/agent0/hypertypes/index
    /autoapi/agent0/traiderdaive/index
 
 

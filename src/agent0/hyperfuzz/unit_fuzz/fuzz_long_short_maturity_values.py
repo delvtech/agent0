@@ -27,12 +27,12 @@ from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint, isclose
+from hyperdrivetypes import CheckpointFP
 
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.ethpy.hyperdrive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.hyperfuzz import FuzzAssertionException
-from agent0.hypertypes.fixedpoint_types import CheckpointFP
 
 from .helpers import advance_time_after_checkpoint, execute_random_trades, setup_fuzz
 

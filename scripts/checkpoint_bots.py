@@ -17,6 +17,7 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import IHyperdriveContract
 from web3 import Web3
 from web3.types import Nonce
 
@@ -25,7 +26,6 @@ from agent0.core.base.make_key import make_private_key
 from agent0.ethpy.base import get_account_balance, smart_contract_preview_transaction, smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
-from agent0.hypertypes import IHyperdriveContract
 
 # Checkpoint bot has a lot going on
 # pylint: disable=too-many-locals

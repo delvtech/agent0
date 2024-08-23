@@ -31,13 +31,6 @@ Once the PR is approved, we perform a final rebase, if necessary, and then a _sq
 This means each PR results in a single commit to `main`.
 Please provide a brief description of the PR in the summary instead of a list of commit strings.
 
-## Building with new Hyperdrive contracts
-
-If you wish to incorporate modifications made to the Hyperdrive contracts, you must update agent0 by:
-
-- Replace the Solidity contract ABIs in `packages/hyperdrive/src/abis` with the newly compiled files from Hyperdrive.
-- Run `pypechain packages/hyperdrive/src/abis/ --output-dir=src/agent0/hypertypes/types`
-
 ## Contributing a new bot policy
 
 We welcome contributions of new bot policies, alongside those in `src/agent0/core/hyperdrive/policies`.

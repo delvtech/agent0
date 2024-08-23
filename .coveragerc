@@ -1,13 +1,11 @@
 [run]
 omit =
     */examples/*.*
-    **/hypertypes/**
 
 [report]
 omit =
     *test*
     **/__init__.py
-    **/hypertypes/**
 exclude_lines =
     if typing:
     if TYPE_CHECKING:

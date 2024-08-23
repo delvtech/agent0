@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Sequence
 import pandas as pd
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import FactoryConfig, Fees, PoolDeployConfig
 from web3 import Web3
 
 from agent0.chainsync.analysis import fill_pnl_values
@@ -30,7 +31,6 @@ from agent0.ethpy.hyperdrive import (
     deploy_hyperdrive_from_factory,
 )
 from agent0.ethpy.hyperdrive.event_types import CreateCheckpoint
-from agent0.hypertypes import FactoryConfig, Fees, PoolDeployConfig
 
 from .hyperdrive import Hyperdrive
 

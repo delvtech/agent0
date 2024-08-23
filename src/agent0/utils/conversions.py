@@ -1,4 +1,4 @@
-"""Conversion for hypertypes to fixedpoint"""
+"""Conversion for hyperdrivetypes to fixedpoint"""
 
 from __future__ import annotations
 
@@ -7,9 +7,7 @@ from dataclasses import asdict
 from typing import Any
 
 from fixedpointmath import FixedPoint
-
-from agent0.hypertypes import Checkpoint, Fees, PoolConfig, PoolInfo
-from agent0.hypertypes.fixedpoint_types import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
+from hyperdrivetypes import Checkpoint, CheckpointFP, Fees, FeesFP, PoolConfig, PoolConfigFP, PoolInfo, PoolInfoFP
 
 
 def camel_to_snake(camel_string: str) -> str:
@@ -47,12 +45,12 @@ def snake_to_camel(snake_string: str) -> str:
     return camel_string[0].lower() + camel_string[1:] if camel_string else camel_string
 
 
-def pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
-    """Convert the Hypertypes PoolInfo attribute types from what solidity returns to FixedPoint.
+def pool_info_to_fixedpoint(hyperdrivetypes_pool_info: PoolInfo) -> PoolInfoFP:
+    """Convert the hyperdrivetypes PoolInfo attribute types from what solidity returns to FixedPoint.
 
     Arguments
     ---------
-    hypertypes_pool_info: PoolInfo
+    hyperdrivetypes_pool_info: PoolInfo
         The hyperdrive pool info.
 
     Returns
@@ -64,7 +62,10 @@ def pool_info_to_fixedpoint(hypertypes_pool_info: PoolInfo) -> PoolInfoFP:
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
     return PoolInfoFP(
-        **{camel_to_snake(key): FixedPoint(scaled_value=value) for (key, value) in asdict(hypertypes_pool_info).items()}
+        **{
+            camel_to_snake(key): FixedPoint(scaled_value=value)
+            for (key, value) in asdict(hyperdrivetypes_pool_info).items()
+        }
     )
 
 
@@ -87,13 +88,13 @@ def fixedpoint_to_pool_info(fixedpoint_pool_info: PoolInfoFP) -> PoolInfo:
 
 
 def checkpoint_to_fixedpoint(
-    hypertypes_checkpoint: Checkpoint,
+    hyperdrivetypes_checkpoint: Checkpoint,
 ) -> CheckpointFP:
-    """Convert the HyperTypes Checkpoint attribute types from what Solidity returns to FixedPoint.
+    """Convert the hyperdrivetypes Checkpoint attribute types from what Solidity returns to FixedPoint.
 
     Arguments
     ---------
-    hypertypes_checkpoint: Checkpoint
+    hyperdrivetypes_checkpoint: Checkpoint
         A checkpoint object with sharePrice and exposure fields with derived types from Pypechain.
 
     Returns
@@ -102,9 +103,9 @@ def checkpoint_to_fixedpoint(
         A dataclass containing the checkpoint vault_share_price and exposure fields converted to FixedPoint.
     """
     return CheckpointFP(
-        weighted_spot_price=FixedPoint(scaled_value=hypertypes_checkpoint.weightedSpotPrice),
-        last_weighted_spot_price_update_time=hypertypes_checkpoint.lastWeightedSpotPriceUpdateTime,
-        vault_share_price=FixedPoint(scaled_value=hypertypes_checkpoint.vaultSharePrice),
+        weighted_spot_price=FixedPoint(scaled_value=hyperdrivetypes_checkpoint.weightedSpotPrice),
+        last_weighted_spot_price_update_time=hyperdrivetypes_checkpoint.lastWeightedSpotPriceUpdateTime,
+        vault_share_price=FixedPoint(scaled_value=hyperdrivetypes_checkpoint.vaultSharePrice),
     )
 
 
@@ -137,13 +138,13 @@ def fixedpoint_to_checkpoint(
 
 
 def pool_config_to_fixedpoint(
-    hypertypes_pool_config: PoolConfig,
+    hyperdrivetypes_pool_config: PoolConfig,
 ) -> PoolConfigFP:
-    """Convert the HyperTypes PoolConfig attributes from what Solidity returns to FixedPoint.
+    """Convert the hyperdrivetypes PoolConfig attributes from what Solidity returns to FixedPoint.
 
     Arguments
     ---------
-    hypertypes_pool_config: PoolConfig
+    hyperdrivetypes_pool_config: PoolConfig
         The hyperdrive pool config.
 
     Returns
@@ -154,7 +155,7 @@ def pool_config_to_fixedpoint(
           - The attribute names are converted to snake_case.
           - FixedPoint types are used if the type was FixedPoint in the underlying contract.
     """
-    dict_pool_config = {camel_to_snake(key): value for key, value in asdict(hypertypes_pool_config).items()}
+    dict_pool_config = {camel_to_snake(key): value for key, value in asdict(hyperdrivetypes_pool_config).items()}
     fixedpoint_keys = [
         "initial_vault_share_price",
         "minimum_share_reserves",

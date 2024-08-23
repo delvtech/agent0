@@ -10,6 +10,14 @@ from typing import TYPE_CHECKING, Any, cast
 
 import eth_abi
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import (
+    CheckpointFP,
+    ERC20MintableContract,
+    IHyperdriveContract,
+    IMorphoBlueHyperdriveContract,
+    MockERC4626Contract,
+    MockLidoContract,
+)
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.types import BlockData, BlockIdentifier, Timestamp
@@ -25,14 +33,6 @@ from agent0.ethpy.hyperdrive.transactions import (
     get_hyperdrive_checkpoint_exposure,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
-)
-from agent0.hypertypes import (
-    CheckpointFP,
-    ERC20MintableContract,
-    IHyperdriveContract,
-    IMorphoBlueHyperdriveContract,
-    MockERC4626Contract,
-    MockLidoContract,
 )
 
 from ._block_getters import _get_block, _get_block_number, _get_block_time

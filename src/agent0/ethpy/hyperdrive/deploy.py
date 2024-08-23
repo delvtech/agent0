@@ -9,18 +9,7 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
-from web3 import Web3
-from web3.constants import ADDRESS_ZERO
-from web3.contract.contract import Contract
-
-from agent0.ethpy.base import (
-    ETH_CONTRACT_ADDRESS,
-    get_account_balance,
-    set_anvil_account_balance,
-    smart_contract_transact,
-)
-from agent0.ethpy.base.receipts import get_transaction_logs
-from agent0.hypertypes import (
+from hyperdrivetypes import (
     ERC20ForwarderFactoryContract,
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,
@@ -47,6 +36,17 @@ from agent0.hypertypes import (
     StETHTarget3DeployerContract,
     StETHTarget4DeployerContract,
 )
+from web3 import Web3
+from web3.constants import ADDRESS_ZERO
+from web3.contract.contract import Contract
+
+from agent0.ethpy.base import (
+    ETH_CONTRACT_ADDRESS,
+    get_account_balance,
+    set_anvil_account_balance,
+    smart_contract_transact,
+)
+from agent0.ethpy.base.receipts import get_transaction_logs
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
