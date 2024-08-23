@@ -14,7 +14,7 @@ from web3.constants import ADDRESS_ZERO
 
 from agent0.hypertypes import PoolConfig
 from agent0.hypertypes.fixedpoint_types import FeesFP
-from agent0.hypertypes.utilities.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
+from agent0.utils.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
 
 if TYPE_CHECKING:
     from .read_interface import HyperdriveReadInterface

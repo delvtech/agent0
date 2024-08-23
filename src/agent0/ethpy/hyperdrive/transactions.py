@@ -11,7 +11,7 @@ from web3.types import BlockIdentifier, Timestamp, TxReceipt
 from agent0.ethpy.base import get_transaction_logs
 from agent0.hypertypes import IHyperdriveContract
 from agent0.hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
-from agent0.hypertypes.utilities.conversions import (
+from agent0.utils.conversions import (
     camel_to_snake,
     checkpoint_to_fixedpoint,
     pool_config_to_fixedpoint,
