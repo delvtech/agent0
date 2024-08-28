@@ -174,7 +174,9 @@ class ERC4626Target2DeployerContract(Contract):
 
         lp_math: LPMathContract
 
-    link_references_placeholder_lookup: dict[str, str] = {"lp_math": "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__"}
+    link_references_placeholder_lookup: dict[str, str] = {
+        "lp_math": "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__",
+    }
 
     @classmethod
     def constructor(cls, link_references: LinkReferences) -> ContractConstructor:  # type: ignore
