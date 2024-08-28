@@ -48,7 +48,7 @@ from web3.exceptions import FallbackNotFound
 from web3.types import ABI, ABIFunction, BlockIdentifier, CallOverride, EventData, TxParams
 
 from .IHyperdriveTypes import Checkpoint, Fees, MarketState, Options, PoolConfig, PoolInfo, WithdrawPool
-from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types, try_bytecode_hexbytes
+from .utilities import dataclass_to_tuple, get_abi_input_types, rename_returned_types
 
 structs = {
     "Options": Options,
@@ -7314,15 +7314,16 @@ imorphobluehyperdrive_abi: ABI = cast(
         {"type": "error", "name": "UpdateLiquidityFailed", "inputs": []},
     ],
 )
-# pylint: disable=line-too-long
-imorphobluehyperdrive_bytecode = HexStr("0x")
 
 
 class IMorphoBlueHyperdriveContract(Contract):
     """A web3.py Contract class for the IMorphoBlueHyperdrive contract."""
 
     abi: ABI = imorphobluehyperdrive_abi
-    bytecode: bytes | None = try_bytecode_hexbytes(imorphobluehyperdrive_bytecode, "imorphobluehyperdrive")
+    # We change `bytecode` as needed for linking, but keep
+    # `_raw_bytecode` unchanged as an original copy.
+    # pylint: disable=line-too-long
+    _raw_bytecode: HexStr | None = HexStr("0x")
 
     def __init__(self, address: ChecksumAddress | None = None) -> None:
         try:
@@ -7359,6 +7360,11 @@ class IMorphoBlueHyperdriveContract(Contract):
             A deployed instance of the contract.
 
         """
+        cls.bytecode = cls._raw_bytecode
+        if cls.bytecode is not None:
+
+            # bytecode needs to be in hex for web3
+            cls.bytecode = HexBytes(cls.bytecode)
 
         return super().constructor()
 
