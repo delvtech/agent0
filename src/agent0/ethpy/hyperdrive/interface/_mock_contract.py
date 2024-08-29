@@ -8,7 +8,7 @@ import hyperdrivepy
 from fixedpointmath import FixedPoint
 from web3.types import Timestamp
 
-from agent0.hypertypes.utilities.conversions import fixedpoint_to_pool_config, fixedpoint_to_pool_info
+from agent0.utils.conversions import fixedpoint_to_pool_config, fixedpoint_to_pool_info
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive.state import PoolState

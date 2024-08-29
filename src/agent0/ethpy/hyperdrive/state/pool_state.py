@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import CheckpointFP, PoolConfigFP, PoolInfoFP
 from web3.types import BlockData
 
-from agent0.hypertypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
-from agent0.hypertypes.utilities.conversions import (
+from agent0.utils.conversions import (
     dataclass_to_dict,
     fixedpoint_to_checkpoint,
     fixedpoint_to_pool_config,

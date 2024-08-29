@@ -11,7 +11,7 @@ import pandas as pd
 from fixedpointmath import FixedPoint
 
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
-from agent0.hypertypes.utilities.conversions import camel_to_snake
+from agent0.utils.conversions import camel_to_snake
 
 from .schema import PoolConfig, PoolInfo
 
