@@ -344,7 +344,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         if rpc_uri is None:
             raise ValueError("RPC_URI is not set")
 
-        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
+        chain = Chain(rpc_uri, Chain.Config(no_postgres=True))
 
         # Get the registry address from environment variable
         registry_address_env = os.getenv("REGISTRY_ADDRESS", None)
@@ -361,7 +361,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         block_time = int(os.getenv("BLOCK_TIME", "12"))
         block_timestamp_interval = int(os.getenv("BLOCK_TIMESTAMP_INTERVAL", "12"))
     else:
-        chain = Chain(parsed_args.rpc_uri)
+        chain = Chain(parsed_args.rpc_uri, Chain.Config(no_postgres=True))
         registry_address = parsed_args.registry_addr
         block_time = 1
         block_timestamp_interval = 1

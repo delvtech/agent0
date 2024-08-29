@@ -104,6 +104,10 @@ class Chain:
         calc_pnl: bool = True
         """Whether to calculate pnl. Defaults to True."""
 
+        no_postgres: bool = False
+        """
+        Don't launch postgres connection at all. Expect things to break if this is set to True.
+        """
         use_existing_postgres: bool = False
         """
         If True, will connect to a remote postgres instance using environmental variables (see env.sample).
@@ -186,26 +190,27 @@ class Chain:
 
         self.docker_client = None
         self.postgres_container = None
-        if config.use_existing_postgres:
-            self.postgres_config = build_postgres_config_from_env()
-            self.chain_id = str(self.postgres_config.POSTGRES_PORT)
-        else:
-            # Set up db connections
-            # We use the db port as the container name
-            # TODO we may want to use the actual chain id for this when we start
-            # caching the db specific to the chain id
-            self.chain_id = str(config.db_port)
-            obj_name = type(self).__name__.lower()
-            db_container_name = f"agent0-{obj_name}-{self.chain_id}"
+        self.db_session = None
+        if not config.no_postgres:
+            if config.use_existing_postgres:
+                self.postgres_config = build_postgres_config_from_env()
+                self.chain_id = str(self.postgres_config.POSTGRES_PORT)
+            else:
+                # Set up db connections
+                # We use the db port as the container name
+                # TODO we may want to use the actual chain id for this when we start
+                # caching the db specific to the chain id
+                self.chain_id = str(config.db_port)
+                obj_name = type(self).__name__.lower()
+                db_container_name = f"agent0-{obj_name}-{self.chain_id}"
 
-            self.docker_client, self.postgres_config, self.postgres_container = self._initialize_postgres_container(
-                db_container_name, config.db_port, config.remove_existing_db_container
-            )
-            assert isinstance(self.postgres_container, Container)
+                self.docker_client, self.postgres_config, self.postgres_container = self._initialize_postgres_container(
+                    db_container_name, config.db_port, config.remove_existing_db_container
+                )
+                assert isinstance(self.postgres_container, Container)
 
-        # Update the database field to use a unique name for this pool using the hyperdrive contract address
-        self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
-        self._db_name = self.postgres_config.POSTGRES_DB
+            # Update the database field to use a unique name for this pool using the hyperdrive contract address
+            self.db_session = initialize_session(self.postgres_config, ensure_database_created=True)
 
         self.config = config
 

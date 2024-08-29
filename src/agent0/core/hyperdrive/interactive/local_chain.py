@@ -530,13 +530,15 @@ class LocalChain(Chain):
         self._deployed_hyperdrive_pools.append(pool)
 
     def _dump_db(self, save_dir: Path):
-        # TODO parameterize the save path
-        os.makedirs(save_dir, exist_ok=True)
-        export_db_to_file(save_dir, self.db_session)
+        if self.db_session is not None:
+            # TODO parameterize the save path
+            os.makedirs(save_dir, exist_ok=True)
+            export_db_to_file(save_dir, self.db_session)
 
     def _load_db(self, load_dir: Path):
-        # TODO parameterize the load path
-        import_to_db(self.db_session, load_dir, drop=True)
+        if self.db_session is not None:
+            # TODO parameterize the load path
+            import_to_db(self.db_session, load_dir, drop=True)
 
     def _save_pool_bookkeeping(self, save_dir: Path) -> None:
         # Save bookkeeping of deployed pools

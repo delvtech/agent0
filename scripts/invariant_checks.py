@@ -237,7 +237,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
 
         ws_rpc_uri = os.getenv("WS_RPC_URI", None)
 
-        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
+        chain = Chain(rpc_uri, Chain.Config(no_postgres=True))
 
         # Get the registry address from artifacts
         registry_address = os.getenv("REGISTRY_ADDRESS", None)
@@ -247,7 +247,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
                 raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
             registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
     else:
-        chain = Chain(parsed_args.rpc_uri)
+        chain = Chain(parsed_args.rpc_uri, Chain.Config(no_postgres=True))
         registry_address = parsed_args.registry_addr
         ws_rpc_uri = parsed_args.ws_rpc_uri
 

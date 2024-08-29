@@ -579,6 +579,8 @@ class LocalHyperdrive(Hyperdrive):
         """
         # Underlying function returns a dataframe, but this is assuming there's a single
         # pool config for this object.
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         pool_config = get_pool_config(self.chain.db_session, coerce_float=coerce_float)
         if len(pool_config) == 0:
             raise ValueError("Pool config doesn't exist in the db.")
@@ -597,6 +599,8 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A pandas dataframe that consists of the pool info per block.
         """
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
         return pool_info
 
@@ -613,6 +617,8 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A pandas dataframe that consists of previous checkpoints made on this pool.
         """
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         return get_checkpoint_info(
             self.chain.db_session, hyperdrive_address=self.hyperdrive_address, coerce_float=coerce_float
         )
@@ -649,6 +655,8 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A dataframe consisting of currently open positions and their corresponding pnl.
         """
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         position_snapshot = get_position_snapshot(
             self.chain.db_session,
             hyperdrive_address=self.interface.hyperdrive_address,
@@ -688,6 +696,8 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A dataframe consisting of positions over time and their corresponding pnl.
         """
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         # TODO add logical name for pool
         position_snapshot = get_position_snapshot(
             self.chain.db_session, hyperdrive_address=self.interface.hyperdrive_address, coerce_float=coerce_float
@@ -716,6 +726,8 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A dataframe of trade events.
         """
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         # TODO add timestamp back in
         out = get_trade_events(
             self.chain.db_session,
@@ -740,6 +752,8 @@ class LocalHyperdrive(Hyperdrive):
         pd.Dataframe
             A dataframe of aggregated wallet pnl per block
         """
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         out = get_total_pnl_over_time(self.chain.db_session, coerce_float=coerce_float)
         out = self.chain._add_username_to_dataframe(out, "wallet_address")
         return out
