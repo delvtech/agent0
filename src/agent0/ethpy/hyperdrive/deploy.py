@@ -401,27 +401,27 @@ def _deploy_erc4626_deployer(
     target0_contract = ERC4626Target0DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=ERC4626Target0DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=ERC4626Target0DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target1_contract = ERC4626Target1DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=ERC4626Target1DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=ERC4626Target1DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target2_contract = ERC4626Target2DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=ERC4626Target2DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=ERC4626Target2DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target3_contract = ERC4626Target3DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=ERC4626Target3DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=ERC4626Target3DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target4_contract = ERC4626Target4DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=ERC4626Target4DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=ERC4626Target4DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     return ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
@@ -450,27 +450,27 @@ def _deploy_steth_deployer(
     target0_contract = StETHTarget0DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=StETHTarget0DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=StETHTarget0DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target1_contract = StETHTarget1DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=StETHTarget1DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=StETHTarget1DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target2_contract = StETHTarget2DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=StETHTarget2DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=StETHTarget2DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target3_contract = StETHTarget3DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=StETHTarget3DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=StETHTarget3DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     target4_contract = StETHTarget4DeployerContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        link_references=StETHTarget4DeployerContract.LinkReferences(lp_math=lp_math_contract),
+        link_references=StETHTarget4DeployerContract.LinkReferences(LPMath=lp_math_contract),
     )
     return StETHHyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
