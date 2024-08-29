@@ -70,7 +70,7 @@ dev = [
     "nbsphinx>=0.8.12",
     "numpydoc>=1.5.0",
     "pylint",
-    "pypechain",
+    "pypechain>=0.0.37",
     "pytest-postgresql",
     "pyright",
     "sphinx>=6",

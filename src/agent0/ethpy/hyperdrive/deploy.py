@@ -9,7 +9,6 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
-from hexbytes import HexBytes
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -48,16 +47,6 @@ from agent0.hypertypes import (
     StETHTarget3DeployerContract,
     StETHTarget4DeployerContract,
 )
-from agent0.hypertypes.types.ERC4626Target0DeployerContract import erc4626target0deployer_bytecode
-from agent0.hypertypes.types.ERC4626Target1DeployerContract import erc4626target1deployer_bytecode
-from agent0.hypertypes.types.ERC4626Target2DeployerContract import erc4626target2deployer_bytecode
-from agent0.hypertypes.types.ERC4626Target3DeployerContract import erc4626target3deployer_bytecode
-from agent0.hypertypes.types.ERC4626Target4DeployerContract import erc4626target4deployer_bytecode
-from agent0.hypertypes.types.StETHTarget0DeployerContract import stethtarget0deployer_bytecode
-from agent0.hypertypes.types.StETHTarget1DeployerContract import stethtarget1deployer_bytecode
-from agent0.hypertypes.types.StETHTarget2DeployerContract import stethtarget2deployer_bytecode
-from agent0.hypertypes.types.StETHTarget3DeployerContract import stethtarget3deployer_bytecode
-from agent0.hypertypes.types.StETHTarget4DeployerContract import stethtarget4deployer_bytecode
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -136,7 +125,7 @@ def deploy_base_and_vault(
             base_token_contract = ERC20MintableContract.deploy(
                 w3=web3,
                 account=deploy_account_addr,
-                constructorArgs=ERC20MintableContract.ConstructorArgs(
+                constructor_args=ERC20MintableContract.ConstructorArgs(
                     name="Base",
                     symbol="BASE",
                     decimals=18,
@@ -149,7 +138,7 @@ def deploy_base_and_vault(
             vault_contract = MockERC4626Contract.deploy(
                 w3=web3,
                 account=deploy_account_addr,
-                constructorArgs=MockERC4626Contract.ConstructorArgs(
+                constructor_args=MockERC4626Contract.ConstructorArgs(
                     asset=base_token_contract.address,
                     name="Delvnet ERC4626 Yield Source",
                     symbol="ERC4626",
@@ -166,7 +155,7 @@ def deploy_base_and_vault(
             vault_contract = MockLidoContract.deploy(
                 w3=web3,
                 account=deploy_account_addr,
-                constructorArgs=MockLidoContract.ConstructorArgs(
+                constructor_args=MockLidoContract.ConstructorArgs(
                     initialRate=initial_variable_rate.scaled_value,
                     admin=ADDRESS_ZERO,
                     isCompetitionMode=False,
@@ -406,35 +395,38 @@ def _deploy_erc4626_deployer(
     web3: Web3,
     deploy_account_addr: ChecksumAddress,
     factory_contract_address: ChecksumAddress,
-    linked_str: str,
-    linked_contract_addr: str,
+    lp_math_contract: LPMathContract,
 ) -> ERC4626HyperdriveDeployerCoordinatorContract:
-    ERC4626Target0DeployerContract.bytecode = HexBytes(
-        str(erc4626target0deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    ERC4626Target1DeployerContract.bytecode = HexBytes(
-        str(erc4626target1deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    ERC4626Target2DeployerContract.bytecode = HexBytes(
-        str(erc4626target2deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    ERC4626Target3DeployerContract.bytecode = HexBytes(
-        str(erc4626target3deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    ERC4626Target4DeployerContract.bytecode = HexBytes(
-        str(erc4626target4deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-
     core_deployer_contract = ERC4626HyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target0_contract = ERC4626Target0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target1_contract = ERC4626Target1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target2_contract = ERC4626Target2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target3_contract = ERC4626Target3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target4_contract = ERC4626Target4DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target0_contract = ERC4626Target0DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=ERC4626Target0DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target1_contract = ERC4626Target1DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=ERC4626Target1DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target2_contract = ERC4626Target2DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=ERC4626Target2DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target3_contract = ERC4626Target3DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=ERC4626Target3DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target4_contract = ERC4626Target4DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=ERC4626Target4DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
     return ERC4626HyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
+        constructor_args=ERC4626HyperdriveDeployerCoordinatorContract.ConstructorArgs(
             name="ERC4626HyperdriveDeployerCoordinator",
             factory=factory_contract_address,
             coreDeployer=core_deployer_contract.address,
@@ -452,35 +444,38 @@ def _deploy_steth_deployer(
     deploy_account_addr: ChecksumAddress,
     factory_contract_address: ChecksumAddress,
     lido_address: ChecksumAddress,
-    linked_str: str,
-    linked_contract_addr: str,
+    lp_math_contract: LPMathContract,
 ) -> StETHHyperdriveDeployerCoordinatorContract:
-    StETHTarget0DeployerContract.bytecode = HexBytes(
-        str(stethtarget0deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    StETHTarget1DeployerContract.bytecode = HexBytes(
-        str(stethtarget1deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    StETHTarget2DeployerContract.bytecode = HexBytes(
-        str(stethtarget2deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    StETHTarget3DeployerContract.bytecode = HexBytes(
-        str(stethtarget3deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-    StETHTarget4DeployerContract.bytecode = HexBytes(
-        str(stethtarget4deployer_bytecode).replace(linked_str, linked_contract_addr)
-    )
-
     core_deployer_contract = StETHHyperdriveCoreDeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target0_contract = StETHTarget0DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target1_contract = StETHTarget1DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target2_contract = StETHTarget2DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target3_contract = StETHTarget3DeployerContract.deploy(w3=web3, account=deploy_account_addr)
-    target4_contract = StETHTarget4DeployerContract.deploy(w3=web3, account=deploy_account_addr)
+    target0_contract = StETHTarget0DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=StETHTarget0DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target1_contract = StETHTarget1DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=StETHTarget1DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target2_contract = StETHTarget2DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=StETHTarget2DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target3_contract = StETHTarget3DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=StETHTarget3DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
+    target4_contract = StETHTarget4DeployerContract.deploy(
+        w3=web3,
+        account=deploy_account_addr,
+        link_references=StETHTarget4DeployerContract.LinkReferences(LPMath=lp_math_contract),
+    )
     return StETHHyperdriveDeployerCoordinatorContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=StETHHyperdriveDeployerCoordinatorContract.ConstructorArgs(
+        constructor_args=StETHHyperdriveDeployerCoordinatorContract.ConstructorArgs(
             name="StETHHyperdriveDeployerCoordinator",
             factory=factory_contract_address,
             coreDeployer=core_deployer_contract.address,
@@ -525,7 +520,7 @@ def _deploy_hyperdrive_factory(
     forwarder_factory_contract = ERC20ForwarderFactoryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=ERC20ForwarderFactoryContract.ConstructorArgs(name="ERC20ForwarderFactory"),
+        constructor_args=ERC20ForwarderFactoryContract.ConstructorArgs(name="ERC20ForwarderFactory"),
     )
     # Set config from forwarder factory contract here
     factory_deploy_config.linkerFactory = forwarder_factory_contract.address
@@ -534,14 +529,14 @@ def _deploy_hyperdrive_factory(
     factory_contract = HyperdriveFactoryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
+        constructor_args=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
     )
 
     # Deploy the Hyperdrive registry contract
     registry_contract = HyperdriveRegistryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructorArgs=HyperdriveRegistryContract.ConstructorArgs(name="HyperdriveRegistry"),
+        constructor_args=HyperdriveRegistryContract.ConstructorArgs(name="HyperdriveRegistry"),
     )
 
     # Register the factory with the registry contract
@@ -559,17 +554,14 @@ def _deploy_hyperdrive_factory(
         raise ValueError(f"Failed to register Hyperdrive factory.\n{receipt=}")
 
     lp_math_contract = LPMathContract.deploy(w3=web3, account=deploy_account_addr)
-    # Deploying the target deployer contracts requires linking to the LPMath contract.
-    # We do this by replacing the `linked_str` pattern with address of lp_math_contract.
-    # The `linked_str` pattern is the identifier of the LP Math contract for
-    # "contracts/src/libraries/LPMath.sol"
-    linked_str = "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__"
-    linked_contract_addr = lp_math_contract.address[2:].lower()
 
     match deploy_type:
         case HyperdriveDeployType.ERC4626:
             deployer_coordinator_contract = _deploy_erc4626_deployer(
-                web3, deploy_account_addr, factory_contract.address, linked_str, linked_contract_addr
+                web3,
+                deploy_account_addr,
+                factory_contract.address,
+                lp_math_contract,
             )
         case HyperdriveDeployType.STETH:
             deployer_coordinator_contract = _deploy_steth_deployer(
@@ -577,8 +569,7 @@ def _deploy_hyperdrive_factory(
                 deploy_account_addr,
                 factory_contract.address,
                 deployed_base_and_vault.vault_shares_token_contract.address,
-                linked_str,
-                linked_contract_addr,
+                lp_math_contract,
             )
 
     add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(
