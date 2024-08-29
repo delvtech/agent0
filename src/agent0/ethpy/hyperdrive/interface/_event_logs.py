@@ -11,6 +11,20 @@ if TYPE_CHECKING:
     from .read_interface import HyperdriveReadInterface
 
 
+# We define the earliest block to look for hyperdrive initialize events
+# based on chain id (retrieved from web3.eth.chain_id()).
+EARLIEST_BLOCK_LOOKUP = {
+    # Ethereum
+    1: 20180600,
+    # Sepolia
+    111545111: 6137300,
+    # Gnosis
+    100: 35732200,
+    # Gnosis fork
+    42070: 35730000,
+}
+
+
 def _event_data_to_dict(in_val: EventData, numeric_args_as_str: bool) -> dict[str, Any]:
     out = dict(in_val)
     # The args field is also an attribute dict, change to dict
@@ -107,6 +121,13 @@ def _get_initialize_events(
     numeric_args_as_str: bool,
 ) -> list[dict[str, Any]]:
     """See API for documentation."""
+
+    # We look up the chain id, and define the `from_block` based on which chain it is as the default.
+    if from_block is None:
+        chain_id = hyperdrive_interface.web3.eth.chain_id
+        # If not in lookup, we default to `earliest`
+        from_block = EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
+
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.Initialize.get_logs(

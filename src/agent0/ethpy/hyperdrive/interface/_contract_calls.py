@@ -228,7 +228,7 @@ async def _async_open_long(
     min_output = 0  # TODO: give the user access to this parameter
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True
@@ -321,7 +321,7 @@ async def _async_close_long(
     min_output = 0
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True
@@ -399,7 +399,7 @@ async def _async_open_short(
     max_deposit = int(MAX_WEI)
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True
@@ -482,7 +482,7 @@ async def _async_close_short(
     min_output = 0
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True
@@ -565,7 +565,7 @@ async def _async_add_liquidity(
     min_lp_share_price = 0
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True
@@ -639,7 +639,7 @@ async def _async_remove_liquidity(
     min_output = 0
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True
@@ -699,7 +699,7 @@ async def _async_redeem_withdraw_shares(
     min_output = FixedPoint(scaled_value=1)
 
     # We use the yield as the base token in steth pools
-    if interface.base_is_eth:
+    if interface.base_is_yield:
         as_base_option = False
     else:
         as_base_option = True

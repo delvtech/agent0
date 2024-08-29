@@ -236,10 +236,8 @@ async def main(argv: Sequence[str] | None = None) -> None:
             raise ValueError("RPC_URI is not set")
 
         ws_rpc_uri = os.getenv("WS_RPC_URI", None)
-        if ws_rpc_uri is None:
-            raise ValueError("WS_RPC_URI is not set")
 
-        chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
+        chain = Chain(rpc_uri, Chain.Config(no_postgres=True))
 
         # Get the registry address from artifacts
         registry_address = os.getenv("REGISTRY_ADDRESS", None)
@@ -248,13 +246,31 @@ async def main(argv: Sequence[str] | None = None) -> None:
             if artifacts_uri is None:
                 raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
             registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+
+        check_time = os.getenv("INVARIANCE_CHECK_TIME", None)
+        if check_time is None:
+            # This sets the default if not passed in
+            check_time = parsed_args.check_time
+        else:
+            # Convert string to python integer
+            check_time = int(check_time)
+
+        run_on_event_trigger = os.getenv("INVARIANCE_CHECK_EVENT_TRIGGER", None)
+        if run_on_event_trigger is None:
+            run_on_event_trigger = parsed_args.event_trigger
+        else:
+            # Convert string to python boolean
+            run_on_event_trigger = run_on_event_trigger.lower() == "true"
     else:
-        chain = Chain(parsed_args.rpc_uri)
+        chain = Chain(parsed_args.rpc_uri, Chain.Config(no_postgres=True))
         registry_address = parsed_args.registry_addr
         ws_rpc_uri = parsed_args.ws_rpc_uri
+        check_time = parsed_args.check_time
+        run_on_event_trigger = parsed_args.event_trigger
 
-    if ws_rpc_uri is None:
-        raise ValueError("ws_rpc_uri must be set.")
+    if run_on_event_trigger:
+        if ws_rpc_uri is None:
+            raise ValueError("ws_rpc_uri must be set if `event-trigger` is set.")
 
     rollbar_environment_name = "invariant_checks"
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
@@ -266,16 +282,20 @@ async def main(argv: Sequence[str] | None = None) -> None:
     logging.info("Checking for new pools...")
     deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
 
-    # Run event handler in background
-    event_handler = asyncio.create_task(
-        run_event_handler(
-            ws_rpc_uri,
-            deployed_pools,
-            log_to_rollbar,
-            invariance_ignore_func,
-            parsed_args.rollbar_verbose,
+    event_handler: asyncio.Task | None = None
+    if run_on_event_trigger:
+        # Type narrowing, we do the check earlier
+        assert ws_rpc_uri is not None
+        # Run event handler in background
+        event_handler = asyncio.create_task(
+            run_event_handler(
+                ws_rpc_uri,
+                deployed_pools,
+                log_to_rollbar,
+                invariance_ignore_func,
+                parsed_args.rollbar_verbose,
+            )
         )
-    )
 
     # Run periodic invariant checks
     while True:
@@ -290,9 +310,10 @@ async def main(argv: Sequence[str] | None = None) -> None:
             continue
 
         # We have an option to run in 2 modes:
-        # 1. When `check_time` <= 0, we check every block, including any blocks we may have missed.
-        # 2. When `check_time` > 0, we don't check every block, but instead check every `check_time` seconds.
-        if parsed_args.check_time > 0:
+        # 1. When `check_time` < 0, we check every block, including any blocks we may have missed.
+        # 2. When `check_time` >= 0, we don't check every block, but instead check every `check_time` seconds.
+        #    0 means we don't wait and check as fast as possible, skipping intermediate blocks.
+        if check_time >= 0:
             # We don't iterate through all skipped blocks, but instead only check a single block
             batch_check_start_block = batch_check_end_block
 
@@ -342,14 +363,20 @@ async def main(argv: Sequence[str] | None = None) -> None:
         # and won't throw the exception until we await the handler.
 
         # If set, we sleep for check_time amount.
-        if parsed_args.check_time > 0:
-            # While we're waiting, we want to keep looking for exceptions in the event handler
-            num_iterations = parsed_args.check_time // HANDLER_EXCEPTION_CHECK_TIME
-            for _ in range(num_iterations):
+        if run_on_event_trigger:
+            # Type narrowing, we do the check earlier
+            assert event_handler is not None
+            if check_time > 0:
+                # While we're waiting, we want to keep looking for exceptions in the event handler
+                num_iterations = check_time // HANDLER_EXCEPTION_CHECK_TIME
+                for _ in range(num_iterations):
+                    _look_for_exception_in_handler(event_handler)
+                    await asyncio.sleep(HANDLER_EXCEPTION_CHECK_TIME)
+            else:
                 _look_for_exception_in_handler(event_handler)
-                await asyncio.sleep(HANDLER_EXCEPTION_CHECK_TIME)
         else:
-            _look_for_exception_in_handler(event_handler)
+            if check_time > 0:
+                await asyncio.sleep(check_time)
 
 
 class Args(NamedTuple):
@@ -362,6 +389,7 @@ class Args(NamedTuple):
     ws_rpc_uri: str
     sepolia: bool
     check_time: int
+    event_trigger: bool
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -385,6 +413,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         ws_rpc_uri=namespace.ws_rpc_uri,
         sepolia=namespace.sepolia,
         check_time=namespace.check_time,
+        event_trigger=namespace.event_trigger,
     )
 
 
@@ -449,7 +478,21 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         "--check-time",
         type=int,
         default=3600,
-        help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
+        help=(
+            "Periodic invariance check, in addition to listening for events (if enabled). "
+            "Negative number means to backfill to check every block. "
+            "Defaults to once an hour."
+        ),
+    )
+
+    # The argument below adds both
+    # `--event-trigger` (default) and
+    # `--no-event-trigger` (turn it off)
+    parser.add_argument(
+        "--event-trigger",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable or disable invariant checks on event triggers via websockets.",
     )
 
     # Use system arguments if none were passed

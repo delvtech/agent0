@@ -146,7 +146,8 @@ class HyperdriveAgent:
         else:
             self.name = name
             # Register the username if it was provided
-            add_addr_to_username(self.name, [self.address], self.chain.db_session)
+            if self.chain.db_session is not None:
+                add_addr_to_username(self.name, [self.address], self.chain.db_session)
 
         # The agent object itself maintains it's own nonce for async transactions
         self.nonce_lock = threading.Lock()
@@ -891,6 +892,8 @@ class HyperdriveAgent:
         self._sync_events(pool)
         hyperdrive_address = pool.interface.hyperdrive_address
 
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         # Query current positions from the events table
         positions = get_current_positions(
             self.chain.db_session,
@@ -1055,6 +1058,8 @@ class HyperdriveAgent:
         else:
             hyperdrive_address = str(pool_filter.hyperdrive_address)
 
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         position_snapshot = get_position_snapshot(
             session=self.chain.db_session,
             latest_entry=True,
@@ -1144,6 +1149,8 @@ class HyperdriveAgent:
         else:
             hyperdrive_address = pool_filter.interface.hyperdrive_address
 
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         trade_events = get_trade_events(
             self.chain.db_session,
             hyperdrive_address=hyperdrive_address,
@@ -1173,6 +1180,8 @@ class HyperdriveAgent:
         else:
             interfaces = [pool.interface]
 
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         # Remote hyperdrive stack syncs only the agent's wallet
         trade_events_to_db(interfaces, wallet_addr=self.address, db_session=self.chain.db_session)
         # We sync checkpoint events as well
@@ -1186,6 +1195,9 @@ class HyperdriveAgent:
             interfaces = [p.interface for p in pool]
         else:
             interfaces = [pool.interface]
+
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
 
         # Note that remote hyperdrive only updates snapshots wrt the agent itself.
         snapshot_positions_to_db(

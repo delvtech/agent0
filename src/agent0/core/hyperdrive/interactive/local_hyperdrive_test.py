@@ -1082,6 +1082,8 @@ def test_dashboard_dfs(fast_hyperdrive_fixture: LocalHyperdrive):
         agent1.execute_policy_action()
 
     # Ensure dataframes can be built
+    # Type narrowing
+    assert fast_hyperdrive_fixture.chain.db_session is not None
     build_pool_dashboard(fast_hyperdrive_fixture.hyperdrive_address, fast_hyperdrive_fixture.chain.db_session)
     build_wallet_dashboard([agent0.address, agent1.address], fast_hyperdrive_fixture.chain.db_session)
 

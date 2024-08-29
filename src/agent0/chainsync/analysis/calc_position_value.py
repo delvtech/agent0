@@ -128,7 +128,7 @@ def calc_single_closeout(
         # on which pool we're interacting with.)
         # When base is eth, we are using the shares as the "base" token
         # Otherwise, we need to convert to base
-        if not interface.base_is_eth:
+        if not interface.base_is_yield:
             fp_out_value *= vault_share_price
 
     elif position["token_type"] == "SHORT":
@@ -191,7 +191,7 @@ def calc_single_closeout(
         # on which pool we're interacting with.)
         # When base is eth, we are using the shares as the "base" token
         # Otherwise, we need to convert to base
-        if not interface.base_is_eth:
+        if not interface.base_is_yield:
             fp_out_value *= vault_share_price
 
     # For PNL, we assume all withdrawal shares are redeemable

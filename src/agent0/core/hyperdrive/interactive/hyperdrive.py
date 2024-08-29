@@ -129,7 +129,8 @@ class Hyperdrive:
                 self.chain._web3,  # pylint: disable=protected-access
             )
 
-        add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
+        if self.chain.db_session is not None:
+            add_hyperdrive_addr_to_name(name, self.hyperdrive_address, self.chain.db_session)
         self.name = name
 
         # Set the crash report's additional information from the chain.
@@ -233,6 +234,9 @@ class Hyperdrive:
         # TODO we can relax this by either dropping any entries from this pool, or by making
         # a db update on a unique constraint.
 
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
+
         if (
             get_latest_block_number_from_trade_event(
                 self.chain.db_session, hyperdrive_address=self.hyperdrive_address, wallet_address=None
@@ -304,6 +308,8 @@ class Hyperdrive:
         return self.interface.hyperdrive_address
 
     def _sync_events(self) -> None:
+        if self.chain.db_session is None:
+            raise ValueError("Function requires postgres.")
         trade_events_to_db([self.interface], wallet_addr=None, db_session=self.chain.db_session)
         # We sync checkpoint events as well
         checkpoint_events_to_db([self.interface], db_session=self.chain.db_session)
