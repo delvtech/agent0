@@ -246,12 +246,28 @@ async def main(argv: Sequence[str] | None = None) -> None:
             if artifacts_uri is None:
                 raise ValueError("ARTIFACTS_URI must be set if registry address is not set.")
             registry_address = get_hyperdrive_registry_from_artifacts(artifacts_uri)
+
+        check_time = os.getenv("INVARIANCE_CHECK_TIME", None)
+        if check_time is None:
+            # This sets the default if not passed in
+            check_time = parsed_args.check_time
+        else:
+            # Convert string to python integer
+            check_time = int(check_time)
+
+        run_on_event_trigger = os.getenv("INVARIANCE_CHECK_EVENT_TRIGGER", None)
+        if run_on_event_trigger is None:
+            run_on_event_trigger = parsed_args.event_trigger
+        else:
+            # Convert string to python boolean
+            run_on_event_trigger = run_on_event_trigger.lower() == "true"
     else:
         chain = Chain(parsed_args.rpc_uri, Chain.Config(no_postgres=True))
         registry_address = parsed_args.registry_addr
         ws_rpc_uri = parsed_args.ws_rpc_uri
+        check_time = parsed_args.check_time
+        run_on_event_trigger = parsed_args.event_trigger
 
-    run_on_event_trigger = parsed_args.event_trigger
     if run_on_event_trigger:
         if ws_rpc_uri is None:
             raise ValueError("ws_rpc_uri must be set if `event-trigger` is set.")
@@ -297,7 +313,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         # 1. When `check_time` < 0, we check every block, including any blocks we may have missed.
         # 2. When `check_time` >= 0, we don't check every block, but instead check every `check_time` seconds.
         #    0 means we don't wait and check as fast as possible, skipping intermediate blocks.
-        if parsed_args.check_time >= 0:
+        if check_time >= 0:
             # We don't iterate through all skipped blocks, but instead only check a single block
             batch_check_start_block = batch_check_end_block
 
@@ -350,17 +366,17 @@ async def main(argv: Sequence[str] | None = None) -> None:
         if run_on_event_trigger:
             # Type narrowing, we do the check earlier
             assert event_handler is not None
-            if parsed_args.check_time > 0:
+            if check_time > 0:
                 # While we're waiting, we want to keep looking for exceptions in the event handler
-                num_iterations = parsed_args.check_time // HANDLER_EXCEPTION_CHECK_TIME
+                num_iterations = check_time // HANDLER_EXCEPTION_CHECK_TIME
                 for _ in range(num_iterations):
                     _look_for_exception_in_handler(event_handler)
                     await asyncio.sleep(HANDLER_EXCEPTION_CHECK_TIME)
             else:
                 _look_for_exception_in_handler(event_handler)
         else:
-            if parsed_args.check_time > 0:
-                await asyncio.sleep(parsed_args.check_time)
+            if check_time > 0:
+                await asyncio.sleep(check_time)
 
 
 class Args(NamedTuple):
