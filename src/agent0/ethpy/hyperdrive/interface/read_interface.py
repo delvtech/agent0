@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import eth_abi
 from fixedpointmath import FixedPoint
 from web3 import Web3
+from web3.constants import ADDRESS_ZERO
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
 from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
@@ -190,11 +191,12 @@ class HyperdriveReadInterface:
         base_token_contract_address = self.pool_config.base_token
         vault_shares_token_address = self.pool_config.vault_shares_token
 
-        # Agent0 doesn't support eth as base, so if it is, we use the yield token as the base, and
+        # Agent0 doesn't support pools with eth as base. Additionally, some pools do not have
+        # a base token. In both of these cases, we use the yield token as the base
         # calls to trades will use "as_base=False"
-        if base_token_contract_address == ETH_CONTRACT_ADDRESS:
-            self.base_is_eth = True
-            # If the base token is eth, we use the yield token as the base token (e.g., steth)
+        if base_token_contract_address in (ETH_CONTRACT_ADDRESS, ADDRESS_ZERO):
+            self.base_is_yield = True
+            # We use the yield token as the base token (e.g., steth)
             # and pass in "as_base=False" to the contract calls.
             # This simplifies accounting to have only one base token for steth.
             # The alternative of having eth as base token requires keeping track of both
@@ -202,7 +204,7 @@ class HyperdriveReadInterface:
             # eth.
             base_token_contract_address = vault_shares_token_address
         else:
-            self.base_is_eth = False
+            self.base_is_yield = False
 
         # Define morpho specific variables
         self.morpho_contract = None

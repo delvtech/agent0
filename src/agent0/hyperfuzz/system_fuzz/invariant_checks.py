@@ -106,7 +106,7 @@ def run_invariant_checks(
             # Warning
             _check_eth_balances(pool_state),
             # Info
-            _check_base_balances(pool_state, interface.base_is_eth),
+            _check_base_balances(pool_state, interface.base_is_yield),
             # Critical (after diving down into steth failure)
             _check_total_shares(pool_state),
             # Critical
@@ -130,7 +130,7 @@ def run_invariant_checks(
         else:
             results = [
                 _check_eth_balances(pool_state),
-                _check_base_balances(pool_state, interface.base_is_eth),
+                _check_base_balances(pool_state, interface.base_is_yield),
                 _check_total_shares(pool_state),
                 _check_minimum_share_reserves(pool_state),
                 _check_solvency(pool_state),
@@ -184,6 +184,7 @@ def run_invariant_checks(
             rollbar_data=rollbar_data,
             rollbar_log_filter_func=rollbar_log_filter_func,
         )
+    logging.info("Done")
     return out_exceptions
 
 
@@ -212,7 +213,7 @@ def _check_eth_balances(pool_state: PoolState) -> InvariantCheckResults:
     return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
-def _check_base_balances(pool_state: PoolState, base_is_eth: bool) -> InvariantCheckResults:
+def _check_base_balances(pool_state: PoolState, base_is_yield: bool) -> InvariantCheckResults:
     # Hyperdrive base & eth balances should always be zero
     failed = False
     exception_message: str | None = None
@@ -220,7 +221,7 @@ def _check_base_balances(pool_state: PoolState, base_is_eth: bool) -> InvariantC
     log_level = None
 
     # We ignore this test for steth, as the base token here is actually the yield token
-    if pool_state.hyperdrive_base_balance != FixedPoint(0) and not base_is_eth:
+    if pool_state.hyperdrive_base_balance != FixedPoint(0) and not base_is_yield:
         exception_message = f"Pool base balance {pool_state.hyperdrive_base_balance} != 0."
         exception_data["invariance_check:actual_hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         failed = True
