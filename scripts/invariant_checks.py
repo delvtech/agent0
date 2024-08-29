@@ -294,9 +294,10 @@ async def main(argv: Sequence[str] | None = None) -> None:
             continue
 
         # We have an option to run in 2 modes:
-        # 1. When `check_time` <= 0, we check every block, including any blocks we may have missed.
-        # 2. When `check_time` > 0, we don't check every block, but instead check every `check_time` seconds.
-        if parsed_args.check_time > 0:
+        # 1. When `check_time` < 0, we check every block, including any blocks we may have missed.
+        # 2. When `check_time` >= 0, we don't check every block, but instead check every `check_time` seconds.
+        #    0 means we don't wait and check as fast as possible, skipping intermediate blocks.
+        if parsed_args.check_time >= 0:
             # We don't iterate through all skipped blocks, but instead only check a single block
             batch_check_start_block = batch_check_end_block
 
@@ -461,7 +462,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         "--check-time",
         type=int,
         default=3600,
-        help="Periodic invariance check, in addition to listening for events. Defaults to once an hour.",
+        help=(
+            "Periodic invariance check, in addition to listening for events (if enabled). "
+            "Negative number means to backfill to check every block. "
+            "Defaults to once an hour."
+        ),
     )
 
     # The argument below adds both
