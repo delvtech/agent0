@@ -172,10 +172,10 @@ class StETHTarget0DeployerContract(Contract):
     class LinkReferences(NamedTuple):
         """Link references required when deploying."""
 
-        lp_math: LPMathContract
+        LPMath: LPMathContract
 
     link_references_placeholder_lookup: dict[str, str] = {
-        "lp_math": "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__",
+        "LPMath": "__$2b4fa6f02a36eedfe41c65e8dd342257d3$__",
     }
 
     @classmethod
@@ -200,7 +200,7 @@ class StETHTarget0DeployerContract(Contract):
         if cls.bytecode is not None:
 
             cls.bytecode = cls.bytecode.replace(
-                cls.link_references_placeholder_lookup["lp_math"], link_references.lp_math.address[2:].lower()
+                cls.link_references_placeholder_lookup["LPMath"], link_references.LPMath.address[2:].lower()
             )
 
             # bytecode needs to be in hex for web3
