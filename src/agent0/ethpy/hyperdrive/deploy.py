@@ -775,8 +775,8 @@ def _deploy_and_initialize_hyperdrive_pool(
     logs = get_transaction_logs(factory_contract, tx_receipt)
     hyperdrive_address: str | None = None
     for log in logs:
-        if log["event"] == "GovernanceUpdated":
-            hyperdrive_address = log["address"]
+        if log["event"] == "Deployed":
+            hyperdrive_address = log["args"]["hyperdrive"]
     if hyperdrive_address is None:
         raise AssertionError("Generating hyperdrive contract didn't return address")
     return hyperdrive_address
