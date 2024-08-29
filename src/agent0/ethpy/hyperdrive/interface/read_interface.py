@@ -303,7 +303,7 @@ class HyperdriveReadInterface:
         """
         if not self._deploy_block_checked:
             self._deploy_block_checked = True
-            initialize_event = self.get_initialize_events("earliest")
+            initialize_event = self.get_initialize_events()
             if len(initialize_event) == 0:
                 logging.warning("Initialize event not found, can't set deploy_block")
             elif len(initialize_event) == 1:
@@ -720,7 +720,8 @@ class HyperdriveReadInterface:
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
-            The block to start getting events from.
+            The block to start getting events from. Defaults to the
+            "earliest" block, which is dependent on the chain we're connecting to.
         argument_filters: dict[str, Any] | None, optional
             A dictionary of filters to apply to the arguments of events.
         numeric_args_as_str: bool, optional

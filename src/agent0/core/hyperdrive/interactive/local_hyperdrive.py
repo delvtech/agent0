@@ -316,7 +316,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        deploy_event = self.interface.get_initialize_events(from_block="earliest")
+        deploy_event = self.interface.get_initialize_events()
         deploy_event = list(deploy_event)
 
         # Attempt to get the deploy event
