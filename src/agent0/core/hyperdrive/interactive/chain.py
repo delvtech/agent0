@@ -472,6 +472,8 @@ class Chain:
     # or have the db query automatically add these columns to the result
 
     def _add_username_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        if self.db_session is None:
+            raise ValueError("Function requires postgres.")
         addr_to_username = get_addr_to_username(self.db_session)
 
         # Get corresponding usernames
@@ -482,6 +484,8 @@ class Chain:
         return out
 
     def _add_hyperdrive_name_to_dataframe(self, df: pd.DataFrame, addr_column: str):
+        if self.db_session is None:
+            raise ValueError("Function requires postgres.")
         hyperdrive_addr_to_name = get_hyperdrive_addr_to_name(self.db_session)
 
         # Do lookup from address to name
