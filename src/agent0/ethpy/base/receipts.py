@@ -65,11 +65,13 @@ def get_event_object(
         If the event is not found, return (None, None).
         Otherwise, return the decoded event information as (data, abi).
     """
+    # TODO getting the event signature hex should be done once, and not every time this function is called.
     abi_events: list[ABIEvent] = [cast(ABIEvent, abi) for abi in contract.abi if abi.get("type", "") == "event"]
     for event in abi_events:
         # Get event signature components
         name = event.get("name")
-        inputs: str = ",".join([param.get("type", "") for param in event.get("inputs", [])])
+        # ABIEvent doesn't support nested tuple types
+        inputs = _get_nested_input_types(event.get("inputs", []))  # type: ignore
         # Hash event signature
         event_signature_text = f"{name}({inputs})"
         event_signature_hex = Web3.keccak(text=event_signature_text).hex()
@@ -85,3 +87,16 @@ def get_event_object(
                 event_data: EventData = contract_event.process_receipt(tx_receipt)[0]
             return event_data, event
     return (None, None)
+
+
+def _get_nested_input_types(event_inputs: list[dict]) -> str:
+    input_list = []
+    for param in event_inputs:
+        param_type = param.get("type", "")
+        if param_type == "tuple":
+            inner_event_types = _get_nested_input_types(param.get("components", []))
+            input_list.append(f"({inner_event_types})")
+        else:
+            input_list.append(param_type)
+
+    return ",".join(input_list)
