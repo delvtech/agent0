@@ -28,14 +28,10 @@ dependencies = [
     "dill>=0.3.8",
     "docker>=7.1.0",
     "eth-abi>=5.1.0",
-    # web3py requires eth-typing < 5.0.0
-    "eth-typing>=4.4.0",
-    # web3py requires eth-account < 0.13.0
-    # eth-account 0.12.3 requires hexbytes >= 1.2.0, which conflicts with web3py
-    "eth-account>=0.11.2",
+    "eth-typing>=5.0.0",
+    "eth-account>=0.13.3",
     "fixedpointmath>=0.2.1",
-    # web3py requires < 0.4.0
-    "hexbytes>=0.3.1",
+    "hexbytes>=1.2.1",
     "hyperdrivepy==0.17.1",
     "hyperdrivetypes>=1.0.18.3",
     "ipython>=8.26.0",
@@ -55,7 +51,7 @@ dependencies = [
     "sqlalchemy-utils>=0.41.2",
     "streamlit>=1.37.1",
     "tqdm>=4.66.5",
-    "web3>=6.20.2, <7.0.0",
+    "web3>=7.2.0",
 ]
 
 
@@ -71,7 +67,9 @@ dev = [
     "nbsphinx>=0.8.12",
     "numpydoc>=1.5.0",
     "pylint",
-    "pypechain>=0.0.37",
+    # FIXME
+    # "pypechain>=0.0.37",
+    "pypechain@/Users/slundquist/workspace/pypechain/",
     "pytest-postgresql",
     "pyright",
     "sphinx>=6",
