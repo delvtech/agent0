@@ -91,10 +91,11 @@ def _get_vault_shares(
         assert interface.morpho_contract is not None
         assert interface.morpho_market_id is not None
         # Get token balances
-        # We want supply shares, which is the first element in the tuple
-        vault_shares = interface.morpho_contract.functions.position(
-            interface.morpho_market_id, hyperdrive_contract.address
-        ).call(block_identifier=block_identifier or "latest")[0]
+        vault_shares = (
+            interface.morpho_contract.functions.position(interface.morpho_market_id, hyperdrive_contract.address)
+            .call(block_identifier=block_identifier or "latest")
+            .supplyShares
+        )
     else:
         # Type narrowing
         assert interface.vault_shares_token_contract is not None

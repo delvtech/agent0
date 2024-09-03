@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import pathlib
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
 
@@ -15,6 +13,7 @@ from hyperdrivetypes import (
     ERC20MintableContract,
     IHyperdriveContract,
     IMorphoBlueHyperdriveContract,
+    IMorphoContract,
     MockERC4626Contract,
     MockLidoContract,
 )
@@ -95,10 +94,6 @@ if TYPE_CHECKING:
     from eth_typing import BlockNumber, ChecksumAddress
 
 AGENT0_SIGNATURE = bytes.fromhex("a0")
-
-MORPHO_ABI_PATH = (
-    pathlib.Path(__file__).parent.parent.parent.parent / "packages" / "external" / "IMorpho.sol" / "IMorpho.json"
-).resolve()
 
 # We expect to have many instance attributes & public methods since this is a large API.
 # pylint: disable=too-many-lines
@@ -232,16 +227,10 @@ class HyperdriveReadInterface:
             # This is due to `hyperdrive_contract` type not knowing it's a base class of
             # morpho, hence we keep it as a separate variable. Ideally we would subclass
             # from interface for the specific instance.
-            morpho_hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(
-                web3.to_checksum_address(self.hyperdrive_address)
-            )
-            with open(MORPHO_ABI_PATH, "rb") as f:
-                morpho_blue_abi = json.load(f)
+            morpho_hyperdrive_contract = IMorphoBlueHyperdriveContract.factory(w3=self.web3)(self.hyperdrive_address)
 
             morpho_contract_addr = morpho_hyperdrive_contract.functions.vault().call()
-            self.morpho_contract = web3.eth.contract(
-                address=web3.to_checksum_address(morpho_contract_addr), abi=morpho_blue_abi["abi"]
-            )
+            self.morpho_contract = IMorphoContract.factory(w3=self.web3)(Web3.to_checksum_address(morpho_contract_addr))
 
             values = (
                 base_token_contract_address,
