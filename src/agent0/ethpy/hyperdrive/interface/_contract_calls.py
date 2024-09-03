@@ -96,7 +96,6 @@ def _get_vault_shares(
             .call(block_identifier=block_identifier or "latest")
             .supplyShares
         )
-        pass
     else:
         # Type narrowing
         assert interface.vault_shares_token_contract is not None
