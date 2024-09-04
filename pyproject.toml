@@ -33,7 +33,7 @@ dependencies = [
     "fixedpointmath>=0.2.1",
     "hexbytes>=1.2.1",
     "hyperdrivepy==0.17.1",
-    "hyperdrivetypes>=1.0.18.3",
+    "hyperdrivetypes>=1.0.18.4",
     "ipython>=8.26.0",
     "matplotlib>=3.9.2",
     "mplfinance>=0.12.10b0",
@@ -67,9 +67,6 @@ dev = [
     "nbsphinx>=0.8.12",
     "numpydoc>=1.5.0",
     "pylint",
-    # FIXME
-    # "pypechain>=0.0.37",
-    "pypechain@/Users/slundquist/workspace/pypechain/",
     "pytest-postgresql",
     "pyright",
     "sphinx>=6",
