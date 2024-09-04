@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from eth_typing import URI
 from web3 import Web3
-from web3.middleware import geth_poa
+from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import RPCEndpoint
 
 
@@ -41,7 +41,7 @@ def initialize_web3_with_http_provider(
         request_kwargs = {"timeout": 20}
     provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
     web3 = Web3(provider)
-    web3.middleware_onion.inject(geth_poa.geth_poa_middleware, layer=0)
+    web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     if reset_provider:
         # TODO: Check that the user is running on anvil, raise error if not
         _ = web3.provider.make_request(method=RPCEndpoint("anvil_reset"), params=[])

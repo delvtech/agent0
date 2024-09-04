@@ -24,7 +24,7 @@ from typing import Callable, NamedTuple, Sequence
 import websockets
 from eth_typing import HexStr
 from web3 import AsyncWeb3
-from web3.providers import WebsocketProviderV2
+from web3.providers import WebSocketProvider
 
 from agent0 import Chain, Hyperdrive
 from agent0.ethpy.hyperdrive import get_hyperdrive_registry_from_artifacts
@@ -153,7 +153,7 @@ async def run_event_handler(
 
     # Initialize web socket in context manager.
     # This automatically reconnects if the connection is lost
-    async for ws_web3 in AsyncWeb3.persistent_websocket(WebsocketProviderV2(ws_rpc_uri)):
+    async for ws_web3 in AsyncWeb3(WebSocketProvider(ws_rpc_uri)):
         try:
             # Initialize event handler by subscribing to events
             subscription_id_to_pool_lookup = await _init_event_handler(ws_web3, pools)

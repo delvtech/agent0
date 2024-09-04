@@ -94,7 +94,7 @@ def _get_checkpoint_events(
     return [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.CreateCheckpoint.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
 
@@ -109,7 +109,7 @@ def _get_transfer_single_events(
     return [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.TransferSingle.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
 
@@ -131,7 +131,7 @@ def _get_initialize_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.Initialize.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     # Convert output event data from lido shares to steth
@@ -151,7 +151,7 @@ def _get_open_long_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.OpenLong.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
@@ -170,7 +170,7 @@ def _get_close_long_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.CloseLong.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
@@ -188,7 +188,7 @@ def _get_open_short_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.OpenShort.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
@@ -206,7 +206,7 @@ def _get_close_short_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.CloseShort.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
@@ -224,7 +224,7 @@ def _get_add_liquidity_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.AddLiquidity.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
@@ -242,7 +242,7 @@ def _get_remove_liquidity_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.RemoveLiquidity.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
@@ -260,7 +260,7 @@ def _get_redeem_withdrawal_shares_events(
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in hyperdrive_interface.hyperdrive_contract.events.RedeemWithdrawalShares.get_logs(
-            fromBlock=from_block, argument_filters=argument_filters
+            from_block=from_block, argument_filters=argument_filters
         )
     ]
     if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:

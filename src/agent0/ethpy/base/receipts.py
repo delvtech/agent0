@@ -5,9 +5,10 @@ from __future__ import annotations
 import warnings
 from typing import Any, Sequence, cast
 
+from eth_typing import ABIEvent
 from web3 import Web3
 from web3.contract.contract import Contract
-from web3.types import ABIEvent, EventData, LogReceipt, TxReceipt
+from web3.types import EventData, LogReceipt, TxReceipt
 
 
 def get_transaction_logs(
