@@ -7,24 +7,13 @@ import random
 from typing import Any, Callable, Sequence
 
 from eth_account.signers.local import LocalAccount
-from eth_typing import BlockIdentifier, BlockNumber, ChecksumAddress
+from eth_typing import ABI, ABIComponent, BlockIdentifier, BlockNumber, ChecksumAddress
 from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
-from web3.types import (
-    ABI,
-    ABIFunctionComponents,
-    ABIFunctionParams,
-    BlockData,
-    Nonce,
-    RPCEndpoint,
-    TxData,
-    TxParams,
-    TxReceipt,
-    Wei,
-)
+from web3.types import BlockData, Nonce, RPCEndpoint, TxData, TxParams, TxReceipt, Wei
 
 from agent0.utils import retry_call
 
@@ -554,7 +543,7 @@ async def _async_send_transaction_and_wait_for_receipt(
     unsent_txn["nonce"] = nonce
 
     signed_txn = signer.sign_transaction(unsent_txn)  # type: ignore
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = await async_wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
@@ -815,7 +804,7 @@ def _send_transaction_and_wait_for_receipt(
         nonce = nonce_func()
     unsent_txn["nonce"] = nonce
     signed_txn = signer.sign_transaction(unsent_txn)  # type: ignore
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
     tx_receipt = wait_for_transaction_receipt(web3, tx_hash, timeout=timeout)
 
     # Error checking when transaction doesn't throw an error, but instead
@@ -1064,14 +1053,10 @@ def fetch_contract_transactions_for_block(
     return contract_transactions
 
 
-def _get_name_and_type_from_abi(abi_outputs: ABIFunctionComponents | ABIFunctionParams) -> tuple[str, str]:
+def _get_name_and_type_from_abi(abi_outputs: ABIComponent) -> tuple[str, str]:
     """Retrieve and narrow the types for abi outputs."""
-    return_value_name: str | None = abi_outputs.get("name")
-    if return_value_name is None:
-        return_value_name = "none"
-    return_value_type: str | None = abi_outputs.get("type")
-    if return_value_type is None:
-        return_value_type = "none"
+    return_value_name: str = abi_outputs.get("name")
+    return_value_type: str = abi_outputs.get("type")
     return (return_value_name, return_value_type)
 
 
