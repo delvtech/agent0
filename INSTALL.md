@@ -25,7 +25,7 @@ You may need to install [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-fil
 Refer to the [suggested build environment](https://github.com/pyenv/pyenv/wiki#suggested-build-environment) if you see
 warnings that system packages are not installed.
 
-Use [venv](https://docs.python.org/3/library/venv.html) to create a local virual Python environment:
+Use [venv](https://docs.python.org/3/library/venv.html) to create a local virtual Python environment:
 
 ```bash
 cd <repo_location>
