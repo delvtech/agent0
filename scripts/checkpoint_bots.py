@@ -181,7 +181,7 @@ async def run_checkpoint_bot(
             break
 
         # We check for low funds in checkpoint bot
-        chain_id = chain._web3.eth.chain_id
+        chain_id = chain._web3.eth.chain_id  # pylint: disable=protected-access
         checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(web3, sender.address))
         if checkpoint_bot_eth_balance <= CHECKPOINT_BOT_LOW_ETH_THRESHOLD.get(
             chain_id, DEFAULT_CHECKPOINT_BOT_LOW_ETH_THRESHOLD
