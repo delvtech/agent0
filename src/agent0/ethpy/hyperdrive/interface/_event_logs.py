@@ -22,6 +22,8 @@ EARLIEST_BLOCK_LOOKUP = {
     100: 35732200,
     # Gnosis fork
     42070: 35730000,
+    # Linea
+    59144: 9245000,
 }
 
 
