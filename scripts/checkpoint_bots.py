@@ -36,7 +36,16 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_e
 CHECKPOINT_WAITING_PERIOD = 0.5
 
 # The threshold for warning low funds
-CHECKPOINT_BOT_LOW_ETH_THRESHOLD = FixedPoint(0.1)
+# This variable is keyed by the chain id, valued with the threshold
+# we should warn at.
+# If not defined, it will default to `FixedPoint(0.1)`
+DEFAULT_CHECKPOINT_BOT_LOW_ETH_THRESHOLD = FixedPoint(0.1)
+CHECKPOINT_BOT_LOW_ETH_THRESHOLD = {
+    # Linea
+    59144: FixedPoint(0.01),
+}
+
+
 FAIL_COUNT_THRESHOLD = 10
 
 
@@ -172,8 +181,11 @@ async def run_checkpoint_bot(
             break
 
         # We check for low funds in checkpoint bot
+        chain_id = chain._web3.eth.chain_id  # pylint: disable=protected-access
         checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(web3, sender.address))
-        if checkpoint_bot_eth_balance <= CHECKPOINT_BOT_LOW_ETH_THRESHOLD:
+        if checkpoint_bot_eth_balance <= CHECKPOINT_BOT_LOW_ETH_THRESHOLD.get(
+            chain_id, DEFAULT_CHECKPOINT_BOT_LOW_ETH_THRESHOLD
+        ):
             log_rollbar_message(
                 message=f"Low funds in checkpoint bot: {checkpoint_bot_eth_balance=}",
                 log_level=logging.WARNING,
