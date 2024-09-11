@@ -208,7 +208,19 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     exception_data: dict[str, Any] = {}
     log_level = None
 
-    previous_pool_state = interface.get_hyperdrive_state(block_identifier=pool_state.block_number - 1)
+    # TODO we hack in a stateful variable into the interface here, since we need
+    # to check between subsequent calls here.
+    # Initial call, we look to see if the attribute exists
+    previous_pool_state: PoolState | None = getattr(interface, "_negative_interest_previous_pool_state", None)
+    # Always set the new state here
+    setattr(interface, "_negative_interest_previous_pool_state", pool_state)
+
+    if previous_pool_state is None:
+        # Skip this check on initial call, not a failure
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
+
     current_vault_share_price = pool_state.pool_info.vault_share_price
     previous_vault_share_price = previous_pool_state.pool_info.vault_share_price
 
