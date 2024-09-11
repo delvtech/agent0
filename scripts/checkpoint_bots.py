@@ -25,6 +25,7 @@ from agent0 import Chain, Hyperdrive
 from agent0.core.base.make_key import make_private_key
 from agent0.ethpy.base import get_account_balance, smart_contract_preview_transaction, smart_contract_transact
 from agent0.ethpy.hyperdrive import get_hyperdrive_pool_config, get_hyperdrive_registry_from_artifacts
+from agent0.ethpy.hyperdrive.interface._event_logs import EARLIEST_BLOCK_LOOKUP
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 
 # Checkpoint bot has a lot going on
@@ -217,7 +218,26 @@ async def run_checkpoint_bot(
                 log_level=logging.INFO,
             )
 
-        if enough_time_has_elapsed and checkpoint_doesnt_exist:
+        # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
+        paused_events = hyperdrive_contract.events.PauseStatusUpdated.get_logs(
+            from_block=EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
+        )
+        is_paused = False
+        if len(list(paused_events)) > 0:
+            # Get the latest pause event
+            # TODO get_logs likely returns events in an ordered
+            # fashion, but we iterate and find the latest one
+            # just in case
+            latest_pause_event = None
+            max_block_number = 0
+            for event in paused_events:
+                if event["blockNumber"] > max_block_number:
+                    max_block_number = event["blockNumber"]
+                    latest_pause_event = event
+            assert latest_pause_event is not None
+            is_paused = latest_pause_event["args"]["isPaused"]
+
+        if enough_time_has_elapsed and checkpoint_doesnt_exist and not is_paused:
             logging_str = f"Pool {pool_name} for {checkpoint_time=}: submitting checkpoint"
             logging.info(logging_str)
             if log_to_rollbar:
