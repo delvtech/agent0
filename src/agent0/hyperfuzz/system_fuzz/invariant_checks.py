@@ -21,6 +21,7 @@ from agent0.hyperfuzz import FuzzAssertionException
 
 LP_SHARE_PRICE_EPSILON = 1e-4
 TOTAL_SHARES_EPSILON = 1e-9
+NEGATIVE_INTEREST_EPSILON = FixedPoint(scaled_value=10)  # 10 wei
 
 
 def run_invariant_checks(
@@ -117,6 +118,8 @@ def run_invariant_checks(
             _check_present_value_greater_than_idle_shares(interface, pool_state),
             # Critical
             _check_previous_checkpoint_exists(interface, pool_state),
+            # Error
+            _check_negative_interest(interface, pool_state),
             # TODO
             # If at any point, we can open a long to make share price to 1
             # Get spot price after long
@@ -136,6 +139,7 @@ def run_invariant_checks(
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
                 _check_previous_checkpoint_exists(interface, pool_state),
+                _check_negative_interest(interface, pool_state),
             ]
 
     exception_message_base = ["Continuous Fuzz Bots Invariant Checks"]
@@ -195,6 +199,42 @@ class InvariantCheckResults(NamedTuple):
     exception_message: str | None
     exception_data: dict[str, Any]
     log_level: int | None
+
+
+def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: PoolState) -> InvariantCheckResults:
+    # Hyperdrive base & eth balances should always be zero
+    failed = False
+    exception_message: str | None = None
+    exception_data: dict[str, Any] = {}
+    log_level = None
+
+    # TODO we hack in a stateful variable into the interface here, since we need
+    # to check between subsequent calls here.
+    # Initial call, we look to see if the attribute exists
+    previous_pool_state: PoolState | None = getattr(interface, "_negative_interest_previous_pool_state", None)
+    # Always set the new state here
+    setattr(interface, "_negative_interest_previous_pool_state", pool_state)
+
+    if previous_pool_state is None:
+        # Skip this check on initial call, not a failure
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
+
+    current_vault_share_price = pool_state.pool_info.vault_share_price
+    previous_vault_share_price = previous_pool_state.pool_info.vault_share_price
+
+    if (current_vault_share_price - previous_vault_share_price) <= -NEGATIVE_INTEREST_EPSILON:
+        exception_message = (
+            f"Negative interest detected. {current_vault_share_price=}, {previous_vault_share_price=}. "
+            f"Difference in wei: {current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
+        )
+        exception_data["invariance_check:current_vault_share_price"] = current_vault_share_price
+        exception_data["invariance_check:previous_vault_share_price"] = previous_vault_share_price
+        failed = True
+        log_level = logging.ERROR
+
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
 def _check_eth_balances(pool_state: PoolState) -> InvariantCheckResults:
