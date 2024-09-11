@@ -276,7 +276,9 @@ async def main(argv: Sequence[str] | None = None) -> None:
     log_to_rollbar = initialize_rollbar(rollbar_environment_name)
 
     # Keeps track of the last time we executed an invariant check
-    batch_check_start_block = chain.block_number()
+    # There are issues with chains where sometimes the block_number
+    # returned here isn't a valid block, so we lag behind a block.
+    batch_check_start_block = chain.block_number() - 1
 
     # Check pools on first iteration
     logging.info("Checking for new pools...")
@@ -301,7 +303,10 @@ async def main(argv: Sequence[str] | None = None) -> None:
     while True:
         # The batch_check_end_block is inclusive
         # (i.e., we do batch_check_end_block + 1 in the loop range)
-        batch_check_end_block = chain.block_number()
+
+        # There are issues with chains where sometimes the block_number
+        # returned here isn't a valid block, so we lag behind a block.
+        batch_check_end_block = chain.block_number() - 1
 
         # If a block hasn't ticked, we sleep
         if batch_check_start_block > batch_check_end_block:
