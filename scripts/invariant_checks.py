@@ -159,7 +159,7 @@ async def run_event_handler(
             subscription_id_to_pool_lookup = await _init_event_handler(ws_web3, pools)
 
             # Listen for responses
-            async for response in ws_web3.ws.process_subscriptions():
+            async for response in ws_web3.socket.process_subscriptions():
                 # Result here is encoded, need to decode if we want to use anything from it.
                 # We get the first topic element, which defines the type of event.
                 assert "result" in response
