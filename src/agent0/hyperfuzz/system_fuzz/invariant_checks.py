@@ -301,6 +301,10 @@ def _check_previous_checkpoint_exists(
     ):
         return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
 
+    # We ignore this test if the pool is paused
+    if interface.get_pool_is_paused():
+        return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
+
     # Otherwise, we ensure the previous checkpoint exists
     previous_checkpoint = get_hyperdrive_checkpoint(
         interface.hyperdrive_contract, Timestamp(previous_checkpoint_time), pool_state.block_number

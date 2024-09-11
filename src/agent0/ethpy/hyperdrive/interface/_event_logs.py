@@ -142,6 +142,31 @@ def _get_initialize_events(
     return out_events
 
 
+def _get_pool_is_paused(
+    hyperdrive_interface: HyperdriveReadInterface,
+) -> bool:
+    chain_id = hyperdrive_interface.web3.eth.chain_id
+    # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
+    paused_events = hyperdrive_interface.hyperdrive_contract.events.PauseStatusUpdated.get_logs(
+        from_block=EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
+    )
+    is_paused = False
+    if len(list(paused_events)) > 0:
+        # Get the latest pause event
+        # TODO get_logs likely returns events in an ordered
+        # fashion, but we iterate and find the latest one
+        # just in case
+        latest_pause_event = None
+        max_block_number = 0
+        for event in paused_events:
+            if event["blockNumber"] > max_block_number:
+                max_block_number = event["blockNumber"]
+                latest_pause_event = event
+        assert latest_pause_event is not None
+        is_paused = latest_pause_event["args"]["isPaused"]
+    return is_paused
+
+
 # TODO we can add a helper function to get all trading events here
 def _get_open_long_events(
     hyperdrive_interface: HyperdriveReadInterface,

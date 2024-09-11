@@ -52,6 +52,7 @@ from ._event_logs import (
     _get_initialize_events,
     _get_open_long_events,
     _get_open_short_events,
+    _get_pool_is_paused,
     _get_redeem_withdrawal_shares_events,
     _get_remove_liquidity_events,
     _get_transfer_single_events,
@@ -645,6 +646,16 @@ class HyperdriveReadInterface:
             The result of hyperdrive_contract.functions.getUncollectedGovernanceFees
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_identifier)
+
+    def get_pool_is_paused(self) -> bool:
+        """Get whether or not the pool is paused from events.
+
+        Returns
+        -------
+        bool
+            Whether or not the pool is paused.
+        """
+        return _get_pool_is_paused(self)
 
     def get_transfer_single_events(
         self,
