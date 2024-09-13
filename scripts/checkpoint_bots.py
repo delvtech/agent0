@@ -44,6 +44,8 @@ DEFAULT_CHECKPOINT_BOT_LOW_ETH_THRESHOLD = FixedPoint(0.1)
 CHECKPOINT_BOT_LOW_ETH_THRESHOLD = {
     # Linea
     59144: FixedPoint(0.01),
+    # Base
+    8453: FixedPoint(0.01),
 }
 
 
