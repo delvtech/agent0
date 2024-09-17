@@ -45,10 +45,10 @@ However, it was built for the primary use case of trading on [Hyperdrive](https:
 
 First, install [Foundry](https://book.getfoundry.sh/getting-started/installation) and [Docker](https://docs.docker.com/engine/install/).
 
-Next, using a Python 3.10 environment, you can install agent0 via pip:
+Next, using a Python 3.10 environment, you can install agent0 via [uv](https://github.com/astral-sh/uv):
 
 ```sh
-pip install --upgrade agent0
+uv pip install --upgrade agent0
 ```
 
 Finally, you can execute Hyperdrive trades in a simulated blockchain environment:
