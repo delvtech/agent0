@@ -12,37 +12,29 @@ environment to compile. Ensure you are using rustc 1.78.0-nightly or newer when 
 
 ## 2. Clone
 
-Clone the repo to <repo_location>, then enter that directory.
+Clone the repo to <repo_location>.
 
 ```bash
 git clone https://github.com/delvtech/agent0.git <repo_location>
-cd <repo_location>
 ```
 
 ## 3. Setup environment
 
-You may need to install [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation).
-Refer to the [suggested build environment](https://github.com/pyenv/pyenv/wiki#suggested-build-environment) if you see
-warnings that system packages are not installed.
-
-Use [venv](https://docs.python.org/3/library/venv.html) to create a local virual Python environment:
+You may need to install [uv](https://github.com/astral-sh/uv) to create a local Python environment.
 
 ```bash
 cd <repo_location>
-pyenv install 3.10
-pyenv local 3.10
-python -m venv --upgrade-deps .venv
+uv venv --python 3.10 .venv
 source .venv/bin/activate
 ```
 
 ## 4. Install `agent0`
 
 ```bash
-pip install --upgrade pip
-pip install -e .
-# pip install . # For non-editable install
-# pip install -e '.[dev]' # For dev and testing tools
-# pip install -e '.[all]' # Install everything
+uv pip install -e '.'
+# uv pip install '.' # For non-editable install
+# uv pip install -e '.[dev]' # For dev and testing tools
+# uv pip install -e '.[all]' # Install everything
 ```
 
 ## 5. Verify
