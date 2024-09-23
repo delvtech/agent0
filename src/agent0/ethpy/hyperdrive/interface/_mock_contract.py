@@ -78,6 +78,13 @@ def _calc_max_spot_price(pool_state: PoolState):
     return FixedPoint(scaled_value=int(max_spot_price))
 
 
+def _calc_rate_given_fixed_price(fixed_price: FixedPoint, position_duration: FixedPoint) -> FixedPoint:
+    """See API for documentation."""
+    # We want position_duration.scaled_value because it is treated as a U256 that gets annualized.
+    fixed_rate = hyperdrivepy.calculate_rate_given_fixed_price(str(fixed_price), str(position_duration.scaled_value))
+    return FixedPoint(scaled_value=int(fixed_rate))
+
+
 def _calc_effective_share_reserves(pool_state: PoolState) -> FixedPoint:
     """See API for documentation."""
     effective_share_reserves = hyperdrivepy.calculate_effective_share_reserves(
