@@ -114,6 +114,7 @@ def get_trades(
 
 
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 async def async_execute_agent_trades(
     trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadWriteInterface,

@@ -153,6 +153,7 @@ async def run_checkpoint_bot(
     """
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-positional-arguments
 
     # TODO pull this function out and put into agent0
     web3 = chain._web3  # pylint: disable=protected-access
@@ -415,6 +416,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         # Reset hyperdrive objs
         deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
 
+        # pylint: disable=protected-access
         checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(chain._web3, sender.address))
         log_message = f"Running checkpoint bots for pools {list(deployed_pools.keys())}. {checkpoint_bot_eth_balance=}"
         logging.info(log_message)

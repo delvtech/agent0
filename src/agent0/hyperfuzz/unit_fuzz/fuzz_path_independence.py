@@ -99,6 +99,7 @@ def fuzz_path_independence(
     """
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     # pylint: disable=too-many-branches
 
     # Make sure there exists enough permutations of paths to ensure independent operations

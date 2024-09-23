@@ -33,6 +33,10 @@ if TYPE_CHECKING:
     from .hyperdrive import Hyperdrive
     from .local_chain import LocalChain
 
+# TODO cleanup
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+
 
 class LocalHyperdriveAgent(HyperdriveAgent):
     """Interactive Local Hyperdrive Agent."""
@@ -77,7 +81,6 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         private_key: str | None, optional
             The private key of the associated account. Default is auto-generated.
         """
-        # pylint: disable=too-many-arguments
 
         # Explicit type checking
         if pool is not None and not isinstance(pool, LocalHyperdrive):
@@ -138,7 +141,6 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             If the token is not in the mapping, will attempt to call `mint` on
             the token contract. Defaults to an empty mapping.
         """
-        # pylint: disable=too-many-arguments
 
         # Explicit type checking
         if pool is not None and not isinstance(pool, LocalHyperdrive):
@@ -542,7 +544,6 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pd.DataFrame
             The agent's positions across all hyperdrive pools.
         """
-        # pylint: disable=too-many-arguments
 
         if registry_address is not None:
             raise ValueError("registry_address not used with local agents")

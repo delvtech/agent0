@@ -224,6 +224,7 @@ def get_trade_events(
         A DataFrame that consists of the queried trade events data.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
 
     query = session.query(TradeEvent)
 
@@ -289,6 +290,7 @@ def get_current_positions(
         A DataFrame that consists of the queried pool info data.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
 
     query = session.query(
         TradeEvent.hyperdrive_address,
@@ -601,8 +603,6 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
 # Analysis schema interfaces
 
 
-# Lots of arguments, most are defaults
-# pylint: disable=too-many-arguments
 def get_position_snapshot(
     session: Session,
     hyperdrive_address: str | list[str] | None = None,
@@ -641,6 +641,9 @@ def get_position_snapshot(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
+    # Lots of arguments, most are defaults
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     query = session.query(PositionSnapshot)
 
     if isinstance(hyperdrive_address, list):

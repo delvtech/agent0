@@ -82,6 +82,7 @@ def run_invariant_checks(
     # TODO cleanup
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     # pylint: disable=too-many-branches
 
     logging.info("Running invariant checks on pool %s", pool_name)
@@ -233,14 +234,16 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
             exception_message = (
                 "Negative interest detected on paused pool. "
                 f"{current_vault_share_price=}, {previous_vault_share_price=}. "
-                f"Difference in wei: {current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
+                "Difference in wei: "
+                f"{current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
             )
             log_level = logging.WARNING
         else:
             exception_message = (
                 "Negative interest detected on unpaused pool. "
                 f"{current_vault_share_price=}, {previous_vault_share_price=}. "
-                f"Difference in wei: {current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
+                "Difference in wei: "
+                f"{current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
             )
             log_level = logging.CRITICAL
 

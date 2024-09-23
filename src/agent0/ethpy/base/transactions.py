@@ -36,6 +36,10 @@ DEFAULT_PRIORITY_FEE_MULTIPLE = 1
 # too many return statements in _contract_function_abi_outputs
 # ruff: noqa: PLR0911
 
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-locals
+
 
 # We define the function to check the exception to retry on
 # for preview calls.
@@ -140,10 +144,6 @@ def smart_contract_read(
     return {f"value{idx}": value for idx, value in enumerate(return_values)}
 
 
-# TODO cleanup
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-arguments
 def smart_contract_preview_transaction(
     contract: Contract,
     signer_address: ChecksumAddress,
@@ -189,6 +189,8 @@ def smart_contract_preview_transaction(
         function to dynamically assign types to output variables
             would be cool if this also put stuff into FixedPoint
     """
+    # TODO cleanup
+    # pylint: disable=too-many-branches
     if read_retry_count is None:
         read_retry_count = DEFAULT_READ_RETRY_COUNT
     if block_identifier is None:
@@ -578,8 +580,6 @@ async def _async_send_transaction_and_wait_for_receipt(
     return tx_receipt
 
 
-# TODO cleanup args
-# pylint: disable=too-many-arguments
 async def async_smart_contract_transact(
     web3: Web3,
     contract: Contract,

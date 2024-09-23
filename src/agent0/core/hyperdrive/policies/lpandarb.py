@@ -36,6 +36,7 @@ MAX_ITER = 50
 # pylint: disable=too-many-arguments
 # ruff: noqa: PLR0913
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-positional-arguments
 
 
 def arb_fixed_rate_down(

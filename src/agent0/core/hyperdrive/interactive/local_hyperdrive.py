@@ -247,7 +247,6 @@ class LocalHyperdrive(Hyperdrive):
 
         return registered_pools
 
-    # pylint: disable=too-many-arguments
     def __init__(
         self,
         chain: LocalChain,
@@ -282,6 +281,8 @@ class LocalHyperdrive(Hyperdrive):
             NOTE: backfilling can be slow.
         """
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments
 
         # We don't call super's init since we do specific type checking
         # in Hyperdrive's init. Instead, we call _initialize

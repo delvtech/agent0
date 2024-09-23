@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
 # We have no control over the number of arguments since it is specified by the smart contracts
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # ruff: noqa: PLR0913
 # We only worry about protected access for anyone outside of this folder.
 # pylint: disable=protected-access
