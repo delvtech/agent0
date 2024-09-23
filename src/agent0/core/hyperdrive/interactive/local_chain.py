@@ -678,6 +678,7 @@ class LocalChain(Chain):
             The agent object for a user to execute trades with.
         """
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments
 
         # Explicit type checking
         if pool is not None and not isinstance(pool, LocalHyperdrive):

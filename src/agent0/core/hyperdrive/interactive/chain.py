@@ -450,6 +450,7 @@ class Chain:
             The agent object for a user to execute trades with.
         """
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-positional-arguments
 
         policy_config = self._handle_policy_config(policy, policy_config)
 

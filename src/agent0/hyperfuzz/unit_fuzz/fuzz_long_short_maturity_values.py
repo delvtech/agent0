@@ -79,6 +79,7 @@ def fuzz_long_short_maturity_values(
         If True, pause on test failure.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
 
     # Parameters for local chain initialization, defines defaults in constructor
     # set a large block time so i can manually control when it ticks
@@ -281,7 +282,6 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     return namespace_to_args(parser.parse_args())
 
 
-# pylint: disable=too-many-arguments
 def invariant_check(
     open_trade_event: OpenLong | OpenShort,
     close_trade_event: CloseLong | CloseShort,
@@ -310,6 +310,8 @@ def invariant_check(
     interactive_hyperdrive: InteractiveHyperdrive
         An instantiated InteractiveHyperdrive object.
     """
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     # pylint: disable=too-many-statements
     failed = False
 

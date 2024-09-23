@@ -63,6 +63,7 @@ def setup_fuzz(
                 An instantiated InteractiveHyperdrive object.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     # pylint: disable=too-many-locals
 
     # Parameters for pool initialization.

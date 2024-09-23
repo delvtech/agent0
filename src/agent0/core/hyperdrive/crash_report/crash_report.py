@@ -53,6 +53,7 @@ def setup_hyperdrive_crash_report_logging(log_format_string: str | None = None) 
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 def build_crash_trade_result(
     exception: Exception,
     interface: HyperdriveReadInterface,
@@ -218,6 +219,7 @@ def build_crash_trade_result(
 
 
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-positional-arguments
 def log_hyperdrive_crash_report(
     trade_result: TradeResult,
     log_level: int | None = None,

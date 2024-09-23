@@ -23,10 +23,6 @@ from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 _SLEEP_AMOUNT = 1
 
 
-# TODO cleanup
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-branches
 def acquire_data(
     start_block: int = 0,
     lookback_block_limit: int = 3000,
@@ -79,6 +75,12 @@ def acquire_data(
     backfill: bool, optional
         If true, will fill in missing pool info data for every block. Defaults to True.
     """
+
+    # TODO cleanup
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-positional-arguments
     # TODO implement logger instead of global logging to suppress based on module name.
 
     hyperdrive_name_mapping = None

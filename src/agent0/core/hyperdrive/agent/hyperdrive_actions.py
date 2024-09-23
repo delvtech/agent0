@@ -132,6 +132,7 @@ def close_long_trade(
     Trade[HyperdriveMarketAction]
         The trade object for closing a long in a Hyperdrive pool.
     """
+    # pylint: disable=too-many-positional-arguments
     return Trade(
         market_type=MarketType.HYPERDRIVE,
         market_action=HyperdriveMarketAction(
@@ -222,6 +223,7 @@ def close_short_trade(
     Trade[HyperdriveMarketAction]
         The trade object for closing a short in a Hyperdrive pool.
     """
+    # pylint: disable=too-many-positional-arguments
     return Trade(
         market_type=MarketType.HYPERDRIVE,
         market_action=HyperdriveMarketAction(
@@ -271,6 +273,7 @@ def add_liquidity_trade(
     Trade[HyperdriveMarketAction]
         The trade object for adding liquidity to a Hyperdrive pool.
     """
+    # pylint: disable=too-many-positional-arguments
     if min_apr is None:
         min_apr = FixedPoint(scaled_value=1)
     if max_apr is None:

@@ -18,10 +18,6 @@ from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 _SLEEP_AMOUNT = 1
 
 
-# TODO cleanup
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-branches
 def analyze_data(
     start_block: int = 0,
     interfaces: list[HyperdriveReadInterface] | None = None,
@@ -67,6 +63,12 @@ def analyze_data(
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
     """
+    # TODO cleanup
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-positional-arguments
+
     # TODO implement logger instead of global logging to suppress based on module name.
 
     ## Initialization

@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 # Number of arguments is influenced by the underlying solidity contract
 # pylint: disable=too-many-arguments
 # ruff: noqa: PLR0913
+# pylint: disable=too-many-positional-arguments
 
 
 def _get_total_supply_withdrawal_shares(

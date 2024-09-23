@@ -101,6 +101,7 @@ AGENT0_SIGNATURE = bytes.fromhex("a0")
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=too-many-statements
 # ruff: noqa: PLR0913
 # We only worry about protected access for anyone outside of this folder.

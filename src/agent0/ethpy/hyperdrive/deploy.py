@@ -51,6 +51,7 @@ from agent0.ethpy.base.receipts import get_transaction_logs
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=too-many-locals
 
 UINT256_MAX = int(2**256 - 1)

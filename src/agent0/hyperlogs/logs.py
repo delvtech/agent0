@@ -54,6 +54,7 @@ def setup_logging(
         - Test the various optional input combinations
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     # remove all handlers if requested
     if not keep_previous_handlers:
         remove_handlers(get_root_logger())
@@ -266,6 +267,7 @@ def add_file_handler(
         Whether to keep previous handlers. Defaults to True.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     logger = get_root_logger(logger)
     if not keep_previous_handlers:
         remove_handlers(logger)
