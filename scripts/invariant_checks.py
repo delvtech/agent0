@@ -167,7 +167,7 @@ async def run_event_handler(
 
                 subscription_id = response["subscription"]
 
-                encoded_event = response["result"]["topics"][0].hex()
+                encoded_event = response["result"]["topics"][0].to_0x_hex()
                 event_str = REVERSE_ENCODED_EVENTS[encoded_event]
                 check_block = response["result"]["blockNumber"]
 
