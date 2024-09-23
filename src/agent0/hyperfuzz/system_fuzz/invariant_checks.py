@@ -121,6 +121,8 @@ def run_invariant_checks(
             _check_previous_checkpoint_exists(interface, pool_state),
             # Error
             _check_negative_interest(interface, pool_state),
+            # Warning
+            _check_price_spike(interface, pool_state),
             # TODO
             # If at any point, we can open a long to make share price to 1
             # Get spot price after long
@@ -141,6 +143,7 @@ def run_invariant_checks(
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
                 _check_previous_checkpoint_exists(interface, pool_state),
                 _check_negative_interest(interface, pool_state),
+                _check_price_spike(interface, pool_state),
             ]
 
     exception_message_base = ["Continuous Fuzz Bots Invariant Checks"]
@@ -200,6 +203,51 @@ class InvariantCheckResults(NamedTuple):
     exception_message: str | None
     exception_data: dict[str, Any]
     log_level: int | None
+
+
+def _check_price_spike(interface: HyperdriveReadInterface, pool_state: PoolState) -> InvariantCheckResults:
+    # Warn if a trade causes a large rate spike; which is a precursor to an attack
+    failed = False
+    exception_message: str | None = None
+    exception_data: dict[str, Any] = {}
+    log_level = None
+    delta_rate_epsilon = interface.pool_config.circuit_breaker_delta
+
+    # TODO we hack in a stateful variable into the interface here to check
+    # between subsequent calls.
+    # Initial call, we look to see if the attribute exists
+    previous_pool_state: PoolState | None = getattr(interface, "_price_spike_previous_pool_state", None)
+    # Always set the new state here
+    setattr(interface, "_price_spike_previous_pool_state", pool_state)
+
+    if previous_pool_state is None:
+        # Skip this check on initial call, not a failure
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
+
+    previous_weighted_spot_apr = interface.calc_rate_given_fixed_price(
+        previous_pool_state.checkpoint.weighted_spot_price,
+        FixedPoint(previous_pool_state.pool_config.position_duration),
+    )
+    current_weighted_spot_apr = interface.calc_rate_given_fixed_price(
+        pool_state.checkpoint.weighted_spot_price,
+        FixedPoint(pool_state.pool_config.position_duration),
+    )
+
+    if abs(current_weighted_spot_apr - previous_weighted_spot_apr) >= delta_rate_epsilon:
+        exception_data["invariance_check:current_weighted_spot_apr"] = current_weighted_spot_apr
+        exception_data["invariance_check:previous_weighted_spot_apr"] = previous_weighted_spot_apr
+        failed = True
+        exception_message = (
+            "Large trade has caused the a rate circuit breaker to trip. "
+            f"{current_weighted_spot_apr=}, {previous_weighted_spot_apr=}. "
+            "Difference: "
+            f"{current_weighted_spot_apr- previous_weighted_spot_apr}."
+        )
+        log_level = logging.WARNING
+
+    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
 def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: PoolState) -> InvariantCheckResults:
