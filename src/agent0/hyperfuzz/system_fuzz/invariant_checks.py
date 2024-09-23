@@ -226,6 +226,7 @@ def _check_price_spike(interface: HyperdriveReadInterface, pool_state: PoolState
             failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
         )
 
+    # The checkpoint weighted spot price is updated every checkpoint and every trade.
     previous_weighted_spot_apr = interface.calc_rate_given_fixed_price(
         previous_pool_state.checkpoint.weighted_spot_price,
         FixedPoint(previous_pool_state.pool_config.position_duration),
