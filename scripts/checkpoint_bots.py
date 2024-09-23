@@ -214,11 +214,6 @@ async def run_checkpoint_bot(
             f"{checkpoint_bot_eth_balance=}"
         )
         logging.info(logging_str)
-        if log_to_rollbar:
-            log_rollbar_message(
-                message=logging_str,
-                log_level=logging.INFO,
-            )
 
         # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
         paused_events = hyperdrive_contract.events.PauseStatusUpdated.get_logs(
@@ -242,11 +237,6 @@ async def run_checkpoint_bot(
         if enough_time_has_elapsed and checkpoint_doesnt_exist and not is_paused:
             logging_str = f"Pool {pool_name} for {checkpoint_time=}: submitting checkpoint"
             logging.info(logging_str)
-            if log_to_rollbar:
-                log_rollbar_message(
-                    message=logging_str,
-                    log_level=logging.INFO,
-                )
 
             # To prevent race conditions with the checkpoint bot submitting transactions
             # for multiple pools simultaneously, we wait a random amount of time before
@@ -425,7 +415,8 @@ async def main(argv: Sequence[str] | None = None) -> None:
         # Reset hyperdrive objs
         deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
 
-        log_message = f"Running checkpoint bots for pools {list(deployed_pools.keys())}..."
+        checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(chain._web3, sender.address))
+        log_message = f"Running checkpoint bots for pools {list(deployed_pools.keys())}. {checkpoint_bot_eth_balance=}"
         logging.info(log_message)
         log_rollbar_message(message=log_message, log_level=logging.INFO)
 
