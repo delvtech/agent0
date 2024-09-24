@@ -530,12 +530,13 @@ if __name__ == "__main__":
     # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
     try:
         asyncio.run(main())
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
+        # pylint: disable=invalid-name
         _rpc_uri = os.getenv("RPC_URI", None)
         if _rpc_uri is None:
-            log_prefix = "Uncaught Critical Error in Checkpoint Bot:"
+            _log_prefix = "Uncaught Critical Error in Checkpoint Bot:"
         else:
-            chain_name = _rpc_uri.split("//")[-1].split("/")[0]
-            log_prefix = f"Uncaught Critical Error for {chain_name} in Checkpoint Bot:"
-        log_rollbar_exception(exception=exc, log_level=logging.CRITICAL, rollbar_log_prefix=log_prefix)
+            _chain_name = _rpc_uri.split("//")[-1].split("/")[0]
+            _log_prefix = f"Uncaught Critical Error for {_chain_name} in Checkpoint Bot:"
+        log_rollbar_exception(exception=exc, log_level=logging.CRITICAL, rollbar_log_prefix=_log_prefix)
         raise exc
