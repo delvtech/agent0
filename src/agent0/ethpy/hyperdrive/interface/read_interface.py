@@ -52,6 +52,7 @@ from ._event_logs import (
     _get_initialize_events,
     _get_open_long_events,
     _get_open_short_events,
+    _get_pause_events,
     _get_pool_is_paused,
     _get_redeem_withdrawal_shares_events,
     _get_remove_liquidity_events,
@@ -649,6 +650,24 @@ class HyperdriveReadInterface:
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_identifier)
 
+    def get_pause_events(
+        self,
+        from_block: BlockIdentifier | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get the list of pause events.
+
+        Arguments
+        ---------
+        from_block: BlockIdentifier | None, optional
+            The block to start getting events from.
+
+        Returns
+        -------
+        list[dict[str, Any]]
+            A list of emitted events.
+        """
+        return _get_pause_events(self, from_block)
+
     def get_pool_is_paused(self) -> bool:
         """Get whether or not the pool is paused from events.
 
@@ -666,8 +685,6 @@ class HyperdriveReadInterface:
         numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted TransferSingle events from the Hyperdrive contract.
-
-        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -770,8 +787,6 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted CloseLong events from the Hyperdrive contract.
 
-        NOTE: numeric event argument values are strings to maintain precision.
-
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
@@ -796,8 +811,6 @@ class HyperdriveReadInterface:
         numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
-
-        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -824,8 +837,6 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted OpenShort events from the Hyperdrive contract.
 
-        NOTE: numeric event argument values are strings to maintain precision.
-
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
@@ -850,8 +861,6 @@ class HyperdriveReadInterface:
         numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted AddLiquidity events from the Hyperdrive contract.
-
-        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------
@@ -878,8 +887,6 @@ class HyperdriveReadInterface:
     ) -> list[dict[str, Any]]:
         """Get the emitted RemoveLiquidity events from the Hyperdrive contract.
 
-        NOTE: numeric event argument values are strings to maintain precision.
-
         Arguments
         ---------
         from_block: BlockIdentifier | None, optional
@@ -904,8 +911,6 @@ class HyperdriveReadInterface:
         numeric_args_as_str: bool = False,
     ) -> list[dict[str, Any]]:
         """Get the emitted RedeemWithdrawalShares events from the Hyperdrive contract.
-
-        NOTE: numeric event argument values are strings to maintain precision.
 
         Arguments
         ---------

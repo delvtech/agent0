@@ -142,14 +142,26 @@ def _get_initialize_events(
     return out_events
 
 
+def _get_pause_events(
+    hyperdrive_interface: HyperdriveReadInterface,
+    from_block: BlockIdentifier | None,
+) -> list[dict[str, Any]]:
+    if from_block is None:
+        chain_id = hyperdrive_interface.web3.eth.chain_id
+        # If not in lookup, we default to `earliest`
+        from_block = EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
+    # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
+    out_events = [
+        _event_data_to_dict(e, False)
+        for e in hyperdrive_interface.hyperdrive_contract.events.PauseStatusUpdated.get_logs(from_block=from_block)
+    ]
+    return out_events
+
+
 def _get_pool_is_paused(
     hyperdrive_interface: HyperdriveReadInterface,
 ) -> bool:
-    chain_id = hyperdrive_interface.web3.eth.chain_id
-    # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
-    paused_events = hyperdrive_interface.hyperdrive_contract.events.PauseStatusUpdated.get_logs(
-        from_block=EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
-    )
+    paused_events = _get_pause_events(hyperdrive_interface, None)
     is_paused = False
     if len(list(paused_events)) > 0:
         # Get the latest pause event
