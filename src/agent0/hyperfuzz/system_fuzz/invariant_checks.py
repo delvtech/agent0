@@ -231,20 +231,17 @@ def _check_price_spike(interface: HyperdriveReadInterface, pool_state: PoolState
         previous_pool_state.checkpoint.weighted_spot_price,
         FixedPoint(previous_pool_state.pool_config.position_duration),
     )
-    current_weighted_spot_apr = interface.calc_rate_given_fixed_price(
-        pool_state.checkpoint.weighted_spot_price,
-        FixedPoint(pool_state.pool_config.position_duration),
-    )
+    current_spot_price = interface.calc_spot_price(pool_state)
 
-    if abs(current_weighted_spot_apr - previous_weighted_spot_apr) >= delta_rate_epsilon:
-        exception_data["invariance_check:current_weighted_spot_apr"] = current_weighted_spot_apr
+    if abs(current_spot_price - previous_weighted_spot_apr) >= delta_rate_epsilon:
+        exception_data["invariance_check:current_spot_price"] = current_spot_price
         exception_data["invariance_check:previous_weighted_spot_apr"] = previous_weighted_spot_apr
         failed = True
         exception_message = (
             "Large trade has caused the a rate circuit breaker to trip. "
-            f"{current_weighted_spot_apr=}, {previous_weighted_spot_apr=}. "
+            f"{current_spot_price=}, {previous_weighted_spot_apr=}. "
             "Difference: "
-            f"{current_weighted_spot_apr- previous_weighted_spot_apr}."
+            f"{current_spot_price- previous_weighted_spot_apr}."
         )
         log_level = logging.WARNING
 
