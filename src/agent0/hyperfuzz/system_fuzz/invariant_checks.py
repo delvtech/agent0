@@ -333,9 +333,10 @@ def _check_base_balances(pool_state: PoolState, base_is_yield: bool) -> Invarian
 def _check_previous_checkpoint_exists(
     interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
+    # pylint: disable=too-many-locals
+
     # This test checks if previous checkpoint was minted, and fails if that checkpoint can't be found
     # (with the exception of the first checkpoint)
-
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}

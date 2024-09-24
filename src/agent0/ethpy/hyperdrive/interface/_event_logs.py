@@ -161,16 +161,16 @@ def _get_pause_events(
 def _get_pool_is_paused(
     hyperdrive_interface: HyperdriveReadInterface,
 ) -> bool:
-    paused_events = _get_pause_events(hyperdrive_interface, None)
+    pause_events = _get_pause_events(hyperdrive_interface, None)
     is_paused = False
-    if len(list(paused_events)) > 0:
+    if len(list(pause_events)) > 0:
         # Get the latest pause event
         # TODO get_logs likely returns events in an ordered
         # fashion, but we iterate and find the latest one
         # just in case
         latest_pause_event = None
         max_block_number = 0
-        for event in paused_events:
+        for event in pause_events:
             if event["blockNumber"] > max_block_number:
                 max_block_number = event["blockNumber"]
                 latest_pause_event = event
