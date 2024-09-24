@@ -84,6 +84,7 @@ def acquire_data(
     # TODO cleanup
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-positional-arguments
     # TODO implement logger instead of global logging to suppress based on module name.
