@@ -375,6 +375,9 @@ def log_hyperdrive_crash_report(
         # Generate filename
         if crash_report_file_prefix is None:
             crash_report_file_prefix = ""
+        else:
+            # Sanitize filename prefix
+            crash_report_file_prefix = crash_report_file_prefix.replace(" ", "_").replace("/", "_").replace("\\", "_")
         crash_report_dir = ".crash_report/"
         crash_report_file = f"{crash_report_dir}/{crash_report_file_prefix}{fn_time_str}.json"
         if not os.path.exists(crash_report_dir):
