@@ -217,18 +217,18 @@ async def run_checkpoint_bot(
         logging.info(logging_str)
 
         # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
-        paused_events = hyperdrive_contract.events.PauseStatusUpdated.get_logs(
+        pause_events = hyperdrive_contract.events.PauseStatusUpdated.get_logs(
             from_block=EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
         )
         is_paused = False
-        if len(list(paused_events)) > 0:
+        if len(list(pause_events)) > 0:
             # Get the latest pause event
             # TODO get_logs likely returns events in an ordered
             # fashion, but we iterate and find the latest one
             # just in case
             latest_pause_event = None
             max_block_number = 0
-            for event in paused_events:
+            for event in pause_events:
                 if event["blockNumber"] > max_block_number:
                     max_block_number = event["blockNumber"]
                     latest_pause_event = event

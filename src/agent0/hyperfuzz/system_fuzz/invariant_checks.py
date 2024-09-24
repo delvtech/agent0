@@ -6,6 +6,7 @@ import logging
 import time
 from typing import Any, Callable, NamedTuple
 
+import pandas as pd
 from fixedpointmath import FixedPoint
 from web3.types import BlockData, Timestamp
 
@@ -332,9 +333,10 @@ def _check_base_balances(pool_state: PoolState, base_is_yield: bool) -> Invarian
 def _check_previous_checkpoint_exists(
     interface: HyperdriveReadInterface, pool_state: PoolState
 ) -> InvariantCheckResults:
+    # pylint: disable=too-many-locals
+
     # This test checks if previous checkpoint was minted, and fails if that checkpoint can't be found
     # (with the exception of the first checkpoint)
-
     failed = False
     exception_message: str | None = None
     exception_data: dict[str, Any] = {}
@@ -360,8 +362,26 @@ def _check_previous_checkpoint_exists(
     ):
         return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
 
-    # We ignore this test if the pool is paused
-    if interface.get_pool_is_paused():
+    # We ignore this test if the pool is paused during last checkpoint time
+    pause_events = interface.get_pause_events()
+    pool_paused_during_previous_checkpoint = False
+    if len(pause_events) > 0:
+        # Convert to dataframe for easier querying
+        pause_df = pd.json_normalize(pause_events).sort_values("blockNumber")
+        # TODO this is querying per pause event, which may not be ideal if there are lots of pauses
+        timestamps = [
+            interface.get_block_timestamp(interface.get_block(block_identifier=b)) for b in pause_df["blockNumber"]
+        ]
+        pause_df["block_timestamp"] = timestamps
+        # We want to find if the pool was paused during previous checkpoint time.
+        # To do this, we filter out all pause events after the previous checkpoint time
+        # and get the last event.
+        pause_df = pause_df[pause_df["block_timestamp"] <= previous_checkpoint_time]
+        # If no events after filter, pool was not paused
+        if len(pause_df) > 0:
+            pool_paused_during_previous_checkpoint = bool(pause_df.iloc[-1]["args.isPaused"])
+
+    if pool_paused_during_previous_checkpoint:
         return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
 
     # Otherwise, we ensure the previous checkpoint exists
