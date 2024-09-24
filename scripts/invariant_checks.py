@@ -174,9 +174,7 @@ async def run_event_handler(
                 # Look up the pool based on the subscription id
                 pool = subscription_id_to_pool_lookup[subscription_id]
 
-                log_str = (
-                    f"Event {event_str} found on block {check_block} for pool {pool.name}. Running invariant checks."
-                )
+                log_str = f"{pool.chain.name}: Event {event_str} found on block {check_block} for pool {pool.name}. Running invariant checks."
                 logging.info(log_str)
                 if rollbar_verbose:
                     log_rollbar_message(log_str, log_level=logging.INFO)
@@ -326,7 +324,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         # If it's past the limit, log an error and catch up by
         # skipping to the latest block
         if (batch_check_end_block - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
-            error_message = "Unable to keep up with invariant checks. Skipping check blocks."
+            error_message = f"{chain.name}: Unable to keep up with invariant checks. Skipping check blocks."
             logging.error(error_message)
             log_rollbar_message(error_message, logging.ERROR)
             batch_check_start_block = batch_check_end_block
@@ -353,7 +351,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
             ]
 
             log_str = (
-                f"Running periodic invariant checks for block {check_block} "
+                f"{chain.name}: Running periodic invariant checks for block {check_block} "
                 f"on pools {[pool.name for pool in deployed_pools]}"
             )
             logging.info(log_str)
@@ -512,7 +510,12 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:  # pylint: disable=broad-except
-        log_rollbar_exception(
-            exception=e, log_level=logging.ERROR, rollbar_log_prefix="Uncaught Critical Error in Invariant Checks:"
-        )
+        rpc_uri = os.getenv("RPC_URI", None)
+        if rpc_uri is None:
+            log_prefix = "Uncaught Critical Error in Invariant Checks:"
+        else:
+            chain_name = rpc_uri.split("//")[-1].split("/")[0]
+            log_prefix = f"Uncaught Critical Error for {chain_name} in Invariant Checks:"
+
+        log_rollbar_exception(exception=e, log_level=logging.ERROR, rollbar_log_prefix=log_prefix)
         raise e

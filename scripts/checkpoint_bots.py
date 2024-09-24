@@ -191,7 +191,7 @@ async def run_checkpoint_bot(
             chain_id, DEFAULT_CHECKPOINT_BOT_LOW_ETH_THRESHOLD
         ):
             log_rollbar_message(
-                message=f"Low funds in checkpoint bot: {checkpoint_bot_eth_balance=}",
+                message=f"{chain.name}: Low funds in checkpoint bot: {checkpoint_bot_eth_balance=}",
                 log_level=logging.WARNING,
             )
 
@@ -287,7 +287,7 @@ async def run_checkpoint_bot(
                     log_rollbar_exception(
                         exception=e,
                         log_level=log_level,
-                        rollbar_log_prefix=f"Pool {pool_name} for {checkpoint_time=}: {logging_str}",
+                        rollbar_log_prefix=f"{chain.name}: Pool {pool_name} for {checkpoint_time=}: {logging_str}",
                     )
 
                 # If any transaction or preview failed, we reset our global nonce counter and depend on the chain's
@@ -297,7 +297,7 @@ async def run_checkpoint_bot(
                 fail_count += 1
                 continue
             logging_str = (
-                f"Pool {pool_name} for {checkpoint_time=}: "
+                f"{chain.name}: Pool {pool_name} for {checkpoint_time=}: "
                 f"Checkpoint successfully mined with transaction_hash={receipt['transactionHash'].hex()}"
             )
             logging.info(logging_str)
@@ -418,7 +418,10 @@ async def main(argv: Sequence[str] | None = None) -> None:
 
         # pylint: disable=protected-access
         checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(chain._web3, sender.address))
-        log_message = f"Running checkpoint bots for pools {list(deployed_pools.keys())}. {checkpoint_bot_eth_balance=}"
+        log_message = (
+            f"{chain.name}: Running checkpoint bots for pools {list(deployed_pools.keys())}. "
+            f"{checkpoint_bot_eth_balance=}"
+        )
         logging.info(log_message)
         log_rollbar_message(message=log_message, log_level=logging.INFO)
 
@@ -528,7 +531,11 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as exc:
-        log_rollbar_exception(
-            exception=exc, log_level=logging.CRITICAL, rollbar_log_prefix="Uncaught Critical Error in Checkpoint Bot:"
-        )
+        rpc_uri = os.getenv("RPC_URI", None)
+        if rpc_uri is None:
+            log_prefix = "Uncaught Critical Error in Checkpoint Bot:"
+        else:
+            chain_name = rpc_uri.split("//")[-1].split("/")[0]
+            log_prefix = f"Uncaught Critical Error for {chain_name} in Checkpoint Bot:"
+        log_rollbar_exception(exception=exc, log_level=logging.CRITICAL, rollbar_log_prefix=log_prefix)
         raise exc
