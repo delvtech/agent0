@@ -386,6 +386,12 @@ class Chain:
         """Returns if this object is a local chain."""
         return False
 
+    @property
+    def name(self) -> str:
+        """Returns the name of the chain, which is the base hostname of the rpc uri."""
+        # We split to get only the root uri
+        return self.rpc_uri.split("//")[-1].split("/")[0]
+
     ################
     # Agent functions
     ################

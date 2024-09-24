@@ -175,7 +175,8 @@ async def run_event_handler(
                 pool = subscription_id_to_pool_lookup[subscription_id]
 
                 log_str = (
-                    f"Event {event_str} found on block {check_block} for pool {pool.name}. Running invariant checks."
+                    f"{pool.chain.name}: Event {event_str} found on block {check_block} for pool {pool.name}. "
+                    "Running invariant checks."
                 )
                 logging.info(log_str)
                 if rollbar_verbose:
@@ -326,7 +327,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
         # If it's past the limit, log an error and catch up by
         # skipping to the latest block
         if (batch_check_end_block - batch_check_start_block) > LOOKBACK_BLOCK_LIMIT:
-            error_message = "Unable to keep up with invariant checks. Skipping check blocks."
+            error_message = f"{chain.name}: Unable to keep up with invariant checks. Skipping check blocks."
             logging.error(error_message)
             log_rollbar_message(error_message, logging.ERROR)
             batch_check_start_block = batch_check_end_block
@@ -353,7 +354,7 @@ async def main(argv: Sequence[str] | None = None) -> None:
             ]
 
             log_str = (
-                f"Running periodic invariant checks for block {check_block} "
+                f"{chain.name}: Running periodic invariant checks for block {check_block} "
                 f"on pools {[pool.name for pool in deployed_pools]}"
             )
             logging.info(log_str)
@@ -512,7 +513,13 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:  # pylint: disable=broad-except
-        log_rollbar_exception(
-            exception=e, log_level=logging.ERROR, rollbar_log_prefix="Uncaught Critical Error in Invariant Checks:"
-        )
+        # pylint: disable=invalid-name
+        _rpc_uri = os.getenv("RPC_URI", None)
+        if _rpc_uri is None:
+            _log_prefix = "Uncaught Critical Error in Invariant Checks:"
+        else:
+            _chain_name = _rpc_uri.split("//")[-1].split("/")[0]
+            _log_prefix = f"Uncaught Critical Error for {_chain_name} in Invariant Checks:"
+
+        log_rollbar_exception(exception=e, log_level=logging.ERROR, rollbar_log_prefix=_log_prefix)
         raise e
