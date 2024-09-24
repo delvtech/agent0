@@ -77,6 +77,7 @@ from ._mock_contract import (
     _calc_pool_share_delta_after_open_short,
     _calc_position_duration_in_years,
     _calc_present_value,
+    _calc_rate_given_fixed_price,
     _calc_shares_in_given_bonds_out_down,
     _calc_shares_in_given_bonds_out_up,
     _calc_shares_out_given_bonds_in_down,
@@ -1035,6 +1036,33 @@ class HyperdriveReadInterface:
         if pool_state is None:
             pool_state = self.current_pool_state
         return _calc_spot_rate(pool_state)
+
+    def calc_rate_given_fixed_price(self, price: FixedPoint, position_duration: FixedPoint) -> FixedPoint:
+        r"""Calculate the rate assuming a given price is constant for some annualized duration.
+
+        We calculate the rate for a fixed length of time as:
+
+        ..math::
+            r = (1 - p) / (p t)
+
+        where $p$ is the price and $t$ is the length of time that this price is
+        assumed to be constant, in units of years. For example, if the price is
+        constant for 6 months, then $t=0.5$.
+        In our case, $t = \text{position_duration} / (60*60*24*365)$.
+
+        Arguments
+        ---------
+        price: FixedPoint
+            The spot price of bonds fora given pool.
+        position_duration: FixedPoint
+            The pool bond position duration, over which the price is assumed to be constant.
+
+        Returns
+        -------
+        FixedPoint
+            The fixed rate apr for a given fixed price and position duration.
+        """
+        return _calc_rate_given_fixed_price(price, position_duration)
 
     def calc_spot_price(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Calculate the spot price for a given Hyperdrive pool.
