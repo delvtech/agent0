@@ -36,6 +36,7 @@ def acquire_data(
     suppress_logs: bool = False,
     progress_bar: bool = False,
     backfill=True,
+    force_init=False,
 ):
     """Execute the data acquisition pipeline.
 
@@ -74,11 +75,16 @@ def acquire_data(
         If true, will show a progress bar. Defaults to False.
     backfill: bool, optional
         If true, will fill in missing pool info data for every block. Defaults to True.
+    force_init: bool, optional
+        If true, will explicitly use start block on query instead of depending on latest pool info.
+        This is useful when we initialize an existing pool object and need to initialize
+        the db.
     """
 
     # TODO cleanup
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
+    # pylint: disable=too-many-statements
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-positional-arguments
     # TODO implement logger instead of global logging to suppress based on module name.
@@ -116,9 +122,12 @@ def acquire_data(
 
     ## Get starting point for restarts
     # Get last entry of pool info in db
-    data_latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
-    # Using max of latest block in database or specified start block
-    curr_write_block = max(start_block, data_latest_block_number + 1)
+    if force_init:
+        curr_write_block = start_block
+    else:
+        data_latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
+        # Using max of latest block in database or specified start block
+        curr_write_block = max(start_block, data_latest_block_number + 1)
 
     latest_mined_block = int(interfaces[0].get_block_number(interfaces[0].get_current_block()))
     if (latest_mined_block - curr_write_block) > lookback_block_limit:
