@@ -510,11 +510,11 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:  # pylint: disable=broad-except
-        rpc_uri = os.getenv("RPC_URI", None)
-        if rpc_uri is None:
+        _rpc_uri = os.getenv("RPC_URI", None)
+        if _rpc_uri is None:
             log_prefix = "Uncaught Critical Error in Invariant Checks:"
         else:
-            chain_name = rpc_uri.split("//")[-1].split("/")[0]
+            chain_name = _rpc_uri.split("//")[-1].split("/")[0]
             log_prefix = f"Uncaught Critical Error for {chain_name} in Invariant Checks:"
 
         log_rollbar_exception(exception=e, log_level=logging.ERROR, rollbar_log_prefix=log_prefix)
