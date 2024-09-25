@@ -530,7 +530,7 @@ if __name__ == "__main__":
     # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
     try:
         asyncio.run(main())
-    except Exception as exc:  # pylint: disable=broad-except
+    except BaseException as exc:  # pylint: disable=broad-except
         # pylint: disable=invalid-name
         _rpc_uri = os.getenv("RPC_URI", None)
         if _rpc_uri is None:
