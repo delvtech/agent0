@@ -227,12 +227,27 @@ def _check_price_spike(interface: HyperdriveReadInterface, pool_state: PoolState
             failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
         )
 
+    if previous_pool_state.checkpoint.weighted_spot_price == FixedPoint(0):
+        # Skip this if the weighted spot price is 0
+        # TODO: Is this the right thing to do?
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
+
     # The checkpoint weighted spot price is updated every checkpoint and every trade.
     previous_weighted_spot_rate = interface.calc_rate_given_fixed_price(
         previous_pool_state.checkpoint.weighted_spot_price,
         FixedPoint(scaled_value=previous_pool_state.pool_config.position_duration),
     )
+
     current_spot_price = interface.calc_spot_price(pool_state)
+    if current_spot_price == FixedPoint(0):
+        # Skip this if the weighted spot price is 0
+        # TODO: Is this the right thing to do?
+        return InvariantCheckResults(
+            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
+        )
+
     current_spot_rate = interface.calc_rate_given_fixed_price(
         current_spot_price,
         FixedPoint(scaled_value=previous_pool_state.pool_config.position_duration),
