@@ -69,7 +69,7 @@ def log_rollbar_message(message: str, log_level: int, extra_data: dict | None = 
 
 
 def log_rollbar_exception(
-    exception: Exception, log_level: int, extra_data: dict | None = None, rollbar_log_prefix: str | None = None
+    exception: BaseException, log_level: int, extra_data: dict | None = None, rollbar_log_prefix: str | None = None
 ):
     """Logs an exception to the rollbar service.
 
