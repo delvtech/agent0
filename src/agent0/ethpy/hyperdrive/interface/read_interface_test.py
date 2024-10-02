@@ -14,6 +14,7 @@ from hyperdrivetypes import PoolConfig
 from hyperdrivetypes.fixedpoint_types import FeesFP
 from web3.constants import ADDRESS_ZERO
 
+from agent0 import LocalChain, LocalHyperdrive
 from agent0.utils.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
 
 if TYPE_CHECKING:
@@ -304,3 +305,41 @@ class TestHyperdriveReadInterface:
         # TODO there are rounding errors between api spot price and fixed rates
         assert abs(api_spot_price - expected_spot_price) <= FixedPoint(1e-16)
         assert abs(api_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)
+
+    def test_long_short_total_supply(self, fast_chain_fixture: LocalChain):
+        position_duration = 3600
+        initial_pool_config = LocalHyperdrive.Config(
+            checkpoint_duration=position_duration,  # 1 hour
+        )
+        pool = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+        agent_0 = fast_chain_fixture.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), pool=pool)
+        agent_1 = fast_chain_fixture.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), pool=pool)
+
+        # Advance time beyond the checkpoint
+        fast_chain_fixture.advance_time(position_duration, create_checkpoints=False)
+
+        # Open longs and shorts
+        agent_0.open_long(base=FixedPoint(111))
+        agent_1.open_long(base=FixedPoint(222))
+        agent_0.open_short(bonds=FixedPoint(111))
+        agent_1.open_short(bonds=FixedPoint(222))
+
+        # Advance time beyond the checkpoint
+        fast_chain_fixture.advance_time(position_duration, create_checkpoints=False)
+
+        # Check total supply
+        checkpoint_id = pool.interface.calc_checkpoint_id()
+        # Using checkpoint_id as an non-existant token
+        assert pool.interface.get_long_total_supply(checkpoint_id) == FixedPoint(0)
+        assert pool.interface.get_short_total_supply(checkpoint_id) == FixedPoint(0)
+
+        maturity_time = agent_0.get_longs()[0].maturity_time
+        assert maturity_time == agent_1.get_longs()[0].maturity_time
+        assert maturity_time == agent_0.get_shorts()[0].maturity_time
+        assert maturity_time == agent_1.get_shorts()[0].maturity_time
+
+        expected_long_amount = agent_0.get_longs()[0].balance + agent_1.get_longs()[0].balance
+        expected_short_amount = agent_0.get_shorts()[0].balance + agent_1.get_shorts()[0].balance
+
+        assert pool.interface.get_long_total_supply(maturity_time) == expected_long_amount
+        assert pool.interface.get_short_total_supply(maturity_time) == expected_short_amount

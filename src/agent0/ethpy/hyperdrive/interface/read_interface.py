@@ -40,6 +40,8 @@ from ._contract_calls import (
     _get_gov_fees_accrued,
     _get_hyperdrive_base_balance,
     _get_hyperdrive_eth_balance,
+    _get_long_total_supply,
+    _get_short_total_supply,
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
     _get_vault_shares,
@@ -649,6 +651,42 @@ class HyperdriveReadInterface:
             The result of hyperdrive_contract.functions.getUncollectedGovernanceFees
         """
         return _get_gov_fees_accrued(self.hyperdrive_contract, block_identifier)
+
+    def get_long_total_supply(self, maturity_time: int, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
+        """Get the total supply of long tokens with the given maturity time.
+
+        Arguments
+        ---------
+        maturity_time: int
+            The maturity time in seconds.
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
+            Defaults to the current block number.
+
+        Returns
+        -------
+        FixedPoint
+            The result of the total supply of long tokens with the given maturity time.
+        """
+        return _get_long_total_supply(self.hyperdrive_contract, maturity_time, block_identifier)
+
+    def get_short_total_supply(self, maturity_time: int, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
+        """Get the total supply of short tokens with the given maturity time.
+
+        Arguments
+        ---------
+        maturity_time: int
+            The maturity time in seconds.
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
+            Defaults to the current block number.
+
+        Returns
+        -------
+        FixedPoint
+            The result of the total supply of short tokens with the given maturity time.
+        """
+        return _get_short_total_supply(self.hyperdrive_contract, maturity_time, block_identifier)
 
     def get_pause_events(
         self,
