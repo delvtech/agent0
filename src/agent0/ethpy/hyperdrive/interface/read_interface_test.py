@@ -14,6 +14,7 @@ from hyperdrivetypes import PoolConfig
 from hyperdrivetypes.fixedpoint_types import FeesFP
 from web3.constants import ADDRESS_ZERO
 
+from agent0 import LocalChain, LocalHyperdrive
 from agent0.utils.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
 
 if TYPE_CHECKING:
@@ -304,3 +305,44 @@ class TestHyperdriveReadInterface:
         # TODO there are rounding errors between api spot price and fixed rates
         assert abs(api_spot_price - expected_spot_price) <= FixedPoint(1e-16)
         assert abs(api_fixed_rate - expected_fixed_rate) <= FixedPoint(1e-16)
+
+    def test_long_short_total_supply(self, fast_chain_fixture: LocalChain):
+        initial_pool_config = LocalHyperdrive.Config(
+            checkpoint_duration=3600,  # 1 hour
+        )
+        pool = LocalHyperdrive(fast_chain_fixture, initial_pool_config)
+        agent_0 = fast_chain_fixture.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), pool=pool)
+        agent_1 = fast_chain_fixture.init_agent(base=FixedPoint(100_000), eth=FixedPoint(100), pool=pool)
+
+        # Get current checkpoint id
+        checkpoint_id_0 = pool.interface.calc_checkpoint_id()
+
+        # Advance time beyond the checkpoint
+        fast_chain_fixture.advance_time(3600, create_checkpoints=False)
+
+        checkpoint_id_1 = pool.interface.calc_checkpoint_id()
+
+        # Open longs and shorts
+        agent_0.open_long(base=FixedPoint(111))
+        agent_1.open_long(base=FixedPoint(222))
+        agent_0.open_short(bonds=FixedPoint(111))
+        agent_1.open_short(bonds=FixedPoint(222))
+
+        # Advance time beyond the checkpoint
+        fast_chain_fixture.advance_time(3600, create_checkpoints=False)
+
+        checkpoint_id_2 = pool.interface.calc_checkpoint_id()
+
+        assert (checkpoint_id_0 + 3600) == checkpoint_id_1
+        assert (checkpoint_id_1 + 3600) == checkpoint_id_2
+
+        # Check total supply
+        assert pool.interface.get_long_total_supply(checkpoint_id_0) == FixedPoint(0)
+        assert pool.interface.get_short_total_supply(checkpoint_id_0) == FixedPoint(0)
+        assert pool.interface.get_long_total_supply(checkpoint_id_2) == FixedPoint(0)
+        assert pool.interface.get_short_total_supply(checkpoint_id_2) == FixedPoint(0)
+
+        expected_long_amount = agent_0.get_longs()[0].balance + agent_1.get_longs()[0].balance
+        expected_short_amount = agent_0.get_shorts()[0].balance + agent_1.get_shorts()[0].balance
+        assert pool.interface.get_long_total_supply(checkpoint_id_1) == expected_long_amount
+        assert pool.interface.get_short_total_supply(checkpoint_id_1) == expected_short_amount
