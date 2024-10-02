@@ -6,9 +6,8 @@ import logging
 import time
 from typing import Any, Callable, NamedTuple
 
-import pandas as pd
 from fixedpointmath import FixedPoint
-from web3.types import BlockData, Timestamp
+from web3.types import BlockData
 
 from agent0.core.hyperdrive.crash_report import (
     build_crash_trade_result,
@@ -17,7 +16,6 @@ from agent0.core.hyperdrive.crash_report import (
 )
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state.pool_state import PoolState
-from agent0.ethpy.hyperdrive.transactions import get_hyperdrive_checkpoint
 from agent0.hyperfuzz import FuzzAssertionException
 
 LP_SHARE_PRICE_EPSILON = 1e-4
