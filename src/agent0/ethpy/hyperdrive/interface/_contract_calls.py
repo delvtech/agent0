@@ -158,8 +158,10 @@ def _create_checkpoint(
     interface: HyperdriveReadWriteInterface,
     sender: LocalAccount,
     checkpoint_time: int | None = None,
+    preview: bool = False,
     gas_limit: int | None = None,
     write_retry_count: int | None = None,
+    nonce_func: Callable[[], Nonce] | None = None,
 ) -> CreateCheckpoint:
     """See API for documentation."""
 
@@ -173,6 +175,15 @@ def _create_checkpoint(
     # 0 is the max iterations for distribute excess idle, where it will default to
     # the default max iterations
     fn_args = (checkpoint_time, 0)
+
+    if preview:
+        _ = smart_contract_preview_transaction(
+            interface.hyperdrive_contract,
+            sender.address,
+            "checkpoint",
+            *fn_args,
+        )
+
     tx_receipt = smart_contract_transact(
         interface.web3,
         interface.hyperdrive_contract,
@@ -183,6 +194,7 @@ def _create_checkpoint(
         write_retry_count=write_retry_count,
         timeout=interface.txn_receipt_timeout,
         txn_options_gas=gas_limit,
+        nonce_func=nonce_func,
     )
     trade_result = parse_logs_to_event(tx_receipt, interface, "createCheckpoint")
     return trade_result

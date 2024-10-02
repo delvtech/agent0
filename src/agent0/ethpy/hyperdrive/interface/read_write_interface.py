@@ -111,8 +111,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         self,
         sender: LocalAccount,
         checkpoint_time: int | None = None,
+        preview: bool = False,
         gas_limit: int | None = None,
         write_retry_count: int | None = None,
+        nonce_func: Callable[[], Nonce] | None = None,
     ) -> CreateCheckpoint:
         """Create a Hyperdrive checkpoint.
 
@@ -122,10 +124,15 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             The sender account that is executing and signing the trade transaction.
         checkpoint_time: int, optional
             The checkpoint time to use. Defaults to the corresponding checkpoint for the provided block_number
+        preview: bool, optional
+            Whether to preview the transaction first for error catching.
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
         write_retry_count: int | None, optional
             The number of times to retry the write call if it fails. Defaults to default set in interface.
+        nonce_func: Callable[[], Nonce] | None
+            A callable function to use to get a nonce. This function is useful for e.g.,
+            passing in a safe nonce getter tied to an agent.
 
         Returns
         -------
@@ -136,8 +143,10 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             interface=self,
             sender=sender,
             checkpoint_time=checkpoint_time,
+            preview=preview,
             gas_limit=gas_limit,
             write_retry_count=write_retry_count,
+            nonce_func=nonce_func,
         )
 
     def set_variable_rate(self, sender: LocalAccount, new_rate: FixedPoint) -> None:

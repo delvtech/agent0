@@ -119,9 +119,8 @@ def does_checkpoint_exist(hyperdrive_contract: IHyperdriveContract, checkpoint_t
 
 async def run_checkpoint_bot(
     chain: Chain,
-    pool_address: ChecksumAddress,
+    pool: Hyperdrive,
     sender: LocalAccount,
-    pool_name: str,
     block_time: int = 1,
     block_timestamp_interval: int = 1,
     check_checkpoint: bool = False,
@@ -134,12 +133,10 @@ async def run_checkpoint_bot(
     ---------
     chain: Chain
         The chain object.
-    pool_address: ChecksumAddress
-        The pool address.
+    pool: Hyperdrive
+        The Hyperdrive pool object.
     sender: LocalAccount
         The sender of the transaction.
-    pool_name: str
-        The name of the pool from `get_hyperdrive_addresses_from_registry`. Only used in logging.
     block_time: int
         The block time in seconds.
     block_timestamp_interval: int
@@ -158,13 +155,12 @@ async def run_checkpoint_bot(
     # TODO pull this function out and put into agent0
     web3 = chain._web3  # pylint: disable=protected-access
 
-    hyperdrive_contract: IHyperdriveContract = IHyperdriveContract.factory(w3=web3)(pool_address)
-
     # Run the checkpoint bot. This bot will attempt to mint a new checkpoint
     # every checkpoint after a waiting period. It will poll very infrequently
     # to reduce the probability of needing to mint a checkpoint.
-    config = get_hyperdrive_pool_config(hyperdrive_contract)
-    checkpoint_duration = config.checkpoint_duration
+    pool_state = pool.interface.get_hyperdrive_state()
+    checkpoint_duration = pool_state.pool_config.checkpoint_duration
+    hyperdrive_contract = pool.interface.hyperdrive_contract
 
     # Rollbar assumes any number longer than 2 integers is "data" and groups them together.
     # We want to ensure that the pool name is always in different groups, so we add
@@ -174,7 +170,7 @@ async def run_checkpoint_bot(
     # `RETHHyperdrive_30day` -> `RETHHyperdrive_3_0_day`
     # TODO this might be done better on the rollbar side with creating a grouping fingerprint
     # TODO ERC4626 gets split up here, may want to only do this for the position duration string.
-    pool_name = "".join([c + "_" if c.isdigit() else c for c in pool_name])
+    pool_name = "".join([c + "_" if c.isdigit() else c for c in pool.name])
 
     fail_count = 0
 
@@ -185,7 +181,7 @@ async def run_checkpoint_bot(
             break
 
         # We check for low funds in checkpoint bot
-        chain_id = chain._web3.eth.chain_id  # pylint: disable=protected-access
+        chain_id = web3.eth.chain_id
         checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(web3, sender.address))
         if checkpoint_bot_eth_balance <= CHECKPOINT_BOT_LOW_ETH_THRESHOLD.get(
             chain_id, DEFAULT_CHECKPOINT_BOT_LOW_ETH_THRESHOLD
@@ -217,23 +213,7 @@ async def run_checkpoint_bot(
         logging.info(logging_str)
 
         # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
-        pause_events = hyperdrive_contract.events.PauseStatusUpdated.get_logs(
-            from_block=EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
-        )
-        is_paused = False
-        if len(list(pause_events)) > 0:
-            # Get the latest pause event
-            # TODO get_logs likely returns events in an ordered
-            # fashion, but we iterate and find the latest one
-            # just in case
-            latest_pause_event = None
-            max_block_number = 0
-            for event in pause_events:
-                if event["blockNumber"] > max_block_number:
-                    max_block_number = event["blockNumber"]
-                    latest_pause_event = event
-            assert latest_pause_event is not None
-            is_paused = latest_pause_event["args"]["isPaused"]
+        is_paused = pool.interface.get_pool_is_paused()
 
         if enough_time_has_elapsed and checkpoint_doesnt_exist and not is_paused:
             logging_str = f"Pool {pool_name} for {checkpoint_time=}: submitting checkpoint"
@@ -249,24 +229,10 @@ async def run_checkpoint_bot(
             # will need to make this more robust so that we retry this
             # transaction if the transaction gets stuck.
             try:
-                # 0 is the max iterations for distribute excess idle, where it will default to
-                # the default max iterations
-                fn_args = (checkpoint_time, 0)
-
-                # Try preview call
-                _ = smart_contract_preview_transaction(
-                    hyperdrive_contract,
-                    sender.address,
-                    "checkpoint",
-                    *fn_args,
-                )
-
-                receipt = smart_contract_transact(
-                    web3,
-                    hyperdrive_contract,
+                receipt = pool.interface.create_checkpoint(
                     sender,
-                    "checkpoint",
-                    *fn_args,
+                    checkpoint_time,
+                    preview=True,
                     nonce_func=partial(async_get_nonce, web3, sender),
                 )
                 # Reset fail count on successful transaction
@@ -298,7 +264,7 @@ async def run_checkpoint_bot(
                 continue
             logging_str = (
                 f"{chain.name}: Pool {pool_name} for {checkpoint_time=}: "
-                f"Checkpoint successfully mined with transaction_hash={receipt['transactionHash'].hex()}"
+                f"Checkpoint successfully mined with transaction_hash={receipt.transaction_hash}"
             )
             logging.info(logging_str)
             if log_to_rollbar:
@@ -308,8 +274,6 @@ async def run_checkpoint_bot(
                 )
 
             if check_checkpoint:
-                # TODO: Add crash report
-                assert receipt["status"] == 1, "Checkpoint failed."
                 latest_block = chain.block_data()
                 timestamp = latest_block.get("timestamp", None)
                 if timestamp is None:
@@ -414,12 +378,12 @@ async def main(argv: Sequence[str] | None = None) -> None:
     while True:
         logging.info("Checking for new pools...")
         # Reset hyperdrive objs
-        deployed_pools = Hyperdrive.get_hyperdrive_addresses_from_registry(chain, registry_address)
+        deployed_pools = Hyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
 
         # pylint: disable=protected-access
         checkpoint_bot_eth_balance = FixedPoint(scaled_value=get_account_balance(chain._web3, sender.address))
         log_message = (
-            f"{chain.name}: Running checkpoint bots for pools {list(deployed_pools.keys())}. "
+            f"{chain.name}: Running checkpoint bots for pools {[p.name for p in deployed_pools]}. "
             f"{checkpoint_bot_eth_balance=}"
         )
         logging.info(log_message)
@@ -433,15 +397,14 @@ async def main(argv: Sequence[str] | None = None) -> None:
             *[
                 run_checkpoint_bot(
                     chain=chain,
-                    pool_address=pool_addr,
+                    pool=pool,
                     sender=sender,
-                    pool_name=pool_name,
                     block_time=block_time,
                     block_timestamp_interval=block_timestamp_interval,
                     block_to_exit=block_to_exit,
                     log_to_rollbar=log_to_rollbar,
                 )
-                for pool_name, pool_addr in deployed_pools.items()
+                for pool in deployed_pools
             ],
             return_exceptions=False,
         )
