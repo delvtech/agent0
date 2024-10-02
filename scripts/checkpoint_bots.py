@@ -213,7 +213,18 @@ async def run_checkpoint_bot(
         # Check to see if the pool is paused. We don't run checkpoint bots on this pool if it's paused.
         is_paused = pool.interface.get_pool_is_paused()
 
-        if enough_time_has_elapsed and checkpoint_doesnt_exist and not is_paused:
+        # We look at the total supply of longs/shorts with a maturity time at this checkpoint
+        positions_matured_on_this_checkpoint = (
+            pool.interface.get_long_total_supply(checkpoint_time)
+            + pool.interface.get_short_total_supply(checkpoint_time)
+        ) > FixedPoint(0)
+
+        if (
+            enough_time_has_elapsed
+            and checkpoint_doesnt_exist
+            and positions_matured_on_this_checkpoint
+            and not is_paused
+        ):
             logging_str = f"Pool {pool_name} for {checkpoint_time=}: submitting checkpoint"
             logging.info(logging_str)
 
