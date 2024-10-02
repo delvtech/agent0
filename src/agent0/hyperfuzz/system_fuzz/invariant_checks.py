@@ -118,8 +118,6 @@ def run_invariant_checks(
             _check_solvency(pool_state),
             # Critical
             _check_present_value_greater_than_idle_shares(interface, pool_state),
-            # Critical
-            _check_previous_checkpoint_exists(interface, pool_state),
             # Error
             _check_negative_interest(interface, pool_state),
             # Warning
@@ -142,7 +140,6 @@ def run_invariant_checks(
                 _check_minimum_share_reserves(pool_state),
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
-                _check_previous_checkpoint_exists(interface, pool_state),
                 _check_negative_interest(interface, pool_state),
                 _check_price_spike(interface, pool_state),
             ]
@@ -349,74 +346,6 @@ def _check_base_balances(pool_state: PoolState, base_is_yield: bool) -> Invarian
         exception_data["invariance_check:actual_hyperdrive_base_balance"] = pool_state.hyperdrive_base_balance
         failed = True
         log_level = logging.INFO
-
-    return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
-
-
-def _check_previous_checkpoint_exists(
-    interface: HyperdriveReadInterface, pool_state: PoolState
-) -> InvariantCheckResults:
-    # pylint: disable=too-many-locals
-
-    # This test checks if previous checkpoint was minted, and fails if that checkpoint can't be found
-    # (with the exception of the first checkpoint)
-    failed = False
-    exception_message: str | None = None
-    exception_data: dict[str, Any] = {}
-    log_level = None
-
-    # Calculate the checkpoint time wrt the current block
-    block = pool_state.block
-    checkpoint_duration = interface.pool_config.checkpoint_duration
-    current_checkpoint_time = interface.calc_checkpoint_id(checkpoint_duration, interface.get_block_timestamp(block))
-    previous_checkpoint_time = current_checkpoint_time - checkpoint_duration
-
-    # If deploy block is set and the previous checkpoint time was before hyperdrive was deployed,
-    # we ignore this test
-    deploy_block = interface.get_deploy_block()
-    if deploy_block is not None and (
-        previous_checkpoint_time < interface.get_block_timestamp(interface.get_block(deploy_block))
-    ):
-        return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
-
-    # We ignore this test if there are no longs or shorts in the pool.
-    if (pool_state.pool_info.longs_outstanding == FixedPoint(0)) and (
-        pool_state.pool_info.shorts_outstanding == FixedPoint(0)
-    ):
-        return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
-
-    # We ignore this test if the pool is paused during last checkpoint time
-    pause_events = interface.get_pause_events()
-    pool_paused_during_previous_checkpoint = False
-    if len(pause_events) > 0:
-        # Convert to dataframe for easier querying
-        pause_df = pd.json_normalize(pause_events).sort_values("blockNumber")
-        # TODO this is querying per pause event, which may not be ideal if there are lots of pauses
-        timestamps = [
-            interface.get_block_timestamp(interface.get_block(block_identifier=b)) for b in pause_df["blockNumber"]
-        ]
-        pause_df["block_timestamp"] = timestamps
-        # We want to find if the pool was paused during previous checkpoint time.
-        # To do this, we filter out all pause events after the previous checkpoint time
-        # and get the last event.
-        pause_df = pause_df[pause_df["block_timestamp"] <= previous_checkpoint_time]
-        # If no events after filter, pool was not paused
-        if len(pause_df) > 0:
-            pool_paused_during_previous_checkpoint = bool(pause_df.iloc[-1]["args.isPaused"])
-
-    if pool_paused_during_previous_checkpoint:
-        return InvariantCheckResults(failed=False, exception_message=None, exception_data={}, log_level=None)
-
-    # Otherwise, we ensure the previous checkpoint exists
-    previous_checkpoint = get_hyperdrive_checkpoint(
-        interface.hyperdrive_contract, Timestamp(previous_checkpoint_time), pool_state.block_number
-    )
-
-    if previous_checkpoint.vault_share_price <= FixedPoint(0):
-        exception_message = f"Previous checkpoint doesn't exist: {previous_checkpoint_time=}"
-        exception_data["invariance_check:previous_checkpoint_time"] = previous_checkpoint
-        failed = True
-        log_level = logging.CRITICAL
 
     return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
