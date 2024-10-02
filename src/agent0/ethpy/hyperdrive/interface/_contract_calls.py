@@ -154,6 +154,32 @@ def _get_gov_fees_accrued(
     return FixedPoint(scaled_value=gov_fees_accrued)
 
 
+def _get_long_total_supply(
+    hyperdrive_contract: IHyperdriveContract,
+    maturity_time: int,
+    block_identifier: BlockIdentifier | None,
+) -> FixedPoint:
+    """See API for documentation."""
+    if block_identifier is None:
+        block_identifier = "latest"
+    asset_id = encode_asset_id(AssetIdPrefix.LONG, maturity_time)
+    total_supply = hyperdrive_contract.functions.totalSupply(asset_id).call(block_identifier=block_identifier)
+    return FixedPoint(scaled_value=total_supply)
+
+
+def _get_short_total_supply(
+    hyperdrive_contract: IHyperdriveContract,
+    maturity_time: int,
+    block_identifier: BlockIdentifier | None,
+) -> FixedPoint:
+    """See API for documentation."""
+    if block_identifier is None:
+        block_identifier = "latest"
+    asset_id = encode_asset_id(AssetIdPrefix.SHORT, maturity_time)
+    total_supply = hyperdrive_contract.functions.totalSupply(asset_id).call(block_identifier=block_identifier)
+    return FixedPoint(scaled_value=total_supply)
+
+
 def _create_checkpoint(
     interface: HyperdriveReadWriteInterface,
     sender: LocalAccount,
