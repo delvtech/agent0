@@ -19,15 +19,12 @@ from hyperdrivetypes import (
     ERC4626Target2DeployerContract,
     ERC4626Target3DeployerContract,
     ERC4626Target4DeployerContract,
-    FactoryConfig,
     HyperdriveFactoryContract,
     HyperdriveRegistryContract,
     IHyperdriveContract,
     LPMathContract,
     MockERC4626Contract,
     MockLidoContract,
-    Options,
-    PoolDeployConfig,
     StETHHyperdriveCoreDeployerContract,
     StETHHyperdriveDeployerCoordinatorContract,
     StETHTarget0DeployerContract,
@@ -36,6 +33,8 @@ from hyperdrivetypes import (
     StETHTarget3DeployerContract,
     StETHTarget4DeployerContract,
 )
+from hyperdrivetypes.types.HyperdriveFactoryTypes import FactoryConfig
+from hyperdrivetypes.types.IHyperdriveTypes import Options, PoolDeployConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
@@ -537,7 +536,6 @@ def _deploy_hyperdrive_factory(
     registry_contract = HyperdriveRegistryContract.deploy(
         w3=web3,
         account=deploy_account_addr,
-        constructor_args=HyperdriveRegistryContract.ConstructorArgs(name="HyperdriveRegistry"),
     )
 
     # Register the factory with the registry contract

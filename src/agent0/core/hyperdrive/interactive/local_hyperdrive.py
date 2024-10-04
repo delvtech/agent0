@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Sequence
 import pandas as pd
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import FactoryConfig, Fees, PoolDeployConfig
+from hyperdrivetypes.types.HyperdriveFactoryTypes import FactoryConfig
+from hyperdrivetypes.types.IHyperdriveTypes import Fees, PoolDeployConfig
 from web3 import Web3
 
 from agent0.chainsync.analysis import fill_pnl_values
