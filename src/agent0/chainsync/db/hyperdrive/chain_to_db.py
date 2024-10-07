@@ -13,6 +13,7 @@ from agent0.chainsync.df_to_db import df_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .convert_data import convert_checkpoint_events, convert_pool_config, convert_pool_info, convert_trade_events
+from .event_getters import get_event_logs_for_db
 from .interface import (
     add_pool_config,
     add_pool_infos,
@@ -142,7 +143,13 @@ def checkpoint_events_to_db(
         # NOTE we get all numeric arguments in events as string to prevent precision loss
 
         from_block = get_latest_block_number_from_checkpoint_info_table(db_session, interface.hyperdrive_address) + 1
-        all_events.extend(interface.get_checkpoint_events(from_block=from_block, numeric_args_as_str=True))
+        all_events.extend(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.CreateCheckpoint,
+                from_block=from_block,
+            )
+        )
 
     events_df = convert_checkpoint_events(all_events)
 
@@ -192,25 +199,28 @@ def trade_events_to_db(
         # Look for transfer single events in both directions if wallet_addr is set
         if wallet_addr is not None:
             all_events.extend(
-                interface.get_transfer_single_events(
+                get_event_logs_for_db(
+                    interface,
+                    interface.hyperdrive_contract.events.TransferSingle,
                     from_block=from_block,
                     argument_filters={"to": wallet_addr},
-                    numeric_args_as_str=True,
                 )
             )
             all_events.extend(
-                interface.get_transfer_single_events(
+                get_event_logs_for_db(
+                    interface,
+                    interface.hyperdrive_contract.events.TransferSingle,
                     from_block=from_block,
                     argument_filters={"from": wallet_addr},
-                    numeric_args_as_str=True,
                 )
             )
         # Otherwise, don't filter by wallet
         else:
             all_events.extend(
-                interface.get_transfer_single_events(
+                get_event_logs_for_db(
+                    interface,
+                    interface.hyperdrive_contract.events.TransferSingle,
                     from_block=from_block,
-                    numeric_args_as_str=True,
                 )
             )
 
@@ -223,56 +233,66 @@ def trade_events_to_db(
             provider_arg_filter = None
 
         all_events.extend(
-            interface.get_initialize_events(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.Initialize,
+                from_block=from_block,
+                argument_filters=provider_arg_filter,
+            )
+        )
+        all_events.extend(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.OpenLong,
+                from_block=from_block,
+                argument_filters=trader_arg_filter,
+            )
+        )
+        all_events.extend(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.CloseLong,
+                from_block=from_block,
+                argument_filters=trader_arg_filter,
+            )
+        )
+        all_events.extend(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.OpenShort,
+                from_block=from_block,
+                argument_filters=trader_arg_filter,
+            )
+        )
+        all_events.extend(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.CloseShort,
+                from_block=from_block,
+                argument_filters=trader_arg_filter,
+            )
+        )
+        all_events.extend(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.AddLiquidity,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
                 numeric_args_as_str=True,
             )
         )
         all_events.extend(
-            interface.get_open_long_events(
-                from_block=from_block,
-                argument_filters=trader_arg_filter,
-                numeric_args_as_str=True,
-            )
-        )
-        all_events.extend(
-            interface.get_close_long_events(
-                from_block=from_block,
-                argument_filters=trader_arg_filter,
-                numeric_args_as_str=True,
-            )
-        )
-        all_events.extend(
-            interface.get_open_short_events(
-                from_block=from_block,
-                argument_filters=trader_arg_filter,
-                numeric_args_as_str=True,
-            )
-        )
-        all_events.extend(
-            interface.get_close_short_events(
-                from_block=from_block,
-                argument_filters=trader_arg_filter,
-                numeric_args_as_str=True,
-            )
-        )
-        all_events.extend(
-            interface.get_add_liquidity_events(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.RemoveLiquidity,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
-                numeric_args_as_str=True,
             )
         )
         all_events.extend(
-            interface.get_remove_liquidity_events(
-                from_block=from_block,
-                argument_filters=provider_arg_filter,
-                numeric_args_as_str=True,
-            )
-        )
-        all_events.extend(
-            interface.get_redeem_withdrawal_shares_events(
+            get_event_logs_for_db(
+                interface,
+                interface.hyperdrive_contract.events.RedeemWithdrawalShares,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
                 numeric_args_as_str=True,

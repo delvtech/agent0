@@ -318,17 +318,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        deploy_event = self.interface.get_initialize_events()
-        deploy_event = list(deploy_event)
-
-        # Attempt to get the deploy event
-        self._deploy_block_number = None
-        if len(deploy_event) == 0:
-            logging.warning("Deploy event not found, can't set deploy_block")
-        elif len(deploy_event) > 1:
-            raise AssertionError("Multiple deploy events found.")
-        else:
-            self._deploy_block_number = deploy_event[0]["blockNumber"]
+        self._deploy_block_number = self.interface._deploy_block
 
         if deploy:
             # If we're deploying, we expect the deploy block to be set

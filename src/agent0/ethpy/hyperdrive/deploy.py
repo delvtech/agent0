@@ -20,7 +20,6 @@ from hyperdrivetypes import (
     ERC4626Target3DeployerContract,
     ERC4626Target4DeployerContract,
     HyperdriveFactoryContract,
-    HyperdriveRegistryContract,
     IHyperdriveContract,
     LPMathContract,
     MockERC4626Contract,
@@ -38,6 +37,7 @@ from hyperdrivetypes.types.IHyperdriveTypes import Options, PoolDeployConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
+from web3.logs import DISCARD
 
 from agent0.ethpy.base import (
     ETH_CONTRACT_ADDRESS,
@@ -45,7 +45,6 @@ from agent0.ethpy.base import (
     set_anvil_account_balance,
     smart_contract_transact,
 )
-from agent0.ethpy.base.receipts import get_transaction_logs
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -710,11 +709,9 @@ def _deploy_and_initialize_hyperdrive_pool(
         *function_args,
         txn_options_value=txn_option_value,
     )
-    logs = get_transaction_logs(factory_contract, tx_receipt)
-    hyperdrive_address: str | None = None
-    for log in logs:
-        if log["event"] == "Deployed":
-            hyperdrive_address = log["args"]["hyperdrive"]
-    if hyperdrive_address is None:
-        raise AssertionError("Generating hyperdrive contract didn't return address")
+
+    deploy_events = list(factory_contract.events.Deployed().process_receipt_typed(tx_receipt, errors=DISCARD))
+    if len(deploy_events) != 1:
+        raise AssertionError(f"Expected 1 Deployed event, got {len(deploy_events)}")
+    hyperdrive_address = deploy_events[0].args.hyperdrive
     return hyperdrive_address
