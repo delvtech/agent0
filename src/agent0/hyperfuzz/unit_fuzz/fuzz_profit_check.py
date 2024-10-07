@@ -301,8 +301,8 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     exception_data: dict[str, Any] = {}
 
     # Check long trade
-    base_amount_returned: FixedPoint = check_data["long_events"]["close"].amount
-    base_amount_provided: FixedPoint = check_data["long_events"]["open"].amount
+    base_amount_returned: FixedPoint = check_data["long_events"]["close"].args.amount
+    base_amount_provided: FixedPoint = check_data["long_events"]["open"].args.amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append("LONG: Amount returned on closing was too large.")
@@ -328,8 +328,8 @@ def invariant_check(check_data: dict[str, Any]) -> None:
         failed = True
 
     # Check short trade
-    base_amount_returned: FixedPoint = check_data["short_events"]["close"].amount
-    base_amount_provided: FixedPoint = check_data["short_events"]["open"].amount
+    base_amount_returned: FixedPoint = check_data["short_events"]["close"].args.amount
+    base_amount_provided: FixedPoint = check_data["short_events"]["open"].args.amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append("SHORT: Amount returned on closing was too large.")
