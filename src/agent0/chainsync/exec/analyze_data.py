@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.analysis import db_to_analysis
 from agent0.chainsync.db.base import initialize_session
-from agent0.chainsync.db.hyperdrive import PoolInfo, get_latest_block_number_from_table
+from agent0.chainsync.db.hyperdrive import DBPoolInfo, get_latest_block_number_from_table
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 _SLEEP_AMOUNT = 1
@@ -135,6 +135,6 @@ def get_latest_data_block(db_session: Session) -> int:
         The latest block number from the PoolInfo table.
     """
     # Note to avoid race condition, we add pool info as the last update for the block
-    latest_pool_info = get_latest_block_number_from_table(PoolInfo, db_session)
+    latest_pool_info = get_latest_block_number_from_table(DBPoolInfo, db_session)
 
     return latest_pool_info

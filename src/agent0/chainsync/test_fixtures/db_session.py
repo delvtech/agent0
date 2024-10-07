@@ -16,7 +16,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from agent0.chainsync import PostgresConfig
-from agent0.chainsync.db.base import Base, initialize_engine
+from agent0.chainsync.db.base import DBBase, initialize_engine
 
 TEST_POSTGRES_NAME = "postgres_test"
 
@@ -160,10 +160,10 @@ def db_session(database_engine: Engine) -> Iterator[Session]:  # pylint: disable
     """
     session = sessionmaker(bind=database_engine)
 
-    Base.metadata.create_all(database_engine)  # create tables
+    DBBase.metadata.create_all(database_engine)  # create tables
     db_session_ = session()
 
     yield db_session_
 
     db_session_.close()
-    Base.metadata.drop_all(database_engine)  # drop tables
+    DBBase.metadata.drop_all(database_engine)  # drop tables

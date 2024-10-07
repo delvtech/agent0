@@ -7,7 +7,7 @@ from typing import Union
 from sqlalchemy import BigInteger, Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from agent0.chainsync.db.base import Base
+from agent0.chainsync.db.base import DBBase
 
 # pylint: disable=invalid-name
 
@@ -23,7 +23,7 @@ FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 # TODO add column for timestamp in seconds in db
 
 
-class HyperdriveAddrToName(Base):
+class DBHyperdriveAddrToName(DBBase):
     """Maps a hyperdrive address to a logical name."""
 
     __tablename__ = "hyperdrive_addr_to_name"
@@ -34,7 +34,7 @@ class HyperdriveAddrToName(Base):
     """The logical name of the hyperdrive address."""
 
 
-class PoolConfig(Base):
+class DBPoolConfig(DBBase):
     """Table/dataclass schema for pool config."""
 
     __tablename__ = "pool_config"
@@ -64,7 +64,7 @@ class PoolConfig(Base):
     inv_time_stretch: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
-class CheckpointInfo(Base):
+class DBCheckpointInfo(DBBase):
     """Table/dataclass schema for checkpoint information."""
 
     __tablename__ = "checkpoint_info"
@@ -93,7 +93,7 @@ class CheckpointInfo(Base):
 
 
 # TODO change this table to allow for missing data in block time.
-class PoolInfo(Base):
+class DBPoolInfo(DBBase):
     """Table/dataclass schema for pool info.
 
     Mapped class that is a data class on the python side, and an declarative base on the sql side.
@@ -138,7 +138,7 @@ class PoolInfo(Base):
     fixed_rate: Mapped[Union[Decimal, None]] = mapped_column(FIXED_NUMERIC, default=None)
 
 
-class TradeEvent(Base):
+class DBTradeEvent(DBBase):
     """Table for storing any transfer events emitted by the Hyperdrive contract.
     This table only contains events of "registered" wallet addresses, which are any agents
     that are managed by agent0. This table does not store all wallet addresses that have
@@ -209,7 +209,7 @@ class TradeEvent(Base):
 ## Analysis schemas
 
 
-class PositionSnapshot(Base):
+class DBPositionSnapshot(DBBase):
     """Table/dataclass schema for snapshots of positions
     This table takes snapshots of open positions and calculates the value and pnl of
     positions every snapshot.

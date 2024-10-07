@@ -13,7 +13,7 @@ from fixedpointmath import FixedPoint
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
 from agent0.utils.conversions import camel_to_snake
 
-from .schema import PoolConfig, PoolInfo
+from .schema import DBPoolConfig, DBPoolInfo
 
 
 def _scaled_value_to_decimal(int_val: Any) -> Decimal:
@@ -399,7 +399,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
     return events_df
 
 
-def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
+def convert_pool_config(pool_config_dict: dict[str, Any]) -> DBPoolConfig:
     """Converts a pool_config_dict from a call in hyperdrive_interface to the postgres data type
 
     Arguments
@@ -413,7 +413,7 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
         The db object for pool config
     """
     args_dict = {}
-    for key in PoolConfig.__annotations__:
+    for key in DBPoolConfig.__annotations__:
         if key not in pool_config_dict:
             logging.warning("Missing %s from pool config", key)
             value = None
@@ -422,11 +422,11 @@ def convert_pool_config(pool_config_dict: dict[str, Any]) -> PoolConfig:
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[camel_to_snake(key)] = value
-    pool_config = PoolConfig(**args_dict)
+    pool_config = DBPoolConfig(**args_dict)
     return pool_config
 
 
-def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
+def convert_pool_info(pool_info_dict: dict[str, Any]) -> DBPoolInfo:
     """Converts a pool_info_dict from a call in hyperdrive interface to the postgres data type
 
     Arguments
@@ -440,7 +440,7 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
         The db object for pool info
     """
     args_dict = {}
-    for key in PoolInfo.__annotations__:
+    for key in DBPoolInfo.__annotations__:
         # Ignore id field
         if key == "id":
             continue
@@ -452,5 +452,5 @@ def convert_pool_info(pool_info_dict: dict[str, Any]) -> PoolInfo:
             if isinstance(value, FixedPoint):
                 value = Decimal(str(value))
         args_dict[camel_to_snake(key)] = value
-    block_pool_info = PoolInfo(**args_dict)
+    block_pool_info = DBPoolInfo(**args_dict)
     return block_pool_info

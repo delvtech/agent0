@@ -12,12 +12,12 @@ from agent0.chainsync.db.base import get_latest_block_number_from_table
 
 from .schema import (
     FIXED_NUMERIC,
-    CheckpointInfo,
-    HyperdriveAddrToName,
-    PoolConfig,
-    PoolInfo,
-    PositionSnapshot,
-    TradeEvent,
+    DBCheckpointInfo,
+    DBHyperdriveAddrToName,
+    DBPoolConfig,
+    DBPoolInfo,
+    DBPositionSnapshot,
+    DBTradeEvent,
 )
 
 
@@ -57,7 +57,7 @@ def add_hyperdrive_addr_to_name(
         raise ValueError("Fatal error: postgres returning multiple entries for primary key")
 
     # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
-    session.merge(HyperdriveAddrToName(hyperdrive_address=hyperdrive_address, name=name))
+    session.merge(DBHyperdriveAddrToName(hyperdrive_address=hyperdrive_address, name=name))
 
     try:
         session.commit()
@@ -82,16 +82,16 @@ def get_hyperdrive_addr_to_name(session: Session, hyperdrive_address: str | None
     DataFrame
         A DataFrame that consists of the queried pool config data
     """
-    query = session.query(HyperdriveAddrToName)
+    query = session.query(DBHyperdriveAddrToName)
     if hyperdrive_address is not None:
-        query = query.filter(HyperdriveAddrToName.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBHyperdriveAddrToName.hyperdrive_address == hyperdrive_address)
     return pd.read_sql(query.statement, con=session.connection())
 
 
 # Event Data Ingestion Interface
 
 
-def add_trade_events(transfer_events: list[TradeEvent], session: Session) -> None:
+def add_trade_events(transfer_events: list[DBTradeEvent], session: Session) -> None:
     """Add transfer events to the transfer events table.
 
     This function is only used for injecting rows into the db.
@@ -138,11 +138,11 @@ def get_latest_block_number_from_trade_event(
         The latest block number in the hyperdrive_events table.
     """
 
-    query = session.query(func.max(TradeEvent.block_number))
+    query = session.query(func.max(DBTradeEvent.block_number))
     if wallet_address is not None:
-        query = query.filter(TradeEvent.wallet_address == wallet_address)
+        query = query.filter(DBTradeEvent.wallet_address == wallet_address)
     if hyperdrive_address is not None:
-        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBTradeEvent.hyperdrive_address == hyperdrive_address)
     query = query.scalar()
 
     if query is None:
@@ -172,11 +172,11 @@ def get_latest_block_number_from_positions_snapshot_table(
         The latest block number in the hyperdrive_events table.
     """
 
-    query = session.query(func.max(PositionSnapshot.block_number))
+    query = session.query(func.max(DBPositionSnapshot.block_number))
     if wallet_addr is not None:
-        query = query.filter(PositionSnapshot.wallet_address == wallet_addr)
+        query = query.filter(DBPositionSnapshot.wallet_address == wallet_addr)
     if hyperdrive_address is not None:
-        query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBPositionSnapshot.hyperdrive_address == hyperdrive_address)
     query = query.scalar()
 
     if query is None:
@@ -226,29 +226,29 @@ def get_trade_events(
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-positional-arguments
 
-    query = session.query(TradeEvent)
+    query = session.query(DBTradeEvent)
 
     if isinstance(wallet_address, list):
-        query = query.filter(TradeEvent.wallet_address.in_(wallet_address))
+        query = query.filter(DBTradeEvent.wallet_address.in_(wallet_address))
     elif wallet_address is not None:
-        query = query.filter(TradeEvent.wallet_address == wallet_address)
+        query = query.filter(DBTradeEvent.wallet_address == wallet_address)
 
     if isinstance(hyperdrive_address, list):
-        query = query.filter(TradeEvent.hyperdrive_address.in_(hyperdrive_address))
+        query = query.filter(DBTradeEvent.hyperdrive_address.in_(hyperdrive_address))
     elif hyperdrive_address is not None:
-        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBTradeEvent.hyperdrive_address == hyperdrive_address)
 
     if not all_token_deltas:
         # Drop the duplicate events
         query = query.filter(
-            ~((TradeEvent.event_type == "RemoveLiquidity") & (TradeEvent.token_id == "WITHDRAWAL_SHARE"))
+            ~((DBTradeEvent.event_type == "RemoveLiquidity") & (DBTradeEvent.token_id == "WITHDRAWAL_SHARE"))
         )
 
     # Always sort by block in order
     if sort_ascending:
-        query = query.order_by(TradeEvent.block_number)
+        query = query.order_by(DBTradeEvent.block_number)
     else:
-        query = query.order_by(TradeEvent.block_number.desc())
+        query = query.order_by(DBTradeEvent.block_number.desc())
 
     if query_limit is not None:
         query = query.limit(query_limit)
@@ -293,35 +293,35 @@ def get_current_positions(
     # pylint: disable=too-many-positional-arguments
 
     query = session.query(
-        TradeEvent.hyperdrive_address,
-        TradeEvent.wallet_address,
-        TradeEvent.token_id,
+        DBTradeEvent.hyperdrive_address,
+        DBTradeEvent.wallet_address,
+        DBTradeEvent.token_id,
         # We use max in lieu of a "first" or "last" function in sqlalchemy
-        func.max(TradeEvent.token_type).label("token_type"),
-        func.max(TradeEvent.maturity_time).label("maturity_time"),
-        func.sum(TradeEvent.token_delta).label("token_balance"),
+        func.max(DBTradeEvent.token_type).label("token_type"),
+        func.max(DBTradeEvent.maturity_time).label("maturity_time"),
+        func.sum(DBTradeEvent.token_delta).label("token_balance"),
         # Convert to base here
         # We explicitly cast to our defined numeric type to truncate to 18 decimal places.
         cast(
-            func.sum(TradeEvent.base_delta + (TradeEvent.vault_share_delta * TradeEvent.vault_share_price)),
+            func.sum(DBTradeEvent.base_delta + (DBTradeEvent.vault_share_delta * DBTradeEvent.vault_share_price)),
             FIXED_NUMERIC,
         ).label("realized_value"),
-        func.max(TradeEvent.block_number).label("last_balance_update_block"),
+        func.max(DBTradeEvent.block_number).label("last_balance_update_block"),
     )
 
     if (query_block is not None) and (query_block < 0):
-        query_block = get_latest_block_number_from_table(TradeEvent, session) + query_block + 1
+        query_block = get_latest_block_number_from_table(DBTradeEvent, session) + query_block + 1
 
     if query_block is not None:
-        query = query.filter(TradeEvent.block_number < query_block)
+        query = query.filter(DBTradeEvent.block_number < query_block)
 
     if wallet_addr is not None:
-        query = query.filter(TradeEvent.wallet_address == wallet_addr)
+        query = query.filter(DBTradeEvent.wallet_address == wallet_addr)
 
     if hyperdrive_address is not None:
-        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBTradeEvent.hyperdrive_address == hyperdrive_address)
 
-    query = query.group_by(TradeEvent.hyperdrive_address, TradeEvent.wallet_address, TradeEvent.token_id)
+    query = query.group_by(DBTradeEvent.hyperdrive_address, DBTradeEvent.wallet_address, DBTradeEvent.token_id)
     out_df = pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
     # Filter out zero balances
     if not show_closed_positions:
@@ -349,13 +349,13 @@ def get_pool_config(session: Session, hyperdrive_address: str | None = None, coe
     DataFrame
         A DataFrame that consists of the queried pool config data.
     """
-    query = session.query(PoolConfig)
+    query = session.query(DBPoolConfig)
     if hyperdrive_address is not None:
-        query = query.filter(PoolConfig.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBPoolConfig.hyperdrive_address == hyperdrive_address)
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
 
-def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
+def add_pool_config(pool_config: DBPoolConfig, session: Session) -> None:
     """Add pool config to the pool config table if not exist.
 
     Verify pool config if it does exist.
@@ -385,7 +385,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
             raise err
     elif len(existing_pool_config) == 1:
         # Verify pool config
-        for key in PoolConfig.__annotations__.keys():
+        for key in DBPoolConfig.__annotations__.keys():
             new_value = getattr(pool_config, key)
             old_value = existing_pool_config.loc[0, key]
             if new_value != old_value:
@@ -397,7 +397,7 @@ def add_pool_config(pool_config: PoolConfig, session: Session) -> None:
         raise ValueError
 
 
-def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
+def add_pool_infos(pool_infos: list[DBPoolInfo], session: Session) -> None:
     """Add a pool info to the poolinfo table.
 
     Arguments
@@ -417,7 +417,7 @@ def add_pool_infos(pool_infos: list[PoolInfo], session: Session) -> None:
         raise err
 
 
-def add_checkpoint_info(checkpoint_info: CheckpointInfo, session: Session) -> None:
+def add_checkpoint_info(checkpoint_info: DBCheckpointInfo, session: Session) -> None:
     """Add checkpoint info to the checkpointinfo table if it doesn't exist.
 
     This function is only used for injecting rows into the db.
@@ -453,7 +453,7 @@ def get_latest_block_number_from_pool_info_table(session: Session) -> int:
     int
         The latest block number in the poolinfo table.
     """
-    return get_latest_block_number_from_table(PoolInfo, session)
+    return get_latest_block_number_from_table(DBPoolInfo, session)
 
 
 def get_pool_info(
@@ -485,10 +485,10 @@ def get_pool_info(
     DataFrame
         A DataFrame that consists of the queried pool info data.
     """
-    query = session.query(PoolInfo)
+    query = session.query(DBPoolInfo)
 
     if hyperdrive_address is not None:
-        query = query.filter(PoolInfo.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBPoolInfo.hyperdrive_address == hyperdrive_address)
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
@@ -497,12 +497,12 @@ def get_pool_info(
         end_block = get_latest_block_number_from_pool_info_table(session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(PoolInfo.block_number >= start_block)
+        query = query.filter(DBPoolInfo.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(PoolInfo.block_number < end_block)
+        query = query.filter(DBPoolInfo.block_number < end_block)
 
     # Always sort by time in order
-    query = query.order_by(PoolInfo.timestamp)
+    query = query.order_by(DBPoolInfo.timestamp)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -522,9 +522,9 @@ def get_latest_block_number_from_checkpoint_info_table(session: Session, hyperdr
     int
         The latest block number in the poolinfo table.
     """
-    query = session.query(func.max(CheckpointInfo.block_number))
+    query = session.query(func.max(DBCheckpointInfo.block_number))
     if hyperdrive_address is not None:
-        query = query.filter(CheckpointInfo.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBCheckpointInfo.hyperdrive_address == hyperdrive_address)
     query = query.scalar()
 
     if query is None:
@@ -554,21 +554,21 @@ def get_checkpoint_info(
     DataFrame
         A DataFrame that consists of the queried checkpoint info.
     """
-    query = session.query(CheckpointInfo)
+    query = session.query(DBCheckpointInfo)
 
     if hyperdrive_address is not None:
-        query = query.filter(CheckpointInfo.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBCheckpointInfo.hyperdrive_address == hyperdrive_address)
 
     if checkpoint_time is not None:
-        query = query.filter(CheckpointInfo.checkpoint_time == checkpoint_time)
+        query = query.filter(DBCheckpointInfo.checkpoint_time == checkpoint_time)
 
     # TODO there exists a race condition where the same checkpoint info row
     # can be duplicated. While this should be fixed in insertion, we fix by
     # ensuring the getter selects on distinct checkpoint times.
-    query = query.distinct(CheckpointInfo.hyperdrive_address, CheckpointInfo.checkpoint_time)
+    query = query.distinct(DBCheckpointInfo.hyperdrive_address, DBCheckpointInfo.checkpoint_time)
 
     # Always sort by time in order
-    query = query.order_by(CheckpointInfo.checkpoint_time)
+    query = query.order_by(DBCheckpointInfo.checkpoint_time)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -588,9 +588,9 @@ def get_all_traders(session: Session, hyperdrive_address: str | None = None) -> 
     pd.Series
         A list of addresses that have made a trade.
     """
-    query = session.query(TradeEvent.wallet_address)
+    query = session.query(DBTradeEvent.wallet_address)
     if hyperdrive_address is not None:
-        query = query.filter(TradeEvent.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBTradeEvent.hyperdrive_address == hyperdrive_address)
     if query is None:
         return pd.Series([])
     query = query.distinct()
@@ -644,16 +644,16 @@ def get_position_snapshot(
     # Lots of arguments, most are defaults
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-positional-arguments
-    query = session.query(PositionSnapshot)
+    query = session.query(DBPositionSnapshot)
 
     if isinstance(hyperdrive_address, list):
-        query = query.filter(PositionSnapshot.hyperdrive_address.in_(hyperdrive_address))
+        query = query.filter(DBPositionSnapshot.hyperdrive_address.in_(hyperdrive_address))
     elif hyperdrive_address is not None:
-        query = query.filter(PositionSnapshot.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBPositionSnapshot.hyperdrive_address == hyperdrive_address)
 
     # If using latest entry, we gather everything then do a distinct on call
     if not latest_entry:
-        latest_block = get_latest_block_number_from_table(PositionSnapshot, session)
+        latest_block = get_latest_block_number_from_table(DBPositionSnapshot, session)
         if start_block is None:
             start_block = 0
         if end_block is None:
@@ -663,31 +663,31 @@ def get_position_snapshot(
             start_block = latest_block + start_block + 1
         if end_block < 0:
             end_block = latest_block + end_block + 1
-        query = query.filter(PositionSnapshot.block_number >= start_block)
-        query = query.filter(PositionSnapshot.block_number < end_block)
+        query = query.filter(DBPositionSnapshot.block_number >= start_block)
+        query = query.filter(DBPositionSnapshot.block_number < end_block)
 
     if isinstance(wallet_address, list):
-        query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
+        query = query.filter(DBPositionSnapshot.wallet_address.in_(wallet_address))
     elif wallet_address is not None:
-        query = query.filter(PositionSnapshot.wallet_address == wallet_address)
+        query = query.filter(DBPositionSnapshot.wallet_address == wallet_address)
 
     if latest_entry:
         # We use a distinct by/order by here to get the last block
         # for each hyperdrive address, wallet address, and token_id
         query = query.distinct(
-            PositionSnapshot.hyperdrive_address,
-            PositionSnapshot.wallet_address,
-            PositionSnapshot.token_id,
+            DBPositionSnapshot.hyperdrive_address,
+            DBPositionSnapshot.wallet_address,
+            DBPositionSnapshot.token_id,
         )
         query = query.order_by(
-            PositionSnapshot.hyperdrive_address,
-            PositionSnapshot.wallet_address,
-            PositionSnapshot.token_id,
-            PositionSnapshot.block_number.desc(),
+            DBPositionSnapshot.hyperdrive_address,
+            DBPositionSnapshot.wallet_address,
+            DBPositionSnapshot.token_id,
+            DBPositionSnapshot.block_number.desc(),
         )
     else:
         # Always sort by block in order
-        query = query.order_by(PositionSnapshot.block_number)
+        query = query.order_by(DBPositionSnapshot.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -723,28 +723,28 @@ def get_total_pnl_over_time(
     """
     # TODO add optional argument of hyperdrive address to not aggregate across pools.
     query = session.query(
-        PositionSnapshot.wallet_address,
-        PositionSnapshot.block_number,
-        func.sum(PositionSnapshot.pnl).label("pnl"),
+        DBPositionSnapshot.wallet_address,
+        DBPositionSnapshot.block_number,
+        func.sum(DBPositionSnapshot.pnl).label("pnl"),
     )
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(PositionSnapshot, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(DBPositionSnapshot, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(PositionSnapshot, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(DBPositionSnapshot, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(PositionSnapshot.block_number >= start_block)
+        query = query.filter(DBPositionSnapshot.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(PositionSnapshot.block_number < end_block)
+        query = query.filter(DBPositionSnapshot.block_number < end_block)
     if wallet_address is not None:
-        query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
+        query = query.filter(DBPositionSnapshot.wallet_address.in_(wallet_address))
 
-    query = query.group_by(PositionSnapshot.wallet_address, PositionSnapshot.block_number)
+    query = query.group_by(DBPositionSnapshot.wallet_address, DBPositionSnapshot.block_number)
 
     # Always sort by block in order
-    query = query.order_by(PositionSnapshot.block_number)
+    query = query.order_by(DBPositionSnapshot.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -779,30 +779,32 @@ def get_positions_over_time(
         A DataFrame that consists of the queried pool info data.
     """
     query = session.query(
-        PositionSnapshot.wallet_address,
-        PositionSnapshot.block_number,
-        PositionSnapshot.token_type,
-        func.sum(PositionSnapshot.token_balance).label("token_balance"),
+        DBPositionSnapshot.wallet_address,
+        DBPositionSnapshot.block_number,
+        DBPositionSnapshot.token_type,
+        func.sum(DBPositionSnapshot.token_balance).label("token_balance"),
     )
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(PositionSnapshot, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(DBPositionSnapshot, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(PositionSnapshot, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(DBPositionSnapshot, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(PositionSnapshot.block_number >= start_block)
+        query = query.filter(DBPositionSnapshot.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(PositionSnapshot.block_number < end_block)
+        query = query.filter(DBPositionSnapshot.block_number < end_block)
 
     if wallet_address is not None:
-        query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
+        query = query.filter(DBPositionSnapshot.wallet_address.in_(wallet_address))
 
-    query = query.group_by(PositionSnapshot.wallet_address, PositionSnapshot.block_number, PositionSnapshot.token_type)
+    query = query.group_by(
+        DBPositionSnapshot.wallet_address, DBPositionSnapshot.block_number, DBPositionSnapshot.token_type
+    )
 
     # Always sort by block in order
-    query = query.order_by(PositionSnapshot.block_number)
+    query = query.order_by(DBPositionSnapshot.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)
 
@@ -837,28 +839,28 @@ def get_realized_value_over_time(
         A DataFrame that consists of the queried pool info data.
     """
     query = session.query(
-        PositionSnapshot.wallet_address,
-        PositionSnapshot.block_number,
-        func.sum(PositionSnapshot.realized_value).label("realized_value"),
+        DBPositionSnapshot.wallet_address,
+        DBPositionSnapshot.block_number,
+        func.sum(DBPositionSnapshot.realized_value).label("realized_value"),
     )
 
     # Support for negative indices
     if (start_block is not None) and (start_block < 0):
-        start_block = get_latest_block_number_from_table(PositionSnapshot, session) + start_block + 1
+        start_block = get_latest_block_number_from_table(DBPositionSnapshot, session) + start_block + 1
     if (end_block is not None) and (end_block < 0):
-        end_block = get_latest_block_number_from_table(PositionSnapshot, session) + end_block + 1
+        end_block = get_latest_block_number_from_table(DBPositionSnapshot, session) + end_block + 1
 
     if start_block is not None:
-        query = query.filter(PositionSnapshot.block_number >= start_block)
+        query = query.filter(DBPositionSnapshot.block_number >= start_block)
     if end_block is not None:
-        query = query.filter(PositionSnapshot.block_number < end_block)
+        query = query.filter(DBPositionSnapshot.block_number < end_block)
 
     if wallet_address is not None:
-        query = query.filter(PositionSnapshot.wallet_address.in_(wallet_address))
+        query = query.filter(DBPositionSnapshot.wallet_address.in_(wallet_address))
 
-    query = query.group_by(PositionSnapshot.wallet_address, PositionSnapshot.block_number)
+    query = query.group_by(DBPositionSnapshot.wallet_address, DBPositionSnapshot.block_number)
 
     # Always sort by block in order
-    query = query.order_by(PositionSnapshot.block_number)
+    query = query.order_by(DBPositionSnapshot.block_number)
 
     return pd.read_sql(query.statement, con=session.connection(), coerce_float=coerce_float)

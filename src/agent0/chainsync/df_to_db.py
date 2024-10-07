@@ -7,12 +7,12 @@ import pandas as pd
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from agent0.chainsync.db.base import Base
+from agent0.chainsync.db.base import DBBase
 
 MAX_BATCH_SIZE = 10000
 
 
-def df_to_db(insert_df: pd.DataFrame, schema_obj: Type[Base], session: Session):
+def df_to_db(insert_df: pd.DataFrame, schema_obj: Type[DBBase], session: Session):
     """Helper function to add a dataframe to a database.
 
     Arguments

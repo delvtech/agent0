@@ -9,7 +9,7 @@ import pandas as pd
 from sqlalchemy import exc
 from sqlalchemy.orm import Session
 
-from agent0.chainsync.db.base import AddrToUsername, get_addr_to_username, initialize_session
+from agent0.chainsync.db.base import DBAddrToUsername, get_addr_to_username, initialize_session
 from agent0.chainsync.df_to_db import df_to_db
 
 from .interface import (
@@ -20,7 +20,7 @@ from .interface import (
     get_position_snapshot,
     get_trade_events,
 )
-from .schema import CheckpointInfo, HyperdriveAddrToName, PoolConfig, PoolInfo, PositionSnapshot, TradeEvent
+from .schema import DBCheckpointInfo, DBHyperdriveAddrToName, DBPoolConfig, DBPoolInfo, DBPositionSnapshot, DBTradeEvent
 
 
 def export_db_to_file(out_dir: Path, db_session: Session | None = None) -> None:
@@ -103,13 +103,13 @@ def import_to_db(db_session: Session, in_dir: Path, drop=True) -> None:
     # Drop all if drop is set
 
     if drop:
-        db_session.query(AddrToUsername).delete()
-        db_session.query(HyperdriveAddrToName).delete()
-        db_session.query(TradeEvent).delete()
-        db_session.query(PoolConfig).delete()
-        db_session.query(CheckpointInfo).delete()
-        db_session.query(PoolInfo).delete()
-        db_session.query(PositionSnapshot).delete()
+        db_session.query(DBAddrToUsername).delete()
+        db_session.query(DBHyperdriveAddrToName).delete()
+        db_session.query(DBTradeEvent).delete()
+        db_session.query(DBPoolConfig).delete()
+        db_session.query(DBCheckpointInfo).delete()
+        db_session.query(DBPoolInfo).delete()
+        db_session.query(DBPositionSnapshot).delete()
         try:
             db_session.commit()
         except exc.DataError as err:
@@ -118,10 +118,10 @@ def import_to_db(db_session: Session, in_dir: Path, drop=True) -> None:
             raise err
 
     out = import_to_pandas(in_dir)
-    df_to_db(out["addr_to_username"], AddrToUsername, db_session)
-    df_to_db(out["hyperdrive_addr_to_name"], HyperdriveAddrToName, db_session)
-    df_to_db(out["trade_event"], TradeEvent, db_session)
-    df_to_db(out["pool_config"], PoolConfig, db_session)
-    df_to_db(out["checkpoint_info"], CheckpointInfo, db_session)
-    df_to_db(out["pool_info"], PoolInfo, db_session)
-    df_to_db(out["position_snapshot"], PositionSnapshot, db_session)
+    df_to_db(out["addr_to_username"], DBAddrToUsername, db_session)
+    df_to_db(out["hyperdrive_addr_to_name"], DBHyperdriveAddrToName, db_session)
+    df_to_db(out["trade_event"], DBTradeEvent, db_session)
+    df_to_db(out["pool_config"], DBPoolConfig, db_session)
+    df_to_db(out["checkpoint_info"], DBCheckpointInfo, db_session)
+    df_to_db(out["pool_info"], DBPoolInfo, db_session)
+    df_to_db(out["position_snapshot"], DBPositionSnapshot, db_session)

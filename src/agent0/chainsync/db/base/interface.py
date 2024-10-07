@@ -17,7 +17,7 @@ from sqlalchemy_utils import create_database, database_exists
 
 from agent0.chainsync import PostgresConfig, build_postgres_config_from_env
 
-from .schema import AddrToUsername, Base
+from .schema import DBAddrToUsername, DBBase
 
 # classes for sqlalchemy that define table schemas have no methods.
 # pylint: disable=too-few-public-methods
@@ -155,7 +155,7 @@ def initialize_session(
     for _ in range(10):
         try:
             # create tables
-            Base.metadata.create_all(engine)
+            DBBase.metadata.create_all(engine)
             # commit the transaction
             session.commit()
             exception = None
@@ -224,7 +224,7 @@ def add_addr_to_username(
             raise ValueError("Fatal error: postgres returning multiple entries for primary key")
 
         # This merge adds the row if not exist (keyed by address), otherwise will overwrite with this entry
-        session.merge(AddrToUsername(address=address, username=username))
+        session.merge(DBAddrToUsername(address=address, username=username))
 
     try:
         session.commit()
@@ -248,13 +248,13 @@ def get_addr_to_username(session: Session, address: str | None = None) -> pd.Dat
     DataFrame
         A DataFrame that consists of the queried pool config data
     """
-    query = session.query(AddrToUsername)
+    query = session.query(DBAddrToUsername)
     if address is not None:
-        query = query.filter(AddrToUsername.address == address)
+        query = query.filter(DBAddrToUsername.address == address)
     return pd.read_sql(query.statement, con=session.connection())
 
 
-class TableWithBlockNumber(Base):
+class TableWithBlockNumber(DBBase):
     """An abstract table that has block_number"""
 
     __abstract__ = True
@@ -271,7 +271,7 @@ class TableWithBlockNumber(Base):
         return Column(String)
 
 
-def get_latest_block_number_from_table(table_obj: Type[Base], session: Session) -> int:
+def get_latest_block_number_from_table(table_obj: Type[DBBase], session: Session) -> int:
     """Get the latest block number based on the specified table in the db.
 
     Arguments

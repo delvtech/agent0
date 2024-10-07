@@ -6,7 +6,7 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from agent0.chainsync.db.hyperdrive import (
-    PositionSnapshot,
+    DBPositionSnapshot,
     get_current_positions,
     get_latest_block_number_from_positions_snapshot_table,
 )
@@ -112,4 +112,4 @@ def snapshot_positions_to_db(
 
     if len(all_pool_positions) > 0:
         # Add wallet_pnl to the database
-        df_to_db(pd.concat(all_pool_positions, axis=0), PositionSnapshot, db_session)
+        df_to_db(pd.concat(all_pool_positions, axis=0), DBPositionSnapshot, db_session)

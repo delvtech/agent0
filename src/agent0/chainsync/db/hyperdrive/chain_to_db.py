@@ -19,7 +19,7 @@ from .interface import (
     get_latest_block_number_from_checkpoint_info_table,
     get_latest_block_number_from_trade_event,
 )
-from .schema import CheckpointInfo, TradeEvent
+from .schema import DBCheckpointInfo, DBTradeEvent
 
 
 def init_data_chain_to_db(
@@ -148,7 +148,7 @@ def checkpoint_events_to_db(
 
     # Add to db
     if len(events_df) > 0:
-        df_to_db(events_df, CheckpointInfo, db_session)
+        df_to_db(events_df, DBCheckpointInfo, db_session)
 
 
 def trade_events_to_db(
@@ -283,4 +283,4 @@ def trade_events_to_db(
 
     # Add to db
     if len(events_df) > 0:
-        df_to_db(events_df, TradeEvent, db_session)
+        df_to_db(events_df, DBTradeEvent, db_session)
