@@ -287,7 +287,7 @@ class RandomHold(Random):
             assert maturity_time > 0
             # All closing positions take bonds as the argument, so we always get the bond amount
             # in bookkeeping from the tx receipt
-            bond_amount = hyperdrive_event.bond_amount
+            bond_amount = hyperdrive_event.args.bond_amount
             assert bond_amount > 0
 
             self.open_positions[interface.hyperdrive_address].append(

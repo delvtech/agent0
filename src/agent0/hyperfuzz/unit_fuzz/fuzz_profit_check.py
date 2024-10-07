@@ -116,7 +116,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     # Close the long
     logging.info("Close the long...")
     close_long_event = long_agent.close_long(
-        maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+        maturity_time=open_long_event.args.maturity_time, bonds=open_long_event.args.bond_amount
     )
     ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
@@ -159,7 +159,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     # Close the short
     logging.info("Close the short...")
     close_short_event = short_agent.close_short(
-        maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
+        maturity_time=open_short_event.args.maturity_time, bonds=open_short_event.args.bond_amount
     )
     ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 

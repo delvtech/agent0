@@ -70,10 +70,10 @@ def _log_event(
         trade_type,
         input_type,
         base_needed,
-        "+" if event.bond_amount > 0 else "",
-        event.bond_amount,
-        "+" if event.amount > 0 else "",
-        event.amount,
+        "+" if event.args.bond_amount > 0 else "",
+        event.args.bond_amount,
+        "+" if event.args.amount > 0 else "",
+        event.args.amount,
     )
 
 

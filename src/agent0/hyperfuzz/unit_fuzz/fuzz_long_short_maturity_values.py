@@ -102,7 +102,7 @@ def fuzz_long_short_maturity_values(
     # Ensure all trades open are within the same checkpoint
     trade_maturity_times = []
     for agent, event in trade_events:
-        trade_maturity_times.append(event.maturity_time)
+        trade_maturity_times.append(event.args.maturity_time)
     assert all(maturity_time == trade_maturity_times[0] for maturity_time in trade_maturity_times)
 
     # Starting checkpoint is automatically created by sending transactions
@@ -342,7 +342,7 @@ def invariant_check(
             # facing functions that the units in analysis and events are in lido shares.
 
             # Undo lido to steth conversion
-            lido_shares = close_trade_event.amount / close_trade_event.vault_share_price
+            lido_shares = close_trade_event.args.amount / close_trade_event.args.vault_share_price
             # Use lido contract to make the conversion on the event block
             # Type narrowing
             assert interactive_hyperdrive.interface.vault_shares_token_contract is not None
@@ -354,9 +354,11 @@ def invariant_check(
             actual_long_base_amount = FixedPoint(scaled_value=steth_amount_in_wei)
 
         else:
-            actual_long_base_amount = close_trade_event.amount
+            actual_long_base_amount = close_trade_event.args.amount
 
-        expected_long_base_amount = close_trade_event.bond_amount - close_trade_event.bond_amount * flat_fee_percent
+        expected_long_base_amount = (
+            close_trade_event.args.bond_amount - close_trade_event.args.bond_amount * flat_fee_percent
+        )
 
         # assert with close event bond amount
         if not isclose(
@@ -384,17 +386,17 @@ def invariant_check(
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
 
         # get the share amount, c1 * dz part of the equation.
-        share_reserves_delta = open_trade_event.bond_amount
-        flat_fee = open_trade_event.bond_amount * flat_fee_percent
+        share_reserves_delta = open_trade_event.args.bond_amount
+        flat_fee = open_trade_event.args.bond_amount * flat_fee_percent
         share_reserves_delta_plus_flat_fee = share_reserves_delta + flat_fee
 
         # get the final interest accrued
         expected_short_base_amount = (
-            open_trade_event.bond_amount * (closing_vault_share_price / open_vault_share_price + flat_fee_percent)
+            open_trade_event.args.bond_amount * (closing_vault_share_price / open_vault_share_price + flat_fee_percent)
             - share_reserves_delta_plus_flat_fee
         )
 
-        actual_short_base_amount = close_trade_event.amount
+        actual_short_base_amount = close_trade_event.args.amount
         if not isclose(
             actual_short_base_amount, expected_short_base_amount, abs_tol=FixedPoint(str(short_maturity_vals_epsilon))
         ):

@@ -334,9 +334,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     add_liquidity_event_0 = hyperdrive_agent_0.add_liquidity(base=FixedPoint(111_111))
     wallet_after = hyperdrive_agent_0.get_wallet()
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        assert add_liquidity_event_0.as_base
+        assert add_liquidity_event_0.args.as_base
     else:
-        assert not add_liquidity_event_0.as_base
+        assert not add_liquidity_event_0.args.as_base
 
     _ensure_event_matches_wallet_delta(
         FixedPoint(111_111), wallet_before, wallet_after, add_liquidity_event_0, deploy_type
@@ -348,9 +348,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     add_liquidity_event_1 = hyperdrive_agent_1.add_liquidity(base=FixedPoint(111_111))
     wallet_after = hyperdrive_agent_1.get_wallet()
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        assert add_liquidity_event_1.as_base
+        assert add_liquidity_event_1.args.as_base
     else:
-        assert not add_liquidity_event_1.as_base
+        assert not add_liquidity_event_1.args.as_base
     _ensure_event_matches_wallet_delta(
         FixedPoint(111_111), wallet_before, wallet_after, add_liquidity_event_1, deploy_type
     )
@@ -362,9 +362,9 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     open_long_event_0 = hyperdrive_agent_0.open_long(base=FixedPoint(22_222))
     wallet_after = hyperdrive_agent_0.get_wallet()
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        assert open_long_event_0.as_base
+        assert open_long_event_0.args.as_base
     else:
-        assert not open_long_event_0.as_base
+        assert not open_long_event_0.args.as_base
     assert len(wallet_after.longs) == 1
     _ensure_event_matches_wallet_delta(FixedPoint(22_222), wallet_before, wallet_after, open_long_event_0, deploy_type)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
@@ -374,37 +374,37 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
     open_long_event_1 = hyperdrive_agent_1.open_long(base=FixedPoint(22_222))
     wallet_after = hyperdrive_agent_1.get_wallet()
     if deploy_type == LocalHyperdrive.DeployType.ERC4626:
-        assert open_long_event_1.as_base
+        assert open_long_event_1.args.as_base
     else:
-        assert not open_long_event_1.as_base
+        assert not open_long_event_1.args.as_base
     _ensure_event_matches_wallet_delta(FixedPoint(22_222), wallet_before, wallet_after, open_long_event_1, deploy_type)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
     # Remove liquidity
     wallet_before = hyperdrive_agent_0.get_wallet()
-    remove_liquidity_event_0 = hyperdrive_agent_0.remove_liquidity(shares=add_liquidity_event_0.lp_amount)
+    remove_liquidity_event_0 = hyperdrive_agent_0.remove_liquidity(shares=add_liquidity_event_0.args.lp_amount)
     wallet_after = hyperdrive_agent_0.get_wallet()
     assert wallet_after.lp_tokens == FixedPoint(0)
     _ensure_event_matches_wallet_delta(
-        add_liquidity_event_0.lp_amount, wallet_before, wallet_after, remove_liquidity_event_0, deploy_type
+        add_liquidity_event_0.args.lp_amount, wallet_before, wallet_after, remove_liquidity_event_0, deploy_type
     )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_0)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_0)
 
     wallet_before = hyperdrive_agent_1.get_wallet()
-    remove_liquidity_event_1 = hyperdrive_agent_1.remove_liquidity(shares=add_liquidity_event_1.lp_amount)
+    remove_liquidity_event_1 = hyperdrive_agent_1.remove_liquidity(shares=add_liquidity_event_1.args.lp_amount)
     wallet_after = hyperdrive_agent_1.get_wallet()
     assert hyperdrive_agent_1.get_wallet().lp_tokens == FixedPoint(0)
     _ensure_event_matches_wallet_delta(
-        add_liquidity_event_1.lp_amount, wallet_before, wallet_after, remove_liquidity_event_1, deploy_type
+        add_liquidity_event_1.args.lp_amount, wallet_before, wallet_after, remove_liquidity_event_1, deploy_type
     )
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive0, hyperdrive_agent_1)
     _ensure_db_wallet_matches_agent_wallet_and_chain(hyperdrive1, hyperdrive_agent_1)
 
     # We ensure there exists some withdrawal shares that were given from the previous trade for testing purposes
-    assert remove_liquidity_event_0.withdrawal_share_amount > 0
-    assert remove_liquidity_event_1.withdrawal_share_amount > 0
+    assert remove_liquidity_event_0.args.withdrawal_share_amount > 0
+    assert remove_liquidity_event_1.args.withdrawal_share_amount > 0
 
     # Add liquidity back to ensure we can close positions
     _ = hyperdrive_agent_0.add_liquidity(base=FixedPoint(111_111))

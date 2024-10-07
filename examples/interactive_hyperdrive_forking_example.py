@@ -65,7 +65,7 @@ hyperdrive_agent0.set_max_approval()
 # trades below
 open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(111))
 close_long_event = hyperdrive_agent0.close_long(
-    maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+    maturity_time=open_long_event.args.maturity_time, bonds=open_long_event.args.bond_amount
 )
 
 

@@ -67,7 +67,7 @@ def test_simple_lp_policy():
         hyperdrive_agent0.add_funds(base=trade_amount)
         open_event = hyperdrive_agent0.open_short(trade_amount)
         chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
-        hyperdrive_agent0.close_short(open_event.maturity_time, open_event.bond_amount)
+        hyperdrive_agent0.close_short(open_event.args.maturity_time, open_event.args.bond_amount)
         trade_event_list = lp_agent.execute_policy_action()
 
     # only one trade per action execution
@@ -91,7 +91,7 @@ def test_simple_lp_policy():
         interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))  # LP gets no extra earnings from variable
         open_event = hyperdrive_agent1.open_long(trade_amount)
         chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
-        hyperdrive_agent1.close_long(open_event.maturity_time, open_event.bond_amount)
+        hyperdrive_agent1.close_long(open_event.args.maturity_time, open_event.args.bond_amount)
 
         trade_event_list = lp_agent.execute_policy_action()
         if len(trade_event_list) > 0:
