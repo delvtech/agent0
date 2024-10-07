@@ -13,6 +13,16 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
+from hyperdrivetypes import (
+    AddLiquidityEventFP,
+    BaseEvent,
+    CloseLongEventFP,
+    CloseShortEventFP,
+    OpenLongEventFP,
+    OpenShortEventFP,
+    RedeemWithdrawalSharesEventFP,
+    RemoveLiquidityEventFP,
+)
 from web3 import Web3
 from web3.types import Nonce, RPCEndpoint
 
@@ -43,16 +53,6 @@ from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import get_account_balance, set_anvil_account_balance, smart_contract_transact
-from agent0.ethpy.hyperdrive.event_types import (
-    AddLiquidity,
-    BaseHyperdriveEvent,
-    CloseLong,
-    CloseShort,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
 
 from .exec import (
     async_execute_agent_trades,
@@ -349,7 +349,7 @@ class HyperdriveAgent:
     # Trades
     ################
 
-    def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
+    def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLongEventFP:
         """Opens a long for this agent.
 
         Arguments
@@ -392,10 +392,10 @@ class HyperdriveAgent:
             raise e
 
         # Type narrowing
-        assert isinstance(hyperdrive_event, OpenLong)
+        assert isinstance(hyperdrive_event, OpenLongEventFP)
         return hyperdrive_event
 
-    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
+    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLongEventFP:
         """Closes a long for this agent.
 
         Arguments
@@ -440,10 +440,10 @@ class HyperdriveAgent:
             raise e
 
         # Type narrowing
-        assert isinstance(hyperdrive_event, CloseLong)
+        assert isinstance(hyperdrive_event, CloseLongEventFP)
         return hyperdrive_event
 
-    def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
+    def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShortEventFP:
         """Opens a short for this agent.
 
         Arguments
@@ -484,10 +484,10 @@ class HyperdriveAgent:
             self._reset_nonce()
             raise e
         # Type narrowing
-        assert isinstance(hyperdrive_event, OpenShort)
+        assert isinstance(hyperdrive_event, OpenShortEventFP)
         return hyperdrive_event
 
-    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
+    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShortEventFP:
         """Closes a short for this agent.
 
         Arguments
@@ -530,10 +530,10 @@ class HyperdriveAgent:
             self._reset_nonce()
             raise e
         # Type narrowing
-        assert isinstance(hyperdrive_event, CloseShort)
+        assert isinstance(hyperdrive_event, CloseShortEventFP)
         return hyperdrive_event
 
-    def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
+    def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidityEventFP:
         """Adds liquidity for this agent.
 
         Arguments
@@ -574,10 +574,10 @@ class HyperdriveAgent:
             self._reset_nonce()
             raise e
         # Type narrowing
-        assert isinstance(hyperdrive_event, AddLiquidity)
+        assert isinstance(hyperdrive_event, AddLiquidityEventFP)
         return hyperdrive_event
 
-    def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
+    def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidityEventFP:
         """Removes liquidity for this agent.
 
         Arguments
@@ -586,6 +586,7 @@ class HyperdriveAgent:
             The amount of liquidity to remove in units of shares.
         pool: Hyperdrive | None, optional
             The pool to interact with. Defaults to the active pool.
+
 
         Returns
         -------
@@ -618,10 +619,12 @@ class HyperdriveAgent:
             self._reset_nonce()
             raise e
         # Type narrowing
-        assert isinstance(hyperdrive_event, RemoveLiquidity)
+        assert isinstance(hyperdrive_event, RemoveLiquidityEventFP)
         return hyperdrive_event
 
-    def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
+    def redeem_withdrawal_share(
+        self, shares: FixedPoint, pool: Hyperdrive | None = None
+    ) -> RedeemWithdrawalSharesEventFP:
         """Redeems withdrawal shares for this agent.
 
         Arguments
@@ -662,7 +665,7 @@ class HyperdriveAgent:
             self._reset_nonce()
             raise e
         # Type narrowing
-        assert isinstance(hyperdrive_event, RedeemWithdrawalShares)
+        assert isinstance(hyperdrive_event, RedeemWithdrawalSharesEventFP)
         return hyperdrive_event
 
     def get_policy_action(self, pool: Hyperdrive | None = None) -> list[Trade[HyperdriveMarketAction]]:
@@ -728,7 +731,7 @@ class HyperdriveAgent:
 
     def execute_action(
         self, actions: list[Trade[HyperdriveMarketAction]], pool: Hyperdrive | None = None
-    ) -> list[BaseHyperdriveEvent]:
+    ) -> list[BaseEvent]:
         """Executes the specified actions.
 
         Arguments
@@ -775,7 +778,7 @@ class HyperdriveAgent:
                 out_events.append(hyperdrive_event)
         return out_events
 
-    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseHyperdriveEvent]:
+    def execute_policy_action(self, pool: Hyperdrive | None = None) -> list[BaseEvent]:
         """Gets the underlying policy action and executes them.
 
         This function simply calls `execute_action` with the result of `get_policy_action`.
@@ -793,7 +796,7 @@ class HyperdriveAgent:
         # Only allow executing agent policies if a policy was passed in the constructor
         return self.execute_action(self.get_policy_action(pool), pool)
 
-    def execute_liquidate(self, pool: Hyperdrive | None = None, randomize: bool = False) -> list[BaseHyperdriveEvent]:
+    def execute_liquidate(self, pool: Hyperdrive | None = None, randomize: bool = False) -> list[BaseEvent]:
         """Gets the agent's liquidate actions and executes them.
 
         This function simply calls `execute_action` with the result of `get_liquidate_action`.
@@ -817,16 +820,16 @@ class HyperdriveAgent:
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[True]
-    ) -> BaseHyperdriveEvent: ...
+    ) -> BaseEvent: ...
 
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[False]
-    ) -> BaseHyperdriveEvent | None: ...
+    ) -> BaseEvent | None: ...
 
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: bool
-    ) -> BaseHyperdriveEvent | None:
+    ) -> BaseEvent | None:
         if not trade_result.trade_successful:
             # Defaults to CRITICAL
             assert trade_result.exception is not None

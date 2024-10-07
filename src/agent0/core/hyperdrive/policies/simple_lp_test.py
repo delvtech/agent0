@@ -6,9 +6,9 @@ import datetime
 
 import pytest
 from fixedpointmath import FixedPoint, isclose
+from hyperdrivetypes import AddLiquidityEventFP, RemoveLiquidityEventFP
 
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
-from agent0.ethpy.hyperdrive.event_types import AddLiquidity, RemoveLiquidity
 
 # pylint: disable=too-many-locals
 
@@ -73,9 +73,9 @@ def test_simple_lp_policy():
     # only one trade per action execution
     assert len(trade_event_list) == 1
     # always should be add liquidity
-    assert isinstance(trade_event_list[0], AddLiquidity)
+    assert isinstance(trade_event_list[0], AddLiquidityEventFP)
     # always should be close to delta_liquidity
-    assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("1.0"))
+    assert isclose(trade_event_list[0].args.lp_amount, delta_liquidity, abs_tol=FixedPoint("1.0"))
 
     # Do smart trades until the LP removes liquidity
     # It's possible the LP could add liquidity in the first couple of trades,
@@ -95,14 +95,14 @@ def test_simple_lp_policy():
 
         trade_event_list = lp_agent.execute_policy_action()
         if len(trade_event_list) > 0:
-            if isinstance(trade_event_list[0], RemoveLiquidity):
+            if isinstance(trade_event_list[0], RemoveLiquidityEventFP):
                 removed_liquidity = True
 
     # only one trade per action execution
     assert len(trade_event_list) == 1
     # always should be remove liquidity
-    assert isinstance(trade_event_list[0], RemoveLiquidity)
+    assert isinstance(trade_event_list[0], RemoveLiquidityEventFP)
     # always should be close to delta_liquidity
-    assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("0.1"))
+    assert isclose(trade_event_list[0].args.lp_amount, delta_liquidity, abs_tol=FixedPoint("0.1"))
 
     chain.cleanup()

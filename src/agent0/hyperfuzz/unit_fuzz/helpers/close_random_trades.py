@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
+from hyperdrivetypes import OpenLongEventFP, OpenShortEventFP
 from numpy.random import Generator
 
 from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
-from agent0.ethpy.hyperdrive.event_types import OpenLong, OpenShort
 
 
 def permute_trade_events(
-    trade_events: list[tuple[LocalHyperdriveAgent, OpenLong | OpenShort]],
+    trade_events: list[tuple[LocalHyperdriveAgent, OpenLongEventFP | OpenShortEventFP]],
     rng: Generator,
-) -> list[tuple[LocalHyperdriveAgent, OpenLong | OpenShort]]:
+) -> list[tuple[LocalHyperdriveAgent, OpenLongEventFP | OpenShortEventFP]]:
     """Given a list of trade events, returns the list in random order.
 
     Arguments
@@ -33,7 +33,7 @@ def permute_trade_events(
 
 
 def close_trades(
-    trade_events: list[tuple[LocalHyperdriveAgent, OpenLong | OpenShort]],
+    trade_events: list[tuple[LocalHyperdriveAgent, OpenLongEventFP | OpenShortEventFP]],
 ) -> None:
     """Close trades provided.
 
@@ -45,7 +45,7 @@ def close_trades(
             - either the OpenLong or OpenShort trade event
     """
     for agent, trade in trade_events:
-        if isinstance(trade, OpenLong):
-            agent.close_long(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
-        if isinstance(trade, OpenShort):
-            agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
+        if isinstance(trade, OpenLongEventFP):
+            agent.close_long(maturity_time=trade.args.maturity_time, bonds=trade.args.bond_amount)
+        if isinstance(trade, OpenShortEventFP):
+            agent.close_short(maturity_time=trade.args.maturity_time, bonds=trade.args.bond_amount)

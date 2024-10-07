@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint, maximum, minimum
+from hyperdrivetypes import AddLiquidityEventFP, RemoveLiquidityEventFP
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive.agent import add_liquidity_trade, remove_liquidity_trade
-from agent0.ethpy.hyperdrive.event_types import AddLiquidity, RemoveLiquidity
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
@@ -167,8 +167,8 @@ class SimpleLP(HyperdriveBasePolicy):
                 and trade_results[-1].hyperdrive_event is not None
             ):
                 if trade_results[-1].trade_object.market_action.action_type.name == "ADD_LIQUIDITY":
-                    assert isinstance(trade_results[-1].hyperdrive_event, AddLiquidity)
-                    self.total_base_spent += trade_results[-1].hyperdrive_event.amount
+                    assert isinstance(trade_results[-1].hyperdrive_event, AddLiquidityEventFP)
+                    self.total_base_spent += trade_results[-1].hyperdrive_event.args.amount
                 elif trade_results[-1].trade_object.market_action.action_type.name == "REMOVE_LIQUIDITY":
-                    assert isinstance(trade_results[-1].hyperdrive_event, RemoveLiquidity)
-                    self.total_base_spent -= trade_results[-1].hyperdrive_event.amount
+                    assert isinstance(trade_results[-1].hyperdrive_event, RemoveLiquidityEventFP)
+                    self.total_base_spent -= trade_results[-1].hyperdrive_event.args.amount

@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
+    from pypechain.core import BaseEvent
 
     from agent0.core.base import Trade
     from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-    from agent0.ethpy.hyperdrive.event_types import BaseHyperdriveEvent
 
     from .hyperdrive_actions import HyperdriveMarketAction
     from .hyperdrive_wallet import HyperdriveWallet
@@ -34,7 +34,7 @@ class TradeResult:
     """The policy that was executing the trade."""
     trade_object: Trade[HyperdriveMarketAction] | None = None
     """The trade object for the trade."""
-    hyperdrive_event: BaseHyperdriveEvent | None = None
+    hyperdrive_event: BaseEvent | None = None
     """The transaction receipt of the trade."""
     contract_call: dict[str, Any] | None = None
     """A dictionary detailing the underlying contract call."""

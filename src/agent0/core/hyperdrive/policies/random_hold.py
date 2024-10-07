@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import OpenLongEventFP, OpenShortEventFP
 
 from agent0.core.base.types import Trade
 from agent0.core.hyperdrive.agent import HyperdriveActionType, close_long_trade, close_short_trade
-from agent0.ethpy.hyperdrive.event_types import OpenLong, OpenShort
 
 from .random import Random
 
@@ -280,8 +280,8 @@ class RandomHold(Random):
             close_time = current_block_time + self.generate_random_hold_time(interface)
             # Open longs/shorts, if successful, should have a transaction receipt
             assert hyperdrive_event is not None
-            assert isinstance(hyperdrive_event, (OpenLong, OpenShort))
-            maturity_time = hyperdrive_event.maturity_time
+            assert isinstance(hyperdrive_event, (OpenLongEventFP, OpenShortEventFP))
+            maturity_time = hyperdrive_event.args.maturity_time
             # Receipt breakdown defaults to 0 maturity time, so we ensure the tx receipt actually
             # returns a maturity time here
             assert maturity_time > 0

@@ -23,11 +23,11 @@ from copy import deepcopy
 
 import pytest
 from fixedpointmath import FixedPoint, isclose
+from hyperdrivetypes import OpenLongEventFP, OpenShortEventFP
 from tabulate import tabulate
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.utilities.predict import TradeDeltas, predict_long, predict_short
-from agent0.ethpy.hyperdrive.event_types import OpenLong, OpenShort
 
 # it's just a test
 # pylint: disable=logging-fstring-interpolation
@@ -62,9 +62,9 @@ def _log_event(
     trade_type: str,
     input_type: str,
     base_needed: FixedPoint,
-    event: OpenLong | OpenShort,
+    event: OpenLongEventFP | OpenShortEventFP,
 ):
-    assert event.as_base
+    assert event.args.as_base
     logging.info(
         "opened %s with input %s=%s, output Δbonds= %s%s, Δbase= %s%s",
         trade_type,

@@ -6,11 +6,11 @@ import logging
 
 import pytest
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import AddLiquidityEventFP, CloseLongEventFP, CloseShortEventFP, OpenLongEventFP, OpenShortEventFP
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.interactive.local_hyperdrive_agent import LocalHyperdriveAgent
 from agent0.core.hyperdrive.policies import PolicyZoo
-from agent0.ethpy.hyperdrive.event_types import AddLiquidity, CloseLong, CloseShort, OpenLong, OpenShort
 
 # avoid unnecessary warning from using fixtures defined in outer scope
 # pylint: disable=redefined-outer-name
@@ -240,7 +240,7 @@ def test_close_long(
     event_list = arbitrage_andy.execute_policy_action()
     logging.info("Andy executed %s", event_list)
     event = event_list[0] if isinstance(event_list, list) else event_list
-    assert isinstance(event, CloseLong)
+    assert isinstance(event, CloseLongEventFP)
     pool_bonds_after = interactive_hyperdrive.interface.current_pool_state.pool_info.bond_reserves
     pool_shares_after = interactive_hyperdrive.interface.current_pool_state.pool_info.share_reserves
     block_time_after = interactive_hyperdrive.interface.current_pool_state.block_time
@@ -305,7 +305,7 @@ def test_reduce_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: Lo
     event = arbitrage_andy.execute_policy_action()
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
-    assert isinstance(event, CloseLong)
+    assert isinstance(event, CloseLongEventFP)
 
 
 @pytest.mark.anvil
@@ -325,7 +325,7 @@ def test_reduce_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: L
     event = arbitrage_andy.execute_policy_action()
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
-    assert isinstance(event, CloseShort)
+    assert isinstance(event, CloseShortEventFP)
 
 
 @pytest.mark.anvil
@@ -351,8 +351,8 @@ def test_safe_long_trading(interactive_hyperdrive: LocalHyperdrive, manual_agent
     action_result = larry.execute_policy_action()  # should not be able to arb the full amount after LPing
     # checks
     assert len(action_result) == 2  # LP & Arb (no closing trades)
-    assert isinstance(action_result[0], AddLiquidity)  # LP first
-    assert isinstance(action_result[1], OpenLong)  # then arb
+    assert isinstance(action_result[0], AddLiquidityEventFP)  # LP first
+    assert isinstance(action_result[1], OpenLongEventFP)  # then arb
 
 
 @pytest.mark.anvil
@@ -378,8 +378,8 @@ def test_safe_short_trading(interactive_hyperdrive: LocalHyperdrive, manual_agen
     action_result = larry.execute_policy_action()  # should not be able to arb the full amount after LPing
     # checks
     assert len(action_result) == 2  # LP & Arb (no closing trades)
-    assert isinstance(action_result[0], AddLiquidity)  # LP first
-    assert isinstance(action_result[1], OpenShort)  # then arb
+    assert isinstance(action_result[0], AddLiquidityEventFP)  # LP first
+    assert isinstance(action_result[1], OpenShortEventFP)  # then arb
 
 
 @pytest.mark.anvil
@@ -397,7 +397,7 @@ def test_matured_long(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: L
     event = arbitrage_andy.execute_policy_action()
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
-    assert not isinstance(event, CloseLong)
+    assert not isinstance(event, CloseLongEventFP)
 
 
 @pytest.mark.anvil
@@ -415,4 +415,4 @@ def test_matured_short(interactive_hyperdrive: LocalHyperdrive, arbitrage_andy: 
     event = arbitrage_andy.execute_policy_action()
     event = event[0] if isinstance(event, list) else event
     logging.info("event is %s", event)
-    assert not isinstance(event, CloseShort)
+    assert not isinstance(event, CloseShortEventFP)

@@ -23,18 +23,17 @@ from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import BlockNumber
-    from web3.types import BlockIdentifier, Nonce
-
-    from agent0.ethpy.hyperdrive.event_types import (
-        AddLiquidity,
-        CloseLong,
-        CloseShort,
-        CreateCheckpoint,
-        OpenLong,
-        OpenShort,
-        RedeemWithdrawalShares,
-        RemoveLiquidity,
+    from hyperdrivetypes import (
+        AddLiquidityEventFP,
+        CloseLongEventFP,
+        CloseShortEventFP,
+        CreateCheckpointEventFP,
+        OpenLongEventFP,
+        OpenShortEventFP,
+        RedeemWithdrawalSharesEventFP,
+        RemoveLiquidityEventFP,
     )
+    from web3.types import BlockIdentifier, Nonce
 
     from .read_interface import HyperdriveReadInterface
     from .read_write_interface import HyperdriveReadWriteInterface
@@ -188,7 +187,7 @@ def _create_checkpoint(
     gas_limit: int | None = None,
     write_retry_count: int | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
-) -> CreateCheckpoint:
+) -> CreateCheckpointEventFP:
     """See API for documentation."""
 
     if write_retry_count is None:
@@ -257,7 +256,7 @@ async def _async_open_long(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> OpenLong:
+) -> OpenLongEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     # min_vault_share_price: int
@@ -355,7 +354,7 @@ async def _async_close_long(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> CloseLong:
+) -> CloseLongEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -433,7 +432,7 @@ async def _async_open_short(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> OpenShort:
+) -> OpenShortEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
@@ -516,7 +515,7 @@ async def _async_close_short(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> CloseShort:
+) -> CloseShortEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -595,7 +594,7 @@ async def _async_add_liquidity(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> AddLiquidity:
+) -> AddLiquidityEventFP:
     """See API for documentation."""
     # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
     if slippage_tolerance is not None:
@@ -673,7 +672,7 @@ async def _async_remove_liquidity(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> RemoveLiquidity:
+) -> RemoveLiquidityEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -732,7 +731,7 @@ async def _async_redeem_withdraw_shares(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> RedeemWithdrawalShares:
+) -> RedeemWithdrawalSharesEventFP:
     """See API for documentation."""
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)

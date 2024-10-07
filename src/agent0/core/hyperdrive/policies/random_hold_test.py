@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import CloseLongEventFP, CloseShortEventFP
 
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.policies import PolicyZoo
-from agent0.ethpy.hyperdrive.event_types import CloseLong, CloseShort
 
 # pylint: disable=too-many-locals
 
@@ -44,8 +44,8 @@ def test_random_hold_policy(fast_chain_fixture: LocalChain):
         trade_events.extend(random_hold_agent.execute_policy_action())
     # We ensure no close trades went through
     trade_types = [type(e) for e in trade_events]
-    assert CloseLong not in trade_types
-    assert CloseShort not in trade_types
+    assert CloseLongEventFP not in trade_types
+    assert CloseShortEventFP not in trade_types
 
     # Advance time to be before min_hold_time
     fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
@@ -56,8 +56,8 @@ def test_random_hold_policy(fast_chain_fixture: LocalChain):
         trade_events.extend(random_hold_agent.execute_policy_action())
     # We ensure no close trades went through
     trade_types = [type(e) for e in trade_events]
-    assert CloseLong not in trade_types
-    assert CloseShort not in trade_types
+    assert CloseLongEventFP not in trade_types
+    assert CloseShortEventFP not in trade_types
 
     # Advance time to be after min_hold_time
     fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=False)
@@ -70,8 +70,8 @@ def test_random_hold_policy(fast_chain_fixture: LocalChain):
     # TODO there's a chance the bot will randomly not return a close trade
     # if so, we can increase the number of trades to make this more likely
     trade_types = [type(e) for e in trade_events]
-    assert CloseShort in trade_types
-    assert CloseLong in trade_types
+    assert CloseShortEventFP in trade_types
+    assert CloseLongEventFP in trade_types
 
 
 def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
@@ -110,8 +110,8 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
 
     # We ensure no close trades went through
     trade_types = [type(e) for e in trade_events]
-    assert CloseLong not in trade_types
-    assert CloseShort not in trade_types
+    assert CloseLongEventFP not in trade_types
+    assert CloseShortEventFP not in trade_types
 
     # Advance time to ensure a new checkpoint has been made
     fast_chain_fixture.advance_time(60 * 60 * 24 * 7, create_checkpoints=True)
@@ -123,8 +123,8 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
 
     # We ensure no close trades went through
     trade_types = [type(e) for e in trade_events]
-    assert CloseLong not in trade_types
-    assert CloseShort not in trade_types
+    assert CloseLongEventFP not in trade_types
+    assert CloseShortEventFP not in trade_types
 
     # Advance time to be after min_hold_time on both pools
     fast_chain_fixture.advance_time(60 * 60 * 24 * 7 * 2, create_checkpoints=False)
@@ -137,8 +137,8 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
     # TODO there's a chance the bot will randomly not return a close trade
     # if so, we can increase the number of trades to make this more likely
     trade_types = [type(e) for e in trade_events]
-    assert CloseShort in trade_types
-    assert CloseLong in trade_types
+    assert CloseShortEventFP in trade_types
+    assert CloseLongEventFP in trade_types
 
     # Execute random trades on the other pool, ensuring at least 1 close trade goes through
     trade_events = []
@@ -148,5 +148,5 @@ def test_multi_pool_random_hold_policy(fast_chain_fixture: LocalChain):
     # TODO there's a chance the bot will randomly not return a close trade
     # if so, we can increase the number of trades to make this more likely
     trade_types = [type(e) for e in trade_events]
-    assert CloseShort in trade_types
-    assert CloseLong in trade_types
+    assert CloseShortEventFP in trade_types
+    assert CloseLongEventFP in trade_types

@@ -27,11 +27,10 @@ from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint, isclose
-from hyperdrivetypes import CheckpointFP
+from hyperdrivetypes import CheckpointFP, CloseLongEventFP, CloseShortEventFP, OpenLongEventFP, OpenShortEventFP
 
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.ethpy.hyperdrive.event_types import CloseLong, CloseShort, OpenLong, OpenShort
 from agent0.hyperfuzz import FuzzAssertionException
 
 from .helpers import advance_time_after_checkpoint, execute_random_trades, setup_fuzz
@@ -137,10 +136,10 @@ def fuzz_long_short_maturity_values(
     # Close the trades one at a time, check invariants
     for index, (agent, trade) in enumerate(trade_events):
         logging.info("closing trade %s out of %s\n", index, len(trade_events) - 1)
-        if isinstance(trade, OpenLong):
-            close_event = agent.close_long(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
-        elif isinstance(trade, OpenShort):
-            close_event = agent.close_short(maturity_time=trade.maturity_time, bonds=trade.bond_amount)
+        if isinstance(trade, OpenLongEventFP):
+            close_event = agent.close_long(maturity_time=trade.args.maturity_time, bonds=trade.args.bond_amount)
+        elif isinstance(trade, OpenShortEventFP):
+            close_event = agent.close_short(maturity_time=trade.args.maturity_time, bonds=trade.args.bond_amount)
         else:
             assert False
 
@@ -283,8 +282,8 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 
 def invariant_check(
-    open_trade_event: OpenLong | OpenShort,
-    close_trade_event: CloseLong | CloseShort,
+    open_trade_event: OpenLongEventFP | OpenShortEventFP,
+    close_trade_event: CloseLongEventFP | CloseShortEventFP,
     starting_checkpoint: CheckpointFP,
     maturity_checkpoint: CheckpointFP,
     long_maturity_vals_epsilon: float,
@@ -318,9 +317,9 @@ def invariant_check(
     exception_message: list[str] = ["Fuzz Long/Short Maturity Values Invariant Check"]
     exception_data: dict[str, Any] = {}
 
-    if isinstance(open_trade_event, OpenLong) and isinstance(close_trade_event, CloseLong):
+    if isinstance(open_trade_event, OpenLongEventFP) and isinstance(close_trade_event, CloseLongEventFP):
         # Ensure we close the trade for all of the opened bonds
-        assert close_trade_event.bond_amount == open_trade_event.bond_amount
+        assert close_trade_event.args.bond_amount == open_trade_event.args.bond_amount
 
         # 0.05 would be a 5% fee.
         flat_fee_percent = interactive_hyperdrive.interface.pool_config.fees.flat
@@ -373,9 +372,9 @@ def invariant_check(
             exception_data["invariance_check:long_base_amount_difference_in_wei"] = difference_in_wei
             failed = True
 
-    elif isinstance(open_trade_event, OpenShort) and isinstance(close_trade_event, CloseShort):
+    elif isinstance(open_trade_event, OpenShortEventFP) and isinstance(close_trade_event, CloseShortEventFP):
         # Ensure we close the trade for all of the opened bonds
-        assert close_trade_event.bond_amount == open_trade_event.bond_amount
+        assert close_trade_event.args.bond_amount == open_trade_event.args.bond_amount
 
         # get the share prices
         open_vault_share_price = starting_checkpoint.vault_share_price

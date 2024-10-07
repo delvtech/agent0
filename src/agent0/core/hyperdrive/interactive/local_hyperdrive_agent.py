@@ -7,6 +7,16 @@ from typing import TYPE_CHECKING, Literal, Type, overload
 import pandas as pd
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import (
+    AddLiquidityEventFP,
+    BaseEvent,
+    CloseLongEventFP,
+    CloseShortEventFP,
+    OpenLongEventFP,
+    OpenShortEventFP,
+    RedeemWithdrawalSharesEventFP,
+    RemoveLiquidityEventFP,
+)
 
 from agent0.core.base import Trade
 from agent0.core.base.make_key import make_private_key
@@ -15,16 +25,6 @@ from agent0.core.hyperdrive.agent import TradeResult
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.interactive.hyperdrive import Hyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.hyperdrive.event_types import (
-    AddLiquidity,
-    BaseHyperdriveEvent,
-    CloseLong,
-    CloseShort,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
 
 from .hyperdrive_agent import HyperdriveAgent
 from .local_hyperdrive import LocalHyperdrive
@@ -230,7 +230,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         # Setting approval mines a block, so we update the data pipeline
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
 
-    def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLong:
+    def open_long(self, base: FixedPoint, pool: Hyperdrive | None = None) -> OpenLongEventFP:
         """Opens a long for this agent.
 
         Arguments
@@ -255,7 +255,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLong:
+    def close_long(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseLongEventFP:
         """Closes a long for this agent.
 
         Arguments
@@ -282,7 +282,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShort:
+    def open_short(self, bonds: FixedPoint, pool: Hyperdrive | None = None) -> OpenShortEventFP:
         """Opens a short for this agent.
 
         Arguments
@@ -307,7 +307,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShort:
+    def close_short(self, maturity_time: int, bonds: FixedPoint, pool: Hyperdrive | None = None) -> CloseShortEventFP:
         """Closes a short for this agent.
 
         Arguments
@@ -334,7 +334,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidity:
+    def add_liquidity(self, base: FixedPoint, pool: Hyperdrive | None = None) -> AddLiquidityEventFP:
         """Adds liquidity for this agent.
 
         Arguments
@@ -359,7 +359,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidity:
+    def remove_liquidity(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RemoveLiquidityEventFP:
         """Removes liquidity for this agent.
 
         Arguments
@@ -384,7 +384,9 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def redeem_withdrawal_share(self, shares: FixedPoint, pool: Hyperdrive | None = None) -> RedeemWithdrawalShares:
+    def redeem_withdrawal_share(
+        self, shares: FixedPoint, pool: Hyperdrive | None = None
+    ) -> RedeemWithdrawalSharesEventFP:
         """Redeems withdrawal shares for this agent.
 
         Arguments
@@ -449,7 +451,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
 
     def execute_action(
         self, actions: list[Trade[HyperdriveMarketAction]], pool: Hyperdrive | None = None
-    ) -> list[BaseHyperdriveEvent]:
+    ) -> list[BaseEvent]:
         """Executes the specified actions.
 
         Arguments
@@ -478,16 +480,16 @@ class LocalHyperdriveAgent(HyperdriveAgent):
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[True]
-    ) -> BaseHyperdriveEvent: ...
+    ) -> BaseEvent: ...
 
     @overload
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: Literal[False]
-    ) -> BaseHyperdriveEvent | None: ...
+    ) -> BaseEvent | None: ...
 
     def _handle_trade_result(
         self, trade_result: TradeResult, pool: Hyperdrive, always_throw_exception: bool
-    ) -> BaseHyperdriveEvent | None:
+    ) -> BaseEvent | None:
         # We add specific data to the trade result from interactive hyperdrive
         if not trade_result.trade_successful:
             assert trade_result.exception is not None

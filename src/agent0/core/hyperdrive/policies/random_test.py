@@ -4,19 +4,19 @@ from __future__ import annotations
 
 import pytest
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import (
+    AddLiquidityEventFP,
+    CloseLongEventFP,
+    CloseShortEventFP,
+    OpenLongEventFP,
+    OpenShortEventFP,
+    RedeemWithdrawalSharesEventFP,
+    RemoveLiquidityEventFP,
+)
 
 from agent0.core.hyperdrive import HyperdriveActionType
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.policies import PolicyZoo
-from agent0.ethpy.hyperdrive.event_types import (
-    AddLiquidity,
-    CloseLong,
-    CloseShort,
-    OpenLong,
-    OpenShort,
-    RedeemWithdrawalShares,
-    RemoveLiquidity,
-)
 
 
 @pytest.mark.anvil
@@ -98,17 +98,17 @@ def test_random_policy_trades(fast_chain_fixture: LocalChain):
             trade_events = random_agent.execute_policy_action()
             for event in trade_events:
                 match event:
-                    case OpenLong():
+                    case OpenLongEventFP():
                         assert trade == HyperdriveActionType.OPEN_LONG
-                    case CloseLong():
+                    case CloseLongEventFP():
                         assert trade == HyperdriveActionType.CLOSE_LONG
-                    case OpenShort():
+                    case OpenShortEventFP():
                         assert trade == HyperdriveActionType.OPEN_SHORT
-                    case CloseShort():
+                    case CloseShortEventFP():
                         assert trade == HyperdriveActionType.CLOSE_SHORT
-                    case AddLiquidity():
+                    case AddLiquidityEventFP():
                         assert trade == HyperdriveActionType.ADD_LIQUIDITY
-                    case RemoveLiquidity():
+                    case RemoveLiquidityEventFP():
                         assert trade == HyperdriveActionType.REMOVE_LIQUIDITY
-                    case RedeemWithdrawalShares():
+                    case RedeemWithdrawalSharesEventFP():
                         assert trade == HyperdriveActionType.REDEEM_WITHDRAW_SHARE
