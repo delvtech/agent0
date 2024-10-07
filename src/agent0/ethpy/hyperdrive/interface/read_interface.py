@@ -290,7 +290,11 @@ class HyperdriveReadInterface:
             # We look up the chain id, and define the `from_block` based on which chain it is as the default.
             chain_id = self.web3.eth.chain_id
             # If not in lookup, we default to `earliest`
-            from_block = EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
+            # If not in lookup, we default to `earliest`
+            if chain_id not in EARLIEST_BLOCK_LOOKUP:
+                from_block = "earliest"
+            else:
+                from_block = EARLIEST_BLOCK_LOOKUP[chain_id]
 
             initialize_event = list(self.hyperdrive_contract.events.Initialize.get_logs_typed(from_block=from_block))
             if len(initialize_event) == 0:
