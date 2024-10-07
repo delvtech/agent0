@@ -71,6 +71,7 @@ def _convert_event_lido_shares_to_steth(events: list[dict[str, Any]], numeric_ar
 def get_event_logs_for_db(
     hyperdrive_interface: HyperdriveReadInterface,
     event_class: type[ContractEvent],
+    trade_base_unit_conversion: bool,
     from_block: BlockIdentifier | None = None,
     argument_filters: dict[str, Any] | None = None,
     numeric_args_as_str: bool = True,
@@ -83,6 +84,8 @@ def get_event_logs_for_db(
         The hyperdrive interface to use.
     event_class: type[ContractEvent]
         The event class to get logs for.
+    trade_base_unit_conversion: bool
+        Whether to convert trade base units from steth "shares" to steth.
     from_block: BlockIdentifier | None, optional
         The block to start getting events from. Defaults to "earliest", with some exceptions for specific chains.
     argument_filters: dict[str, Any] | None, optional
@@ -96,6 +99,8 @@ def get_event_logs_for_db(
     list[dict[str, Any]]
         A list of emitted events.
     """
+    # pylint: disable=too-many-arguments
+
     # We look up the chain id, and define the `from_block` based on which chain it is as the default.
     if from_block is None:
         chain_id = hyperdrive_interface.web3.eth.chain_id
@@ -108,7 +113,7 @@ def get_event_logs_for_db(
     ]
 
     # Convert output event data from lido shares to steth
-    if hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
+    if trade_base_unit_conversion and hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:
         _convert_event_lido_shares_to_steth(out_events, numeric_args_as_str)
 
     return out_events

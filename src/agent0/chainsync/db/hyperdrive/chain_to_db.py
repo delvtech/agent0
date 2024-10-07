@@ -147,6 +147,7 @@ def checkpoint_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.CreateCheckpoint,
+                trade_base_unit_conversion=False,
                 from_block=from_block,
             )
         )
@@ -202,6 +203,7 @@ def trade_events_to_db(
                 get_event_logs_for_db(
                     interface,
                     interface.hyperdrive_contract.events.TransferSingle,
+                    trade_base_unit_conversion=False,
                     from_block=from_block,
                     argument_filters={"to": wallet_addr},
                 )
@@ -210,6 +212,7 @@ def trade_events_to_db(
                 get_event_logs_for_db(
                     interface,
                     interface.hyperdrive_contract.events.TransferSingle,
+                    trade_base_unit_conversion=False,
                     from_block=from_block,
                     argument_filters={"from": wallet_addr},
                 )
@@ -220,6 +223,7 @@ def trade_events_to_db(
                 get_event_logs_for_db(
                     interface,
                     interface.hyperdrive_contract.events.TransferSingle,
+                    trade_base_unit_conversion=False,
                     from_block=from_block,
                 )
             )
@@ -236,6 +240,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.Initialize,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
             )
@@ -244,6 +249,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.OpenLong,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=trader_arg_filter,
             )
@@ -252,6 +258,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.CloseLong,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=trader_arg_filter,
             )
@@ -260,6 +267,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.OpenShort,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=trader_arg_filter,
             )
@@ -268,6 +276,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.CloseShort,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=trader_arg_filter,
             )
@@ -276,6 +285,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.AddLiquidity,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
                 numeric_args_as_str=True,
@@ -285,6 +295,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.RemoveLiquidity,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
             )
@@ -293,6 +304,7 @@ def trade_events_to_db(
             get_event_logs_for_db(
                 interface,
                 interface.hyperdrive_contract.events.RedeemWithdrawalShares,
+                trade_base_unit_conversion=True,
                 from_block=from_block,
                 argument_filters=provider_arg_filter,
                 numeric_args_as_str=True,
