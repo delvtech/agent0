@@ -9,12 +9,7 @@ from fixedpointmath import FixedPoint
 from hyperdrivetypes import CheckpointFP, PoolConfigFP, PoolInfoFP
 from web3.types import BlockData
 
-from agent0.utils.conversions import (
-    dataclass_to_dict,
-    fixedpoint_to_checkpoint,
-    fixedpoint_to_pool_config,
-    fixedpoint_to_pool_info,
-)
+from agent0.utils.conversions import dataclass_to_dict
 
 # pylint: disable=too-many-instance-attributes
 
@@ -51,14 +46,14 @@ class PoolState:
     @property
     def pool_info_to_dict(self) -> dict[str, Any]:
         """Get the pool_info property."""
-        return dataclass_to_dict(fixedpoint_to_pool_info(self.pool_info))
+        return dataclass_to_dict(self.pool_info.to_pypechain())
 
     @property
     def pool_config_to_dict(self) -> dict[str, Any]:
         """Get the pool_config property."""
-        return dataclass_to_dict(fixedpoint_to_pool_config(self.pool_config))
+        return dataclass_to_dict(self.pool_config.to_pypechain())
 
     @property
     def checkpoint_to_dict(self) -> dict[str, Any]:
         """Get the checkpoint property."""
-        return dataclass_to_dict(fixedpoint_to_checkpoint(self.checkpoint))
+        return dataclass_to_dict(self.checkpoint.to_pypechain())

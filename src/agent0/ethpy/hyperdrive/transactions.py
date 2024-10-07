@@ -2,32 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, cast
 
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import (
-    AddLiquidityEventFP,
-    BaseEvent,
-    CloseLongEventFP,
-    CloseShortEventFP,
-    CreateCheckpointEventFP,
-    IHyperdriveContract,
-    OpenLongEventFP,
-    OpenShortEventFP,
-    RedeemWithdrawalSharesEventFP,
-    RemoveLiquidityEventFP,
-)
+from hyperdrivetypes import IHyperdriveContract
 from hyperdrivetypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
-from web3 import Web3
-from web3.types import BlockIdentifier, Timestamp, TxReceipt
-
-from agent0.ethpy.base import get_transaction_logs
-from agent0.utils.conversions import (
-    camel_to_snake,
-    checkpoint_to_fixedpoint,
-    pool_config_to_fixedpoint,
-    pool_info_to_fixedpoint,
-)
+from web3.types import BlockIdentifier, Timestamp
 
 if TYPE_CHECKING:
     from .interface import HyperdriveReadInterface
@@ -47,7 +27,7 @@ def get_hyperdrive_pool_config(hyperdrive_contract: IHyperdriveContract) -> Pool
         The hyperdrive pool config.
     """
     pool_config = hyperdrive_contract.functions.getPoolConfig().call()
-    return pool_config_to_fixedpoint(cast(Any, pool_config))
+    return PoolConfigFP.from_pypechain(pool_config)
 
 
 def get_hyperdrive_pool_info(hyperdrive_contract: IHyperdriveContract, block_identifier: BlockIdentifier) -> PoolInfoFP:
@@ -66,7 +46,7 @@ def get_hyperdrive_pool_info(hyperdrive_contract: IHyperdriveContract, block_ide
         A dictionary containing the Hyperdrive pool info returned from the smart contract.
     """
     pool_info = hyperdrive_contract.functions.getPoolInfo().call(None, block_identifier)
-    return pool_info_to_fixedpoint(pool_info)
+    return PoolInfoFP.from_pypechain(pool_info)
 
 
 def get_hyperdrive_checkpoint(
@@ -89,7 +69,7 @@ def get_hyperdrive_checkpoint(
         The dataclass containing the checkpoint info in fixed point
     """
     checkpoint = hyperdrive_contract.functions.getCheckpoint(checkpoint_time).call(None, block_identifier)
-    return checkpoint_to_fixedpoint(checkpoint)
+    return CheckpointFP.from_pypechain(checkpoint)
 
 
 def get_hyperdrive_checkpoint_exposure(
