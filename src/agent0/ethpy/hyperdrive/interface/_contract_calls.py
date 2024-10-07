@@ -7,7 +7,20 @@ from typing import TYPE_CHECKING, Callable
 
 from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
+from hyperdrivetypes import (
+    AddLiquidityEventFP,
+    CloseLongEventFP,
+    CloseShortEventFP,
+    CreateCheckpointEventFP,
+    ERC20MintableContract,
+    IHyperdriveContract,
+    MockERC4626Contract,
+    MockLidoContract,
+    OpenLongEventFP,
+    OpenShortEventFP,
+    RedeemWithdrawalSharesEventFP,
+    RemoveLiquidityEventFP,
+)
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.logs import DISCARD
@@ -22,17 +35,6 @@ from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber
-    from hyperdrivetypes import (
-        AddLiquidityEventFP,
-        CloseLongEventFP,
-        CloseShortEventFP,
-        CreateCheckpointEventFP,
-        OpenLongEventFP,
-        OpenShortEventFP,
-        RedeemWithdrawalSharesEventFP,
-        RemoveLiquidityEventFP,
-    )
     from web3.types import BlockIdentifier, Nonce
 
     from .read_interface import HyperdriveReadInterface
