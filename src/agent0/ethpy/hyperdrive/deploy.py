@@ -70,7 +70,6 @@ class DeployedHyperdriveFactory(NamedTuple):
     deployer_account: LocalAccount
     factory_contract: HyperdriveFactoryContract
     deployer_coordinator_contract: Contract
-    registry_contract: HyperdriveRegistryContract
     factory_deploy_config: FactoryConfig
 
 
@@ -324,36 +323,6 @@ def deploy_hyperdrive_from_factory(
         )
     )
 
-    # Register this pool with the registry contract
-    register_function = deployed_factory.registry_contract.functions.setInstanceInfo(
-        [hyperdrive_checksum_address], [1], [deployed_factory.factory_contract.address]
-    )
-    function_name = register_function.fn_name
-    function_args = register_function.args
-    receipt = smart_contract_transact(
-        web3,
-        deployed_factory.registry_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed to register Hyperdrive contract.\n{receipt=}")
-
-    # Register the admin account
-    register_function = deployed_factory.registry_contract.functions.updateAdmin(deploy_account_addr)
-    function_name = register_function.fn_name
-    function_args = register_function.args
-    receipt = smart_contract_transact(
-        web3,
-        deployed_factory.registry_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed to register Hyperdrive deployer admin address.\n{receipt=}")
-
     # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
         deployer_account=deployer_account,
@@ -532,26 +501,6 @@ def _deploy_hyperdrive_factory(
         constructor_args=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
     )
 
-    # Deploy the Hyperdrive registry contract
-    registry_contract = HyperdriveRegistryContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-    )
-
-    # Register the factory with the registry contract
-    register_function = registry_contract.functions.setFactoryInfo([factory_contract.address], [1])
-    function_name = register_function.fn_name
-    function_args = register_function.args
-    receipt = smart_contract_transact(
-        web3,
-        registry_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed to register Hyperdrive factory.\n{receipt=}")
-
     lp_math_contract = LPMathContract.deploy(w3=web3, account=deploy_account_addr)
 
     match deploy_type:
@@ -591,7 +540,6 @@ def _deploy_hyperdrive_factory(
         factory_contract=factory_contract,
         deployer_coordinator_contract=deployer_coordinator_contract,
         factory_deploy_config=factory_deploy_config,
-        registry_contract=registry_contract,
     )
 
 
