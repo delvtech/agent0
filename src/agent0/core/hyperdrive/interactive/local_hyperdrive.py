@@ -318,7 +318,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        self._deploy_block_number = self.interface._deploy_block
+        self._deploy_block_number = self.interface.get_deploy_block()
 
         if deploy:
             # If we're deploying, we expect the deploy block to be set

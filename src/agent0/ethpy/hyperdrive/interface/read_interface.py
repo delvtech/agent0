@@ -270,7 +270,7 @@ class HyperdriveReadInterface:
         self._current_pool_state = None
         self.last_state_block_number = -1
 
-        # Best effort to find initialize event and set deploy block
+        # Cached deploy block
         self._deploy_block: None | int = None
         self._deploy_block_checked = False
 
