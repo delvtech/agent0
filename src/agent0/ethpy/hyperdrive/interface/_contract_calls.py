@@ -10,6 +10,7 @@ from fixedpointmath import FixedPoint
 from hyperdrivetypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
+from web3.logs import DISCARD
 
 from agent0.ethpy.base import (
     async_smart_contract_transact,
@@ -18,7 +19,6 @@ from agent0.ethpy.base import (
     smart_contract_transact,
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
-from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
@@ -201,6 +201,7 @@ def _create_checkpoint(
     # the default max iterations
     fn_args = (checkpoint_time, 0)
 
+    # TODO replace these calls with pypechain `call` and `transact` functions.
     if preview:
         _ = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
@@ -221,8 +222,16 @@ def _create_checkpoint(
         txn_options_gas=gas_limit,
         nonce_func=nonce_func,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "createCheckpoint")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.CreateCheckpoint().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return CreateCheckpointEventFP.from_pypechain(out_events[0])
 
 
 def _set_variable_rate(
@@ -338,8 +347,14 @@ async def _async_open_long(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "openLong")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(interface.hyperdrive_contract.events.OpenLong().process_receipt_typed(tx_receipt, errors=DISCARD))
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return OpenLongEventFP.from_pypechain(out_events[0])
 
 
 # pylint: disable=too-many-arguments
@@ -417,8 +432,16 @@ async def _async_close_long(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "closeLong")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.CloseLong().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return CloseLongEventFP.from_pypechain(out_events[0])
 
 
 # pylint: disable=too-many-locals
@@ -500,8 +523,16 @@ async def _async_open_short(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "openShort")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.OpenShort().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return OpenShortEventFP.from_pypechain(out_events[0])
 
 
 async def _async_close_short(
@@ -578,8 +609,16 @@ async def _async_close_short(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "closeShort")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.CloseShort().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return CloseShortEventFP.from_pypechain(out_events[0])
 
 
 async def _async_add_liquidity(
@@ -659,8 +698,16 @@ async def _async_add_liquidity(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "addLiquidity")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.AddLiquidity().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return AddLiquidityEventFP.from_pypechain(out_events[0])
 
 
 async def _async_remove_liquidity(
@@ -718,8 +765,16 @@ async def _async_remove_liquidity(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "removeLiquidity")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.RemoveLiquidity().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return RemoveLiquidityEventFP.from_pypechain(out_events[0])
 
 
 async def _async_redeem_withdraw_shares(
@@ -784,5 +839,13 @@ async def _async_redeem_withdraw_shares(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "redeemWithdrawalShares")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.RedeemWithdrawalShares().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return RedeemWithdrawalSharesEventFP.from_pypechain(out_events[0])
