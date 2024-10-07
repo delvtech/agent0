@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
 from hyperdrivetypes import (
     AddLiquidityEventFP,
+    BaseEvent,
     CloseLongEventFP,
     CloseShortEventFP,
     CreateCheckpointEventFP,
@@ -256,6 +257,36 @@ def _set_variable_rate(
     )
 
 
+# Helper function to check if we need to convert amounts in the case of a steth (i.e., rebasing) deployment
+# TODO consider not converting amount here, and keeping output events in units of steth "shares".
+# The suggested change above would keep output events mirroring that of what's returned from hyperdrive.
+# We just need to make the conversion in the database to keep track of the actual amount.
+# TODO likely need to generalize this to be all rebasing tokens, not just steth.
+
+T = TypeVar("T", bound="BaseEvent")
+
+
+def _convert_event_base_amounts_for_rebasing_tokens(
+    in_event: T,
+) -> T:
+    # Vault share price should be in every hyperdrive event
+    assert hasattr(in_event.args, "vault_share_price")
+    if hasattr(in_event.args, "amount"):
+        # We make the checks already, typing doesn't narrow here
+        in_event.args.amount *= in_event.args.vault_share_price  # type: ignore
+
+    if hasattr(in_event.args, "base_proceeds"):
+        # We make the checks already, typing doesn't narrow here
+        in_event.args.base_proceeds *= in_event.args.vault_share_price  # type: ignore
+
+    if hasattr(in_event.args, "base_payment"):
+        # We make the checks already, typing doesn't narrow here
+        in_event.args.base_payment *= in_event.args.vault_share_price  # type: ignore
+
+    # Although this is changed in-place, we return regardless
+    return in_event
+
+
 # pylint: disable=too-many-locals
 async def _async_open_long(
     interface: HyperdriveReadWriteInterface,
@@ -356,7 +387,12 @@ async def _async_open_long(
     out_events = list(interface.hyperdrive_contract.events.OpenLong().process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return OpenLongEventFP.from_pypechain(out_events[0])
+    out_event = OpenLongEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 # pylint: disable=too-many-arguments
@@ -443,7 +479,12 @@ async def _async_close_long(
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return CloseLongEventFP.from_pypechain(out_events[0])
+    out_event = CloseLongEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 # pylint: disable=too-many-locals
@@ -534,7 +575,12 @@ async def _async_open_short(
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return OpenShortEventFP.from_pypechain(out_events[0])
+    out_event = OpenShortEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_close_short(
@@ -620,7 +666,12 @@ async def _async_close_short(
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return CloseShortEventFP.from_pypechain(out_events[0])
+    out_event = CloseShortEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_add_liquidity(
@@ -709,7 +760,12 @@ async def _async_add_liquidity(
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return AddLiquidityEventFP.from_pypechain(out_events[0])
+    out_event = AddLiquidityEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_remove_liquidity(
@@ -776,7 +832,12 @@ async def _async_remove_liquidity(
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return RemoveLiquidityEventFP.from_pypechain(out_events[0])
+    out_event = RemoveLiquidityEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_redeem_withdraw_shares(
@@ -850,4 +911,9 @@ async def _async_redeem_withdraw_shares(
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
-    return RedeemWithdrawalSharesEventFP.from_pypechain(out_events[0])
+    out_event = RedeemWithdrawalSharesEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
