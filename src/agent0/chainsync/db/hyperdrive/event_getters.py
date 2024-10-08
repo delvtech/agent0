@@ -100,6 +100,7 @@ def get_event_logs_for_db(
         A list of emitted events.
     """
     # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
 
     # We look up the chain id, and define the `from_block` based on which chain it is as the default.
     if from_block is None:

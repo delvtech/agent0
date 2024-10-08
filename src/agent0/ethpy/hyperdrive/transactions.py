@@ -2,15 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
-
 from fixedpointmath import FixedPoint
 from hyperdrivetypes import IHyperdriveContract
 from hyperdrivetypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
 from web3.types import BlockIdentifier, Timestamp
-
-if TYPE_CHECKING:
-    from .interface import HyperdriveReadInterface
 
 
 def get_hyperdrive_pool_config(hyperdrive_contract: IHyperdriveContract) -> PoolConfigFP:

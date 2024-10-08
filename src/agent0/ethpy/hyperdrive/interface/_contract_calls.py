@@ -9,7 +9,6 @@ from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
 from hyperdrivetypes import (
     AddLiquidityEventFP,
-    BaseEvent,
     CloseLongEventFP,
     CloseShortEventFP,
     CreateCheckpointEventFP,
@@ -36,6 +35,7 @@ from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
+    from hyperdrivetypes import BaseEvent
     from web3.types import BlockIdentifier, Nonce
 
     from .read_interface import HyperdriveReadInterface

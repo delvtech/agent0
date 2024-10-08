@@ -7,7 +7,7 @@ from dataclasses import asdict
 from typing import Any
 
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import CheckpointFP, FeesFP, PoolConfigFP, PoolInfoFP
+from hyperdrivetypes import FeesFP
 from hyperdrivetypes.types.IHyperdriveTypes import Checkpoint, PoolConfig, PoolInfo
 
 
