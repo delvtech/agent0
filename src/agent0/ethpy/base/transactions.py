@@ -521,8 +521,6 @@ async def async_smart_contract_transact(
 
     unsent_txn: TxParams = {}
 
-    # We need to retry both build transaction with send and wait
-    # so we compose both of these functions here in a private subfunction
     async def _async_build_send_and_wait():
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
@@ -591,7 +589,6 @@ async def async_smart_contract_transact(
                 function_name_or_signature,
                 *fn_args,
                 block_identifier=BlockNumber(block_number),
-                read_retry_count=1,  # No retries for this preview
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here
@@ -760,8 +757,6 @@ def smart_contract_transact(
 
     unsent_txn: TxParams = {}
 
-    # We need to retry both build transaction with send and wait
-    # so we compose both of these functions here in a private subfunction
     def _build_send_and_wait():
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
@@ -825,7 +820,6 @@ def smart_contract_transact(
                 function_name_or_signature,
                 *fn_args,
                 block_identifier=BlockNumber(block_number),
-                read_retry_count=1,  # No retries for this preview
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here

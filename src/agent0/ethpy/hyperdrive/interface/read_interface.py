@@ -137,8 +137,6 @@ class HyperdriveReadInterface:
         web3: Web3, optional
             web3 provider object, optional
             If not given, a web3 object is constructed using the `rpc_uri` as the http provider.
-        read_retry_count: int | None, optional
-            The number of times to retry the read call if it fails. Defaults to 5.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         txn_signature: bytes | None, optional

@@ -545,7 +545,6 @@ class LocalHyperdrive(Hyperdrive):
                 return None
 
         try:
-            # Adding in explicit retires here to avoid setting the global retry
             checkpoint_event = self.interface.create_checkpoint(
                 self.chain.get_deployer_account(),
                 checkpoint_time=checkpoint_time,
