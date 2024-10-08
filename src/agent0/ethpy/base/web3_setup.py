@@ -5,6 +5,7 @@ from __future__ import annotations
 from eth_typing import URI
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.providers.rpc.utils import REQUEST_RETRY_ALLOWLIST, ExceptionRetryConfiguration
 from web3.types import RPCEndpoint
 
 
@@ -39,7 +40,16 @@ def initialize_web3_with_http_provider(
         # e.g., agent0.chain and read_interface.
         # For now, set the default to be 20 seconds.
         request_kwargs = {"timeout": 20}
-    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
+
+    provider = Web3.HTTPProvider(
+        ethereum_node,
+        request_kwargs,
+        # Adds caching
+        cache_allowed_requests=True,
+        # Adds retries
+        exception_retry_configuration=ExceptionRetryConfiguration(),
+    )
+
     web3 = Web3(provider)
     web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     if reset_provider:
