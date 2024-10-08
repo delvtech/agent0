@@ -32,6 +32,7 @@ SEPOLIA_WHALE_ADDRESSES = {
 def _fuzz_ignore_errors(exc: Exception) -> bool:
     """Function defining errors to ignore for pausing chain during fuzzing."""
     # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-branches
     # Ignored fuzz exceptions
     if isinstance(exc, FuzzAssertionException):
         # LP rate invariance check
