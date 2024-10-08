@@ -258,7 +258,7 @@ def _check_price_spike(interface: HyperdriveReadInterface, pool_state: PoolState
         )
         failed = True
         exception_message = (
-            "Large trade has caused the a rate circuit breaker to trip. "
+            "Large trade has caused the rate circuit breaker to trip. "
             f"{current_spot_rate=}, {previous_weighted_spot_rate=}. "
             "Difference: "
             f"{current_spot_rate- previous_weighted_spot_rate}."
