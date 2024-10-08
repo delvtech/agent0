@@ -559,7 +559,7 @@ async def async_smart_contract_transact(
         )
 
     try:
-        return _async_build_send_and_wait()
+        return await _async_build_send_and_wait()
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
