@@ -121,7 +121,6 @@ class HyperdriveReadInterface:
         hyperdrive_address: ChecksumAddress,
         rpc_uri: str | None = None,
         web3: Web3 | None = None,
-        read_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
         txn_signature: bytes | None = None,
     ) -> None:
@@ -260,10 +259,6 @@ class HyperdriveReadInterface:
             web3.to_checksum_address(base_token_contract_address)
         )
 
-        # Set the retry count for contract calls using the interface when previewing/transacting
-        # TODO these parameters are currently only used for trades against hyperdrive
-        # and uses defaults for other smart_contract_read functions, e.g., get_pool_info.
-        self.read_retry_count = read_retry_count
         self.txn_receipt_timeout = txn_receipt_timeout
 
         # Lazily fill in state cache
@@ -616,7 +611,7 @@ class HyperdriveReadInterface:
         FixedPoint
             The eth on the chain.
         """
-        return _get_hyperdrive_eth_balance(self, self.web3, self.hyperdrive_contract.address)
+        return _get_hyperdrive_eth_balance(self.web3, self.hyperdrive_contract.address)
 
     def get_hyperdrive_base_balance(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
         """Get the current Hyperdrive balance in the base contract.

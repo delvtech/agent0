@@ -50,8 +50,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         hyperdrive_address: ChecksumAddress,
         rpc_uri: str | None = None,
         web3: Web3 | None = None,
-        read_retry_count: int | None = None,
-        write_retry_count: int | None = None,
         txn_receipt_timeout: float | None = None,
         txn_signature: bytes | None = None,
     ) -> None:
@@ -66,10 +64,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         web3: Web3, optional
             web3 provider object, optional
             If not given, a web3 object is constructed using the `rpc_uri` as the http provider.
-        read_retry_count: int | None, optional
-            The number of times to retry the read call if it fails. Defaults to 5.
-        write_retry_count: int | None, optional
-            The number of times to retry the transact call if it fails. Defaults to no retries.
         txn_receipt_timeout: float | None, optional
             The timeout for waiting for a transaction receipt in seconds. Defaults to 120.
         txn_signature: bytes | None, optional
@@ -79,11 +73,9 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             hyperdrive_address=hyperdrive_address,
             rpc_uri=rpc_uri,
             web3=web3,
-            read_retry_count=read_retry_count,
             txn_receipt_timeout=txn_receipt_timeout,
             txn_signature=txn_signature,
         )
-        self.write_retry_count = write_retry_count
         self._read_interface: HyperdriveReadInterface | None = None
 
     def get_read_interface(self) -> HyperdriveReadInterface:
@@ -100,7 +92,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             self._read_interface = HyperdriveReadInterface(
                 hyperdrive_address=self.hyperdrive_address,
                 web3=self.web3,
-                read_retry_count=self.read_retry_count,
                 txn_receipt_timeout=self.txn_receipt_timeout,
             )
 
@@ -112,7 +103,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         checkpoint_time: int | None = None,
         preview: bool = False,
         gas_limit: int | None = None,
-        write_retry_count: int | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
     ) -> CreateCheckpointEventFP:
         """Create a Hyperdrive checkpoint.
@@ -127,8 +117,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             Whether to preview the transaction first for error catching.
         gas_limit: int | None, optional
             The maximum amount of gas used by the transaction.
-        write_retry_count: int | None, optional
-            The number of times to retry the write call if it fails. Defaults to default set in interface.
         nonce_func: Callable[[], Nonce] | None
             A callable function to use to get a nonce. This function is useful for e.g.,
             passing in a safe nonce getter tied to an agent.
@@ -144,7 +132,6 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
             checkpoint_time=checkpoint_time,
             preview=preview,
             gas_limit=gas_limit,
-            write_retry_count=write_retry_count,
             nonce_func=nonce_func,
         )
 
