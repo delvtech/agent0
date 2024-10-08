@@ -71,8 +71,6 @@ def main(argv: Sequence[str] | None = None):
                 log_filename=".logging/fuzz_long_short_maturity_values.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
-                # Try 5 times when creating checkpoints for advancing time transactions
-                advance_time_create_checkpoint_retry_count=5,
             )
             long_maturity_vals_epsilon = 1e-17
             short_maturity_vals_epsilon = 1e-9
@@ -112,8 +110,6 @@ def main(argv: Sequence[str] | None = None):
                 log_filename=".logging/fuzz_path_independence.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
-                # Try 5 times when creating checkpoints for advancing time transactions
-                advance_time_create_checkpoint_retry_count=5,
             )
             lp_share_price_epsilon = 1e-14
             effective_share_reserves_epsilon = 1e-4
@@ -156,8 +152,6 @@ def main(argv: Sequence[str] | None = None):
                 log_filename=".logging/fuzz_profit_check.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
-                # Try 5 times when creating checkpoints for advancing time transactions
-                advance_time_create_checkpoint_retry_count=5,
             )
             fuzz_profit_check(chain_config, parsed_args.steth, pause_on_fail=parsed_args.pause_on_fail)
         except FuzzAssertionException:
@@ -188,8 +182,6 @@ def main(argv: Sequence[str] | None = None):
                 log_filename=".logging/fuzz_present_value.log",
                 log_to_stdout=False,
                 gas_limit=int(1e6),  # Plenty of gas limit for transactions
-                # Try 5 times when creating checkpoints for advancing time transactions
-                advance_time_create_checkpoint_retry_count=5,
             )
             present_value_epsilon = 0.01
             fuzz_present_value(

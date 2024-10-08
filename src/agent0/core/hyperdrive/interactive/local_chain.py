@@ -77,11 +77,6 @@ class LocalChain(Chain):
         If False, will use the existing RNG state before load.
         Defaults to False.
         """
-        advance_time_create_checkpoint_retry_count: int | None = None
-        """
-        The number of times to retry creating checkpoints when advancing time.
-        Defaults to no retries.
-        """
         manual_database_sync: bool = False
         """
         If True, depends on the user to sync the database against the chain by calling

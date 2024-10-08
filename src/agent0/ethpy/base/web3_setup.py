@@ -46,8 +46,7 @@ def initialize_web3_with_http_provider(
         request_kwargs,
         # Adds caching
         cache_allowed_requests=True,
-        # Adds retries
-        exception_retry_configuration=ExceptionRetryConfiguration(),
+        # Retries are automatically enabled in web3py v7
     )
 
     web3 = Web3(provider)

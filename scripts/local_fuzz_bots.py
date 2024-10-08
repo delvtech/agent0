@@ -211,7 +211,6 @@ def main(argv: Sequence[str] | None = None) -> None:
         rollbar_log_level_threshold=logging.ERROR,  # Only log errors and above to rollbar
         crash_report_additional_info={"rng_seed": rng_seed},
         gas_limit=int(1e6),  # Plenty of gas limit for transactions
-        advance_time_create_checkpoint_retry_count=5,  # Try 5 times when creating checkpoints for advancing time
     )
 
     while True:
