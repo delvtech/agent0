@@ -32,6 +32,7 @@ SEPOLIA_WHALE_ADDRESSES = {
 def _fuzz_ignore_errors(exc: Exception) -> bool:
     """Function defining errors to ignore for pausing chain during fuzzing."""
     # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-branches
     # Ignored fuzz exceptions
     if isinstance(exc, FuzzAssertionException):
         # LP rate invariance check
@@ -40,6 +41,14 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
             and "lp_rate=" in exc.args[1]
             and "is expected to be >= vault_rate=" in exc.args[1]
+        ):
+            return True
+
+        # Large circuit breaker check
+        if (
+            len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "Large trade has caused the rate circuit breaker to trip." in exc.args[1]
         ):
             return True
 
