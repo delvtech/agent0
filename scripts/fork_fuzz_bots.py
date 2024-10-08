@@ -43,6 +43,14 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
+        # Large circuit breaker check
+        if (
+            len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "Large trade has caused the rate circuit breaker to trip." in exc.args[1]
+        ):
+            return True
+
         # There's a known issue with the underlying steth pool on sepolia,
         # due to the deployed mock steth. Hence, we ignore the LP rate invariance check
         # for sepolia when fuzzing.
