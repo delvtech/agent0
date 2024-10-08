@@ -25,14 +25,6 @@ class TestHyperdriveInterface:
         assert not isinstance(
             hyperdrive_read_write_interface_fixture.get_read_interface(), HyperdriveReadWriteInterface
         )
-        # parent class has read attributes
-        assert hasattr(hyperdrive_read_interface_fixture, "read_retry_count")
-        # parent class does not have write attributes
-        assert not hasattr(hyperdrive_read_interface_fixture, "write_retry_count")
-        # child class has write attributes
-        assert hasattr(hyperdrive_read_write_interface_fixture, "write_retry_count")
-        # child class can convert to parent class, then it would not have write attributes
-        assert not hasattr(hyperdrive_read_write_interface_fixture.get_read_interface(), "write_retry_count")
         # write functions
         assert not hasattr(hyperdrive_read_interface_fixture, "async_open_long")
         assert hasattr(hyperdrive_read_write_interface_fixture, "async_open_long")
