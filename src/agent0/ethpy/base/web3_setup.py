@@ -5,7 +5,6 @@ from __future__ import annotations
 from eth_typing import URI
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
-from web3.providers.rpc.utils import REQUEST_RETRY_ALLOWLIST, ExceptionRetryConfiguration
 from web3.types import RPCEndpoint
 
 

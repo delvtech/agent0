@@ -12,8 +12,8 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
-from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
-from web3.types import BlockData, Nonce, RPCEndpoint, TxData, TxParams, TxReceipt, Wei
+from web3.exceptions import ContractCustomError, TimeExhausted, TransactionNotFound
+from web3.types import Nonce, RPCEndpoint, TxParams, TxReceipt, Wei
 
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
@@ -391,7 +391,6 @@ async def _async_send_transaction_and_wait_for_receipt(
     unsent_txn: TxParams,
     signer: LocalAccount,
     web3: Web3,
-    read_retry_count: int | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     timeout: float | None = None,
 ) -> TxReceipt:
@@ -405,8 +404,6 @@ async def _async_send_transaction_and_wait_for_receipt(
         The LocalAccount that will be used to pay for the gas & sign the transaction.
     web3: Web3
         web3 provider object.
-    read_retry_count: int | None
-        The number of times to retry getting the nonce. Defaults to `DEFAULT_READ_RETRY_COUNT`.
     nonce_func: Callable[[], Nonce] | None
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
@@ -497,10 +494,6 @@ async def async_smart_contract_transact(
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
         Defaults to setting it to the result of `get_transaction_count`.
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-    write_retry_count: BlockNumber | None
-        The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field for the transaction.
     txn_options_gas : int | None
