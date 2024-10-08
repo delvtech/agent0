@@ -17,13 +17,13 @@ import requests
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import CreateCheckpointEventFP
 from IPython.display import IFrame
 from web3.types import RPCEndpoint
 
 from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.hyperdrive.event_types import CreateCheckpoint
 
 from .chain import Chain
 from .local_hyperdrive import LocalHyperdrive
@@ -291,7 +291,7 @@ class LocalChain(Chain):
     # pylint: disable=too-many-branches
     def advance_time(
         self, time_delta: int | timedelta, create_checkpoints: bool = True
-    ) -> dict[LocalHyperdrive, list[CreateCheckpoint]]:
+    ) -> dict[LocalHyperdrive, list[CreateCheckpointEventFP]]:
         """Advance time for this chain using the `evm_mine` RPC call.
 
         This function looks at the timestamp of the current block, then
@@ -326,7 +326,9 @@ class LocalChain(Chain):
         else:
             time_delta = int(time_delta)  # convert int-like (e.g. np.int64) types to int
 
-        out_dict: dict[LocalHyperdrive, list[CreateCheckpoint]] = {pool: [] for pool in self._deployed_hyperdrive_pools}
+        out_dict: dict[LocalHyperdrive, list[CreateCheckpointEventFP]] = {
+            pool: [] for pool in self._deployed_hyperdrive_pools
+        }
 
         # Don't checkpoint when advancing time if `create_checkpoints` is false
         # or there are no deployed pools

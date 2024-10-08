@@ -26,4 +26,4 @@ from .interface import (
     get_total_pnl_over_time,
     get_trade_events,
 )
-from .schema import CheckpointInfo, HyperdriveAddrToName, PoolConfig, PoolInfo, PositionSnapshot
+from .schema import DBCheckpointInfo, DBHyperdriveAddrToName, DBPoolConfig, DBPoolInfo, DBPositionSnapshot

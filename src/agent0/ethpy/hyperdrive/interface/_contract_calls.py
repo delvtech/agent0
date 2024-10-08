@@ -3,13 +3,27 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 from eth_utils.currency import MAX_WEI
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import ERC20MintableContract, IHyperdriveContract, MockERC4626Contract, MockLidoContract
+from hyperdrivetypes import (
+    AddLiquidityEventFP,
+    CloseLongEventFP,
+    CloseShortEventFP,
+    CreateCheckpointEventFP,
+    ERC20MintableContract,
+    IHyperdriveContract,
+    MockERC4626Contract,
+    MockLidoContract,
+    OpenLongEventFP,
+    OpenShortEventFP,
+    RedeemWithdrawalSharesEventFP,
+    RemoveLiquidityEventFP,
+)
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
+from web3.logs import DISCARD
 
 from agent0.ethpy.base import (
     async_smart_contract_transact,
@@ -18,23 +32,11 @@ from agent0.ethpy.base import (
     smart_contract_transact,
 )
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
-from agent0.ethpy.hyperdrive.transactions import parse_logs_to_event
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber
+    from hyperdrivetypes import BaseEvent
     from web3.types import BlockIdentifier, Nonce
-
-    from agent0.ethpy.hyperdrive.event_types import (
-        AddLiquidity,
-        CloseLong,
-        CloseShort,
-        CreateCheckpoint,
-        OpenLong,
-        OpenShort,
-        RedeemWithdrawalShares,
-        RemoveLiquidity,
-    )
 
     from .read_interface import HyperdriveReadInterface
     from .read_write_interface import HyperdriveReadWriteInterface
@@ -188,7 +190,7 @@ def _create_checkpoint(
     gas_limit: int | None = None,
     write_retry_count: int | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
-) -> CreateCheckpoint:
+) -> CreateCheckpointEventFP:
     """See API for documentation."""
 
     if write_retry_count is None:
@@ -202,6 +204,7 @@ def _create_checkpoint(
     # the default max iterations
     fn_args = (checkpoint_time, 0)
 
+    # TODO replace these calls with pypechain `call` and `transact` functions.
     if preview:
         _ = smart_contract_preview_transaction(
             interface.hyperdrive_contract,
@@ -222,8 +225,16 @@ def _create_checkpoint(
         txn_options_gas=gas_limit,
         nonce_func=nonce_func,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "createCheckpoint")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.CreateCheckpoint().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    return CreateCheckpointEventFP.from_pypechain(out_events[0])
 
 
 def _set_variable_rate(
@@ -246,6 +257,36 @@ def _set_variable_rate(
     )
 
 
+# Helper function to check if we need to convert amounts in the case of a steth (i.e., rebasing) deployment
+# TODO consider not converting amount here, and keeping output events in units of steth "shares".
+# The suggested change above would keep output events mirroring that of what's returned from hyperdrive.
+# We just need to make the conversion in the database to keep track of the actual amount.
+# TODO likely need to generalize this to be all rebasing tokens, not just steth.
+
+T = TypeVar("T", bound="BaseEvent")
+
+
+def _convert_event_base_amounts_for_rebasing_tokens(
+    in_event: T,
+) -> T:
+    # Vault share price should be in every hyperdrive event
+    assert hasattr(in_event.args, "vault_share_price")
+    if hasattr(in_event.args, "amount"):
+        # We make the checks already, typing doesn't narrow here
+        in_event.args.amount *= in_event.args.vault_share_price  # type: ignore
+
+    if hasattr(in_event.args, "base_proceeds"):
+        # We make the checks already, typing doesn't narrow here
+        in_event.args.base_proceeds *= in_event.args.vault_share_price  # type: ignore
+
+    if hasattr(in_event.args, "base_payment"):
+        # We make the checks already, typing doesn't narrow here
+        in_event.args.base_payment *= in_event.args.vault_share_price  # type: ignore
+
+    # Although this is changed in-place, we return regardless
+    return in_event
+
+
 # pylint: disable=too-many-locals
 async def _async_open_long(
     interface: HyperdriveReadWriteInterface,
@@ -257,7 +298,7 @@ async def _async_open_long(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> OpenLong:
+) -> OpenLongEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     # min_vault_share_price: int
@@ -339,8 +380,19 @@ async def _async_open_long(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "openLong")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(interface.hyperdrive_contract.events.OpenLong().process_receipt_typed(tx_receipt, errors=DISCARD))
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = OpenLongEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 # pylint: disable=too-many-arguments
@@ -355,7 +407,7 @@ async def _async_close_long(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> CloseLong:
+) -> CloseLongEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -418,8 +470,21 @@ async def _async_close_long(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "closeLong")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.CloseLong().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = CloseLongEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 # pylint: disable=too-many-locals
@@ -433,7 +498,7 @@ async def _async_open_short(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> OpenShort:
+) -> OpenShortEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     max_deposit = int(MAX_WEI)
@@ -501,8 +566,21 @@ async def _async_open_short(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "openShort")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.OpenShort().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = OpenShortEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_close_short(
@@ -516,7 +594,7 @@ async def _async_close_short(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> CloseShort:
+) -> CloseShortEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -579,8 +657,21 @@ async def _async_close_short(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "closeShort")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.CloseShort().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = CloseShortEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_add_liquidity(
@@ -595,7 +686,7 @@ async def _async_add_liquidity(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> AddLiquidity:
+) -> AddLiquidityEventFP:
     """See API for documentation."""
     # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
     if slippage_tolerance is not None:
@@ -660,8 +751,21 @@ async def _async_add_liquidity(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "addLiquidity")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.AddLiquidity().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = AddLiquidityEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_remove_liquidity(
@@ -673,7 +777,7 @@ async def _async_remove_liquidity(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> RemoveLiquidity:
+) -> RemoveLiquidityEventFP:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = 0
@@ -719,8 +823,21 @@ async def _async_remove_liquidity(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "removeLiquidity")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.RemoveLiquidity().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = RemoveLiquidityEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event
 
 
 async def _async_redeem_withdraw_shares(
@@ -732,7 +849,7 @@ async def _async_redeem_withdraw_shares(
     txn_options_priority_fee_multiple: float | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     preview_before_trade: bool = False,
-) -> RedeemWithdrawalShares:
+) -> RedeemWithdrawalSharesEventFP:
     """See API for documentation."""
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
     agent_checksum_address = Web3.to_checksum_address(agent.address)
@@ -785,5 +902,18 @@ async def _async_redeem_withdraw_shares(
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
         timeout=interface.txn_receipt_timeout,
     )
-    trade_result = parse_logs_to_event(tx_receipt, interface, "redeemWithdrawalShares")
-    return trade_result
+
+    # Process receipt attempts to process all events in logs, even if it's not of the
+    # defined event. Since we know hyperdrive emits multiple events per transaction,
+    # we get the one we want and discard the rest
+    out_events = list(
+        interface.hyperdrive_contract.events.RedeemWithdrawalShares().process_receipt_typed(tx_receipt, errors=DISCARD)
+    )
+    if len(out_events) != 1:
+        raise ValueError(f"Unexpected number of events: {out_events}")
+    out_event = RedeemWithdrawalSharesEventFP.from_pypechain(out_events[0])
+    # If hyperdrive is steth, convert the amount from lido shares to steth
+    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+        out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
+
+    return out_event

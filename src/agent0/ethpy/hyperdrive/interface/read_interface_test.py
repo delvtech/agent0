@@ -5,17 +5,16 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import fields
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import PoolConfig
+from hyperdrivetypes import PoolConfigFP, PoolInfoFP
 from hyperdrivetypes.fixedpoint_types import FeesFP
 from web3.constants import ADDRESS_ZERO
 
 from agent0 import LocalChain, LocalHyperdrive
-from agent0.utils.conversions import pool_config_to_fixedpoint, pool_info_to_fixedpoint
 
 if TYPE_CHECKING:
     from .read_interface import HyperdriveReadInterface
@@ -29,26 +28,22 @@ class TestHyperdriveReadInterface:
 
     def test_pool_config(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
-        pool_config = cast(
-            PoolConfig, hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolConfig().call()
-        )
+        pool_config = hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolConfig().call()
         assert (
-            pool_config_to_fixedpoint(pool_config) == hyperdrive_read_interface_fixture.current_pool_state.pool_config
+            PoolConfigFP.from_pypechain(pool_config) == hyperdrive_read_interface_fixture.current_pool_state.pool_config
         )
 
     def test_pool_config_deployed(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_config matches what is returned from the smart contract."""
-        pool_config = cast(
-            PoolConfig, hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolConfig().call()
-        )
+        pool_config = hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolConfig().call()
         assert (
-            pool_config_to_fixedpoint(pool_config) == hyperdrive_read_interface_fixture.current_pool_state.pool_config
+            PoolConfigFP.from_pypechain(pool_config) == hyperdrive_read_interface_fixture.current_pool_state.pool_config
         )
 
     def test_pool_info(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Checks that the Hyperdrive pool_info matches what is returned from the smart contract."""
         pool_info = hyperdrive_read_interface_fixture.hyperdrive_contract.functions.getPoolInfo().call()
-        assert pool_info_to_fixedpoint(pool_info) == hyperdrive_read_interface_fixture.current_pool_state.pool_info
+        assert PoolInfoFP.from_pypechain(pool_info) == hyperdrive_read_interface_fixture.current_pool_state.pool_info
 
     def test_checkpoint(self, hyperdrive_read_interface_fixture: HyperdriveReadInterface):
         """Checks that the Hyperdrive checkpoint matches what is returned from the smart contract."""

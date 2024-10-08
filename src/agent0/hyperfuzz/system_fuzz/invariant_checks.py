@@ -7,6 +7,7 @@ import time
 from typing import Any, Callable, NamedTuple
 
 from fixedpointmath import FixedPoint
+from hyperdrivetypes.types.IHyperdriveContract import CloseLongEvent, CloseShortEvent
 from web3.types import BlockData
 
 from agent0.core.hyperdrive.crash_report import (
@@ -540,32 +541,31 @@ def _check_lp_share_price(
 
     # Determine if a checkpoint was minted on the current block
     # -1 to get events from current block
-    checkpoint_events = interface.get_checkpoint_events(from_block=check_block_number - 1)
+    checkpoint_events = interface.hyperdrive_contract.events.CreateCheckpoint.get_logs_typed(
+        from_block=check_block_number - 1
+    )
     currently_minting_checkpoint = False
     for event in checkpoint_events:
-        assert "blockNumber" in event
-        if event["blockNumber"] == check_block_number:
+        if event.block_number == check_block_number:
             currently_minting_checkpoint = True
             break
 
     # Determine if matured positions were closed this timestamp
     # We look for close events on this block
     # -1 to get events from current block
-    trade_events: list[dict[str, Any]] = []
-    trade_events.extend(interface.get_close_short_events(from_block=check_block_number - 1))
-    trade_events.extend(interface.get_close_long_events(from_block=check_block_number - 1))
+    trade_events: list[CloseShortEvent | CloseLongEvent] = []
+    trade_events.extend(
+        interface.hyperdrive_contract.events.CloseShort.get_logs_typed(from_block=check_block_number - 1)
+    )
+    trade_events.extend(
+        interface.hyperdrive_contract.events.CloseLong.get_logs_typed(from_block=check_block_number - 1)
+    )
 
     closing_mature_position = False
     for event in trade_events:
-        # maturityTime should always be part of close short/long
-        assert "args" in event
-        assert "maturityTime" in event["args"]
-        assert "blockNumber" in event
         # Race condition, filter only on events from the current block
         # Check if any matured positions were closed
-        if (event["blockNumber"] == check_block_number) and (
-            mined_pool_state.block_time >= event["args"]["maturityTime"]
-        ):
+        if (event.block_number == check_block_number) and (mined_pool_state.block_time >= event.args.maturityTime):
             closing_mature_position = True
             break
 

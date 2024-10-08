@@ -21,19 +21,18 @@ if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
     from eth_typing import ChecksumAddress
     from fixedpointmath import FixedPoint
+    from hyperdrivetypes import (
+        AddLiquidityEventFP,
+        CloseLongEventFP,
+        CloseShortEventFP,
+        CreateCheckpointEventFP,
+        OpenLongEventFP,
+        OpenShortEventFP,
+        RedeemWithdrawalSharesEventFP,
+        RemoveLiquidityEventFP,
+    )
     from web3 import Web3
     from web3.types import Nonce
-
-    from agent0.ethpy.hyperdrive.event_types import (
-        AddLiquidity,
-        CloseLong,
-        CloseShort,
-        CreateCheckpoint,
-        OpenLong,
-        OpenShort,
-        RedeemWithdrawalShares,
-        RemoveLiquidity,
-    )
 
 # We have no control over the number of arguments since it is specified by the smart contracts
 # pylint: disable=too-many-arguments
@@ -115,7 +114,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         gas_limit: int | None = None,
         write_retry_count: int | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
-    ) -> CreateCheckpoint:
+    ) -> CreateCheckpointEventFP:
         """Create a Hyperdrive checkpoint.
 
         Arguments
@@ -174,7 +173,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> OpenLong:
+    ) -> OpenLongEventFP:
         """Contract call to open a long position.
 
         Arguments
@@ -231,7 +230,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> CloseLong:
+    ) -> CloseLongEventFP:
         """Contract call to close a long position.
 
         Arguments
@@ -288,7 +287,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> OpenShort:
+    ) -> OpenShortEventFP:
         """Contract call to open a short position.
 
         Arguments
@@ -345,7 +344,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> CloseShort:
+    ) -> CloseShortEventFP:
         """Contract call to close a short position.
 
         Arguments
@@ -406,7 +405,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> AddLiquidity:
+    ) -> AddLiquidityEventFP:
         """Contract call to add liquidity to the Hyperdrive pool.
 
         Arguments
@@ -465,7 +464,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> RemoveLiquidity:
+    ) -> RemoveLiquidityEventFP:
         """Contract call to remove liquidity from the Hyperdrive pool.
 
         Arguments
@@ -513,7 +512,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         txn_options_priority_fee_multiple: float | None = None,
         nonce_func: Callable[[], Nonce] | None = None,
         preview_before_trade: bool = False,
-    ) -> RedeemWithdrawalShares:
+    ) -> RedeemWithdrawalSharesEventFP:
         """Contract call to redeem withdraw shares from Hyperdrive pool.
 
         This should be done after closing liquidity.

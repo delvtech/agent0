@@ -20,7 +20,7 @@ from .interface import (
     get_pool_config,
     get_pool_info,
 )
-from .schema import CheckpointInfo, PoolConfig, PoolInfo, TradeEvent
+from .schema import DBCheckpointInfo, DBPoolConfig, DBPoolInfo, DBTradeEvent
 
 
 class TestHyperdriveAddrToName:
@@ -132,9 +132,9 @@ class TestCheckpointInterface:
         checkpoint_time_1 = 100
         checkpoint_time_2 = 1000
         checkpoint_time_3 = 10000
-        checkpoint_1 = CheckpointInfo(checkpoint_time=checkpoint_time_1, hyperdrive_address="a", block_number=1)
-        checkpoint_2 = CheckpointInfo(checkpoint_time=checkpoint_time_2, hyperdrive_address="a", block_number=2)
-        checkpoint_3 = CheckpointInfo(checkpoint_time=checkpoint_time_3, hyperdrive_address="a", block_number=3)
+        checkpoint_1 = DBCheckpointInfo(checkpoint_time=checkpoint_time_1, hyperdrive_address="a", block_number=1)
+        checkpoint_2 = DBCheckpointInfo(checkpoint_time=checkpoint_time_2, hyperdrive_address="a", block_number=2)
+        checkpoint_3 = DBCheckpointInfo(checkpoint_time=checkpoint_time_3, hyperdrive_address="a", block_number=3)
         add_checkpoint_info(checkpoint_1, db_session)
         add_checkpoint_info(checkpoint_2, db_session)
         add_checkpoint_info(checkpoint_3, db_session)
@@ -148,13 +148,13 @@ class TestCheckpointInterface:
     @pytest.mark.docker
     def test_checkpoint_time_query_checkpoints(self, db_session):
         """Testing querying by block number of checkpoints via interface"""
-        checkpoint_1 = CheckpointInfo(
+        checkpoint_1 = DBCheckpointInfo(
             checkpoint_time=100, hyperdrive_address="a", block_number=1, vault_share_price=Decimal("3.1")
         )
-        checkpoint_2 = CheckpointInfo(
+        checkpoint_2 = DBCheckpointInfo(
             checkpoint_time=1000, hyperdrive_address="a", block_number=2, vault_share_price=Decimal("3.2")
         )
-        checkpoint_3 = CheckpointInfo(
+        checkpoint_3 = DBCheckpointInfo(
             checkpoint_time=10000, hyperdrive_address="a", block_number=3, vault_share_price=Decimal("3.3")
         )
         add_checkpoint_info(checkpoint_1, db_session)
@@ -180,14 +180,14 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_get_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_1 = DBPoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
 
         pool_config_df_1 = get_pool_config(db_session, coerce_float=True)
         assert len(pool_config_df_1) == 1
         np.testing.assert_array_equal(pool_config_df_1["initial_vault_share_price"], np.array([3.2]))
 
-        pool_config_2 = PoolConfig(hyperdrive_address="1", initial_vault_share_price=Decimal("3.4"))
+        pool_config_2 = DBPoolConfig(hyperdrive_address="1", initial_vault_share_price=Decimal("3.4"))
         add_pool_config(pool_config_2, db_session)
 
         pool_config_df_2 = get_pool_config(db_session, coerce_float=True)
@@ -197,7 +197,7 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_primary_id_query_pool_config(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config = DBPoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config, db_session)
 
         pool_config_df_1 = get_pool_config(db_session, hyperdrive_address="0", coerce_float=True)
@@ -210,21 +210,21 @@ class TestPoolConfigInterface:
     @pytest.mark.docker
     def test_pool_config_verify(self, db_session):
         """Testing retrieval of pool config via interface"""
-        pool_config_1 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_1 = DBPoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_1, db_session)
         pool_config_df_1 = get_pool_config(db_session, coerce_float=True)
         assert len(pool_config_df_1) == 1
         assert pool_config_df_1.loc[0, "initial_vault_share_price"] == 3.2
 
         # Nothing should happen if we give the same pool_config
-        pool_config_2 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
+        pool_config_2 = DBPoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.2"))
         add_pool_config(pool_config_2, db_session)
         pool_config_df_2 = get_pool_config(db_session, coerce_float=True)
         assert len(pool_config_df_2) == 1
         assert pool_config_df_2.loc[0, "initial_vault_share_price"] == 3.2
 
         # If we try to add another pool config with a different value, should throw a ValueError
-        pool_config_3 = PoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.4"))
+        pool_config_3 = DBPoolConfig(hyperdrive_address="0", initial_vault_share_price=Decimal("3.4"))
         with pytest.raises(ValueError):
             add_pool_config(pool_config_3, db_session)
 
@@ -236,16 +236,16 @@ class TestPoolInfoInterface:
     def test_latest_block_number(self, db_session):
         """Testing latest block number call"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
-        pool_info_1 = PoolInfo(block_number=1, hyperdrive_address="a", timestamp=timestamp_1)
+        pool_info_1 = DBPoolInfo(block_number=1, hyperdrive_address="a", timestamp=timestamp_1)
         add_pool_infos([pool_info_1], db_session)
 
         latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
         assert latest_block_number == 1
 
         timestamp_1 = datetime.fromtimestamp(1628472002)
-        pool_info_1 = PoolInfo(block_number=2, hyperdrive_address="a", timestamp=timestamp_1)
+        pool_info_1 = DBPoolInfo(block_number=2, hyperdrive_address="a", timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472004)
-        pool_info_2 = PoolInfo(block_number=3, hyperdrive_address="a", timestamp=timestamp_2)
+        pool_info_2 = DBPoolInfo(block_number=3, hyperdrive_address="a", timestamp=timestamp_2)
         add_pool_infos([pool_info_1, pool_info_2], db_session)
 
         latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
@@ -255,11 +255,11 @@ class TestPoolInfoInterface:
     def test_get_pool_info(self, db_session):
         """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
-        pool_info_1 = PoolInfo(block_number=0, hyperdrive_address="a", timestamp=timestamp_1)
+        pool_info_1 = DBPoolInfo(block_number=0, hyperdrive_address="a", timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472002)
-        pool_info_2 = PoolInfo(block_number=1, hyperdrive_address="a", timestamp=timestamp_2)
+        pool_info_2 = DBPoolInfo(block_number=1, hyperdrive_address="a", timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
-        pool_info_3 = PoolInfo(block_number=2, hyperdrive_address="a", timestamp=timestamp_3)
+        pool_info_3 = DBPoolInfo(block_number=2, hyperdrive_address="a", timestamp=timestamp_3)
         add_pool_infos([pool_info_1, pool_info_2, pool_info_3], db_session)
 
         pool_info_df = get_pool_info(db_session)
@@ -272,11 +272,11 @@ class TestPoolInfoInterface:
     def test_block_query_pool_info(self, db_session):
         """Testing retrieval of pool info via interface"""
         timestamp_1 = datetime.fromtimestamp(1628472000)
-        pool_info_1 = PoolInfo(block_number=0, hyperdrive_address="a", timestamp=timestamp_1)
+        pool_info_1 = DBPoolInfo(block_number=0, hyperdrive_address="a", timestamp=timestamp_1)
         timestamp_2 = datetime.fromtimestamp(1628472002)
-        pool_info_2 = PoolInfo(block_number=1, hyperdrive_address="a", timestamp=timestamp_2)
+        pool_info_2 = DBPoolInfo(block_number=1, hyperdrive_address="a", timestamp=timestamp_2)
         timestamp_3 = datetime.fromtimestamp(1628472004)
-        pool_info_3 = PoolInfo(block_number=2, hyperdrive_address="a", timestamp=timestamp_3)
+        pool_info_3 = DBPoolInfo(block_number=2, hyperdrive_address="a", timestamp=timestamp_3)
         add_pool_infos([pool_info_1, pool_info_2, pool_info_3], db_session)
         pool_info_df = get_pool_info(db_session, start_block=1)
         np.testing.assert_array_equal(
@@ -306,7 +306,7 @@ class TestHyperdriveEventsInterface:
     @pytest.mark.docker
     def test_latest_block_number_on_wallet(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        transfer_event = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
+        transfer_event = DBTradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
         add_trade_events([transfer_event], db_session)
 
         latest_block_number = get_latest_block_number_from_trade_event(
@@ -314,8 +314,12 @@ class TestHyperdriveEventsInterface:
         )
         assert latest_block_number == 1
 
-        transfer_event_1 = TradeEvent(block_number=2, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
-        transfer_event_2 = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="2")
+        transfer_event_1 = DBTradeEvent(
+            block_number=2, transaction_hash="a", hyperdrive_address="a", wallet_address="1"
+        )
+        transfer_event_2 = DBTradeEvent(
+            block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="2"
+        )
         add_trade_events([transfer_event_1, transfer_event_2], db_session)
         latest_block_number = get_latest_block_number_from_trade_event(
             db_session, hyperdrive_address=None, wallet_address="1"
@@ -329,7 +333,7 @@ class TestHyperdriveEventsInterface:
     @pytest.mark.docker
     def test_latest_block_number_on_hyperdrive_address(self, db_session):
         """Testing retrieval of wallet info via interface"""
-        transfer_event = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
+        transfer_event = DBTradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
         add_trade_events([transfer_event], db_session)
 
         latest_block_number = get_latest_block_number_from_trade_event(
@@ -337,8 +341,12 @@ class TestHyperdriveEventsInterface:
         )
         assert latest_block_number == 1
 
-        transfer_event_1 = TradeEvent(block_number=2, transaction_hash="a", hyperdrive_address="a", wallet_address="1")
-        transfer_event_2 = TradeEvent(block_number=1, transaction_hash="a", hyperdrive_address="b", wallet_address="1")
+        transfer_event_1 = DBTradeEvent(
+            block_number=2, transaction_hash="a", hyperdrive_address="a", wallet_address="1"
+        )
+        transfer_event_2 = DBTradeEvent(
+            block_number=1, transaction_hash="a", hyperdrive_address="b", wallet_address="1"
+        )
         add_trade_events([transfer_event_1, transfer_event_2], db_session)
         latest_block_number = get_latest_block_number_from_trade_event(
             db_session, hyperdrive_address="a", wallet_address=None
@@ -352,13 +360,13 @@ class TestHyperdriveEventsInterface:
     @pytest.mark.docker
     def test_get_agents(self, db_session):
         """Testing helper function to get current wallet values"""
-        wallet_delta_1 = TradeEvent(
+        wallet_delta_1 = DBTradeEvent(
             block_number=0, hyperdrive_address="a", transaction_hash="a", wallet_address="addr_1"
         )
-        wallet_delta_2 = TradeEvent(
+        wallet_delta_2 = DBTradeEvent(
             block_number=1, hyperdrive_address="a", transaction_hash="b", wallet_address="addr_1"
         )
-        wallet_delta_3 = TradeEvent(
+        wallet_delta_3 = DBTradeEvent(
             block_number=2, hyperdrive_address="a", transaction_hash="c", wallet_address="addr_2"
         )
         add_trade_events([wallet_delta_1, wallet_delta_2, wallet_delta_3], db_session)

@@ -16,11 +16,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 # Currently using `Mapped[Union[str, None]]` for backwards compatibility
 
 
-class Base(MappedAsDataclass, DeclarativeBase):
+class DBBase(MappedAsDataclass, DeclarativeBase):
     """Base class to subclass from to define the schema"""
 
 
-class AddrToUsername(Base):
+class DBAddrToUsername(DBBase):
     """Maps an address to a username."""
 
     __tablename__ = "addr_to_username"

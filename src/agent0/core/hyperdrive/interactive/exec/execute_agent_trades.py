@@ -9,6 +9,7 @@ from typing import Callable
 
 from eth_account.signers.local import LocalAccount
 from numpy.random import Generator
+from pypechain.core import BaseEvent
 from web3.types import Nonce
 
 from agent0.core.base import MarketType, Trade
@@ -23,7 +24,6 @@ from agent0.core.hyperdrive.crash_report import build_crash_trade_result, check_
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.core.test_utils import assert_never
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface, HyperdriveReadWriteInterface
-from agent0.ethpy.hyperdrive.event_types import BaseHyperdriveEvent
 
 
 def get_liquidation_trades(
@@ -171,7 +171,7 @@ async def async_execute_agent_trades(
     # TODO preliminary search shows async tasks has very low overhead:
     # https://stackoverflow.com/questions/55761652/what-is-the-overhead-of-an-asyncio-task
     # However, should probably test the limit number of trades an agent can make in one block
-    event_or_exception: list[BaseHyperdriveEvent | BaseException] = await asyncio.gather(
+    event_or_exception: list[BaseEvent | BaseException] = await asyncio.gather(
         *[
             _async_match_contract_call_to_trade(
                 account,
@@ -287,7 +287,7 @@ async def async_execute_single_trade(
 
 
 def _handle_contract_call_to_trade(
-    event_or_exception: list[BaseHyperdriveEvent | BaseException],
+    event_or_exception: list[BaseEvent | BaseException],
     trades: list[Trade[HyperdriveMarketAction]],
     interface: HyperdriveReadInterface,
     account: LocalAccount,
@@ -335,7 +335,7 @@ def _handle_contract_call_to_trade(
             # additional arguments describing these detected errors for crash reporting.
             trade_result = check_for_known_errors(trade_result, interface)
         else:
-            if not isinstance(result, BaseHyperdriveEvent):
+            if not isinstance(result, BaseEvent):
                 raise TypeError("The trade result is not the correct type.")
             tx_receipt = result
             trade_result = TradeResult(
@@ -352,7 +352,7 @@ async def _async_match_contract_call_to_trade(
     trade_envelope: Trade[HyperdriveMarketAction],
     preview_before_trade: bool,
     nonce_func: Callable[[], Nonce] | None = None,
-) -> BaseHyperdriveEvent:
+) -> BaseEvent:
     """Match statement that executes the smart contract trade based on the provided type.
 
     Arguments

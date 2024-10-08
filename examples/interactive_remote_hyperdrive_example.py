@@ -95,8 +95,8 @@ agent1.set_max_approval()
 # Here, base is unitless and is dependent on the underlying tokens the pool uses.
 open_long_event = agent0.open_long(base=FixedPoint(11111), pool=hyperdrive_pool)
 close_long_event = agent0.close_long(
-    maturity_time=open_long_event.maturity_time,
-    bonds=open_long_event.bond_amount,
+    maturity_time=open_long_event.args.maturity_time,
+    bonds=open_long_event.args.bond_amount,
     pool=hyperdrive_pool,
 )
 

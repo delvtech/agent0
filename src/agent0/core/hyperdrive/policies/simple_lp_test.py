@@ -6,9 +6,9 @@ import datetime
 
 import pytest
 from fixedpointmath import FixedPoint, isclose
+from hyperdrivetypes import AddLiquidityEventFP, RemoveLiquidityEventFP
 
 from agent0 import LocalChain, LocalHyperdrive, PolicyZoo
-from agent0.ethpy.hyperdrive.event_types import AddLiquidity, RemoveLiquidity
 
 # pylint: disable=too-many-locals
 
@@ -67,15 +67,15 @@ def test_simple_lp_policy():
         hyperdrive_agent0.add_funds(base=trade_amount)
         open_event = hyperdrive_agent0.open_short(trade_amount)
         chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
-        hyperdrive_agent0.close_short(open_event.maturity_time, open_event.bond_amount)
+        hyperdrive_agent0.close_short(open_event.args.maturity_time, open_event.args.bond_amount)
         trade_event_list = lp_agent.execute_policy_action()
 
     # only one trade per action execution
     assert len(trade_event_list) == 1
     # always should be add liquidity
-    assert isinstance(trade_event_list[0], AddLiquidity)
+    assert isinstance(trade_event_list[0], AddLiquidityEventFP)
     # always should be close to delta_liquidity
-    assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("1.0"))
+    assert isclose(trade_event_list[0].args.lp_amount, delta_liquidity, abs_tol=FixedPoint("1.0"))
 
     # Do smart trades until the LP removes liquidity
     # It's possible the LP could add liquidity in the first couple of trades,
@@ -91,18 +91,18 @@ def test_simple_lp_policy():
         interactive_hyperdrive.set_variable_rate(FixedPoint("0.0"))  # LP gets no extra earnings from variable
         open_event = hyperdrive_agent1.open_long(trade_amount)
         chain.advance_time(datetime.timedelta(weeks=1), create_checkpoints=False)
-        hyperdrive_agent1.close_long(open_event.maturity_time, open_event.bond_amount)
+        hyperdrive_agent1.close_long(open_event.args.maturity_time, open_event.args.bond_amount)
 
         trade_event_list = lp_agent.execute_policy_action()
         if len(trade_event_list) > 0:
-            if isinstance(trade_event_list[0], RemoveLiquidity):
+            if isinstance(trade_event_list[0], RemoveLiquidityEventFP):
                 removed_liquidity = True
 
     # only one trade per action execution
     assert len(trade_event_list) == 1
     # always should be remove liquidity
-    assert isinstance(trade_event_list[0], RemoveLiquidity)
+    assert isinstance(trade_event_list[0], RemoveLiquidityEventFP)
     # always should be close to delta_liquidity
-    assert isclose(trade_event_list[0].lp_amount, delta_liquidity, abs_tol=FixedPoint("0.1"))
+    assert isclose(trade_event_list[0].args.lp_amount, delta_liquidity, abs_tol=FixedPoint("0.1"))
 
     chain.cleanup()

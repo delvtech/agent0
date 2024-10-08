@@ -76,8 +76,8 @@ open_long_event_2 = agent1.open_long(base=FixedPoint(22222))
 
 # Close previous longs from events
 close_long_event_1 = agent0.close_long(
-    maturity_time=open_long_event_1.maturity_time,
-    bonds=open_long_event_1.bond_amount,
+    maturity_time=open_long_event_1.args.maturity_time,
+    bonds=open_long_event_1.args.bond_amount,
     pool=hyperdrive0,
 )
 

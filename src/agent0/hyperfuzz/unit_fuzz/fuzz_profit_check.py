@@ -116,7 +116,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     # Close the long
     logging.info("Close the long...")
     close_long_event = long_agent.close_long(
-        maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+        maturity_time=open_long_event.args.maturity_time, bonds=open_long_event.args.bond_amount
     )
     ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
@@ -159,7 +159,7 @@ def fuzz_profit_check(chain_config: LocalChain.Config, steth: bool = False, paus
     # Close the short
     logging.info("Close the short...")
     close_short_event = short_agent.close_short(
-        maturity_time=open_short_event.maturity_time, bonds=open_short_event.bond_amount
+        maturity_time=open_short_event.args.maturity_time, bonds=open_short_event.args.bond_amount
     )
     ending_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
 
@@ -301,8 +301,8 @@ def invariant_check(check_data: dict[str, Any]) -> None:
     exception_data: dict[str, Any] = {}
 
     # Check long trade
-    base_amount_returned: FixedPoint = check_data["long_events"]["close"].amount
-    base_amount_provided: FixedPoint = check_data["long_events"]["open"].amount
+    base_amount_returned: FixedPoint = check_data["long_events"]["close"].args.amount
+    base_amount_provided: FixedPoint = check_data["long_events"]["open"].args.amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append("LONG: Amount returned on closing was too large.")
@@ -328,8 +328,8 @@ def invariant_check(check_data: dict[str, Any]) -> None:
         failed = True
 
     # Check short trade
-    base_amount_returned: FixedPoint = check_data["short_events"]["close"].amount
-    base_amount_provided: FixedPoint = check_data["short_events"]["open"].amount
+    base_amount_returned: FixedPoint = check_data["short_events"]["close"].args.amount
+    base_amount_provided: FixedPoint = check_data["short_events"]["open"].args.amount
     if base_amount_returned >= base_amount_provided:
         difference_in_wei = abs(base_amount_returned.scaled_value - base_amount_provided.scaled_value)
         exception_message.append("SHORT: Amount returned on closing was too large.")

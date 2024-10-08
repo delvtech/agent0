@@ -19,15 +19,11 @@ from hyperdrivetypes import (
     ERC4626Target2DeployerContract,
     ERC4626Target3DeployerContract,
     ERC4626Target4DeployerContract,
-    FactoryConfig,
     HyperdriveFactoryContract,
-    HyperdriveRegistryContract,
     IHyperdriveContract,
     LPMathContract,
     MockERC4626Contract,
     MockLidoContract,
-    Options,
-    PoolDeployConfig,
     StETHHyperdriveCoreDeployerContract,
     StETHHyperdriveDeployerCoordinatorContract,
     StETHTarget0DeployerContract,
@@ -36,9 +32,12 @@ from hyperdrivetypes import (
     StETHTarget3DeployerContract,
     StETHTarget4DeployerContract,
 )
+from hyperdrivetypes.types.HyperdriveFactoryTypes import FactoryConfig
+from hyperdrivetypes.types.IHyperdriveTypes import Options, PoolDeployConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
+from web3.logs import DISCARD
 
 from agent0.ethpy.base import (
     ETH_CONTRACT_ADDRESS,
@@ -46,7 +45,6 @@ from agent0.ethpy.base import (
     set_anvil_account_balance,
     smart_contract_transact,
 )
-from agent0.ethpy.base.receipts import get_transaction_logs
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -71,7 +69,6 @@ class DeployedHyperdriveFactory(NamedTuple):
     deployer_account: LocalAccount
     factory_contract: HyperdriveFactoryContract
     deployer_coordinator_contract: Contract
-    registry_contract: HyperdriveRegistryContract
     factory_deploy_config: FactoryConfig
 
 
@@ -325,36 +322,6 @@ def deploy_hyperdrive_from_factory(
         )
     )
 
-    # Register this pool with the registry contract
-    register_function = deployed_factory.registry_contract.functions.setInstanceInfo(
-        [hyperdrive_checksum_address], [1], [deployed_factory.factory_contract.address]
-    )
-    function_name = register_function.fn_name
-    function_args = register_function.args
-    receipt = smart_contract_transact(
-        web3,
-        deployed_factory.registry_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed to register Hyperdrive contract.\n{receipt=}")
-
-    # Register the admin account
-    register_function = deployed_factory.registry_contract.functions.updateAdmin(deploy_account_addr)
-    function_name = register_function.fn_name
-    function_args = register_function.args
-    receipt = smart_contract_transact(
-        web3,
-        deployed_factory.registry_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed to register Hyperdrive deployer admin address.\n{receipt=}")
-
     # Get block number when hyperdrive was deployed
     return DeployedHyperdrivePool(
         deployer_account=deployer_account,
@@ -533,27 +500,6 @@ def _deploy_hyperdrive_factory(
         constructor_args=HyperdriveFactoryContract.ConstructorArgs(factory_deploy_config, "HyperdriveFactory"),
     )
 
-    # Deploy the Hyperdrive registry contract
-    registry_contract = HyperdriveRegistryContract.deploy(
-        w3=web3,
-        account=deploy_account_addr,
-        constructor_args=HyperdriveRegistryContract.ConstructorArgs(name="HyperdriveRegistry"),
-    )
-
-    # Register the factory with the registry contract
-    register_function = registry_contract.functions.setFactoryInfo([factory_contract.address], [1])
-    function_name = register_function.fn_name
-    function_args = register_function.args
-    receipt = smart_contract_transact(
-        web3,
-        registry_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed to register Hyperdrive factory.\n{receipt=}")
-
     lp_math_contract = LPMathContract.deploy(w3=web3, account=deploy_account_addr)
 
     match deploy_type:
@@ -593,7 +539,6 @@ def _deploy_hyperdrive_factory(
         factory_contract=factory_contract,
         deployer_coordinator_contract=deployer_coordinator_contract,
         factory_deploy_config=factory_deploy_config,
-        registry_contract=registry_contract,
     )
 
 
@@ -764,11 +709,9 @@ def _deploy_and_initialize_hyperdrive_pool(
         *function_args,
         txn_options_value=txn_option_value,
     )
-    logs = get_transaction_logs(factory_contract, tx_receipt)
-    hyperdrive_address: str | None = None
-    for log in logs:
-        if log["event"] == "Deployed":
-            hyperdrive_address = log["args"]["hyperdrive"]
-    if hyperdrive_address is None:
-        raise AssertionError("Generating hyperdrive contract didn't return address")
+
+    deploy_events = list(factory_contract.events.Deployed().process_receipt_typed(tx_receipt, errors=DISCARD))
+    if len(deploy_events) != 1:
+        raise AssertionError(f"Expected 1 Deployed event, got {len(deploy_events)}")
+    hyperdrive_address = deploy_events[0].args.hyperdrive
     return hyperdrive_address

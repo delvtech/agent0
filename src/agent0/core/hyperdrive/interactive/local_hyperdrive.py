@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING, Sequence
 import pandas as pd
 from eth_typing import BlockNumber, ChecksumAddress
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import FactoryConfig, Fees, PoolDeployConfig
+from hyperdrivetypes import CreateCheckpointEventFP
+from hyperdrivetypes.types.HyperdriveFactoryTypes import FactoryConfig
+from hyperdrivetypes.types.IHyperdriveTypes import Fees, PoolDeployConfig
 from web3 import Web3
 
 from agent0.chainsync.analysis import fill_pnl_values
@@ -30,7 +32,6 @@ from agent0.ethpy.hyperdrive import (
     deploy_hyperdrive_factory,
     deploy_hyperdrive_from_factory,
 )
-from agent0.ethpy.hyperdrive.event_types import CreateCheckpoint
 
 from .hyperdrive import Hyperdrive
 
@@ -317,17 +318,7 @@ class LocalHyperdrive(Hyperdrive):
 
         # At this point, we've deployed hyperdrive, so we want to save the block where it was deployed
         # for the data pipeline
-        deploy_event = self.interface.get_initialize_events()
-        deploy_event = list(deploy_event)
-
-        # Attempt to get the deploy event
-        self._deploy_block_number = None
-        if len(deploy_event) == 0:
-            logging.warning("Deploy event not found, can't set deploy_block")
-        elif len(deploy_event) > 1:
-            raise AssertionError("Multiple deploy events found.")
-        else:
-            self._deploy_block_number = deploy_event[0]["blockNumber"]
+        self._deploy_block_number = self.interface.get_deploy_block()
 
         if deploy:
             # If we're deploying, we expect the deploy block to be set
@@ -538,7 +529,7 @@ class LocalHyperdrive(Hyperdrive):
         check_if_exists: bool = True,
         gas_limit: int | None = None,
         retries: int | None = None,
-    ) -> CreateCheckpoint | None:
+    ) -> CreateCheckpointEventFP | None:
         """Internal function without safeguard checks for creating a checkpoint.
         Creating checkpoints is called by the chain's `advance_time`.
         """

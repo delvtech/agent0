@@ -21,5 +21,4 @@ from .transactions import (
     get_hyperdrive_checkpoint_exposure,
     get_hyperdrive_pool_config,
     get_hyperdrive_pool_info,
-    parse_logs_to_event,
 )
