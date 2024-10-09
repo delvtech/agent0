@@ -111,7 +111,7 @@ def _get_vault_shares(
 def _get_eth_base_balances(interface: HyperdriveReadInterface, agent: LocalAccount) -> tuple[FixedPoint, FixedPoint]:
     """See API for documentation."""
     agent_checksum_address = Web3.to_checksum_address(agent.address)
-    agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address, interface.read_retry_count)
+    agent_eth_balance = get_account_balance(interface.web3, agent_checksum_address)
     agent_base_balance = interface.base_token_contract.functions.balanceOf(agent_checksum_address).call()
 
     return (
@@ -133,13 +133,12 @@ def _get_hyperdrive_base_balance(
 
 
 def _get_hyperdrive_eth_balance(
-    interface: HyperdriveReadInterface,
     web3: Web3,
     hyperdrive_address: str,
 ) -> FixedPoint:
     """See API for documentation."""
     hyperdrive_checksum_address = Web3.to_checksum_address(hyperdrive_address)
-    agent_eth_balance = get_account_balance(web3, hyperdrive_checksum_address, interface.read_retry_count)
+    agent_eth_balance = get_account_balance(web3, hyperdrive_checksum_address)
     return FixedPoint(scaled_value=agent_eth_balance)
 
 
@@ -188,13 +187,9 @@ def _create_checkpoint(
     checkpoint_time: int | None = None,
     preview: bool = False,
     gas_limit: int | None = None,
-    write_retry_count: int | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
 ) -> CreateCheckpointEventFP:
     """See API for documentation."""
-
-    if write_retry_count is None:
-        write_retry_count = interface.write_retry_count
 
     if checkpoint_time is None:
         block_timestamp = interface.get_block_timestamp(interface.get_current_block())
@@ -219,8 +214,6 @@ def _create_checkpoint(
         sender,
         "checkpoint",
         *fn_args,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=write_retry_count,
         timeout=interface.txn_receipt_timeout,
         txn_options_gas=gas_limit,
         nonce_func=nonce_func,
@@ -251,8 +244,6 @@ def _set_variable_rate(
         sender,
         "setRate",
         new_rate.scaled_value,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         timeout=interface.txn_receipt_timeout,
     )
 
@@ -350,7 +341,6 @@ async def _async_open_long(
             "openLong",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
         min_output = (
@@ -373,8 +363,6 @@ async def _async_open_long(
         "openLong",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
@@ -440,7 +428,6 @@ async def _async_close_long(
             "closeLong",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
         min_output = (
@@ -463,8 +450,6 @@ async def _async_close_long(
         "closeLong",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
@@ -536,7 +521,6 @@ async def _async_open_short(
             "openShort",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
         max_deposit = (
@@ -559,8 +543,6 @@ async def _async_open_short(
         "openShort",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
@@ -627,7 +609,6 @@ async def _async_close_short(
             "closeShort",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
     if slippage_tolerance is not None:
         min_output = (
@@ -650,8 +631,6 @@ async def _async_close_short(
         "closeShort",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
@@ -735,7 +714,6 @@ async def _async_add_liquidity(
             "addLiquidity",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
     tx_receipt = await async_smart_contract_transact(
         interface.web3,
@@ -744,8 +722,6 @@ async def _async_add_liquidity(
         "addLiquidity",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
@@ -807,7 +783,6 @@ async def _async_remove_liquidity(
             "removeLiquidity",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
     tx_receipt = await async_smart_contract_transact(
         interface.web3,
@@ -816,8 +791,6 @@ async def _async_remove_liquidity(
         "removeLiquidity",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
@@ -880,7 +853,6 @@ async def _async_redeem_withdraw_shares(
             "redeemWithdrawalShares",
             *fn_args,
             block_identifier="pending",
-            read_retry_count=interface.read_retry_count,
         )
         # Here, a preview call of redeem withdrawal shares will still be successful without logs if
         # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
@@ -895,8 +867,6 @@ async def _async_redeem_withdraw_shares(
         "redeemWithdrawalShares",
         *fn_args,
         nonce_func=nonce_func,
-        read_retry_count=interface.read_retry_count,
-        write_retry_count=interface.write_retry_count,
         txn_options_gas=gas_limit,
         txn_options_base_fee_multiple=txn_options_base_fee_multiple,
         txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,

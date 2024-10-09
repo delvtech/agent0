@@ -12,16 +12,12 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
-from web3.exceptions import ContractCustomError, ContractPanicError, TimeExhausted, TransactionNotFound
-from web3.types import BlockData, Nonce, RPCEndpoint, TxData, TxParams, TxReceipt, Wei
-
-from agent0.utils import retry_call
+from web3.exceptions import ContractCustomError, TimeExhausted, TransactionNotFound
+from web3.types import Nonce, RPCEndpoint, TxParams, TxReceipt, Wei
 
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
 
-DEFAULT_READ_RETRY_COUNT = 5
-DEFAULT_WRITE_RETRY_COUNT = 1
 # This is the default to be the standard for setting
 # max_fee = (2 * base_fee) + max_priority_fee
 DEFAULT_BASE_FEE_MULTIPLE = 2
@@ -41,116 +37,12 @@ DEFAULT_PRIORITY_FEE_MULTIPLE = 1
 # pylint: disable=too-many-locals
 
 
-# We define the function to check the exception to retry on
-# for preview calls.
-# This is the error we get when preview fails due to anvil
-def _retry_preview_check(exc: Exception) -> bool:
-    """Check the exception to retry on for preview calls."""
-    return (
-        isinstance(exc, ContractPanicError)
-        and exc.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
-    )
-
-
-def _retry_txn_check(exc: Exception) -> bool:
-    """Check the exception to retry on for transaction calls."""
-    return isinstance(exc, UnknownBlockError) and exc.args[0] == "Receipt has status of 0"
-
-
-def smart_contract_read(
-    contract: Contract,
-    function_name_or_signature: str,
-    *fn_args,
-    block_number: BlockNumber | None = None,
-    read_retry_count: int | None = None,
-    **fn_kwargs,
-) -> dict[str, Any]:
-    """Return from a smart contract read call.
-
-    Arguments
-    ---------
-    contract: web3.contract.contract.Contract
-        The contract that we are reading from.
-    function_name_or_signature: str
-        The name of the function to query.
-    *fn_args: Unknown
-        The arguments passed to the contract method.
-    block_number: BlockNumber | None
-        If set, will query the chain on the specified block
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-    **fn_kwargs: Unknown
-        The keyword arguments passed to the contract method.
-
-    Returns
-    -------
-    dict[str, Any]
-        A dictionary of value names
-
-    .. todo::
-        Add better typing to the return value
-        function to recursively find component names & types
-        function to dynamically assign types to output variables
-            would be cool if this also put stuff into FixedPoint
-    """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
-
-    # get the callable contract function from function_name & call it
-    if "(" in function_name_or_signature:
-        function = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
-    else:
-        function = contract.get_function_by_name(function_name_or_signature)(*fn_args, **fn_kwargs)
-    try:
-        # Call function with retries
-        return_values = retry_call(read_retry_count, None, function.call, block_identifier=block_number)
-    except Exception as err:
-        # Add additional information to the exception
-        # This field is passed in if smart_contract_read is called with an explicit block
-        # Will default to None, in which case crash reporting will do best attempt at getting
-        # the block number
-        # TODO add in raw_txn to smart contract read functions
-        raise ContractCallException(
-            "Error in smart contract read",
-            orig_exception=err,
-            contract_call_type=ContractCallType.READ,
-            function_name_or_signature=function_name_or_signature,
-            fn_args=fn_args,
-            fn_kwargs=fn_kwargs,
-            block_identifier=block_number,
-        ) from err
-
-    # If there is a single value returned, we want to put it in a list of length 1
-    if not isinstance(return_values, Sequence) or isinstance(return_values, str):
-        return_values = [return_values]
-
-    if contract.abi:  # not all contracts have an associated ABI
-        # NOTE: this will break if a function signature is passed.  need to update this helper
-        return_names_and_types = _contract_function_abi_outputs(contract.abi, function_name_or_signature)
-        if return_names_and_types is not None:
-            if len(return_names_and_types) != len(return_values):
-                raise AssertionError(
-                    f"{len(return_names_and_types)=} must equal {len(return_values)=}."
-                    f"\n{return_names_and_types=}\n{return_values=}"
-                )
-            function_return_dict = {}
-            for var_name_and_type, var_value in zip(return_names_and_types, return_values):
-                var_name = var_name_and_type[0]
-                if var_name:
-                    function_return_dict[var_name] = var_value
-                else:
-                    function_return_dict["value"] = var_value
-            return function_return_dict
-    return {f"value{idx}": value for idx, value in enumerate(return_values)}
-
-
 def smart_contract_preview_transaction(
     contract: Contract,
     signer_address: ChecksumAddress,
     function_name_or_signature: str,
     *fn_args,
     block_identifier: BlockIdentifier | None = None,
-    read_retry_count: int | None = None,
     txn_options_value: int | None = None,
     nonce: int | None = None,
     **fn_kwargs,
@@ -169,8 +61,6 @@ def smart_contract_preview_transaction(
         The arguments passed to the contract method.
     block_identifier: BlockIdentifier | None, optional
         If set, will query the chain on the specified block. Defaults to the `pending` block.
-    read_retry_count: int | None
-        The number of times to retry the read call if it fails. Defaults to 5.
     txn_options_value: int | None
         The value field for the transaction.
     nonce: int | None
@@ -191,8 +81,6 @@ def smart_contract_preview_transaction(
     """
     # TODO cleanup
     # pylint: disable=too-many-branches
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
     if block_identifier is None:
         block_identifier = "pending"
 
@@ -225,10 +113,7 @@ def smart_contract_preview_transaction(
         pass
 
     try:
-        return_values = retry_call(
-            read_retry_count,
-            _retry_preview_check,
-            function.call,
+        return_values = function.call(
             transaction_kwargs,
             block_identifier=block_identifier,
         )
@@ -506,7 +391,6 @@ async def _async_send_transaction_and_wait_for_receipt(
     unsent_txn: TxParams,
     signer: LocalAccount,
     web3: Web3,
-    read_retry_count: int | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     timeout: float | None = None,
 ) -> TxReceipt:
@@ -520,8 +404,6 @@ async def _async_send_transaction_and_wait_for_receipt(
         The LocalAccount that will be used to pay for the gas & sign the transaction.
     web3: Web3
         web3 provider object.
-    read_retry_count: int | None
-        The number of times to retry getting the nonce. Defaults to `DEFAULT_READ_RETRY_COUNT`.
     nonce_func: Callable[[], Nonce] | None
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
@@ -536,10 +418,8 @@ async def _async_send_transaction_and_wait_for_receipt(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     # We generate a nonce right before we sign the transaction
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
     if nonce_func is None:
-        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer.address, "pending")
+        nonce = web3.eth.get_transaction_count(signer.address, "pending")
     else:
         nonce = nonce_func()
     unsent_txn["nonce"] = nonce
@@ -587,8 +467,6 @@ async def async_smart_contract_transact(
     function_name_or_signature: str,
     *fn_args,
     nonce_func: Callable[[], Nonce] | None = None,
-    read_retry_count: int | None = None,
-    write_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
@@ -616,10 +494,6 @@ async def async_smart_contract_transact(
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
         Defaults to setting it to the result of `get_transaction_count`.
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-    write_retry_count: BlockNumber | None
-        The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field for the transaction.
     txn_options_gas : int | None
@@ -639,8 +513,6 @@ async def async_smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    if write_retry_count is None:
-        write_retry_count = DEFAULT_WRITE_RETRY_COUNT
 
     if "(" in function_name_or_signature:
         func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
@@ -649,8 +521,6 @@ async def async_smart_contract_transact(
 
     unsent_txn: TxParams = {}
 
-    # We need to retry both build transaction with send and wait
-    # so we compose both of these functions here in a private subfunction
     async def _async_build_send_and_wait():
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
@@ -675,17 +545,12 @@ async def async_smart_contract_transact(
             unsent_txn,
             signer,
             web3,
-            read_retry_count=read_retry_count,
             nonce_func=nonce_func,
             timeout=timeout,
         )
 
     try:
-        return await retry_call(
-            write_retry_count,
-            _retry_txn_check,
-            _async_build_send_and_wait,
-        )
+        return await _async_build_send_and_wait()
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
@@ -724,7 +589,6 @@ async def async_smart_contract_transact(
                 function_name_or_signature,
                 *fn_args,
                 block_identifier=BlockNumber(block_number),
-                read_retry_count=1,  # No retries for this preview
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here
@@ -766,7 +630,6 @@ def _send_transaction_and_wait_for_receipt(
     unsent_txn: TxParams,
     signer: LocalAccount,
     web3: Web3,
-    read_retry_count: int | None = None,
     nonce_func: Callable[[], Nonce] | None = None,
     timeout: float | None = None,
 ) -> TxReceipt:
@@ -780,8 +643,6 @@ def _send_transaction_and_wait_for_receipt(
         The LocalAccount that will be used to pay for the gas & sign the transaction.
     web3: Web3
         web3 provider object.
-    read_retry_count: int | None
-        The number of times to retry getting the nonce. Defaults to `DEFAULT_READ_RETRY_COUNT`.
     nonce_func: Callable[[], Nonce] | None
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
@@ -796,10 +657,8 @@ def _send_transaction_and_wait_for_receipt(
         a TypedDict; success can be checked via tx_receipt["status"]
     """
     # We generate a nonce right before we sign the transaction
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
     if nonce_func is None:
-        nonce = retry_call(read_retry_count, None, web3.eth.get_transaction_count, signer.address, "pending")
+        nonce = web3.eth.get_transaction_count(signer.address, "pending")
     else:
         nonce = nonce_func()
     unsent_txn["nonce"] = nonce
@@ -846,8 +705,6 @@ def smart_contract_transact(
     function_name_or_signature: str,
     *fn_args,
     nonce_func: Callable[[], Nonce] | None = None,
-    read_retry_count: int | None = None,
-    write_retry_count: int | None = None,
     txn_options_value: int | None = None,
     txn_options_gas: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
@@ -873,10 +730,6 @@ def smart_contract_transact(
         A callable function to use to get a nonce. This function is useful for e.g.,
         passing in a safe nonce getter tied to an agent.
         Defaults to setting it to the result of `get_transaction_count`.
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-    write_retry_count: BlockNumber | None
-        The number of times to retry the transact call if it fails. Defaults to no retries.
     txn_options_value: int | None
         The value field for the transaction.
     txn_options_gas : int | None
@@ -896,8 +749,6 @@ def smart_contract_transact(
     TxReceipt
         a TypedDict; success can be checked via tx_receipt["status"]
     """
-    if write_retry_count is None:
-        write_retry_count = DEFAULT_WRITE_RETRY_COUNT
 
     if "(" in function_name_or_signature:
         func_handle = contract.get_function_by_signature(function_name_or_signature)(*fn_args, **fn_kwargs)
@@ -906,8 +757,6 @@ def smart_contract_transact(
 
     unsent_txn: TxParams = {}
 
-    # We need to retry both build transaction with send and wait
-    # so we compose both of these functions here in a private subfunction
     def _build_send_and_wait():
         # Build transaction
         # Building transaction can fail when transaction itself isn't correct
@@ -931,17 +780,12 @@ def smart_contract_transact(
             unsent_txn,
             signer,
             web3,
-            read_retry_count=read_retry_count,
             nonce_func=nonce_func,
             timeout=timeout,
         )
 
     try:
-        return retry_call(
-            write_retry_count,
-            _retry_txn_check,
-            _build_send_and_wait,
-        )
+        return _build_send_and_wait()
 
     # Wraps the exception with a contract call exception, adding additional information
     # Other than UnknownBlockError, which gets the block number from the transaction receipt,
@@ -976,7 +820,6 @@ def smart_contract_transact(
                 function_name_or_signature,
                 *fn_args,
                 block_identifier=BlockNumber(block_number),
-                read_retry_count=1,  # No retries for this preview
                 **fn_kwargs,
             )
             # If the preview was successful, then we raise this message here
@@ -1008,49 +851,6 @@ def smart_contract_transact(
             raw_txn=dict(unsent_txn),
             fn_kwargs=fn_kwargs,
         ) from err
-
-
-def fetch_contract_transactions_for_block(
-    web3: Web3, contract: Contract, block_number: BlockNumber, read_retry_count: int | None = None
-) -> list[TxData]:
-    """Fetch transactions related to a contract for a given block number.
-
-    Arguments
-    ---------
-    web3: Web3
-        web3 provider object
-    contract: Contract
-        The contract to query the pool info from
-    block_number: BlockNumber
-        The block number to query from the chain
-    read_retry_count: BlockNumber | None
-        The number of times to retry the read call if it fails. Defaults to 5.
-
-    Returns
-    -------
-    tuple[list[Transaction], list[WalletDelta]]
-        A list of Transaction objects ready to be inserted into Postgres, and
-        a list of wallet delta objects ready to be inserted into Postgres
-    """
-    if read_retry_count is None:
-        read_retry_count = DEFAULT_READ_RETRY_COUNT
-    # TODO figure out which exception here to retry on
-    block: BlockData = retry_call(read_retry_count, None, web3.eth.get_block, block_number, full_transactions=True)
-    all_transactions = block.get("transactions")
-
-    if not all_transactions:
-        logging.debug("no transactions in block %s", block.get("number"))
-        return []
-    contract_transactions: list[TxData] = []
-    for transaction in all_transactions:
-        if isinstance(transaction, HexBytes):
-            logging.warning("transaction HexBytes, can't decode")
-            continue
-        if transaction.get("to") != contract.address:
-            continue
-        contract_transactions.append(transaction)
-
-    return contract_transactions
 
 
 def _get_name_and_type_from_abi(abi_outputs: ABIComponent) -> tuple[str, str]:

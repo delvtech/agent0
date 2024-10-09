@@ -39,7 +39,15 @@ def initialize_web3_with_http_provider(
         # e.g., agent0.chain and read_interface.
         # For now, set the default to be 20 seconds.
         request_kwargs = {"timeout": 20}
-    provider = Web3.HTTPProvider(ethereum_node, request_kwargs)
+
+    provider = Web3.HTTPProvider(
+        ethereum_node,
+        request_kwargs,
+        # Adds caching
+        cache_allowed_requests=True,
+        # Retries are automatically enabled in web3py v7
+    )
+
     web3 = Web3(provider)
     web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
     if reset_provider:

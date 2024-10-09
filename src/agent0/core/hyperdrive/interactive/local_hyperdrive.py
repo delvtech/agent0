@@ -528,7 +528,6 @@ class LocalHyperdrive(Hyperdrive):
         checkpoint_time: int | None = None,
         check_if_exists: bool = True,
         gas_limit: int | None = None,
-        retries: int | None = None,
     ) -> CreateCheckpointEventFP | None:
         """Internal function without safeguard checks for creating a checkpoint.
         Creating checkpoints is called by the chain's `advance_time`.
@@ -546,12 +545,10 @@ class LocalHyperdrive(Hyperdrive):
                 return None
 
         try:
-            # Adding in explicit retires here to avoid setting the global retry
             checkpoint_event = self.interface.create_checkpoint(
                 self.chain.get_deployer_account(),
                 checkpoint_time=checkpoint_time,
                 gas_limit=gas_limit,
-                write_retry_count=retries,
             )
         except AssertionError as exc:
             # Adding additional context to the "Transaction receipt has no logs" error

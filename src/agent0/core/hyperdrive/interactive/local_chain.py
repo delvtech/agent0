@@ -77,11 +77,6 @@ class LocalChain(Chain):
         If False, will use the existing RNG state before load.
         Defaults to False.
         """
-        advance_time_create_checkpoint_retry_count: int | None = None
-        """
-        The number of times to retry creating checkpoints when advancing time.
-        Defaults to no retries.
-        """
         manual_database_sync: bool = False
         """
         If True, depends on the user to sync the database against the chain by calling
@@ -353,7 +348,6 @@ class LocalChain(Chain):
                 checkpoint_event = pool._create_checkpoint(  # pylint: disable=protected-access
                     check_if_exists=True,
                     gas_limit=self.config.gas_limit,
-                    retries=self.config.advance_time_create_checkpoint_retry_count,
                 )
                 if checkpoint_event is not None:
                     out_dict[pool].append(checkpoint_event)
@@ -377,7 +371,6 @@ class LocalChain(Chain):
                 for pool in self._deployed_hyperdrive_pools:
                     checkpoint_event = pool._create_checkpoint(
                         gas_limit=self.config.gas_limit,
-                        retries=self.config.advance_time_create_checkpoint_retry_count,
                     )  # pylint: disable=protected-access
                     # These checkpoints should never fail
                     assert checkpoint_event is not None
