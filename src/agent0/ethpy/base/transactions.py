@@ -13,7 +13,7 @@ from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, TimeExhausted, TransactionNotFound
-from web3.types import Nonce, RPCEndpoint, TxParams, TxReceipt, Wei
+from web3.types import Nonce, TxParams, TxReceipt, Wei
 
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
@@ -340,7 +340,7 @@ def build_transaction(
     if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
     else:
-        # TODO web3 estimate gas is underestimating gas, likely due not
+        # Web3 estimate gas is underestimating gas, likely due not
         # looking at the pending block within web3py. Hence, we explicitly
         # estimate gas with `pending` to solve.
         transaction_kwargs["gas"] = func_handle.estimate_gas(transaction_kwargs, block_identifier="pending")
