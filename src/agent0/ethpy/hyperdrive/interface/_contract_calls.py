@@ -24,6 +24,7 @@ from hyperdrivetypes.types.MockLido import MockLidoContract
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.logs import DISCARD
+from web3.types import TxParams
 
 from agent0.ethpy.base import async_wait_for_transaction_receipt, get_account_balance, wait_for_transaction_receipt
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
@@ -194,28 +195,22 @@ def _create_checkpoint(
     # the default max iterations
     fn_args = (checkpoint_time, 0)
 
-    # TODO replace these calls with pypechain `call` and `transact` functions.
     contract_fn = interface.hyperdrive_contract.functions.checkpoint
+    tx_params = TxParams({"from": sender.address})
     if preview:
         _ = contract_fn(*fn_args).call(
-            {"from": sender.address},
+            tx_params,
             block_identifier="pending",
         )
 
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": sender.address}, block_identifier="pending")
-    nonce = None
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": sender.address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     tx_receipt = wait_for_transaction_receipt(interface.web3, tx_hash, timeout=interface.txn_receipt_timeout)
 
@@ -292,7 +287,6 @@ async def _async_open_long(
     if txn_options_priority_fee_multiple is None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     # min_vault_share_price: int
     #   Minium share price at which to open the long.
     #   This allows traders to protect themselves from opening a long in
@@ -323,19 +317,18 @@ async def _async_open_long(
         min_output,
         min_vault_share_price,
         Options(
-            agent_checksum_address,  # destination
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
     contract_fn = interface.hyperdrive_contract.functions.openLong
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
+    tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
@@ -348,26 +341,20 @@ async def _async_open_long(
             min_output,
             min_vault_share_price,
             Options(  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
 
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
+
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
@@ -408,7 +395,6 @@ async def _async_close_long(
         raise NotImplementedError("Base fee multiple not yet implemented")
     if txn_options_priority_fee_multiple is None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     min_output = 0
 
     # We use the yield as the base token in steth pools
@@ -422,21 +408,18 @@ async def _async_close_long(
         trade_amount.scaled_value,
         min_output,
         Options(  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
     contract_fn = interface.hyperdrive_contract.functions.closeLong
-
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
+    tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
@@ -447,25 +430,18 @@ async def _async_close_long(
             trade_amount.scaled_value,
             min_output,
             Options(  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
@@ -507,9 +483,7 @@ async def _async_open_short(
     if txn_options_priority_fee_multiple is None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     max_deposit = int(MAX_WEI)
-
     # We use the yield as the base token in steth pools
     if interface.base_is_yield:
         as_base_option = False
@@ -526,20 +500,18 @@ async def _async_open_short(
         max_deposit,
         min_vault_share_price,
         Options(  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
     contract_fn = interface.hyperdrive_contract.functions.openShort
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
+    tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
@@ -552,25 +524,18 @@ async def _async_open_short(
             max_deposit,
             min_vault_share_price,
             Options(  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
@@ -613,7 +578,6 @@ async def _async_close_short(
     if txn_options_priority_fee_multiple is None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     min_output = 0
 
     # We use the yield as the base token in steth pools
@@ -627,20 +591,18 @@ async def _async_close_short(
         trade_amount.scaled_value,
         min_output,
         Options(  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
     contract_fn = interface.hyperdrive_contract.functions.closeShort
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
+    tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
@@ -650,25 +612,18 @@ async def _async_close_short(
             trade_amount.scaled_value,
             min_output,
             Options(  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
@@ -716,7 +671,6 @@ async def _async_add_liquidity(
     if slippage_tolerance is not None:
         raise NotImplementedError("Slippage tolerance for add liquidity not yet supported")
 
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     min_lp_share_price = 0
 
     # We use the yield as the base token in steth pools
@@ -743,35 +697,26 @@ async def _async_add_liquidity(
         min_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr below this amount
         max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
         Options(  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+            sender.address,
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
     contract_fn = interface.hyperdrive_contract.functions.addLiquidity
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
+    tx_params = TxParams({"from": sender.address})
     if preview_before_trade:
         _ = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
@@ -811,7 +756,6 @@ async def _async_remove_liquidity(
     if txn_options_priority_fee_multiple is None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     min_output = 0
 
     # We use the yield as the base token in steth pools
@@ -824,34 +768,26 @@ async def _async_remove_liquidity(
         trade_amount.scaled_value,
         min_output,
         Options(  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+            sender.address,
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
     contract_fn = interface.hyperdrive_contract.functions.removeLiquidity
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
+    tx_params = TxParams({"from": sender.address})
     if preview_before_trade is True:
         _ = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
 
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
@@ -892,7 +828,6 @@ async def _async_redeem_withdraw_shares(
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
-    agent_checksum_address = Web3.to_checksum_address(sender.address)
     min_output = FixedPoint(scaled_value=1)
 
     # We use the yield as the base token in steth pools
@@ -905,7 +840,7 @@ async def _async_redeem_withdraw_shares(
         trade_amount.scaled_value,
         min_output.scaled_value,
         Options(  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+            sender.address,
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
@@ -914,9 +849,10 @@ async def _async_redeem_withdraw_shares(
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
     contract_fn = interface.hyperdrive_contract.functions.redeemWithdrawalShares
+    tx_params = TxParams({"from": sender.address})
     if preview_before_trade is True:
         preview_result = contract_fn(*fn_args).call(
-            {"from": agent_checksum_address},
+            tx_params,
             block_identifier="pending",
         )
         # Here, a preview call of redeem withdrawal shares will still be successful without logs if
@@ -925,20 +861,13 @@ async def _async_redeem_withdraw_shares(
         if preview_result.withdrawalSharesRedeemed == 0 and trade_amount > 0:
             raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
-    if gas_limit is None:
-        # Web3 default gas estimate seems to be underestimating gas, likely due to
-        # not looking at pending block. Here, we explicitly call estimate gas for this.
-        gas_limit = contract_fn(*fn_args).estimate_gas({"from": agent_checksum_address}, block_identifier="pending")
-    nonce = None
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
     if nonce_func is not None:
-        nonce = nonce_func()
+        tx_params["nonce"] = nonce_func()
     tx_hash = contract_fn(*fn_args).sign_and_transact(
         sender,
-        {
-            "from": agent_checksum_address,
-            "gas": gas_limit,
-        },
-        nonce=nonce,
+        tx_params,
     )
     # Use async await to avoid blocking the event loop
     tx_receipt = await async_wait_for_transaction_receipt(
