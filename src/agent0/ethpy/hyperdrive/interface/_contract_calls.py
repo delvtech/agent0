@@ -195,10 +195,10 @@ def _create_checkpoint(
     # the default max iterations
     fn_args = (checkpoint_time, 0)
 
-    contract_fn = interface.hyperdrive_contract.functions.checkpoint
+    contract_fn = interface.hyperdrive_contract.functions.checkpoint(*fn_args)
     tx_params = TxParams({"from": sender.address})
     if preview:
-        _ = contract_fn(*fn_args).call(
+        _ = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -208,11 +208,11 @@ def _create_checkpoint(
     if gas_limit is not None:
         tx_params["gas"] = gas_limit
 
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
-    tx_receipt = wait_for_transaction_receipt(interface.web3, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -233,8 +233,9 @@ def _set_variable_rate(
     """See API for documentation."""
     # Type narrowing
     assert interface.vault_shares_token_contract is not None
-    tx_hash = interface.vault_shares_token_contract.functions.setRate(new_rate.scaled_value).sign_and_transact(sender)
-    _ = wait_for_transaction_receipt(interface.web3, tx_hash, timeout=interface.txn_receipt_timeout)
+    contract_fn = interface.vault_shares_token_contract.functions.setRate(new_rate.scaled_value)
+    tx_hash = contract_fn.sign_and_transact(sender)
+    _ = wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
 
 # Helper function to check if we need to convert amounts in the case of a steth (i.e., rebasing) deployment
@@ -323,11 +324,11 @@ async def _async_open_long(
         ),
     )
 
-    contract_fn = interface.hyperdrive_contract.functions.openLong
+    contract_fn = interface.hyperdrive_contract.functions.openLong(*fn_args)
     tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = contract_fn(*fn_args).call(
+        preview_result = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -346,20 +347,19 @@ async def _async_open_long(
                 interface.txn_signature,  # extraData
             ),
         )
+        contract_fn = interface.hyperdrive_contract.functions.openLong(*fn_args)
 
     if gas_limit is not None:
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
 
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -414,11 +414,11 @@ async def _async_close_long(
         ),
     )
 
-    contract_fn = interface.hyperdrive_contract.functions.closeLong
+    contract_fn = interface.hyperdrive_contract.functions.closeLong(*fn_args)
     tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = contract_fn(*fn_args).call(
+        preview_result = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -435,18 +435,17 @@ async def _async_close_long(
                 interface.txn_signature,  # extraData
             ),
         )
+        contract_fn = interface.hyperdrive_contract.functions.closeLong(*fn_args)
     if gas_limit is not None:
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -506,11 +505,11 @@ async def _async_open_short(
         ),
     )
 
-    contract_fn = interface.hyperdrive_contract.functions.openShort
+    contract_fn = interface.hyperdrive_contract.functions.openShort(*fn_args)
     tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = contract_fn(*fn_args).call(
+        preview_result = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -529,18 +528,17 @@ async def _async_open_short(
                 interface.txn_signature,  # extraData
             ),
         )
+        contract_fn = interface.hyperdrive_contract.functions.openShort(*fn_args)
     if gas_limit is not None:
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -597,11 +595,11 @@ async def _async_close_short(
         ),
     )
 
-    contract_fn = interface.hyperdrive_contract.functions.closeShort
+    contract_fn = interface.hyperdrive_contract.functions.closeShort(*fn_args)
     tx_params = TxParams({"from": sender.address})
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = contract_fn(*fn_args).call(
+        preview_result = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -617,18 +615,17 @@ async def _async_close_short(
                 interface.txn_signature,  # extraData
             ),
         )
+        contract_fn = interface.hyperdrive_contract.functions.closeShort(*fn_args)
     if gas_limit is not None:
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -703,10 +700,10 @@ async def _async_add_liquidity(
         ),
     )
 
-    contract_fn = interface.hyperdrive_contract.functions.addLiquidity
+    contract_fn = interface.hyperdrive_contract.functions.addLiquidity(*fn_args)
     tx_params = TxParams({"from": sender.address})
     if preview_before_trade:
-        _ = contract_fn(*fn_args).call(
+        _ = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -714,14 +711,12 @@ async def _async_add_liquidity(
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -773,10 +768,10 @@ async def _async_remove_liquidity(
             interface.txn_signature,  # extraData
         ),
     )
-    contract_fn = interface.hyperdrive_contract.functions.removeLiquidity
+    contract_fn = interface.hyperdrive_contract.functions.removeLiquidity(*fn_args)
     tx_params = TxParams({"from": sender.address})
     if preview_before_trade is True:
-        _ = contract_fn(*fn_args).call(
+        _ = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -785,14 +780,12 @@ async def _async_remove_liquidity(
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -848,10 +841,10 @@ async def _async_redeem_withdraw_shares(
     # To catch any solidity errors, we always preview transactions on the current block
     # before calling smart contract transact
     # Since current_pool_state.block_number is a property, we want to get the static block here
-    contract_fn = interface.hyperdrive_contract.functions.redeemWithdrawalShares
+    contract_fn = interface.hyperdrive_contract.functions.redeemWithdrawalShares(*fn_args)
     tx_params = TxParams({"from": sender.address})
     if preview_before_trade is True:
-        preview_result = contract_fn(*fn_args).call(
+        preview_result = contract_fn.call(
             tx_params,
             block_identifier="pending",
         )
@@ -865,14 +858,12 @@ async def _async_redeem_withdraw_shares(
         tx_params["gas"] = gas_limit
     if nonce_func is not None:
         tx_params["nonce"] = nonce_func()
-    tx_hash = contract_fn(*fn_args).sign_and_transact(
+    tx_hash = contract_fn.sign_and_transact(
         sender,
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(
-        interface.web3, tx_hash, timeout=interface.txn_receipt_timeout
-    )
+    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
