@@ -194,7 +194,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_open_long(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
             gas_limit=gas_limit,
@@ -253,7 +253,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_close_long(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
@@ -308,7 +308,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_open_short(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
             gas_limit=gas_limit,
@@ -367,7 +367,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_close_short(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
@@ -430,7 +430,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_add_liquidity(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             min_apr=min_apr,
             max_apr=max_apr,
@@ -481,7 +481,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_remove_liquidity(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
@@ -537,7 +537,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_redeem_withdraw_shares(
             interface=self,
-            agent=agent,
+            sender=agent,
             trade_amount=trade_amount,
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
