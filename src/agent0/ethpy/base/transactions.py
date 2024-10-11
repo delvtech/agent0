@@ -13,7 +13,7 @@ from web3 import Web3
 from web3._utils.threads import Timeout
 from web3.contract.contract import Contract, ContractFunction
 from web3.exceptions import ContractCustomError, TimeExhausted, TransactionNotFound
-from web3.types import Nonce, RPCEndpoint, TxParams, TxReceipt, Wei
+from web3.types import Nonce, TxParams, TxReceipt, Wei
 
 from .errors.errors import ContractCallException, ContractCallType, decode_error_selector_for_contract
 from .errors.types import UnknownBlockError
@@ -340,49 +340,12 @@ def build_transaction(
     if txn_options_gas is not None:
         transaction_kwargs["gas"] = txn_options_gas
     else:
-        # TODO web3 estimate gas getting called is throwing weird errors,
-        # so we explicitly set gas to a large number to avoid estimating gas
-        # within web3, and set it ourselves after building transaction.
-        # A better solution here is to avoid `build_transaction` altogether
-        # and instead encode the `data` field via `contract_instance.encodeABI(...)`.
-        transaction_kwargs["gas"] = int(1e9)
+        # Web3 estimate gas is underestimating gas, likely due not
+        # looking at the pending block within web3py. Hence, we explicitly
+        # estimate gas with `pending` to solve.
+        transaction_kwargs["gas"] = func_handle.estimate_gas(transaction_kwargs, block_identifier="pending")
 
     raw_txn = func_handle.build_transaction(TxParams(transaction_kwargs))
-
-    if txn_options_gas is None:
-        # Type narrowing, we expect all of these fields to exist after building transaction
-        assert "from" in raw_txn
-        assert "to" in raw_txn
-        assert "value" in raw_txn
-        assert "data" in raw_txn
-        # TODO new web3 version gas estimation seems to underestimate gas.
-        # We explicitly do an rpc call to estimate gas here to get an accurate gas estimate.
-        # RPC call to estimate gas
-
-        result = web3.provider.make_request(
-            method=RPCEndpoint("eth_estimateGas"),
-            params=[
-                {
-                    "from": str(raw_txn["from"]),
-                    "to": str(raw_txn["to"]),
-                    # Convert integer to hex string
-                    "value": hex(raw_txn["value"]),
-                    "data": str(raw_txn["data"]),
-                }
-            ],
-        )
-        if "result" not in result:
-            # We do error handling here in case the underlying rpc call fails
-            # due to a custom error getting thrown
-            if "error" in result and "data" in result["error"]:
-                data = result["error"]["data"]  # type: ignore
-                # We emulate web3py by throwing a contract custom error here.
-                raise ContractCustomError(data, data=data)
-            # Otherwise, we raise value error with the result.
-            raise ValueError(f"Failed to estimate gas via RPC call: {result}")
-        # Hex to int
-        gas = int(result["result"], 0)
-        raw_txn["gas"] = gas
 
     return raw_txn
 
