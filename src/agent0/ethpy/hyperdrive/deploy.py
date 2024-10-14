@@ -160,12 +160,9 @@ def deploy_base_and_vault(
             )
             # We fund lido with 1 eth to start to avoid reverts when we
             # initialize the pool
-            tx_hash = vault_contract.functions.submit(ADDRESS_ZERO).sign_and_transact(
-                deploy_account, TxParams({"value": Wei(FixedPoint(1).scaled_value)})
+            _ = vault_contract.functions.submit(ADDRESS_ZERO).sign_transact_and_wait(
+                deploy_account, TxParams({"value": Wei(FixedPoint(1).scaled_value)}), validate_transaction=True
             )
-            tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-            if tx_receipt["status"] != 1:
-                raise ValueError(f"Failed to fund lido: {tx_receipt}")
 
     return DeployedBaseAndVault(
         deployer_account=deploy_account,
@@ -510,12 +507,9 @@ def _deploy_hyperdrive_factory(
                 lp_math_contract,
             )
 
-    tx_hash = factory_contract.functions.addDeployerCoordinator(
-        deployer_coordinator_contract.address
-    ).sign_and_transact(deployer_account)
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    if receipt["status"] != 1:
-        raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
+    _ = factory_contract.functions.addDeployerCoordinator(deployer_coordinator_contract.address).sign_transact_and_wait(
+        deployer_account, validate_transaction=True
+    )
 
     return DeployedHyperdriveFactory(
         deployer_account=deployer_account,
@@ -625,7 +619,7 @@ def _deploy_and_initialize_hyperdrive_pool(
 
     # There are 4 contracts to deploy, we call deployTarget on all of them
     for target_index in range(5):
-        tx_hash = factory_contract.functions.deployTarget(
+        _ = factory_contract.functions.deployTarget(
             deploymentId=deployment_id,
             deployerCoordinator=deployer_coordinator_address,
             config=pool_deploy_config,
@@ -634,10 +628,7 @@ def _deploy_and_initialize_hyperdrive_pool(
             timeStretchAPR=initial_time_stretch_apr.scaled_value,
             targetIndex=target_index,
             salt=salt,
-        ).sign_and_transact(deploy_account)
-        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-        if receipt["status"] != 1:
-            raise ValueError(f"Failed calling deployTarget on target {target_index}.\n{receipt=}")
+        ).sign_transact_and_wait(deploy_account, validate_transaction=True)
 
     match deploy_type:
         case HyperdriveDeployType.ERC4626:
@@ -651,7 +642,7 @@ def _deploy_and_initialize_hyperdrive_pool(
     tx_args = TxParams()
     if txn_option_value is not None:
         tx_args["value"] = Wei(txn_option_value)
-    tx_hash = factory_contract.functions.deployAndInitialize(
+    tx_receipt = factory_contract.functions.deployAndInitialize(
         name=name,
         deploymentId=deployment_id,
         deployerCoordinator=deployer_coordinator_address,
@@ -666,8 +657,7 @@ def _deploy_and_initialize_hyperdrive_pool(
             extraData=bytes(0),
         ),
         salt=salt,
-    ).sign_and_transact(deploy_account, tx_args)
-    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    ).sign_transact_and_wait(deploy_account, tx_args, validate_transaction=True)
 
     deploy_events = list(factory_contract.events.Deployed().process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(deploy_events) != 1:

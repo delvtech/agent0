@@ -73,12 +73,6 @@ async def async_wait_for_transaction_receipt(
             f"Transaction {HexBytes(transaction_hash) !r} is not in the chain " f"after {timeout} seconds"
         ) from exc
 
-    # We need to catch `status = 0` error in wait for txn receipt.
-    # This exception needs to be the same as the pypechain error,
-    # which means we need the function object to make the exception.
-    # We can add the `wait_for_transaction_receipt` function to pypechain,
-    # but the async version doesn't make sense, as we'd be attaching it to a sync function.
-
     if validate_transaction:
         return check_txn_receipt(contract_function, transaction_hash, tx_receipt)
     return tx_receipt
