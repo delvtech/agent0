@@ -26,7 +26,7 @@ from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.logs import DISCARD
 from web3.types import TxParams
 
-from agent0.ethpy.base import async_wait_for_transaction_receipt, get_account_balance, wait_for_transaction_receipt
+from agent0.ethpy.base import async_wait_for_transaction_receipt, get_account_balance
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 if TYPE_CHECKING:
@@ -208,11 +208,12 @@ def _create_checkpoint(
     if gas_limit is not None:
         tx_params["gas"] = gas_limit
 
-    tx_hash = contract_fn.sign_and_transact(
+    tx_receipt = contract_fn.sign_transact_and_wait(
         sender,
         tx_params,
+        timeout=interface.txn_receipt_timeout,
+        validate_transaction=True,
     )
-    tx_receipt = wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -234,8 +235,7 @@ def _set_variable_rate(
     # Type narrowing
     assert interface.vault_shares_token_contract is not None
     contract_fn = interface.vault_shares_token_contract.functions.setRate(new_rate.scaled_value)
-    tx_hash = contract_fn.sign_and_transact(sender)
-    _ = wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    _ = contract_fn.sign_transact_and_wait(sender, timeout=interface.txn_receipt_timeout, validate_transaction=True)
 
 
 # Helper function to check if we need to convert amounts in the case of a steth (i.e., rebasing) deployment
@@ -359,7 +359,9 @@ async def _async_open_long(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -445,7 +447,9 @@ async def _async_close_long(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -538,7 +542,9 @@ async def _async_open_short(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -625,7 +631,9 @@ async def _async_close_short(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -716,7 +724,9 @@ async def _async_add_liquidity(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -785,7 +795,9 @@ async def _async_remove_liquidity(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
@@ -863,7 +875,9 @@ async def _async_redeem_withdraw_shares(
         tx_params,
     )
     # Use async await to avoid blocking the event loop
-    tx_receipt = await async_wait_for_transaction_receipt(contract_fn, tx_hash, timeout=interface.txn_receipt_timeout)
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
+    )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,

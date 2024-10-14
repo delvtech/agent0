@@ -8,7 +8,8 @@ import time
 import requests
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes
-from hyperdrivetypes import HyperdriveRegistryContract, IHyperdriveContract
+from hyperdrivetypes.types.HyperdriveRegistry import HyperdriveRegistryContract
+from hyperdrivetypes.types.IHyperdrive import IHyperdriveContract
 from web3 import Web3
 
 from .get_expected_hyperdrive_version import check_hyperdrive_version, get_minimum_hyperdrive_version

@@ -32,18 +32,19 @@ from hyperdrivetypes import (
     StETHTarget3DeployerContract,
     StETHTarget4DeployerContract,
 )
-from hyperdrivetypes.types.HyperdriveFactoryTypes import FactoryConfig
-from hyperdrivetypes.types.IHyperdriveTypes import Options, PoolDeployConfig
+from hyperdrivetypes.types.HyperdriveFactory import FactoryConfig
+from hyperdrivetypes.types.IHyperdrive import Options, PoolDeployConfig
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.contract.contract import Contract
 from web3.logs import DISCARD
+from web3.types import TxParams, Wei
 
 from agent0.ethpy.base import (
     ETH_CONTRACT_ADDRESS,
     get_account_balance,
     set_anvil_account_balance,
-    smart_contract_transact,
+    wait_for_transaction_receipt,
 )
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
@@ -162,17 +163,10 @@ def deploy_base_and_vault(
             )
             # We fund lido with 1 eth to start to avoid reverts when we
             # initialize the pool
-            lido_submit_func = vault_contract.functions.submit(ADDRESS_ZERO)
-            function_name = lido_submit_func.fn_name
-            function_args = lido_submit_func.args
-            tx_receipt = smart_contract_transact(
-                web3,
-                vault_contract,
-                deploy_account,
-                function_name,
-                *function_args,
-                txn_options_value=FixedPoint(1).scaled_value,
+            tx_hash = vault_contract.functions.submit(ADDRESS_ZERO).sign_and_transact(
+                deploy_account, TxParams({"value": Wei(FixedPoint(1).scaled_value)})
             )
+            tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
             if tx_receipt["status"] != 1:
                 raise ValueError(f"Failed to fund lido: {tx_receipt}")
 
@@ -519,18 +513,10 @@ def _deploy_hyperdrive_factory(
                 lp_math_contract,
             )
 
-    add_deployer_coordinator_function = factory_contract.functions.addDeployerCoordinator(
+    tx_hash = factory_contract.functions.addDeployerCoordinator(
         deployer_coordinator_contract.address
-    )
-    function_name = add_deployer_coordinator_function.fn_name
-    function_args = add_deployer_coordinator_function.args
-    receipt = smart_contract_transact(
-        web3,
-        factory_contract,
-        deployer_account,
-        function_name,
-        *function_args,
-    )
+    ).sign_and_transact(deployer_account)
+    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     if receipt["status"] != 1:
         raise ValueError(f"Failed adding the Hyperdrive deployer to the factory.\n{receipt=}")
 
@@ -572,23 +558,13 @@ def _mint_and_approve(
         _ = set_anvil_account_balance(web3, funding_account.address, new_eth_balance.scaled_value)
 
     else:
-        # Need to pass signature instead of function name since there are multiple mint functions
-        _ = smart_contract_transact(
-            web3,
-            funding_contract,
-            funding_account,
-            "mint(address,uint256)",
-            Web3.to_checksum_address(funding_account.address),
-            mint_amount.scaled_value,
-        )
-        _ = smart_contract_transact(
-            web3,
-            funding_contract,
-            funding_account,
-            "approve",
-            contract_to_approve.address,
-            mint_amount.scaled_value,
-        )
+        tx_receipt = funding_contract.functions.mint(
+            funding_account.address, mint_amount.scaled_value
+        ).sign_transact_and_wait(funding_account, validate_transaction=True)
+
+        _ = funding_contract.functions.approve(
+            funding_account.address, mint_amount.scaled_value
+        ).sign_transact_and_wait(funding_account, validate_transaction=True)
 
 
 def _deploy_and_initialize_hyperdrive_pool(
@@ -651,7 +627,7 @@ def _deploy_and_initialize_hyperdrive_pool(
 
     # There are 4 contracts to deploy, we call deployTarget on all of them
     for target_index in range(5):
-        deploy_target_function = factory_contract.functions.deployTarget(
+        tx_hash = factory_contract.functions.deployTarget(
             deploymentId=deployment_id,
             deployerCoordinator=deployer_coordinator_address,
             config=pool_deploy_config,
@@ -660,16 +636,8 @@ def _deploy_and_initialize_hyperdrive_pool(
             timeStretchAPR=initial_time_stretch_apr.scaled_value,
             targetIndex=target_index,
             salt=salt,
-        )
-        function_name = deploy_target_function.fn_name
-        function_args = deploy_target_function.args
-        receipt = smart_contract_transact(
-            web3,
-            factory_contract,
-            deploy_account,
-            function_name,
-            *function_args,
-        )
+        ).sign_and_transact(deploy_account)
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
         if receipt["status"] != 1:
             raise ValueError(f"Failed calling deployTarget on target {target_index}.\n{receipt=}")
 
@@ -682,7 +650,10 @@ def _deploy_and_initialize_hyperdrive_pool(
             # Transaction to `deployAndInitialize` needs value field since it's transfering eth
             txn_option_value = initial_liquidity.scaled_value
 
-    deploy_and_init_function = factory_contract.functions.deployAndInitialize(
+    tx_args = TxParams()
+    if txn_option_value is not None:
+        tx_args["value"] = Wei(txn_option_value)
+    tx_hash = factory_contract.functions.deployAndInitialize(
         name=name,
         deploymentId=deployment_id,
         deployerCoordinator=deployer_coordinator_address,
@@ -697,18 +668,8 @@ def _deploy_and_initialize_hyperdrive_pool(
             extraData=bytes(0),
         ),
         salt=salt,
-    )
-
-    function_name = deploy_and_init_function.fn_name
-    function_args = deploy_and_init_function.args
-    tx_receipt = smart_contract_transact(
-        web3,
-        factory_contract,
-        deploy_account,
-        function_name,
-        *function_args,
-        txn_options_value=txn_option_value,
-    )
+    ).sign_and_transact(deploy_account, tx_args)
+    tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
 
     deploy_events = list(factory_contract.events.Deployed().process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(deploy_events) != 1:
