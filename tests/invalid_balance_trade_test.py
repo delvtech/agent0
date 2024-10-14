@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 from utils import expect_failure_with_funded_bot, expect_failure_with_non_funded_bot  # type: ignore
 from web3.exceptions import ContractCustomError, ContractPanicError
 
@@ -21,7 +22,6 @@ from agent0.core.hyperdrive.agent import (
 )
 from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -338,13 +338,14 @@ class TestInvalidTrades:
         """Tests when making a trade with not enough base in wallet."""
         try:
             expect_failure_with_non_funded_bot(fast_hyperdrive_fixture, InvalidAddLiquidity)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on add liquidity
-            assert exc.function_name_or_signature == "addLiquidity"
+            assert exc.function_name == "addLiquidity"
             assert exc.orig_exception is not None
+            # FIXME double check this
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
@@ -358,13 +359,14 @@ class TestInvalidTrades:
         """Tests when making a trade with not enough base in wallet."""
         try:
             expect_failure_with_non_funded_bot(fast_hyperdrive_fixture, InvalidOpenLong)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on open long
-            assert exc.function_name_or_signature == "openLong"
+            assert exc.function_name == "openLong"
             assert exc.orig_exception is not None
+            # FIXME double check this
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
@@ -378,14 +380,15 @@ class TestInvalidTrades:
         """Tests when making a trade with not enough base in wallet."""
         try:
             expect_failure_with_non_funded_bot(fast_hyperdrive_fixture, InvalidOpenShort)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on open short
-            assert exc.function_name_or_signature == "openShort"
+            assert exc.function_name == "openShort"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractPanicError)
+            # FIXME double check this
             assert (
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )
@@ -398,14 +401,15 @@ class TestInvalidTrades:
         """Test making a invalid remove liquidity with zero lp tokens."""
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidityFromZero)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "removeLiquidity"
+            assert exc.function_name == "removeLiquidity"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
+            # FIXME double check this
             assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
@@ -416,15 +420,16 @@ class TestInvalidTrades:
         """Test making a invalid close long with zero long tokens."""
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLongFromZero)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             assert "long token not found in wallet" in exc.args[0]
             # Fails on close long
-            assert exc.function_name_or_signature == "closeLong"
+            assert exc.function_name == "closeLong"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
+            # FIXME double check this
             assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
@@ -435,15 +440,16 @@ class TestInvalidTrades:
         """Test making a invalid close long with zero long tokens."""
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShortFromZero)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             assert "short token not found in wallet" in exc.args[0]
             # Fails on close long
-            assert exc.function_name_or_signature == "closeShort"
+            assert exc.function_name == "closeShort"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
+            # FIXME double check this
             assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
@@ -454,14 +460,15 @@ class TestInvalidTrades:
         """Test making a invalid remove liquidity trade with nonzero lp tokens."""
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidityFromNonZero)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "removeLiquidity"
+            assert exc.function_name == "removeLiquidity"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
+            # FIXME double check this
             assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
@@ -472,14 +479,15 @@ class TestInvalidTrades:
         """Test when making a invalid close long with nonzero long tokens."""
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLongFromNonZero)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on closeLong
-            assert exc.function_name_or_signature == "closeLong"
+            assert exc.function_name == "closeLong"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
+            # FIXME double check this
             assert "ContractCustomError('InsufficientBalance')" in exc.args
 
     @pytest.mark.anvil
@@ -490,12 +498,13 @@ class TestInvalidTrades:
         """Test making a invalid close short with nonzero short tokens."""
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShortFromNonZero)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Invalid balance:" in exc.args[0]
             # Fails on closeShort
-            assert exc.function_name_or_signature == "closeShort"
+            assert exc.function_name == "closeShort"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
+            # FIXME double check this
             assert "ContractCustomError('InsufficientBalance')" in exc.args

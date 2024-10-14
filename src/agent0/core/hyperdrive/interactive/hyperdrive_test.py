@@ -2,9 +2,9 @@
 
 import pytest
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 
 from agent0.core.base.make_key import make_private_key
-from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import AssetIdPrefix, encode_asset_id
 
 from .chain import Chain
@@ -300,17 +300,20 @@ def test_no_approval(fast_chain_fixture: LocalChain):
     # Make a call without approval
     try:
         hyperdrive_agent.add_liquidity(base=FixedPoint(1_000))
-    except ContractCallException as exc:
+    except PypechainCallException as exc:
+        # FIXME this is probably the decoded error, fix
         assert "Insufficient allowance: " in exc.args[0]
 
     try:
         hyperdrive_agent.open_long(base=FixedPoint(1_000))
-    except ContractCallException as exc:
+    except PypechainCallException as exc:
+        # FIXME this is probably the decoded error, fix
         assert "Insufficient allowance: " in exc.args[0]
 
     try:
         hyperdrive_agent.open_short(bonds=FixedPoint(1_000))
-    except ContractCallException as exc:
+    except PypechainCallException as exc:
+        # FIXME this is probably the decoded error, fix
         assert "Insufficient allowance: " in exc.args[0]
 
     remote_chain.cleanup()
@@ -347,7 +350,8 @@ def test_out_of_gas(fast_chain_fixture: LocalChain):
     # Make a call with not enough gas
     try:
         hyperdrive_agent.add_liquidity(base=FixedPoint(1_000))
-    except ContractCallException as exc:
+    except PypechainCallException as exc:
+        # FIXME this is probably the decoded error, fix
         assert "Out of gas" in exc.args[0]
 
     remote_chain.cleanup()

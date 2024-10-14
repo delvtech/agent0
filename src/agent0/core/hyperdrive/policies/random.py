@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 
 from agent0.core.base import Trade
 from agent0.core.hyperdrive.agent import (
@@ -20,7 +21,6 @@ from agent0.core.hyperdrive.agent import (
     remove_liquidity_trade,
 )
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
-from agent0.ethpy.base.errors import ContractCallException, ContractCallType
 
 from .hyperdrive_policy import HyperdriveBasePolicy
 
@@ -162,13 +162,14 @@ class Random(HyperdriveBasePolicy):
         except BaseException as orig_exception:  # pylint: disable=broad-except
             # TODO while this isn't strictly a contract call exception, we used the class
             # to keep track of the original exception
-            exception = ContractCallException(
+            exception = PypechainCallException(
                 "Random policy: Error in rust call to calc_max_short",
                 orig_exception=orig_exception,
-                contract_call_type=ContractCallType.READ,
-                function_name_or_signature="rust::calc_max_short",
+                contract_call_type="call",
+                function_name="rust::calc_max_short",
                 fn_args=(wallet.balance.amount, interface.current_pool_state),
             )
+
             crash_report = build_crash_trade_result(exception, interface)
             # TODO get these parameters from config
             log_hyperdrive_crash_report(
@@ -270,11 +271,11 @@ class Random(HyperdriveBasePolicy):
         except BaseException as orig_exception:  # pylint: disable=broad-except
             # TODO while this isn't strictly a contract call exception, we used the class
             # to keep track of the original exception
-            exception = ContractCallException(
+            exception = PypechainCallException(
                 "Random policy: Error in rust call to calc_max_long",
                 orig_exception=orig_exception,
-                contract_call_type=ContractCallType.READ,
-                function_name_or_signature="rust::calc_max_long",
+                contract_call_type="call",
+                function_name="rust::calc_max_long",
                 fn_args=(wallet.balance.amount, interface.current_pool_state),
             )
             crash_report = build_crash_trade_result(exception, interface)

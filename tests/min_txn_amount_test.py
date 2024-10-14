@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 from utils import expect_failure_with_funded_bot  # type: ignore
 from web3.exceptions import ContractCustomError
 
@@ -21,7 +22,6 @@ from agent0.core.hyperdrive.agent import (
 )
 from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -247,12 +247,13 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidAddLiquidity)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "addLiquidity"
+            assert exc.function_name == "addLiquidity"
+            # FIXME double check this
             # This throws ContractCallException under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
@@ -265,12 +266,13 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidity)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "removeLiquidity"
+            assert exc.function_name == "removeLiquidity"
+            # FIXME double check this
             # This throws ContractCallException under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
@@ -285,12 +287,13 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidOpenLong)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "openLong"
+            assert exc.function_name == "openLong"
+            # FIXME double check this
             # This throws ContractCallException under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
@@ -303,12 +306,13 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidOpenShort)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "openShort"
+            assert exc.function_name == "openShort"
+            # FIXME double check this
             # This throws ContractCallException under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
@@ -321,12 +325,13 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLong)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "closeLong"
+            assert exc.function_name == "closeLong"
+            # FIXME double check this
             # This throws ContractCallException under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
@@ -339,13 +344,14 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShort)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "closeShort"
+            assert exc.function_name == "closeShort"
+            # FIXME double check this
             # This throws ContractCallException under the hood
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
+            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args[0]

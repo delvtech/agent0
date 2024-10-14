@@ -40,12 +40,7 @@ from web3.contract.contract import Contract
 from web3.logs import DISCARD
 from web3.types import TxParams, Wei
 
-from agent0.ethpy.base import (
-    ETH_CONTRACT_ADDRESS,
-    get_account_balance,
-    set_anvil_account_balance,
-    wait_for_transaction_receipt,
-)
+from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, get_account_balance, set_anvil_account_balance
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -60,8 +55,8 @@ class DeployedBaseAndVault(NamedTuple):
     """Collection of attributes associated with a locally deployed Hyperdrive factory."""
 
     deployer_account: LocalAccount
-    base_token_contract: Contract
-    vault_shares_token_contract: Contract
+    base_token_contract: ERC20MintableContract | Contract
+    vault_shares_token_contract: MockERC4626Contract | MockLidoContract
 
 
 class DeployedHyperdriveFactory(NamedTuple):
@@ -69,7 +64,9 @@ class DeployedHyperdriveFactory(NamedTuple):
 
     deployer_account: LocalAccount
     factory_contract: HyperdriveFactoryContract
-    deployer_coordinator_contract: Contract
+    deployer_coordinator_contract: (
+        ERC4626HyperdriveDeployerCoordinatorContract | StETHHyperdriveDeployerCoordinatorContract
+    )
     factory_deploy_config: FactoryConfig
 
 
@@ -79,8 +76,8 @@ class DeployedHyperdrivePool(NamedTuple):
     deployer_account: LocalAccount
     hyperdrive_contract: IHyperdriveContract
     # Keeping the base and vault shares contract generic
-    base_token_contract: Contract
-    vault_shares_token_contract: Contract
+    base_token_contract: ERC20MintableContract | Contract
+    vault_shares_token_contract: MockERC4626Contract | MockLidoContract
     deploy_block_number: int
     pool_deploy_config: PoolDeployConfig
 
@@ -531,7 +528,7 @@ def _deploy_hyperdrive_factory(
 def _mint_and_approve(
     web3,
     funding_account: LocalAccount,
-    funding_contract: Contract,
+    funding_contract: ERC20MintableContract | Contract,
     contract_to_approve: Contract,
     mint_amount: FixedPoint,
 ) -> None:
@@ -558,12 +555,13 @@ def _mint_and_approve(
         _ = set_anvil_account_balance(web3, funding_account.address, new_eth_balance.scaled_value)
 
     else:
-        tx_receipt = funding_contract.functions.mint(
-            funding_account.address, mint_amount.scaled_value
-        ).sign_transact_and_wait(funding_account, validate_transaction=True)
+        assert isinstance(funding_contract, ERC20MintableContract)
+        _ = funding_contract.functions.mint(funding_account.address, mint_amount.scaled_value).sign_transact_and_wait(
+            funding_account, validate_transaction=True
+        )
 
         _ = funding_contract.functions.approve(
-            funding_account.address, mint_amount.scaled_value
+            contract_to_approve.address, mint_amount.scaled_value
         ).sign_transact_and_wait(funding_account, validate_transaction=True)
 
 

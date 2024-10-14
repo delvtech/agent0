@@ -53,15 +53,9 @@ from agent0.core.hyperdrive.agent import (
 from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.base import get_account_balance, set_anvil_account_balance, smart_contract_transact
+from agent0.ethpy.base import get_account_balance, set_anvil_account_balance
 
-from .exec import (
-    async_execute_agent_trades,
-    async_execute_single_trade,
-    get_liquidation_trades,
-    get_trades,
-    set_max_approval,
-)
+from .exec import async_execute_agent_trades, async_execute_single_trade, get_liquidation_trades, get_trades
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -289,13 +283,8 @@ class HyperdriveAgent:
 
             else:
                 # We mint base
-                _ = smart_contract_transact(
-                    self.chain._web3,
-                    base_token_contract,
-                    signer_account,
-                    "mint(address,uint256)",
-                    self.account.address,
-                    base.scaled_value,
+                base_token_contract.functions.mint(self.account.address, base.scaled_value).sign_transact_and_wait(
+                    signer_account, validate_transaction=True
                 )
 
     def set_max_approval(self, pool: Hyperdrive | None = None) -> None:

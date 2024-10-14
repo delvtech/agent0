@@ -42,10 +42,10 @@ from typing import Any, NamedTuple, Sequence
 import pandas as pd
 import rollbar
 from fixedpointmath import FixedPoint, isclose
+from pypechain.core import PypechainCallException
 
 from agent0.core.hyperdrive.crash_report import build_crash_trade_result, log_hyperdrive_crash_report
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
-from agent0.ethpy.base.errors import ContractCallException
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperlogs import ExtendedJSONEncoder
 
@@ -189,7 +189,7 @@ def fuzz_path_independence(
         starting_checkpoint_id = hyperdrive_pool.interface.calc_checkpoint_id()
         try:
             close_trades(random_trade_events)
-        except ContractCallException:
+        except PypechainCallException:
             # Trades can fail here due to invalid order, we ignore and move on
             # These trades get logged as info
             # We track the ticker for each failed path here. This bookkeeping is only
