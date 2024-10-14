@@ -7,6 +7,7 @@ import threading
 from functools import partial
 from typing import TYPE_CHECKING, Literal, Type, overload
 
+import eth_utils
 import pandas as pd
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -312,9 +313,10 @@ class HyperdriveAgent:
             pool = self._active_pool
         if pool is None:
             raise ValueError("Setting approval requires an active pool.")
-        set_max_approval(
-            self.account, self.chain._web3, pool.interface.base_token_contract, str(pool.hyperdrive_address)
-        )
+
+        pool.interface.base_token_contract.functions.approve(
+            self.account.address, eth_utils.currency.MAX_WEI
+        ).sign_transact_and_wait(account=self.account, validate_transaction=True)
 
     def set_active(
         self,

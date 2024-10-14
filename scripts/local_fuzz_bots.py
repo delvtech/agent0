@@ -10,10 +10,10 @@ import time
 from typing import NamedTuple, Sequence
 
 import numpy as np
+from pypechain.core import FailedTransaction, PypechainCallException
 from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
-from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import generate_fuzz_hyperdrive_config, run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception
@@ -26,7 +26,7 @@ def _fuzz_ignore_logging_to_rollbar(exc: Exception) -> bool:
     known issues due to random bots not accounting for these cases, so we don't log them to
     rollbar.
     """
-    if isinstance(exc, ContractCallException):
+    if isinstance(exc, PypechainCallException):
         orig_exception = exc.orig_exception
         if orig_exception is None:
             return False
@@ -71,7 +71,7 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             return True
 
     # Contract call exceptions
-    elif isinstance(exc, ContractCallException):
+    elif isinstance(exc, PypechainCallException):
         orig_exception = exc.orig_exception
         if orig_exception is None:
             return False
@@ -121,7 +121,8 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             # pylint: disable=too-many-boolean-expressions
             isinstance(orig_exception, list)
             and len(orig_exception) > 1
-            and isinstance(orig_exception[0], UnknownBlockError)
+            and isinstance(orig_exception[0], FailedTransaction)
+            # FIXME check for this
             and len(orig_exception[0].args) > 0
             and "Receipt has status of 0" in orig_exception[0].args[0]
         ):

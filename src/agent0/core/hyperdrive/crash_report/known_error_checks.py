@@ -6,11 +6,11 @@ import logging
 from typing import TYPE_CHECKING
 
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 from web3.exceptions import ContractCustomError
 
 from agent0.core.hyperdrive.agent import HyperdriveActionType
 from agent0.core.test_utils import assert_never
-from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 if TYPE_CHECKING:
@@ -281,8 +281,9 @@ def check_for_slippage(trade_result: TradeResult) -> TradeResult:
     # TODO this error is not guaranteed to be exclusive for slippage in the future.
     assert trade_result.trade_object is not None
     is_slippage = (
-        isinstance(trade_result.exception, ContractCallException)
+        isinstance(trade_result.exception, PypechainCallException)
         and isinstance(trade_result.exception.orig_exception, ContractCustomError)
+        # FIXME this is probably the decoded error, fix
         and ("ContractCustomError('OutputLimit')" in trade_result.exception.args)
         and (
             trade_result.trade_object.market_action.action_type
