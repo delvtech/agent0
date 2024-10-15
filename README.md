@@ -11,7 +11,7 @@
 
 # A Framework for Hyperdrive Trading Strategies
 
-This repo by [DELV](https://delv.tech) contains tools for you to deploy automated trading agents, perform market simulations, and conduct trading research. Read on for more info or jump to the [quickstart guide](https://agent0.readthedocs.io/en/latest/#quickstart).
+This repo by [DELV](https://delv.tech) contains tools for you to deploy automated trading agents, perform market simulations, and conduct trading research. Read on for more info or jump to the [quickstart guide](https://agent0.readthedocs.io/en/latest/#quickstart-agent0-repo).
 
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"><a> 
 
