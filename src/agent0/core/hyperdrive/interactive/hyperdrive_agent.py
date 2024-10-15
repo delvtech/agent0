@@ -304,7 +304,7 @@ class HyperdriveAgent:
             raise ValueError("Setting approval requires an active pool.")
 
         pool.interface.base_token_contract.functions.approve(
-            self.account.address, eth_utils.currency.MAX_WEI
+            pool.interface.hyperdrive_address, eth_utils.currency.MAX_WEI
         ).sign_transact_and_wait(account=self.account, validate_transaction=True)
 
     def set_active(
