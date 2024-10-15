@@ -285,7 +285,7 @@ async def _async_open_long(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     # min_vault_share_price: int
@@ -395,7 +395,7 @@ async def _async_close_long(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
     min_output = 0
 
@@ -483,7 +483,7 @@ async def _async_open_short(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     max_deposit = int(MAX_WEI)
@@ -579,7 +579,7 @@ async def _async_close_short(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     min_output = 0
@@ -669,7 +669,7 @@ async def _async_add_liquidity(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
@@ -758,7 +758,7 @@ async def _async_remove_liquidity(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     min_output = 0
@@ -829,7 +829,7 @@ async def _async_redeem_withdraw_shares(
     # TODO readd in fee multiples
     if txn_options_base_fee_multiple is not None:
         raise NotImplementedError("Base fee multiple not yet implemented")
-    if txn_options_priority_fee_multiple is None:
+    if txn_options_priority_fee_multiple is not None:
         raise NotImplementedError("Priority fee multiple not yet implemented")
 
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
