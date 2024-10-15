@@ -11,7 +11,7 @@
 
 # A Framework for Hyperdrive Trading Strategies
 
-This repo by [DELV](https://delv.tech) contains tools for you to deploy automated trading agents, perform market simulations, and conduct trading research. Read on for more info or jump to the [quickstart guide](https://agent0.readthedocs.io/en/latest/#quickstart-agent0-repo).
+This repo by [DELV](https://delv.tech) contains tools for you to deploy automated trading agents, perform market simulations, and conduct trading research. Read on for more info or jump to the [quickstart guide](https://agent0.readthedocs.io/en/latest/#quickstart-examples).
 
 <br><a href="https://app.codecov.io/gh/delvtech/agent0?displayType=list"><img height="100px" src="https://codecov.io/gh/delvtech/agent0/graphs/sunburst.svg?token=1S60MD42ZP"></a> 
 
@@ -32,13 +32,13 @@ This docs page can be found via [https://agent0.readthedocs.io/en/latest/](https
 
 ## What is Agent0?
 
-Agent0 is DELV's Python-based library for testing, analyzing, and interacting with Hyperdrive's smart contracts. It provides ready-for-use trading policies as well as a framework for building smart agents that act according to policies that can be strictly user-designed, AI-powered, or a combination. These agents are deployable to execute trades on-chain or can be coupled with a simulated environment to test trading strategies, understand Hyperdrive, and explore integrations or deployment configurations. 
+Agent0 is DELV's Python-based library for testing, analyzing, and interacting with Hyperdrive's smart contracts. It provides ready-for-use trading policies as well as a framework for building smart agents that act according to policies that can be strictly user-designed, AI-powered, or a combination. These agents are deployable to execute trades on-chain or can be coupled with a simulated environment to test trading strategies, understand Hyperdrive, and explore integrations or deployment configurations.
 
 When running Hyperdrive on a local blockchain, agent0 also provides a managed database delivered to you as Pandas dataframes via an API as well as a visualization dashboard to enable analysis and understanding.
 
 Read more about [how agent0 works](https://docs.hyperdrive.box/hyperdrive-trading-bots/how-agent0-works) in our [docs](https://docs.hyperdrive.box/).
 
-## Quickstart | Agent0 Repo
+## Quickstart Examples
 
 This repo contains general purpose code for interacting with Ethereum smart contracts.
 However, it was built for the primary use case of trading on [Hyperdrive](https://hyperdrive.delv.tech) markets.
@@ -51,19 +51,21 @@ Next, using a Python 3.10 environment, you can install agent0 via [uv](https://g
 uv pip install --upgrade agent0
 ```
 
-Finally, you can execute Hyperdrive trades in a simulated blockchain environment:
+You're ready to go! You can use agent0 to do datascience, automate trading, or simulate trading strategies. Below are some quick examples to get you started. When you're ready, check out our [examples folder](https://github.com/delvtech/agent0/tree/main/examples/) for more information, including details on executing trades on remote chains.
+
+### Execute Hyperdrive trades in a simulated blockchain environment
 
 ```python
 import datetime
 from fixedpointmath import FixedPoint
 from agent0 import LocalHyperdrive, LocalChain
 
-# Initialize
+# Initialize.
 chain = LocalChain()
 hyperdrive = LocalHyperdrive(chain)
 hyperdrive_agent0 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10), pool=hyperdrive)
 
-# Run trades
+# Run trades.
 chain.advance_time(datetime.timedelta(weeks=1))
 open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100), eth=FixedPoint(10))
 chain.advance_time(datetime.timedelta(weeks=5))
@@ -71,16 +73,83 @@ close_event = hyperdrive_agent0.close_long(
     maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
 )
 
-# Analyze
+# Analyze.
 pool_info = hyperdrive.get_pool_info(coerce_float=True)
 pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
+
+# Shut down the chain.
+chain.cleanup()
 ```
 
-See our [tutorial notebook](https://github.com/delvtech/agent0/tree/main/examples/tutorial.ipynb) and 
-[examples notebook](https://github.com/delvtech/agent0/tree/main/examples/short_examples.ipynb) for more information, 
-including details on executing trades on remote chains.
+### Query all positions
 
-## Install
+```python
+import os
+from agnet0 import Chain, Hyperdrive
+
+# We recommend you use env variables for sensitive information.
+PUBLIC_ADDRESS = os.getenv("PUBLIC_ADDRESS")
+RPC_URI = os.getenv("RPC_URI")
+
+# Address of the Hyperdrive registry (this is for Sepolia).
+REGISTRY_ADDRESS = "0x4ba58147e50e57e71177cfedb1fac0303f216104"
+
+# View open and closed positions across all pools.
+with Chain(RPC_URI) as chain:
+    agent = chain.init_agent(public_address=PUBLIC_ADDRESS)
+    registered_pools = Hyperdrive.get_hyperdrive_pools_from_registry(
+        chain,
+        registry_address = REGISTRY_ADDRESS,
+    )
+    all_positions = agent.get_positions(
+        pool_filter=registered_pools,
+        show_closed_positions=True,
+    )
+    print(all_positions)
+```
+
+### Automate withdrawing mature positions
+
+```python
+import os
+from agnet0 import Chain, Hyperdrive
+
+# We recommend you use env variables for sensitive information.
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+RPC_URI = os.getenv("RPC_URI")
+
+# Address of the Hyperdrive registry (this is for Sepolia).
+REGISTRY_ADDRESS = "0x4ba58147e50e57e71177cfedb1fac0303f216104"
+chain = Chain(RPC_URI)
+registered_pools = Hyperdrive.get_hyperdrive_pools_from_registry(
+    chain,
+    registry_address = REGISTRY_ADDRESS,
+)
+
+agent = chain.init_agent(private_key=PRIVATE_KEY)
+for pool in registered_pools:
+    # Close all mature longs.
+    for long in agent.get_longs(pool=pool):
+        if long.maturity_time <= chain.block_time():
+            agent.close_long(
+                maturity_time=long.maturity_time,
+                bonds=long.balance,
+                pool=pool,
+            )
+    # Close all mature shorts.
+    for short in agent.get_shorts(pool=pool):
+        if short.maturity_time <= chain.block_time():
+            agent.close_short(
+                maturity_time=short.maturity_time,
+                bonds=short.balance,
+                pool=pool,
+            )
+
+# Shut down the chain.
+chain.cleanup()
+```
+
+## Advanced Install
 
 Please refer to [INSTALL.md](https://github.com/delvtech/agent0/tree/main/INSTALL.md) for more advanced install options.
 
@@ -88,30 +157,9 @@ Please refer to [INSTALL.md](https://github.com/delvtech/agent0/tree/main/INSTAL
 
 Please refer to [BUILD.md](https://github.com/delvtech/agent0/tree/main/BUILD.md).
 
-## Testing
-
-We deploy a local anvil chain to run system tests.
-Therefore, you must [install foundry](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation) as a prerequisite for running tests.
-
-Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html).
-You can run all tests from the repository root directory by running `python -m pytest`, or you can pick a specific test with `python -m pytest {path/to/test_file.py}`.
-General integration-level tests are in the `tests` folder, while more isolated or unit tests are colocated with the files they are testing and end with a `_test.py` suffix.
-
-## Contributions
+## Testing and Contributions
 
 Please refer to [CONTRIBUTING.md](https://github.com/delvtech/agent0/tree/main/CONTRIBUTING.md).
-
-## Coverage
-
-To run coverage locally you can follow these steps:
-
-```bash
-pip install coverage
-coverage run -m pytest
-coverage html
-```
-
-then just open `htmlcov/index.html` to view the report!
 
 ## Number format
 

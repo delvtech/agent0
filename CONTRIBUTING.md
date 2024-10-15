@@ -6,6 +6,27 @@ We strive for verbose and readable comments and docstrings.
 All code and documentation should follow our [style guide](STYLEGUIDE.md).
 The hosted docs are automatically generated using [Sphinx](https://www.sphinx-doc.org/en/master/tutorial/automatic-doc-generation.html).
 
+## Testing
+
+We deploy a local anvil chain to run system tests.
+Therefore, you must [install foundry](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation) as a prerequisite for running tests.
+
+Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html).
+You can run all tests from the repository root directory by running `python -m pytest`, or you can pick a specific test with `python -m pytest {path/to/test_file.py}`.
+General integration-level tests are in the `tests` folder, while more isolated or unit tests are colocated with the files they are testing and end with a `_test.py` suffix.
+
+## Coverage
+
+To run coverage locally you can follow these steps:
+
+```bash
+pip install coverage
+coverage run -m pytest
+coverage html
+```
+
+then just open `htmlcov/index.html` to view the report!
+
 ## Contributor git workflow
 
 We follow a standard [feature branch rebase workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) that prioritizes short PRs with isolated improvements.
