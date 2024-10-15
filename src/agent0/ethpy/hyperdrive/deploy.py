@@ -620,14 +620,14 @@ def _deploy_and_initialize_hyperdrive_pool(
     # There are 4 contracts to deploy, we call deployTarget on all of them
     for target_index in range(5):
         _ = factory_contract.functions.deployTarget(
-            deploymentId=deployment_id,
-            deployerCoordinator=deployer_coordinator_address,
-            config=pool_deploy_config,
-            extraData=bytes(0),  # Vec::new().info()
-            fixedAPR=initial_fixed_apr.scaled_value,
-            timeStretchAPR=initial_time_stretch_apr.scaled_value,
-            targetIndex=target_index,
-            salt=salt,
+            _deploymentId=deployment_id,
+            _deployerCoordinator=deployer_coordinator_address,
+            _config=pool_deploy_config,
+            _extraData=bytes(0),  # Vec::new().info()
+            _fixedAPR=initial_fixed_apr.scaled_value,
+            _timeStretchAPR=initial_time_stretch_apr.scaled_value,
+            _targetIndex=target_index,
+            _salt=salt,
         ).sign_transact_and_wait(deploy_account, validate_transaction=True)
 
     match deploy_type:
@@ -643,20 +643,20 @@ def _deploy_and_initialize_hyperdrive_pool(
     if txn_option_value is not None:
         tx_args["value"] = Wei(txn_option_value)
     tx_receipt = factory_contract.functions.deployAndInitialize(
-        name=name,
-        deploymentId=deployment_id,
-        deployerCoordinator=deployer_coordinator_address,
-        config=pool_deploy_config,
-        extraData=bytes(0),
-        contribution=initial_liquidity.scaled_value,
-        fixedAPR=initial_fixed_apr.scaled_value,
-        timeStretchAPR=initial_time_stretch_apr.scaled_value,
-        options=Options(
+        __name=name,
+        _deploymentId=deployment_id,
+        _deployerCoordinator=deployer_coordinator_address,
+        _config=pool_deploy_config,
+        _extraData=bytes(0),
+        _contribution=initial_liquidity.scaled_value,
+        _fixedAPR=initial_fixed_apr.scaled_value,
+        _timeStretchAPR=initial_time_stretch_apr.scaled_value,
+        _options=Options(
             asBase=True,
             destination=Web3.to_checksum_address(deploy_account.address),
             extraData=bytes(0),
         ),
-        salt=salt,
+        _salt=salt,
     ).sign_transact_and_wait(deploy_account, tx_args, validate_transaction=True)
 
     deploy_events = list(factory_contract.events.Deployed().process_receipt_typed(tx_receipt, errors=DISCARD))
