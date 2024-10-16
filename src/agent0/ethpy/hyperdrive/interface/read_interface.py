@@ -9,12 +9,14 @@ from typing import TYPE_CHECKING, cast
 import eth_abi
 from fixedpointmath import FixedPoint
 from hyperdrivetypes import CheckpointFP
-from hyperdrivetypes.types.ERC20Mintable import ERC20MintableContract
-from hyperdrivetypes.types.IHyperdrive import IHyperdriveContract
-from hyperdrivetypes.types.IMorpho import IMorphoContract
-from hyperdrivetypes.types.IMorphoBlueHyperdrive import IMorphoBlueHyperdriveContract
-from hyperdrivetypes.types.MockERC4626 import MockERC4626Contract
-from hyperdrivetypes.types.MockLido import MockLidoContract
+from hyperdrivetypes.types import (
+    ERC20MintableContract,
+    IHyperdriveContract,
+    IMorphoBlueHyperdriveContract,
+    IMorphoContract,
+    MockERC4626Contract,
+    MockLidoContract,
+)
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.types import BlockData, BlockIdentifier, Timestamp
