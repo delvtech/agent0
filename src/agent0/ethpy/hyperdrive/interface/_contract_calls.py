@@ -89,9 +89,14 @@ def _get_vault_shares(
         # Type narrowing
         assert interface.morpho_contract is not None
         assert interface.morpho_market_id is not None
+
+        # TODO pypechain requires bytes input (not HexBytes) for the position function call.
+        # Fix to allow for bytes input to be interchangeable.
+        morpho_market_id = bytes(interface.morpho_market_id)
+
         # Get token balances
         vault_shares = (
-            interface.morpho_contract.functions.position(interface.morpho_market_id, hyperdrive_contract.address)
+            interface.morpho_contract.functions.position(morpho_market_id, hyperdrive_contract.address)
             .call(block_identifier=block_identifier or "latest")
             .supplyShares
         )

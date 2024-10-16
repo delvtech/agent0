@@ -79,7 +79,9 @@ def get_hyperdrive_addresses_from_registry(hyperdrive_registry_addr: str, web3: 
     # Call registry contract to get registered pools.
     num_instances = registry_contract.functions.getNumberOfInstances().call()
     hyperdrive_addresses = registry_contract.functions.getInstancesInRange(0, num_instances).call()
-    hyperdrive_infos = registry_contract.functions.getInstanceInfosWithMetadata(hyperdrive_addresses).call()
+    # TODO pypechain needs a list input for any functions that takes a vector as an input.
+    # Fix to allow for any sequence input.
+    hyperdrive_infos = registry_contract.functions.getInstanceInfosWithMetadata(list(hyperdrive_addresses)).call()
 
     # TODO there's a bug in the registry that sets the `name` field of instances as an encoded hex string
     # We decode here if we find this case
