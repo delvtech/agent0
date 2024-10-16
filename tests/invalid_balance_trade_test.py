@@ -345,7 +345,6 @@ class TestInvalidTrades:
             # Fails on add liquidity
             assert exc.function_name == "addLiquidity"
             assert exc.orig_exception is not None
-            # FIXME double check this
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
@@ -366,7 +365,6 @@ class TestInvalidTrades:
             # Fails on open long
             assert exc.function_name == "openLong"
             assert exc.orig_exception is not None
-            # FIXME double check this
             assert isinstance(exc.orig_exception, ContractPanicError)
             assert (
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
@@ -388,7 +386,6 @@ class TestInvalidTrades:
             assert exc.function_name == "openShort"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractPanicError)
-            # FIXME double check this
             assert (
                 exc.orig_exception.args[0] == "Panic error 0x11: Arithmetic operation results in underflow or overflow."
             )

@@ -1744,6 +1744,5 @@ def test_close_long_too_much_fees(fast_chain_fixture: LocalChain):
         # We expect this to fail
         assert False, "Expected exception"
     except PypechainCallException as e:
-        # FIXME check this
         assert len(e.args) > 1
         assert "Closing the long results in fees exceeding the long proceeds." in e.args[0]

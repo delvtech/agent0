@@ -272,7 +272,6 @@ class TestSlippageWarning:
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenLongSlippage)
         except PypechainCallException as exc:
-            # FIXME double check this
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()
@@ -296,7 +295,6 @@ class TestSlippageWarning:
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenShortSlippage)
         except PypechainCallException as exc:
-            # FIXME double check this
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()
@@ -323,7 +321,6 @@ class TestSlippageWarning:
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongSlippage)
         except PypechainCallException as exc:
-            # FIXME double check this
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()
@@ -347,7 +344,6 @@ class TestSlippageWarning:
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortSlippage)
         except PypechainCallException as exc:
-            # FIXME double check this
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()

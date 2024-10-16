@@ -301,19 +301,16 @@ def test_no_approval(fast_chain_fixture: LocalChain):
     try:
         hyperdrive_agent.add_liquidity(base=FixedPoint(1_000))
     except PypechainCallException as exc:
-        # FIXME this is probably the decoded error, fix
         assert "Insufficient allowance: " in exc.args[0]
 
     try:
         hyperdrive_agent.open_long(base=FixedPoint(1_000))
     except PypechainCallException as exc:
-        # FIXME this is probably the decoded error, fix
         assert "Insufficient allowance: " in exc.args[0]
 
     try:
         hyperdrive_agent.open_short(bonds=FixedPoint(1_000))
     except PypechainCallException as exc:
-        # FIXME this is probably the decoded error, fix
         assert "Insufficient allowance: " in exc.args[0]
 
     remote_chain.cleanup()
@@ -351,7 +348,6 @@ def test_out_of_gas(fast_chain_fixture: LocalChain):
     try:
         hyperdrive_agent.add_liquidity(base=FixedPoint(1_000))
     except PypechainCallException as exc:
-        # FIXME this is probably the decoded error, fix
         assert "Out of gas" in exc.args[0]
 
     remote_chain.cleanup()

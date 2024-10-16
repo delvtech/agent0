@@ -112,14 +112,9 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
 
         # Status == 0
         if (
-            # Lots of conditions to check
-            # pylint: disable=too-many-boolean-expressions
-            isinstance(orig_exception, list)
-            and len(orig_exception) > 1
-            and isinstance(orig_exception[0], FailedTransaction)
-            # FIXME check for this
-            and len(orig_exception[0].args) > 0
-            and "Receipt has status of 0" in orig_exception[0].args[0]
+            isinstance(orig_exception, FailedTransaction)
+            and len(orig_exception.args) > 0
+            and "Receipt has status of 0" in orig_exception.args[0]
         ):
             return True
 
