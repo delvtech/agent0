@@ -283,8 +283,7 @@ def check_for_slippage(trade_result: TradeResult) -> TradeResult:
     is_slippage = (
         isinstance(trade_result.exception, PypechainCallException)
         and isinstance(trade_result.exception.orig_exception, ContractCustomError)
-        # FIXME this is probably the decoded error, fix
-        and ("ContractCustomError('OutputLimit')" in trade_result.exception.args)
+        and trade_result.exception.decoded_error == "OutputLimit()"
         and (
             trade_result.trade_object.market_action.action_type
             in (

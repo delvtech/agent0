@@ -253,11 +253,9 @@ class TestMinTxAmount:
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name == "addLiquidity"
-            # FIXME double check this
-            # This throws ContractCallException under the hood
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_min_txn(
@@ -272,11 +270,9 @@ class TestMinTxAmount:
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name == "removeLiquidity"
-            # FIXME double check this
-            # This throws ContractCallException under the hood
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     # We don't test withdrawal shares because redeeming withdrawal shares are not subject to min_txn_amount
 
@@ -293,11 +289,9 @@ class TestMinTxAmount:
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name == "openLong"
-            # FIXME double check this
-            # This throws ContractCallException under the hood
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_open_short_min_txn(
@@ -312,11 +306,9 @@ class TestMinTxAmount:
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name == "openShort"
-            # FIXME double check this
-            # This throws ContractCallException under the hood
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_long_min_txn(
@@ -331,11 +323,9 @@ class TestMinTxAmount:
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name == "closeLong"
-            # FIXME double check this
-            # This throws ContractCallException under the hood
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_short_min_txn(
@@ -350,8 +340,6 @@ class TestMinTxAmount:
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
             assert exc.function_name == "closeShort"
-            # FIXME double check this
-            # This throws ContractCallException under the hood
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args[0]
