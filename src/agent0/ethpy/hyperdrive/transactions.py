@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import IHyperdriveContract
 from hyperdrivetypes.fixedpoint_types import CheckpointFP, PoolConfigFP, PoolInfoFP
+from hyperdrivetypes.types import IHyperdriveContract
 from web3.types import BlockIdentifier, Timestamp
 
 

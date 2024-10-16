@@ -9,7 +9,7 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import (
+from hyperdrivetypes.types import (
     ERC20ForwarderFactoryContract,
     ERC20MintableContract,
     ERC4626HyperdriveCoreDeployerContract,
