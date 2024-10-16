@@ -72,37 +72,25 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             return False
 
         # Insufficient liquidity error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('InsufficientLiquidity')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "InsufficientLiquidity()":
             return True
 
         # Circuit breaker triggered error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('CircuitBreakerTriggered')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "CircuitBreakerTriggered()":
             return True
 
         # DistributeExcessIdle error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('DistributeExcessIdleFailed')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "DistributeExcessIdleFailed()":
             return True
 
         # MinimumTransactionAmount error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('MinimumTransactionAmount')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "MinimumTransactionAmount()":
             return True
 
         # DecreasedPresentValueWhenAddingLiquidity error
         if (
             isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('DecreasedPresentValueWhenAddingLiquidity')" in exc.args
+            and exc.decoded_error == "DecreasedPresentValueWhenAddingLiquidity()"
         ):
             return True
 
