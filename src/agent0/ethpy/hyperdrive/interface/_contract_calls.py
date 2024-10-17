@@ -423,6 +423,9 @@ async def _async_close_long(
 
     contract_fn = interface.hyperdrive_contract.functions.closeLong(*fn_args)
     tx_params = TxParams({"from": sender.address})
+
+    # To catch any solidity errors, we preview transactions on the current block
+    # before calling smart contract transact
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn.call(
@@ -516,6 +519,8 @@ async def _async_open_short(
 
     contract_fn = interface.hyperdrive_contract.functions.openShort(*fn_args)
     tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
+    # before calling smart contract transact
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn.call(
@@ -608,6 +613,8 @@ async def _async_close_short(
 
     contract_fn = interface.hyperdrive_contract.functions.closeShort(*fn_args)
     tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
+    # before calling smart contract transact
     preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
         preview_result = contract_fn.call(
@@ -715,6 +722,8 @@ async def _async_add_liquidity(
 
     contract_fn = interface.hyperdrive_contract.functions.addLiquidity(*fn_args)
     tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
+    # before calling smart contract transact
     if preview_before_trade:
         _ = contract_fn.call(
             tx_params,
@@ -785,6 +794,8 @@ async def _async_remove_liquidity(
     )
     contract_fn = interface.hyperdrive_contract.functions.removeLiquidity(*fn_args)
     tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
+    # before calling smart contract transact
     if preview_before_trade is True:
         _ = contract_fn.call(
             tx_params,
@@ -855,11 +866,10 @@ async def _async_redeem_withdraw_shares(
             interface.txn_signature,  # extraData
         ),
     )
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
     contract_fn = interface.hyperdrive_contract.functions.redeemWithdrawalShares(*fn_args)
     tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
+    # before calling smart contract transact
     if preview_before_trade is True:
         preview_result = contract_fn.call(
             tx_params,
