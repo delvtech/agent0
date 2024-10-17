@@ -298,7 +298,6 @@ def deploy_hyperdrive_from_factory(
     # Deploy the Hyperdrive contract and call the initialize function
     hyperdrive_checksum_address = Web3.to_checksum_address(
         _deploy_and_initialize_hyperdrive_pool(
-            web3,
             deployed_factory.deployer_coordinator_contract.address,
             deploy_type,
             deployer_account,
@@ -560,7 +559,6 @@ def _mint_and_approve(
 
 
 def _deploy_and_initialize_hyperdrive_pool(
-    web3: Web3,
     deployer_coordinator_address: ChecksumAddress,
     deploy_type: HyperdriveDeployType,
     deploy_account: LocalAccount,
