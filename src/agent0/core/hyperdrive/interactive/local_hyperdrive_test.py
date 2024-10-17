@@ -24,6 +24,7 @@ from hyperdrivetypes import (
 )
 from pandas import Series
 from pandas.testing import assert_frame_equal
+from pypechain.core import PypechainCallException
 
 from agent0.chainsync.dashboard import build_pool_dashboard, build_wallet_dashboard
 from agent0.core.base import Trade
@@ -31,7 +32,6 @@ from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy, PolicyZoo
 from agent0.core.test_utils import CycleTradesPolicy
-from agent0.ethpy.base.errors import ContractCallException
 from agent0.ethpy.hyperdrive import AssetIdPrefix, HyperdriveReadInterface, encode_asset_id
 
 from .local_chain import LocalChain
@@ -1694,7 +1694,7 @@ def test_anvil_dump_state(capsys):
             pool=pool,
         )
         # Make known bad trade
-        with pytest.raises(ContractCallException):
+        with pytest.raises(PypechainCallException):
             _ = agent.add_liquidity(FixedPoint(10_000))
 
         # Look for the last line in captured output
@@ -1743,6 +1743,6 @@ def test_close_long_too_much_fees(fast_chain_fixture: LocalChain):
         agent.close_long(maturity_time=open_long_event.args.maturity_time, bonds=open_long_event.args.bond_amount)
         # We expect this to fail
         assert False, "Expected exception"
-    except ContractCallException as e:
+    except PypechainCallException as e:
         assert len(e.args) > 1
         assert "Closing the long results in fees exceeding the long proceeds." in e.args[0]

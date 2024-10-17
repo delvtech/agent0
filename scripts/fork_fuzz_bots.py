@@ -11,10 +11,10 @@ from typing import NamedTuple, Sequence
 
 import numpy as np
 from fixedpointmath import FixedPoint
+from pypechain.core import FailedTransaction, PypechainCallException
 from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
-from agent0.ethpy.base.errors import ContractCallException, UnknownBlockError
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_message
@@ -66,43 +66,31 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             return True
 
     # Contract call exceptions
-    elif isinstance(exc, ContractCallException):
+    elif isinstance(exc, PypechainCallException):
         orig_exception = exc.orig_exception
         if orig_exception is None:
             return False
 
         # Insufficient liquidity error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('InsufficientLiquidity')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "InsufficientLiquidity()":
             return True
 
         # Circuit breaker triggered error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('CircuitBreakerTriggered')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "CircuitBreakerTriggered()":
             return True
 
         # DistributeExcessIdle error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('DistributeExcessIdleFailed')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "DistributeExcessIdleFailed()":
             return True
 
         # MinimumTransactionAmount error
-        if (
-            isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('MinimumTransactionAmount')" in exc.args
-        ):
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "MinimumTransactionAmount()":
             return True
 
         # DecreasedPresentValueWhenAddingLiquidity error
         if (
             isinstance(orig_exception, ContractCustomError)
-            and "ContractCustomError('DecreasedPresentValueWhenAddingLiquidity')" in exc.args
+            and exc.decoded_error == "DecreasedPresentValueWhenAddingLiquidity()"
         ):
             return True
 
@@ -112,13 +100,9 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
 
         # Status == 0
         if (
-            # Lots of conditions to check
-            # pylint: disable=too-many-boolean-expressions
-            isinstance(orig_exception, list)
-            and len(orig_exception) > 1
-            and isinstance(orig_exception[0], UnknownBlockError)
-            and len(orig_exception[0].args) > 0
-            and "Receipt has status of 0" in orig_exception[0].args[0]
+            isinstance(orig_exception, FailedTransaction)
+            and len(orig_exception.args) > 0
+            and "Receipt has status of 0" in orig_exception.args[0]
         ):
             return True
 

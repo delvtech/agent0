@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 from utils import expect_failure_with_funded_bot, run_with_funded_bot  # type: ignore
 
 from agent0.core.hyperdrive.agent import (
@@ -18,7 +19,6 @@ from agent0.core.hyperdrive.agent import (
 )
 from agent0.core.hyperdrive.interactive import LocalChain, LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
     from agent0.core.base import Trade
@@ -271,7 +271,7 @@ class TestSlippageWarning:
         hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenLongSlippage)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()
@@ -294,7 +294,7 @@ class TestSlippageWarning:
         hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidOpenShortSlippage)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()
@@ -320,7 +320,7 @@ class TestSlippageWarning:
         hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseLongSlippage)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()
@@ -343,7 +343,7 @@ class TestSlippageWarning:
         hyperdrive = LocalHyperdrive(chain, config)
         try:
             expect_failure_with_funded_bot(hyperdrive, InvalidCloseShortSlippage)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             assert "Slippage detected" in exc.args[0]
 
         chain.cleanup()

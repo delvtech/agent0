@@ -16,7 +16,7 @@ from typing import NamedTuple, Sequence
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import IHyperdriveContract
+from hyperdrivetypes.types import IHyperdriveContract
 from web3 import Web3
 from web3.types import Nonce
 

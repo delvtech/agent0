@@ -15,11 +15,11 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from eth_account.signers.local import LocalAccount
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 from web3 import Web3
 from web3.types import RPCEndpoint
 
 from agent0.core.hyperdrive.agent import TradeResult
-from agent0.ethpy.base.errors import ContractCallException
 from agent0.hyperlogs import ExtendedJSONEncoder, logs
 from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
@@ -99,27 +99,26 @@ def build_crash_trade_result(
     )
 
     # Best effort to get the crash block number
-    if isinstance(exception, ContractCallException) and exception.block_identifier is not None:
-        crash_block_number = interface.get_block_number(interface.get_block(exception.block_identifier))
-        crash_block_identifier = exception.block_identifier
+    if isinstance(exception, PypechainCallException) and exception.block_number is not None:
+        crash_block_number = exception.block_number
     else:
         crash_block_number = interface.get_block_number(interface.get_current_block())
-        crash_block_identifier = crash_block_number
     trade_result.block_number = crash_block_number
 
     ## Check if the exception came from a contract call & determine block number
     # If it did, we fill various trade result data with custom data from
     # the exception
     trade_result.exception = exception
-    if isinstance(exception, ContractCallException):
+    if isinstance(exception, PypechainCallException):
         trade_result.orig_exception = exception.orig_exception
         trade_result.contract_call = {
             "contract_call_type": exception.contract_call_type,
-            "function_name_or_signature": exception.function_name_or_signature,
+            "function_name": exception.function_name,
             "fn_args": exception.fn_args,
             "fn_kwargs": exception.fn_kwargs,
         }
-        trade_result.raw_transaction = exception.raw_txn
+        if exception.raw_txn is not None:
+            trade_result.raw_transaction = dict(exception.raw_txn)
     else:
         # We still build this structure so the schema stays the same
         trade_result.contract_call = {
@@ -132,9 +131,9 @@ def build_crash_trade_result(
     # We trust the caller to provide the correct pool state if it's being passed in.
     if pool_state is None:
         # Get the pool state at the desired block number
-        # If the exception's block identifier is "pending", we need to get the state using a mined block
-        # so we grab the latest
-        if crash_block_identifier == "pending":
+        # If the exception's block identifier is "pending", the block may be out of range.
+        # If this is the case, we clamp the block number to latest.
+        if trade_result.block_number > interface.web3.eth.get_block_number():
             query_block_id = "latest"
         else:
             query_block_id = trade_result.block_number

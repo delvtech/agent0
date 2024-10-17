@@ -7,7 +7,7 @@ import time
 from typing import Any, Callable, NamedTuple
 
 from fixedpointmath import FixedPoint
-from hyperdrivetypes.types.IHyperdriveContract import CloseLongEvent, CloseShortEvent
+from hyperdrivetypes.types.IHyperdrive import CloseLongEvent, CloseShortEvent
 from web3.types import BlockData
 
 from agent0.core.hyperdrive.crash_report import (

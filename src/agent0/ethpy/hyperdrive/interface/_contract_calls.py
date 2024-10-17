@@ -12,25 +12,21 @@ from hyperdrivetypes import (
     CloseLongEventFP,
     CloseShortEventFP,
     CreateCheckpointEventFP,
-    ERC20MintableContract,
-    IHyperdriveContract,
-    MockERC4626Contract,
-    MockLidoContract,
     OpenLongEventFP,
     OpenShortEventFP,
     RedeemWithdrawalSharesEventFP,
     RemoveLiquidityEventFP,
 )
+from hyperdrivetypes.types.ERC20Mintable import ERC20MintableContract
+from hyperdrivetypes.types.IHyperdrive import IHyperdriveContract, Options
+from hyperdrivetypes.types.MockERC4626 import MockERC4626Contract
+from hyperdrivetypes.types.MockLido import MockLidoContract
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.logs import DISCARD
+from web3.types import TxParams
 
-from agent0.ethpy.base import (
-    async_smart_contract_transact,
-    get_account_balance,
-    smart_contract_preview_transaction,
-    smart_contract_transact,
-)
+from agent0.ethpy.base import async_wait_for_transaction_receipt, get_account_balance
 from agent0.ethpy.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 if TYPE_CHECKING:
@@ -93,9 +89,14 @@ def _get_vault_shares(
         # Type narrowing
         assert interface.morpho_contract is not None
         assert interface.morpho_market_id is not None
+
+        # TODO pypechain requires bytes input (not HexBytes) for the position function call.
+        # Fix to allow for bytes input to be interchangeable.
+        morpho_market_id = bytes(interface.morpho_market_id)
+
         # Get token balances
         vault_shares = (
-            interface.morpho_contract.functions.position(interface.morpho_market_id, hyperdrive_contract.address)
+            interface.morpho_contract.functions.position(morpho_market_id, hyperdrive_contract.address)
             .call(block_identifier=block_identifier or "latest")
             .supplyShares
         )
@@ -199,24 +200,24 @@ def _create_checkpoint(
     # the default max iterations
     fn_args = (checkpoint_time, 0)
 
-    # TODO replace these calls with pypechain `call` and `transact` functions.
+    contract_fn = interface.hyperdrive_contract.functions.checkpoint(*fn_args)
+    tx_params = TxParams({"from": sender.address})
     if preview:
-        _ = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            sender.address,
-            "checkpoint",
-            *fn_args,
+        _ = contract_fn.call(
+            tx_params,
+            block_identifier="pending",
         )
 
-    tx_receipt = smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+
+    tx_receipt = contract_fn.sign_transact_and_wait(
         sender,
-        "checkpoint",
-        *fn_args,
+        tx_params,
         timeout=interface.txn_receipt_timeout,
-        txn_options_gas=gas_limit,
-        nonce_func=nonce_func,
+        validate_transaction=True,
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -238,14 +239,8 @@ def _set_variable_rate(
     """See API for documentation."""
     # Type narrowing
     assert interface.vault_shares_token_contract is not None
-    _ = smart_contract_transact(
-        interface.web3,
-        interface.vault_shares_token_contract,
-        sender,
-        "setRate",
-        new_rate.scaled_value,
-        timeout=interface.txn_receipt_timeout,
-    )
+    contract_fn = interface.vault_shares_token_contract.functions.setRate(new_rate.scaled_value)
+    _ = contract_fn.sign_transact_and_wait(sender, timeout=interface.txn_receipt_timeout, validate_transaction=True)
 
 
 # Helper function to check if we need to convert amounts in the case of a steth (i.e., rebasing) deployment
@@ -281,7 +276,7 @@ def _convert_event_base_amounts_for_rebasing_tokens(
 # pylint: disable=too-many-locals
 async def _async_open_long(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
@@ -291,7 +286,13 @@ async def _async_open_long(
     preview_before_trade: bool = False,
 ) -> OpenLongEventFP:
     """See API for documentation."""
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
+
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
+
     # min_vault_share_price: int
     #   Minium share price at which to open the long.
     #   This allows traders to protect themselves from opening a long in
@@ -321,52 +322,50 @@ async def _async_open_long(
         trade_amount.scaled_value,
         min_output,
         min_vault_share_price,
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
-    # Need to set transaction options value field if we're using eth as base
-
-    # To catch any solidity errors, we always preview transactions on the current block
-    # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
-    preview_result = {}
+    contract_fn = interface.hyperdrive_contract.functions.openLong(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+    preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "openLong",
-            *fn_args,
+        preview_result = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
+        assert preview_result is not None
         min_output = (
-            FixedPoint(scaled_value=preview_result["bondProceeds"]) * (FixedPoint(1) - slippage_tolerance)
+            FixedPoint(scaled_value=preview_result.bondProceeds) * (FixedPoint(1) - slippage_tolerance)
         ).scaled_value
         fn_args = (
             trade_amount.scaled_value,
             min_output,
             min_vault_share_price,
-            (  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+            Options(  # IHyperdrive.Options
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "openLong",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+        contract_fn = interface.hyperdrive_contract.functions.openLong(*fn_args)
+
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -376,6 +375,7 @@ async def _async_open_long(
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
     out_event = OpenLongEventFP.from_pypechain(out_events[0])
+
     # If hyperdrive is steth, convert the amount from lido shares to steth
     if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
         out_event = _convert_event_base_amounts_for_rebasing_tokens(out_event)
@@ -386,7 +386,7 @@ async def _async_open_long(
 # pylint: disable=too-many-arguments
 async def _async_close_long(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
@@ -397,7 +397,11 @@ async def _async_close_long(
     preview_before_trade: bool = False,
 ) -> CloseLongEventFP:
     """See API for documentation."""
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
     min_output = 0
 
     # We use the yield as the base token in steth pools
@@ -410,50 +414,49 @@ async def _async_close_long(
         maturity_time,
         trade_amount.scaled_value,
         min_output,
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(  # IHyperdrive.Options
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
-    # To catch any solidity errors, we always preview transactions on the current block
+    contract_fn = interface.hyperdrive_contract.functions.closeLong(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+
+    # To catch any solidity errors, we preview transactions on the current block
     # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
-    preview_result = {}
+    preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "closeLong",
-            *fn_args,
+        preview_result = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
-        min_output = (
-            FixedPoint(scaled_value=preview_result["proceeds"]) * (FixedPoint(1) - slippage_tolerance)
-        ).scaled_value
+        assert preview_result is not None
+        min_output = (FixedPoint(scaled_value=preview_result) * (FixedPoint(1) - slippage_tolerance)).scaled_value
         fn_args = (
             maturity_time,
             trade_amount.scaled_value,
             min_output,
-            (  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+            Options(  # IHyperdrive.Options
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "closeLong",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+        contract_fn = interface.hyperdrive_contract.functions.closeLong(*fn_args)
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -475,7 +478,7 @@ async def _async_close_long(
 # pylint: disable=too-many-locals
 async def _async_open_short(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     slippage_tolerance: FixedPoint | None = None,
     gas_limit: int | None = None,
@@ -485,9 +488,13 @@ async def _async_open_short(
     preview_before_trade: bool = False,
 ) -> OpenShortEventFP:
     """See API for documentation."""
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
-    max_deposit = int(MAX_WEI)
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
 
+    max_deposit = int(MAX_WEI)
     # We use the yield as the base token in steth pools
     if interface.base_is_yield:
         as_base_option = False
@@ -503,50 +510,50 @@ async def _async_open_short(
         trade_amount.scaled_value,
         max_deposit,
         min_vault_share_price,
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(  # IHyperdrive.Options
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
-    # To catch any solidity errors, we always preview transactions on the current block
+    contract_fn = interface.hyperdrive_contract.functions.openShort(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
     # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
-    preview_result = {}
+    preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "openShort",
-            *fn_args,
+        preview_result = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
+        assert preview_result is not None
         max_deposit = (
-            FixedPoint(scaled_value=preview_result["deposit"]) * (FixedPoint(1) + slippage_tolerance)
+            FixedPoint(scaled_value=preview_result.deposit) * (FixedPoint(1) + slippage_tolerance)
         ).scaled_value
         fn_args = (
             trade_amount.scaled_value,
             max_deposit,
             min_vault_share_price,
-            (  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+            Options(  # IHyperdrive.Options
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "openShort",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+        contract_fn = interface.hyperdrive_contract.functions.openShort(*fn_args)
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -567,7 +574,7 @@ async def _async_open_short(
 
 async def _async_close_short(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     maturity_time: int,
     slippage_tolerance: FixedPoint | None = None,
@@ -578,7 +585,13 @@ async def _async_close_short(
     preview_before_trade: bool = False,
 ) -> CloseShortEventFP:
     """See API for documentation."""
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
+
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
+
     min_output = 0
 
     # We use the yield as the base token in steth pools
@@ -591,50 +604,47 @@ async def _async_close_short(
         maturity_time,
         trade_amount.scaled_value,
         min_output,
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(  # IHyperdrive.Options
+            sender.address,  # destination
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
-    # To catch any solidity errors, we always preview transactions on the current block
+    contract_fn = interface.hyperdrive_contract.functions.closeShort(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
     # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
-    preview_result = {}
+    preview_result = None
     if preview_before_trade or slippage_tolerance is not None:
-        preview_result = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "closeShort",
-            *fn_args,
+        preview_result = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
     if slippage_tolerance is not None:
-        min_output = (
-            FixedPoint(scaled_value=preview_result["proceeds"]) * (FixedPoint(1) - slippage_tolerance)
-        ).scaled_value
+        min_output = (FixedPoint(scaled_value=preview_result) * (FixedPoint(1) - slippage_tolerance)).scaled_value
         fn_args = (
             maturity_time,
             trade_amount.scaled_value,
             min_output,
-            (  # IHyperdrive.Options
-                agent_checksum_address,  # destination
+            Options(  # IHyperdrive.Options
+                sender.address,  # destination
                 as_base_option,  # asBase
                 interface.txn_signature,  # extraData
             ),
         )
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "closeShort",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+        contract_fn = interface.hyperdrive_contract.functions.closeShort(*fn_args)
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -655,7 +665,7 @@ async def _async_close_short(
 
 async def _async_add_liquidity(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     min_apr: FixedPoint,
     max_apr: FixedPoint,
@@ -667,11 +677,17 @@ async def _async_add_liquidity(
     preview_before_trade: bool = False,
 ) -> AddLiquidityEventFP:
     """See API for documentation."""
+
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
+
     # TODO implement slippage tolerance for this. Explicitly setting min_lp_share_price to 0.
     if slippage_tolerance is not None:
         raise NotImplementedError("Slippage tolerance for add liquidity not yet supported")
 
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_lp_share_price = 0
 
     # We use the yield as the base token in steth pools
@@ -697,35 +713,33 @@ async def _async_add_liquidity(
         min_lp_share_price,
         min_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr below this amount
         max_apr.scaled_value,  # trade will reject if liquidity pushes fixed apr above this amount
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(  # IHyperdrive.Options
+            sender.address,
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
 
-    # To catch any solidity errors, we always preview transactions on the current block
+    contract_fn = interface.hyperdrive_contract.functions.addLiquidity(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
     # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
     if preview_before_trade:
-        _ = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "addLiquidity",
-            *fn_args,
+        _ = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "addLiquidity",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -746,7 +760,7 @@ async def _async_add_liquidity(
 
 async def _async_remove_liquidity(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
@@ -755,7 +769,12 @@ async def _async_remove_liquidity(
     preview_before_trade: bool = False,
 ) -> RemoveLiquidityEventFP:
     """See API for documentation."""
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
+
     min_output = 0
 
     # We use the yield as the base token in steth pools
@@ -767,34 +786,33 @@ async def _async_remove_liquidity(
     fn_args = (
         trade_amount.scaled_value,
         min_output,
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(  # IHyperdrive.Options
+            sender.address,
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
-    # To catch any solidity errors, we always preview transactions on the current block
+    contract_fn = interface.hyperdrive_contract.functions.removeLiquidity(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
     # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
     if preview_before_trade is True:
-        _ = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "removeLiquidity",
-            *fn_args,
+        _ = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "removeLiquidity",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the
@@ -815,7 +833,7 @@ async def _async_remove_liquidity(
 
 async def _async_redeem_withdraw_shares(
     interface: HyperdriveReadWriteInterface,
-    agent: LocalAccount,
+    sender: LocalAccount,
     trade_amount: FixedPoint,
     gas_limit: int | None = None,
     txn_options_base_fee_multiple: float | None = None,
@@ -824,8 +842,13 @@ async def _async_redeem_withdraw_shares(
     preview_before_trade: bool = False,
 ) -> RedeemWithdrawalSharesEventFP:
     """See API for documentation."""
+    # TODO readd in fee multiples
+    if txn_options_base_fee_multiple is not None:
+        raise NotImplementedError("Base fee multiple not yet implemented")
+    if txn_options_priority_fee_multiple is not None:
+        raise NotImplementedError("Priority fee multiple not yet implemented")
+
     # for now, assume an underlying vault share price of at least 1, should be higher by a bit
-    agent_checksum_address = Web3.to_checksum_address(agent.address)
     min_output = FixedPoint(scaled_value=1)
 
     # We use the yield as the base token in steth pools
@@ -837,40 +860,38 @@ async def _async_redeem_withdraw_shares(
     fn_args = (
         trade_amount.scaled_value,
         min_output.scaled_value,
-        (  # IHyperdrive.Options
-            agent_checksum_address,  # destination
+        Options(  # IHyperdrive.Options
+            sender.address,
             as_base_option,  # asBase
             interface.txn_signature,  # extraData
         ),
     )
-    # To catch any solidity errors, we always preview transactions on the current block
+    contract_fn = interface.hyperdrive_contract.functions.redeemWithdrawalShares(*fn_args)
+    tx_params = TxParams({"from": sender.address})
+    # To catch any solidity errors, we preview transactions on the current block
     # before calling smart contract transact
-    # Since current_pool_state.block_number is a property, we want to get the static block here
     if preview_before_trade is True:
-        preview_result = smart_contract_preview_transaction(
-            interface.hyperdrive_contract,
-            agent_checksum_address,
-            "redeemWithdrawalShares",
-            *fn_args,
+        preview_result = contract_fn.call(
+            tx_params,
             block_identifier="pending",
         )
         # Here, a preview call of redeem withdrawal shares will still be successful without logs if
         # the amount of shares to redeem is larger than what's in the wallet. We want to catch this error
         # here with a useful error message, so we check that explicitly here
-        if preview_result["withdrawalSharesRedeemed"] == 0 and trade_amount > 0:
+        if preview_result.withdrawalSharesRedeemed == 0 and trade_amount > 0:
             raise ValueError("Preview call for redeem withdrawal shares returned 0 for non-zero input trade amount")
 
-    tx_receipt = await async_smart_contract_transact(
-        interface.web3,
-        interface.hyperdrive_contract,
-        agent,
-        "redeemWithdrawalShares",
-        *fn_args,
-        nonce_func=nonce_func,
-        txn_options_gas=gas_limit,
-        txn_options_base_fee_multiple=txn_options_base_fee_multiple,
-        txn_options_priority_fee_multiple=txn_options_priority_fee_multiple,
-        timeout=interface.txn_receipt_timeout,
+    if gas_limit is not None:
+        tx_params["gas"] = gas_limit
+    if nonce_func is not None:
+        tx_params["nonce"] = nonce_func()
+    tx_hash = contract_fn.sign_and_transact(
+        sender,
+        tx_params,
+    )
+    # Use async await to avoid blocking the event loop
+    tx_receipt = await async_wait_for_transaction_receipt(
+        contract_fn, tx_hash, timeout=interface.txn_receipt_timeout, validate_transaction=True
     )
 
     # Process receipt attempts to process all events in logs, even if it's not of the

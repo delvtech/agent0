@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fixedpointmath import FixedPoint
+from pypechain.core import PypechainCallException
 from utils import expect_failure_with_funded_bot  # type: ignore
 from web3.exceptions import ContractCustomError
 
@@ -21,7 +22,6 @@ from agent0.core.hyperdrive.agent import (
 )
 from agent0.core.hyperdrive.interactive import LocalHyperdrive
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.base.errors import ContractCallException
 
 if TYPE_CHECKING:
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
@@ -247,16 +247,15 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidAddLiquidity)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "addLiquidity"
-            # This throws ContractCallException under the hood
+            assert exc.function_name == "addLiquidity"
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_remove_liquidity_min_txn(
@@ -265,16 +264,15 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidRemoveLiquidity)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "removeLiquidity"
-            # This throws ContractCallException under the hood
+            assert exc.function_name == "removeLiquidity"
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     # We don't test withdrawal shares because redeeming withdrawal shares are not subject to min_txn_amount
 
@@ -285,16 +283,15 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidOpenLong)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "openLong"
-            # This throws ContractCallException under the hood
+            assert exc.function_name == "openLong"
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_open_short_min_txn(
@@ -303,16 +300,15 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidOpenShort)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "openShort"
-            # This throws ContractCallException under the hood
+            assert exc.function_name == "openShort"
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_long_min_txn(
@@ -321,16 +317,15 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseLong)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "closeLong"
-            # This throws ContractCallException under the hood
+            assert exc.function_name == "closeLong"
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args
 
     @pytest.mark.anvil
     def test_invalid_close_short_min_txn(
@@ -339,13 +334,12 @@ class TestMinTxAmount:
     ):
         try:
             expect_failure_with_funded_bot(fast_hyperdrive_fixture, InvalidCloseShort)
-        except ContractCallException as exc:
+        except PypechainCallException as exc:
             # Expected error due to illegal trade
             # We do add an argument for invalid balance to the args, so check for that here
             assert "Minimum Transaction Amount:" in exc.args[0]
             # Fails on remove liquidity
-            assert exc.function_name_or_signature == "closeShort"
-            # This throws ContractCallException under the hood
+            assert exc.function_name == "closeShort"
+            assert exc.decoded_error == "MinimumTransactionAmount()"
             assert exc.orig_exception is not None
             assert isinstance(exc.orig_exception, ContractCustomError)
-            assert "ContractCustomError('MinimumTransactionAmount')" in exc.args

@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, cast
 
 import eth_abi
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import (
-    CheckpointFP,
+from hyperdrivetypes import CheckpointFP
+from hyperdrivetypes.types import (
     ERC20MintableContract,
     IHyperdriveContract,
     IMorphoBlueHyperdriveContract,
