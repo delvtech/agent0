@@ -152,7 +152,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
     async def async_open_long(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
@@ -165,8 +165,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
         slippage_tolerance: FixedPoint, optional
@@ -194,7 +194,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_open_long(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
             gas_limit=gas_limit,
@@ -208,7 +208,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     # pylint: disable=too-many-arguments
     async def async_close_long(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
@@ -222,8 +222,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The amount of bonds you wish to close.
         maturity_time: int
@@ -253,7 +253,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_close_long(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
@@ -266,7 +266,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
     async def async_open_short(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         slippage_tolerance: FixedPoint | None = None,
         gas_limit: int | None = None,
@@ -279,8 +279,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
         slippage_tolerance: FixedPoint, optional
@@ -308,7 +308,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_open_short(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             slippage_tolerance=slippage_tolerance,
             gas_limit=gas_limit,
@@ -322,7 +322,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     # pylint: disable=too-many-arguments
     async def async_close_short(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         maturity_time: int,
         slippage_tolerance: FixedPoint | None = None,
@@ -336,8 +336,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
         maturity_time: int
@@ -367,7 +367,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_close_short(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             maturity_time=maturity_time,
             slippage_tolerance=slippage_tolerance,
@@ -382,7 +382,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
     # pylint: disable=too-many-arguments
     async def async_add_liquidity(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         min_apr: FixedPoint,
         max_apr: FixedPoint,
@@ -397,8 +397,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
         min_apr: FixedPoint
@@ -430,7 +430,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_add_liquidity(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             min_apr=min_apr,
             max_apr=max_apr,
@@ -444,7 +444,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
     async def async_remove_liquidity(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
@@ -456,8 +456,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
         gas_limit: int | None, optional
@@ -481,7 +481,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_remove_liquidity(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
@@ -492,7 +492,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
     async def async_redeem_withdraw_shares(
         self,
-        agent: LocalAccount,
+        sender: LocalAccount,
         trade_amount: FixedPoint,
         gas_limit: int | None = None,
         txn_options_base_fee_multiple: float | None = None,
@@ -512,8 +512,8 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
 
         Arguments
         ---------
-        agent: LocalAccount
-            The account for the agent that is executing and signing the trade transaction.
+        sender: LocalAccount
+            The account that is executing and signing the trade transaction.
         trade_amount: FixedPoint
             The size of the position, in base.
         gas_limit: int | None, optional
@@ -537,7 +537,7 @@ class HyperdriveReadWriteInterface(HyperdriveReadInterface):
         """
         return await _async_redeem_withdraw_shares(
             interface=self,
-            sender=agent,
+            sender=sender,
             trade_amount=trade_amount,
             gas_limit=gas_limit,
             txn_options_base_fee_multiple=txn_options_base_fee_multiple,
