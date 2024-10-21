@@ -222,7 +222,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                 whale_accounts=whale_accounts,
             )
         except Exception as e:  # pylint: disable=broad-except
-            raise e
             logging.error(
                 "Pausing port:%s on crash %s",
                 chain.config.chain_port,
