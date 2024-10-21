@@ -18,7 +18,7 @@ from web3.exceptions import ContractCustomError
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_message
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 
 # We define a dict of whales, keyed by the token contract addr,
 # with the value as the whale address.
@@ -222,6 +222,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 whale_accounts=whale_accounts,
             )
         except Exception as e:  # pylint: disable=broad-except
+            log_rollbar_exception(exception=e, log_level=logging.ERROR)
             logging.error(
                 "Pausing port:%s on crash %s",
                 chain.config.chain_port,
