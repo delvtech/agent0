@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Callable, Sequence
 
+from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
 
@@ -154,7 +155,7 @@ def run_fuzz_bots(
     random_variable_rate: bool = False,
     num_iterations: int | None = None,
     lp_share_price_test: bool = False,
-    whale_accounts: dict[str, str] | None = None,
+    whale_accounts: dict[str, str] | dict[ChecksumAddress, ChecksumAddress] | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 

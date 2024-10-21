@@ -12,6 +12,7 @@ from typing import NamedTuple, Sequence
 import numpy as np
 from fixedpointmath import FixedPoint
 from pypechain.core import FailedTransaction, PypechainCallException
+from web3 import Web3
 from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
@@ -23,10 +24,26 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_m
 # with the value as the whale address.
 # Note that if a token is missing in this mapping, we will try to
 # call `mint` on the trading token to fund.
-SEPOLIA_WHALE_ADDRESSES = {
-    # Note all base tokens are mintable up to 500, so we don't need whales here
+MAINNET_WHALE_ADDRESSES = {
+    # stETH
+    "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84": "0x7F39C581F595B53C5CB19BD0B3F8DA6C935E2CA0",
+    # DAI
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F": "0xf6e72Db5454dd049d0788e411b06CfAF16853042",
+    # rETH
+    "0xae78736Cd615f374D3085123A210448E74Fc6393": "0xCc9EE9483f662091a1de4795249E24aC0aC2630f",
+    # ezETH
+    "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110": "0xC8140dA31E6bCa19b287cC35531c2212763C2059",
+    # eETH
+    "0x35fA164735182de50811E8e2E824cFb9B6118ac2": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
+    # USDC
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": "0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341",
+    # USDA
+    "0x0000206329b97DB379d5E1Bf586BbDB969C63274": "0x0022228a2cc5E7eF0274A7Baa600d44da5aB5776",
+    # USDS
+    "0xdC035D45d973E3EC169d2276DDab16f1e407384F": "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
 }
-# TODO set the static block we fork at, in case whales change
+
+# TODO build an outer lookup based on chain id
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
@@ -172,6 +189,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     logging.info(log_message)
     log_rollbar_message(message=log_message, log_level=logging.INFO)
 
+    # Ensure all whale account addresses are checksum addresses
+    whale_accounts = {
+        Web3.to_checksum_address(key): Web3.to_checksum_address(value) for key, value in MAINNET_WHALE_ADDRESSES.items()
+    }
+
     while True:
         # Check for new pools
         latest_block = chain.block_data()
@@ -196,12 +218,11 @@ def main(argv: Sequence[str] | None = None) -> None:
                 random_advance_time=False,
                 random_variable_rate=False,
                 lp_share_price_test=False,
-                # TODO all base tokens are mintable up to 500 base
-                # If we want more, we need to put minting in a loop.
-                base_budget_per_bot=FixedPoint(500),
-                whale_accounts=SEPOLIA_WHALE_ADDRESSES,
+                base_budget_per_bot=FixedPoint(10_000),
+                whale_accounts=whale_accounts,
             )
         except Exception as e:  # pylint: disable=broad-except
+            raise e
             logging.error(
                 "Pausing port:%s on crash %s",
                 chain.config.chain_port,
