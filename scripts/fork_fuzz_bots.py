@@ -203,9 +203,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         chain_port = parsed_args.chain_port
 
+    if parsed_args.db_port < 0:
+        db_port = 2222
+    else:
+        db_port = parsed_args.db_port
+
     chain_config = LocalChain.Config(
         chain_host=chain_host,
         chain_port=chain_port,
+        db_port=db_port,
         log_level_threshold=logging.WARNING,
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
@@ -282,6 +288,7 @@ class Args(NamedTuple):
     registry_addr: str
     chain_host: str
     chain_port: int
+    db_port: int
     rpc_uri: str
     rng_seed: int
 
@@ -304,6 +311,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         pause_on_invariance_fail=namespace.pause_on_invariance_fail,
         chain_host=namespace.chain_host,
         chain_port=namespace.chain_port,
+        db_port=namespace.db_port,
         rpc_uri=namespace.rpc_uri,
         rng_seed=namespace.rng_seed,
     )
@@ -349,6 +357,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=-1,
         help="The port to run anvil on.",
+    )
+    parser.add_argument(
+        "--db-port",
+        type=int,
+        default=-1,
+        help="The port to run the postgres db on.",
     )
 
     parser.add_argument(
