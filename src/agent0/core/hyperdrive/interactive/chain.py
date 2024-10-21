@@ -394,6 +394,7 @@ class Chain:
 
     @property
     def chain_id(self) -> int:
+        """Returns the chain id of the chain."""
         return self._web3.eth.chain_id
 
     ################
