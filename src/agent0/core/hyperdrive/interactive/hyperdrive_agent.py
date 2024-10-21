@@ -198,7 +198,7 @@ class HyperdriveAgent:
         eth: FixedPoint | None = None,
         pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
-        whale_accounts: dict[str, str] | None = None,
+        whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
     ) -> None:
         """Adds additional funds to the agent.
 
@@ -217,7 +217,7 @@ class HyperdriveAgent:
             The pool to interact with. Defaults to the active pool.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
-        whale_accounts: dict[str, str] | None, optional
+        whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None, optional
             A mapping between token -> whale addresses to use to fund the fuzz agent.
             If the token is not in the mapping, will attempt to call `mint` on
             the token contract. Defaults to an empty mapping.
@@ -260,9 +260,22 @@ class HyperdriveAgent:
 
                 # Ensure whale has enough base to transfer
                 whale_balance = base_token_contract.functions.balanceOf(whale_account_addr).call()
-                if whale_balance < base.scaled_value:
+
+                # TODO usdc and eurc uses 6 decimal values, put support for this in fixedpoint.
+                # TODO hard coding for USDC for now, put switch case for this elsewhere
+                if base_token_contract.address in (
+                    # USDC on mainnet
+                    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    # USDC on base
+                    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                ):
+                    base_scaled_value = base.scaled_value // int(1e12)
+                else:
+                    base_scaled_value = base.scaled_value
+
+                if whale_balance < base_scaled_value:
                     raise ValueError(
-                        f"Whale does not have enough base to transfer. {whale_balance=}, {base.scaled_value=}."
+                        f"Whale does not have enough base to transfer. {whale_balance=}, {base_scaled_value=}."
                     )
 
                 # RPC anvil call to impersonate account
@@ -277,7 +290,7 @@ class HyperdriveAgent:
                 _ = set_anvil_account_balance(self.chain._web3, whale_account_addr, FixedPoint(10).scaled_value)
 
                 # Transfer base from whale to account
-                base_token_contract.functions.transfer(self.account.address, base.scaled_value).transact(
+                base_token_contract.functions.transfer(self.account.address, base_scaled_value).transact(
                     {"from": whale_account_addr}
                 )
 

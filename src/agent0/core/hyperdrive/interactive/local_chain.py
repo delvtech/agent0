@@ -173,7 +173,7 @@ class LocalChain(Chain):
         # Snapshot bookkeeping
         # Put chain_id as a separate directory to avoid conflicts
         if config.snapshot_dir is None:
-            self._snapshot_dir = Path(".interactive_state") / "snapshot" / ("chain_" + str(self.chain_id))
+            self._snapshot_dir = Path(".interactive_state") / "snapshot" / ("chain_" + str(self.chain_obj_id))
         else:
             self._snapshot_dir = Path(config.snapshot_dir)
 

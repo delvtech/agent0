@@ -12,21 +12,73 @@ from typing import NamedTuple, Sequence
 import numpy as np
 from fixedpointmath import FixedPoint
 from pypechain.core import FailedTransaction, PypechainCallException
+from web3 import Web3
 from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
-from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_message
+from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 
 # We define a dict of whales, keyed by the token contract addr,
 # with the value as the whale address.
 # Note that if a token is missing in this mapping, we will try to
 # call `mint` on the trading token to fund.
-SEPOLIA_WHALE_ADDRESSES = {
-    # Note all base tokens are mintable up to 500, so we don't need whales here
+MAINNET_WHALE_ADDRESSES = {
+    # stETH
+    "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84": "0x7F39C581F595B53C5CB19BD0B3F8DA6C935E2CA0",
+    # DAI
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F": "0xf6e72Db5454dd049d0788e411b06CfAF16853042",
+    # rETH
+    "0xae78736Cd615f374D3085123A210448E74Fc6393": "0xCc9EE9483f662091a1de4795249E24aC0aC2630f",
+    # ezETH
+    "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110": "0xC8140dA31E6bCa19b287cC35531c2212763C2059",
+    # eETH
+    "0x35fA164735182de50811E8e2E824cFb9B6118ac2": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
+    # USDC
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": "0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341",
+    # USDA
+    "0x0000206329b97DB379d5E1Bf586BbDB969C63274": "0xEc0B13b2271E212E1a74D55D51932BD52A002961",
+    # USDS
+    "0xdC035D45d973E3EC169d2276DDab16f1e407384F": "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
 }
-# TODO set the static block we fork at, in case whales change
+
+GNOSIS_WHALE_ADDRESSES = {
+    # wstETH
+    "0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6": "0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f",
+}
+
+LINEA_WHALE_ADDRESSES = {
+    # wrsETH
+    "0xD2671165570f41BBB3B0097893300b6EB6101E6C": "0x4DCb388488622e47683EAd1a147947140a31e485",
+    # ezETH
+    "0x2416092f143378750bb29b79eD961ab195CcEea5": "0x0684FC172a0B8e6A65cF4684eDb2082272fe9050",
+}
+
+BASE_WHALE_ADDRESSES = {
+    # cbETH
+    "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+    # USDC
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": "0xF977814e90dA44bFA03b6295A0616a897441aceC",
+    # mwEURC
+    "0xf24608E0CCb972b0b0f4A6446a0BBf58c701a026": "0xAB198020F3B9Fa0187eAF5B5Cd09E407bE0E6F3F",
+    # WELL
+    "0xA88594D404727625A9437C3f886C7643872296AE": "0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17",
+    # nARS
+    "0x5e40f26E89213660514c51Fb61b2d357DBf63C85": "0xF3F1a405bc844FB3322587a305B1a8b2EC916536",
+}
+
+# We build an outer lookup based on chain id
+WHALE_ADDRESSES = {
+    # Ethereum
+    1: MAINNET_WHALE_ADDRESSES,
+    # Gnosis
+    100: GNOSIS_WHALE_ADDRESSES,
+    # Linea
+    59144: LINEA_WHALE_ADDRESSES,
+    # Base
+    8453: BASE_WHALE_ADDRESSES,
+}
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
@@ -151,9 +203,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     else:
         chain_port = parsed_args.chain_port
 
+    if parsed_args.db_port < 0:
+        db_port = 2222
+    else:
+        db_port = parsed_args.db_port
+
     chain_config = LocalChain.Config(
         chain_host=chain_host,
         chain_port=chain_port,
+        db_port=db_port,
         log_level_threshold=logging.WARNING,
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
@@ -165,6 +223,17 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     # Build interactive local hyperdrive
     chain = LocalChain(fork_uri=rpc_uri, config=chain_config)
+
+    chain_id = chain.chain_id
+    # Select whale account based on chain id
+    if chain_id in WHALE_ADDRESSES:
+        # Ensure all whale account addresses are checksum addresses
+        whale_accounts = {
+            Web3.to_checksum_address(key): Web3.to_checksum_address(value)
+            for key, value in WHALE_ADDRESSES[chain_id].items()
+        }
+    else:
+        whale_accounts = {}
 
     # Get list of deployed pools on initial iteration
     deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
@@ -196,14 +265,14 @@ def main(argv: Sequence[str] | None = None) -> None:
                 random_advance_time=False,
                 random_variable_rate=False,
                 lp_share_price_test=False,
-                # TODO all base tokens are mintable up to 500 base
-                # If we want more, we need to put minting in a loop.
-                base_budget_per_bot=FixedPoint(500),
-                whale_accounts=SEPOLIA_WHALE_ADDRESSES,
+                base_budget_per_bot=FixedPoint(1_000),
+                whale_accounts=whale_accounts,
             )
         except Exception as e:  # pylint: disable=broad-except
+            log_rollbar_exception(exception=e, log_level=logging.ERROR)
             logging.error(
-                "Pausing port:%s on crash %s",
+                "Pausing pool (chain:%s port:%s) on crash %s",
+                chain.name,
                 chain.config.chain_port,
                 repr(e),
             )
@@ -220,6 +289,7 @@ class Args(NamedTuple):
     registry_addr: str
     chain_host: str
     chain_port: int
+    db_port: int
     rpc_uri: str
     rng_seed: int
 
@@ -242,6 +312,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         pause_on_invariance_fail=namespace.pause_on_invariance_fail,
         chain_host=namespace.chain_host,
         chain_port=namespace.chain_port,
+        db_port=namespace.db_port,
         rpc_uri=namespace.rpc_uri,
         rng_seed=namespace.rng_seed,
     )
@@ -287,6 +358,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=-1,
         help="The port to run anvil on.",
+    )
+    parser.add_argument(
+        "--db-port",
+        type=int,
+        default=-1,
+        help="The port to run the postgres db on.",
     )
 
     parser.add_argument(

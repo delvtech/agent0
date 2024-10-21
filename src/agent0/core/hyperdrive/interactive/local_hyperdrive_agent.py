@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal, Type, overload
 
 import pandas as pd
 from eth_account.signers.local import LocalAccount
+from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from hyperdrivetypes import (
     AddLiquidityEventFP,
@@ -117,7 +118,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         eth: FixedPoint | None = None,
         pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
-        whale_accounts: dict[str, str] | None = None,
+        whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
     ) -> None:
         """Adds additional funds to the agent.
 
@@ -136,7 +137,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             The pool to mint base for.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
-        whale_accounts: dict[str, str] | None, optional
+        whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None, optional
             A mapping between token -> whale addresses to use to fund the fuzz agent.
             If the token is not in the mapping, will attempt to call `mint` on
             the token contract. Defaults to an empty mapping.

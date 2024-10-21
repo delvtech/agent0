@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Callable, Sequence
 
+from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
 
@@ -154,7 +155,7 @@ def run_fuzz_bots(
     random_variable_rate: bool = False,
     num_iterations: int | None = None,
     lp_share_price_test: bool = False,
-    whale_accounts: dict[str, str] | None = None,
+    whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -202,7 +203,7 @@ def run_fuzz_bots(
         The number of iterations to run. Defaults to None (infinite)
     lp_share_price_test: bool, optional
         If True, will test the LP share price. Defaults to False.
-    whale_accounts: dict[str, str] | None, optional
+    whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None, optional
         A mapping between token -> whale addresses to use to fund the fuzz agent.
         If the token is not in the mapping, fuzzing will attempt to call `mint` on
         the token contract. Defaults to an empty mapping.
@@ -365,7 +366,12 @@ def run_fuzz_bots(
                 if run_async:
                     raise NotImplementedError("Running async not implemented")
                 _ = [
-                    agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=hyperdrive_pool)
+                    agent.add_funds(
+                        base=base_budget_per_bot,
+                        eth=eth_budget_per_bot,
+                        pool=hyperdrive_pool,
+                        whale_accounts=whale_accounts,
+                    )
                     for agent in agents
                 ]
 

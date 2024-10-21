@@ -239,6 +239,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
 
         except Exception as e:  # pylint: disable=broad-except
+            log_rollbar_exception(exception=e, log_level=logging.ERROR)
             logging.error(
                 "Pausing pool (pool:%s port:%s) on crash %s",
                 hyperdrive_pool.hyperdrive_address,

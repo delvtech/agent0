@@ -21,7 +21,12 @@ from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
-from agent0.ethpy.base import EARLIEST_BLOCK_LOOKUP, ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
+from agent0.ethpy.base import (
+    EARLIEST_BLOCK_LOOKUP,
+    ETH_CONTRACT_ADDRESS,
+    EURC_BASE_CONTRACT_ADDRESS,
+    initialize_web3_with_http_provider,
+)
 from agent0.ethpy.hyperdrive.get_expected_hyperdrive_version import (
     check_hyperdrive_version,
     get_minimum_hyperdrive_version,
@@ -178,9 +183,10 @@ class HyperdriveReadInterface:
         vault_shares_token_address = self.pool_config.vault_shares_token
 
         # Agent0 doesn't support pools with eth as base. Additionally, some pools do not have
-        # a base token. In both of these cases, we use the yield token as the base
-        # calls to trades will use "as_base=False"
-        if base_token_contract_address in (ETH_CONTRACT_ADDRESS, ADDRESS_ZERO):
+        # a base token. Finally, `Moonwell EURC` pool doesn't support withdrawing in base.
+        # In all of these cases, we use the yield token as the base.
+        # Calls to trades will use "as_base=False"
+        if base_token_contract_address in (ETH_CONTRACT_ADDRESS, ADDRESS_ZERO, EURC_BASE_CONTRACT_ADDRESS):
             self.base_is_yield = True
             # We use the yield token as the base token (e.g., steth)
             # and pass in "as_base=False" to the contract calls.
