@@ -148,7 +148,6 @@ def checkpoint_events_to_db(
         # Don't look back earlier than the defined earliest block for this chain
         chain_id = interface.web3.eth.chain_id
         if chain_id in EARLIEST_BLOCK_LOOKUP:
-            # Don't look back earlier than the defined earliest block for this chain
             from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[chain_id])
 
         all_events.extend(
@@ -205,9 +204,9 @@ def trade_events_to_db(
             + 1
         )
 
+        # Don't look back earlier than the defined earliest block for this chain
         chain_id = interface.web3.eth.chain_id
         if chain_id in EARLIEST_BLOCK_LOOKUP:
-            # Don't look back earlier than the defined earliest block for this chain
             from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[chain_id])
 
         # Look for transfer single events in both directions if wallet_addr is set
