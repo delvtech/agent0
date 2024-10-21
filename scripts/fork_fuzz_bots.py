@@ -271,7 +271,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         except Exception as e:  # pylint: disable=broad-except
             log_rollbar_exception(exception=e, log_level=logging.ERROR)
             logging.error(
-                "Pausing port:%s on crash %s",
+                "Pausing pool (chain:%s port:%s) on crash %s",
+                chain.name,
                 chain.config.chain_port,
                 repr(e),
             )
