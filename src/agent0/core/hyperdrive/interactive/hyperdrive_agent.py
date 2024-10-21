@@ -261,9 +261,13 @@ class HyperdriveAgent:
                 # Ensure whale has enough base to transfer
                 whale_balance = base_token_contract.functions.balanceOf(whale_account_addr).call()
 
-                # TODO usdc uses 6 decimal values, put support for this in fixedpoint.
+                # TODO usdc and eurc uses 6 decimal values, put support for this in fixedpoint.
                 # TODO hard coding for USDC for now, put switch case for this elsewhere
-                if base_token_contract.address == "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48":
+                if base_token_contract.address in (
+                    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                    "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+                ):
                     base_scaled_value = base.scaled_value // int(1e12)
                 else:
                     base_scaled_value = base.scaled_value

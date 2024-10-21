@@ -392,6 +392,10 @@ class Chain:
         # We split to get only the root uri
         return self.rpc_uri.split("//")[-1].split("/")[0]
 
+    @property
+    def chain_id(self) -> int:
+        return self._web3.eth.chain_id
+
     ################
     # Agent functions
     ################

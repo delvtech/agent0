@@ -43,7 +43,42 @@ MAINNET_WHALE_ADDRESSES = {
     "0xdC035D45d973E3EC169d2276DDab16f1e407384F": "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
 }
 
-# TODO build an outer lookup based on chain id
+GNOSIS_WHALE_ADDRESSES = {
+    # wstETH
+    "0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6": "0x458cD345B4C05e8DF39d0A07220feb4Ec19F5e6f",
+}
+
+LINEA_WHALE_ADDRESSES = {
+    # wrsETH
+    "0xD2671165570f41BBB3B0097893300b6EB6101E6C": "0x4DCb388488622e47683EAd1a147947140a31e485",
+    # ezETH
+    "0x2416092f143378750bb29b79eD961ab195CcEea5": "0x0684FC172a0B8e6A65cF4684eDb2082272fe9050",
+}
+
+BASE_WHALE_ADDRESSES = {
+    # cbETH
+    "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+    # USDC
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": "0xF977814e90dA44bFA03b6295A0616a897441aceC",
+    # EURC
+    "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42": "0xE846373C1a92B167b4E9cd5d8E4d6B1Db9E90EC7",
+    # WELL
+    "0xA88594D404727625A9437C3f886C7643872296AE": "0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17",
+    # nARS
+    "0x5e40f26E89213660514c51Fb61b2d357DBf63C85": "0xF3F1a405bc844FB3322587a305B1a8b2EC916536",
+}
+
+# We build an outer lookup based on chain id
+WHALE_ADDRESSES = {
+    # Ethereum
+    1: MAINNET_WHALE_ADDRESSES,
+    # Gnosis
+    100: GNOSIS_WHALE_ADDRESSES,
+    # Linea
+    59144: LINEA_WHALE_ADDRESSES,
+    # Base
+    8453: BASE_WHALE_ADDRESSES,
+}
 
 
 def _fuzz_ignore_errors(exc: Exception) -> bool:
@@ -183,16 +218,22 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Build interactive local hyperdrive
     chain = LocalChain(fork_uri=rpc_uri, config=chain_config)
 
+    chain_id = chain.chain_id
+    # Select whale account based on chain id
+    if chain_id in WHALE_ADDRESSES:
+        # Ensure all whale account addresses are checksum addresses
+        whale_accounts = {
+            Web3.to_checksum_address(key): Web3.to_checksum_address(value)
+            for key, value in WHALE_ADDRESSES[chain_id].items()
+        }
+    else:
+        whale_accounts = {}
+
     # Get list of deployed pools on initial iteration
     deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
     log_message = f"Running fuzzing on pools {[p.name for p in deployed_pools]}..."
     logging.info(log_message)
     log_rollbar_message(message=log_message, log_level=logging.INFO)
-
-    # Ensure all whale account addresses are checksum addresses
-    whale_accounts = {
-        Web3.to_checksum_address(key): Web3.to_checksum_address(value) for key, value in MAINNET_WHALE_ADDRESSES.items()
-    }
 
     while True:
         # Check for new pools
@@ -218,10 +259,11 @@ def main(argv: Sequence[str] | None = None) -> None:
                 random_advance_time=False,
                 random_variable_rate=False,
                 lp_share_price_test=False,
-                base_budget_per_bot=FixedPoint(10_000),
+                base_budget_per_bot=FixedPoint(1_000),
                 whale_accounts=whale_accounts,
             )
         except Exception as e:  # pylint: disable=broad-except
+            raise e
             log_rollbar_exception(exception=e, log_level=logging.ERROR)
             logging.error(
                 "Pausing port:%s on crash %s",
