@@ -146,7 +146,10 @@ def checkpoint_events_to_db(
         from_block = get_latest_block_number_from_checkpoint_info_table(db_session, interface.hyperdrive_address) + 1
 
         # Don't look back earlier than the defined earliest block for this chain
-        from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[interface.web3.eth.chain_id])
+        chain_id = interface.web3.eth.chain_id
+        if chain_id in EARLIEST_BLOCK_LOOKUP:
+            # Don't look back earlier than the defined earliest block for this chain
+            from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[chain_id])
 
         all_events.extend(
             get_event_logs_for_db(
@@ -202,8 +205,10 @@ def trade_events_to_db(
             + 1
         )
 
-        # Don't look back earlier than the defined earliest block for this chain
-        from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[interface.web3.eth.chain_id])
+        chain_id = interface.web3.eth.chain_id
+        if chain_id in EARLIEST_BLOCK_LOOKUP:
+            # Don't look back earlier than the defined earliest block for this chain
+            from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[chain_id])
 
         # Look for transfer single events in both directions if wallet_addr is set
         if wallet_addr is not None:
