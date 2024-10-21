@@ -4,9 +4,8 @@ from .rpc_interface import get_account_balance, set_anvil_account_balance
 from .transactions import async_wait_for_transaction_receipt
 from .web3_setup import initialize_web3_with_http_provider
 
+# The contract address of ethereum on mainnet chain
 ETH_CONTRACT_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-
-EURC_BASE_CONTRACT_ADDRESS = "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
 
 # We define the earliest block to look for hyperdrive initialize events
 # based on chain id (retrieved from web3.eth.chain_id()).
