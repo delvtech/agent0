@@ -10,6 +10,7 @@ from fixedpointmath import FixedPoint
 from sqlalchemy.orm import Session
 
 from agent0.chainsync.df_to_db import df_to_db
+from agent0.ethpy.base import EARLIEST_BLOCK_LOOKUP
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 from .convert_data import convert_checkpoint_events, convert_pool_config, convert_pool_info, convert_trade_events
@@ -143,6 +144,10 @@ def checkpoint_events_to_db(
         # NOTE we get all numeric arguments in events as string to prevent precision loss
 
         from_block = get_latest_block_number_from_checkpoint_info_table(db_session, interface.hyperdrive_address) + 1
+
+        # Don't look back earlier than the defined earliest block for this chain
+        from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[interface.web3.eth.chain_id])
+
         all_events.extend(
             get_event_logs_for_db(
                 interface,
@@ -196,6 +201,9 @@ def trade_events_to_db(
             )
             + 1
         )
+
+        # Don't look back earlier than the defined earliest block for this chain
+        from_block = max(from_block, EARLIEST_BLOCK_LOOKUP[interface.web3.eth.chain_id])
 
         # Look for transfer single events in both directions if wallet_addr is set
         if wallet_addr is not None:
