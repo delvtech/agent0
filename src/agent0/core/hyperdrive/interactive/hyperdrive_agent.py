@@ -198,7 +198,7 @@ class HyperdriveAgent:
         eth: FixedPoint | None = None,
         pool: Hyperdrive | None = None,
         signer_account: LocalAccount | None = None,
-        whale_accounts: dict[str, str] | dict[ChecksumAddress, ChecksumAddress] | None = None,
+        whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
     ) -> None:
         """Adds additional funds to the agent.
 
@@ -217,7 +217,7 @@ class HyperdriveAgent:
             The pool to interact with. Defaults to the active pool.
         signer_account: LocalAccount | None, optional
             The signer account to use to call `mint`. Defaults to the agent itself.
-        whale_accounts: dict[str, str] | None, optional
+        whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None, optional
             A mapping between token -> whale addresses to use to fund the fuzz agent.
             If the token is not in the mapping, will attempt to call `mint` on
             the token contract. Defaults to an empty mapping.
@@ -264,9 +264,10 @@ class HyperdriveAgent:
                 # TODO usdc and eurc uses 6 decimal values, put support for this in fixedpoint.
                 # TODO hard coding for USDC for now, put switch case for this elsewhere
                 if base_token_contract.address in (
+                    # USDC on mainnet
                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    # USDC on base
                     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                    "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
                 ):
                     base_scaled_value = base.scaled_value // int(1e12)
                 else:

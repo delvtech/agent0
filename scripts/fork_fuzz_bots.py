@@ -60,8 +60,8 @@ BASE_WHALE_ADDRESSES = {
     "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22": "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
     # USDC
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": "0xF977814e90dA44bFA03b6295A0616a897441aceC",
-    # EURC
-    "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42": "0xE846373C1a92B167b4E9cd5d8E4d6B1Db9E90EC7",
+    # mwEURC
+    "0xf24608E0CCb972b0b0f4A6446a0BBf58c701a026": "0xAB198020F3B9Fa0187eAF5B5Cd09E407bE0E6F3F",
     # WELL
     "0xA88594D404727625A9437C3f886C7643872296AE": "0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17",
     # nARS
@@ -263,7 +263,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                 whale_accounts=whale_accounts,
             )
         except Exception as e:  # pylint: disable=broad-except
-            raise e
             log_rollbar_exception(exception=e, log_level=logging.ERROR)
             logging.error(
                 "Pausing port:%s on crash %s",

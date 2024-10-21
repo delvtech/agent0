@@ -6,6 +6,8 @@ from .web3_setup import initialize_web3_with_http_provider
 
 ETH_CONTRACT_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
+EURC_BASE_CONTRACT_ADDRESS = "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42"
+
 # We define the earliest block to look for hyperdrive initialize events
 # based on chain id (retrieved from web3.eth.chain_id()).
 EARLIEST_BLOCK_LOOKUP = {
