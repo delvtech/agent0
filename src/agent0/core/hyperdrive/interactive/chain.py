@@ -194,15 +194,15 @@ class Chain:
         if not config.no_postgres:
             if config.use_existing_postgres:
                 self.postgres_config = build_postgres_config_from_env()
-                self.chain_id = str(self.postgres_config.POSTGRES_PORT)
+                self.chain_obj_id = str(self.postgres_config.POSTGRES_PORT)
             else:
                 # Set up db connections
                 # We use the db port as the container name
                 # TODO we may want to use the actual chain id for this when we start
                 # caching the db specific to the chain id
-                self.chain_id = str(config.db_port)
+                self.chain_obj_id = str(config.db_port)
                 obj_name = type(self).__name__.lower()
-                db_container_name = f"agent0-{obj_name}-{self.chain_id}"
+                db_container_name = f"agent0-{obj_name}-{self.chain_obj_id}"
 
                 self.docker_client, self.postgres_config, self.postgres_container = self._initialize_postgres_container(
                     db_container_name, config.db_port, config.remove_existing_db_container
