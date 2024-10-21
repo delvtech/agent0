@@ -366,7 +366,12 @@ def run_fuzz_bots(
                 if run_async:
                     raise NotImplementedError("Running async not implemented")
                 _ = [
-                    agent.add_funds(base=base_budget_per_bot, eth=eth_budget_per_bot, pool=hyperdrive_pool)
+                    agent.add_funds(
+                        base=base_budget_per_bot,
+                        eth=eth_budget_per_bot,
+                        pool=hyperdrive_pool,
+                        whale_accounts=whale_accounts,
+                    )
                     for agent in agents
                 ]
 
