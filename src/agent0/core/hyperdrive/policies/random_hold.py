@@ -16,7 +16,6 @@ from .random import Random
 if TYPE_CHECKING:
     from agent0.core.hyperdrive import HyperdriveMarketAction, HyperdriveWallet, TradeResult
     from agent0.ethpy.hyperdrive import HyperdriveReadInterface
-    from agent0.ethpy.hyperdrive.state import PoolState
 
 
 class RandomHold(Random):

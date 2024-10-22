@@ -83,6 +83,29 @@ WHALE_ADDRESSES = {
 }
 
 
+def _fuzz_ignore_logging_to_rollbar(exc: Exception) -> bool:
+    """Function defining errors to not log to rollbar during fuzzing.
+
+    These are the two most common errors we see in local fuzz testing. These are
+    known issues due to random bots not accounting for these cases, so we don't log them to
+    rollbar.
+    """
+    if isinstance(exc, PypechainCallException):
+        orig_exception = exc.orig_exception
+        if orig_exception is None:
+            return False
+
+        # Insufficient liquidity error
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "InsufficientLiquidity()":
+            return True
+
+        # Circuit breaker triggered error
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "CircuitBreakerTriggered()":
+            return True
+
+    return False
+
+
 def _fuzz_ignore_errors(exc: Exception) -> bool:
     """Function defining errors to ignore for pausing chain during fuzzing."""
     # pylint: disable=too-many-return-statements
@@ -218,6 +241,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         preview_before_trade=True,
         log_to_rollbar=log_to_rollbar,
         rollbar_log_prefix="forkfuzzbots",
+        rollbar_log_filter_func=_fuzz_ignore_logging_to_rollbar,
         rng=rng,
         crash_log_level=logging.ERROR,
         crash_report_additional_info={"rng_seed": rng_seed},
