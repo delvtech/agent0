@@ -113,7 +113,7 @@ class Random(HyperdriveBasePolicy):
             A list containing all of the available actions.
         """
         pool_state = interface.current_pool_state
-        # The amount of minimum transaction amount is dependent on if we're trading with
+        # The minimum transaction amount is dependent on if we're trading with
         # base or vault shares
         if interface.base_is_yield:
             minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
