@@ -26,7 +26,15 @@ def _fuzz_ignore_logging_to_rollbar(exc: Exception) -> bool:
     known issues due to random bots not accounting for these cases, so we don't log them to
     rollbar.
     """
-    if isinstance(exc, PypechainCallException):
+    if isinstance(exc, FuzzAssertionException):
+        # Large circuit breaker check
+        if (
+            len(exc.args) >= 2
+            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
+            and "Large trade has caused the rate circuit breaker to trip." in exc.args[1]
+        ):
+            return True
+    elif isinstance(exc, PypechainCallException):
         orig_exception = exc.orig_exception
         if orig_exception is None:
             return False
