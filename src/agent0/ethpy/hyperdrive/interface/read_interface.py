@@ -41,6 +41,7 @@ from ._contract_calls import (
     _get_hyperdrive_base_balance,
     _get_hyperdrive_eth_balance,
     _get_long_total_supply,
+    _get_minimum_transaction_amount_shares,
     _get_short_total_supply,
     _get_total_supply_withdrawal_shares,
     _get_variable_rate,
@@ -477,7 +478,25 @@ class HyperdriveReadInterface:
             block_identifier = "latest"
         return get_hyperdrive_checkpoint(self.hyperdrive_contract, checkpoint_time, block_identifier)
 
-    def get_total_supply_withdrawal_shares(self, block_identifier: BlockIdentifier | None) -> FixedPoint:
+    def get_minimum_transaction_amount_shares(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
+        """Use an RPC to get the minimum transaction amount in units of shares at the given block.
+
+        Arguments
+        ---------
+        block_identifier: BlockIdentifier, optional
+            The identifier for a block.
+            If not given, the latest block number is used.
+
+        Returns
+        -------
+        FixedPoint
+            The quantity of withdrawal shares available in the Hyperdrive pool.
+        """
+        if block_identifier is None:
+            block_identifier = "latest"
+        return _get_minimum_transaction_amount_shares(self, self.hyperdrive_contract, block_identifier)
+
+    def get_total_supply_withdrawal_shares(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
         """Use an RPC to get the total supply of withdrawal shares in the pool at the given block.
 
         Arguments
@@ -495,7 +514,7 @@ class HyperdriveReadInterface:
             block_identifier = "latest"
         return _get_total_supply_withdrawal_shares(self.hyperdrive_contract, block_identifier)
 
-    def get_vault_shares(self, block_identifier: BlockIdentifier | None) -> FixedPoint:
+    def get_vault_shares(self, block_identifier: BlockIdentifier | None = None) -> FixedPoint:
         """Use an RPC to get the balance of shares that the Hyperdrive pool has in the underlying yield source.
 
         Arguments
@@ -513,7 +532,7 @@ class HyperdriveReadInterface:
             block_identifier = "latest"
         return _get_vault_shares(self, self.hyperdrive_contract, block_identifier)
 
-    def get_idle_shares(self, pool_state: PoolState | None) -> FixedPoint:
+    def get_idle_shares(self, pool_state: PoolState | None = None) -> FixedPoint:
         """Get the balance of idle shares that the Hyperdrive pool has.
 
         Arguments

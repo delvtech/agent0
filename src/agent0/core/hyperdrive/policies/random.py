@@ -113,9 +113,16 @@ class Random(HyperdriveBasePolicy):
             A list containing all of the available actions.
         """
         pool_state = interface.current_pool_state
+        # The minimum transaction amount is dependent on if we're trading with
+        # base or vault shares
+        if interface.base_is_yield:
+            minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
+        else:
+            minimum_transaction_amount = pool_state.pool_config.minimum_transaction_amount
+
         # prevent accidental override
         # compile a list of all actions
-        if wallet.balance.amount <= pool_state.pool_config.minimum_transaction_amount:
+        if wallet.balance.amount <= minimum_transaction_amount:
             all_available_actions = []
         else:
             all_available_actions = [
@@ -127,7 +134,9 @@ class Random(HyperdriveBasePolicy):
             all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
         if wallet.shorts:  # if the agent has open shorts
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
-        if wallet.lp_tokens:
+        # If the agent has more than minimum transaction amount of liquidity to remove
+        # Note the lp tokens are always bounded by the actual minimum share reserves in pool config
+        if wallet.lp_tokens >= pool_state.pool_config.minimum_transaction_amount:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
         if wallet.withdraw_shares and pool_state.pool_info.withdrawal_shares_ready_to_withdraw > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
@@ -151,6 +160,10 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for opening a Hyperdrive short.
         """
+        # Shorts take units of bonds, which is always checked against the minimum transaction amount
+        # as defined in pool config.
+        minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
+
         # Calc max short is crashing, we surround in try catch to log
         # TODO fix all crashes in calc_max_short and calc_max_long and instead return 0 for max short
         try:
@@ -183,16 +196,14 @@ class Random(HyperdriveBasePolicy):
             # We don't return a trade here if this fails
             return []
 
-        if maximum_trade_amount <= interface.pool_config.minimum_transaction_amount:
+        if maximum_trade_amount <= minimum_transaction_amount:
             return []
 
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # minimum_transaction_amount <= trade_amount <= max_short
-        trade_amount = max(
-            interface.pool_config.minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount)
-        )
+        trade_amount = max(minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount))
         # optionally ignore slippage tolerance
         ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
         if ignore_slippage:
@@ -261,6 +272,15 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for opening a Hyperdrive long.
         """
+
+        pool_state = interface.current_pool_state
+        # open long's minimum transaction amount is dependent on if we're trading with
+        # base or vault shares
+        if interface.base_is_yield:
+            minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
+        else:
+            minimum_transaction_amount = pool_state.pool_config.minimum_transaction_amount
+
         # TODO fix all crashes in calc_max_short and calc_max_long and instead return 0 for max short
         try:
             maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, interface.current_pool_state)
@@ -290,16 +310,14 @@ class Random(HyperdriveBasePolicy):
             )
             # We don't return a trade here if this fails
             return []
-        if maximum_trade_amount <= interface.pool_config.minimum_transaction_amount:
+        if maximum_trade_amount <= minimum_transaction_amount:
             return []
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # minimum_transaction_amount <= trade_amount <= max long
-        trade_amount = max(
-            interface.pool_config.minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount)
-        )
+        trade_amount = max(minimum_transaction_amount, min(initial_trade_amount, maximum_trade_amount))
         # optionally ignore slippage tolerance
         ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
         if ignore_slippage:
@@ -368,14 +386,16 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for adding liquidity to a Hyperdrive pool.
         """
+        # LP is in units of LP, which is always checked against the minimum transaction amount
+        # as defined in pool config.
+        minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
+
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # minimum_transaction_amount <= trade_amount
-        trade_amount: FixedPoint = max(
-            interface.pool_config.minimum_transaction_amount, min(wallet.balance.amount, initial_trade_amount)
-        )
+        trade_amount: FixedPoint = max(minimum_transaction_amount, min(wallet.balance.amount, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             add_liquidity_trade(
@@ -400,14 +420,16 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for removing liquidity from a Hyperdrive pool.
         """
+        # LP is in units of LP, which is always checked against the minimum transaction amount
+        # as defined in pool config.
+        minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
+
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(wallet.balance.amount) * 0.1, scale=float(wallet.balance.amount) * 0.01)
         )
         # minimum_transaction_amount <= trade_amount <= lp_tokens
-        trade_amount = max(
-            interface.pool_config.minimum_transaction_amount, min(wallet.lp_tokens, initial_trade_amount)
-        )
+        trade_amount = max(minimum_transaction_amount, min(wallet.lp_tokens, initial_trade_amount))
         # optionally ignore slippage tolerance
         ignore_slippage = self.rng.choice([True, False], size=1) if self.randomly_ignore_slippage_tolerance else False
         if ignore_slippage:
