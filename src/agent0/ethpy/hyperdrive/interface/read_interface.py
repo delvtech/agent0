@@ -21,12 +21,7 @@ from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
-from agent0.ethpy.base import (
-    EARLIEST_BLOCK_LOOKUP,
-    ETH_CONTRACT_ADDRESS,
-    EURC_BASE_CONTRACT_ADDRESS,
-    initialize_web3_with_http_provider,
-)
+from agent0.ethpy.base import EARLIEST_BLOCK_LOOKUP, ETH_CONTRACT_ADDRESS, initialize_web3_with_http_provider
 from agent0.ethpy.hyperdrive.get_expected_hyperdrive_version import (
     check_hyperdrive_version,
     get_minimum_hyperdrive_version,
@@ -182,18 +177,30 @@ class HyperdriveReadInterface:
         base_token_contract_address = self.pool_config.base_token
         vault_shares_token_address = self.pool_config.vault_shares_token
 
-        # Agent0 doesn't support pools with eth as base. Additionally, some pools do not have
-        # a base token. Finally, `Moonwell EURC` pool doesn't support withdrawing in base.
+        # There are cases where we can't interact with hyperdrive
+        # with the base token:
+        # - The pool uses eth as base.
+        # - The pool does not have a base token.
+        # - The pool doesn't support some operations in base (i.e., Moonwell EURC, Moonwell USDC)
         # In all of these cases, we use the yield token as the base.
         # Calls to trades will use "as_base=False"
-        if base_token_contract_address in (ETH_CONTRACT_ADDRESS, ADDRESS_ZERO, EURC_BASE_CONTRACT_ADDRESS):
+        hyperdrive_name = self.hyperdrive_contract.functions.name().call()
+        if (
+            base_token_contract_address
+            in (
+                ETH_CONTRACT_ADDRESS,
+                ADDRESS_ZERO,
+            )
+            or "Moonwell USDC" in hyperdrive_name
+            or "Moonwell EURC" in hyperdrive_name
+            or "Moonwell StkWell" in hyperdrive_name
+            or "Num Finance snARS" in hyperdrive_name
+        ):
             self.base_is_yield = True
             # We use the yield token as the base token (e.g., steth)
             # and pass in "as_base=False" to the contract calls.
             # This simplifies accounting to have only one base token for steth.
-            # The alternative of having eth as base token requires keeping track of both
-            # tokens in order to support `removeLiquidity`, as we can't remove liquidity into
-            # eth.
+            # TODO expose `as_base` to the caller, and set a default for agent0
             base_token_contract_address = vault_shares_token_address
         else:
             self.base_is_yield = False
