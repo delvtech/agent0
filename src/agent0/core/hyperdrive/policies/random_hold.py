@@ -120,6 +120,12 @@ class RandomHold(Random):
         """
         # pylint: disable=too-many-branches
         pool_state = interface.current_pool_state
+        # The amount of minimum transaction amount is dependent on if we're trading with
+        # base or vault shares
+        if interface.base_is_yield:
+            minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
+        else:
+            minimum_transaction_amount = pool_state.pool_config.minimum_transaction_amount
 
         # Initialize list of open positions
         if interface.hyperdrive_address not in self.open_positions:
@@ -142,7 +148,7 @@ class RandomHold(Random):
                     # Sanity check
                     raise ValueError(f"Action type {position.action_type} not in allowable actions")
 
-        if wallet.balance.amount <= pool_state.pool_config.minimum_transaction_amount:
+        if wallet.balance.amount <= minimum_transaction_amount:
             all_available_actions = []
         else:
             all_available_actions = [
@@ -161,6 +167,7 @@ class RandomHold(Random):
         if short_ready_to_close:  # if the agent has shorts ready to close
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
         # If the agent has more than minimum transaction amount of liquidity to remove
+        # Note the lp tokens are always bounded by the actual minimum share reserves in pool config
         if wallet.lp_tokens >= pool_state.pool_config.minimum_transaction_amount:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
         if wallet.withdraw_shares and pool_state.pool_info.withdrawal_shares_ready_to_withdraw > 0:

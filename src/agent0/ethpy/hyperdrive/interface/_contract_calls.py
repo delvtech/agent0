@@ -43,6 +43,21 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-positional-arguments
 
 
+def _get_minimum_transaction_amount_shares(
+    interface: HyperdriveReadInterface,
+    hyperdrive_contract: IHyperdriveContract,
+    block_identifier: BlockIdentifier | None = None,
+) -> FixedPoint:
+    # Get the minimum transaction amount in units of base
+    minimum_transaction_amount_base = interface.pool_config.minimum_transaction_amount
+    # Convert to shares via rpc call, and cast as fixed point
+    return FixedPoint(
+        scaled_value=hyperdrive_contract.functions.convertToShares(minimum_transaction_amount_base.scaled_value).call(
+            block_identifier=block_identifier or "latest"
+        )
+    )
+
+
 def _get_total_supply_withdrawal_shares(
     hyperdrive_contract: IHyperdriveContract, block_identifier: BlockIdentifier | None = None
 ) -> FixedPoint:
@@ -79,6 +94,8 @@ def _get_vault_shares(
     block_identifier: BlockIdentifier | None = None,
 ) -> FixedPoint:
     """See API for documentation."""
+
+    # TODO call `hyperdrive_contract.functions.totalShares` instead of custom logic between pools
     if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
         # Type narrowing
         assert interface.vault_shares_token_contract is not None
