@@ -161,7 +161,8 @@ class RandomHold(Random):
             all_available_actions.append(HyperdriveActionType.CLOSE_LONG)
         if short_ready_to_close:  # if the agent has shorts ready to close
             all_available_actions.append(HyperdriveActionType.CLOSE_SHORT)
-        if wallet.lp_tokens:
+        # If the agent has more than minimum transaction amount of liquidity to remove
+        if wallet.lp_tokens >= pool_state.pool_config.minimum_transaction_amount:
             all_available_actions.append(HyperdriveActionType.REMOVE_LIQUIDITY)
         if wallet.withdraw_shares and pool_state.pool_info.withdrawal_shares_ready_to_withdraw > 0:
             all_available_actions.append(HyperdriveActionType.REDEEM_WITHDRAW_SHARE)
