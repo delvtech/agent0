@@ -234,7 +234,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 run_async=False,
                 random_advance_time=True,
                 random_variable_rate=True,
-                num_iterations=3000,
+                num_iterations=parsed_args.num_iterations_per_episode,
                 lp_share_price_test=parsed_args.lp_share_price_test,
             )
 
@@ -262,6 +262,7 @@ class Args(NamedTuple):
     genesis_timestamp: int
     rng_seed: int
     steth: bool
+    num_iterations_per_episode: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -285,6 +286,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         genesis_timestamp=namespace.genesis_timestamp,
         rng_seed=namespace.rng_seed,
         steth=namespace.steth,
+        num_iterations_per_episode=namespace.num_iterations_per_episode,
     )
 
 
@@ -343,6 +345,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         default=False,
         action="store_true",
         help="Runs fuzz testing on the steth hyperdrive",
+    )
+    parser.add_argument(
+        "--num-iterations-per-episode",
+        default=3000,
+        help="The number of iterations to run for each random pool config.",
     )
 
     # Use system arguments if none were passed

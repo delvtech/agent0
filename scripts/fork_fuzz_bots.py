@@ -223,36 +223,35 @@ def main(argv: Sequence[str] | None = None) -> None:
         crash_report_additional_info={"rng_seed": rng_seed},
         gas_limit=int(1e6),  # Plenty of gas limit for transactions
     )
-    # Build interactive local hyperdrive
-    chain = LocalChain(fork_uri=rpc_uri, config=chain_config)
-
-    chain_id = chain.chain_id
-    # Select whale account based on chain id
-    if chain_id in WHALE_ADDRESSES:
-        # Ensure all whale account addresses are checksum addresses
-        whale_accounts = {
-            Web3.to_checksum_address(key): Web3.to_checksum_address(value)
-            for key, value in WHALE_ADDRESSES[chain_id].items()
-        }
-    else:
-        whale_accounts = {}
-
-    # Get list of deployed pools on initial iteration
-    deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-    log_message = f"Running fuzzing on pools {[p.name for p in deployed_pools]}..."
-    logging.info(log_message)
-    log_rollbar_message(message=log_message, log_level=logging.INFO)
 
     while True:
+        # Build interactive local hyperdrive
+        chain = LocalChain(fork_uri=rpc_uri, config=chain_config)
+
+        chain_id = chain.chain_id
+        # Select whale account based on chain id
+        if chain_id in WHALE_ADDRESSES:
+            # Ensure all whale account addresses are checksum addresses
+            whale_accounts = {
+                Web3.to_checksum_address(key): Web3.to_checksum_address(value)
+                for key, value in WHALE_ADDRESSES[chain_id].items()
+            }
+        else:
+            whale_accounts = {}
+
+        # Get list of deployed pools on initial iteration
+        deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
+        log_message = f"Running fuzzing on pools {[p.name for p in deployed_pools]}..."
+        logging.info(log_message)
+        log_rollbar_message(message=log_message, log_level=logging.INFO)
         # Check for new pools
         latest_block = chain.block_data()
         latest_block_number = latest_block.get("number", None)
         if latest_block_number is None:
             raise AssertionError("Block has no number.")
 
-        # TODO we may want to refork every once in awhile in case new pools are deployed.
-        # For now, we assume this script gets restarted.
-
+        # We run fuzzbots for every num_iterations_per_episode,
+        # after which we will refork and restart.
         try:
             run_fuzz_bots(
                 chain,
@@ -269,6 +268,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 lp_share_price_test=False,
                 base_budget_per_bot=FixedPoint(1_000),
                 whale_accounts=whale_accounts,
+                num_iterations=parsed_args.num_iterations_per_episode,
             )
         except Exception as e:  # pylint: disable=broad-except
             log_rollbar_exception(exception=e, log_level=logging.ERROR)
@@ -294,6 +294,7 @@ class Args(NamedTuple):
     db_port: int
     rpc_uri: str
     rng_seed: int
+    num_iterations_per_episode: int
 
 
 def namespace_to_args(namespace: argparse.Namespace) -> Args:
@@ -317,6 +318,7 @@ def namespace_to_args(namespace: argparse.Namespace) -> Args:
         db_port=namespace.db_port,
         rpc_uri=namespace.rpc_uri,
         rng_seed=namespace.rng_seed,
+        num_iterations_per_episode=namespace.num_iterations_per_episode,
     )
 
 
@@ -380,6 +382,11 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
         type=int,
         default=-1,
         help="The random seed to use for the fuzz run.",
+    )
+    parser.add_argument(
+        "--num-iterations-per-episode",
+        default=3000,
+        help="The number of iterations to run for each random pool config.",
     )
 
     # Use system arguments if none were passed
