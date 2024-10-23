@@ -311,8 +311,11 @@ def run_fuzz_bots(
                     if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
                         # To ensure we log all errors, even when not from a trade contract call,
                         # we log the exception here
+                        # TODO this can result in duplicate entries of the same error
                         log_rollbar_exception(
-                            rollbar_log_prefix="Unexpected error", exception=exc, log_level=logging.ERROR
+                            rollbar_log_prefix=f"Unexpected contract call error on pool {pool.name}",
+                            exception=exc,
+                            log_level=logging.ERROR,
                         )
 
                         if raise_error_on_crash:
