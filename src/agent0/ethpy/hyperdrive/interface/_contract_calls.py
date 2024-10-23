@@ -83,13 +83,9 @@ def _get_variable_rate(
         rate = yield_contract.functions.getRate().call(block_identifier=block_identifier or "latest")
         return FixedPoint(scaled_value=rate)
     except (BadFunctionCallOutput, ValueError):
-        logging.warning("Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`.")
         return None
     # Some contracts throw a logic error
     except ContractLogicError:
-        logging.warning(
-            "Underlying yield contract reverted `getRate` function, setting `state.variable_rate` as `None`."
-        )
         return None
 
 
