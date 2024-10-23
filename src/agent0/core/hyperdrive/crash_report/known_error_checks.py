@@ -35,7 +35,6 @@ def check_for_known_errors(trade_result: TradeResult, interface: HyperdriveReadI
     trade_result = check_for_invalid_balance(trade_result, interface)
     trade_result = check_for_insufficient_allowance(trade_result, interface)
     trade_result = check_for_slippage(trade_result)
-    trade_result = check_for_min_txn_amount(trade_result)
     trade_result = check_for_long_proceeds_less_than_fees(trade_result, interface)
     return trade_result
 
@@ -299,49 +298,6 @@ def check_for_slippage(trade_result: TradeResult) -> TradeResult:
         # Prepend slippage argument to exception args
         trade_result.exception.args = ("Slippage detected",) + trade_result.exception.args
         trade_result.is_slippage = True
-
-    return trade_result
-
-
-def check_for_min_txn_amount(trade_result: TradeResult) -> TradeResult:
-    """Detects minimum transaction amount errors in trade_result and adds additional information to the
-    exception in trade_result
-
-    Arguments
-    ---------
-    trade_result: TradeResult
-        The trade result object from trading
-
-    Returns
-    -------
-    TradeResult
-        A modified trade_result that has a custom exception argument message prepended
-    """
-
-    assert trade_result.pool_config is not None
-    assert trade_result.trade_object is not None
-
-    trade_type = trade_result.trade_object.market_action.action_type
-    add_arg = None
-    is_min_txn_amount = False
-
-    # Redeem withdrawal shares is not subject to minimum transaction amounts
-    if trade_type != HyperdriveActionType.REDEEM_WITHDRAW_SHARE:
-        min_txn_amount = trade_result.pool_config["minimum_transaction_amount"]
-        trade_amount = trade_result.trade_object.market_action.trade_amount
-        if trade_amount < min_txn_amount:
-            add_arg = (
-                f"Minimum Transaction Amount: {trade_type.name} for {trade_amount}, "
-                f"minimum transaction amount is {min_txn_amount}."
-            )
-            is_min_txn_amount = True
-
-    # Prepend balance error argument to exception args
-    if is_min_txn_amount:
-        assert add_arg is not None
-        assert trade_result.exception is not None
-        trade_result.exception.args = (add_arg,) + trade_result.exception.args
-        trade_result.is_min_txn_amount = True
 
     return trade_result
 
