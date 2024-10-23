@@ -8,6 +8,7 @@ from typing import Callable, Sequence
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
+from pypechain.core import PypechainCallException
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
@@ -305,16 +306,15 @@ def run_fuzz_bots(
                 agent_trade = []
                 try:
                     agent_trade = agent.execute_policy_action(pool=pool)
-                except Exception as exc:  # pylint: disable=broad-exception-caught
+                except PypechainCallException as exc:
                     if raise_error_on_crash:
                         if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
                             raise exc
                     else:
                         # TODO this assumes that the resulting exception is logged to rollbar.
                         # This is the case when the bot crashes during the trade,
-                        # but if an exception happens that we didn't expect,
+                        # but if a contract call exception happens that we didn't expect,
                         # the error here won't get logged.
-                        # Fix here is likely catching only certain expected exceptions
                         logging.error("Logged %s, continuing", repr(exc))
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
