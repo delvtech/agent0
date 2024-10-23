@@ -35,6 +35,7 @@ def run_invariant_checks(
     crash_report_additional_info: dict[str, Any] | None = None,
     log_anvil_state_dump: bool = False,
     pending_pool_state: PoolState | None = None,
+    check_price_spike: bool = True,
 ) -> list[FuzzAssertionException]:
     """Run the invariant checks.
 
@@ -45,7 +46,8 @@ def run_invariant_checks(
     - the system is solvent, i.e. (share reserves - long exposure in shares - min share reserves) > 0
     - present value is greater than idle shares
     - the lp share price doesn't exceed an amount from block to block
-    - the previous checkpoint should always exist, except for the first checkpoint
+    - check negative interest on yield source
+    - Warn if a trade causes a large rate spike; which is a precursor to an attack
 
     Arguments
     ---------
@@ -73,6 +75,8 @@ def run_invariant_checks(
     pending_pool_state: BlockData | None, optional
         The pool state for the pending block. If None, assumes the block is ticking in the
         background and will maintain the pending block itself.
+    check_price_spike: bool
+        If True, check price spike
 
     Returns
     -------
@@ -119,12 +123,13 @@ def run_invariant_checks(
             _check_present_value_greater_than_idle_shares(interface, pool_state),
             # Error
             _check_negative_interest(interface, pool_state),
-            # Warning
-            _check_price_spike(interface, pool_state),
             # TODO
             # If at any point, we can open a long to make share price to 1
             # Get spot price after long
         ]
+        if check_price_spike:
+            # Warning
+            results.append(_check_price_spike(interface, pool_state))
 
     else:
         if lp_share_price_test:
@@ -140,8 +145,10 @@ def run_invariant_checks(
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
                 _check_negative_interest(interface, pool_state),
-                _check_price_spike(interface, pool_state),
             ]
+            if check_price_spike:
+                # Warning
+                results.append(_check_price_spike(interface, pool_state))
 
     exception_message_base = ["Continuous Fuzz Bots Invariant Checks"]
     exception_data_template: dict[str, Any] = {}

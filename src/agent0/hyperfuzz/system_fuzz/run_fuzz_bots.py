@@ -345,6 +345,7 @@ def run_fuzz_bots(
                         log_anvil_state_dump=chain.config.log_anvil_state_dump,
                         pool_name=pool.name,
                         pending_pool_state=pending_pool_state,
+                        check_price_spike=False,
                     )
                     if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
                         # If we have an ignore function, we filter exceptions
