@@ -327,8 +327,11 @@ def run_fuzz_bots(
 
                 trades.append(agent_trade)
 
-                # Check invariance on every iteration
-                if check_invariance:
+                # Check invariance on every iteration if we're not doing lp_share_price_test.
+                # Only check invariance if a trade was executed for lp_share_price_test.
+                # This is because the lp_share_price_test requires a trade to be executed
+                # in order to mine a block, as it waits for the pending block to be mined.
+                if check_invariance and (not lp_share_price_test or (lp_share_price_test and len(agent_trade) > 0)):
                     latest_block = pool.interface.get_block("latest")
                     latest_block_number = latest_block.get("number", None)
                     if latest_block_number is None:
