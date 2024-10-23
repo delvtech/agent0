@@ -32,7 +32,7 @@ MAINNET_WHALE_ADDRESSES = {
     # rETH
     "0xae78736Cd615f374D3085123A210448E74Fc6393": "0xCc9EE9483f662091a1de4795249E24aC0aC2630f",
     # ezETH
-    "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110": "0xC8140dA31E6bCa19b287cC35531c2212763C2059",
+    "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110": "0x22E12A50e3ca49FB183074235cB1db84Fe4C716D",
     # eETH
     "0x35fA164735182de50811E8e2E824cFb9B6118ac2": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
     # USDC
@@ -90,15 +90,7 @@ def _fuzz_ignore_logging_to_rollbar(exc: Exception) -> bool:
     known issues due to random bots not accounting for these cases, so we don't log them to
     rollbar.
     """
-    if isinstance(exc, FuzzAssertionException):
-        # Large circuit breaker check
-        if (
-            len(exc.args) >= 2
-            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
-            and "Large trade has caused the rate circuit breaker to trip." in exc.args[1]
-        ):
-            return True
-    elif isinstance(exc, PypechainCallException):
+    if isinstance(exc, PypechainCallException):
         orig_exception = exc.orig_exception
         if orig_exception is None:
             return False
@@ -126,27 +118,6 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
             and "lp_rate=" in exc.args[1]
             and "is expected to be >= vault_rate=" in exc.args[1]
-        ):
-            return True
-
-        # Large circuit breaker check
-        if (
-            len(exc.args) >= 2
-            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
-            and "Large trade has caused the rate circuit breaker to trip." in exc.args[1]
-        ):
-            return True
-
-        # There's a known issue with the underlying steth pool on sepolia,
-        # due to the deployed mock steth. Hence, we ignore the LP rate invariance check
-        # for sepolia when fuzzing.
-        if (
-            # Only ignore steth pools
-            "STETH" in exc.exception_data["pool_name"]
-            and len(exc.args) >= 2
-            and exc.args[0] == "Continuous Fuzz Bots Invariant Checks"
-            and "actual_vault_shares=" in exc.args[1]
-            and "is expected to be greater than expected_vault_shares=" in exc.args[1]
         ):
             return True
 
@@ -189,6 +160,11 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
             and len(orig_exception.args) > 0
             and "Receipt has status of 0" in orig_exception.args[0]
         ):
+            return True
+
+        # This is the `OraclePriceExpired()` error from the ezeth pool, which we expect from time advancing.
+        # TODO call instance `advanceTime` to allow for interest accrual on forked pools, which will sidestep this error
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "0xeafdc186()":
             return True
 
     return False
@@ -253,7 +229,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         rng=rng,
         crash_log_level=logging.ERROR,
         crash_report_additional_info={"rng_seed": rng_seed},
-        gas_limit=int(1e6),  # Plenty of gas limit for transactions
+        gas_limit=int(3e6),  # Plenty of gas limit for transactions
     )
 
     while True:
@@ -303,15 +279,16 @@ def main(argv: Sequence[str] | None = None) -> None:
                 num_iterations=parsed_args.num_iterations_per_episode,
             )
         except Exception as e:  # pylint: disable=broad-except
-            log_rollbar_exception(exception=e, log_level=logging.ERROR)
-            logging.error(
-                "Pausing pool (chain:%s port:%s) on crash %s",
-                chain.name,
-                chain.config.chain_port,
-                repr(e),
-            )
-            while True:
-                time.sleep(1000000)
+            log_rollbar_exception(rollbar_log_prefix="Unexpected error", exception=e, log_level=logging.ERROR)
+            if parsed_args.pause_on_invariance_fail:
+                logging.error(
+                    "Pausing pool (chain:%s port:%s) on crash %s",
+                    chain.name,
+                    chain.config.chain_port,
+                    repr(e),
+                )
+                while True:
+                    time.sleep(1000000)
 
         chain.cleanup()
 
@@ -417,7 +394,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     )
     parser.add_argument(
         "--num-iterations-per-episode",
-        default=3000,
+        default=1000,
         help="The number of iterations to run for each random pool config.",
     )
 

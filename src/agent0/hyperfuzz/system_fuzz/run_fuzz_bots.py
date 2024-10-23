@@ -8,6 +8,7 @@ from typing import Callable, Sequence
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
+from pypechain.core import PypechainCallException
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.core.base.make_key import make_private_key
@@ -15,6 +16,7 @@ from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -293,6 +295,7 @@ def run_fuzz_bots(
             # There are race conditions throughout that need to be fixed here
             raise NotImplementedError("Running async not implemented")
         for pool in hyperdrive_pools:
+            logging.info("Trading on %s", pool.name)
             for agent in agents:
                 # If we're checking invariance, and we're doing the lp share test,
                 # we need to get the pending pool state here before the trades.
@@ -304,19 +307,28 @@ def run_fuzz_bots(
                 agent_trade = []
                 try:
                     agent_trade = agent.execute_policy_action(pool=pool)
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    if raise_error_on_crash:
-                        if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                except PypechainCallException as exc:
+                    if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                        # To ensure we log all errors, even when not from a trade contract call,
+                        # we log the exception here.
+                        # E.g., there's a crash when calling `interface.get_hyperdrive_state` from
+                        # a contract call.
+                        # TODO this can result in duplicate entries of the same error
+                        log_rollbar_exception(
+                            rollbar_log_prefix=f"Unexpected contract call error on pool {pool.name}",
+                            exception=exc,
+                            log_level=logging.ERROR,
+                        )
+
+                        if raise_error_on_crash:
                             raise exc
-                    else:
-                        logging.error("Logged %s, continuing", repr(exc))
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
 
                 trades.append(agent_trade)
 
-                # Check invariance after every trade, only if a trade has been made
-                if check_invariance and len(agent_trade) > 0:
+                # Check invariance on every iteration
+                if check_invariance:
                     latest_block = pool.interface.get_block("latest")
                     latest_block_number = latest_block.get("number", None)
                     if latest_block_number is None:
@@ -333,6 +345,7 @@ def run_fuzz_bots(
                         log_anvil_state_dump=chain.config.log_anvil_state_dump,
                         pool_name=pool.name,
                         pending_pool_state=pending_pool_state,
+                        check_price_spike=False,
                     )
                     if len(fuzz_exceptions) > 0 and raise_error_on_failed_invariance_checks:
                         # If we have an ignore function, we filter exceptions

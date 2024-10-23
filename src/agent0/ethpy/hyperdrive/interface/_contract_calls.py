@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Callable, TypeVar
 
 from eth_utils.currency import MAX_WEI
@@ -21,6 +20,7 @@ from hyperdrivetypes.types.ERC20Mintable import ERC20MintableContract
 from hyperdrivetypes.types.IHyperdrive import IHyperdriveContract, Options
 from hyperdrivetypes.types.MockERC4626 import MockERC4626Contract
 from hyperdrivetypes.types.MockLido import MockLidoContract
+from pypechain.core import PypechainCallException
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 from web3.logs import DISCARD
@@ -51,11 +51,15 @@ def _get_minimum_transaction_amount_shares(
     # Get the minimum transaction amount in units of base
     minimum_transaction_amount_base = interface.pool_config.minimum_transaction_amount
     # Convert to shares via rpc call, and cast as fixed point
-    return FixedPoint(
-        scaled_value=hyperdrive_contract.functions.convertToShares(minimum_transaction_amount_base.scaled_value).call(
+    try:
+        shares_value = hyperdrive_contract.functions.convertToShares(minimum_transaction_amount_base.scaled_value).call(
             block_identifier=block_identifier or "latest"
         )
-    )
+        return FixedPoint(scaled_value=shares_value)
+    except PypechainCallException:
+        # Fallback to using vault share price
+        shares_value = minimum_transaction_amount_base / interface.current_pool_state.pool_info.vault_share_price
+        return shares_value
 
 
 def _get_total_supply_withdrawal_shares(
@@ -78,13 +82,9 @@ def _get_variable_rate(
         rate = yield_contract.functions.getRate().call(block_identifier=block_identifier or "latest")
         return FixedPoint(scaled_value=rate)
     except (BadFunctionCallOutput, ValueError):
-        logging.warning("Underlying yield contract has no `getRate` function, setting `state.variable_rate` as `None`.")
         return None
     # Some contracts throw a logic error
     except ContractLogicError:
-        logging.warning(
-            "Underlying yield contract reverted `getRate` function, setting `state.variable_rate` as `None`."
-        )
         return None
 
 

@@ -78,7 +78,10 @@ def get_liquidation_trades(
 
 
 def get_trades(
-    interface: HyperdriveReadInterface, policy: HyperdriveBasePolicy, wallet: HyperdriveWallet
+    interface: HyperdriveReadInterface,
+    policy: HyperdriveBasePolicy,
+    wallet: HyperdriveWallet,
+    default_gas_limit: int | None = None,
 ) -> list[Trade[HyperdriveMarketAction]]:
     """Get trades from the policy.
 
@@ -90,6 +93,8 @@ def get_trades(
         The policy attached to the agent.
     wallet: HyperdriveWallet
         The wallet of the account.
+    default_gas_limit: int | None
+        The default gas limit to use if not provided by the policy.
 
     Returns
     -------
@@ -106,9 +111,16 @@ def get_trades(
 
     # Policy action checking
     for action in actions:
-        if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
-            if action.market_action.trade_amount <= 0:
-                raise ValueError("Trade amount cannot be zero or negative.")
+        # If the policy doesn't set the gas limit, use the default gas limit
+        if action.market_action.gas_limit is None:
+            action.market_action.gas_limit = default_gas_limit
+
+        if (
+            action.market_type == MarketType.HYPERDRIVE
+            and action.market_action.maturity_time is None
+            and action.market_action.trade_amount <= 0
+        ):
+            raise ValueError("Trade amount cannot be zero or negative.")
 
     return actions
 
