@@ -698,6 +698,7 @@ class HyperdriveAgent:
             interface=pool.interface.get_read_interface(),
             policy=self._active_policy,
             wallet=self.get_wallet(pool),
+            default_gas_limit=self.chain.config.gas_limit,
         )
 
     def get_liquidate_action(
