@@ -526,7 +526,7 @@ def _check_lp_share_price(
     loop_counter = 0
     while True:
         if loop_counter > 24:
-            logging.warning("Check block number has not been mined in a reasonable amount of time")
+            raise AssertionError("Check block number has not been mined in a reasonable amount of time")
         curr_block = interface.get_block_number(interface.get_current_block())
         if curr_block < check_block_number:
             loop_counter += 1
