@@ -162,6 +162,11 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
+        # This is the `OraclePriceExpired()` error from the ezeth pool, which we expect from time advancing.
+        # TODO call instance `advanceTime` to allow for interest accrual on forked pools, which will sidestep this error
+        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "0xeafdc186()":
+            return True
+
     return False
 
 
