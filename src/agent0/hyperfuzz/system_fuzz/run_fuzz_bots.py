@@ -310,7 +310,9 @@ def run_fuzz_bots(
                 except PypechainCallException as exc:
                     if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
                         # To ensure we log all errors, even when not from a trade contract call,
-                        # we log the exception here
+                        # we log the exception here.
+                        # E.g., there's a crash when calling `interface.get_hyperdrive_state` from
+                        # a contract call.
                         # TODO this can result in duplicate entries of the same error
                         log_rollbar_exception(
                             rollbar_log_prefix=f"Unexpected contract call error on pool {pool.name}",
