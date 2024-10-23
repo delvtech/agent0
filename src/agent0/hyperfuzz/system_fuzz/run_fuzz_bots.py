@@ -309,6 +309,11 @@ def run_fuzz_bots(
                         if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
                             raise exc
                     else:
+                        # TODO this assumes that the resulting exception is logged to rollbar.
+                        # This is the case when the bot crashes during the trade,
+                        # but if an exception happens that we didn't expect,
+                        # the error here won't get logged.
+                        # Fix here is likely catching only certain expected exceptions
                         logging.error("Logged %s, continuing", repr(exc))
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
