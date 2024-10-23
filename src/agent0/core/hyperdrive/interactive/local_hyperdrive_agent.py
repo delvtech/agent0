@@ -385,7 +385,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 
-    def redeem_withdrawal_share(
+    def redeem_withdrawal_shares(
         self, shares: FixedPoint, pool: Hyperdrive | None = None
     ) -> RedeemWithdrawalSharesEventFP:
         """Redeems withdrawal shares for this agent.
@@ -408,7 +408,7 @@ class LocalHyperdriveAgent(HyperdriveAgent):
             raise ValueError("Remove withdrawal shares requires an active pool.")
 
         self._ensure_approval_set(pool)
-        out = super().redeem_withdrawal_share(shares, pool)
+        out = super().redeem_withdrawal_shares(shares, pool)
         pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
         return out
 

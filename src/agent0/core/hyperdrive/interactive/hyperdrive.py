@@ -205,10 +205,6 @@ class Hyperdrive:
     def get_trade_events(self, all_token_deltas: bool = False, coerce_float: bool = False) -> pd.DataFrame:
         """Gets the ticker history of all trades and the corresponding token deltas for each trade.
 
-        This function is not implemented for remote hyperdrive, as gathering this data
-        is expensive. In the future, we can explicitly make this call gather data from
-        the remote chain.
-
         Arguments
         ---------
         all_token_deltas: bool

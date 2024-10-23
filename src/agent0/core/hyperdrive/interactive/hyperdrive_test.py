@@ -240,7 +240,9 @@ def test_remote_funding_and_trades(fast_chain_fixture: LocalChain):
     # Redeem withdrawal shares
     # Note that redeeming withdrawal shares for more than available in the pool
     # will pull out as much withdrawal shares as possible
-    redeem_event = hyperdrive_agent0.redeem_withdrawal_share(shares=remove_liquidity_event.args.withdrawal_share_amount)
+    redeem_event = hyperdrive_agent0.redeem_withdrawal_shares(
+        shares=remove_liquidity_event.args.withdrawal_share_amount
+    )
     assert (
         hyperdrive_agent0.get_wallet().withdraw_shares
         == remove_liquidity_event.args.withdrawal_share_amount - redeem_event.args.withdrawal_share_amount
