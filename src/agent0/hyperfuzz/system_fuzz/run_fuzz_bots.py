@@ -293,6 +293,7 @@ def run_fuzz_bots(
             # There are race conditions throughout that need to be fixed here
             raise NotImplementedError("Running async not implemented")
         for pool in hyperdrive_pools:
+            logging.info("Trading on %s", pool.name)
             for agent in agents:
                 # If we're checking invariance, and we're doing the lp share test,
                 # we need to get the pending pool state here before the trades.
