@@ -115,7 +115,11 @@ def get_trades(
         if action.market_action.gas_limit is None:
             action.market_action.gas_limit = default_gas_limit
 
-        if action.market_type == MarketType.HYPERDRIVE and action.market_action.maturity_time is None:
+        if (
+            action.market_type == MarketType.HYPERDRIVE
+            and action.market_action.maturity_time is None
+            and action.market_action.trade_amount <= 0
+        ):
             raise ValueError("Trade amount cannot be zero or negative.")
 
     return actions
