@@ -290,15 +290,16 @@ def main(argv: Sequence[str] | None = None) -> None:
                 num_iterations=parsed_args.num_iterations_per_episode,
             )
         except Exception as e:  # pylint: disable=broad-except
-            log_rollbar_exception(exception=e, log_level=logging.ERROR)
-            logging.error(
-                "Pausing pool (chain:%s port:%s) on crash %s",
-                chain.name,
-                chain.config.chain_port,
-                repr(e),
-            )
-            while True:
-                time.sleep(1000000)
+            log_rollbar_exception(rollbar_log_prefix="Unexpected error", exception=e, log_level=logging.ERROR)
+            if parsed_args.pause_on_invariance_fail:
+                logging.error(
+                    "Pausing pool (chain:%s port:%s) on crash %s",
+                    chain.name,
+                    chain.config.chain_port,
+                    repr(e),
+                )
+                while True:
+                    time.sleep(1000000)
 
         chain.cleanup()
 
