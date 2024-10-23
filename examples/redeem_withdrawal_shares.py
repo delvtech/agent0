@@ -1,11 +1,17 @@
-from dotenv import load_dotenv
+"""Script automatically redeeming withdrwal shares.
 
-load_dotenv(".env")
+The script iteratively checks all deployed testnet pools for events that would
+trigger releasing idle liquidity, and then attempts to redeem withdrawal shares.
+"""
 
 import os
 import time
 
+from dotenv import load_dotenv
+
 from agent0 import Chain, Hyperdrive
+
+load_dotenv(".env")
 
 RPC_URI = os.getenv("RPC_URI", "")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
