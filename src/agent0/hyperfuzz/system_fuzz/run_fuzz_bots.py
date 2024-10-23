@@ -16,6 +16,7 @@ from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -307,15 +308,15 @@ def run_fuzz_bots(
                 try:
                     agent_trade = agent.execute_policy_action(pool=pool)
                 except PypechainCallException as exc:
-                    if raise_error_on_crash:
-                        if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                    if ignore_raise_error_func is None or not ignore_raise_error_func(exc):
+                        # To ensure we log all errors, even when not from a trade contract call,
+                        # we log the exception here
+                        log_rollbar_exception(
+                            rollbar_log_prefix="Unexpected error", exception=exc, log_level=logging.ERROR
+                        )
+
+                        if raise_error_on_crash:
                             raise exc
-                    else:
-                        # TODO this assumes that the resulting exception is logged to rollbar.
-                        # This is the case when the bot crashes during the trade,
-                        # but if a contract call exception happens that we didn't expect,
-                        # the error here won't get logged.
-                        logging.error("Logged %s, continuing", repr(exc))
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
 
