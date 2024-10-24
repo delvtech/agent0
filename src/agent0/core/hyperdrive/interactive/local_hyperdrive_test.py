@@ -487,7 +487,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
 
     # Redeem withdrawal shares
     wallet_before = hyperdrive_agent_0.get_wallet()
-    redeem_event_0 = hyperdrive_agent_0.redeem_withdrawal_share(
+    redeem_event_0 = hyperdrive_agent_0.redeem_withdrawal_shares(
         shares=remove_liquidity_event_0.args.withdrawal_share_amount
     )
     wallet_after = hyperdrive_agent_0.get_wallet()
@@ -500,7 +500,7 @@ def test_funding_and_trades(fast_chain_fixture: LocalChain, deploy_type: LocalHy
 
     # Redeem withdrawal shares
     wallet_before = hyperdrive_agent_1.get_wallet()
-    redeem_event_1 = hyperdrive_agent_1.redeem_withdrawal_share(
+    redeem_event_1 = hyperdrive_agent_1.redeem_withdrawal_shares(
         shares=remove_liquidity_event_1.args.withdrawal_share_amount
     )
     wallet_after = hyperdrive_agent_1.get_wallet()

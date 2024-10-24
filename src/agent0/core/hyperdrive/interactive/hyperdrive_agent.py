@@ -626,7 +626,7 @@ class HyperdriveAgent:
         assert isinstance(hyperdrive_event, RemoveLiquidityEventFP)
         return hyperdrive_event
 
-    def redeem_withdrawal_share(
+    def redeem_withdrawal_shares(
         self, shares: FixedPoint, pool: Hyperdrive | None = None
     ) -> RedeemWithdrawalSharesEventFP:
         """Redeems withdrawal shares for this agent.

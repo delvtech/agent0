@@ -108,6 +108,11 @@ def get_event_logs_for_db(
         # If not in lookup, we default to `earliest`
         from_block = EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
 
+    # If the from block specified is a specific block number, make sure it's not a pending block
+    # If it's past the latest block, no events to return
+    if isinstance(from_block, int) and from_block > hyperdrive_interface.web3.eth.block_number:
+        return []
+
     out_events = [
         _event_data_to_dict(e, numeric_args_as_str)
         for e in event_class.get_logs(from_block=from_block, argument_filters=argument_filters)
