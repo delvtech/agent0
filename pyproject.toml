@@ -33,7 +33,7 @@ dependencies = [
     "fixedpointmath>=0.2.1",
     "hexbytes>=1.2.1",
     "hyperdrivepy==0.17.1",
-    "hyperdrivetypes==1.0.20.8",
+    "hyperdrivetypes==1.0.20.9",
     "ipython>=8.26.0",
     "ipykernel>=6.29.5",
     "matplotlib>=3.9.2",
