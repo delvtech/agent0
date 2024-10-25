@@ -17,6 +17,7 @@ from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz import FuzzAssertionException
+from agent0.hyperfuzz.fork_fuzz import accrue_interest_fork
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 
@@ -279,6 +280,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 base_budget_per_bot=FixedPoint(1_000),
                 whale_accounts=whale_accounts,
                 num_iterations=parsed_args.num_iterations_per_episode,
+                accrue_interest_func=accrue_interest_fork,
             )
         except Exception as e:  # pylint: disable=broad-except
             log_rollbar_exception(

@@ -15,6 +15,7 @@ from agent0.chainsync.db.hyperdrive import get_trade_events
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception, log_rollbar_message
@@ -222,6 +223,7 @@ def run_fuzz_bots(
     num_iterations: int | None = None,
     lp_share_price_test: bool = False,
     whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface], None] | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -273,6 +275,10 @@ def run_fuzz_bots(
         A mapping between token -> whale addresses to use to fund the fuzz agent.
         If the token is not in the mapping, fuzzing will attempt to call `mint` on
         the token contract. Defaults to an empty mapping.
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface], None] | None, optional
+        A function that will accrue interest on the hyperdrive pool. This function will get called
+        before and after each set of trades, with the pool's hyperdrive interface as an argument.
+        It's up to the function itself to maintain the last time interest was accrued.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -370,6 +376,10 @@ def run_fuzz_bots(
                 if check_invariance and lp_share_price_test:
                     pending_pool_state = pool.interface.get_hyperdrive_state("pending")
 
+                # Accrue interest before and after making the trades
+                if accrue_interest_func is not None:
+                    accrue_interest_func(pool.interface)
+
                 # Execute trades
                 agent_trade = []
                 try:
@@ -391,6 +401,10 @@ def run_fuzz_bots(
                             raise exc
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
+
+                # Accrue interest before and after making the trades
+                if accrue_interest_func is not None:
+                    accrue_interest_func(pool.interface)
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
