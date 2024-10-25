@@ -116,6 +116,7 @@ class HyperdriveReadInterface:
         MORPHO = "MorphoBlueHyperdrive"
         EZETH = "EzETHHyperdrive"
         RETH = "RETHHyperdrive"
+        STKWELL = "StkWellHyperdrive"
 
     def __init__(
         self,
@@ -178,6 +179,15 @@ class HyperdriveReadInterface:
         base_token_contract_address = self.pool_config.base_token
         vault_shares_token_address = self.pool_config.vault_shares_token
 
+        # Set hyperdrive kind variable
+        hyperdrive_kind_str = self.hyperdrive_contract.functions.kind().call()
+        try:
+            self.hyperdrive_kind = self.HyperdriveKind(hyperdrive_kind_str)
+        except ValueError:
+            logging.warning("Unknown hyperdrive kind %s, defaulting to `ERC4626`", hyperdrive_kind_str)
+            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
+        self.hyperdrive_name = self.hyperdrive_contract.functions.name().call()
+
         # There are cases where we can't interact with hyperdrive
         # with the base token:
         # - The pool uses eth as base.
@@ -185,17 +195,20 @@ class HyperdriveReadInterface:
         # - The pool doesn't support some operations in base (i.e., Moonwell EURC, Moonwell USDC)
         # In all of these cases, we use the yield token as the base.
         # Calls to trades will use "as_base=False"
-        hyperdrive_name = self.hyperdrive_contract.functions.name().call()
         if (
             base_token_contract_address
             in (
                 ETH_CONTRACT_ADDRESS,
                 ADDRESS_ZERO,
             )
-            or "Moonwell USDC" in hyperdrive_name
-            or "Moonwell EURC" in hyperdrive_name
-            or "Moonwell StkWell" in hyperdrive_name
-            or "Num Finance snARS" in hyperdrive_name
+            or self.hyperdrive_kind == self.HyperdriveKind.STKWELL
+            or self.hyperdrive_name
+            in (
+                "ElementDAO 182 Day sUSDe Hyperdrive",
+                "ElementDAO 30 Day Num Finance snARS Hyperdrive",
+                "ElementDAO 182 Day Moonwell USDC Hyperdrive",
+                "ElementDAO 182 Day Moonwell EURC Hyperdrive",
+            )
         ):
             self.base_is_yield = True
             # We use the yield token as the base token (e.g., steth)
@@ -209,14 +222,6 @@ class HyperdriveReadInterface:
         # Define morpho specific variables
         self.morpho_contract = None
         self.morpho_market_id = None
-
-        # Set hyperdrive kind variable
-        hyperdrive_kind_str = self.hyperdrive_contract.functions.kind().call()
-        try:
-            self.hyperdrive_kind = self.HyperdriveKind(hyperdrive_kind_str)
-        except ValueError:
-            logging.warning("Unknown hyperdrive kind %s, defaulting to `ERC4626`", hyperdrive_kind_str)
-            self.hyperdrive_kind = self.HyperdriveKind.ERC4626
 
         if self.hyperdrive_kind == self.HyperdriveKind.STETH:
             # Redefine the vault shares token contract as the mock lido contract
