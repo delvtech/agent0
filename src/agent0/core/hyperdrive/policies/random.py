@@ -386,9 +386,12 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for adding liquidity to a Hyperdrive pool.
         """
-        # LP is in units of LP, which is always checked against the minimum transaction amount
-        # as defined in pool config.
-        minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
+        # The minimum transaction amount is dependent on if we're trading with
+        # base or vault shares
+        if interface.base_is_yield:
+            minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
+        else:
+            minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
 
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
