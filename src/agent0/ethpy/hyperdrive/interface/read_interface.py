@@ -187,15 +187,16 @@ class HyperdriveReadInterface:
         # Calls to trades will use "as_base=False"
         hyperdrive_name = self.hyperdrive_contract.functions.name().call()
         if (
-            base_token_contract_address
+            base_token_contract_address  # pylint: disable=too-many-boolean-expressions
             in (
                 ETH_CONTRACT_ADDRESS,
                 ADDRESS_ZERO,
             )
-            or "Moonwell USDC" in hyperdrive_name
-            or "Moonwell EURC" in hyperdrive_name
-            or "Moonwell StkWell" in hyperdrive_name
-            or "Num Finance snARS" in hyperdrive_name
+            or "Moonwell USDC Hyperdrive" in hyperdrive_name
+            or "Moonwell EURC Hyperdrive" in hyperdrive_name
+            or "Moonwell StkWell Hyperdrive" in hyperdrive_name
+            or "Num Finance snARS Hyperdrive" in hyperdrive_name
+            or hyperdrive_name == "ElementDAO 182 Day sUSDe Hyperdrive"
         ):
             self.base_is_yield = True
             # We use the yield token as the base token (e.g., steth)
