@@ -196,17 +196,12 @@ class HyperdriveReadInterface:
         # - The pool doesn't support some operations in base (i.e., Moonwell EURC, Moonwell USDC)
         # In all of these cases, we use the yield token as the base.
         # Calls to trades will use "as_base=False"
-<<<<<<< HEAD
-=======
-        self.hyperdrive_name = self.hyperdrive_contract.functions.name().call()
->>>>>>> 1bb049c8 (Adding EETH as hyperdrive kind. Setting hyperdrive name as interface member variable)
         if (
             base_token_contract_address
             in (
                 ETH_CONTRACT_ADDRESS,
                 ADDRESS_ZERO,
             )
-<<<<<<< HEAD
             or self.hyperdrive_kind == self.HyperdriveKind.STKWELL
             or self.hyperdrive_name
             in (
@@ -215,12 +210,6 @@ class HyperdriveReadInterface:
                 "ElementDAO 182 Day Moonwell USDC Hyperdrive",
                 "ElementDAO 182 Day Moonwell EURC Hyperdrive",
             )
-=======
-            or "Moonwell USDC" in self.hyperdrive_name
-            or "Moonwell EURC" in self.hyperdrive_name
-            or "Moonwell StkWell" in self.hyperdrive_name
-            or "Num Finance snARS" in self.hyperdrive_name
->>>>>>> 1bb049c8 (Adding EETH as hyperdrive kind. Setting hyperdrive name as interface member variable)
         ):
             self.base_is_yield = True
             # We use the yield token as the base token (e.g., steth)
