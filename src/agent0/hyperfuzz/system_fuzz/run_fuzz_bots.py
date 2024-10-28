@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from collections import deque
 from typing import Callable, Sequence
 
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
+from hyperdrivetypes import BaseEvent
 from numpy.random import Generator
 from pypechain.core import PypechainCallException
 
@@ -304,7 +306,7 @@ def run_fuzz_bots(
         for pool in hyperdrive_pools:
             logging.info("Trading on %s", pool.name)
             # Execute the agent policies
-            pool_trades = []
+            pool_trades: list[BaseEvent] = []
             for agent in agents:
                 # If we're checking invariance, and we're doing the lp share test,
                 # we need to get the pending pool state here before the trades.
@@ -371,11 +373,11 @@ def run_fuzz_bots(
                             # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
                             raise FuzzAssertionException(*fuzz_exceptions)
 
-            trade_history[pool.name].appendleft(pool_trades)
+            trade_history[pool.name].appendleft([trade.__name__ for trade in pool_trades])
 
         # Log trades
         # Logs trades
-        logging.info("Trade history: %s", trade_history)
+        logging.info("Trade history: \n %s", json.dumps(trade_history, indent=2))
 
         # Look for past trades and limit the size of the list
         for pool_name, trades in trade_history.items():
