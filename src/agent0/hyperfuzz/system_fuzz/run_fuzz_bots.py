@@ -289,13 +289,13 @@ def run_fuzz_bots(
         if num_iterations is not None and iteration >= num_iterations:
             break
         iteration += 1
-        # Execute the agent policies
-        trades = []
         if run_async:
             # There are race conditions throughout that need to be fixed here
             raise NotImplementedError("Running async not implemented")
         for pool in hyperdrive_pools:
             logging.info("Trading on %s", pool.name)
+            # Execute the agent policies
+            pool_trades = []
             for agent in agents:
                 # If we're checking invariance, and we're doing the lp share test,
                 # we need to get the pending pool state here before the trades.
@@ -325,7 +325,7 @@ def run_fuzz_bots(
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
 
-                trades.append(agent_trade)
+                pool_trades.append(agent_trade)
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
@@ -364,7 +364,9 @@ def run_fuzz_bots(
 
             # Logs trades
             logging.info(
-                "Trades on %s: %s", pool.name, [[trade.__name__ for trade in agent_trade] for agent_trade in trades]
+                "Trades on %s: %s",
+                pool.name,
+                [[trade.__name__ for trade in agent_trade] for agent_trade in pool_trades],
             )
 
         # Check agent funds and refund if necessary
