@@ -396,7 +396,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     )
     parser.add_argument(
         "--num-iterations-per-episode",
-        default=1000,
+        default=300,
         help="The number of iterations to run for each random pool config.",
     )
 
