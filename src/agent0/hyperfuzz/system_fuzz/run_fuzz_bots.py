@@ -363,7 +363,7 @@ def run_fuzz_bots(
                             raise FuzzAssertionException(*fuzz_exceptions)
 
         # Logs trades
-        logging.debug([[trade.__name__ for trade in agent_trade] for agent_trade in trades])
+        logging.info([[trade.__name__ for trade in agent_trade] for agent_trade in trades])
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
