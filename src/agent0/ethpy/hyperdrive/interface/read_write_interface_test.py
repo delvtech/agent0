@@ -12,7 +12,7 @@ from eth_utils.curried import text_if_str
 from fixedpointmath import FixedPoint
 from hexbytes import HexBytes
 
-from agent0.ethpy.base import set_anvil_account_balance
+from agent0.ethpy.base import set_account_balance
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
@@ -37,6 +37,6 @@ class TestHyperdriveReadWriteInterface:
         private_key = HexBytes(key_bytes).hex()
         sender: LocalAccount = Account().from_key(private_key)
 
-        set_anvil_account_balance(hyperdrive_read_write_interface_fixture.web3, sender.address, 10**19)
+        set_account_balance(hyperdrive_read_write_interface_fixture.web3, sender.address, 10**19)
         hyperdrive_read_write_interface_fixture.set_variable_rate(sender, new_rate)
         assert hyperdrive_read_write_interface_fixture.get_variable_rate() == new_rate
