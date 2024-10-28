@@ -376,8 +376,8 @@ def run_fuzz_bots(
             trade_history[pool.name].appendleft([trade.__name__ for trade in pool_trades])
 
         # Log trades
-        # Logs trades
-        logging.info("Trade history: \n %s", json.dumps(trade_history, indent=2))
+        print_trades = {k: list(v) for k, v in trade_history.items()}
+        logging.info("Trade history: \n %s", json.dumps(print_trades, indent=2))
 
         # Look for past trades and limit the size of the list
         for pool_name, trades in trade_history.items():
