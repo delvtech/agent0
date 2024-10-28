@@ -58,7 +58,8 @@ def _get_minimum_transaction_amount_shares(
         return FixedPoint(scaled_value=shares_value)
     except PypechainCallException:
         # Fallback to using vault share price
-        shares_value = minimum_transaction_amount_base / interface.current_pool_state.pool_info.vault_share_price
+        # We div_up to overestimate the min txn amount
+        shares_value = minimum_transaction_amount_base.div_up(interface.current_pool_state.pool_info.vault_share_price)
         return shares_value
 
 
