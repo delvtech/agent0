@@ -362,8 +362,10 @@ def run_fuzz_bots(
                             # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
                             raise FuzzAssertionException(*fuzz_exceptions)
 
-        # Logs trades
-        logging.info([[trade.__name__ for trade in agent_trade] for agent_trade in trades])
+            # Logs trades
+            logging.info(
+                "Trades on %s: %s", pool.name, [[trade.__name__ for trade in agent_trade] for agent_trade in trades]
+            )
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
