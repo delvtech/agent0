@@ -287,9 +287,15 @@ def run_fuzz_bots(
             agent.set_max_approval(pool=pool)
         agents.append(agent)
 
+    # We use deque collection to allow for fast prepending to list
+    # By specifying a maxlen, items get popped off on the other side
+    # of the deque as new items are added
+    trade_history = {pool.name: deque(maxlen=MAX_TRADE_HISTORY) for pool in hyperdrive_pools}
+
     # Make trades until the user or agents stop us
     logging.info("Trading...")
     iteration = 0
+
     while True:
         if num_iterations is not None and iteration >= num_iterations:
             break
@@ -298,15 +304,10 @@ def run_fuzz_bots(
             # There are race conditions throughout that need to be fixed here
             raise NotImplementedError("Running async not implemented")
 
-        # We use deque collection to allow for fast prepending to list
-        # By specifying a maxlen, items get popped off on the other side
-        # of the deque as new items are added
-        trade_history = {pool.name: deque(maxlen=MAX_TRADE_HISTORY) for pool in hyperdrive_pools}
-
         for pool in hyperdrive_pools:
             logging.info("Trading on %s", pool.name)
             # Execute the agent policies
-            pool_trades: list[BaseEvent] = []
+            pool_trades: list[str] = []
             for agent in agents:
                 # If we're checking invariance, and we're doing the lp share test,
                 # we need to get the pending pool state here before the trades.
@@ -336,7 +337,7 @@ def run_fuzz_bots(
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
 
-                pool_trades.extend(agent_trade)
+                pool_trades.extend([trade.__name__ for trade in agent_trade])
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
@@ -373,7 +374,7 @@ def run_fuzz_bots(
                             # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
                             raise FuzzAssertionException(*fuzz_exceptions)
 
-            trade_history[pool.name].appendleft([trade.__name__ for trade in pool_trades])
+            trade_history[pool.name].appendleft(pool_trades)
 
         # Log trades
         print_trades = {k: list(v) for k, v in trade_history.items()}
