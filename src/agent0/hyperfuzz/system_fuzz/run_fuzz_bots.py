@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections import deque
 from typing import Callable, Sequence
 
 from eth_typing import ChecksumAddress
@@ -51,6 +52,8 @@ LP_SHARE_PRICE_FLAT_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_CURVE_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_LP_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
+
+MAX_TRADE_HISTORY = 10
 
 
 # pylint: disable=too-many-locals
@@ -245,7 +248,7 @@ def run_fuzz_bots(
             policy=PolicyZoo.random,
             policy_config=PolicyZoo.random.Config(
                 slippage_tolerance=slippage_tolerance,
-                trade_chance=FixedPoint("0.8"),
+                trade_chance=FixedPoint("1.0"),
                 randomly_ignore_slippage_tolerance=True,
             ),
         )
@@ -266,7 +269,7 @@ def run_fuzz_bots(
             policy=PolicyZoo.random_hold,
             policy_config=PolicyZoo.random_hold.Config(
                 slippage_tolerance=slippage_tolerance,
-                trade_chance=FixedPoint("0.8"),
+                trade_chance=FixedPoint("1.0"),
                 randomly_ignore_slippage_tolerance=True,
                 max_open_positions_per_pool=1_000,
             ),
@@ -292,6 +295,12 @@ def run_fuzz_bots(
         if run_async:
             # There are race conditions throughout that need to be fixed here
             raise NotImplementedError("Running async not implemented")
+
+        # We use deque collection to allow for fast prepending to list
+        # By specifying a maxlen, items get popped off on the other side
+        # of the deque as new items are added
+        trade_history = {pool.name: deque(maxlen=MAX_TRADE_HISTORY) for pool in hyperdrive_pools}
+
         for pool in hyperdrive_pools:
             logging.info("Trading on %s", pool.name)
             # Execute the agent policies
@@ -325,7 +334,7 @@ def run_fuzz_bots(
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
 
-                pool_trades.append(agent_trade)
+                pool_trades.extend(agent_trade)
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
@@ -362,12 +371,19 @@ def run_fuzz_bots(
                             # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
                             raise FuzzAssertionException(*fuzz_exceptions)
 
-            # Logs trades
-            logging.info(
-                "Trades on %s: %s",
-                pool.name,
-                [[trade.__name__ for trade in agent_trade] for agent_trade in pool_trades],
-            )
+            trade_history[pool.name].appendleft(pool_trades)
+
+        # Log trades
+        # Logs trades
+        logging.info("Trade history: %s", trade_history)
+
+        # Look for past trades and limit the size of the list
+        for pool_name, trades in trade_history.items():
+            if len(trades) == MAX_TRADE_HISTORY:
+                num_trades = [len(t) for t in trades]
+                if sum(num_trades) == 0:
+                    logging.warning("No trades found on %s for the past %s iterations", pool_name, MAX_TRADE_HISTORY)
+                    # TODO log to rollbar
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
