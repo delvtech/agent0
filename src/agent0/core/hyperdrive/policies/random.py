@@ -114,7 +114,7 @@ class Random(HyperdriveBasePolicy):
         """
         pool_state = interface.current_pool_state
         # The minimum transaction amount is dependent on if we're trading with
-        # base or vault shares
+        # base or vault shares. The config's min transaction amount is in units of base.
         if interface.base_is_yield:
             minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
         else:
@@ -386,12 +386,8 @@ class Random(HyperdriveBasePolicy):
         list[Trade[HyperdriveMarketAction]]
             A list with a single Trade element for adding liquidity to a Hyperdrive pool.
         """
-        # The minimum transaction amount is dependent on if we're trading with
-        # base or vault shares
-        if interface.base_is_yield:
-            minimum_transaction_amount = interface.get_minimum_transaction_amount_shares()
-        else:
-            minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
+        # The minimum transaction amount input is always compared against the pool config's minimum transaction amount
+        minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
 
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
