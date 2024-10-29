@@ -38,9 +38,7 @@ def accrue_interest_ezeth(interface: HyperdriveReadWriteInterface, variable_rate
     # There's a current issue with pypechain where it breaks if the called function returns a double nested list,
     # e.g., in calculateTVLs. We fall back to using pure web3 for this.
     # https://github.com/delvtech/pypechain/issues/147
-
     total_tvl = restake_manager.get_function_by_name("calculateTVLs")().call()[2]
-    # total_tvl = restake_manager.functions.calculateTVLs().call().arg3
 
     # Build accrue_interest_data
     accrue_interest_data = {
