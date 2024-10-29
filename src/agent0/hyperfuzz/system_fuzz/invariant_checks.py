@@ -196,7 +196,6 @@ def run_invariant_checks(
             rollbar_data=rollbar_data,
             rollbar_log_filter_func=rollbar_log_filter_func,
         )
-    logging.info("Done")
     return out_exceptions
 
 

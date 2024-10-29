@@ -281,7 +281,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                 num_iterations=parsed_args.num_iterations_per_episode,
             )
         except Exception as e:  # pylint: disable=broad-except
-            log_rollbar_exception(rollbar_log_prefix="Unexpected error", exception=e, log_level=logging.ERROR)
+            log_rollbar_exception(
+                rollbar_log_prefix="Fork FuzzBot: Unexpected error", exception=e, log_level=logging.ERROR
+            )
             if parsed_args.pause_on_invariance_fail:
                 logging.error(
                     "Pausing pool (chain:%s port:%s) on crash %s",
@@ -396,7 +398,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
     )
     parser.add_argument(
         "--num-iterations-per-episode",
-        default=1000,
+        default=300,
         help="The number of iterations to run for each random pool config.",
     )
 
