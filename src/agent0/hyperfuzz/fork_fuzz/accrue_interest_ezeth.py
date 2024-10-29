@@ -19,8 +19,7 @@ DEPOSIT_QUEUE_ADDR = "0xf2F305D14DCD8aaef887E0428B3c9534795D0d60"
 
 
 def accrue_interest_ezeth(interface: HyperdriveReadWriteInterface, variable_rate: FixedPoint) -> None:
-    """
-    Function to accrue interest in the ezeth pool when fork fuzzing.
+    """Function to accrue interest in the ezeth pool when fork fuzzing.
 
     Arguments
     ---------
