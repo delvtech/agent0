@@ -247,9 +247,6 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         # Get list of deployed pools on initial iteration
         deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
-        # FIXME
-
-        deployed_pools = [p for p in deployed_pools if "ezETH" in p.name]
 
         log_message = f"Running fuzzing on pools {[p.name for p in deployed_pools]}..."
         logging.info(log_message)
@@ -287,8 +284,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                 rollbar_log_prefix="Fork FuzzBot: Unexpected error", exception=e, log_level=logging.ERROR
             )
             if parsed_args.pause_on_invariance_fail:
-                # FIXME
-                raise e
                 logging.error(
                     "Pausing pool (chain:%s port:%s) on crash %s",
                     chain.name,
