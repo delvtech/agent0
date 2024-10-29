@@ -276,10 +276,10 @@ def run_fuzz_bots(
         A mapping between token -> whale addresses to use to fund the fuzz agent.
         If the token is not in the mapping, fuzzing will attempt to call `mint` on
         the token contract. Defaults to an empty mapping.
-    accrue_interest_func: Callable[[HyperdriveReadWriteInterface], None] | None, optional
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint], None] | None, optional
         A function that will accrue interest on the hyperdrive pool. This function will get called
-        before and after each set of trades, with the pool's hyperdrive interface as an argument.
-        It's up to the function itself to maintain the last time interest was accrued.
+        before and after each set of trades, with the pool's hyperdrive interface and the variable rate
+        as an argument. It's up to the function itself to maintain the last time interest was accrued.
     accrue_interest_rate: FixedPoint | None, optional
         The variable rate to be passed into the accrue_interest_func. Note this value is only used when
         forking, as variable interest is handled by a mock yield source when simulating.
