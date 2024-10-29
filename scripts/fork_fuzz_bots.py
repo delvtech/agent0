@@ -228,6 +228,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         crash_log_level=logging.ERROR,
         crash_report_additional_info={"rng_seed": rng_seed},
         gas_limit=int(3e6),  # Plenty of gas limit for transactions
+        # In order to accrue interest correctly, mining a block on the fork must not advance time.
+        # We advance time manually when fuzzing.
+        # This option will mine blocks based on real time.
+        block_timestamp_interval=None,
     )
 
     while True:
@@ -270,7 +274,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 ignore_raise_error_func=_fuzz_ignore_errors,
                 run_async=False,
                 # TODO advance time and randomize variable rates
-                random_advance_time=False,
+                random_advance_time=True,
                 random_variable_rate=False,
                 lp_share_price_test=False,
                 base_budget_per_bot=FixedPoint(1_000),
@@ -280,6 +284,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 accrue_interest_rate=FixedPoint(0.05),
             )
         except Exception as e:  # pylint: disable=broad-except
+            raise e
             log_rollbar_exception(
                 rollbar_log_prefix="Fork FuzzBot: Unexpected error", exception=e, log_level=logging.ERROR
             )
