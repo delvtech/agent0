@@ -20,7 +20,7 @@ from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception, log_rollbar_message
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -166,37 +166,42 @@ def _check_trades_made_on_pool(
         trade_counts = trade_counts.reset_index()
         # Omission of rows means no trades of that type went through
         for pool in hyperdrive_pools:
+            has_err = False
+            error_message = ""
             if pool.name not in trade_counts["hyperdrive_name"].values:
-                logging.error("Pool %s did not make any trades after %s iterations", pool.name, iteration)
-                # TODO log to rollbar
+                has_err = True
+                error_message = f"Pool {pool.name} did not make any trades after {iteration} iterations"
             else:
                 pool_trade_event_counts = trade_counts[trade_counts["hyperdrive_name"] == pool.name][
                     "event_type"
                 ].values
                 if "OpenLong" not in pool_trade_event_counts:
-                    logging.error(
-                        "Pool %s did not make any OpenLong trades after %s iterations",
-                    )
+                    has_err = True
+                    error_message = f"Pool {pool.name} did not make any OpenLong trades after {iteration} iterations"
                 if "OpenShort" not in pool_trade_event_counts:
-                    logging.error(
-                        "Pool %s did not make any OpenShort trades after %s iterations",
-                    )
+                    has_err = True
+                    error_message = f"Pool {pool.name} did not make any OpenShort trades after {iteration} iterations"
                 if "CloseLong" not in pool_trade_event_counts:
-                    logging.error(
-                        "Pool %s did not make any CloseLong trades after %s iterations",
-                    )
+                    has_err = True
+                    error_message = f"Pool {pool.name} did not make any CloseLong trades after {iteration} iterations"
                 if "CloseShort" not in pool_trade_event_counts:
-                    logging.error(
-                        "Pool %s did not make any CloseShort trades after %s iterations",
-                    )
+                    has_err = True
+                    error_message = f"Pool {pool.name} did not make any CloseShort trades after {iteration} iterations"
                 if "AddLiquidity" not in pool_trade_event_counts:
-                    logging.error(
-                        "Pool %s did not make any AddLiquidity trades after %s iterations",
+                    has_err = True
+                    error_message = (
+                        f"Pool {pool.name} did not make any AddLiquidity trades after {iteration} iterations"
                     )
                 if "RemoveLiquidity" not in pool_trade_event_counts:
-                    logging.error(
-                        "Pool %s did not make any RemoveLiquidity trades after %s iterations",
+                    has_err = True
+                    error_message = (
+                        f"Pool {pool.name} did not make any RemoveLiquidity trades after {iteration} iterations"
                     )
+
+            if has_err:
+                error_message = "FuzzBots: " + error_message
+                logging.error(error_message)
+                log_rollbar_message(error_message, logging.ERROR)
 
 
 def run_fuzz_bots(
@@ -380,7 +385,7 @@ def run_fuzz_bots(
                         # a contract call.
                         # TODO this can result in duplicate entries of the same error
                         log_rollbar_exception(
-                            rollbar_log_prefix=f"Unexpected contract call error on pool {pool.name}",
+                            rollbar_log_prefix=f"FuzzBots: Unexpected contract call error on pool {pool.name}",
                             exception=exc,
                             log_level=logging.ERROR,
                         )
