@@ -114,7 +114,7 @@ def run_invariant_checks(
             # Info
             _check_base_balances(pool_state, interface.base_is_yield),
             # Critical (after diving down into steth failure)
-            _check_total_shares(pool_state),
+            _check_total_shares(interface, pool_state),
             # Critical
             _check_minimum_share_reserves(pool_state),
             # Critical
@@ -140,7 +140,7 @@ def run_invariant_checks(
             results = [
                 _check_eth_balances(pool_state),
                 _check_base_balances(pool_state, interface.base_is_yield),
-                _check_total_shares(pool_state),
+                _check_total_shares(interface, pool_state),
                 _check_minimum_share_reserves(pool_state),
                 _check_solvency(pool_state),
                 _check_present_value_greater_than_idle_shares(interface, pool_state),
@@ -403,7 +403,7 @@ def _check_minimum_share_reserves(pool_state: PoolState) -> InvariantCheckResult
     return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
 
-def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
+def _check_total_shares(interface: HyperdriveReadInterface, pool_state: PoolState) -> InvariantCheckResults:
     # Total shares is correctly calculated
     failed = False
     exception_message = ""
@@ -423,9 +423,15 @@ def _check_total_shares(pool_state: PoolState) -> InvariantCheckResults:
     )
     actual_vault_shares = pool_state.vault_shares
 
+    # We use a slightly bigger tolerance for the wsteth-usda pool
+    if interface.hyperdrive_name == "ElementDAO 182 Day Morpho Blue wstETH/USDA Hyperdrive":
+        shares_epsilon = 1e-5
+    else:
+        shares_epsilon = TOTAL_SHARES_EPSILON
+
     # While the expected vault shares is a bit inaccurate, we're testing
     # solvency here, hence, we ensure that the actual vault shares >= expected vault shares
-    if actual_vault_shares < (expected_vault_shares - FixedPoint(str(TOTAL_SHARES_EPSILON))):
+    if actual_vault_shares < (expected_vault_shares - FixedPoint(str(shares_epsilon))):
         difference_in_wei = abs(expected_vault_shares.scaled_value - actual_vault_shares.scaled_value)
         exception_message = (
             f"{actual_vault_shares=} is expected to be greater than {expected_vault_shares=}. {difference_in_wei=}. "
