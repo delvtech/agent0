@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import logging
-from collections import deque
 from typing import Callable, Sequence
 
 from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
-from hyperdrivetypes import BaseEvent
 from numpy.random import Generator
 from pypechain.core import PypechainCallException
 
