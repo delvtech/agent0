@@ -18,7 +18,18 @@ RESTAKE_MANAGER_ADDR = "0x74a09653A083691711cF8215a6ab074BB4e99ef5"
 DEPOSIT_QUEUE_ADDR = "0xf2F305D14DCD8aaef887E0428B3c9534795D0d60"
 
 
-def accrue_interest_ezeth(interface: HyperdriveReadWriteInterface, variable_rate: FixedPoint):
+def accrue_interest_ezeth(interface: HyperdriveReadWriteInterface, variable_rate: FixedPoint) -> None:
+    """
+    Function to accrue interest in the ezeth pool when fork fuzzing.
+
+    Arguments
+    ---------
+    interface: HyperdriveReadWriteInterface
+        The interface to the Hyperdrive pool.
+    variable_rate: FixedPoint
+        The variable rate of the pool.
+    """
+
     assert variable_rate > FixedPoint(0)
 
     # TODO we may want to build these objects once and store them
