@@ -14,6 +14,7 @@ from numpy.random import Generator
 from pypechain.core import PypechainCallException
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
+from agent0.chainsync.db.hyperdrive import get_trade_events
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
 from agent0.ethpy.base import set_anvil_account_balance
@@ -55,7 +56,7 @@ LP_SHARE_PRICE_CURVE_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_LP_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
-MAX_TRADE_HISTORY = 10
+TRADE_COUNT_PERIODIC_CHECK = 50
 
 
 # pylint: disable=too-many-locals
@@ -140,6 +141,62 @@ def generate_fuzz_hyperdrive_config(rng: Generator, lp_share_price_test: bool, s
         governance_zombie_fee=FixedPoint(rng.uniform(*governance_zombie_fee_range)),
         deploy_type=LocalHyperdrive.DeployType.ERC4626 if not steth else LocalHyperdrive.DeployType.STETH,
     )
+
+
+def _check_trades_made_on_pool(
+    chain: Chain, hyperdrive_pools: Sequence[Hyperdrive], fuzz_start_block: int, iteration: int
+):
+    # Get histogram counts of trades made on each pool
+    # Note we don't use interactive interface, as we want to do one query to get
+    # trade events for all tracked pools
+    assert chain.db_session is not None
+    trade_events = get_trade_events(chain.db_session, all_token_deltas=False)
+    # pylint: disable=protected-access
+    trade_events = chain._add_hyperdrive_name_to_dataframe(trade_events, "hyperdrive_address")
+    # Filter for trades since start of fuzzing
+    trade_events = trade_events[trade_events["block_number"] >= fuzz_start_block]
+    # Get counts
+    trade_counts = trade_events.groupby(["hyperdrive_name", "event_type"])["id"].count()
+
+    logging.info("Trade counts: %s", trade_counts)
+
+    # After 50 iterations, we expect all pools to make at least one trade
+    # Iteration at this point has already been incremented
+    if iteration % TRADE_COUNT_PERIODIC_CHECK == 0:
+        trade_counts = trade_counts.reset_index()
+        # Omission of rows means no trades of that type went through
+        for pool in hyperdrive_pools:
+            if pool.name not in trade_counts["hyperdrive_name"].values:
+                logging.error("Pool %s did not make any trades after %s iterations", pool.name, iteration)
+                # TODO log to rollbar
+            else:
+                pool_trade_event_counts = trade_counts[trade_counts["hyperdrive_name"] == pool.name][
+                    "event_type"
+                ].values
+                if "OpenLong" not in pool_trade_event_counts:
+                    logging.error(
+                        "Pool %s did not make any OpenLong trades after %s iterations",
+                    )
+                if "OpenShort" not in pool_trade_event_counts:
+                    logging.error(
+                        "Pool %s did not make any OpenShort trades after %s iterations",
+                    )
+                if "CloseLong" not in pool_trade_event_counts:
+                    logging.error(
+                        "Pool %s did not make any CloseLong trades after %s iterations",
+                    )
+                if "CloseShort" not in pool_trade_event_counts:
+                    logging.error(
+                        "Pool %s did not make any CloseShort trades after %s iterations",
+                    )
+                if "AddLiquidity" not in pool_trade_event_counts:
+                    logging.error(
+                        "Pool %s did not make any AddLiquidity trades after %s iterations",
+                    )
+                if "RemoveLiquidity" not in pool_trade_event_counts:
+                    logging.error(
+                        "Pool %s did not make any RemoveLiquidity trades after %s iterations",
+                    )
 
 
 def run_fuzz_bots(
@@ -287,14 +344,11 @@ def run_fuzz_bots(
             agent.set_max_approval(pool=pool)
         agents.append(agent)
 
-    # We use deque collection to allow for fast prepending to list
-    # By specifying a maxlen, items get popped off on the other side
-    # of the deque as new items are added
-    trade_history = {pool.name: deque(maxlen=MAX_TRADE_HISTORY) for pool in hyperdrive_pools}
-
     # Make trades until the user or agents stop us
     logging.info("Trading...")
     iteration = 0
+    # Get block before start fuzzing
+    fuzz_start_block = chain.block_number()
 
     while True:
         if num_iterations is not None and iteration >= num_iterations:
@@ -307,7 +361,6 @@ def run_fuzz_bots(
         for pool in hyperdrive_pools:
             logging.info("Trading on %s", pool.name)
             # Execute the agent policies
-            pool_trades: list[str] = []
             for agent in agents:
                 # If we're checking invariance, and we're doing the lp share test,
                 # we need to get the pending pool state here before the trades.
@@ -336,8 +389,6 @@ def run_fuzz_bots(
                             raise exc
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
-
-                pool_trades.extend([trade.__name__ for trade in agent_trade])
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
@@ -374,19 +425,8 @@ def run_fuzz_bots(
                             # Otherwise, we raise a new fuzz assertion exception wht the list of exceptions
                             raise FuzzAssertionException(*fuzz_exceptions)
 
-            trade_history[pool.name].appendleft(pool_trades)
-
-        # Log trades
-        print_trades = {k: list(v) for k, v in trade_history.items()}
-        logging.info("Trade history: \n %s", json.dumps(print_trades, indent=2))
-
-        # Look for past trades and limit the size of the list
-        for pool_name, trades in trade_history.items():
-            if len(trades) == MAX_TRADE_HISTORY:
-                num_trades = [len(t) for t in trades]
-                if sum(num_trades) == 0:
-                    logging.warning("No trades found on %s for the past %s iterations", pool_name, MAX_TRADE_HISTORY)
-                    # TODO log to rollbar
+        # Check trades on pools and log if no trades have been made on any of the pools
+        _check_trades_made_on_pool(chain, hyperdrive_pools, fuzz_start_block, iteration)
 
         # Check agent funds and refund if necessary
         assert len(agents) > 0
