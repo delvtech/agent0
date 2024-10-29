@@ -51,8 +51,9 @@ def accrue_interest_ezeth(interface: HyperdriveReadWriteInterface, variable_rate
     # how much time has advanced between subsequent calls.
     # Initial call, we look to see if the attribute exists
     previous_accrue_interest_data: dict | None = getattr(interface, "_accrue_interest_data", None)
+
     # Always set the new state here
-    setattr(interface, "_previous_interest_accrual_time", accrue_interest_data)
+    setattr(interface, "_accrue_interest_data", accrue_interest_data)
 
     if previous_accrue_interest_data is None:
         # Skip this check on initial call, not a failure
