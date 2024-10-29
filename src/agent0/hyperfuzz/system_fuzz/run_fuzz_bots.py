@@ -53,7 +53,7 @@ LP_SHARE_PRICE_CURVE_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_LP_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
-TRADE_COUNT_PERIODIC_CHECK = 50
+TRADE_COUNT_PERIODIC_CHECK = 100
 
 
 # pylint: disable=too-many-locals
