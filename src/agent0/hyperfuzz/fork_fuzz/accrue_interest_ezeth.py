@@ -75,7 +75,8 @@ def accrue_interest_ezeth(interface: HyperdriveReadWriteInterface, variable_rate
 
     previous_total_tvl: FixedPoint = previous_accrue_interest_data["total_tvl"]
     assert isinstance(previous_total_tvl, FixedPoint)
-    eth_to_add = previous_total_tvl * adjusted_variable_rate
+    # Give a little bit extra for gas
+    eth_to_add = previous_total_tvl * adjusted_variable_rate + FixedPoint(0.01)
 
     # Give eth to restake manager
     curr_balance = FixedPoint(scaled_value=get_account_balance(interface.web3, RESTAKE_MANAGER_ADDR))
