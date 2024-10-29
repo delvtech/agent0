@@ -17,6 +17,7 @@ from web3.exceptions import ContractCustomError
 
 from agent0 import LocalChain, LocalHyperdrive
 from agent0.hyperfuzz import FuzzAssertionException
+from agent0.hyperfuzz.fork_fuzz import accrue_interest_fork
 from agent0.hyperfuzz.system_fuzz import run_fuzz_bots
 from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_exception, log_rollbar_message
 
@@ -164,11 +165,6 @@ def _fuzz_ignore_errors(exc: Exception) -> bool:
         ):
             return True
 
-        # This is the `OraclePriceExpired()` error from the ezeth pool, which we expect from time advancing.
-        # TODO call instance `advanceTime` to allow for interest accrual on forked pools, which will sidestep this error
-        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "0xeafdc186()":
-            return True
-
     return False
 
 
@@ -251,6 +247,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
         # Get list of deployed pools on initial iteration
         deployed_pools = LocalHyperdrive.get_hyperdrive_pools_from_registry(chain, registry_address)
+
         log_message = f"Running fuzzing on pools {[p.name for p in deployed_pools]}..."
         logging.info(log_message)
         log_rollbar_message(message=log_message, log_level=logging.INFO)
@@ -279,6 +276,8 @@ def main(argv: Sequence[str] | None = None) -> None:
                 base_budget_per_bot=FixedPoint(1_000),
                 whale_accounts=whale_accounts,
                 num_iterations=parsed_args.num_iterations_per_episode,
+                accrue_interest_func=accrue_interest_fork,
+                accrue_interest_rate=FixedPoint(0.05),
             )
         except Exception as e:  # pylint: disable=broad-except
             log_rollbar_exception(

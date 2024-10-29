@@ -14,7 +14,8 @@ from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.chainsync.db.hyperdrive import get_trade_events
 from agent0.core.base.make_key import make_private_key
 from agent0.core.hyperdrive.interactive.hyperdrive_agent import HyperdriveAgent
-from agent0.ethpy.base import set_anvil_account_balance
+from agent0.ethpy.base import set_account_balance
+from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
 from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception, log_rollbar_message
@@ -222,6 +223,8 @@ def run_fuzz_bots(
     num_iterations: int | None = None,
     lp_share_price_test: bool = False,
     whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint], None] | None = None,
+    accrue_interest_rate: FixedPoint | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
 
@@ -273,6 +276,14 @@ def run_fuzz_bots(
         A mapping between token -> whale addresses to use to fund the fuzz agent.
         If the token is not in the mapping, fuzzing will attempt to call `mint` on
         the token contract. Defaults to an empty mapping.
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint], None] | None, optional
+        A function that will accrue interest on the hyperdrive pool. This function will get called
+        before and after each set of trades, with the pool's hyperdrive interface and the variable rate
+        as an argument. It's up to the function itself to maintain the last time interest was accrued.
+    accrue_interest_rate: FixedPoint | None, optional
+        The variable rate to be passed into the accrue_interest_func. Note this value is only used when
+        forking, as variable interest is handled by a mock yield source when simulating.
+        If `random_variable_rate` is True, this value will be ignored.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -355,6 +366,27 @@ def run_fuzz_bots(
     while True:
         if num_iterations is not None and iteration >= num_iterations:
             break
+
+        # Set the variable rate
+        if random_variable_rate:
+            # This will change an underlying yield source twice if pools share the same underlying
+            # yield source
+            if lp_share_price_test:
+                variable_rate_range = LP_SHARE_PRICE_VARIABLE_RATE_RANGE
+            else:
+                variable_rate_range = VARIABLE_RATE_RANGE
+            for hyperdrive_pool in hyperdrive_pools:
+                if isinstance(hyperdrive_pool, LocalHyperdrive):
+                    # RNG should always exist, config's post_init should always
+                    # initialize an rng object
+                    assert hyperdrive_pool.chain.config.rng is not None
+                    accrue_interest_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*variable_rate_range))
+                    # TODO this call will break on forks, we likely want to ignore this call
+                    # if this is the case
+                    hyperdrive_pool.set_variable_rate(accrue_interest_rate)
+                else:
+                    raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")
+
         iteration += 1
         if run_async:
             # There are race conditions throughout that need to be fixed here
@@ -369,6 +401,10 @@ def run_fuzz_bots(
                 pending_pool_state = None
                 if check_invariance and lp_share_price_test:
                     pending_pool_state = pool.interface.get_hyperdrive_state("pending")
+
+                # Accrue interest before and after making the trades
+                if accrue_interest_func is not None and accrue_interest_rate is not None:
+                    accrue_interest_func(pool.interface, accrue_interest_rate)
 
                 # Execute trades
                 agent_trade = []
@@ -391,6 +427,10 @@ def run_fuzz_bots(
                             raise exc
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
+
+                # Accrue interest before and after making the trades
+                if accrue_interest_func is not None and accrue_interest_rate is not None:
+                    accrue_interest_func(pool.interface, accrue_interest_rate)
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
@@ -471,7 +511,7 @@ def run_fuzz_bots(
                 deployer_account = chain.get_deployer_account()
                 deployer_agent_eth = hyperdrive_pools[0].interface.get_eth_base_balances(deployer_account)[0]
                 if deployer_agent_eth < minimum_avg_agent_eth:
-                    _ = set_anvil_account_balance(
+                    _ = set_account_balance(
                         hyperdrive_pools[0].interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
                     )
                 # RNG should always exist, config's post_init should always
@@ -482,20 +522,3 @@ def run_fuzz_bots(
                 chain.advance_time(random_time, create_checkpoints=True)
             else:
                 raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
-
-        if random_variable_rate:
-            # This will change an underlying yield source twice if pools share the same underlying
-            # yield source
-            if lp_share_price_test:
-                variable_rate_range = LP_SHARE_PRICE_VARIABLE_RATE_RANGE
-            else:
-                variable_rate_range = VARIABLE_RATE_RANGE
-            for hyperdrive_pool in hyperdrive_pools:
-                if isinstance(hyperdrive_pool, LocalHyperdrive):
-                    # RNG should always exist, config's post_init should always
-                    # initialize an rng object
-                    assert hyperdrive_pool.chain.config.rng is not None
-                    random_rate = FixedPoint(hyperdrive_pool.chain.config.rng.uniform(*variable_rate_range))
-                    hyperdrive_pool.set_variable_rate(random_rate)
-                else:
-                    raise ValueError("Random variable rate only allowed for LocalHyperdrive pools")

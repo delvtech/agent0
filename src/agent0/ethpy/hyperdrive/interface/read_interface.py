@@ -117,6 +117,7 @@ class HyperdriveReadInterface:
         EZETH = "EzETHHyperdrive"
         RETH = "RETHHyperdrive"
         STKWELL = "StkWellHyperdrive"
+        EETH = "EETHHyperdrive"
 
     def __init__(
         self,

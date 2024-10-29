@@ -53,7 +53,7 @@ from agent0.core.hyperdrive.agent import (
 from agent0.core.hyperdrive.agent.hyperdrive_wallet import Long, Short
 from agent0.core.hyperdrive.crash_report import log_hyperdrive_crash_report
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
-from agent0.ethpy.base import get_account_balance, set_anvil_account_balance
+from agent0.ethpy.base import get_account_balance, set_account_balance
 
 from .exec import async_execute_agent_trades, async_execute_single_trade, get_liquidation_trades, get_trades
 
@@ -244,7 +244,7 @@ class HyperdriveAgent:
             # Eth is a set balance call
             eth_balance = self.get_eth()
             new_eth_balance = eth_balance + eth
-            _ = set_anvil_account_balance(self.chain._web3, self.account.address, new_eth_balance.scaled_value)
+            _ = set_account_balance(self.chain._web3, self.account.address, new_eth_balance.scaled_value)
 
         if base > FixedPoint(0):
             if pool is None:
@@ -287,7 +287,7 @@ class HyperdriveAgent:
                     raise KeyError("Response did not have a result.")
 
                 # Give eth to the whale account for gas
-                _ = set_anvil_account_balance(self.chain._web3, whale_account_addr, FixedPoint(10).scaled_value)
+                _ = set_account_balance(self.chain._web3, whale_account_addr, FixedPoint(10).scaled_value)
 
                 # Transfer base from whale to account
                 base_token_contract.functions.transfer(self.account.address, base_scaled_value).transact(

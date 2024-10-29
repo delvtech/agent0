@@ -40,7 +40,7 @@ from web3.contract.contract import Contract
 from web3.logs import DISCARD
 from web3.types import TxParams, Wei
 
-from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, get_account_balance, set_anvil_account_balance
+from agent0.ethpy.base import ETH_CONTRACT_ADDRESS, get_account_balance, set_account_balance
 
 # Deploying a Hyperdrive pool requires a long sequence of contract and RPCs,
 # resulting in long functions with many parameter arguments.
@@ -545,7 +545,7 @@ def _mint_and_approve(
         # No need to approve, but we still need to ensure there's enough eth to fund
         eth_balance = FixedPoint(scaled_value=get_account_balance(web3, funding_account.address))
         new_eth_balance = eth_balance + mint_amount
-        _ = set_anvil_account_balance(web3, funding_account.address, new_eth_balance.scaled_value)
+        _ = set_account_balance(web3, funding_account.address, new_eth_balance.scaled_value)
 
     else:
         assert isinstance(funding_contract, ERC20MintableContract)

@@ -6,7 +6,7 @@ from web3 import Web3
 from web3.types import RPCEndpoint, RPCResponse
 
 
-def set_anvil_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
+def set_account_balance(web3: Web3, account_address: str, amount_wei: int) -> RPCResponse:
     """Set the eth balance of the the account using the web3 provider.
 
     Arguments
