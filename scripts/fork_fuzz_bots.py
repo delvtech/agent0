@@ -284,7 +284,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                 accrue_interest_rate=FixedPoint(0.05),
             )
         except Exception as e:  # pylint: disable=broad-except
-            raise e
             log_rollbar_exception(
                 rollbar_log_prefix="Fork FuzzBot: Unexpected error", exception=e, log_level=logging.ERROR
             )
