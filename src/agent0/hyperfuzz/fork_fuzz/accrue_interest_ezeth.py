@@ -54,11 +54,12 @@ def accrue_interest_ezeth(
             block_identifier=block_number_before_advance
         )[2]
     )
+    previous_timestamp = interface.get_block_timestamp(interface.get_block(block_number_before_advance))
+    current_timestamp = interface.get_block_timestamp(interface.get_block("latest"))
+    time_delta = current_timestamp - previous_timestamp
 
     adjusted_variable_rate = FixedPoint(
-        scaled_value=FixedPointIntegerMath.mul_div_down(
-            variable_rate.scaled_value, interface.pool_config.position_duration, SECONDS_IN_YEAR
-        )
+        scaled_value=FixedPointIntegerMath.mul_div_down(variable_rate.scaled_value, time_delta, SECONDS_IN_YEAR)
     )
 
     eth_to_add = previous_total_tvl * adjusted_variable_rate

@@ -9,6 +9,7 @@ from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
 from pypechain.core import PypechainCallException
+from web3.types import RPCEndpoint
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.chainsync.db.hyperdrive import get_trade_events
@@ -18,7 +19,7 @@ from agent0.ethpy.base import set_account_balance
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception, log_rollbar_message
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -43,7 +44,7 @@ INITIAL_TIME_STRETCH_APR_RANGE: tuple[float, float] = (0.005, 0.5)
 # The variable rate to set after each episode
 VARIABLE_RATE_RANGE: tuple[float, float] = (0, 1)
 # How much to advance time between episodes
-ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, 5 * ONE_DAY_IN_SECONDS)
+ADVANCE_TIME_SECONDS_RANGE: tuple[int, int] = (0, ONE_DAY_IN_SECONDS)
 # The fee percentage. The range controls all 4 fees
 FEE_RANGE: tuple[float, float] = (0.0001, 0.2)
 
@@ -512,7 +513,9 @@ def run_fuzz_bots(
                 # an out of date oracle, and we can't do any other contract calls
                 # until we accrue interest. Hence, we break up the call
                 # to accrue interest, then update the db.
-                chain._advance_chain_time(random_time)  # pylint: disable=protected-access
+                # chain._advance_chain_time(random_time)  # pylint: disable=protected-access
+                chain._web3.provider.make_request(method=RPCEndpoint("evm_increaseTime"), params=[random_time])
+
                 for pool in hyperdrive_pools:
                     accrue_interest_func(pool.interface, accrue_interest_rate, block_number_before_advance)
                     assert isinstance(pool, LocalHyperdrive)
