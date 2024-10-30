@@ -9,6 +9,7 @@ from eth_typing import ChecksumAddress
 from fixedpointmath import FixedPoint
 from numpy.random import Generator
 from pypechain.core import PypechainCallException
+from web3.types import RPCEndpoint
 
 from agent0 import Chain, Hyperdrive, LocalChain, LocalHyperdrive, PolicyZoo
 from agent0.chainsync.db.hyperdrive import get_trade_events
@@ -18,7 +19,7 @@ from agent0.ethpy.base import set_account_balance
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception, log_rollbar_message
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -197,9 +198,9 @@ def _check_trades_made_on_pool(
                     )
 
             if has_err:
-                error_message = "FuzzBots: " + error_message
                 logging.error(error_message)
-                log_rollbar_message(error_message, logging.ERROR)
+                # We log message to get rollbar to group these messages together
+                log_rollbar_exception(ValueError(error_message), logging.ERROR, rollbar_log_prefix="FuzzBots:")
 
 
 def run_fuzz_bots(
@@ -223,7 +224,7 @@ def run_fuzz_bots(
     num_iterations: int | None = None,
     lp_share_price_test: bool = False,
     whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
-    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint], None] | None = None,
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint, int], None] | None = None,
     accrue_interest_rate: FixedPoint | None = None,
 ) -> None:
     """Runs fuzz bots on a hyperdrive pool.
@@ -276,10 +277,10 @@ def run_fuzz_bots(
         A mapping between token -> whale addresses to use to fund the fuzz agent.
         If the token is not in the mapping, fuzzing will attempt to call `mint` on
         the token contract. Defaults to an empty mapping.
-    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint], None] | None, optional
+    accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint, int], None] | None, optional
         A function that will accrue interest on the hyperdrive pool. This function will get called
-        before and after each set of trades, with the pool's hyperdrive interface and the variable rate
-        as an argument. It's up to the function itself to maintain the last time interest was accrued.
+        after advancing time, with the following signature:
+        `accrue_interest_func(hyperdrive_interface, variable_rate, block_number_before_advance)`.
     accrue_interest_rate: FixedPoint | None, optional
         The variable rate to be passed into the accrue_interest_func. Note this value is only used when
         forking, as variable interest is handled by a mock yield source when simulating.
@@ -402,10 +403,6 @@ def run_fuzz_bots(
                 if check_invariance and lp_share_price_test:
                     pending_pool_state = pool.interface.get_hyperdrive_state("pending")
 
-                # Accrue interest before and after making the trades
-                if accrue_interest_func is not None and accrue_interest_rate is not None:
-                    accrue_interest_func(pool.interface, accrue_interest_rate)
-
                 # Execute trades
                 agent_trade = []
                 try:
@@ -427,10 +424,6 @@ def run_fuzz_bots(
                             raise exc
                     # Otherwise, we ignore crashes, we want the bot to keep trading
                     # These errors will get logged regardless
-
-                # Accrue interest before and after making the trades
-                if accrue_interest_func is not None and accrue_interest_rate is not None:
-                    accrue_interest_func(pool.interface, accrue_interest_rate)
 
                 # Check invariance on every iteration if we're not doing lp_share_price_test.
                 # Only check invariance if a trade was executed for lp_share_price_test.
@@ -505,8 +498,31 @@ def run_fuzz_bots(
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
             # LocalChain object
-            if isinstance(chain, LocalChain):
-                # The deployer pays gas for advancing time
+            if not isinstance(chain, LocalChain):
+                raise ValueError("Random advance time only allowed for pools deployed on LocalChain")
+
+            # RNG should always exist, config's post_init should always
+            # initialize an rng object
+            assert chain.config.rng is not None
+            random_time = int(chain.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
+
+            if accrue_interest_func is not None and accrue_interest_rate is not None:
+                # Get block number before we advance time
+                block_number_before_advance = chain.block_number()
+                # There's issues around generating intermittent checkpoints with
+                # an out of date oracle, and we can't do any other contract calls
+                # until we accrue interest. Hence, we break up the call
+                # to accrue interest, then update the db.
+                # chain._advance_chain_time(random_time)  # pylint: disable=protected-access
+                chain._web3.provider.make_request(method=RPCEndpoint("evm_increaseTime"), params=[random_time])
+
+                for pool in hyperdrive_pools:
+                    accrue_interest_func(pool.interface, accrue_interest_rate, block_number_before_advance)
+                    assert isinstance(pool, LocalHyperdrive)
+                    pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
+
+            else:
+                # The deployer pays gas for creating checkpoints when advancing time
                 # We check the eth balance and refund if it runs low
                 deployer_account = chain.get_deployer_account()
                 deployer_agent_eth = hyperdrive_pools[0].interface.get_eth_base_balances(deployer_account)[0]
@@ -514,11 +530,4 @@ def run_fuzz_bots(
                     _ = set_account_balance(
                         hyperdrive_pools[0].interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
                     )
-                # RNG should always exist, config's post_init should always
-                # initialize an rng object
-                assert chain.config.rng is not None
-                # TODO should there be an upper bound for advancing time?
-                random_time = int(chain.config.rng.integers(*ADVANCE_TIME_SECONDS_RANGE))
                 chain.advance_time(random_time, create_checkpoints=True)
-            else:
-                raise ValueError("Random advance time only allowed for pools deployed on LocalChain")

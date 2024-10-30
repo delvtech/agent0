@@ -549,6 +549,7 @@ class LocalHyperdrive(Hyperdrive):
                 self.chain.get_deployer_account(),
                 checkpoint_time=checkpoint_time,
                 gas_limit=gas_limit,
+                preview=self.chain.config.preview_before_trade,
             )
         except AssertionError as exc:
             # Adding additional context to the "Transaction receipt has no logs" error

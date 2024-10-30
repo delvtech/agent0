@@ -228,6 +228,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         crash_log_level=logging.ERROR,
         crash_report_additional_info={"rng_seed": rng_seed},
         gas_limit=int(3e6),  # Plenty of gas limit for transactions
+        # There's an issue with oracles getting out of date, so we don't advance time when fuzzing
+        block_timestamp_interval=0,
     )
 
     while True:
