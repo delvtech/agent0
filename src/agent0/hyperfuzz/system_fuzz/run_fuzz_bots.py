@@ -174,27 +174,37 @@ def _check_trades_made_on_pool(
                 pool_trade_event_counts = trade_counts[trade_counts["hyperdrive_name"] == pool.name][
                     "event_type"
                 ].values
+                # Only look for close trades if we found a corresponding open trade
                 if "OpenLong" not in pool_trade_event_counts:
                     has_err = True
                     error_message = f"Pool {pool.name} did not make any OpenLong trades after {iteration} iterations"
+                elif "CloseLong" not in pool_trade_event_counts:
+                    has_err = True
+                    error_message = (
+                        f"Pool {pool.name} did not make any CloseLong trades "
+                        f"with open positions after {iteration} iterations"
+                    )
+
                 if "OpenShort" not in pool_trade_event_counts:
                     has_err = True
                     error_message = f"Pool {pool.name} did not make any OpenShort trades after {iteration} iterations"
-                if "CloseLong" not in pool_trade_event_counts:
+                elif "CloseShort" not in pool_trade_event_counts:
                     has_err = True
-                    error_message = f"Pool {pool.name} did not make any CloseLong trades after {iteration} iterations"
-                if "CloseShort" not in pool_trade_event_counts:
-                    has_err = True
-                    error_message = f"Pool {pool.name} did not make any CloseShort trades after {iteration} iterations"
+                    error_message = (
+                        f"Pool {pool.name} did not make any CloseShort trades "
+                        f"with open positions after {iteration} iterations"
+                    )
+
                 if "AddLiquidity" not in pool_trade_event_counts:
                     has_err = True
                     error_message = (
                         f"Pool {pool.name} did not make any AddLiquidity trades after {iteration} iterations"
                     )
-                if "RemoveLiquidity" not in pool_trade_event_counts:
+                elif "RemoveLiquidity" not in pool_trade_event_counts:
                     has_err = True
                     error_message = (
-                        f"Pool {pool.name} did not make any RemoveLiquidity trades after {iteration} iterations"
+                        f"Pool {pool.name} did not make any RemoveLiquidity trades "
+                        f"with open positions after {iteration} iterations"
                     )
 
             if has_err:
