@@ -32,6 +32,7 @@ def accrue_interest_ezeth(
     block_number_before_advance: int
         The block number before time was advanced.
     """
+    # pylint: disable=too-many-locals
 
     assert variable_rate > FixedPoint(0)
 

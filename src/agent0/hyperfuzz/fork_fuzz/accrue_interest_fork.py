@@ -20,6 +20,8 @@ def accrue_interest_fork(
         The interface to the Hyperdrive pool.
     variable_rate: FixedPoint
         The variable rate of the pool.
+    block_number_before_advance: int
+        The block number before time was advanced.
     """
 
     # Switch case for pool types for interest accrual
