@@ -386,6 +386,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         "vault_share_delta": "vault_share_delta",
         "asBase": "as_base",
         "vaultSharePrice": "vault_share_price",
+        "extraData": "extra_data",
     }
 
     events_df = events_df[list(rename_dict.keys())].rename(columns=rename_dict)
