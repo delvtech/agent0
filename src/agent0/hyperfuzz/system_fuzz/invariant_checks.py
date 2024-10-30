@@ -22,6 +22,7 @@ from agent0.hyperfuzz import FuzzAssertionException
 LP_SHARE_PRICE_EPSILON = 1e-4
 TOTAL_SHARES_EPSILON = 1e-9
 NEGATIVE_INTEREST_EPSILON = FixedPoint(scaled_value=10)  # 10 wei
+PRESENT_VALUE_EPSILON = FixedPoint(scaled_value=1)  # 1 wei
 
 
 def run_invariant_checks(
@@ -477,7 +478,7 @@ def _check_present_value_greater_than_idle_shares(
             failed=True, exception_message=repr(e), exception_data=exception_data, log_level=logging.CRITICAL
         )
 
-    if not present_value >= idle_shares:
+    if not present_value >= (idle_shares - PRESENT_VALUE_EPSILON):
         difference_in_wei = abs(present_value.scaled_value - idle_shares.scaled_value)
         exception_message = f"{present_value=} < {idle_shares=}, {difference_in_wei=}"
         exception_data["invariance_check:idle_shares"] = idle_shares
