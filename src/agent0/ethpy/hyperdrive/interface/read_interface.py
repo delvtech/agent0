@@ -17,6 +17,7 @@ from hyperdrivetypes.types import (
     MockERC4626Contract,
     MockLidoContract,
 )
+from packaging.version import Version
 from web3 import Web3
 from web3.constants import ADDRESS_ZERO
 from web3.types import BlockData, BlockIdentifier, Timestamp
@@ -168,10 +169,10 @@ class HyperdriveReadInterface:
         )
 
         # Check version here to ensure the contract is the correct version
-        hyperdrive_version = self.hyperdrive_contract.functions.version().call()
-        if not check_hyperdrive_version(hyperdrive_version):
+        self.hyperdrive_version = self.hyperdrive_contract.functions.version().call()
+        if not check_hyperdrive_version(self.hyperdrive_version):
             raise ValueError(
-                f"Hyperdrive address {self.hyperdrive_address} is version {hyperdrive_version}, "
+                f"Hyperdrive address {self.hyperdrive_address} is version {self.hyperdrive_version}, "
                 f"does not meet minimum versions {get_minimum_hyperdrive_version()}"
             )
 
@@ -262,7 +263,8 @@ class HyperdriveReadInterface:
             # TODO There's a known issue fixed in Hyperdrive v1.0.17 that causes issues with
             # extra data passed to morpho. Remove this when minimum hyperdrive version supported
             # >= 1.0.17
-            self.txn_signature = bytes(0)
+            if Version(self.hyperdrive_version) < Version("1.0.17"):
+                self.txn_signature = bytes(0)
 
         else:
             # TODO Although the underlying function might not be a MockERC4626Contract,
