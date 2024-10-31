@@ -103,9 +103,9 @@ def _fuzz_ignore_logging_to_rollbar(exc: Exception) -> bool:
         if orig_exception is None:
             return False
 
-        # Insufficient liquidity error
-        if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "InsufficientLiquidity()":
-            return True
+        # # Insufficient liquidity error
+        # if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "InsufficientLiquidity()":
+        #     return True
 
         # Circuit breaker triggered error
         if isinstance(orig_exception, ContractCustomError) and exc.decoded_error == "CircuitBreakerTriggered()":
