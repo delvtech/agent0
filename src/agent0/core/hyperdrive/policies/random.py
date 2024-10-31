@@ -283,7 +283,11 @@ class Random(HyperdriveBasePolicy):
 
         # TODO fix all crashes in calc_max_short and calc_max_long and instead return 0 for max short
         try:
-            maximum_trade_amount = interface.calc_max_long(wallet.balance.amount, interface.current_pool_state)
+            # There's an issue around calc_max_long where it overestimates the max trade amount
+            # Hence, we multiply it by 0.9 to go under
+            maximum_trade_amount = interface.calc_max_long(
+                wallet.balance.amount, interface.current_pool_state
+            ) * FixedPoint(0.9)
         # TODO pyo3 throws a PanicException here, which is derived from BaseException
         # Ideally, we would import the exact exception in python here, but pyo3 doesn't
         # expose this exception. Need to (1) fix the underlying calc_max_short bug, or
