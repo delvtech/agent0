@@ -147,6 +147,7 @@ class HyperdriveReadInterface:
             The signature for transactions. Defaults to `0xa0`.
         """
         # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
         if txn_signature is None:
             self.txn_signature = AGENT0_SIGNATURE
         else:
