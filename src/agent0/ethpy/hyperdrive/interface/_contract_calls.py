@@ -20,6 +20,7 @@ from hyperdrivetypes.types.ERC20Mintable import ERC20MintableContract
 from hyperdrivetypes.types.IHyperdrive import IHyperdriveContract, Options
 from hyperdrivetypes.types.MockERC4626 import MockERC4626Contract
 from hyperdrivetypes.types.MockLido import MockLidoContract
+from packaging.version import Version
 from pypechain.core import PypechainCallException
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, ContractLogicError
@@ -96,34 +97,39 @@ def _get_vault_shares(
 ) -> FixedPoint:
     """See API for documentation."""
 
-    # TODO call `hyperdrive_contract.functions.totalShares` instead of custom logic between pools
-    if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
-        # Type narrowing
-        assert interface.vault_shares_token_contract is not None
-        vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
+    # `totalShares` is only available after hyperdrive version `1.0.17`
+    if Version(interface.hyperdrive_version) >= Version("1.0.17"):
+        vault_shares = interface.hyperdrive_contract.functions.totalShares().call(
             block_identifier=block_identifier or "latest"
-        )
-    elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHO:
-        # Type narrowing
-        assert interface.morpho_contract is not None
-        assert interface.morpho_market_id is not None
-
-        # TODO pypechain requires bytes input (not HexBytes) for the position function call.
-        # Fix to allow for bytes input to be interchangeable.
-        morpho_market_id = bytes(interface.morpho_market_id)
-
-        # Get token balances
-        vault_shares = (
-            interface.morpho_contract.functions.position(morpho_market_id, hyperdrive_contract.address)
-            .call(block_identifier=block_identifier or "latest")
-            .supplyShares
         )
     else:
-        # Type narrowing
-        assert interface.vault_shares_token_contract is not None
-        vault_shares = interface.vault_shares_token_contract.functions.balanceOf(hyperdrive_contract.address).call(
-            block_identifier=block_identifier or "latest"
-        )
+        if interface.hyperdrive_kind == interface.HyperdriveKind.STETH:
+            # Type narrowing
+            assert interface.vault_shares_token_contract is not None
+            vault_shares = interface.vault_shares_token_contract.functions.sharesOf(hyperdrive_contract.address).call(
+                block_identifier=block_identifier or "latest"
+            )
+        elif interface.hyperdrive_kind == interface.HyperdriveKind.MORPHO:
+            # Type narrowing
+            assert interface.morpho_contract is not None
+            assert interface.morpho_market_id is not None
+
+            # TODO pypechain requires bytes input (not HexBytes) for the position function call.
+            # Fix to allow for bytes input to be interchangeable.
+            morpho_market_id = bytes(interface.morpho_market_id)
+
+            # Get token balances
+            vault_shares = (
+                interface.morpho_contract.functions.position(morpho_market_id, hyperdrive_contract.address)
+                .call(block_identifier=block_identifier or "latest")
+                .supplyShares
+            )
+        else:
+            # Type narrowing
+            assert interface.vault_shares_token_contract is not None
+            vault_shares = interface.vault_shares_token_contract.functions.balanceOf(hyperdrive_contract.address).call(
+                block_identifier=block_identifier or "latest"
+            )
     return FixedPoint(scaled_value=vault_shares)
 
 

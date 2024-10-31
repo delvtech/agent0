@@ -147,6 +147,7 @@ class HyperdriveReadInterface:
             The signature for transactions. Defaults to `0xa0`.
         """
         # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
         if txn_signature is None:
             self.txn_signature = AGENT0_SIGNATURE
         else:
@@ -265,7 +266,10 @@ class HyperdriveReadInterface:
             # >= 1.0.17
             if Version(self.hyperdrive_version) < Version("1.0.17"):
                 self.txn_signature = bytes(0)
-
+        elif vault_shares_token_address == ADDRESS_ZERO:
+            # Some contracts don't have a vault shares token contract. We set the contract to None
+            # in this case.
+            self.vault_shares_token_contract = None
         else:
             # TODO Although the underlying function might not be a MockERC4626Contract,
             # the pypechain contract factory happily accepts any address and exposes
@@ -584,7 +588,7 @@ class HyperdriveReadInterface:
         if block_identifier is None:
             block_identifier = "latest"
         if self.vault_shares_token_contract is None:
-            raise ValueError("Vault shares token contract is not set")
+            return None
         return _get_variable_rate(self.vault_shares_token_contract, block_identifier)
 
     def get_standardized_variable_rate(self, time_range: int = 604800) -> FixedPoint:

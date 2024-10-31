@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 from functools import partial
 from typing import TYPE_CHECKING, Literal, Type, overload
@@ -273,10 +274,15 @@ class HyperdriveAgent:
                 else:
                     base_scaled_value = base.scaled_value
 
+                # If whale doesn't have enough balance, give it as much as possible
                 if whale_balance < base_scaled_value:
-                    raise ValueError(
-                        f"Whale does not have enough base to transfer. {whale_balance=}, {base_scaled_value=}."
+                    logging.warning(
+                        "Whale %s doesn't have enough base to transfer %s, only supplying %s base.",
+                        whale_account_addr,
+                        FixedPoint(scaled_value=base_scaled_value),
+                        FixedPoint(scaled_value=whale_balance),
                     )
+                    base_scaled_value = whale_balance
 
                 # RPC anvil call to impersonate account
                 response = self.chain._web3.provider.make_request(

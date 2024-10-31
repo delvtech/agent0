@@ -25,6 +25,7 @@ from agent0.hyperlogs.rollbar_utilities import initialize_rollbar, log_rollbar_e
 # with the value as the whale address.
 # Note that if a token is missing in this mapping, we will try to
 # call `mint` on the trading token to fund.
+# TODO we need a better method to ensure this list of whales doesn't get stale
 MAINNET_WHALE_ADDRESSES = {
     # stETH
     "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84": "0x7F39C581F595B53C5CB19BD0B3F8DA6C935E2CA0",
@@ -71,6 +72,8 @@ BASE_WHALE_ADDRESSES = {
     "0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17": "0x5E564c1905fFF9724621542f58d61BE0405C4879",
     # snARS
     "0xC1F4C75e8925A67BE4F35D6b1c044B5ea8849a58": "0x54423d0A5c4e3a6Eb8Bd12FDD54c1e6b42D52Ebe",
+    # LP Token for Areo USD pool
+    "0x6cDcb1C4A4D1C3C6d054b27AC5B77e89eAFb971d": "0xD22B2890A6812414B544598fC77AC04382008754",
 }
 
 # We build an outer lookup based on chain id
