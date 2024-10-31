@@ -489,21 +489,15 @@ def run_fuzz_bots(
                 logging.info("Refunding agents...")
                 if run_async:
                     raise NotImplementedError("Running async not implemented")
-                try:
-                    _ = [
-                        agent.add_funds(
-                            base=base_budget_per_bot,
-                            eth=eth_budget_per_bot,
-                            pool=hyperdrive_pool,
-                            whale_accounts=whale_accounts,
-                        )
-                        for agent in agents
-                    ]
-                except ValueError as e:
-                    # Look for the case when the whale doesn't have enough base to transfer, and
-                    # ignore when refunding.
-                    if "Whale does not have enough base to transfer." not in e.args[0]:
-                        raise e
+                _ = [
+                    agent.add_funds(
+                        base=base_budget_per_bot,
+                        eth=eth_budget_per_bot,
+                        pool=hyperdrive_pool,
+                        whale_accounts=whale_accounts,
+                    )
+                    for agent in agents
+                ]
 
         if random_advance_time:
             # We only allow random advance time if the chain connected to the pool is a
