@@ -23,6 +23,7 @@ LP_SHARE_PRICE_EPSILON = 1e-4
 TOTAL_SHARES_EPSILON = 1e-9
 NEGATIVE_INTEREST_EPSILON = FixedPoint(scaled_value=10)  # 10 wei
 PRESENT_VALUE_EPSILON = FixedPoint(scaled_value=1)  # 1 wei
+EZETH_NEG_INTEREST_TIME_DELTA = 12 * 60 * 60
 
 
 def run_invariant_checks(
@@ -282,12 +283,24 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     exception_data: dict[str, Any] = {}
     log_level = None
 
-    # TODO we hack in a stateful variable into the interface here, since we need
+    # We hack in a stateful variable into the interface here, since we need
     # to check between subsequent calls here.
+    # TODO: build in a way to store old pool states, e.g. a dict keyed by block time
     # Initial call, we look to see if the attribute exists
     previous_pool_state: PoolState | None = getattr(interface, "_negative_interest_previous_pool_state", None)
-    # Always set the new state here
-    setattr(interface, "_negative_interest_previous_pool_state", pool_state)
+
+    # We need to check interest over a longer time scale for ezETH
+    if interface.hyperdrive_name == "ElementDAO 182 Day ezETH Hyperdrive":
+        if previous_pool_state is None:
+            # Set initial state
+            setattr(interface, "_negative_interest_previous_pool_state", pool_state)
+        else:
+            # Only set prev state if enough time has passed
+            if pool_state.block_time - previous_pool_state.block_time > EZETH_NEG_INTEREST_TIME_DELTA:
+                setattr(interface, "_negative_interest_previous_pool_state", pool_state)
+    else:
+        # Always set the new state for all other pools, or if prev state has not been set
+        setattr(interface, "_negative_interest_previous_pool_state", pool_state)
 
     if previous_pool_state is None:
         # Skip this check on initial call, not a failure
