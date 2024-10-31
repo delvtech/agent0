@@ -291,13 +291,15 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
 
     # We need to check interest over a longer time scale for ezETH
     if interface.hyperdrive_name == "ElementDAO 182 Day ezETH Hyperdrive":
-        if (
-            previous_pool_state is not None
-            and pool_state.block_time - previous_pool_state.block_time > EZETH_NEG_INTEREST_TIME_DELTA
-        ):
+        if previous_pool_state is None:
+            # Set initial state
             setattr(interface, "_negative_interest_previous_pool_state", pool_state)
+        else:
+            # Only set prev state if enough time has passed
+            if pool_state.block_time - previous_pool_state.block_time > EZETH_NEG_INTEREST_TIME_DELTA:
+                setattr(interface, "_negative_interest_previous_pool_state", pool_state)
     else:
-        # Always set the new state for all other pools
+        # Always set the new state for all other pools, or if prev state has not been set
         setattr(interface, "_negative_interest_previous_pool_state", pool_state)
 
     if previous_pool_state is None:
