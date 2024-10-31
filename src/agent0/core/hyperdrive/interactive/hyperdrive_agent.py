@@ -279,8 +279,8 @@ class HyperdriveAgent:
                     logging.warning(
                         "Whale %s doesn't have enough base to transfer %s, only supplying %s base.",
                         whale_account_addr,
-                        base_scaled_value,
-                        whale_balance,
+                        FixedPoint(scaled_value=base_scaled_value),
+                        FixedPoint(scaled_value=whale_balance),
                     )
                     base_scaled_value = whale_balance
 
