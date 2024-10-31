@@ -580,7 +580,9 @@ class LocalHyperdrive(Hyperdrive):
         # pool config for this object.
         if self.chain.db_session is None:
             raise ValueError("Function requires postgres.")
-        pool_config = get_pool_config(self.chain.db_session, coerce_float=coerce_float)
+        pool_config = get_pool_config(
+            self.chain.db_session, hyperdrive_address=self.hyperdrive_address, coerce_float=coerce_float
+        )
         if len(pool_config) == 0:
             raise ValueError("Pool config doesn't exist in the db.")
         return pool_config.iloc[0]
@@ -600,7 +602,9 @@ class LocalHyperdrive(Hyperdrive):
         """
         if self.chain.db_session is None:
             raise ValueError("Function requires postgres.")
-        pool_info = get_pool_info(self.chain.db_session, coerce_float=coerce_float).drop("id", axis=1)
+        pool_info = get_pool_info(
+            self.chain.db_session, hyperdrive_address=self.hyperdrive_address, coerce_float=coerce_float
+        ).drop("id", axis=1)
         return pool_info
 
     def get_checkpoint_info(self, coerce_float: bool = False) -> pd.DataFrame:
