@@ -19,7 +19,7 @@ from agent0.ethpy.base import set_account_balance
 from agent0.ethpy.hyperdrive import HyperdriveReadWriteInterface
 from agent0.hyperfuzz import FuzzAssertionException
 from agent0.hyperfuzz.system_fuzz.invariant_checks import run_invariant_checks
-from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception
+from agent0.hyperlogs.rollbar_utilities import log_rollbar_exception, log_rollbar_message
 
 ONE_HOUR_IN_SECONDS = 60 * 60
 ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS * 24
@@ -55,7 +55,7 @@ LP_SHARE_PRICE_CURVE_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_LP_FEE_RANGE: tuple[float, float] = (0, 0)
 LP_SHARE_PRICE_GOVERNANCE_ZOMBIE_FEE_RANGE: tuple[float, float] = (0, 0)
 
-TRADE_COUNT_PERIODIC_CHECK = 100
+TRADE_COUNT_CHECK = 100
 
 
 # pylint: disable=too-many-locals
@@ -159,9 +159,8 @@ def _check_trades_made_on_pool(
 
     logging.info("Trade counts: %s", trade_counts)
 
-    # After 50 iterations, we expect all pools to make at least one trade
-    # Iteration at this point has already been incremented
-    if iteration % TRADE_COUNT_PERIODIC_CHECK == 0:
+    # After some iterations, we expect all pools to make at least one trade
+    if iteration == TRADE_COUNT_CHECK:
         trade_counts = trade_counts.reset_index()
         # Omission of rows means no trades of that type went through
         for pool in hyperdrive_pools:
@@ -208,9 +207,10 @@ def _check_trades_made_on_pool(
                     )
 
             if has_err:
+                error_message = "FuzzBots: " + error_message
                 logging.error(error_message)
                 # We log message to get rollbar to group these messages together
-                log_rollbar_exception(ValueError(error_message), logging.ERROR, rollbar_log_prefix="FuzzBots:")
+                log_rollbar_message(error_message, logging.ERROR)
 
 
 def run_fuzz_bots(
