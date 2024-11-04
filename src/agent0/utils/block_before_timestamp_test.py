@@ -29,9 +29,12 @@ def test_block_before_timestamp(fast_chain_fixture: LocalChain):
 
     # Start out a few blocks behind the latest
     hyperdrive_interface = LocalHyperdrive(fast_chain_fixture, LocalHyperdrive.Config()).interface
-    for _ in range(NUM_FUZZ_RUNS):
+    for fuzz_iter in range(NUM_FUZZ_RUNS):
         # Grab a random block in the past & get the time
-        test_block_number = int(np.random.randint(initial_block_number + 2, chain_block_number - 1))
+        if fuzz_iter == 0:  # test an edge case on the first iteration
+            test_block_number = initial_block_number
+        else:
+            test_block_number = int(np.random.randint(initial_block_number + 2, chain_block_number - 1))
         test_block_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_block(test_block_number))
 
         # Add a random amount of time that is less than the time between blocks
