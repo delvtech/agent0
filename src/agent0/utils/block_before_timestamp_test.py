@@ -5,12 +5,12 @@ import pytest
 
 from agent0 import LocalChain, LocalHyperdrive
 
-from .block_before_timestamp import block_before_timestamp
+from .block_before_timestamp import block_number_before_timestamp
 
 
 @pytest.mark.docker
 @pytest.mark.anvil
-def test_block_before_timestamp(fast_chain_fixture: LocalChain):
+def test_block_number_before_timestamp(fast_chain_fixture: LocalChain):
     """Test that ensures block_before_timestamp always returns a block number
     with a timestamp that is closest to but before the provided timestamp.
     """
@@ -43,7 +43,7 @@ def test_block_before_timestamp(fast_chain_fixture: LocalChain):
         time_delta = int(np.random.randint(0, time_between_blocks - 1))
 
         # Find the block that was closest to this timestamp
-        inferred_block_number = block_before_timestamp(hyperdrive_interface.web3, test_block_time + time_delta)
+        inferred_block_number = block_number_before_timestamp(hyperdrive_interface.web3, test_block_time + time_delta)
         inferred_block_time = hyperdrive_interface.get_block_timestamp(
             hyperdrive_interface.get_block(inferred_block_number)
         )

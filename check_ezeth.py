@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 
 from agent0 import Chain, Hyperdrive
-from agent0.utils import block_before_timestamp
+from agent0.utils import block_number_before_timestamp
 
 load_dotenv(".env")
 DEV_RPC_URI = os.getenv("DEV_RPC_URI", "")
@@ -31,13 +31,13 @@ def main(start_block_timestamp: int, lookback_length: int):
             start_block_number = chain.block_number()
         # Otherwise, find the block with the given blocktime
         else:
-            start_block_number = block_before_timestamp(web3, start_block_timestamp)
+            start_block_number = block_number_before_timestamp(web3, start_block_timestamp)
 
         start_pool_state = ezeth_pool.interface.get_hyperdrive_state(block_identifier=start_block_number)
         start_vault_share_price = start_pool_state.pool_info.vault_share_price
 
         lookback_timestamp = start_block_timestamp - lookback_length
-        lookback_block_number = block_before_timestamp(web3, lookback_timestamp)
+        lookback_block_number = block_number_before_timestamp(web3, lookback_timestamp)
         lookback_pool_state = ezeth_pool.interface.get_hyperdrive_state(block_identifier=lookback_block_number)
         lookback_vault_share_price = lookback_pool_state.pool_info.vault_share_price
 

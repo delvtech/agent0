@@ -7,8 +7,8 @@ from web3.types import Timestamp
 # pylint: disable=too-many-locals
 
 
-def block_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) -> BlockNumber:
-    """Finds the closest block that is before or at the given block time.
+def block_number_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) -> BlockNumber:
+    """Finds the closest block number that is before or at the given block time.
 
     Arguments
     ---------
