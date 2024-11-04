@@ -1,6 +1,10 @@
+"""Get the number of the block that is at or immediately before the given timestamp."""
+
 from eth_typing import BlockNumber
 from web3 import Web3
 from web3.types import Timestamp
+
+# pylint: disable=too-many-locals
 
 
 def block_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) -> BlockNumber:
@@ -19,6 +23,7 @@ def block_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) -> Bloc
         The closest block number to the given block time.
     """
     # Get the current block number and timestamp
+    block_timestamp = Timestamp(block_timestamp)
     current_block = web3.eth.get_block("latest")
     current_block_number = current_block.get("number", None)
     assert current_block_number is not None

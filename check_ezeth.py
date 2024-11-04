@@ -1,3 +1,5 @@
+"""Script to check the ezeth vault share price."""
+
 import argparse
 import os
 
@@ -13,7 +15,8 @@ REGISTRY_ADDRESS = os.getenv("REGISTRY_ADDRESS", "")
 
 
 def main(start_block_timestamp: int, lookback_length: int):
-    with Chain(RPC_URI) as chain:
+    """Main entry point."""
+    with Chain(RPC_URI, config=Chain.Config(no_postgres=True)) as chain:
         # Get the ezeth pool
         registered_pools = Hyperdrive.get_hyperdrive_pools_from_registry(
             chain,

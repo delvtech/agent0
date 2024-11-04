@@ -1,3 +1,5 @@
+"""Tests for convenience functions in the Local Chain."""
+
 import numpy as np
 import pytest
 
@@ -7,9 +9,11 @@ from agent0 import LocalChain
 @pytest.mark.docker
 @pytest.mark.anvil
 def test_mine_blocks(fast_chain_fixture: LocalChain):
-    """Test that ensures block_before_timestamp always returns a block number that is closest to but before the timestamp."""
+    """Test that ensures block_before_timestamp always returns a block number
+    that is closest to but before the timestamp.
+    """
 
-    NUM_FUZZ_RUNS = 50
+    num_fuzz_runs = 50
 
     time_between_blocks = fast_chain_fixture.config.block_timestamp_interval
     assert time_between_blocks is not None
@@ -17,7 +21,7 @@ def test_mine_blocks(fast_chain_fixture: LocalChain):
     previous_block_number = fast_chain_fixture.block_number()
     previous_block_time = fast_chain_fixture.block_time()
 
-    for _ in range(NUM_FUZZ_RUNS):
+    for _ in range(num_fuzz_runs):
         # Advance the chain a random number of blocks
         num_blocks = np.random.randint(1, 1_000)
         fast_chain_fixture.mine_blocks(num_blocks)

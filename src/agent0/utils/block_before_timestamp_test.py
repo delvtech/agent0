@@ -1,3 +1,5 @@
+"""Test for the block_before_timestamp function."""
+
 import numpy as np
 import pytest
 
@@ -13,7 +15,7 @@ def test_block_before_timestamp(fast_chain_fixture: LocalChain):
     with a timestamp that is closest to but before the provided timestamp.
     """
     # Run the test a bunch of times because the function is iterative.
-    NUM_FUZZ_RUNS = 2_000
+    num_fuzz_runs = 2_000
 
     # Advance the chain NUM_FUZZ_RUNS blocks
     initial_block_number = fast_chain_fixture.block_number()
@@ -24,12 +26,12 @@ def test_block_before_timestamp(fast_chain_fixture: LocalChain):
 
     time_between_blocks = initial_block_plus_one_time - initial_block_time
     assert time_between_blocks >= 1
-    fast_chain_fixture.mine_blocks(NUM_FUZZ_RUNS - 1)
+    fast_chain_fixture.mine_blocks(num_fuzz_runs - 1)
     chain_block_number = fast_chain_fixture.block_number()
 
     # Start out a few blocks behind the latest
     hyperdrive_interface = LocalHyperdrive(fast_chain_fixture, LocalHyperdrive.Config()).interface
-    for fuzz_iter in range(NUM_FUZZ_RUNS):
+    for fuzz_iter in range(num_fuzz_runs):
         # Grab a random block in the past & get the time
         if fuzz_iter == 0:  # test an edge case on the first iteration
             test_block_number = initial_block_number
