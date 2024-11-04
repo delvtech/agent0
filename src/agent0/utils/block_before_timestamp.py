@@ -47,9 +47,21 @@ def block_number_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) 
     delta_time = current_block_timestamp - block_timestamp
     estimated_block_number = current_block_number - (delta_time // avg_time_between_blocks)
 
-    # Use a binary search to find the block
+    # Establish upper and lower bounds
     left = int(max(0, estimated_block_number - 100))  # search 100 blocks before estimated block
     right = int(min(current_block_number, estimated_block_number + 100))  # search 100 blocks after estimated block
+
+    # Ensure bounds of binary search is within the target timestamp
+    left_timestamp = web3.eth.get_block(left).get("timestamp", None)
+    assert left_timestamp is not None
+    if left_timestamp > block_timestamp:
+        left = 0
+    right_timestamp = web3.eth.get_block(right).get("timestamp", None)
+    assert right_timestamp is not None
+    if right_timestamp < block_timestamp:
+        right = current_block_number
+
+    # Use a binary search to find the block
     while left <= right:
         mid = int((left + right) // 2)
         block = web3.eth.get_block(BlockNumber(mid))
