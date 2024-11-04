@@ -49,6 +49,9 @@ def main(start_block_timestamp: int, lookback_length: int):
         lookback_pool_state = ezeth_pool.interface.get_hyperdrive_state(block_identifier=lookback_block_number)
         lookback_vault_share_price = lookback_pool_state.pool_info.vault_share_price
 
+    print(
+        f"Calculating vault share price difference between block {start_block_number} and block {lookback_block_number}"
+    )
     print(f"time = {start_block_timestamp}; vault share price = {start_vault_share_price}")
     print(f"time = {lookback_timestamp}; vault share price = {lookback_vault_share_price}")
     print(f"Difference: {start_vault_share_price - lookback_vault_share_price=}")
