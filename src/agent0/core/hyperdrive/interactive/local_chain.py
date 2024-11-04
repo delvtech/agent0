@@ -283,6 +283,37 @@ class LocalChain(Chain):
         if "result" not in response:
             raise KeyError("Response did not have a result.")
 
+    def _mine_chain_blocks(self, num_blocks: int = 1) -> None:
+        response = self._web3.provider.make_request(method=RPCEndpoint("anvil_mine"), params=[num_blocks])
+        # ensure response is valid
+        if "result" not in response:
+            raise KeyError("Response did not have a result.")
+
+    def mine_blocks(self, num_blocks: int = 1) -> None:
+        """Advance time for this chain using the `anvil_mine` RPC call.
+
+        This function mines the specified amount of blocks with the chain config
+        specified time between blocks.
+
+        .. note::
+            This advances the chain for all pool connected to this chain.
+
+        .. todo::
+            Add support for minting checkpoints.
+
+        Arguments
+        ---------
+        num_blocks: int
+            The amount of blocks to advance. Defaults to 1.
+
+        Returns
+        -------
+        None
+        """
+        self._mine_chain_blocks(num_blocks)
+        for pool in self._deployed_hyperdrive_pools:
+            pool._maybe_run_blocking_data_pipeline()  # pylint: disable=protected-access
+
     # pylint: disable=too-many-branches
     def advance_time(
         self, time_delta: int | timedelta, create_checkpoints: bool = True
@@ -292,7 +323,7 @@ class LocalChain(Chain):
         This function looks at the timestamp of the current block, then
         mines a block explicitly setting the timestamp to the current block timestamp + time_delta.
 
-        If create_checkpoints is True, it will also create intermediate when advancing time.
+        If create_checkpoints is True, it will also create intermediate checkpoints when advancing time.
 
         .. note::
             This advances the chain for all pool connected to this chain.
