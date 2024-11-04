@@ -319,10 +319,14 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
         if interface.get_pool_is_paused():
             exception_message = (
                 "Negative interest detected between block "
-                f"{previous_pool_state.block_number}"
-                " and block "
-                f"{pool_state.block_number}"
-                " on paused pool. "
+                f"{previous_pool_state.block_number} "
+                "at time "
+                f"{previous_pool_state.block_time} "
+                "and block "
+                f"{pool_state.block_number} "
+                "at time "
+                f"{pool_state.block_time} "
+                "on paused pool. "
                 f"{current_vault_share_price=}, {previous_vault_share_price=}. "
                 "Difference in wei: "
                 f"{current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."

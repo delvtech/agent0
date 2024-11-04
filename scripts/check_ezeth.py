@@ -26,11 +26,12 @@ def main(start_block_timestamp: int, lookback_length: int):
     """
     with Chain(RPC_URI, config=Chain.Config(no_postgres=True)) as chain:
         # Get the ezeth pool
+        pool_name = "ElementDAO 182 Day ezETH Hyperdrive"
         registered_pools = Hyperdrive.get_hyperdrive_pools_from_registry(
             chain,
             registry_address=REGISTRY_ADDRESS,
         )
-        ezeth_pool = [pool for pool in registered_pools if pool.name == "ElementDAO 182 Day ezETH Hyperdrive"][0]
+        ezeth_pool = [pool for pool in registered_pools if pool.name == pool_name][0]
         web3 = ezeth_pool.interface.web3
 
         # If the start block is zero, use the current block
