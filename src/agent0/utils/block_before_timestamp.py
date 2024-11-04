@@ -11,12 +11,12 @@ def block_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) -> Bloc
     web3: Web3
         The web3 instance.
     block_timestamp: BlockTime | int
-      The block time to find the closest block to.
+        The block time to find the closest block to.
 
     Returns
     -------
     BlockNumber
-      The closest block number to the given block time.
+        The closest block number to the given block time.
     """
     # Get the current block number and timestamp
     current_block = web3.eth.get_block("latest")
@@ -43,20 +43,25 @@ def block_before_timestamp(web3: Web3, block_timestamp: Timestamp | int) -> Bloc
     # Use a binary search to find the block
     left = int(max(0, estimated_block_number - 100))  # search 100 blocks before estimated block
     right = int(min(current_block_number, estimated_block_number + 100))  # search 100 blocks after estimated block
-    while left < right:
+    while left <= right:
         mid = int((left + right) // 2)
         block = web3.eth.get_block(BlockNumber(mid))
         search_block_timestamp = block.get("timestamp", None)
         assert search_block_timestamp is not None
         if search_block_timestamp > block_timestamp:
-            # The mid point is later than the block we want
-            # The user could enter a time that is greater than the nearest block
-            # timestamp but less than the next block timestamp. Therefore, set
-            # upper bound to mid.
-            right = mid
+            # The mid point is later than the block we want, set right to mid-1
+            right = mid - 1
         elif search_block_timestamp < block_timestamp:
-            # The mid point is earlier than the block we want, set lower bound
-            # to mid + 1
+            # The mid point is earlier than the block we want
+            # The user could enter a time that is greater than the nearest block
+            # timestamp but less than the next block timestamp
+            next_block = web3.eth.get_block(BlockNumber(mid + 1))
+            next_block_timestamp = next_block.get("timestamp", None)
+            assert next_block_timestamp is not None
+            if next_block_timestamp > block_timestamp:
+                # The user time is between the current and next block
+                return BlockNumber(mid)
+            # If the next block wasn't right, then set it to left
             left = mid + 1
         else:
             # The mid point is the right block
