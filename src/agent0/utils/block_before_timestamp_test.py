@@ -25,7 +25,7 @@ def test_block_before_timestamp(fast_chain_fixture: LocalChain):
     initial_block_plus_one_time = fast_chain_fixture.block_time()
 
     time_between_blocks = initial_block_plus_one_time - initial_block_time
-    assert time_between_blocks >= 1
+    assert time_between_blocks >= 2
     fast_chain_fixture.mine_blocks(num_fuzz_runs - 1)
     chain_block_number = fast_chain_fixture.block_number()
 
@@ -34,7 +34,7 @@ def test_block_before_timestamp(fast_chain_fixture: LocalChain):
     for fuzz_iter in range(num_fuzz_runs):
         # Grab a random block in the past & get the time
         if fuzz_iter == 0:  # test an edge case on the first iteration
-            test_block_number = initial_block_number
+            test_block_number = initial_block_number + 2
         else:
             test_block_number = int(np.random.randint(initial_block_number + 2, chain_block_number - 1))
         test_block_time = hyperdrive_interface.get_block_timestamp(hyperdrive_interface.get_block(test_block_number))
