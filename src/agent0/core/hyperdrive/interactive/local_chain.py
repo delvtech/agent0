@@ -305,10 +305,6 @@ class LocalChain(Chain):
         ---------
         num_blocks: int
             The amount of blocks to advance. Defaults to 1.
-
-        Returns
-        -------
-        None
         """
         self._mine_chain_blocks(num_blocks)
         for pool in self._deployed_hyperdrive_pools:

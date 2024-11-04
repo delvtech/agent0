@@ -15,7 +15,15 @@ REGISTRY_ADDRESS = os.getenv("REGISTRY_ADDRESS", "")
 
 
 def main(start_block_timestamp: int, lookback_length: int):
-    """Main entry point."""
+    """Main entry point.
+
+    Arguments
+    ---------
+    start_block_timestamp: int
+        The start block timestamp, in seconds (should be after the ezETH Hyperdrive pool was deployed).
+    lookback_length: int
+        The number of seconds to lookback from the start block.
+    """
     with Chain(RPC_URI, config=Chain.Config(no_postgres=True)) as chain:
         # Get the ezeth pool
         registered_pools = Hyperdrive.get_hyperdrive_pools_from_registry(
