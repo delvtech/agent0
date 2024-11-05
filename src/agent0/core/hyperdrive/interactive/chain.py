@@ -15,6 +15,7 @@ import pandas as pd
 from docker import DockerClient
 from docker.errors import NotFound
 from docker.models.containers import Container
+from eth_typing import BlockNumber
 from numpy.random import Generator
 from web3.types import BlockData, BlockIdentifier, Timestamp
 
@@ -342,7 +343,7 @@ class Chain:
         except Exception:  # pylint: disable=broad-except
             pass
 
-    def block_number(self) -> int:
+    def block_number(self) -> BlockNumber:
         """Get the current block number on the chain.
 
         Returns
