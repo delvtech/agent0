@@ -290,7 +290,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 accrue_interest_func=accrue_interest_fork,
                 accrue_interest_rate=FixedPoint(0.05),
                 # Never refund agents
-                minimum_avg_agent_base=FixedPoint(1_000_000_000_000),
+                minimum_avg_agent_base=FixedPoint(-1),
             )
         except Exception as e:  # pylint: disable=broad-except
             log_rollbar_exception(
