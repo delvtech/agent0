@@ -168,8 +168,14 @@ def _check_trades_made_on_pool(
             error_message = ""
             if pool.name not in trade_counts["hyperdrive_name"].values:
                 has_err = True
+                log_level = logging.ERROR
                 error_message = f"Pool {pool.name} did not make any trades after {iteration} iterations"
             else:
+                # There may be cases where certain trades may not be possible
+                # (e.g., once we open a large trade, we can't add LP since we're not advancing
+                # time enough). Due to this, we only track these issues via warnings,
+                # where an actual pool without any trades is an error.
+                log_level = logging.WARNING
                 pool_trade_event_counts = trade_counts[trade_counts["hyperdrive_name"] == pool.name][
                     "event_type"
                 ].values
@@ -210,7 +216,7 @@ def _check_trades_made_on_pool(
                 error_message = "FuzzBots: " + error_message
                 logging.error(error_message)
                 # We log message to get rollbar to group these messages together
-                log_rollbar_message(error_message, logging.ERROR)
+                log_rollbar_message(error_message, log_level)
 
 
 def run_fuzz_bots(
