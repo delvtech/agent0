@@ -45,6 +45,8 @@ MAINNET_WHALE_ADDRESSES = {
     "0xdC035D45d973E3EC169d2276DDab16f1e407384F": "0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD",
     # sUSDe
     "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497": "0xb99a2c4C1C4F1fc27150681B740396F6CE1cBcF5",
+    # GYD
+    "0xe07F9D810a48ab5c3c914BA3cA53AF14E4491e8A": "0x209383219959CEF6763015AF0B394164AC526564",
 }
 
 GNOSIS_WHALE_ADDRESSES = {
@@ -287,6 +289,8 @@ def main(argv: Sequence[str] | None = None) -> None:
                 num_iterations=parsed_args.num_iterations_per_episode,
                 accrue_interest_func=accrue_interest_fork,
                 accrue_interest_rate=FixedPoint(0.05),
+                # Never refund agents
+                minimum_avg_agent_base=FixedPoint(1_000_000_000_000),
             )
         except Exception as e:  # pylint: disable=broad-except
             log_rollbar_exception(
