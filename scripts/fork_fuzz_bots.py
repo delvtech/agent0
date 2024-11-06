@@ -425,4 +425,12 @@ def parse_arguments(argv: Sequence[str] | None = None) -> Args:
 
 
 if __name__ == "__main__":
-    main()
+    # Wrap everything in a try catch to log any non-caught critical errors and log to rollbar
+    try:
+        main()
+    except BaseException as e:  # pylint: disable=broad-except
+        # pylint: disable=invalid-name
+        _log_prefix = "Uncaught Critical Error in Fork Fuzz Checks:"
+
+        log_rollbar_exception(exception=e, log_level=logging.ERROR, rollbar_log_prefix=_log_prefix)
+        raise e
