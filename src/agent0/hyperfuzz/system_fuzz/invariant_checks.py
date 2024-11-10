@@ -18,6 +18,7 @@ from agent0.core.hyperdrive.crash_report import (
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 from agent0.ethpy.hyperdrive.state.pool_state import PoolState
 from agent0.hyperfuzz import FuzzAssertionException
+from agent0.utils import block_number_before_timestamp
 
 LP_SHARE_PRICE_EPSILON = 1e-4
 TOTAL_SHARES_EPSILON = 1e-9
@@ -283,32 +284,17 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     exception_data: dict[str, Any] = {}
     log_level = None
 
-    # We hack in a stateful variable into the interface here, since we need
-    # to check between subsequent calls here.
-    # TODO: build in a way to store old pool states, e.g. a dict keyed by block time
-    # Initial call, we look to see if the attribute exists
-    previous_pool_state: PoolState | None = getattr(interface, "_negative_interest_previous_pool_state", None)
-
-    # We need to check interest over a longer time scale for ezETH
-    if interface.hyperdrive_name == "ElementDAO 182 Day ezETH Hyperdrive":
-        if previous_pool_state is None:
-            # Set initial state
-            setattr(interface, "_negative_interest_previous_pool_state", pool_state)
-        else:
-            # Only set prev state if enough time has passed
-            if pool_state.block_time - previous_pool_state.block_time > EZETH_NEG_INTEREST_TIME_DELTA:
-                setattr(interface, "_negative_interest_previous_pool_state", pool_state)
-    else:
-        # Always set the new state for all other pools, or if prev state has not been set
-        setattr(interface, "_negative_interest_previous_pool_state", pool_state)
-
-    if previous_pool_state is None:
-        # Skip this check on initial call, not a failure
-        return InvariantCheckResults(
-            failed=False, exception_message=exception_message, exception_data=exception_data, log_level=log_level
-        )
-
+    current_block_time = pool_state.block_time
     current_vault_share_price = pool_state.pool_info.vault_share_price
+
+    if interface.hyperdrive_name == "ElementDAO 182 Day ezETH Hyperdrive":
+        # block number 12 hours ago
+        previous_block_number = block_number_before_timestamp(interface.web3, current_block_time - 60 * 60 * 12)
+    else:
+        # block number 1 hour ago
+        previous_block_number = block_number_before_timestamp(interface.web3, current_block_time - 60 * 60 * 1)
+
+    previous_pool_state = interface.get_hyperdrive_state(block_identifier=previous_block_number)
     previous_vault_share_price = previous_pool_state.pool_info.vault_share_price
 
     if (current_vault_share_price - previous_vault_share_price) <= -NEGATIVE_INTEREST_EPSILON:
