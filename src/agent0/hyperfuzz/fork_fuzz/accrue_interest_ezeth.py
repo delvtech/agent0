@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fixedpointmath import FixedPoint, FixedPointIntegerMath
 from hyperdrivetypes.types import IDepositQueueContract, IRestakeManagerContract
-from pypechain.core import check_txn_receipt
+from pypechain.core.contract_call_exception import check_txn_receipt
 from web3 import Web3
 from web3.types import RPCEndpoint, TxParams, Wei
 
