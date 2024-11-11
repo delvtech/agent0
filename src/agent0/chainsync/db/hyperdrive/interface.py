@@ -458,7 +458,7 @@ def get_latest_block_number_from_pool_info_table(session: Session, hyperdrive_ad
     """
     query = session.query(func.max(DBPoolInfo.block_number))
     if hyperdrive_address is not None:
-        query = query.filter(DBTradeEvent.hyperdrive_address == hyperdrive_address)
+        query = query.filter(DBPoolInfo.hyperdrive_address == hyperdrive_address)
     query = query.scalar()
 
     if query is None:

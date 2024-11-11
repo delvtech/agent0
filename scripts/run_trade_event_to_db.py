@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import logging
 import os
 import sys
@@ -58,6 +57,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         lookback_block_limit=None,
         backfill=True,
         backfill_sample_period=backfill_sample_period,
+        backfill_progress_bar=True,
     )
     analyze_data(
         interfaces=list(interfaces),
@@ -65,6 +65,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         calc_pnl=True,
         backfill=True,
         backfill_sample_period=backfill_sample_period,
+        backfill_progress_bar=True,
     )
 
     # Loop forever, running db once an hour
