@@ -284,10 +284,10 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     exception_data: dict[str, Any] = {}
     log_level = None
 
-    earliest_block_time = interface.get_block_timestamp(interface.get_block("earliest"))
     current_block_time = pool_state.block_time
     current_vault_share_price = pool_state.pool_info.vault_share_price
 
+    earliest_block_time = interface.get_block_timestamp(interface.get_block("earliest"))
     if interface.hyperdrive_name == "ElementDAO 182 Day ezETH Hyperdrive":
         lookback_timestamp = max(earliest_block_time, current_block_time - 60 * 60 * 12)  # 12 hours ago
     else:
@@ -297,15 +297,15 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     previous_vault_share_price = previous_pool_state.pool_info.vault_share_price
 
     if (current_vault_share_price - previous_vault_share_price) <= -NEGATIVE_INTEREST_EPSILON:
-        exception_data["invariance_check:current_vault_share_price"] = current_vault_share_price
-        exception_data["invariance_check:previous_vault_share_price"] = previous_vault_share_price
-        failed = True
         if interface.get_pool_is_paused():
             paused_str = "paused"
             log_level = logging.WARNING
         else:
             paused_str = "unpaused"
             log_level = logging.CRITICAL
+        failed = True
+        exception_data["invariance_check:current_vault_share_price"] = current_vault_share_price
+        exception_data["invariance_check:previous_vault_share_price"] = previous_vault_share_price
         exception_message = (
             "Negative interest detected beteween block "
             f"{previous_pool_state.block_number} "
