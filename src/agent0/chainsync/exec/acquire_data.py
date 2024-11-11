@@ -44,8 +44,8 @@ def acquire_data(
     ---------
     start_block: int
         The starting block to filter the query on
-    lookback_block_limit: int
-        The maximum number of blocks to look back when filling in missing data
+    lookback_block_limit: int, optional
+        The maximum number of blocks to look back when filling in missing data.
     interfaces: list[HyperdriveReadInterface] | None, optional
         A collection of Hyperdrive interface objects, each connected to a pool.
         If not set, will initialize one based on rpc_uri and hyperdrive_address.
