@@ -10,12 +10,7 @@ from tqdm import tqdm
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
-from agent0.chainsync.db.hyperdrive import (
-    add_hyperdrive_addr_to_name,
-    data_chain_to_db,
-    get_latest_block_number_from_pool_info_table,
-    init_data_chain_to_db,
-)
+from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, data_chain_to_db, init_data_chain_to_db
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
@@ -27,9 +22,9 @@ def acquire_data(
     hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
-    progress_bar: bool = False,
     backfill=True,
-    force_init=False,
+    backfill_sample_period: int | None = None,
+    backfill_progress_bar: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
@@ -58,14 +53,12 @@ def acquire_data(
         postgres_config.
     postgres_config: PostgresConfig | None = None,
         PostgresConfig for connecting to db. If none, will set from .env.
-    progress_bar: bool, optional
-        If true, will show a progress bar. Defaults to False.
     backfill: bool, optional
-        If true, will fill in missing pool info data for every block. Defaults to True.
-    force_init: bool, optional
-        If true, will explicitly use start block on query instead of depending on latest pool info.
-        This is useful when we initialize an existing pool object and need to initialize
-        the db.
+        If true, will fill in missing pool info data for every `backfill_sample_period` blocks. Defaults to True.
+    backfill_sample_period: int | None, optional
+        The sample frequency when backfilling. If None, will backfill every block.
+    backfill_progress_bar: bool, optional
+        If true, will show a progress bar when backfilling. Defaults to False.
     """
 
     # TODO cleanup
@@ -75,6 +68,9 @@ def acquire_data(
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-positional-arguments
     # TODO implement logger instead of global logging to suppress based on module name.
+
+    if backfill_sample_period is None:
+        backfill_sample_period = 1
 
     hyperdrive_name_mapping = None
 
@@ -107,31 +103,24 @@ def acquire_data(
         for hyperdrive_name, hyperdrive_address in hyperdrive_name_mapping.items():
             add_hyperdrive_addr_to_name(hyperdrive_name, hyperdrive_address, db_session)
 
-    ## Get starting point for restarts
-    # Get last entry of pool info in db
-    if force_init:
-        curr_write_block = start_block
-    else:
-        data_latest_block_number = get_latest_block_number_from_pool_info_table(db_session)
-        # Using max of latest block in database or specified start block
-        curr_write_block = max(start_block, data_latest_block_number + 1)
-
-    latest_mined_block = int(interfaces[0].get_block_number(interfaces[0].get_current_block()))
-    if lookback_block_limit is not None and (latest_mined_block - curr_write_block) > lookback_block_limit:
-        curr_write_block = latest_mined_block - lookback_block_limit
+    latest_mined_block = interfaces[0].web3.eth.get_block_number()
+    if lookback_block_limit is not None and (latest_mined_block - start_block) > lookback_block_limit:
+        start_block = latest_mined_block - lookback_block_limit
         logging.warning(
             "Starting block is past lookback block limit, starting at block %s",
-            curr_write_block,
+            start_block,
         )
 
     ## Collect initial data
     init_data_chain_to_db(interfaces, db_session)
 
-    latest_mined_block = interfaces[0].web3.eth.get_block_number()
-
     # Backfilling for blocks that need updating
+    # Note `data_chain_to_db` takes care of handling duplicate rows
     if backfill:
-        for block_int in tqdm(range(curr_write_block, latest_mined_block + 1), disable=not progress_bar):
+        for block_int in tqdm(
+            range(start_block, latest_mined_block + backfill_sample_period, backfill_sample_period),
+            disable=not backfill_progress_bar,
+        ):
             block_number: BlockNumber = BlockNumber(block_int)
             # Explicit check against loopback block limit
             if lookback_block_limit is not None and (latest_mined_block - block_number) > lookback_block_limit:

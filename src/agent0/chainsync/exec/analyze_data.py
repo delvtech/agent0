@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from eth_typing import ChecksumAddress
 from sqlalchemy.orm import Session
+from tqdm import tqdm
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.analysis import db_to_analysis
@@ -13,17 +14,23 @@ from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
 def analyze_data(
+    start_block: int = 0,
     interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
     hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
     calc_pnl: bool = True,
+    backfill: bool = False,
+    backfill_sample_period: int | None = None,
+    backfill_progress_bar: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
     Arguments
     ---------
+    start_block: int, optional
+        The starting block to run analysis on for backfilling.
     interfaces: list[HyperdriveReadInterface] | None, optional
         A collection of Hyperdrive interface objects, each connected to a pool.
         If not set, will initialize one based on rpc_uri and hyperdrive_address.
@@ -42,6 +49,12 @@ def analyze_data(
         PostgresConfig for connecting to db. If none, will set from .env.
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
+    backfill: bool, optional
+        If true, will fill in missing pool info data for every `backfill_sample_period` blocks. Defaults to True.
+    backfill_sample_period: int | None, optional
+        The sample frequency when backfilling. If None, will backfill every block.
+    backfill_progress_bar: bool, optional
+        If true, will show a progress bar when backfilling. Defaults to False.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -50,6 +63,9 @@ def analyze_data(
     # pylint: disable=too-many-positional-arguments
 
     # TODO implement logger instead of global logging to suppress based on module name.
+
+    if backfill_sample_period is None:
+        backfill_sample_period = 1
 
     ## Initialization
     if interfaces is None:
@@ -72,8 +88,17 @@ def analyze_data(
         db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
-    # Each table handles keeping track of appending to tables
-    db_to_analysis(db_session, interfaces, calc_pnl)
+    latest_mined_block = interfaces[0].web3.eth.get_block_number()
+    if backfill:
+        for block_number in tqdm(
+            range(start_block, latest_mined_block + backfill_sample_period, backfill_sample_period),
+            disable=not backfill_progress_bar,
+        ):
+            # Each table handles keeping track of appending to tables
+            db_to_analysis(db_session, interfaces, block_number, calc_pnl)
+    else:
+        # Each table handles keeping track of appending to tables
+        db_to_analysis(db_session, interfaces, latest_mined_block, calc_pnl)
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here

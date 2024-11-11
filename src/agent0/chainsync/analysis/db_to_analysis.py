@@ -21,6 +21,7 @@ pd.set_option("display.max_columns", None)
 def db_to_analysis(
     db_session: Session,
     interfaces: list[HyperdriveReadInterface],
+    block_number: int,
     calc_pnl: bool = True,
 ) -> None:
     """Function to query postgres data tables and insert to analysis tables.
@@ -32,6 +33,8 @@ def db_to_analysis(
         The initialized db session.
     interfaces: list[HyperdriveReadInterface]
         A collection of Hyperdrive interface objects, each connected to a pool.
+    block_number: int
+        The block number to run analysis on.
     calc_pnl: bool, optional
         Whether to calculate pnl. Defaults to True.
     """
@@ -45,11 +48,16 @@ def db_to_analysis(
         wallet_addr=None,
         calc_pnl=calc_pnl,
         db_session=db_session,
+        block_number=block_number,
     )
 
 
 def snapshot_positions_to_db(
-    interfaces: list[HyperdriveReadInterface], wallet_addr: str | None, calc_pnl: bool, db_session: Session
+    interfaces: list[HyperdriveReadInterface],
+    wallet_addr: str | None,
+    calc_pnl: bool,
+    db_session: Session,
+    block_number: int,
 ):
     """Function to query the trade events table and takes a snapshot
     of the current positions and pnl.
@@ -75,9 +83,10 @@ def snapshot_positions_to_db(
         The database session.
     calc_pnl: bool
         Whether to calculate pnl.
+    block_number: int
+        The block number to snapshot positions on.
     """
     assert len(interfaces) > 0
-    query_block_number = interfaces[0].get_block_number(interfaces[0].get_block("latest"))
 
     all_pool_positions: list[pd.DataFrame] = []
     for interface in interfaces:
@@ -85,7 +94,7 @@ def snapshot_positions_to_db(
         last_snapshot_block = get_latest_block_number_from_positions_snapshot_table(
             db_session, wallet_addr, hyperdrive_address=interface.hyperdrive_address
         )
-        if query_block_number <= last_snapshot_block:
+        if block_number <= last_snapshot_block:
             continue
 
         # Calculate all open positions for the end block
@@ -96,13 +105,13 @@ def snapshot_positions_to_db(
             db_session,
             wallet_addr=wallet_addr,
             hyperdrive_address=interface.hyperdrive_address,
-            query_block=query_block_number + 1,  # Query block numbers are not inclusive
+            query_block=block_number + 1,  # Query block numbers are not inclusive
             show_closed_positions=True,
             coerce_float=False,
         )
         if len(current_pool_positions) > 0:
             # Add missing columns
-            current_pool_positions["block_number"] = query_block_number
+            current_pool_positions["block_number"] = block_number
             # Calculate pnl for these positions if flag is set
             if calc_pnl:
                 current_pool_positions = fill_pnl_values(

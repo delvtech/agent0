@@ -347,17 +347,16 @@ class LocalHyperdrive(Hyperdrive):
         if backfill_data_start_block is not None:
             logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
             # If this is set, we ignore manual sync and always sync the database
-            self.sync_database(progress_bar=True, force_backfill=True, force_init=True)
+            self.sync_database(progress_bar=True, force_backfill=True)
         else:
             # Otherwise, we do this lazily if manual sync is on
-            self._maybe_run_blocking_data_pipeline(force_init=True)
+            self._maybe_run_blocking_data_pipeline()
 
     def sync_database(
         self,
         start_block: int | None = None,
         progress_bar: bool = False,
         force_backfill: bool = False,
-        force_init: bool = False,
     ) -> None:
         """Explicitly syncs the database with the chain.
         This function doesn't need to be explicitly called if `manual_database_sync = False`.
@@ -399,11 +398,11 @@ class LocalHyperdrive(Hyperdrive):
             start_block=data_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
-            progress_bar=progress_bar,
+            backfill_progress_bar=progress_bar,
             backfill=backfill,
-            force_init=force_init,
         )
         analyze_data(
+            start_block=analysis_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
             calc_pnl=self.calc_pnl,
@@ -414,7 +413,7 @@ class LocalHyperdrive(Hyperdrive):
     ) -> None:
         # Checks the chain config to see if manual sync is on. Noop if it is.
         if not self.chain.config.manual_database_sync:
-            self.sync_database(start_block, progress_bar, force_init=force_init)
+            self.sync_database(start_block, progress_bar)
 
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
     # This is used to allow chain's `advance_time` function to return this object as a key.

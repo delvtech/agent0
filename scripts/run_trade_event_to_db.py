@@ -47,8 +47,25 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     interfaces = [pool.interface for pool in deployed_pools]
 
-    # TODO backfill pool info
     # TODO periodic backup of db and load if we find the backup file
+
+    # TODO backfill period based on chain
+    backfill_sample_period = 100
+
+    acquire_data(
+        interfaces=list(interfaces),
+        db_session=chain.db_session,
+        lookback_block_limit=None,
+        backfill=True,
+        backfill_sample_period=backfill_sample_period,
+    )
+    analyze_data(
+        interfaces=list(interfaces),
+        db_session=chain.db_session,
+        calc_pnl=True,
+        backfill=True,
+        backfill_sample_period=backfill_sample_period,
+    )
 
     # Loop forever, running db once an hour
     while True:
@@ -62,6 +79,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             interfaces=list(interfaces),
             db_session=chain.db_session,
             calc_pnl=True,
+            backfill=False,
         )
         time.sleep(3600)
 
