@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import logging
-import time
-from typing import Callable
 
 from eth_typing import BlockNumber, ChecksumAddress
 from sqlalchemy.orm import Session
@@ -20,20 +18,15 @@ from agent0.chainsync.db.hyperdrive import (
 )
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
-_SLEEP_AMOUNT = 1
-
 
 def acquire_data(
     start_block: int = 0,
-    lookback_block_limit: int = 3000,
+    lookback_block_limit: int | None = 3000,
     interfaces: list[HyperdriveReadInterface] | None = None,
     rpc_uri: str | None = None,
     hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
-    exit_on_catch_up: bool = False,
-    exit_callback_fn: Callable[[], bool] | None = None,
-    suppress_logs: bool = False,
     progress_bar: bool = False,
     backfill=True,
     force_init=False,
@@ -46,6 +39,8 @@ def acquire_data(
         The starting block to filter the query on
     lookback_block_limit: int, optional
         The maximum number of blocks to look back when filling in missing data.
+        If None, will ignore lookback block limit.
+        Defaults to 3000.
     interfaces: list[HyperdriveReadInterface] | None, optional
         A collection of Hyperdrive interface objects, each connected to a pool.
         If not set, will initialize one based on rpc_uri and hyperdrive_address.
@@ -63,14 +58,6 @@ def acquire_data(
         postgres_config.
     postgres_config: PostgresConfig | None = None,
         PostgresConfig for connecting to db. If none, will set from .env.
-    exit_on_catch_up: bool, optional
-        If True, will exit after catching up to current block. Defaults to False.
-    exit_callback_fn: Callable[[], bool] | None, optional
-        A function that returns a boolean to call to determine if the script should exit.
-        The function should return False if the script should continue, or True if the script should exit.
-        Defaults to not set.
-    suppress_logs: bool, optional
-        If true, will suppress info logging from this function. Defaults to False.
     progress_bar: bool, optional
         If true, will show a progress bar. Defaults to False.
     backfill: bool, optional
@@ -130,7 +117,7 @@ def acquire_data(
         curr_write_block = max(start_block, data_latest_block_number + 1)
 
     latest_mined_block = int(interfaces[0].get_block_number(interfaces[0].get_current_block()))
-    if (latest_mined_block - curr_write_block) > lookback_block_limit:
+    if lookback_block_limit is not None and (latest_mined_block - curr_write_block) > lookback_block_limit:
         curr_write_block = latest_mined_block - lookback_block_limit
         logging.warning(
             "Starting block is past lookback block limit, starting at block %s",
@@ -140,46 +127,28 @@ def acquire_data(
     ## Collect initial data
     init_data_chain_to_db(interfaces, db_session)
 
-    # Main data loop
-    # monitor for new blocks & add pool info per block
-    if not suppress_logs:
-        logging.info("Monitoring for pool info updates...")
-    while True:
-        latest_mined_block = interfaces[0].web3.eth.get_block_number()
-        # Only execute if we are on a new block
-        if latest_mined_block < curr_write_block:
-            exit_callable = False
-            if exit_callback_fn is not None:
-                exit_callable = exit_callback_fn()
-            if exit_on_catch_up or exit_callable:
-                break
-            time.sleep(_SLEEP_AMOUNT)
-            continue
-        # Backfilling for blocks that need updating
-        if backfill:
-            for block_int in tqdm(range(curr_write_block, latest_mined_block + 1), disable=not progress_bar):
-                block_number: BlockNumber = BlockNumber(block_int)
-                # Only print every 10 blocks
-                if not suppress_logs and (block_number % 10) == 0:
-                    logging.info("Block %s", block_number)
-                # Explicit check against loopback block limit
-                if (latest_mined_block - block_number) > lookback_block_limit:
-                    # NOTE when this case happens, wallet information will no longer
-                    # be accurate, as we may have missed deltas on wallets
-                    # based on the blocks we skipped
-                    # TODO should directly query the chain for open positions
-                    # in this case
-                    logging.warning(
-                        "Querying block_number %s out of %s, unable to keep up with chain block iteration",
-                        block_number,
-                        latest_mined_block,
-                    )
-                    continue
-                data_chain_to_db(interfaces, block_number, db_session)
-        else:
-            data_chain_to_db(interfaces, latest_mined_block, db_session)
+    latest_mined_block = interfaces[0].web3.eth.get_block_number()
 
-        curr_write_block = latest_mined_block + 1
+    # Backfilling for blocks that need updating
+    if backfill:
+        for block_int in tqdm(range(curr_write_block, latest_mined_block + 1), disable=not progress_bar):
+            block_number: BlockNumber = BlockNumber(block_int)
+            # Explicit check against loopback block limit
+            if lookback_block_limit is not None and (latest_mined_block - block_number) > lookback_block_limit:
+                # NOTE when this case happens, wallet information will no longer
+                # be accurate, as we may have missed deltas on wallets
+                # based on the blocks we skipped
+                # TODO should directly query the chain for open positions
+                # in this case
+                logging.warning(
+                    "Querying block_number %s out of %s, unable to keep up with chain block iteration",
+                    block_number,
+                    latest_mined_block,
+                )
+                continue
+            data_chain_to_db(interfaces, block_number, db_session)
+    else:
+        data_chain_to_db(interfaces, latest_mined_block, db_session)
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here

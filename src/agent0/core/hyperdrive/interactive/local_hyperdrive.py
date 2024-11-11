@@ -399,18 +399,13 @@ class LocalHyperdrive(Hyperdrive):
             start_block=data_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
-            exit_on_catch_up=True,
-            suppress_logs=True,
             progress_bar=progress_bar,
             backfill=backfill,
             force_init=force_init,
         )
         analyze_data(
-            start_block=analysis_start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
-            exit_on_catch_up=True,
-            suppress_logs=True,
             calc_pnl=self.calc_pnl,
         )
 
