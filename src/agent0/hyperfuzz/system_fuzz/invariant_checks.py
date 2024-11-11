@@ -301,39 +301,26 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
         exception_data["invariance_check:current_vault_share_price"] = current_vault_share_price
         exception_data["invariance_check:previous_vault_share_price"] = previous_vault_share_price
         failed = True
-        # Different error messages and log levels if the pool is paused
         if interface.get_pool_is_paused():
-            exception_message = (
-                "Negative interest detected between block "
-                f"{previous_pool_state.block_number} "
-                "at time "
-                f"{previous_pool_state.block_time} "
-                "and block "
-                f"{pool_state.block_number} "
-                "at time "
-                f"{pool_state.block_time} "
-                "on paused pool. "
-                f"{current_vault_share_price=}, {previous_vault_share_price=}. "
-                "Difference in wei: "
-                f"{current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
-            )
+            paused_str = "paused"
             log_level = logging.WARNING
         else:
-            exception_message = (
-                "Negative interest detected beteween block "
-                f"{previous_pool_state.block_number} "
-                "at time "
-                f"{previous_pool_state.block_time} "
-                "and block "
-                f"{pool_state.block_number} "
-                "at time "
-                f"{pool_state.block_time} "
-                "on unpaused pool. "
-                f"{current_vault_share_price=}, {previous_vault_share_price=}. "
-                "Difference in wei: "
-                f"{current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
-            )
+            paused_str = "unpaused"
             log_level = logging.CRITICAL
+        exception_message = (
+            "Negative interest detected beteween block "
+            f"{previous_pool_state.block_number} "
+            "at time "
+            f"{previous_pool_state.block_time} "
+            "and block "
+            f"{pool_state.block_number} "
+            "at time "
+            f"{pool_state.block_time} "
+            f"on {paused_str} pool. "
+            f"{current_vault_share_price=}, {previous_vault_share_price=}. "
+            "Difference in wei: "
+            f"{current_vault_share_price.scaled_value - previous_vault_share_price.scaled_value}."
+        )
 
     return InvariantCheckResults(failed, exception_message, exception_data, log_level=log_level)
 
