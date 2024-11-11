@@ -284,16 +284,15 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     exception_data: dict[str, Any] = {}
     log_level = None
 
+    earliest_block_time = interface.get_block_timestamp(interface.get_block("earliest"))
     current_block_time = pool_state.block_time
     current_vault_share_price = pool_state.pool_info.vault_share_price
 
     if interface.hyperdrive_name == "ElementDAO 182 Day ezETH Hyperdrive":
-        # block number 12 hours ago
-        previous_block_number = block_number_before_timestamp(interface.web3, current_block_time - 60 * 60 * 12)
+        lookback_timestamp = max(earliest_block_time, current_block_time - 60 * 60 * 12)  # 12 hours ago
     else:
-        # block number 1 hour ago
-        previous_block_number = block_number_before_timestamp(interface.web3, current_block_time - 60 * 60 * 1)
-
+        lookback_timestamp = max(earliest_block_time, current_block_time - 60 * 60 * 1)  # 1 hour ago
+    previous_block_number = block_number_before_timestamp(interface.web3, lookback_timestamp)
     previous_pool_state = interface.get_hyperdrive_state(block_identifier=previous_block_number)
     previous_vault_share_price = previous_pool_state.pool_info.vault_share_price
 
