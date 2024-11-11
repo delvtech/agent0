@@ -440,20 +440,30 @@ def add_checkpoint_info(checkpoint_info: DBCheckpointInfo, session: Session) -> 
         raise err
 
 
-def get_latest_block_number_from_pool_info_table(session: Session) -> int:
+def get_latest_block_number_from_pool_info_table(session: Session, hyperdrive_address: str | None = None) -> int:
     """Get the latest block number based on the pool info table in the db.
 
     Arguments
     ---------
     session: Session
         The initialized session object.
+    hyperdrive_address: str | None
+        The hyperdrive address to filter the results on. Can be None to return latest block number
+        regardless of pool.
 
     Returns
     -------
     int
         The latest block number in the poolinfo table.
     """
-    return get_latest_block_number_from_table(DBPoolInfo, session)
+    query = session.query(func.max(DBPoolInfo.block_number))
+    if hyperdrive_address is not None:
+        query = query.filter(DBTradeEvent.hyperdrive_address == hyperdrive_address)
+    query = query.scalar()
+
+    if query is None:
+        return 0
+    return int(query)
 
 
 def get_pool_info(

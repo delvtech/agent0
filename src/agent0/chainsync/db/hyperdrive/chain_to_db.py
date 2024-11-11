@@ -19,6 +19,7 @@ from .interface import (
     add_pool_config,
     add_pool_infos,
     get_latest_block_number_from_checkpoint_info_table,
+    get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_trade_event,
 )
 from .schema import DBCheckpointInfo, DBTradeEvent
@@ -83,7 +84,12 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     checkpoint_events_to_db(interfaces, db_session=session)
 
     for interface in interfaces:
+        # TODO abstract this function out
+        # Only add the pool info row if it's already not in the db
         hyperdrive_address = interface.hyperdrive_address
+        if block_number <= get_latest_block_number_from_pool_info_table(session, hyperdrive_address=hyperdrive_address):
+            continue
+
         pool_state = interface.get_hyperdrive_state(block_data=block)
 
         ## Query and add block_pool_info
