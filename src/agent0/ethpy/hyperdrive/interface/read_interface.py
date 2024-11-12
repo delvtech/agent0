@@ -7,6 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, cast
 
 import eth_abi
+from eth_typing import BlockNumber
 from fixedpointmath import FixedPoint
 from hyperdrivetypes import CheckpointFP
 from hyperdrivetypes.types import (
@@ -85,7 +86,7 @@ from ._mock_contract import (
 
 if TYPE_CHECKING:
     from eth_account.signers.local import LocalAccount
-    from eth_typing import BlockNumber, ChecksumAddress
+    from eth_typing import ChecksumAddress
 
 AGENT0_SIGNATURE = bytes.fromhex("a0")
 
@@ -290,18 +291,19 @@ class HyperdriveReadInterface:
         self.last_state_block_number = -1
 
         # Cached deploy block
-        self._deploy_block: None | int = None
+        self._deploy_block: BlockNumber | None = None
         self._deploy_block_checked = False
 
-    def get_deploy_block(self) -> int | None:
-        """Get the block that the Hyperdrive contract was deployed on.
+    def get_deploy_block_number(self) -> BlockNumber | None:
+        """Get the block number that the Hyperdrive contract was deployed on.
 
         NOTE: The deploy event may get lost on e.g., anvil, so we ensure we only check once
 
         Returns
         -------
-        int | None
-            The block that the Hyperdrive contract was deployed on. Returns None if it can't be found.
+        BlockNumber | None
+            The block number that the Hyperdrive contract was deployed on.
+            Returns None if it can't be found.
         """
         if not self._deploy_block_checked:
             self._deploy_block_checked = True
@@ -318,7 +320,7 @@ class HyperdriveReadInterface:
             if len(initialize_event) == 0:
                 logging.warning("Initialize event not found, can't set deploy_block")
             elif len(initialize_event) == 1:
-                self._deploy_block = initialize_event[0].block_number
+                self._deploy_block = BlockNumber(initialize_event[0].block_number)
             else:
                 raise ValueError("Multiple initialize events found")
 

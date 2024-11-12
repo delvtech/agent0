@@ -287,7 +287,7 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     current_block_time = pool_state.block_time
     current_vault_share_price = pool_state.pool_info.vault_share_price
 
-    deploy_block = interface.get_deploy_block()
+    deploy_block = interface.get_deploy_block_number()
     if deploy_block is None:  # type narrowing
         raise ValueError("Deploy block not found.")
     deploy_block_time = interface.get_block_timestamp(interface.get_block(deploy_block))
