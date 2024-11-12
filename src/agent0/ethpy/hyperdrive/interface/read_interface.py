@@ -309,7 +309,6 @@ class HyperdriveReadInterface:
             # We look up the chain id, and define the `from_block` based on which chain it is as the default.
             chain_id = self.web3.eth.chain_id
             # If not in lookup, we default to `earliest`
-            # If not in lookup, we default to `earliest`
             if chain_id not in EARLIEST_BLOCK_LOOKUP:
                 from_block = "earliest"
             else:
