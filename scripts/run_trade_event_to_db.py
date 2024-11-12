@@ -11,6 +11,7 @@ from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
 from agent0.chainsync.exec import acquire_data, analyze_data
+from agent0.ethpy.base import EARLIEST_BLOCK_LOOKUP
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -34,7 +35,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     if rpc_uri is None:
         raise ValueError("RPC_URI is not set")
 
-    chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
+    chain = Chain(rpc_uri, Chain.Config())
 
     # Get the registry address from artifacts
     registry_address = os.getenv("REGISTRY_ADDRESS", None)
@@ -48,10 +49,13 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # TODO periodic backup of db and load if we find the backup file
 
-    # TODO backfill period based on chain
     backfill_sample_period = 100
 
+    chain_id = chain.chain_id
+    earliest_block = EARLIEST_BLOCK_LOOKUP[chain_id]
+
     acquire_data(
+        start_block=earliest_block,
         interfaces=list(interfaces),
         db_session=chain.db_session,
         lookback_block_limit=None,
@@ -60,6 +64,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         backfill_progress_bar=True,
     )
     analyze_data(
+        start_block=earliest_block,
         interfaces=list(interfaces),
         db_session=chain.db_session,
         calc_pnl=True,
@@ -71,12 +76,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Loop forever, running db once an hour
     while True:
         acquire_data(
+            start_block=earliest_block,
             interfaces=list(interfaces),
             db_session=chain.db_session,
             lookback_block_limit=None,
             backfill=False,
         )
         analyze_data(
+            start_block=earliest_block,
             interfaces=list(interfaces),
             db_session=chain.db_session,
             calc_pnl=True,
