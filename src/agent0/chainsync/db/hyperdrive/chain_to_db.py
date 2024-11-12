@@ -90,6 +90,13 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
         if block_number <= get_latest_block_number_from_pool_info_table(session, hyperdrive_address=hyperdrive_address):
             continue
 
+        # If the pool wasn't deployed at the query block, skip
+        deploy_block = interface.get_deploy_block_number()
+        # deploy_block may be None in cases where we have a local chain and we lose the past events
+        # In this case, we don't skip and hope the pool is already deployed
+        if deploy_block is not None and block_number < deploy_block:
+            continue
+
         pool_state = interface.get_hyperdrive_state(block_data=block)
 
         ## Query and add block_pool_info
