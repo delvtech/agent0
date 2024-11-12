@@ -149,6 +149,11 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
+
+            # Ensure block doesn't exceed current block
+            if block_number > latest_mined_block:
+                continue
+
             pool_info_to_db(interfaces, block_number, db_session)
     else:
         pool_info_to_db(interfaces, latest_mined_block, db_session)
