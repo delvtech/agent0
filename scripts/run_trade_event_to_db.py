@@ -49,7 +49,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # TODO periodic backup of db and load if we find the backup file
 
-    backfill_sample_period = 100
+    # TODO sample period different per pool (want to target once per hour)
+    backfill_sample_period = 300
 
     chain_id = chain.chain_id
     earliest_block = EARLIEST_BLOCK_LOOKUP[chain_id]

@@ -10,7 +10,13 @@ from tqdm import tqdm
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.db.base import initialize_session
-from agent0.chainsync.db.hyperdrive import add_hyperdrive_addr_to_name, data_chain_to_db, init_data_chain_to_db
+from agent0.chainsync.db.hyperdrive import (
+    add_hyperdrive_addr_to_name,
+    checkpoint_events_to_db,
+    init_data_chain_to_db,
+    pool_info_to_db,
+    trade_events_to_db,
+)
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
 
@@ -114,6 +120,14 @@ def acquire_data(
     ## Collect initial data
     init_data_chain_to_db(interfaces, db_session)
 
+    # Add all trade events to the table
+    # TODO there may be time and memory concerns here if we're spinning up from
+    # scratch and there's lots of trades/pools.
+    trade_events_to_db(interfaces, wallet_addr=None, db_session=db_session)
+
+    # Add all checkpoint events to the table
+    checkpoint_events_to_db(interfaces, db_session=db_session)
+
     # Backfilling for blocks that need updating
     # Note `data_chain_to_db` takes care of handling duplicate rows
     if backfill:
@@ -135,9 +149,9 @@ def acquire_data(
                     latest_mined_block,
                 )
                 continue
-            data_chain_to_db(interfaces, block_number, db_session)
+            pool_info_to_db(interfaces, block_number, db_session)
     else:
-        data_chain_to_db(interfaces, latest_mined_block, db_session)
+        pool_info_to_db(interfaces, latest_mined_block, db_session)
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here

@@ -1,6 +1,6 @@
 """Hyperdrive database utilities."""
 
-from .chain_to_db import checkpoint_events_to_db, data_chain_to_db, init_data_chain_to_db, trade_events_to_db
+from .chain_to_db import checkpoint_events_to_db, init_data_chain_to_db, pool_info_to_db, trade_events_to_db
 from .convert_data import convert_pool_config, convert_pool_info
 from .import_export_data import export_db_to_file, import_to_db, import_to_pandas
 from .interface import (

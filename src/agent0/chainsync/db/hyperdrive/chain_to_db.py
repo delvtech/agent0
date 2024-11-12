@@ -51,7 +51,7 @@ def init_data_chain_to_db(
         add_pool_config(pool_config_db_obj, session)
 
 
-def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: int, session: Session) -> None:
+def pool_info_to_db(interfaces: list[HyperdriveReadInterface], block_number: int, session: Session) -> None:
     """Function to query and insert data to dashboard.
 
     Arguments
@@ -74,14 +74,6 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     # checkpoint id and vault share price (although if pipeline goes down, there might be
     # missing data TODO)
     # Pool info table drives which blocks gets queried.
-
-    # Add all trade events to the table
-    # TODO there may be time and memory concerns here if we're spinning up from
-    # scratch and there's lots of trades/pools.
-    trade_events_to_db(interfaces, wallet_addr=None, db_session=session)
-
-    # Add all checkpoint events to the table
-    checkpoint_events_to_db(interfaces, db_session=session)
 
     for interface in interfaces:
         # TODO abstract this function out
