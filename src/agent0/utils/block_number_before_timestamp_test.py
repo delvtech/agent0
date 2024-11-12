@@ -5,7 +5,7 @@ import pytest
 
 from agent0 import LocalChain, LocalHyperdrive
 
-from .block_before_timestamp import block_number_before_timestamp
+from .block_number_before_timestamp import block_number_before_timestamp
 
 
 @pytest.mark.docker
