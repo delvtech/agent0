@@ -47,7 +47,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     interfaces = [pool.interface for pool in deployed_pools]
 
-    # TODO periodic backup of db and load if we find the backup file
+    db_dump_path = ".db/"
+
+    # TODO load dump path if exists
+    # TODO make dir if not exist
 
     # TODO sample period different per pool (want to target once per hour)
     backfill_sample_period = 300
@@ -90,6 +93,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             calc_pnl=True,
             backfill=False,
         )
+
+        chain.dump_db(db_dump_path)
+
         time.sleep(3600)
 
 
