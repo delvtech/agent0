@@ -53,7 +53,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     # TODO make dir if not exist
 
     # TODO sample period different per pool (want to target once per hour)
-    backfill_sample_period = 300
+    # backfill_sample_period = 300
+    backfill_sample_period = 3000
 
     chain_id = chain.chain_id
     earliest_block = EARLIEST_BLOCK_LOOKUP[chain_id]
@@ -79,6 +80,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     # Loop forever, running db once an hour
     while True:
+        print("Updating db")
         acquire_data(
             start_block=earliest_block,
             interfaces=list(interfaces),
