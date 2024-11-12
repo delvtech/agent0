@@ -5,7 +5,8 @@ from __future__ import annotations
 import random
 
 from hexbytes import HexBytes
-from pypechain.core import PypechainContractFunction, check_txn_receipt
+from pypechain.core import PypechainContractFunction
+from pypechain.core.contract_call_exception import check_txn_receipt
 from web3._utils.threads import Timeout
 from web3.exceptions import TimeExhausted, TransactionNotFound
 from web3.types import TxReceipt
