@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 import time
+from pathlib import Path
 from typing import NamedTuple, Sequence
 
 from agent0 import Chain, Hyperdrive
@@ -96,7 +97,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             backfill=False,
         )
 
-        chain.dump_db(db_dump_path)
+        chain.dump_db(Path(db_dump_path))
 
         time.sleep(3600)
 
