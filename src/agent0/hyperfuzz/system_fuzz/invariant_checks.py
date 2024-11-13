@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime
 from typing import Any, Callable, NamedTuple
 
 from fixedpointmath import FixedPoint
@@ -316,11 +317,11 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
             "Negative interest detected beteween block "
             f"{previous_pool_state.block_number} "
             "at time "
-            f"{previous_pool_state.block_time} "
+            f"{datetime.fromtimestamp(previous_pool_state.block_time).strftime('%Y-%m-%d %H:%M:%S')}"
             "and block "
             f"{pool_state.block_number} "
             "at time "
-            f"{pool_state.block_time} "
+            f"{datetime.fromtimestamp(pool_state.block_time).strftime('%Y-%m-%d %H:%M:%S')}"
             f"on {paused_str} pool. "
             f"{current_vault_share_price=}, {previous_vault_share_price=}. "
             "Difference in wei: "
