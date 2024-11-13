@@ -94,6 +94,9 @@ def analyze_data(
             range(start_block, latest_mined_block + backfill_sample_period, backfill_sample_period),
             disable=not backfill_progress_bar,
         ):
+            # Ensure block doesn't exceed current block
+            if block_number > latest_mined_block:
+                continue
             # Each table handles keeping track of appending to tables
             db_to_analysis(db_session, interfaces, block_number, calc_pnl)
     else:
