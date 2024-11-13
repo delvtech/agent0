@@ -36,7 +36,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     if rpc_uri is None:
         raise ValueError("RPC_URI is not set")
 
-    chain = Chain(rpc_uri, Chain.Config())
+    chain = Chain(rpc_uri, Chain.Config(use_existing_postgres=True))
 
     # Get the registry address from artifacts
     registry_address = os.getenv("REGISTRY_ADDRESS", None)
