@@ -86,7 +86,7 @@ def pool_info_to_db(interfaces: list[HyperdriveReadInterface], block_number: int
         deploy_block = interface.get_deploy_block_number()
         # deploy_block may be None in cases where we have a local chain and we lose the past events
         # In this case, we don't skip and hope the pool is already deployed
-        if deploy_block is not None and block_number <= deploy_block:
+        if deploy_block is not None and block_number < deploy_block:
             continue
 
         pool_state = interface.get_hyperdrive_state(block_data=block)
