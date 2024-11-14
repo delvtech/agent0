@@ -132,7 +132,7 @@ def acquire_data(
     # Note `data_chain_to_db` takes care of handling duplicate rows
     if backfill:
         for block_int in tqdm(
-            range(start_block, latest_mined_block + backfill_sample_period, backfill_sample_period),
+            range(start_block, latest_mined_block + 1, backfill_sample_period),
             disable=not backfill_progress_bar,
         ):
             block_number: BlockNumber = BlockNumber(block_int)
