@@ -19,6 +19,7 @@ from agent0.chainsync.dashboard import (
     plot_ohlcv,
     plot_outstanding_positions,
     plot_rates,
+    plot_share_price,
 )
 from agent0.chainsync.db.base import initialize_session
 from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
