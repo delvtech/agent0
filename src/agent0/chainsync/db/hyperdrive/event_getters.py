@@ -118,7 +118,7 @@ def get_event_logs_for_db(
 
     # split up from_block if too large
     out_events = []
-    for _from_block in range(int(from_block), current_block + EVENT_QUERY_PAGE_SIZE, EVENT_QUERY_PAGE_SIZE):
+    for _from_block in range(int(from_block), current_block + 1, EVENT_QUERY_PAGE_SIZE):
         # -1 because to block in get_logs is inclusive
         _to_block = _from_block + EVENT_QUERY_PAGE_SIZE - 1
         if _to_block >= current_block:
