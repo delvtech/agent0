@@ -54,7 +54,7 @@ main_placeholder = st.empty()
 
 main_fig = mpf.figure(style="mike", figsize=(10, 10))
 # matplotlib doesn't play nice with types
-(ax_ohlcv, ax_fixed_rate, ax_positions) = main_fig.subplots(3, 1, sharex=True)  # type: ignore
+(ax_ohlcv, ax_fixed_rate, ax_vault_share_price, ax_positions) = main_fig.subplots(4, 1, sharex=True)  # type: ignore
 
 while True:
     if selected_hyperdrive_address is not None:
@@ -75,10 +75,12 @@ while True:
             # Clears all axes
             ax_ohlcv.clear()
             ax_fixed_rate.clear()
+            ax_vault_share_price.clear()
             ax_positions.clear()
 
             plot_ohlcv(data_dfs["ohlcv"], ax_ohlcv)
             plot_rates(data_dfs["fixed_rate"], data_dfs["variable_rate"], ax_fixed_rate)
+            plot_share_price(vault_share_price = data_dfs["vault_share_price"], ax_vault_share_price)
             plot_outstanding_positions(data_dfs["outstanding_positions"], ax_positions)
 
             ax_ohlcv.tick_params(axis="both", which="both")
