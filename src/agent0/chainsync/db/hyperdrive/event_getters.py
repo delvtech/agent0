@@ -125,7 +125,7 @@ def get_event_logs_for_db(
             _to_block = "latest"
 
         # FIXME
-        print(f"{_from_block=}, {_to_block=}")
+        print(f"{_from_block=}, {_to_block=}, {current_block=}")
 
         out_events.extend(
             _event_data_to_dict(e, numeric_args_as_str)
