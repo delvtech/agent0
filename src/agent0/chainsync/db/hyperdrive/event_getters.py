@@ -120,7 +120,10 @@ def get_event_logs_for_db(
     out_events = []
     for _from_block in range(int(from_block), current_block + EVENT_QUERY_PAGE_SIZE, EVENT_QUERY_PAGE_SIZE):
         # -1 because to block in get_logs is inclusive
-        _to_block = min(_from_block + EVENT_QUERY_PAGE_SIZE - 1, current_block)
+        _to_block = _from_block + EVENT_QUERY_PAGE_SIZE - 1
+        if _to_block >= current_block:
+            _to_block = "latest"
+
         out_events.extend(
             _event_data_to_dict(e, numeric_args_as_str)
             for e in event_class.get_logs(from_block=_from_block, to_block=_to_block, argument_filters=argument_filters)
