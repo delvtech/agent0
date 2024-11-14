@@ -48,9 +48,16 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     interfaces = [pool.interface for pool in deployed_pools]
 
-    db_dump_path = ".db/"
+    db_dump_path = Path(".db/")
+    # Ignore if file not found
+    try:
+        chain.load_db(db_dump_path)
+        print(f"Loaded db from {db_dump_path}")
+    except FileNotFoundError:
+        pass
 
     # TODO load dump path if exists
+
     # TODO make dir if not exist
 
     # TODO sample period different per pool (want to target once per hour)
@@ -99,7 +106,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             backfill=False,
         )
 
-        chain.dump_db(Path(db_dump_path))
+        chain.dump_db(db_dump_path)
 
         time.sleep(3600)
 
