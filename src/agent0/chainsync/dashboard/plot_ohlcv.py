@@ -22,7 +22,7 @@ def plot_ohlcv(ohlcv: pd.DataFrame, ohlcv_ax: Axes) -> None:
         mpf.plot(ohlcv, type="candle", ax=ohlcv_ax, show_nontrading=True)
 
         ohlcv_ax.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.6")))
-        ohlcv_ax.set_xlabel("block timestamp")
+        ohlcv_ax.set_xlabel("Timestamp")
         ohlcv_ax.set_title("Spot Price Ohlc")
         ohlcv_ax.yaxis.set_label_position("right")
         ohlcv_ax.yaxis.tick_right()
