@@ -80,7 +80,7 @@ while True:
 
             plot_ohlcv(data_dfs["ohlcv"], ax_ohlcv)
             plot_rates(data_dfs["fixed_rate"], data_dfs["variable_rate"], ax_fixed_rate)
-            plot_share_price(vault_share_price = data_dfs["vault_share_price"], ax_vault_share_price)
+            plot_share_price(data_dfs["vault_share_price"], ax_vault_share_price)
             plot_outstanding_positions(data_dfs["outstanding_positions"], ax_positions)
 
             ax_ohlcv.tick_params(axis="both", which="both")
