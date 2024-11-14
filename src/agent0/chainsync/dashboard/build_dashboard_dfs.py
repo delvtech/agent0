@@ -23,6 +23,7 @@ from .build_ohlcv import build_ohlcv
 from .build_outstanding_positions import build_outstanding_positions
 from .build_ticker import build_ticker_for_pool_page, build_ticker_for_wallet_page
 from .build_variable_rate import build_variable_rate
+from .build_vault_share_price import build_vault_share_price
 from .build_wallet_positions import (
     build_pnl_over_time,
     build_positions_over_time,
@@ -108,6 +109,7 @@ def build_pool_dashboard(
     # build rates
     out_dfs["fixed_rate"] = build_fixed_rate(pool_info)
     out_dfs["variable_rate"] = build_variable_rate(pool_info)
+    out_dfs["vault_share_price"] = build_vault_share_price(pool_info)
 
     # build outstanding positions plots
     out_dfs["outstanding_positions"] = build_outstanding_positions(pool_info)

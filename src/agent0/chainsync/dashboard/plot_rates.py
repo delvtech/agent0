@@ -25,7 +25,7 @@ def plot_rates(fixed_rate: pd.DataFrame, variable_rate: pd.DataFrame, axes: Axes
     axes.yaxis.set_major_formatter(mpl_ticker.FuncFormatter(lambda x, p: format(x, "0.3%")))
     axes.yaxis.set_label_position("right")
     axes.yaxis.tick_right()
-    axes.set_xlabel("block timestamp")
+    axes.set_xlabel("Timestamp")
     axes.set_ylabel("rate (%)")
     axes.set_title("Fixed/Variable rate")
     axes.legend()
