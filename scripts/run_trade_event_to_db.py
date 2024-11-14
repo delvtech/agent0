@@ -82,6 +82,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     # Loop forever, running db once an hour
     while True:
         print("Updating db")
+        # TODO to ensure these tables are synced, we want to
+        # add the block to add the data on.
         acquire_data(
             start_block=earliest_block,
             interfaces=list(interfaces),
