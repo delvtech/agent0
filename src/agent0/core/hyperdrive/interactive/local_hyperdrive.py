@@ -379,8 +379,6 @@ class LocalHyperdrive(Hyperdrive):
         force_backfill: bool, optional
             If True, will force backfilling pool info data. Otherwise will look for
             `chain.config.backfill_pool_info` in the chain config.
-        force_init: bool, optional
-            If True, will explicitly initialize the database with this pool's info.
         """
         if start_block is None:
             data_start_block = self._data_start_block
