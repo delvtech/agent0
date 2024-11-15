@@ -1668,6 +1668,62 @@ def test_fork_backfill():
         backfill_data_start_block=0,
     )
     assert fork_pool.get_pool_info().equals(pool.get_pool_info())
+    assert fork_pool.get_historical_positions().equals(pool.get_historical_positions())
+
+    chain.cleanup()
+    fork_chain.cleanup()
+
+
+@pytest.mark.anvil
+def test_fork_backfill_sample():
+    """Tests backfilling data from a forked chain."""
+
+    # Set up orig chain
+    chain = LocalChain(config=LocalChain.Config(chain_port=6000, db_port=6001))
+    pool = LocalHyperdrive(chain, LocalHyperdrive.Config())
+    agent = chain.init_agent(
+        base=FixedPoint(10_000),
+        eth=FixedPoint(10),
+        pool=pool,
+    )
+    _ = agent.add_liquidity(FixedPoint(1_000))
+    _ = agent.open_long(FixedPoint(1_000))
+    _ = agent.open_short(FixedPoint(1_000))
+
+    fork_chain = LocalChain(
+        fork_uri=chain.rpc_uri,
+        config=LocalChain.Config(chain_port=6002, db_port=6003),
+    )
+    # Set deploy = False since we're attaching to an existing chain
+    # We set backfill data start block to backfill all data
+    fork_pool = LocalHyperdrive(
+        fork_chain,
+        deploy=False,
+        hyperdrive_address=pool.hyperdrive_address,
+        backfill_data_start_block=0,
+        backfill_sample_period=2,
+    )
+
+    # Ensure sample period is correct
+    assert fork_pool._deploy_block_number is not None
+    target_sample_blocks = list(range(fork_pool._deploy_block_number, fork_chain.block_number(), 2))
+
+    sample_pool_info = fork_pool.get_pool_info()
+    assert list(sample_pool_info["block_number"].unique()) == target_sample_blocks
+
+    sample_historical_positions = fork_pool.get_historical_positions()
+    assert list(sample_historical_positions["block_number"].unique()) == target_sample_blocks
+
+    # Ensure correctness
+    full_pool_info = pool.get_pool_info()
+    sample_from_full_pool_info = full_pool_info[full_pool_info["block_number"].isin(target_sample_blocks)].reset_index(drop=True)
+    assert sample_pool_info.equals(sample_from_full_pool_info)
+
+    full_historical_positions = pool.get_pool_info()
+    sample_from_full_positions = full_historical_positions[
+        full_historical_positions["block_number"].isin(target_sample_blocks)
+    ].reset_index(drop=True)
+    assert sample_historical_positions.equals(sample_from_full_positions)
 
     chain.cleanup()
     fork_chain.cleanup()
