@@ -513,13 +513,27 @@ class Chain:
         out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
         return out
 
-    def dump_db(self, save_dir: Path):
+    def dump_db(self, save_dir: Path) -> None:
+        """Export the managed database to file.
+
+        Arguments
+        ---------
+        save_dir: Path
+            The output directory to dump the data to.
+        """
         if self.db_session is not None:
             # TODO parameterize the save path
             os.makedirs(save_dir, exist_ok=True)
             export_db_to_file(save_dir, self.db_session)
 
-    def load_db(self, load_dir: Path):
+    def load_db(self, load_dir: Path) -> None:
+        """Import the managed database from file.
+
+        Arguments
+        ---------
+        load_dir: Path
+            The directory that contains the exported database.
+        """
         if self.db_session is not None:
             # TODO parameterize the load path
             import_to_db(self.db_session, load_dir, drop=True)

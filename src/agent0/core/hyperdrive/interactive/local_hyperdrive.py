@@ -408,9 +408,7 @@ class LocalHyperdrive(Hyperdrive):
             backfill_progress_bar=progress_bar,
         )
 
-    def _maybe_run_blocking_data_pipeline(
-        self, start_block: int | None = None, progress_bar: bool = False, force_init: bool = False
-    ) -> None:
+    def _maybe_run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
         # Checks the chain config to see if manual sync is on. Noop if it is.
         if not self.chain.config.manual_database_sync:
             self.sync_database(start_block, progress_bar)
