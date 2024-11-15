@@ -1719,7 +1719,7 @@ def test_fork_backfill_sample():
     sample_from_full_pool_info = full_pool_info[full_pool_info["block_number"].isin(target_sample_blocks)].reset_index(drop=True)
     assert sample_pool_info.equals(sample_from_full_pool_info)
 
-    full_historical_positions = pool.get_pool_info()
+    full_historical_positions = pool.get_historical_positions()
     sample_from_full_positions = full_historical_positions[
         full_historical_positions["block_number"].isin(target_sample_blocks)
     ].reset_index(drop=True)
