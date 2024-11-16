@@ -23,7 +23,8 @@ from agent0.utils import block_number_before_timestamp
 
 LP_SHARE_PRICE_EPSILON = 1e-4
 TOTAL_SHARES_EPSILON = 1e-9
-NEGATIVE_INTEREST_EPSILON = FixedPoint(scaled_value=10)  # 10 wei
+NEGATIVE_INTEREST_ATOL = FixedPoint(scaled_value=10)  # absolute tolerance 10 wei
+NEGATIVE_INTEREST_RTOL = FixedPoint(scaled_value=10)  # relative tolerance 10bp
 PRESENT_VALUE_EPSILON = FixedPoint(scaled_value=1)  # 1 wei
 EZETH_NEG_INTEREST_TIME_DELTA = 12 * 60 * 60
 
@@ -303,13 +304,16 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
     previous_pool_state = interface.get_hyperdrive_state(block_identifier=previous_block_number)
     previous_vault_share_price = previous_pool_state.pool_info.vault_share_price
 
-    if (current_vault_share_price - previous_vault_share_price) <= -NEGATIVE_INTEREST_EPSILON:
+    absolute_check = current_vault_share_price - previous_vault_share_price <= -NEGATIVE_INTEREST_ATOL
+    relative_check = previous_vault_share_price * NEGATIVE_INTEREST_RTOL <= current_vault_share_price
+    if absolute_check:  # rate went down
+        log_level = logging.WARNING
         if interface.get_pool_is_paused():
             paused_str = "paused"
-            log_level = logging.WARNING
         else:
             paused_str = "unpaused"
-            log_level = logging.CRITICAL
+            if relative_check:  # rate went down by a lot
+                log_level = logging.CRITICAL
         failed = True
         exception_data["invariance_check:current_vault_share_price"] = current_vault_share_price
         exception_data["invariance_check:previous_vault_share_price"] = previous_vault_share_price
