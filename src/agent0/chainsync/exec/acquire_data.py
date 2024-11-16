@@ -144,7 +144,10 @@ def acquire_data(
                 # TODO should directly query the chain for open positions
                 # in this case
                 logging.warning(
-                    "Querying block_number %s out of %s, unable to keep up with chain block iteration",
+                    (
+                        "Querying block_number %s out of %s, unable to keep up with chain block iteration. "
+                        "Wallet information may be inaccurate."
+                    ),
                     block_number,
                     latest_mined_block,
                 )
