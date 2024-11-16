@@ -1220,4 +1220,5 @@ class HyperdriveAgent:
             wallet_addr=self.address,
             db_session=self.chain.db_session,
             calc_pnl=self.chain.config.calc_pnl,
+            block_number=self.chain.block_number(),
         )

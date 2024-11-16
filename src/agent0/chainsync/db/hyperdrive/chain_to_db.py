@@ -19,6 +19,7 @@ from .interface import (
     add_pool_config,
     add_pool_infos,
     get_latest_block_number_from_checkpoint_info_table,
+    get_latest_block_number_from_pool_info_table,
     get_latest_block_number_from_trade_event,
 )
 from .schema import DBCheckpointInfo, DBTradeEvent
@@ -50,7 +51,7 @@ def init_data_chain_to_db(
         add_pool_config(pool_config_db_obj, session)
 
 
-def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: int, session: Session) -> None:
+def pool_info_to_db(interfaces: list[HyperdriveReadInterface], block_number: int, session: Session) -> None:
     """Function to query and insert data to dashboard.
 
     Arguments
@@ -74,16 +75,20 @@ def data_chain_to_db(interfaces: list[HyperdriveReadInterface], block_number: in
     # missing data TODO)
     # Pool info table drives which blocks gets queried.
 
-    # Add all trade events to the table
-    # TODO there may be time and memory concerns here if we're spinning up from
-    # scratch and there's lots of trades/pools.
-    trade_events_to_db(interfaces, wallet_addr=None, db_session=session)
-
-    # Add all checkpoint events to the table
-    checkpoint_events_to_db(interfaces, db_session=session)
-
     for interface in interfaces:
+        # TODO abstract this function out
+        # Only add the pool info row if it's already not in the db
         hyperdrive_address = interface.hyperdrive_address
+        if block_number <= get_latest_block_number_from_pool_info_table(session, hyperdrive_address=hyperdrive_address):
+            continue
+
+        # If the pool wasn't deployed at the query block, skip
+        deploy_block = interface.get_deploy_block_number()
+        # deploy_block may be None in cases where we have a local chain and we lose the past events
+        # In this case, we don't skip and hope the pool is already deployed
+        if deploy_block is not None and block_number < deploy_block:
+            continue
+
         pool_state = interface.get_hyperdrive_state(block_data=block)
 
         ## Query and add block_pool_info

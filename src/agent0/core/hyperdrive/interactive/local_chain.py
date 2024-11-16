@@ -21,7 +21,6 @@ from hyperdrivetypes import CreateCheckpointEventFP
 from IPython.display import IFrame
 from web3.types import RPCEndpoint
 
-from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.core.hyperdrive.crash_report import get_anvil_state_dump
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 
@@ -447,7 +446,7 @@ class LocalChain(Chain):
             else:
                 save_dir = Path(".interactive_state/") / (save_prefix + "_" + fn_time_str)
 
-        self._dump_db(save_dir)
+        self.dump_db(save_dir)
         anvil_state_dump = get_anvil_state_dump(self._web3)
         assert anvil_state_dump is not None
         anvil_state_dump_file = save_dir / "anvil_state.dump"
@@ -490,7 +489,7 @@ class LocalChain(Chain):
         self._anvil_save_snapshot()
 
         # Save the db state
-        self._dump_db(self._snapshot_dir)
+        self.dump_db(self._snapshot_dir)
 
         # Save all states
         self._save_pool_bookkeeping(self._snapshot_dir)
@@ -525,7 +524,7 @@ class LocalChain(Chain):
         # NOTE: existing pool objects initialized after snapshot will no longer be valid.
         self._load_pool_bookkeeping(self._snapshot_dir)
         # load snapshot database state
-        self._load_db(self._snapshot_dir)
+        self.load_db(self._snapshot_dir)
         # Update pool's agent bookkeeping
         # Note this will wipe the agent's active pool.
         self._load_agent_bookkeeping(self._snapshot_dir)
@@ -550,17 +549,6 @@ class LocalChain(Chain):
 
     def _add_deployed_pool_to_bookkeeping(self, pool: LocalHyperdrive):
         self._deployed_hyperdrive_pools.append(pool)
-
-    def _dump_db(self, save_dir: Path):
-        if self.db_session is not None:
-            # TODO parameterize the save path
-            os.makedirs(save_dir, exist_ok=True)
-            export_db_to_file(save_dir, self.db_session)
-
-    def _load_db(self, load_dir: Path):
-        if self.db_session is not None:
-            # TODO parameterize the load path
-            import_to_db(self.db_session, load_dir, drop=True)
 
     def _save_pool_bookkeeping(self, save_dir: Path) -> None:
         # Save bookkeeping of deployed pools

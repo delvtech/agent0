@@ -34,7 +34,7 @@ from .usernames import build_user_mapping
 
 
 def build_pool_dashboard(
-    hyperdrive_address: str, session: Session, max_live_blocks: int = 5000, max_ticker_rows: int = 1000
+    hyperdrive_address: str, session: Session, max_live_blocks: int = 20000, max_ticker_rows: int = 10000
 ) -> dict[str, pd.DataFrame]:
     """Builds the dataframes for the main dashboard page that focuses on pools.
 

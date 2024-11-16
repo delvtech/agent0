@@ -23,6 +23,7 @@ from agent0.chainsync import PostgresConfig
 from agent0.chainsync.dashboard.usernames import build_user_mapping
 from agent0.chainsync.db.base import get_addr_to_username, initialize_session
 from agent0.chainsync.db.hyperdrive import get_hyperdrive_addr_to_name
+from agent0.chainsync.db.hyperdrive.import_export_data import export_db_to_file, import_to_db
 from agent0.chainsync.postgres_config import build_postgres_config_from_env
 from agent0.core.hyperdrive.policies import HyperdriveBasePolicy
 from agent0.ethpy.base import initialize_web3_with_http_provider
@@ -511,3 +512,28 @@ class Chain:
         out = df.copy()
         out.insert(df.columns.get_loc(addr_column), "hyperdrive_name", hyperdrive_name)  # type: ignore
         return out
+
+    def dump_db(self, save_dir: Path) -> None:
+        """Export the managed database to file.
+
+        Arguments
+        ---------
+        save_dir: Path
+            The output directory to dump the data to.
+        """
+        if self.db_session is not None:
+            # TODO parameterize the save path
+            os.makedirs(save_dir, exist_ok=True)
+            export_db_to_file(save_dir, self.db_session)
+
+    def load_db(self, load_dir: Path) -> None:
+        """Import the managed database from file.
+
+        Arguments
+        ---------
+        load_dir: Path
+            The directory that contains the exported database.
+        """
+        if self.db_session is not None:
+            # TODO parameterize the load path
+            import_to_db(self.db_session, load_dir, drop=True)

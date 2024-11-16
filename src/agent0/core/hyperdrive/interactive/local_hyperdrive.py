@@ -256,6 +256,7 @@ class LocalHyperdrive(Hyperdrive):
         deploy: bool = True,
         hyperdrive_address: ChecksumAddress | str | None = None,
         backfill_data_start_block: int | None = None,
+        backfill_sample_period: int | None = None,
     ):
         """Constructor for the interactive hyperdrive agent.
 
@@ -334,8 +335,6 @@ class LocalHyperdrive(Hyperdrive):
                     self._data_start_block = backfill_data_start_block
                 else:
                     self._data_start_block = max(self._deploy_block_number, backfill_data_start_block)
-            # Always start analysis at the current block
-            self._analysis_start_block = chain.block_number()
 
         # Add this pool to the chain bookkeeping for snapshots
         chain._add_deployed_pool_to_bookkeeping(self)
@@ -347,17 +346,17 @@ class LocalHyperdrive(Hyperdrive):
         if backfill_data_start_block is not None:
             logging.info("Backfilling data from block %s to %s", self._data_start_block, chain.block_number())
             # If this is set, we ignore manual sync and always sync the database
-            self.sync_database(progress_bar=True, force_backfill=True, force_init=True)
+            self.sync_database(progress_bar=True, force_backfill=True, backfill_sample_period=backfill_sample_period)
         else:
             # Otherwise, we do this lazily if manual sync is on
-            self._maybe_run_blocking_data_pipeline(force_init=True)
+            self._maybe_run_blocking_data_pipeline()
 
     def sync_database(
         self,
         start_block: int | None = None,
         progress_bar: bool = False,
         force_backfill: bool = False,
-        force_init: bool = False,
+        backfill_sample_period: int | None = None,
     ) -> None:
         """Explicitly syncs the database with the chain.
         This function doesn't need to be explicitly called if `manual_database_sync = False`.
@@ -380,15 +379,11 @@ class LocalHyperdrive(Hyperdrive):
         force_backfill: bool, optional
             If True, will force backfilling pool info data. Otherwise will look for
             `chain.config.backfill_pool_info` in the chain config.
-        force_init: bool, optional
-            If True, will explicitly initialize the database with this pool's info.
+        backfill_sample_period: int | None, optional
+            The sample period to use when backfilling data. Defaults to every block.
         """
         if start_block is None:
-            data_start_block = self._data_start_block
-            analysis_start_block = self._analysis_start_block
-        else:
-            data_start_block = start_block
-            analysis_start_block = start_block
+            start_block = self._data_start_block
 
         if force_backfill:
             backfill = True
@@ -396,30 +391,27 @@ class LocalHyperdrive(Hyperdrive):
             backfill = self.chain.config.backfill_pool_info
 
         acquire_data(
-            start_block=data_start_block,
+            start_block=start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
-            exit_on_catch_up=True,
-            suppress_logs=True,
-            progress_bar=progress_bar,
             backfill=backfill,
-            force_init=force_init,
+            backfill_sample_period=backfill_sample_period,
+            backfill_progress_bar=progress_bar,
         )
         analyze_data(
-            start_block=analysis_start_block,
+            start_block=start_block,
             interfaces=[self.interface],
             db_session=self.chain.db_session,
-            exit_on_catch_up=True,
-            suppress_logs=True,
             calc_pnl=self.calc_pnl,
+            backfill=backfill,
+            backfill_sample_period=backfill_sample_period,
+            backfill_progress_bar=progress_bar,
         )
 
-    def _maybe_run_blocking_data_pipeline(
-        self, start_block: int | None = None, progress_bar: bool = False, force_init: bool = False
-    ) -> None:
+    def _maybe_run_blocking_data_pipeline(self, start_block: int | None = None, progress_bar: bool = False) -> None:
         # Checks the chain config to see if manual sync is on. Noop if it is.
         if not self.chain.config.manual_database_sync:
-            self.sync_database(start_block, progress_bar, force_init=force_init)
+            self.sync_database(start_block, progress_bar)
 
     # We overwrite these dunder methods to allow this object to be used as a dictionary key
     # This is used to allow chain's `advance_time` function to return this object as a key.

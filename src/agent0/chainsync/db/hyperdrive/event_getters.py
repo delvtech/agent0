@@ -11,6 +11,8 @@ from web3.types import BlockIdentifier, EventData
 from agent0.ethpy.base import EARLIEST_BLOCK_LOOKUP
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
 
+EVENT_QUERY_PAGE_SIZE = 80000
+
 
 # Event getters
 def _event_data_to_dict(in_val: EventData, numeric_args_as_str: bool) -> dict[str, Any]:
@@ -108,15 +110,24 @@ def get_event_logs_for_db(
         # If not in lookup, we default to `earliest`
         from_block = EARLIEST_BLOCK_LOOKUP.get(chain_id, "earliest")
 
+    current_block = hyperdrive_interface.web3.eth.block_number
     # If the from block specified is a specific block number, make sure it's not a pending block
     # If it's past the latest block, no events to return
-    if isinstance(from_block, int) and from_block > hyperdrive_interface.web3.eth.block_number:
+    if isinstance(from_block, int) and from_block > current_block:
         return []
 
-    out_events = [
-        _event_data_to_dict(e, numeric_args_as_str)
-        for e in event_class.get_logs(from_block=from_block, argument_filters=argument_filters)
-    ]
+    # split up from_block if too large
+    out_events = []
+    for _from_block in range(int(from_block), current_block + 1, EVENT_QUERY_PAGE_SIZE):
+        # -1 because to block in get_logs is inclusive
+        _to_block = _from_block + EVENT_QUERY_PAGE_SIZE - 1
+        if _to_block >= current_block:
+            _to_block = "latest"
+
+        out_events.extend(
+            _event_data_to_dict(e, numeric_args_as_str)
+            for e in event_class.get_logs(from_block=_from_block, to_block=_to_block, argument_filters=argument_filters)
+        )
 
     # Convert output event data from lido shares to steth
     if trade_base_unit_conversion and hyperdrive_interface.hyperdrive_kind == hyperdrive_interface.HyperdriveKind.STETH:

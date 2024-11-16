@@ -2,20 +2,15 @@
 
 from __future__ import annotations
 
-import logging
-import time
-from typing import Callable
-
 from eth_typing import ChecksumAddress
 from sqlalchemy.orm import Session
+from tqdm import tqdm
 
 from agent0.chainsync import PostgresConfig
 from agent0.chainsync.analysis import db_to_analysis
 from agent0.chainsync.db.base import initialize_session
 from agent0.chainsync.db.hyperdrive import DBPoolInfo, get_latest_block_number_from_table
 from agent0.ethpy.hyperdrive import HyperdriveReadInterface
-
-_SLEEP_AMOUNT = 1
 
 
 def analyze_data(
@@ -25,17 +20,17 @@ def analyze_data(
     hyperdrive_addresses: list[ChecksumAddress] | dict[str, ChecksumAddress] | None = None,
     db_session: Session | None = None,
     postgres_config: PostgresConfig | None = None,
-    exit_on_catch_up: bool = False,
-    exit_callback_fn: Callable[[], bool] | None = None,
-    suppress_logs: bool = False,
     calc_pnl: bool = True,
+    backfill: bool = False,
+    backfill_sample_period: int | None = None,
+    backfill_progress_bar: bool = False,
 ):
     """Execute the data acquisition pipeline.
 
     Arguments
     ---------
-    start_block: int
-        The starting block to filter the query on
+    start_block: int, optional
+        The starting block to run analysis on for backfilling.
     interfaces: list[HyperdriveReadInterface] | None, optional
         A collection of Hyperdrive interface objects, each connected to a pool.
         If not set, will initialize one based on rpc_uri and hyperdrive_address.
@@ -52,16 +47,14 @@ def analyze_data(
         .env.
     postgres_config: PostgresConfig | None = None,
         PostgresConfig for connecting to db. If none, will set from .env.
-    exit_on_catch_up: bool
-        If True, will exit after catching up to current block
-    exit_callback_fn: Callable[[], bool] | None, optional
-        A function that returns a boolean to call to determine if the script should exit.
-        The function should return False if the script should continue, or True if the script should exit.
-        Defaults to not set.
-    suppress_logs: bool, optional
-        If true, will suppress info logging from this function. Defaults to False.
     calc_pnl: bool
         Whether to calculate pnl. Defaults to True.
+    backfill: bool, optional
+        If true, will fill in missing pool info data for every `backfill_sample_period` blocks. Defaults to True.
+    backfill_sample_period: int | None, optional
+        The sample frequency when backfilling. If None, will backfill every block.
+    backfill_progress_bar: bool, optional
+        If true, will show a progress bar when backfilling. Defaults to False.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -70,6 +63,9 @@ def analyze_data(
     # pylint: disable=too-many-positional-arguments
 
     # TODO implement logger instead of global logging to suppress based on module name.
+
+    if backfill_sample_period is None:
+        backfill_sample_period = 1
 
     ## Initialization
     if interfaces is None:
@@ -92,25 +88,20 @@ def analyze_data(
         db_session_init = True
         db_session = initialize_session(postgres_config=postgres_config, ensure_database_created=True)
 
-    curr_start_write_block = start_block
-    # Main data loop
-    # monitor for new blocks & add pool info per block
-    if not suppress_logs:
-        logging.info("Monitoring database for updates...")
-    while True:
-        latest_data_block_number = get_latest_data_block(db_session)
-        # Only execute if we are on a new block
-        if latest_data_block_number < curr_start_write_block:
-            exit_callable = False
-            if exit_callback_fn is not None:
-                exit_callable = exit_callback_fn()
-            if exit_on_catch_up or exit_callable:
-                break
-            time.sleep(_SLEEP_AMOUNT)
-            continue
+    latest_mined_block = interfaces[0].web3.eth.get_block_number()
+    if backfill:
+        for block_number in tqdm(
+            range(start_block, latest_mined_block + backfill_sample_period, backfill_sample_period),
+            disable=not backfill_progress_bar,
+        ):
+            # Ensure block doesn't exceed current block
+            if block_number > latest_mined_block:
+                continue
+            # Each table handles keeping track of appending to tables
+            db_to_analysis(db_session, interfaces, block_number, calc_pnl)
+    else:
         # Each table handles keeping track of appending to tables
-        db_to_analysis(db_session, interfaces, calc_pnl)
-        curr_start_write_block = latest_data_block_number + 1
+        db_to_analysis(db_session, interfaces, latest_mined_block, calc_pnl)
 
     # Clean up resources on clean exit
     # If this function made the db session, we close it here
