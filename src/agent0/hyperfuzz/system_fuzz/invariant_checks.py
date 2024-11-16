@@ -24,7 +24,7 @@ from agent0.utils import block_number_before_timestamp
 LP_SHARE_PRICE_EPSILON = 1e-4
 TOTAL_SHARES_EPSILON = 1e-9
 NEGATIVE_INTEREST_ATOL = FixedPoint(scaled_value=10)  # absolute tolerance 10 wei
-NEGATIVE_INTEREST_RTOL = FixedPoint(scaled_value=10)  # relative tolerance 10bp
+NEGATIVE_INTEREST_RTOL = FixedPoint(0.001)  # relative tolerance 10bp
 PRESENT_VALUE_EPSILON = FixedPoint(scaled_value=1)  # 1 wei
 EZETH_NEG_INTEREST_TIME_DELTA = 12 * 60 * 60
 
