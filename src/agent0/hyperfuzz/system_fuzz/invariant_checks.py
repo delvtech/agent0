@@ -319,7 +319,7 @@ def _check_negative_interest(interface: HyperdriveReadInterface, pool_state: Poo
         else:
             paused_str = "unpaused"
             # relative check to see if the rate went down by a lot
-            if previous_vault_share_price * NEGATIVE_INTEREST_RTOL <= current_vault_share_price:
+            if previous_vault_share_price * (FixedPoint(1) - NEGATIVE_INTEREST_RTOL) >= current_vault_share_price:
                 log_level = logging.CRITICAL
         failed = True
         exception_data["invariance_check:current_vault_share_price"] = current_vault_share_price
