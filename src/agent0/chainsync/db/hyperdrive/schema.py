@@ -20,7 +20,6 @@ FIXED_NUMERIC = Numeric(precision=1000, scale=18)
 
 
 ## Base schemas for raw data
-# TODO add column for timestamp in seconds in db
 
 
 class DBHyperdriveAddrToName(DBBase):
@@ -92,7 +91,6 @@ class DBCheckpointInfo(DBBase):
     """The lp share price at the checkpoint."""
 
 
-# TODO change this table to allow for missing data in block time.
 class DBPoolInfo(DBBase):
     """Table/dataclass schema for pool info.
 
@@ -139,16 +137,7 @@ class DBPoolInfo(DBBase):
 
 
 class DBTradeEvent(DBBase):
-    """Table for storing any transfer events emitted by the Hyperdrive contract.
-    This table only contains events of "registered" wallet addresses, which are any agents
-    that are managed by agent0. This table does not store all wallet addresses that have
-    interacted with all Hyperdrive contracts.
-    TODO this table would take the place of the `WalletDelta` table with the following updates:
-    - We explicitly fill this table with all addresses that have interacted with all hyperdrive pools.
-        - This is very slow on existing pools, which makes it useful for simulations and
-          any managed chains to run a dashboard on, but not so much for connections to remote chains
-          to execute trades.
-    """
+    """Table for storing any transfer events emitted by the Hyperdrive contract."""
 
     __tablename__ = "trade_event"
     # Indices
