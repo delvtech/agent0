@@ -72,7 +72,7 @@ def _convert_event_lido_shares_to_steth(events: list[dict[str, Any]], numeric_ar
 
 def get_event_logs_for_db(
     hyperdrive_interface: HyperdriveReadInterface,
-    event_class: type[ContractEvent],
+    event_class: ContractEvent,
     trade_base_unit_conversion: bool,
     from_block: BlockIdentifier | None = None,
     argument_filters: dict[str, Any] | None = None,
