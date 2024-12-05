@@ -248,7 +248,7 @@ def _create_checkpoint(
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
     out_events = list(
-        interface.hyperdrive_contract.events.CreateCheckpoint().process_receipt_typed(tx_receipt, errors=DISCARD)
+        interface.hyperdrive_contract.events.CreateCheckpoint.process_receipt_typed(tx_receipt, errors=DISCARD)
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
@@ -395,7 +395,7 @@ async def _async_open_long(
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
-    out_events = list(interface.hyperdrive_contract.events.OpenLong().process_receipt_typed(tx_receipt, errors=DISCARD))
+    out_events = list(interface.hyperdrive_contract.events.OpenLong.process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
     out_event = OpenLongEventFP.from_pypechain(out_events[0])
@@ -486,9 +486,7 @@ async def _async_close_long(
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
-    out_events = list(
-        interface.hyperdrive_contract.events.CloseLong().process_receipt_typed(tx_receipt, errors=DISCARD)
-    )
+    out_events = list(interface.hyperdrive_contract.events.CloseLong.process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
     out_event = CloseLongEventFP.from_pypechain(out_events[0])
@@ -583,9 +581,7 @@ async def _async_open_short(
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
-    out_events = list(
-        interface.hyperdrive_contract.events.OpenShort().process_receipt_typed(tx_receipt, errors=DISCARD)
-    )
+    out_events = list(interface.hyperdrive_contract.events.OpenShort.process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
     out_event = OpenShortEventFP.from_pypechain(out_events[0])
@@ -674,9 +670,7 @@ async def _async_close_short(
     # Process receipt attempts to process all events in logs, even if it's not of the
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
-    out_events = list(
-        interface.hyperdrive_contract.events.CloseShort().process_receipt_typed(tx_receipt, errors=DISCARD)
-    )
+    out_events = list(interface.hyperdrive_contract.events.CloseShort.process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
     out_event = CloseShortEventFP.from_pypechain(out_events[0])
@@ -770,7 +764,7 @@ async def _async_add_liquidity(
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
     out_events = list(
-        interface.hyperdrive_contract.events.AddLiquidity().process_receipt_typed(tx_receipt, errors=DISCARD)
+        interface.hyperdrive_contract.events.AddLiquidity.process_receipt_typed(tx_receipt, errors=DISCARD)
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
@@ -843,7 +837,7 @@ async def _async_remove_liquidity(
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
     out_events = list(
-        interface.hyperdrive_contract.events.RemoveLiquidity().process_receipt_typed(tx_receipt, errors=DISCARD)
+        interface.hyperdrive_contract.events.RemoveLiquidity.process_receipt_typed(tx_receipt, errors=DISCARD)
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")
@@ -922,7 +916,7 @@ async def _async_redeem_withdraw_shares(
     # defined event. Since we know hyperdrive emits multiple events per transaction,
     # we get the one we want and discard the rest
     out_events = list(
-        interface.hyperdrive_contract.events.RedeemWithdrawalShares().process_receipt_typed(tx_receipt, errors=DISCARD)
+        interface.hyperdrive_contract.events.RedeemWithdrawalShares.process_receipt_typed(tx_receipt, errors=DISCARD)
     )
     if len(out_events) != 1:
         raise ValueError(f"Unexpected number of events: {out_events}")

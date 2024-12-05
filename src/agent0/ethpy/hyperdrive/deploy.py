@@ -657,7 +657,7 @@ def _deploy_and_initialize_hyperdrive_pool(
         _salt=salt,
     ).sign_transact_and_wait(deploy_account, tx_args, validate_transaction=True)
 
-    deploy_events = list(factory_contract.events.Deployed().process_receipt_typed(tx_receipt, errors=DISCARD))
+    deploy_events = list(factory_contract.events.Deployed.process_receipt_typed(tx_receipt, errors=DISCARD))
     if len(deploy_events) != 1:
         raise AssertionError(f"Expected 1 Deployed event, got {len(deploy_events)}")
     hyperdrive_address = deploy_events[0].args.hyperdrive
