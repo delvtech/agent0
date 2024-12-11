@@ -48,7 +48,7 @@ def get_liquidation_trades(
         The list of liquidation trades.
     """
     minimum_transaction_amount = interface.pool_config.minimum_transaction_amount
-    action_list = []
+    action_list: list[Trade] = []
     for maturity_time, long in wallet.longs.items():
         logging.debug("closing long: maturity_time=%g, balance=%s", maturity_time, long)
         if long.balance > minimum_transaction_amount:
@@ -67,7 +67,8 @@ def get_liquidation_trades(
 
     # We use the underlying policies rng object for randomizing liquidation trades
     if randomize_trades:
-        action_list = rng.permutation(action_list).tolist()
+        # Numpy has issues with typing of list of Trades
+        action_list: list[Trade] = rng.permutation(action_list).tolist()  # type: ignore
 
     # Always set withdrawal shares to be last, as we need trades to close first before withdrawing
     if wallet.withdraw_shares > 0:
