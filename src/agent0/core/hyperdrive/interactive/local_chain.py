@@ -57,6 +57,8 @@ class LocalChain(Chain):
         """Number of seconds to advance time for every mined block. Uses real time if None."""
         chain_host: str | None = None
         """The host to bind for the anvil chain. Defaults to `127.0.0.1`."""
+        chain_id: int | None = None
+        """The chain ID for the local anvil chain."""
         # TODO allow chain_port to be None to allow for automatically finding an open port within range.
         chain_port: int = 10_000
         """The port to bind for the anvil chain. Will fail if this port is being used."""
@@ -137,6 +139,9 @@ class LocalChain(Chain):
             anvil_launch_args.extend(["--fork-url", fork_uri])
             if fork_block_number is not None:
                 anvil_launch_args.extend(["--fork-block-number", str(fork_block_number)])
+
+        if config.chain_id is not None:
+            anvil_launch_args.extend(("--chain-id", str(config.chain_id)))
 
         # This process never stops, so we run this in the background and explicitly clean up later
         if config.verbose:
