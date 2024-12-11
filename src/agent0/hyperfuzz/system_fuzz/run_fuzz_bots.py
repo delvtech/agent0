@@ -225,6 +225,7 @@ def run_fuzz_bots(
     check_invariance: bool,
     num_random_agents: int | None = None,
     num_random_hold_agents: int | None = None,
+    agents: Sequence[HyperdriveAgent] | None = None,
     base_budget_per_bot: FixedPoint | None = None,
     eth_budget_per_bot: FixedPoint | None = None,
     slippage_tolerance: FixedPoint | None = None,
@@ -242,7 +243,7 @@ def run_fuzz_bots(
     whale_accounts: dict[ChecksumAddress, ChecksumAddress] | None = None,
     accrue_interest_func: Callable[[HyperdriveReadWriteInterface, FixedPoint, int], None] | None = None,
     accrue_interest_rate: FixedPoint | None = None,
-) -> None:
+) -> Sequence[HyperdriveAgent]:
     """Runs fuzz bots on a hyperdrive pool.
 
     Arguments
@@ -253,6 +254,8 @@ def run_fuzz_bots(
         The hyperdrive pool(s) to run the bots on.
     check_invariance: bool
         If True, will run invariance checks after each set of trades.
+    agents: Sequence[HyperdriveAgent] | None, optional
+        The agents making trades. If None, will create random agents.
     num_random_agents: int | None, optional
         The number of random agents to create. Defaults to 2.
     num_random_hold_agents: int | None, optional
@@ -301,6 +304,11 @@ def run_fuzz_bots(
         The variable rate to be passed into the accrue_interest_func. Note this value is only used when
         forking, as variable interest is handled by a mock yield source when simulating.
         If `random_variable_rate` is True, this value will be ignored.
+
+    Returns
+    -------
+    Sequence[HyperdriveAgent]
+        The set of agents making trades.
     """
     # TODO cleanup
     # pylint: disable=too-many-arguments
@@ -328,51 +336,55 @@ def run_fuzz_bots(
     if not isinstance(hyperdrive_pools, Sequence):
         hyperdrive_pools = [hyperdrive_pools]
 
-    # Initialize agents
-    agents: list[HyperdriveAgent] = []
-    for _ in range(num_random_agents):
-        # Initialize & fund agent using a random private key
-        agent: HyperdriveAgent = chain.init_agent(
-            private_key=make_private_key(),
-            policy=PolicyZoo.random,
-            policy_config=PolicyZoo.random.Config(
-                slippage_tolerance=slippage_tolerance,
-                trade_chance=FixedPoint("1.0"),
-                randomly_ignore_slippage_tolerance=True,
-            ),
-        )
-        # We're assuming we can fund the agent here
-        for pool in hyperdrive_pools:
-            agent.add_funds(
-                base=base_budget_per_bot,
-                eth=eth_budget_per_bot,
-                pool=pool,
-                whale_accounts=whale_accounts,
-            )
-            agent.set_max_approval(pool=pool)
-        agents.append(agent)
+    # Initialize agents. If agents are provided, use them.
+    # NOTE the input agents are assumed to have a policy attached.
+    if agents is None:
+        _agents: Sequence[HyperdriveAgent] = []
 
-    for _ in range(num_random_hold_agents):
-        agent: HyperdriveAgent = chain.init_agent(
-            private_key=make_private_key(),
-            policy=PolicyZoo.random_hold,
-            policy_config=PolicyZoo.random_hold.Config(
-                slippage_tolerance=slippage_tolerance,
-                trade_chance=FixedPoint("1.0"),
-                randomly_ignore_slippage_tolerance=True,
-                max_open_positions_per_pool=1_000,
-            ),
-        )
-        # We're assuming we can fund the agent here
-        for pool in hyperdrive_pools:
-            agent.add_funds(
-                base=base_budget_per_bot,
-                eth=eth_budget_per_bot,
-                pool=pool,
-                whale_accounts=whale_accounts,
+        for _ in range(num_random_agents):
+            # Initialize & fund agent using a random private key
+            agent: HyperdriveAgent = chain.init_agent(
+                private_key=make_private_key(),
+                policy=PolicyZoo.random,
+                policy_config=PolicyZoo.random.Config(
+                    slippage_tolerance=slippage_tolerance,
+                    trade_chance=FixedPoint("1.0"),
+                    randomly_ignore_slippage_tolerance=True,
+                ),
             )
-            agent.set_max_approval(pool=pool)
-        agents.append(agent)
+            # We're assuming we can fund the agent here
+            for pool in hyperdrive_pools:
+                agent.add_funds(
+                    base=base_budget_per_bot,
+                    eth=eth_budget_per_bot,
+                    pool=pool,
+                    whale_accounts=whale_accounts,
+                )
+                agent.set_max_approval(pool=pool)
+            _agents.append(agent)
+
+        for _ in range(num_random_hold_agents):
+            agent: HyperdriveAgent = chain.init_agent(
+                private_key=make_private_key(),
+                policy=PolicyZoo.random_hold,
+                policy_config=PolicyZoo.random_hold.Config(
+                    slippage_tolerance=slippage_tolerance,
+                    trade_chance=FixedPoint("1.0"),
+                    randomly_ignore_slippage_tolerance=True,
+                    max_open_positions_per_pool=1_000,
+                ),
+            )
+            # We're assuming we can fund the agent here
+            for pool in hyperdrive_pools:
+                agent.add_funds(
+                    base=base_budget_per_bot,
+                    eth=eth_budget_per_bot,
+                    pool=pool,
+                    whale_accounts=whale_accounts,
+                )
+                agent.set_max_approval(pool=pool)
+            _agents.append(agent)
+        agents = _agents
 
     # Make trades until the user or agents stop us
     logging.info("Trading...")
@@ -541,3 +553,5 @@ def run_fuzz_bots(
                         hyperdrive_pools[0].interface.web3, deployer_account.address, eth_budget_per_bot.scaled_value
                     )
                 chain.advance_time(random_time, create_checkpoints=True)
+
+    return agents
