@@ -778,7 +778,6 @@ class HyperdriveAgent:
                 # We pass in policy here for `post_action`. Post action is ignored if policy not set.
                 policy=self._active_policy,
                 preview_before_trade=self.chain.config.preview_before_trade,
-                nonce_func=self._get_nonce_safe,
             )
         )
         out_events = []
