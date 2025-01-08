@@ -69,15 +69,17 @@ hyperdrive_agent0 = chain.init_agent(base=FixedPoint(100_000), eth=FixedPoint(10
 
 # Run trades.
 chain.advance_time(datetime.timedelta(weeks=1))
-open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100), eth=FixedPoint(10))
+open_long_event = hyperdrive_agent0.open_long(base=FixedPoint(100))
 chain.advance_time(datetime.timedelta(weeks=5))
 close_event = hyperdrive_agent0.close_long(
-    maturity_time=open_long_event.maturity_time, bonds=open_long_event.bond_amount
+    maturity_time=open_long_event.args.maturity_time, bonds=open_long_event.args.bond_amount
 )
 
 # Analyze.
 pool_info = hyperdrive.get_pool_info(coerce_float=True)
 pool_info.plot(x="block_number", y="longs_outstanding", kind="line")
+trade_ticker = hyperdrive_agent0.get_trade_events()
+positions = hyperdrive_agent0.get_positions(show_closed_positions=True)
 
 # Shut down the chain.
 chain.cleanup()
@@ -87,7 +89,7 @@ chain.cleanup()
 
 ```python
 import os
-from agnet0 import Chain, Hyperdrive
+from agent0 import Chain, Hyperdrive
 
 # We recommend you use env variables for sensitive information.
 PUBLIC_ADDRESS = os.getenv("PUBLIC_ADDRESS")
@@ -114,7 +116,7 @@ with Chain(RPC_URI) as chain:
 
 ```python
 import os
-from agnet0 import Chain, Hyperdrive
+from agent0 import Chain, Hyperdrive
 
 # We recommend you use env variables for sensitive information.
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
