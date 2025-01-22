@@ -13,6 +13,8 @@ from fixedpointmath import FixedPoint
 from agent0.ethpy.hyperdrive import AssetIdPrefix, decode_asset_id
 from agent0.utils.conversions import camel_to_snake
 
+from web3.constants import ADDRESS_ZERO
+
 from .schema import DBPoolConfig, DBPoolInfo
 
 
@@ -138,9 +140,8 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         # tuple to multiple columns
         if "id" not in transfer_events_df:
             raise AssertionError("Transfer event has no id")
-        # TODO there may be a conversion issue here if `id` is too large of an int
         transfer_events_df["token_type"], transfer_events_df["maturityTime"] = zip(
-            *transfer_events_df["id"].astype(int).apply(decode_asset_id)
+            *transfer_events_df["id"].apply(lambda x: decode_asset_id(int(x)))
         )
         # Convert token_type enum to name
         transfer_events_df["token_type"] = transfer_events_df["token_type"].apply(lambda x: AssetIdPrefix(x).name)
@@ -154,7 +155,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         transfer_events_df.loc[long_or_short_idx, "token_id"] = (
             transfer_events_df.loc[long_or_short_idx, "token_type"]
             + "-"
-            + transfer_events_df.loc[long_or_short_idx, "maturityTime"]
+            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
         )
 
         # If the wallet address is set, set the event wrt the trader
@@ -175,13 +176,34 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         # If the wallet address is not set, ensure it's not a mint or burn, then add two rows
         # wrt both traders
         else:
-            # TODO need to implement transfers to test this case
-            # We raise not implemented for now
-            raise NotImplementedError(
-                "Transfer single event found without corresponding hyperdrive trade event. "
-                "Likely a transfer of a token to/from another wallet. "
-                "Not implemented when converting events without a provided wallet_addr."
-            )
+            # Handle mint events (from address is zero)
+            mint_idx = transfer_events_df["from"] == ADDRESS_ZERO
+            if mint_idx.any():
+                transfer_events_df.loc[mint_idx, "trader"] = transfer_events_df.loc[mint_idx, "to"]
+                transfer_events_df.loc[mint_idx, "token_delta"] = transfer_events_df.loc[mint_idx, "value"].apply(
+                    _scaled_value_to_decimal  # type: ignore
+                )
+                transfer_events_df.loc[mint_idx, "base_delta"] = Decimal(0)
+                transfer_events_df.loc[mint_idx, "vault_share_delta"] = Decimal(0)
+
+            # Handle burn events (to address is zero)
+            burn_idx = transfer_events_df["to"] == ADDRESS_ZERO
+            if burn_idx.any():
+                transfer_events_df.loc[burn_idx, "trader"] = transfer_events_df.loc[burn_idx, "from"]
+                transfer_events_df.loc[burn_idx, "token_delta"] = -transfer_events_df.loc[burn_idx, "value"].apply(
+                    _scaled_value_to_decimal  # type: ignore
+                )
+                transfer_events_df.loc[burn_idx, "base_delta"] = Decimal(0)
+                transfer_events_df.loc[burn_idx, "vault_share_delta"] = Decimal(0)
+
+            # For regular transfers (neither mint nor burn), raise NotImplemented
+            regular_transfer_idx = ~(mint_idx | burn_idx)
+            if regular_transfer_idx.any():
+                raise NotImplementedError(
+                    "Transfer single event found without corresponding hyperdrive trade event. "
+                    "Likely a transfer of a token to/from another wallet. "
+                    "Not implemented when converting events without a provided wallet_addr."
+                )
 
         # See if it's a receive or send of tokens
         send_idx = transfer_events_df["from"] == wallet_addr
@@ -217,7 +239,14 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
 
     # Convert fields to db schema
     # All events should have vaultSharePrice. We convert to non-scaled value.
-    events_df["vaultSharePrice"] = events_df["vaultSharePrice"].apply(_scaled_value_to_decimal)  # type: ignore
+    if len(events_df) == 0:
+        # asBase and vaultSharePrice doesn't make sense here, we keep as nan
+        # We use camel case to match the other event fields before rename
+        events_df["asBase"] = np.nan
+        events_df["vaultSharePrice"] = np.nan
+        events_df["extraData"] = ""
+    else:
+        events_df["vaultSharePrice"] = events_df["vaultSharePrice"].apply(_scaled_value_to_decimal)  # type: ignore
 
     # LP
     events_idx = events_df["event"].isin(["AddLiquidity", "RemoveLiquidity", "Initialize"])
