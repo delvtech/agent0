@@ -155,7 +155,7 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
         transfer_events_df.loc[long_or_short_idx, "token_id"] = (
             transfer_events_df.loc[long_or_short_idx, "token_type"]
             + "-"
-            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(str)
+            + transfer_events_df.loc[long_or_short_idx, "maturityTime"].astype(int).astype(str)
         )
 
         # If the wallet address is set, set the event wrt the trader
