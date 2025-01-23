@@ -183,8 +183,6 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
                 transfer_events_df.loc[mint_idx, "token_delta"] = transfer_events_df.loc[mint_idx, "value"].apply(
                     _scaled_value_to_decimal  # type: ignore
                 )
-                transfer_events_df.loc[mint_idx, "base_delta"] = Decimal(0)
-                transfer_events_df.loc[mint_idx, "vault_share_delta"] = Decimal(0)
 
             # Handle burn events (to address is zero)
             burn_idx = transfer_events_df["to"] == ADDRESS_ZERO
@@ -193,8 +191,6 @@ def convert_trade_events(events: list[dict[str, Any]], wallet_addr: str | None) 
                 transfer_events_df.loc[burn_idx, "token_delta"] = -transfer_events_df.loc[burn_idx, "value"].apply(
                     _scaled_value_to_decimal  # type: ignore
                 )
-                transfer_events_df.loc[burn_idx, "base_delta"] = Decimal(0)
-                transfer_events_df.loc[burn_idx, "vault_share_delta"] = Decimal(0)
 
             # For regular transfers (neither mint nor burn), raise NotImplemented
             regular_transfer_idx = ~(mint_idx | burn_idx)
